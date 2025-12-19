@@ -546,12 +546,6 @@ export default function GPRegistration() {
                       />
                     </div>
                   </div>
-                  <DocumentUpload
-                    label="Photo/Scan de la pièce d'identité"
-                    onUpload={(url) => setKycData({ ...kycData, idDocumentUrl: url })}
-                    uploadedUrl={kycData.idDocumentUrl}
-                    required
-                  />
                 </div>
 
                 {/* Business Registration */}
