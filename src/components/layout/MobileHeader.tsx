@@ -1,13 +1,13 @@
 import { Link } from "react-router-dom";
-import { Package, Bell } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Package } from "lucide-react";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 interface MobileHeaderProps {
   title?: string;
   showNotifications?: boolean;
 }
 
-export function MobileHeader({ title, showNotifications = false }: MobileHeaderProps) {
+export function MobileHeader({ title, showNotifications = true }: MobileHeaderProps) {
   return (
     <header className="sticky top-0 z-40 bg-card border-b border-border px-4 py-3">
       <div className="flex items-center justify-between">
@@ -25,12 +25,7 @@ export function MobileHeader({ title, showNotifications = false }: MobileHeaderP
           )}
         </Link>
 
-        {showNotifications && (
-          <Button variant="ghost" size="icon-sm" className="relative">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-0 right-0 w-2 h-2 bg-secondary rounded-full" />
-          </Button>
-        )}
+        {showNotifications && <NotificationBell />}
       </div>
     </header>
   );
