@@ -12,6 +12,7 @@ import GPRegistration from "./pages/GPRegistration";
 import GPDashboard from "./pages/GPDashboard";
 import Messages from "./pages/Messages";
 import AdminDashboard from "./pages/AdminDashboard";
+import PriceCalculator from "./pages/PriceCalculator";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/offres" element={<Offres />} />
           <Route path="/tracking" element={<Tracking />} />
           <Route path="/messages" element={<Messages />} />
+          <Route path="/calculateur" element={<PriceCalculator />} />
           <Route path="/gp" element={<GPLanding />} />
           <Route path="/gp/inscription" element={<GPRegistration />} />
           <Route path="/gp/dashboard" element={<GPDashboard />} />

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   Package, Truck, Search, ArrowRight, Zap, Ship, Plane, 
-  MapPin, Star, Shield, Clock, Briefcase
+  MapPin, Star, Shield, Clock, Briefcase, Sparkles
 } from "lucide-react";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -68,25 +68,22 @@ export default function Index() {
             Connectez-vous avec des transporteurs vérifiés
           </p>
 
-          {/* Search Bar */}
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher une ville, destination..."
-              className="pl-10 h-11 bg-muted/50"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          {/* Quick Actions */}
+          <div className="flex flex-col gap-3 mb-5">
+            <Link to="/demande">
+              <Button variant="default" size="lg" className="w-full">
+                <Package className="w-5 h-5" />
+                Envoyer un colis
+                <ArrowRight className="w-5 h-5" />
+              </Button>
+            </Link>
+            <Link to="/calculateur">
+              <Button variant="outline" size="lg" className="w-full">
+                <Sparkles className="w-5 h-5" />
+                Calculateur IA de prix
+              </Button>
+            </Link>
           </div>
-
-          {/* Quick Action */}
-          <Link to="/demande">
-            <Button variant="default" size="lg" className="w-full mb-5">
-              <Package className="w-5 h-5" />
-              Envoyer un colis
-              <ArrowRight className="w-5 h-5" />
-            </Button>
-          </Link>
         </motion.div>
       </section>
 
