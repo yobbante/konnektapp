@@ -102,10 +102,7 @@ export default function GPRegistration() {
         }
         return true;
       case 3:
-        if (!kycData.idNumber || !kycData.idDocumentUrl) {
-          toast({ title: "Erreur", description: "Veuillez fournir votre pièce d'identité", variant: "destructive" });
-          return false;
-        }
+        // Documents are now optional
         return true;
       case 4:
         if (zones.length === 0) {

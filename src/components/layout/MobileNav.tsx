@@ -1,13 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, Search, Package, Wallet, User } from "lucide-react";
+import { Home, Search, Package, Wallet, User, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", icon: Home, label: "Accueil" },
   { href: "/offres", icon: Search, label: "Offres" },
   { href: "/demande", icon: Package, label: "Envoyer" },
+  { href: "/messages", icon: MessageCircle, label: "Messages" },
   { href: "/tracking", icon: Search, label: "Suivi" },
-  { href: "/auth", icon: User, label: "Compte" },
 ];
 
 export function MobileNav() {

@@ -10,6 +10,8 @@ import Tracking from "./pages/Tracking";
 import GPLanding from "./pages/GPLanding";
 import GPRegistration from "./pages/GPRegistration";
 import GPDashboard from "./pages/GPDashboard";
+import Messages from "./pages/Messages";
+import AdminDashboard from "./pages/AdminDashboard";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -26,9 +28,11 @@ const App = () => (
           <Route path="/demande" element={<DemandeEnvoi />} />
           <Route path="/offres" element={<Offres />} />
           <Route path="/tracking" element={<Tracking />} />
+          <Route path="/messages" element={<Messages />} />
           <Route path="/gp" element={<GPLanding />} />
           <Route path="/gp/inscription" element={<GPRegistration />} />
           <Route path="/gp/dashboard" element={<GPDashboard />} />
+          <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/auth" element={<Auth />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
