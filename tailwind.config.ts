@@ -7,13 +7,12 @@ export default {
   theme: {
     container: {
       center: true,
-      padding: "1.5rem",
+      padding: "1rem",
       screens: {
         sm: "640px",
         md: "768px",
         lg: "1024px",
         xl: "1280px",
-        "2xl": "1400px",
       },
     },
     extend: {
@@ -50,6 +49,10 @@ export default {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
         },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
@@ -69,17 +72,15 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
         // Custom brand colors
-        navy: {
-          DEFAULT: "hsl(var(--navy-deep))",
-          deep: "hsl(var(--navy-deep))",
-          light: "hsl(var(--navy-light))",
+        teal: {
+          DEFAULT: "hsl(var(--teal))",
+          light: "hsl(var(--teal-light))",
+          dark: "hsl(var(--teal-dark))",
         },
-        gold: {
-          DEFAULT: "hsl(var(--gold))",
-          dark: "hsl(var(--gold-dark))",
+        orange: {
+          DEFAULT: "hsl(var(--orange))",
+          light: "hsl(var(--orange-light))",
         },
-        amber: "hsl(var(--amber))",
-        teal: "hsl(var(--teal))",
         cream: "hsl(var(--cream))",
         // Transport types
         transport: {
@@ -92,8 +93,8 @@ export default {
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        md: "calc(var(--radius) - 4px)",
+        sm: "calc(var(--radius) - 8px)",
         xl: "calc(var(--radius) + 4px)",
         "2xl": "calc(var(--radius) + 8px)",
       },
@@ -101,8 +102,6 @@ export default {
         sm: "var(--shadow-sm)",
         md: "var(--shadow-md)",
         lg: "var(--shadow-lg)",
-        xl: "var(--shadow-xl)",
-        glow: "var(--shadow-glow)",
         card: "var(--shadow-card)",
       },
       keyframes: {
@@ -115,38 +114,19 @@ export default {
           to: { height: "0" },
         },
         "fade-up": {
-          "0%": { opacity: "0", transform: "translateY(20px)" },
+          "0%": { opacity: "0", transform: "translateY(16px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
-        },
-        "fade-in": {
-          "0%": { opacity: "0" },
-          "100%": { opacity: "1" },
         },
         "scale-in": {
           "0%": { opacity: "0", transform: "scale(0.95)" },
           "100%": { opacity: "1", transform: "scale(1)" },
         },
-        float: {
-          "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-10px)" },
-        },
-        shimmer: {
-          "0%": { backgroundPosition: "-200% 0" },
-          "100%": { backgroundPosition: "200% 0" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-up": "fade-up 0.5s ease-out",
-        "fade-in": "fade-in 0.3s ease-out",
+        "fade-up": "fade-up 0.4s ease-out",
         "scale-in": "scale-in 0.3s ease-out",
-        float: "float 6s ease-in-out infinite",
-        shimmer: "shimmer 2s linear infinite",
-      },
-      backgroundImage: {
-        "hero-pattern": "radial-gradient(ellipse at top, hsl(var(--navy-light) / 0.3) 0%, transparent 70%)",
-        "gold-shimmer": "linear-gradient(90deg, transparent, hsl(var(--gold) / 0.3), transparent)",
       },
     },
   },
