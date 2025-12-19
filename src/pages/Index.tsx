@@ -1,33 +1,54 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   Package, Truck, Search, ArrowRight, Zap, Ship, Plane, 
-  MapPin, Star, Shield, Clock
+  MapPin, Star, Shield, Clock, Briefcase
 } from "lucide-react";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
+type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur";
+
 const transportTypes = [
-  { icon: Zap, label: "Express", color: "bg-transport-express/10 text-transport-express" },
-  { icon: Truck, label: "Routier", color: "bg-transport-routier/10 text-transport-routier" },
-  { icon: Ship, label: "Maritime", color: "bg-transport-maritime/10 text-transport-maritime" },
-  { icon: Plane, label: "Aérien", color: "bg-transport-aerien/10 text-transport-aerien" },
+  { type: "express" as TransportType, icon: Zap, label: "Express", color: "bg-transport-express/10 text-transport-express border-transport-express/20" },
+  { type: "routier" as TransportType, icon: Truck, label: "Routier", color: "bg-transport-routier/10 text-transport-routier border-transport-routier/20" },
+  { type: "maritime" as TransportType, icon: Ship, label: "Maritime", color: "bg-transport-maritime/10 text-transport-maritime border-transport-maritime/20" },
+  { type: "aerien" as TransportType, icon: Plane, label: "Aérien", color: "bg-transport-aerien/10 text-transport-aerien border-transport-aerien/20" },
+  { type: "voyageur" as TransportType, icon: Briefcase, label: "Voyageur", color: "bg-transport-voyageur/10 text-transport-voyageur border-transport-voyageur/20" },
 ];
 
-const recentOffers = [
-  { id: "1", origin: "Dakar", destination: "Abidjan", price: 6500, type: "routier", gpName: "Mamadou Express", rating: 4.8 },
-  { id: "2", origin: "Dakar", destination: "Paris", price: 8500, type: "aerien", gpName: "Air Cargo SN", rating: 4.9 },
-  { id: "3", origin: "Abidjan", destination: "Bamako", price: 5500, type: "express", gpName: "Flash Livraison", rating: 4.7 },
+const allOffers = [
+  { id: "1", origin: "Dakar", destination: "Abidjan", price: 6500, type: "routier" as TransportType, gpName: "Mamadou Express", rating: 4.8 },
+  { id: "2", origin: "Dakar", destination: "Paris", price: 8500, type: "aerien" as TransportType, gpName: "Air Cargo SN", rating: 4.9 },
+  { id: "3", origin: "Abidjan", destination: "Bamako", price: 5500, type: "express" as TransportType, gpName: "Flash Livraison", rating: 4.7 },
+  { id: "4", origin: "Dakar", destination: "Casablanca", price: 12000, type: "maritime" as TransportType, gpName: "Atlantic Freight", rating: 4.6 },
+  { id: "5", origin: "Conakry", destination: "Dakar", price: 4500, type: "voyageur" as TransportType, gpName: "Moussa GP", rating: 4.5 },
+  { id: "6", origin: "Lagos", destination: "Accra", price: 7500, type: "routier" as TransportType, gpName: "West Africa Trans", rating: 4.6 },
 ];
 
 export default function Index() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedType, setSelectedType] = useState<TransportType | null>(null);
+
+  const filteredOffers = allOffers.filter((offer) => {
+    const matchesType = !selectedType || offer.type === selectedType;
+    const matchesSearch = !searchQuery || 
+      offer.origin.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      offer.destination.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesType && matchesSearch;
+  });
+
+  const displayedOffers = selectedType || searchQuery ? filteredOffers : filteredOffers.slice(0, 3);
+
   return (
     <div className="min-h-screen bg-background pb-safe">
       <MobileHeader />
 
-      {/* Hero Section - Mobile Optimized */}
+      {/* Hero Section */}
       <section className="px-4 py-6">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -43,82 +64,82 @@ export default function Index() {
             <span className="text-primary">partout en Afrique</span>
           </h1>
           
-          <p className="text-muted-foreground text-sm mb-6">
+          <p className="text-muted-foreground text-sm mb-5">
             Connectez-vous avec des transporteurs vérifiés
           </p>
 
-          {/* Quick Actions - 2 taps */}
-          <div className="flex flex-col gap-3 mb-6">
-            <Link to="/demande">
-              <Button variant="default" size="lg" className="w-full">
-                <Package className="w-5 h-5" />
-                Envoyer un colis
-                <ArrowRight className="w-5 h-5" />
-              </Button>
-            </Link>
-            <Link to="/offres">
-              <Button variant="outline" size="lg" className="w-full">
-                <Search className="w-5 h-5" />
-                Voir les offres
-              </Button>
-            </Link>
+          {/* Search Bar */}
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher une ville, destination..."
+              className="pl-10 h-11 bg-muted/50"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
 
-          {/* Transport Types - Scrollable */}
-          <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-            {transportTypes.map((type) => (
-              <Link 
-                key={type.label} 
-                to={`/offres?type=${type.label.toLowerCase()}`}
-                className="flex-shrink-0"
-              >
-                <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl ${type.color} border border-current/20`}>
-                  <type.icon className="w-4 h-4" />
-                  <span className="text-sm font-medium">{type.label}</span>
-                </div>
-              </Link>
-            ))}
-          </div>
+          {/* Quick Action */}
+          <Link to="/demande">
+            <Button variant="default" size="lg" className="w-full mb-5">
+              <Package className="w-5 h-5" />
+              Envoyer un colis
+              <ArrowRight className="w-5 h-5" />
+            </Button>
+          </Link>
         </motion.div>
       </section>
 
-      {/* Quick Stats */}
-      <section className="px-4 py-4">
-        <div className="grid grid-cols-3 gap-3">
-          <div className="mobile-card text-center">
-            <p className="text-xl font-bold text-primary">5000+</p>
-            <p className="text-xs text-muted-foreground">GP vérifiés</p>
-          </div>
-          <div className="mobile-card text-center">
-            <p className="text-xl font-bold text-primary">50K+</p>
-            <p className="text-xs text-muted-foreground">Colis livrés</p>
-          </div>
-          <div className="mobile-card text-center">
-            <p className="text-xl font-bold text-primary">4.8</p>
-            <p className="text-xs text-muted-foreground">Note moyenne</p>
-          </div>
+      {/* Transport Types - Interactive Filter */}
+      <section className="px-4 py-2">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-semibold text-foreground">Voir les offres</h2>
+          {selectedType && (
+            <button
+              onClick={() => setSelectedType(null)}
+              className="text-sm text-primary font-medium"
+            >
+              Tout voir
+            </button>
+          )}
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+          {transportTypes.map((type) => (
+            <button 
+              key={type.label} 
+              onClick={() => setSelectedType(selectedType === type.type ? null : type.type)}
+              className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all ${
+                selectedType === type.type 
+                  ? "bg-primary text-primary-foreground border-primary" 
+                  : type.color
+              }`}
+            >
+              <type.icon className="w-4 h-4" />
+              <span className="text-sm font-medium">{type.label}</span>
+            </button>
+          ))}
         </div>
       </section>
 
-      {/* Recent Offers */}
+      {/* Filtered Offers List */}
       <section className="px-4 py-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-foreground">Offres récentes</h2>
-          <Link to="/offres" className="text-sm text-primary font-medium">
-            Voir tout
-          </Link>
-        </div>
+        {(selectedType || searchQuery) && (
+          <p className="text-sm text-muted-foreground mb-3">
+            {filteredOffers.length} offre{filteredOffers.length > 1 ? "s" : ""} 
+            {selectedType && ` ${transportTypes.find(t => t.type === selectedType)?.label}`}
+          </p>
+        )}
 
         <div className="space-y-3">
-          {recentOffers.map((offer, index) => (
+          {displayedOffers.map((offer, index) => (
             <motion.div
               key={offer.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
+              transition={{ delay: index * 0.05 }}
             >
               <Link to={`/offres/${offer.id}`}>
-                <div className="mobile-card">
+                <div className="mobile-card active:scale-[0.98] transition-transform">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-primary" />
@@ -145,9 +166,52 @@ export default function Index() {
             </motion.div>
           ))}
         </div>
+
+        {filteredOffers.length === 0 && (
+          <div className="text-center py-8">
+            <Package className="w-10 h-10 text-muted-foreground/50 mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Aucune offre trouvée</p>
+          </div>
+        )}
+
+        {!selectedType && !searchQuery && (
+          <Link to="/offres" className="block mt-4">
+            <Button variant="outline" className="w-full">
+              Voir toutes les offres
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </Link>
+        )}
+
+        {(selectedType || searchQuery) && filteredOffers.length > 0 && (
+          <Link to={`/offres${selectedType ? `?type=${selectedType}` : ''}`} className="block mt-4">
+            <Button variant="outline" className="w-full">
+              Voir sur la page offres
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </Link>
+        )}
       </section>
 
-      {/* Why Us - Simple */}
+      {/* Quick Stats */}
+      <section className="px-4 py-4">
+        <div className="grid grid-cols-3 gap-3">
+          <div className="mobile-card text-center">
+            <p className="text-xl font-bold text-primary">5000+</p>
+            <p className="text-xs text-muted-foreground">GP vérifiés</p>
+          </div>
+          <div className="mobile-card text-center">
+            <p className="text-xl font-bold text-primary">50K+</p>
+            <p className="text-xs text-muted-foreground">Colis livrés</p>
+          </div>
+          <div className="mobile-card text-center">
+            <p className="text-xl font-bold text-primary">4.8</p>
+            <p className="text-xs text-muted-foreground">Note moyenne</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Us */}
       <section className="px-4 py-4">
         <h2 className="font-semibold text-foreground mb-4">Pourquoi nous choisir</h2>
         <div className="grid grid-cols-2 gap-3">
