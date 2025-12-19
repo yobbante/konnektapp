@@ -1,22 +1,16 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
-  Package, Wallet, BarChart3, Plus, ArrowUpRight, ArrowDownRight,
-  TrendingUp, Clock, CheckCircle, AlertCircle, Eye, Edit, Trash2,
-  MapPin, Calendar, Star, ChevronRight, Bell, Settings, LogOut,
-  Zap, Truck, Ship, Plane, Briefcase, Users, DollarSign
+  Package, Wallet, Plus, ChevronRight, Star, 
+  TrendingUp, Clock, MapPin, ArrowRight, Settings, LogOut
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GPDashboardHeader } from "@/components/gp/GPDashboardHeader";
-import { GPStatsCards } from "@/components/gp/GPStatsCards";
-import { GPOffersTable } from "@/components/gp/GPOffersTable";
-import { GPOrdersTable } from "@/components/gp/GPOrdersTable";
-import { GPWalletCard } from "@/components/gp/GPWalletCard";
+import { MobileHeader } from "@/components/layout/MobileHeader";
+import { GPMobileNav } from "@/components/layout/MobileNav";
 import { GPCreateOfferDialog } from "@/components/gp/GPCreateOfferDialog";
 
 interface GPProfile {
@@ -29,7 +23,7 @@ interface GPProfile {
   total_deliveries: number;
 }
 
-interface Wallet {
+interface WalletData {
   balance: number;
   pending_balance: number;
   total_earned: number;
@@ -41,7 +35,7 @@ export default function GPDashboard() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
-  const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [wallet, setWallet] = useState<WalletData | null>(null);
   const [offers, setOffers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [showCreateOffer, setShowCreateOffer] = useState(false);
@@ -60,7 +54,6 @@ export default function GPDashboard() {
         return;
       }
 
-      // Fetch GP profile
       const { data: profile, error: profileError } = await supabase
         .from("gp_profiles")
         .select("*")
@@ -72,7 +65,7 @@ export default function GPDashboard() {
       if (!profile) {
         toast({
           title: "Accès refusé",
-          description: "Vous devez être un GP inscrit pour accéder à ce dashboard",
+          description: "Vous devez être un GP inscrit",
           variant: "destructive",
         });
         navigate("/gp/inscription");
@@ -81,7 +74,6 @@ export default function GPDashboard() {
 
       setGpProfile(profile);
 
-      // Fetch wallet
       const { data: walletData } = await supabase
         .from("gp_wallets")
         .select("*")
@@ -90,7 +82,6 @@ export default function GPDashboard() {
 
       setWallet(walletData);
 
-      // Fetch offers
       const { data: offersData } = await supabase
         .from("gp_offers")
         .select("*")
@@ -99,7 +90,6 @@ export default function GPDashboard() {
 
       setOffers(offersData || []);
 
-      // Fetch orders
       const { data: ordersData } = await supabase
         .from("orders")
         .select("*")
@@ -128,169 +118,58 @@ export default function GPDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 rounded-full border-4 border-secondary border-t-transparent animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Chargement...</p>
-        </div>
+        <div className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
       </div>
     );
   }
 
-  if (!gpProfile) {
-    return null;
-  }
+  if (!gpProfile) return null;
 
   const stats = {
-    totalOffers: offers.length,
     activeOffers: offers.filter(o => o.status === 'active').length,
-    totalOrders: orders.length,
     pendingOrders: orders.filter(o => o.status === 'pending').length,
     inTransitOrders: orders.filter(o => o.status === 'in_transit').length,
-    completedOrders: orders.filter(o => o.status === 'delivered').length,
-    revenue: wallet?.total_earned || 0,
     balance: wallet?.balance || 0,
   };
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      {/* Header */}
-      <GPDashboardHeader 
-        gpProfile={gpProfile} 
-        onSignOut={handleSignOut}
-      />
+    <div className="min-h-screen bg-muted/30 pb-safe">
+      <MobileHeader title={gpProfile.business_name} showNotifications />
 
-      <main className="container py-8">
-        {/* Welcome & Status */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
-                Bienvenue, {gpProfile.business_name}
-              </h1>
-              <div className="flex items-center gap-3">
-                <Badge variant={gpProfile.status === 'verified' ? 'success' : 'pending'}>
-                  {gpProfile.status === 'verified' ? 'Vérifié' : 'En attente'}
-                </Badge>
-                <Badge variant={gpProfile.subscription === 'premium' ? 'gold' : 'secondary'}>
-                  {gpProfile.subscription === 'premium' ? '⭐ Premium' : 'Gratuit'}
-                </Badge>
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <Star className="w-4 h-4 text-secondary fill-secondary" />
-                  {gpProfile.rating?.toFixed(1) || '0.0'}
-                </div>
-              </div>
-            </div>
-            <Button variant="gold" onClick={() => setShowCreateOffer(true)}>
-              <Plus className="w-4 h-4" />
-              Nouvelle offre
-            </Button>
-          </div>
-        </motion.div>
+      {/* Content based on active tab */}
+      {activeTab === "overview" && (
+        <OverviewTab 
+          gpProfile={gpProfile}
+          stats={stats}
+          wallet={wallet}
+          offers={offers}
+          orders={orders}
+          onCreateOffer={() => setShowCreateOffer(true)}
+          onSignOut={handleSignOut}
+        />
+      )}
 
-        {/* Stats Cards */}
-        <GPStatsCards stats={stats} />
+      {activeTab === "offers" && (
+        <OffersTab 
+          offers={offers}
+          onCreateOffer={() => setShowCreateOffer(true)}
+          onRefresh={checkAuthAndLoadData}
+        />
+      )}
 
-        {/* Main Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
-            <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
-            <TabsTrigger value="offers">Mes offres</TabsTrigger>
-            <TabsTrigger value="orders">Commandes</TabsTrigger>
-            <TabsTrigger value="wallet">Wallet</TabsTrigger>
-          </TabsList>
+      {activeTab === "orders" && (
+        <OrdersTab 
+          orders={orders}
+          onRefresh={checkAuthAndLoadData}
+        />
+      )}
 
-          {/* Overview Tab */}
-          <TabsContent value="overview">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Recent Orders */}
-              <div className="lg:col-span-2 bg-card rounded-2xl border border-border p-6 shadow-card">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-lg text-foreground">Commandes récentes</h3>
-                  <Button variant="ghost" size="sm" onClick={() => setActiveTab("orders")}>
-                    Voir tout
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-                {orders.length > 0 ? (
-                  <GPOrdersTable orders={orders.slice(0, 5)} compact />
-                ) : (
-                  <div className="text-center py-10 text-muted-foreground">
-                    <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p>Aucune commande pour le moment</p>
-                  </div>
-                )}
-              </div>
+      {activeTab === "wallet" && (
+        <WalletTab wallet={wallet} />
+      )}
 
-              {/* Wallet Summary */}
-              <GPWalletCard wallet={wallet} compact />
-            </div>
+      <GPMobileNav activeTab={activeTab} onTabChange={setActiveTab} />
 
-            {/* Active Offers */}
-            <div className="mt-6 bg-card rounded-2xl border border-border p-6 shadow-card">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-lg text-foreground">Offres actives</h3>
-                <Button variant="ghost" size="sm" onClick={() => setActiveTab("offers")}>
-                  Voir tout
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-              {offers.filter(o => o.status === 'active').length > 0 ? (
-                <GPOffersTable offers={offers.filter(o => o.status === 'active').slice(0, 3)} compact />
-              ) : (
-                <div className="text-center py-10 text-muted-foreground">
-                  <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>Aucune offre active</p>
-                  <Button variant="gold" size="sm" className="mt-4" onClick={() => setShowCreateOffer(true)}>
-                    <Plus className="w-4 h-4" />
-                    Créer une offre
-                  </Button>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
-          {/* Offers Tab */}
-          <TabsContent value="offers">
-            <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="font-semibold text-lg text-foreground">Mes offres de transport</h3>
-                <Button variant="gold" onClick={() => setShowCreateOffer(true)}>
-                  <Plus className="w-4 h-4" />
-                  Nouvelle offre
-                </Button>
-              </div>
-              <GPOffersTable 
-                offers={offers} 
-                onRefresh={checkAuthAndLoadData}
-              />
-            </div>
-          </TabsContent>
-
-          {/* Orders Tab */}
-          <TabsContent value="orders">
-            <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="font-semibold text-lg text-foreground">Historique des commandes</h3>
-              </div>
-              <GPOrdersTable 
-                orders={orders}
-                onRefresh={checkAuthAndLoadData}
-              />
-            </div>
-          </TabsContent>
-
-          {/* Wallet Tab */}
-          <TabsContent value="wallet">
-            <GPWalletCard wallet={wallet} />
-          </TabsContent>
-        </Tabs>
-      </main>
-
-      {/* Create Offer Dialog */}
       <GPCreateOfferDialog
         open={showCreateOffer}
         onClose={() => setShowCreateOffer(false)}
@@ -300,6 +179,330 @@ export default function GPDashboard() {
           checkAuthAndLoadData();
         }}
       />
+    </div>
+  );
+}
+
+// Overview Tab Component
+function OverviewTab({ gpProfile, stats, wallet, offers, orders, onCreateOffer, onSignOut }: any) {
+  return (
+    <div className="px-4 py-4 space-y-4">
+      {/* Profile Card */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mobile-card"
+      >
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="font-semibold text-foreground">{gpProfile.business_name}</h2>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant={gpProfile.status === 'verified' ? 'success' : 'pending'}>
+                {gpProfile.status === 'verified' ? 'Vérifié' : 'En attente'}
+              </Badge>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Star className="w-3 h-3 text-warning fill-warning" />
+                {gpProfile.rating?.toFixed(1) || '0.0'}
+              </div>
+            </div>
+          </div>
+          <Button variant="ghost" size="icon-sm" onClick={onSignOut}>
+            <LogOut className="w-5 h-5" />
+          </Button>
+        </div>
+      </motion.div>
+
+      {/* Quick Stats Grid */}
+      <div className="grid grid-cols-2 gap-3">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mobile-card"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Package className="w-4 h-4 text-primary" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-foreground">{stats.activeOffers}</p>
+          <p className="text-xs text-muted-foreground">Offres actives</p>
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mobile-card"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
+              <Clock className="w-4 h-4 text-warning" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-foreground">{stats.pendingOrders}</p>
+          <p className="text-xs text-muted-foreground">En attente</p>
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mobile-card"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-secondary" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-foreground">{stats.inTransitOrders}</p>
+          <p className="text-xs text-muted-foreground">En transit</p>
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="mobile-card"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
+              <Wallet className="w-4 h-4 text-success" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-foreground">{stats.balance.toLocaleString()}</p>
+          <p className="text-xs text-muted-foreground">FCFA dispo.</p>
+        </motion.div>
+      </div>
+
+      {/* Quick Actions */}
+      <Button variant="default" size="lg" className="w-full" onClick={onCreateOffer}>
+        <Plus className="w-5 h-5" />
+        Nouvelle offre
+      </Button>
+
+      {/* Recent Orders */}
+      {orders.length > 0 && (
+        <div>
+          <h3 className="font-semibold text-foreground mb-3">Commandes récentes</h3>
+          <div className="space-y-2">
+            {orders.slice(0, 3).map((order: any) => (
+              <div key={order.id} className="mobile-card">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium">{order.origin_city}</span>
+                    <ArrowRight className="w-3 h-3 text-muted-foreground" />
+                    <span className="text-sm font-medium">{order.destination_city}</span>
+                  </div>
+                  <Badge variant={order.status === 'delivered' ? 'success' : 'pending'}>
+                    {order.status}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-xs text-muted-foreground">{order.order_number}</span>
+                  <span className="font-semibold text-sm">{order.total_price} FCFA</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Offers Tab Component  
+function OffersTab({ offers, onCreateOffer, onRefresh }: any) {
+  return (
+    <div className="px-4 py-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold text-foreground">Mes offres</h2>
+        <Button variant="default" size="sm" onClick={onCreateOffer}>
+          <Plus className="w-4 h-4" />
+          Nouvelle
+        </Button>
+      </div>
+
+      {offers.length === 0 ? (
+        <div className="mobile-card text-center py-8">
+          <Package className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+          <p className="text-muted-foreground mb-4">Aucune offre</p>
+          <Button variant="default" onClick={onCreateOffer}>Créer une offre</Button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {offers.map((offer: any) => (
+            <div key={offer.id} className="mobile-card">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  <span className="font-medium text-sm">{offer.origin_city}</span>
+                  <ArrowRight className="w-3 h-3 text-muted-foreground" />
+                  <span className="font-medium text-sm">{offer.destination_city}</span>
+                </div>
+                <Badge variant={offer.status === 'active' ? 'success' : 'pending'}>
+                  {offer.status}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">
+                  {new Date(offer.departure_date).toLocaleDateString('fr-FR')}
+                </span>
+                <span className="font-bold text-primary">{offer.price_per_kg} FCFA/kg</span>
+              </div>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
+                <span className="text-xs text-muted-foreground">
+                  {offer.available_capacity}/{offer.total_capacity} kg dispo
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {offer.bookings_count || 0} réservations
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Orders Tab Component
+function OrdersTab({ orders, onRefresh }: any) {
+  const { toast } = useToast();
+
+  const updateOrderStatus = async (orderId: string, newStatus: "pending" | "accepted" | "in_transit" | "delivered" | "cancelled" | "disputed") => {
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: newStatus })
+        .eq("id", orderId);
+
+      if (error) throw error;
+
+      toast({ title: "Statut mis à jour" });
+      onRefresh();
+    } catch (error) {
+      toast({ title: "Erreur", variant: "destructive" });
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'warning';
+      case 'accepted': return 'default';
+      case 'in_transit': return 'secondary';
+      case 'delivered': return 'success';
+      default: return 'outline';
+    }
+  };
+
+  return (
+    <div className="px-4 py-4 space-y-4">
+      <h2 className="font-semibold text-foreground">Commandes</h2>
+
+      {orders.length === 0 ? (
+        <div className="mobile-card text-center py-8">
+          <Package className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+          <p className="text-muted-foreground">Aucune commande</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {orders.map((order: any) => (
+            <div key={order.id} className="mobile-card">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-mono text-muted-foreground">{order.order_number}</span>
+                <Badge variant={getStatusColor(order.status) as any}>{order.status}</Badge>
+              </div>
+              <div className="flex items-center gap-2 mb-2">
+                <MapPin className="w-4 h-4 text-primary" />
+                <span className="font-medium text-sm">{order.origin_city}</span>
+                <ArrowRight className="w-3 h-3 text-muted-foreground" />
+                <span className="font-medium text-sm">{order.destination_city}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm mb-3">
+                <span className="text-muted-foreground">{order.weight} kg</span>
+                <span className="font-bold">{order.total_price} FCFA</span>
+              </div>
+
+              {order.status === 'pending' && (
+                <Button 
+                  variant="success" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => updateOrderStatus(order.id, 'accepted')}
+                >
+                  Accepter
+                </Button>
+              )}
+              {order.status === 'accepted' && (
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => updateOrderStatus(order.id, 'in_transit')}
+                >
+                  Marquer en transit
+                </Button>
+              )}
+              {order.status === 'in_transit' && (
+                <Button 
+                  variant="success" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => updateOrderStatus(order.id, 'delivered')}
+                >
+                  Marquer livré
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Wallet Tab Component
+function WalletTab({ wallet }: { wallet: WalletData | null }) {
+  return (
+    <div className="px-4 py-4 space-y-4">
+      <h2 className="font-semibold text-foreground">Mon Wallet</h2>
+
+      {/* Balance Card */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-primary rounded-2xl p-5 text-primary-foreground"
+      >
+        <p className="text-primary-foreground/80 text-sm mb-1">Solde disponible</p>
+        <p className="text-3xl font-bold">{(wallet?.balance || 0).toLocaleString()} FCFA</p>
+        
+        {(wallet?.pending_balance || 0) > 0 && (
+          <div className="mt-3 pt-3 border-t border-primary-foreground/20">
+            <p className="text-primary-foreground/70 text-xs">En attente</p>
+            <p className="font-semibold">{wallet?.pending_balance.toLocaleString()} FCFA</p>
+          </div>
+        )}
+      </motion.div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="mobile-card">
+          <p className="text-xs text-muted-foreground mb-1">Total gagné</p>
+          <p className="text-lg font-bold text-success">{(wallet?.total_earned || 0).toLocaleString()} FCFA</p>
+        </div>
+        <div className="mobile-card">
+          <p className="text-xs text-muted-foreground mb-1">En attente</p>
+          <p className="text-lg font-bold text-warning">{(wallet?.pending_balance || 0).toLocaleString()} FCFA</p>
+        </div>
+      </div>
+
+      {/* Withdraw Button */}
+      <Button variant="outline" size="lg" className="w-full" disabled={(wallet?.balance || 0) <= 0}>
+        <Wallet className="w-5 h-5" />
+        Retirer des fonds
+      </Button>
     </div>
   );
 }
