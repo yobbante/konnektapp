@@ -14,6 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      gp_offers: {
+        Row: {
+          arrival_date: string | null
+          available_capacity: number
+          bookings_count: number | null
+          conditions: string | null
+          created_at: string
+          currency: string
+          departure_date: string
+          description: string | null
+          destination_city: string
+          destination_country: string
+          gp_id: string
+          id: string
+          max_weight: number | null
+          min_weight: number | null
+          origin_city: string
+          origin_country: string
+          price_per_kg: number
+          status: Database["public"]["Enums"]["offer_status"]
+          total_capacity: number
+          transport_type: Database["public"]["Enums"]["gp_type"]
+          updated_at: string
+          views_count: number | null
+        }
+        Insert: {
+          arrival_date?: string | null
+          available_capacity: number
+          bookings_count?: number | null
+          conditions?: string | null
+          created_at?: string
+          currency?: string
+          departure_date: string
+          description?: string | null
+          destination_city: string
+          destination_country: string
+          gp_id: string
+          id?: string
+          max_weight?: number | null
+          min_weight?: number | null
+          origin_city: string
+          origin_country?: string
+          price_per_kg: number
+          status?: Database["public"]["Enums"]["offer_status"]
+          total_capacity: number
+          transport_type: Database["public"]["Enums"]["gp_type"]
+          updated_at?: string
+          views_count?: number | null
+        }
+        Update: {
+          arrival_date?: string | null
+          available_capacity?: number
+          bookings_count?: number | null
+          conditions?: string | null
+          created_at?: string
+          currency?: string
+          departure_date?: string
+          description?: string | null
+          destination_city?: string
+          destination_country?: string
+          gp_id?: string
+          id?: string
+          max_weight?: number | null
+          min_weight?: number | null
+          origin_city?: string
+          origin_country?: string
+          price_per_kg?: number
+          status?: Database["public"]["Enums"]["offer_status"]
+          total_capacity?: number
+          transport_type?: Database["public"]["Enums"]["gp_type"]
+          updated_at?: string
+          views_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gp_offers_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gp_profiles: {
         Row: {
           address: string | null
@@ -107,6 +190,152 @@ export type Database = {
         }
         Relationships: []
       }
+      gp_wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          currency: string
+          gp_id: string
+          id: string
+          pending_balance: number
+          total_earned: number
+          total_withdrawn: number
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          currency?: string
+          gp_id: string
+          id?: string
+          pending_balance?: number
+          total_earned?: number
+          total_withdrawn?: number
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          currency?: string
+          gp_id?: string
+          id?: string
+          pending_balance?: number
+          total_earned?: number
+          total_withdrawn?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gp_wallets_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: true
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          actual_delivery_date: string | null
+          client_id: string
+          commission_amount: number
+          created_at: string
+          currency: string
+          declared_value: number | null
+          delivery_date: string | null
+          description: string | null
+          destination_city: string
+          destination_country: string
+          dimensions: string | null
+          gp_id: string
+          has_insurance: boolean | null
+          id: string
+          insurance_amount: number | null
+          offer_id: string | null
+          order_number: string
+          origin_city: string
+          origin_country: string
+          pickup_date: string | null
+          price_per_kg: number
+          status: Database["public"]["Enums"]["order_status"]
+          total_price: number
+          tracking_code: string | null
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          actual_delivery_date?: string | null
+          client_id: string
+          commission_amount?: number
+          created_at?: string
+          currency?: string
+          declared_value?: number | null
+          delivery_date?: string | null
+          description?: string | null
+          destination_city: string
+          destination_country: string
+          dimensions?: string | null
+          gp_id: string
+          has_insurance?: boolean | null
+          id?: string
+          insurance_amount?: number | null
+          offer_id?: string | null
+          order_number: string
+          origin_city: string
+          origin_country: string
+          pickup_date?: string | null
+          price_per_kg: number
+          status?: Database["public"]["Enums"]["order_status"]
+          total_price: number
+          tracking_code?: string | null
+          updated_at?: string
+          weight: number
+        }
+        Update: {
+          actual_delivery_date?: string | null
+          client_id?: string
+          commission_amount?: number
+          created_at?: string
+          currency?: string
+          declared_value?: number | null
+          delivery_date?: string | null
+          description?: string | null
+          destination_city?: string
+          destination_country?: string
+          dimensions?: string | null
+          gp_id?: string
+          has_insurance?: boolean | null
+          id?: string
+          insurance_amount?: number | null
+          offer_id?: string | null
+          order_number?: string
+          origin_city?: string
+          origin_country?: string
+          pickup_date?: string | null
+          price_per_kg?: number
+          status?: Database["public"]["Enums"]["order_status"]
+          total_price?: number
+          tracking_code?: string | null
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "gp_offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -146,6 +375,60 @@ export type Database = {
         }
         Relationships: []
       }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          order_id: string | null
+          reference: string | null
+          status: string
+          type: Database["public"]["Enums"]["transaction_type"]
+          wallet_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          reference?: string | null
+          status?: string
+          type: Database["public"]["Enums"]["transaction_type"]
+          wallet_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          reference?: string | null
+          status?: string
+          type?: Database["public"]["Enums"]["transaction_type"]
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "gp_wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -157,6 +440,20 @@ export type Database = {
       gp_status: "pending" | "verified" | "suspended" | "rejected"
       gp_subscription: "free" | "premium"
       gp_type: "express" | "routier" | "maritime" | "aerien" | "voyageur"
+      offer_status: "active" | "paused" | "expired" | "completed"
+      order_status:
+        | "pending"
+        | "accepted"
+        | "in_transit"
+        | "delivered"
+        | "cancelled"
+        | "disputed"
+      transaction_type:
+        | "earning"
+        | "withdrawal"
+        | "commission"
+        | "refund"
+        | "bonus"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -287,6 +584,22 @@ export const Constants = {
       gp_status: ["pending", "verified", "suspended", "rejected"],
       gp_subscription: ["free", "premium"],
       gp_type: ["express", "routier", "maritime", "aerien", "voyageur"],
+      offer_status: ["active", "paused", "expired", "completed"],
+      order_status: [
+        "pending",
+        "accepted",
+        "in_transit",
+        "delivered",
+        "cancelled",
+        "disputed",
+      ],
+      transaction_type: [
+        "earning",
+        "withdrawal",
+        "commission",
+        "refund",
+        "bonus",
+      ],
     },
   },
 } as const
