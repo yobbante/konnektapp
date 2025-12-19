@@ -14,7 +14,138 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      gp_profiles: {
+        Row: {
+          address: string | null
+          business_name: string
+          business_registration_url: string | null
+          city: string
+          country_code: string
+          created_at: string
+          description: string | null
+          fleet_size: number | null
+          gp_type: Database["public"]["Enums"]["gp_type"]
+          id: string
+          id_document_url: string | null
+          id_number: string | null
+          id_type: string | null
+          insurance_document_url: string | null
+          international_destinations: string[] | null
+          phone: string
+          rating: number | null
+          status: Database["public"]["Enums"]["gp_status"]
+          subscription: Database["public"]["Enums"]["gp_subscription"]
+          total_deliveries: number | null
+          total_reviews: number | null
+          transport_license_url: string | null
+          updated_at: string
+          user_id: string
+          verified_at: string | null
+          whatsapp: string | null
+          years_experience: number | null
+          zones_covered: string[] | null
+        }
+        Insert: {
+          address?: string | null
+          business_name: string
+          business_registration_url?: string | null
+          city: string
+          country_code?: string
+          created_at?: string
+          description?: string | null
+          fleet_size?: number | null
+          gp_type: Database["public"]["Enums"]["gp_type"]
+          id?: string
+          id_document_url?: string | null
+          id_number?: string | null
+          id_type?: string | null
+          insurance_document_url?: string | null
+          international_destinations?: string[] | null
+          phone: string
+          rating?: number | null
+          status?: Database["public"]["Enums"]["gp_status"]
+          subscription?: Database["public"]["Enums"]["gp_subscription"]
+          total_deliveries?: number | null
+          total_reviews?: number | null
+          transport_license_url?: string | null
+          updated_at?: string
+          user_id: string
+          verified_at?: string | null
+          whatsapp?: string | null
+          years_experience?: number | null
+          zones_covered?: string[] | null
+        }
+        Update: {
+          address?: string | null
+          business_name?: string
+          business_registration_url?: string | null
+          city?: string
+          country_code?: string
+          created_at?: string
+          description?: string | null
+          fleet_size?: number | null
+          gp_type?: Database["public"]["Enums"]["gp_type"]
+          id?: string
+          id_document_url?: string | null
+          id_number?: string | null
+          id_type?: string | null
+          insurance_document_url?: string | null
+          international_destinations?: string[] | null
+          phone?: string
+          rating?: number | null
+          status?: Database["public"]["Enums"]["gp_status"]
+          subscription?: Database["public"]["Enums"]["gp_subscription"]
+          total_deliveries?: number | null
+          total_reviews?: number | null
+          transport_license_url?: string | null
+          updated_at?: string
+          user_id?: string
+          verified_at?: string | null
+          whatsapp?: string | null
+          years_experience?: number | null
+          zones_covered?: string[] | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          country_code: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          is_gp: boolean | null
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          country_code?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          is_gp?: boolean | null
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          country_code?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          is_gp?: boolean | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +154,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      gp_status: "pending" | "verified" | "suspended" | "rejected"
+      gp_subscription: "free" | "premium"
+      gp_type: "express" | "routier" | "maritime" | "aerien" | "voyageur"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +283,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      gp_status: ["pending", "verified", "suspended", "rejected"],
+      gp_subscription: ["free", "premium"],
+      gp_type: ["express", "routier", "maritime", "aerien", "voyageur"],
+    },
   },
 } as const
