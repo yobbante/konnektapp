@@ -5,119 +5,129 @@
 @tailwind utilities;
 
 /* Yobbanté-GP Design System
-   Mobile-first logistics marketplace
-   Teal/Sarcelle + Warm Orange accents
+   African-inspired logistics marketplace
+   Deep navy + Gold/Amber accents
 */
 
 @layer base {
   :root {
-    /* Core Brand Colors - Teal & Orange (inspired by reference) */
-    --background: 0 0% 100%;
-    --foreground: 220 20% 20%;
+    /* Core Brand Colors - Deep Navy & Gold */
+    --background: 210 25% 97%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 20%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 20%;
+    --popover-foreground: 222 47% 11%;
 
-    /* Primary: Teal/Sarcelle */
-    --primary: 168 60% 42%;
-    --primary-foreground: 0 0% 100%;
+    /* Primary: Deep Navy */
+    --primary: 222 47% 15%;
+    --primary-foreground: 45 93% 58%;
 
-    /* Secondary: Warm Orange */
-    --secondary: 24 85% 55%;
-    --secondary-foreground: 0 0% 100%;
+    /* Secondary: Warm Gold */
+    --secondary: 45 93% 58%;
+    --secondary-foreground: 222 47% 11%;
 
-    /* Muted: Soft gray */
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 10% 46%;
+    /* Muted: Soft gray-blue */
+    --muted: 210 20% 93%;
+    --muted-foreground: 215 16% 47%;
 
-    /* Accent: Deep Teal */
-    --accent: 168 65% 35%;
+    /* Accent: Amber/Orange for CTAs */
+    --accent: 32 95% 55%;
     --accent-foreground: 0 0% 100%;
 
-    /* Success: Green */
-    --success: 142 70% 45%;
+    /* Success: Teal */
+    --success: 162 63% 41%;
     --success-foreground: 0 0% 100%;
-
-    /* Warning: Amber */
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
 
     /* Destructive */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 168 60% 42%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 45 93% 58%;
 
-    --radius: 1rem;
+    --radius: 0.75rem;
 
     /* Custom Colors */
-    --teal: 168 60% 42%;
-    --teal-light: 168 50% 55%;
-    --teal-dark: 168 65% 30%;
-    --orange: 24 85% 55%;
-    --orange-light: 24 80% 65%;
-    --cream: 40 30% 97%;
+    --navy-deep: 222 47% 11%;
+    --navy-light: 222 35% 25%;
+    --gold: 45 93% 58%;
+    --gold-dark: 45 93% 45%;
+    --amber: 32 95% 55%;
+    --teal: 162 63% 41%;
+    --cream: 45 30% 96%;
+
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(222 35% 22%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(45 93% 58%) 0%, hsl(32 95% 55%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 25% 97%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(210 25% 97%) 0%, hsl(210 20% 93%) 100%);
 
     /* Transport Type Colors */
-    --transport-express: 24 85% 55%;
-    --transport-routier: 142 70% 45%;
+    --transport-express: 32 95% 55%;
+    --transport-routier: 162 63% 41%;
     --transport-maritime: 200 80% 50%;
     --transport-aerien: 280 70% 55%;
-    --transport-voyageur: 38 92% 50%;
+    --transport-voyageur: 45 93% 58%;
 
     /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(220 20% 20% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(220 20% 20% / 0.08);
-    --shadow-lg: 0 10px 20px -5px hsl(220 20% 20% / 0.1);
-    --shadow-card: 0 2px 12px -2px hsl(220 20% 20% / 0.08);
+    --shadow-sm: 0 1px 2px 0 hsl(222 47% 11% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(222 47% 11% / 0.1), 0 2px 4px -2px hsl(222 47% 11% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(222 47% 11% / 0.1), 0 4px 6px -4px hsl(222 47% 11% / 0.1);
+    --shadow-xl: 0 20px 25px -5px hsl(222 47% 11% / 0.1), 0 8px 10px -6px hsl(222 47% 11% / 0.1);
+    --shadow-glow: 0 0 30px hsl(45 93% 58% / 0.3);
+    --shadow-card: 0 4px 20px -2px hsl(222 47% 11% / 0.08);
 
     /* Sidebar */
-    --sidebar-background: 168 60% 42%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 24 85% 55%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 168 55% 35%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 168 55% 35%;
-    --sidebar-ring: 24 85% 55%;
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 45 30% 96%;
+    --sidebar-primary: 45 93% 58%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 222 35% 20%;
+    --sidebar-accent-foreground: 45 30% 96%;
+    --sidebar-border: 222 35% 20%;
+    --sidebar-ring: 45 93% 58%;
   }
 
   .dark {
-    --background: 220 20% 10%;
-    --foreground: 0 0% 98%;
+    --background: 222 47% 8%;
+    --foreground: 45 30% 96%;
 
-    --card: 220 20% 14%;
-    --card-foreground: 0 0% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 45 30% 96%;
 
-    --popover: 220 20% 14%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 45 30% 96%;
 
-    --primary: 168 55% 50%;
-    --primary-foreground: 220 20% 10%;
+    --primary: 45 93% 58%;
+    --primary-foreground: 222 47% 11%;
 
-    --secondary: 24 80% 55%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 222 35% 20%;
+    --secondary-foreground: 45 30% 96%;
 
-    --muted: 220 15% 20%;
-    --muted-foreground: 220 10% 65%;
+    --muted: 222 35% 15%;
+    --muted-foreground: 215 16% 65%;
 
-    --accent: 168 50% 45%;
+    --accent: 32 95% 55%;
     --accent-foreground: 0 0% 100%;
 
-    --success: 142 65% 50%;
+    --success: 162 63% 41%;
     --success-foreground: 0 0% 100%;
 
-    --destructive: 0 62% 50%;
+    --destructive: 0 62% 30%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 15% 25%;
-    --input: 220 15% 25%;
-    --ring: 168 55% 50%;
+    --border: 222 35% 20%;
+    --input: 222 35% 20%;
+    --ring: 45 93% 58%;
+
+    --gradient-hero: linear-gradient(135deg, hsl(222 47% 6%) 0%, hsl(222 47% 15%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(222 47% 11%) 0%, hsl(222 47% 8%) 100%);
+
+    --shadow-glow: 0 0 40px hsl(45 93% 58% / 0.2);
   }
 }
 
@@ -140,65 +150,74 @@
 }
 
 @layer components {
-  /* Mobile Bottom Navigation */
-  .bottom-nav {
-    @apply fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border;
-    padding-bottom: env(safe-area-inset-bottom);
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-gold);
   }
 
-  .bottom-nav-item {
-    @apply flex flex-col items-center justify-center py-2 px-3 text-muted-foreground transition-colors;
+  .bg-hero-gradient {
+    background: var(--gradient-hero);
   }
 
-  .bottom-nav-item.active {
-    @apply text-primary;
+  .bg-gold-gradient {
+    background: var(--gradient-gold);
   }
 
-  .bottom-nav-item svg {
-    @apply w-6 h-6 mb-1;
+  .bg-card-gradient {
+    background: var(--gradient-card);
   }
 
-  .bottom-nav-item span {
-    @apply text-xs font-medium;
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
   }
 
-  /* Glass effects */
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
   .glass {
-    @apply backdrop-blur-md bg-background/90 border border-border/50;
+    @apply backdrop-blur-md bg-background/80 border border-border/50;
   }
 
-  /* Card styles */
-  .mobile-card {
-    @apply bg-card rounded-2xl p-4 shadow-card border border-border/50;
-  }
-
-  /* Status badges */
-  .status-badge {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
+  .glass-dark {
+    @apply backdrop-blur-md bg-primary/90 border border-primary/20;
   }
 }
 
 @layer utilities {
-  .animate-fade-up {
-    animation: fade-up 0.4s ease-out;
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
   }
 
-  .animate-scale-in {
-    animation: scale-in 0.3s ease-out;
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
   }
 
-  @keyframes fade-up {
-    from { opacity: 0; transform: translateY(16px); }
+  .animate-slide-up {
+    animation: slide-up 0.5s ease-out;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.6s ease-out;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px hsl(45 93% 58% / 0.3); }
+    50% { box-shadow: 0 0 40px hsl(45 93% 58% / 0.5); }
+  }
+
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
   }
 
-  @keyframes scale-in {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
-  }
-
-  /* Safe area padding for mobile */
-  .pb-safe {
-    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 }

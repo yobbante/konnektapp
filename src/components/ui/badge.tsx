@@ -4,7 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors focus:outline-none",
+  "inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
   {
     variants: {
       variant: {
@@ -13,8 +13,6 @@ const badgeVariants = cva(
         destructive: "border-transparent bg-destructive text-destructive-foreground",
         outline: "text-foreground border-border",
         success: "border-transparent bg-success text-success-foreground",
-        warning: "border-transparent bg-warning text-warning-foreground",
-        pending: "border-transparent bg-warning/20 text-warning",
         gold: "border-transparent bg-secondary text-secondary-foreground",
         // Transport type badges
         express: "border-transparent bg-transport-express/15 text-transport-express border border-transport-express/30",
@@ -24,7 +22,9 @@ const badgeVariants = cva(
         voyageur: "border-transparent bg-transport-voyageur/15 text-transport-voyageur border border-transport-voyageur/30",
         // Status badges
         available: "bg-success/10 text-success border border-success/20",
+        pending: "bg-secondary/20 text-secondary-foreground border border-secondary/30",
         complete: "bg-muted text-muted-foreground border border-border",
+        premium: "bg-gold-gradient text-primary font-bold border-0",
       },
     },
     defaultVariants: {
