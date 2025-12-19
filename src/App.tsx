@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import DemandeEnvoi from "./pages/DemandeEnvoi";
 import Offres from "./pages/Offres";
+import OfferDetail from "./pages/OfferDetail";
 import Tracking from "./pages/Tracking";
 import GPLanding from "./pages/GPLanding";
 import GPRegistration from "./pages/GPRegistration";
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/demande" element={<DemandeEnvoi />} />
           <Route path="/offres" element={<Offres />} />
+          <Route path="/offres/:id" element={<OfferDetail />} />
           <Route path="/tracking" element={<Tracking />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/calculateur" element={<PriceCalculator />} />
