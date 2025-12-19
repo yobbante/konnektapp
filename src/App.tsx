@@ -7,6 +7,9 @@ import Index from "./pages/Index";
 import DemandeEnvoi from "./pages/DemandeEnvoi";
 import Offres from "./pages/Offres";
 import Tracking from "./pages/Tracking";
+import GPLanding from "./pages/GPLanding";
+import GPRegistration from "./pages/GPRegistration";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +25,9 @@ const App = () => (
           <Route path="/demande" element={<DemandeEnvoi />} />
           <Route path="/offres" element={<Offres />} />
           <Route path="/tracking" element={<Tracking />} />
+          <Route path="/gp" element={<GPLanding />} />
+          <Route path="/gp/inscription" element={<GPRegistration />} />
+          <Route path="/auth" element={<Auth />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
