@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
@@ -65,12 +66,47 @@ serve(async (req) => {
   }
 
   try {
-    // Rate limiting by IP
-    const clientIP = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
-                     req.headers.get("x-real-ip") || 
-                     "unknown";
-    
-    if (!checkRateLimit(clientIP)) {
+    // Authentication check - require valid user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.log("No authorization header provided");
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Authentification requise" 
+        }),
+        { 
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Verify user with Supabase
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      console.log("Invalid authentication token:", authError?.message);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Token d'authentification invalide" 
+        }),
+        { 
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Rate limiting by user ID (more accurate than IP)
+    const rateLimitKey = user.id;
+    if (!checkRateLimit(rateLimitKey)) {
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -82,6 +118,8 @@ serve(async (req) => {
         }
       );
     }
+
+    console.log(`Price calculation requested by user: ${user.id}`);
 
     // Parse and validate input
     const rawData = await req.json();
