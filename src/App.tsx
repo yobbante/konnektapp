@@ -17,6 +17,7 @@ import Tracking from "./pages/Tracking";
 import PriceCalculator from "./pages/PriceCalculator";
 import Messages from "./pages/Messages";
 import AdminDashboard from "./pages/AdminDashboard";
+import PostBookingForm from "./pages/PostBookingForm";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/gp/dashboard" element={<GPDashboard />} />
           <Route path="/client/dashboard" element={<ClientDashboard />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/order/:orderId/complete" element={<PostBookingForm />} />
           <Route path="/auth" element={<Auth />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

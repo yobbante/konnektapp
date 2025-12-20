@@ -374,6 +374,77 @@ export type Database = {
         }
         Relationships: []
       }
+      order_logistics: {
+        Row: {
+          created_at: string
+          declared_value: number | null
+          delivery_address: string
+          estimated_volume: string | null
+          estimated_weight: number
+          id: string
+          is_fragile: boolean
+          is_urgent: boolean
+          locked_at: string | null
+          merchandise_description: string | null
+          merchandise_type: string
+          order_id: string
+          pickup_address: string
+          pickup_date: string
+          pickup_time_slot: string | null
+          special_conditions: string | null
+          updated_at: string
+          validated_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          declared_value?: number | null
+          delivery_address: string
+          estimated_volume?: string | null
+          estimated_weight: number
+          id?: string
+          is_fragile?: boolean
+          is_urgent?: boolean
+          locked_at?: string | null
+          merchandise_description?: string | null
+          merchandise_type: string
+          order_id: string
+          pickup_address: string
+          pickup_date: string
+          pickup_time_slot?: string | null
+          special_conditions?: string | null
+          updated_at?: string
+          validated_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          declared_value?: number | null
+          delivery_address?: string
+          estimated_volume?: string | null
+          estimated_weight?: number
+          id?: string
+          is_fragile?: boolean
+          is_urgent?: boolean
+          locked_at?: string | null
+          merchandise_description?: string | null
+          merchandise_type?: string
+          order_id?: string
+          pickup_address?: string
+          pickup_date?: string
+          pickup_time_slot?: string | null
+          special_conditions?: string | null
+          updated_at?: string
+          validated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_logistics_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           actual_delivery_date: string | null
@@ -391,6 +462,7 @@ export type Database = {
           has_insurance: boolean | null
           id: string
           insurance_amount: number | null
+          logistics_status: string
           offer_id: string | null
           order_number: string
           origin_city: string
@@ -419,6 +491,7 @@ export type Database = {
           has_insurance?: boolean | null
           id?: string
           insurance_amount?: number | null
+          logistics_status?: string
           offer_id?: string | null
           order_number: string
           origin_city: string
@@ -447,6 +520,7 @@ export type Database = {
           has_insurance?: boolean | null
           id?: string
           insurance_amount?: number | null
+          logistics_status?: string
           offer_id?: string | null
           order_number?: string
           origin_city?: string

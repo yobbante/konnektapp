@@ -6,6 +6,7 @@ import {
   Truck, Shield, MessageCircle, Phone, Share2, Heart,
   Zap, Ship, Plane, Briefcase, User, CheckCircle
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Button } from "@/components/ui/button";
@@ -22,90 +23,138 @@ const transportIcons: Record<TransportType, React.ElementType> = {
   voyageur: Briefcase,
 };
 
-// Mock data - in production, fetch from Supabase
-const mockOffers: Record<string, any> = {
-  "1": { 
-    id: "1", 
-    origin: "Dakar", 
-    originCountry: "Sénégal",
-    destination: "Abidjan", 
-    destinationCountry: "Côte d'Ivoire",
-    departureDate: "2024-12-22",
-    arrivalDate: "2024-12-25",
-    price: 6500, 
-    type: "routier" as TransportType, 
-    gpName: "Mamadou Express", 
-    gpRating: 4.8,
-    gpDeliveries: 234,
-    gpVerified: true,
-    availableCapacity: 150,
-    totalCapacity: 200,
-    description: "Transport routier régulier entre Dakar et Abidjan. Départ tous les lundis et jeudis. Colis sécurisés et assurés.",
-    conditions: "Poids minimum 1kg. Emballage soigné requis. Pas de produits périssables."
-  },
-  "2": { 
-    id: "2", 
-    origin: "Dakar", 
-    originCountry: "Sénégal",
-    destination: "Paris", 
-    destinationCountry: "France",
-    departureDate: "2024-12-24",
-    arrivalDate: "2024-12-26",
-    price: 8500, 
-    type: "aerien" as TransportType, 
-    gpName: "Air Cargo SN", 
-    gpRating: 4.9,
-    gpDeliveries: 567,
-    gpVerified: true,
-    availableCapacity: 50,
-    totalCapacity: 100,
-    description: "Fret aérien express vers Paris CDG. Livraison rapide et sécurisée pour vos colis urgents.",
-    conditions: "Poids max 30kg par colis. Documents requis pour la douane."
-  },
-  "3": { 
-    id: "3", 
-    origin: "Abidjan", 
-    originCountry: "Côte d'Ivoire",
-    destination: "Bamako", 
-    destinationCountry: "Mali",
-    departureDate: "2024-12-23",
-    arrivalDate: "2024-12-24",
-    price: 5500, 
-    type: "express" as TransportType, 
-    gpName: "Flash Livraison", 
-    gpRating: 4.7,
-    gpDeliveries: 189,
-    gpVerified: true,
-    availableCapacity: 30,
-    totalCapacity: 50,
-    description: "Service express 24h entre Abidjan et Bamako. Suivi en temps réel disponible.",
-    conditions: "Colis de moins de 20kg. Livraison porte à porte."
-  },
-};
+interface GPOffer {
+  id: string;
+  origin_city: string;
+  origin_country: string;
+  destination_city: string;
+  destination_country: string;
+  departure_date: string;
+  arrival_date: string | null;
+  price_per_kg: number;
+  transport_type: string;
+  available_capacity: number;
+  total_capacity: number;
+  description: string | null;
+  conditions: string | null;
+  gp_id: string;
+}
+
+interface GPProfile {
+  business_name: string;
+  rating: number;
+  total_deliveries: number;
+  verified_at: string | null;
+}
 
 export default function OfferDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [offer, setOffer] = useState<any>(null);
+  const [offer, setOffer] = useState<GPOffer | null>(null);
+  const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [booking, setBooking] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
-    // Simulate fetching offer
-    setTimeout(() => {
-      const foundOffer = mockOffers[id || ""] || mockOffers["1"];
-      setOffer(foundOffer);
-      setLoading(false);
-    }, 300);
+    loadOffer();
   }, [id]);
 
-  const handleBook = () => {
-    toast({
-      title: "Réservation initiée",
-      description: "Vous allez être redirigé vers le formulaire de réservation",
-    });
-    navigate("/demande");
+  const loadOffer = async () => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Fetch offer from database
+      const { data: offerData, error: offerError } = await supabase
+        .from("gp_offers")
+        .select("*")
+        .eq("id", id)
+        .eq("status", "active")
+        .single();
+
+      if (offerError || !offerData) {
+        setLoading(false);
+        return;
+      }
+
+      setOffer(offerData);
+
+      // Fetch GP profile (public view)
+      const { data: gpData } = await supabase
+        .from("public_gp_profiles")
+        .select("business_name, rating, total_deliveries, verified_at")
+        .eq("id", offerData.gp_id)
+        .single();
+
+      if (gpData) {
+        setGpProfile(gpData);
+      }
+    } catch (error) {
+      console.error("Error loading offer:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBook = async () => {
+    // Check if user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      toast({
+        title: "Connexion requise",
+        description: "Veuillez vous connecter pour réserver",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    if (!offer) return;
+
+    setBooking(true);
+    try {
+      // Create order with pending_info status
+      const { data: orderData, error: orderError } = await supabase
+        .from("orders")
+        .insert([{
+          client_id: user.id,
+          gp_id: offer.gp_id,
+          offer_id: offer.id,
+          origin_city: offer.origin_city,
+          origin_country: offer.origin_country,
+          destination_city: offer.destination_city,
+          destination_country: offer.destination_country,
+          price_per_kg: offer.price_per_kg,
+          weight: 1,
+          total_price: offer.price_per_kg,
+          status: "pending" as const,
+          logistics_status: "pending_info",
+          order_number: "TEMP", // Will be overwritten by trigger
+        }])
+        .select("id")
+        .single();
+
+      if (orderError) throw orderError;
+
+      toast({
+        title: "Réservation créée",
+        description: "Complétez le formulaire pour finaliser",
+      });
+      navigate(`/order/${orderData.id}/complete`);
+    } catch (error) {
+      console.error("Booking error:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de créer la réservation",
+        variant: "destructive",
+      });
+    } finally {
+      setBooking(false);
+    }
   };
 
   const handleContact = () => {
@@ -144,8 +193,8 @@ export default function OfferDetail() {
     );
   }
 
-  const TypeIcon = transportIcons[offer.type as TransportType] || Truck;
-  const capacityPercentage = ((offer.totalCapacity - offer.availableCapacity) / offer.totalCapacity) * 100;
+  const TypeIcon = transportIcons[offer.transport_type as TransportType] || Truck;
+  const capacityPercentage = ((offer.total_capacity - offer.available_capacity) / offer.total_capacity) * 100;
 
   return (
     <div className="min-h-screen bg-background pb-safe">
@@ -178,9 +227,9 @@ export default function OfferDetail() {
           className="mobile-card mb-4"
         >
           <div className="flex items-center justify-between mb-4">
-            <Badge variant={offer.type as any} className="gap-1">
+            <Badge variant={offer.transport_type as any} className="gap-1">
               <TypeIcon className="w-3 h-3" />
-              {offer.type}
+              {offer.transport_type}
             </Badge>
             <Badge variant="success">Disponible</Badge>
           </div>
@@ -190,9 +239,9 @@ export default function OfferDetail() {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-3 h-3 rounded-full bg-primary" />
-                <span className="font-semibold">{offer.origin}</span>
+                <span className="font-semibold">{offer.origin_city}</span>
               </div>
-              <p className="text-xs text-muted-foreground ml-5">{offer.originCountry}</p>
+              <p className="text-xs text-muted-foreground ml-5">{offer.origin_country}</p>
             </div>
             <div className="flex-shrink-0 px-3">
               <div className="w-12 h-px bg-border relative">
@@ -201,10 +250,10 @@ export default function OfferDetail() {
             </div>
             <div className="flex-1 text-right">
               <div className="flex items-center justify-end gap-2 mb-1">
-                <span className="font-semibold">{offer.destination}</span>
+                <span className="font-semibold">{offer.destination_city}</span>
                 <div className="w-3 h-3 rounded-full bg-accent" />
               </div>
-              <p className="text-xs text-muted-foreground mr-5">{offer.destinationCountry}</p>
+              <p className="text-xs text-muted-foreground mr-5">{offer.destination_country}</p>
             </div>
           </div>
 
@@ -214,14 +263,18 @@ export default function OfferDetail() {
               <Calendar className="w-4 h-4 text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">Départ</p>
-                <p className="text-sm font-medium">{new Date(offer.departureDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</p>
+                <p className="text-sm font-medium">{new Date(offer.departure_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">Arrivée estimée</p>
-                <p className="text-sm font-medium">{new Date(offer.arrivalDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</p>
+                <p className="text-sm font-medium">
+                  {offer.arrival_date 
+                    ? new Date(offer.arrival_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+                    : "À confirmer"}
+                </p>
               </div>
             </div>
           </div>
@@ -240,17 +293,17 @@ export default function OfferDetail() {
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <p className="font-semibold">{offer.gpName}</p>
-                {offer.gpVerified && (
+                <p className="font-semibold">{gpProfile?.business_name || "Transporteur"}</p>
+                {gpProfile?.verified_at && (
                   <CheckCircle className="w-4 h-4 text-primary" />
                 )}
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <div className="flex items-center gap-1">
                   <Star className="w-3 h-3 text-warning fill-warning" />
-                  <span>{offer.gpRating}</span>
+                  <span>{gpProfile?.rating || 0}</span>
                 </div>
-                <span className="text-muted-foreground">{offer.gpDeliveries} livraisons</span>
+                <span className="text-muted-foreground">{gpProfile?.total_deliveries || 0} livraisons</span>
               </div>
             </div>
             <Button variant="outline" size="icon" onClick={handleContact}>
@@ -258,7 +311,7 @@ export default function OfferDetail() {
             </Button>
           </div>
 
-          {offer.gpVerified && (
+          {gpProfile?.verified_at && (
             <div className="flex items-center gap-2 p-2 bg-primary/5 rounded-lg">
               <Shield className="w-4 h-4 text-primary" />
               <span className="text-xs text-primary font-medium">Transporteur vérifié</span>
@@ -275,8 +328,8 @@ export default function OfferDetail() {
         >
           <h3 className="font-semibold text-sm mb-3">Capacité disponible</h3>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-muted-foreground">{offer.availableCapacity}kg restants</span>
-            <span className="text-sm font-medium">{offer.totalCapacity}kg total</span>
+            <span className="text-sm text-muted-foreground">{offer.available_capacity}kg restants</span>
+            <span className="text-sm font-medium">{offer.total_capacity}kg total</span>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">
             <div 
@@ -287,26 +340,30 @@ export default function OfferDetail() {
         </motion.div>
 
         {/* Description */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mobile-card mb-4"
-        >
-          <h3 className="font-semibold text-sm mb-2">Description</h3>
-          <p className="text-sm text-muted-foreground">{offer.description}</p>
-        </motion.div>
+        {offer.description && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mobile-card mb-4"
+          >
+            <h3 className="font-semibold text-sm mb-2">Description</h3>
+            <p className="text-sm text-muted-foreground">{offer.description}</p>
+          </motion.div>
+        )}
 
         {/* Conditions */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="mobile-card mb-4"
-        >
-          <h3 className="font-semibold text-sm mb-2">Conditions</h3>
-          <p className="text-sm text-muted-foreground">{offer.conditions}</p>
-        </motion.div>
+        {offer.conditions && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="mobile-card mb-4"
+          >
+            <h3 className="font-semibold text-sm mb-2">Conditions</h3>
+            <p className="text-sm text-muted-foreground">{offer.conditions}</p>
+          </motion.div>
+        )}
       </div>
 
       {/* Fixed Bottom CTA */}
@@ -315,11 +372,17 @@ export default function OfferDetail() {
           <div>
             <p className="text-xs text-muted-foreground">Prix par kg</p>
             <p className="text-2xl font-bold text-primary">
-              {offer.price.toLocaleString()} <span className="text-sm font-normal">FCFA</span>
+              {offer.price_per_kg.toLocaleString()} <span className="text-sm font-normal">FCFA</span>
             </p>
           </div>
-          <Button variant="default" size="lg" onClick={handleBook} className="px-8">
-            Réserver maintenant
+          <Button 
+            variant="default" 
+            size="lg" 
+            onClick={handleBook} 
+            disabled={booking}
+            className="px-8"
+          >
+            {booking ? "Réservation..." : "Réserver maintenant"}
           </Button>
         </div>
       </div>
