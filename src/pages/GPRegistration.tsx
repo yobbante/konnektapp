@@ -155,6 +155,14 @@ export default function GPRegistration() {
           toast({ title: "Erreur", description: "Veuillez ajouter au moins une zone de couverture", variant: "destructive" });
           return false;
         }
+        // Vérifier que chaque zone a au moins un pays et une ville/des villes
+        const hasValidZone = coverageZones.some(z => 
+          z.country && (z.city || (z.cities && z.cities.length > 0))
+        );
+        if (!hasValidZone) {
+          toast({ title: "Erreur", description: "Veuillez compléter au moins une zone avec un pays et une ville", variant: "destructive" });
+          return false;
+        }
         return true;
       default:
         return true;
@@ -231,8 +239,13 @@ export default function GPRegistration() {
           years_experience: parseInt(businessData.yearsExperience) || 0,
           fleet_size: parseInt(businessData.fleetSize) || 1,
           description: businessData.description || null,
-          zones_covered: coverageZones.map(z => z.city || z.cities?.join(", ") || z.country).filter(Boolean),
-          international_destinations: coverageZones.filter(z => !["SN", "CI", "ML", "BF", "GN", "CM", "TG", "BJ", "GH", "NG"].includes(z.country)).map(z => z.country),
+          zones_covered: coverageZones
+            .filter(z => z.country && (z.city || (z.cities && z.cities.length > 0)))
+            .map(z => z.city || z.cities?.join(", ") || z.country)
+            .filter(Boolean),
+          international_destinations: coverageZones
+            .filter(z => z.country && !["SN", "CI", "ML", "BF", "GN", "CM", "TG", "BJ", "GH", "NG"].includes(z.country))
+            .map(z => z.country),
         });
 
       if (gpError) throw gpError;
