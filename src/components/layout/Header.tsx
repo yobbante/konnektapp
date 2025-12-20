@@ -1,9 +1,18 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Package, Truck, User, ChevronDown } from "lucide-react";
+import { Menu, X, Package, Truck, User, Shield, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CountrySelector } from "@/components/CountrySelector";
+import { useUserRole } from "@/hooks/useUserRole";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const navLinks = [
   { href: "/", label: "Accueil" },
@@ -16,6 +25,13 @@ const navLinks = [
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAdmin, isGP, isAuthenticated, loading } = useUserRole();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
@@ -44,6 +60,33 @@ export function Header() {
                 </Button>
               </Link>
             ))}
+            
+            {/* Admin Link */}
+            {isAdmin && (
+              <Link to="/admin">
+                <Button
+                  variant={location.pathname === "/admin" ? "nav-active" : "nav"}
+                  size="sm"
+                  className="text-destructive"
+                >
+                  <Shield className="w-4 h-4" />
+                  Admin
+                </Button>
+              </Link>
+            )}
+            
+            {/* GP Dashboard Link */}
+            {isGP && (
+              <Link to="/gp/dashboard">
+                <Button
+                  variant={location.pathname === "/gp/dashboard" ? "nav-active" : "nav"}
+                  size="sm"
+                >
+                  <Truck className="w-4 h-4" />
+                  Dashboard GP
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Right Section */}
@@ -52,19 +95,67 @@ export function Header() {
               <CountrySelector />
             </div>
             
-            <Link to="/auth" className="hidden sm:block">
-              <Button variant="outline" size="sm">
-                <User className="w-4 h-4" />
-                Connexion
-              </Button>
-            </Link>
-            
-            <Link to="/gp/inscription" className="hidden md:block">
-              <Button variant="gold" size="sm">
-                <Truck className="w-4 h-4" />
-                Espace GP
-              </Button>
-            </Link>
+            {!loading && (
+              <>
+                {isAuthenticated ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <User className="w-4 h-4" />
+                        Mon compte
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      {isAdmin && (
+                        <DropdownMenuItem asChild>
+                          <Link to="/admin" className="flex items-center gap-2 cursor-pointer">
+                            <Shield className="w-4 h-4 text-destructive" />
+                            Dashboard Admin
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                      {isGP && (
+                        <DropdownMenuItem asChild>
+                          <Link to="/gp/dashboard" className="flex items-center gap-2 cursor-pointer">
+                            <Truck className="w-4 h-4 text-primary" />
+                            Dashboard GP
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                      {!isGP && (
+                        <DropdownMenuItem asChild>
+                          <Link to="/client/dashboard" className="flex items-center gap-2 cursor-pointer">
+                            <Package className="w-4 h-4" />
+                            Mes envois
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Déconnexion
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <>
+                    <Link to="/auth" className="hidden sm:block">
+                      <Button variant="outline" size="sm">
+                        <User className="w-4 h-4" />
+                        Connexion
+                      </Button>
+                    </Link>
+                    
+                    <Link to="/gp/inscription" className="hidden md:block">
+                      <Button variant="gold" size="sm">
+                        <Truck className="w-4 h-4" />
+                        Espace GP
+                      </Button>
+                    </Link>
+                  </>
+                )}
+              </>
+            )}
 
             {/* Mobile Menu Toggle */}
             <Button
@@ -103,20 +194,48 @@ export function Header() {
                     </Button>
                   </Link>
                 ))}
+                
+                {/* Admin & GP Links in mobile menu */}
+                {isAdmin && (
+                  <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="nav" className="w-full justify-start text-destructive">
+                      <Shield className="w-4 h-4" />
+                      Dashboard Admin
+                    </Button>
+                  </Link>
+                )}
+                {isGP && (
+                  <Link to="/gp/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="nav" className="w-full justify-start">
+                      <Truck className="w-4 h-4" />
+                      Dashboard GP
+                    </Button>
+                  </Link>
+                )}
+                
                 <div className="pt-4 space-y-2 border-t border-border/50">
                   <CountrySelector />
-                  <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="outline" className="w-full">
-                      <User className="w-4 h-4" />
-                      Connexion
+                  {isAuthenticated ? (
+                    <Button variant="outline" className="w-full" onClick={handleSignOut}>
+                      <LogOut className="w-4 h-4" />
+                      Déconnexion
                     </Button>
-                  </Link>
-                  <Link to="/gp/inscription" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="gold" className="w-full">
-                      <Truck className="w-4 h-4" />
-                      Espace GP
-                    </Button>
-                  </Link>
+                  ) : (
+                    <>
+                      <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="outline" className="w-full">
+                          <User className="w-4 h-4" />
+                          Connexion
+                        </Button>
+                      </Link>
+                      <Link to="/gp/inscription" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="gold" className="w-full">
+                          <Truck className="w-4 h-4" />
+                          Espace GP
+                        </Button>
+                      </Link>
+                    </>
+                  )}
                 </div>
               </div>
             </motion.div>
