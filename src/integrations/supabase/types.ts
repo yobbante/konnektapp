@@ -837,11 +837,18 @@ export type Database = {
       app_role: "admin" | "moderator" | "user"
       gp_status: "pending" | "verified" | "suspended" | "rejected"
       gp_subscription: "free" | "premium"
-      gp_type: "express" | "routier" | "maritime" | "aerien" | "voyageur"
+      gp_type:
+        | "express"
+        | "routier"
+        | "maritime"
+        | "aerien"
+        | "voyageur"
+        | "agence"
       offer_status: "active" | "paused" | "expired" | "completed"
       order_status:
         | "pending"
         | "accepted"
+        | "collected"
         | "in_transit"
         | "delivered"
         | "cancelled"
@@ -982,11 +989,19 @@ export const Constants = {
       app_role: ["admin", "moderator", "user"],
       gp_status: ["pending", "verified", "suspended", "rejected"],
       gp_subscription: ["free", "premium"],
-      gp_type: ["express", "routier", "maritime", "aerien", "voyageur"],
+      gp_type: [
+        "express",
+        "routier",
+        "maritime",
+        "aerien",
+        "voyageur",
+        "agence",
+      ],
       offer_status: ["active", "paused", "expired", "completed"],
       order_status: [
         "pending",
         "accepted",
+        "collected",
         "in_transit",
         "delivered",
         "cancelled",

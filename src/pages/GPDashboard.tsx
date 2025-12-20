@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   Package, Wallet, Plus, ChevronRight, Star, 
-  TrendingUp, Clock, MapPin, ArrowRight, Settings, LogOut
+  TrendingUp, Clock, MapPin, ArrowRight, LogOut,
+  AlertTriangle, CheckCircle, Truck
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +13,13 @@ import { Badge } from "@/components/ui/badge";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { GPMobileNav } from "@/components/layout/MobileNav";
 import { GPCreateOfferDialog } from "@/components/gp/GPCreateOfferDialog";
+import { 
+  OrderStatus, 
+  orderStatusConfig, 
+  getOrderStatusLabel, 
+  getOrderStatusColor,
+  getNextOrderStatus 
+} from "@/lib/transportTypes";
 
 interface GPProfile {
   id: string;
@@ -125,16 +133,54 @@ export default function GPDashboard() {
 
   if (!gpProfile) return null;
 
+  // Calculer les missions en attente de mise à jour
+  const pendingUpdateOrders = orders.filter(o => 
+    ['accepted', 'collected', 'in_transit'].includes(o.status)
+  );
+
   const stats = {
     activeOffers: offers.filter(o => o.status === 'active').length,
     pendingOrders: orders.filter(o => o.status === 'pending').length,
-    inTransitOrders: orders.filter(o => o.status === 'in_transit').length,
+    inProgressOrders: pendingUpdateOrders.length,
+    deliveredOrders: orders.filter(o => o.status === 'delivered').length,
     balance: wallet?.balance || 0,
   };
 
   return (
     <div className="min-h-screen bg-muted/30 pb-safe">
       <MobileHeader title={gpProfile.business_name} showNotifications />
+
+      {/* Rappel pour les missions en cours */}
+      {pendingUpdateOrders.length > 0 && activeTab === "overview" && (
+        <div className="px-4 pt-4">
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 rounded-xl bg-warning/10 border border-warning/30"
+          >
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-foreground">
+                  {pendingUpdateOrders.length} mission{pendingUpdateOrders.length > 1 ? 's' : ''} en attente de mise à jour
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Mettez à jour le statut de vos livraisons pour finaliser les missions
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => setActiveTab("orders")}
+                >
+                  Voir les missions
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Content based on active tab */}
       {activeTab === "overview" && (
@@ -146,6 +192,7 @@ export default function GPDashboard() {
           orders={orders}
           onCreateOffer={() => setShowCreateOffer(true)}
           onSignOut={handleSignOut}
+          onViewOrders={() => setActiveTab("orders")}
         />
       )}
 
@@ -160,6 +207,7 @@ export default function GPDashboard() {
       {activeTab === "orders" && (
         <OrdersTab 
           orders={orders}
+          gpProfileId={gpProfile.id}
           onRefresh={checkAuthAndLoadData}
         />
       )}
@@ -184,7 +232,7 @@ export default function GPDashboard() {
 }
 
 // Overview Tab Component
-function OverviewTab({ gpProfile, stats, wallet, offers, orders, onCreateOffer, onSignOut }: any) {
+function OverviewTab({ gpProfile, stats, wallet, offers, orders, onCreateOffer, onSignOut, onViewOrders }: any) {
   return (
     <div className="px-4 py-4 space-y-4">
       {/* Profile Card */}
@@ -233,7 +281,8 @@ function OverviewTab({ gpProfile, stats, wallet, offers, orders, onCreateOffer, 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="mobile-card"
+          className="mobile-card cursor-pointer hover:shadow-md transition-shadow"
+          onClick={onViewOrders}
         >
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
@@ -248,15 +297,16 @@ function OverviewTab({ gpProfile, stats, wallet, offers, orders, onCreateOffer, 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="mobile-card"
+          className="mobile-card cursor-pointer hover:shadow-md transition-shadow"
+          onClick={onViewOrders}
         >
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-secondary" />
+              <Truck className="w-4 h-4 text-secondary" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-foreground">{stats.inTransitOrders}</p>
-          <p className="text-xs text-muted-foreground">En transit</p>
+          <p className="text-2xl font-bold text-foreground">{stats.inProgressOrders}</p>
+          <p className="text-xs text-muted-foreground">En cours</p>
         </motion.div>
 
         <motion.div 
@@ -284,7 +334,13 @@ function OverviewTab({ gpProfile, stats, wallet, offers, orders, onCreateOffer, 
       {/* Recent Orders */}
       {orders.length > 0 && (
         <div>
-          <h3 className="font-semibold text-foreground mb-3">Commandes récentes</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-foreground">Missions récentes</h3>
+            <Button variant="ghost" size="sm" onClick={onViewOrders}>
+              Voir tout
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
           <div className="space-y-2">
             {orders.slice(0, 3).map((order: any) => (
               <div key={order.id} className="mobile-card">
@@ -295,8 +351,8 @@ function OverviewTab({ gpProfile, stats, wallet, offers, orders, onCreateOffer, 
                     <ArrowRight className="w-3 h-3 text-muted-foreground" />
                     <span className="text-sm font-medium">{order.destination_city}</span>
                   </div>
-                  <Badge variant={order.status === 'delivered' ? 'success' : 'pending'}>
-                    {order.status}
+                  <Badge variant={getOrderStatusColor(order.status) as any}>
+                    {getOrderStatusLabel(order.status)}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between mt-2">
@@ -367,97 +423,175 @@ function OffersTab({ offers, onCreateOffer, onRefresh }: any) {
   );
 }
 
-// Orders Tab Component
-function OrdersTab({ orders, onRefresh }: any) {
+// Orders Tab Component with full workflow
+function OrdersTab({ orders, gpProfileId, onRefresh }: { orders: any[]; gpProfileId: string; onRefresh: () => void }) {
   const { toast } = useToast();
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
-  const updateOrderStatus = async (orderId: string, newStatus: "pending" | "accepted" | "in_transit" | "delivered" | "cancelled" | "disputed") => {
+  const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
+    setUpdatingOrderId(orderId);
     try {
-      const { error } = await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Non authentifié");
+
+      // Mettre à jour le statut de la commande
+      const { error: orderError } = await supabase
         .from("orders")
-        .update({ status: newStatus })
+        .update({ 
+          status: newStatus,
+          ...(newStatus === 'delivered' ? { actual_delivery_date: new Date().toISOString() } : {})
+        })
         .eq("id", orderId);
 
-      if (error) throw error;
+      if (orderError) throw orderError;
 
-      toast({ title: "Statut mis à jour" });
+      // Ajouter l'entrée dans l'historique
+      const { error: historyError } = await supabase
+        .from("order_status_history")
+        .insert({
+          order_id: orderId,
+          status: newStatus,
+          changed_by: user.id,
+          changed_by_type: "gp",
+        });
+
+      if (historyError) console.error("History error:", historyError);
+
+      toast({ 
+        title: "Statut mis à jour",
+        description: `Mission marquée comme "${getOrderStatusLabel(newStatus)}"`,
+      });
       onRefresh();
-    } catch (error) {
-      toast({ title: "Erreur", variant: "destructive" });
+    } catch (error: any) {
+      console.error("Update error:", error);
+      toast({ 
+        title: "Erreur", 
+        description: error.message || "Impossible de mettre à jour",
+        variant: "destructive" 
+      });
+    } finally {
+      setUpdatingOrderId(null);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'warning';
-      case 'accepted': return 'default';
-      case 'in_transit': return 'secondary';
-      case 'delivered': return 'success';
-      default: return 'outline';
-    }
+  // Grouper les commandes par statut
+  const pendingOrders = orders.filter(o => o.status === 'pending');
+  const inProgressOrders = orders.filter(o => ['accepted', 'collected', 'in_transit'].includes(o.status));
+  const completedOrders = orders.filter(o => ['delivered', 'cancelled', 'disputed'].includes(o.status));
+
+  const OrderCard = ({ order }: { order: any }) => {
+    const status = order.status as OrderStatus;
+    const { nextStatus, label } = getNextOrderStatus(status);
+    const isUpdating = updatingOrderId === order.id;
+
+    return (
+      <div className="mobile-card">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-mono text-muted-foreground">{order.order_number}</span>
+          <Badge variant={getOrderStatusColor(status) as any}>
+            {getOrderStatusLabel(status)}
+          </Badge>
+        </div>
+        <div className="flex items-center gap-2 mb-2">
+          <MapPin className="w-4 h-4 text-primary" />
+          <span className="font-medium text-sm">{order.origin_city}</span>
+          <ArrowRight className="w-3 h-3 text-muted-foreground" />
+          <span className="font-medium text-sm">{order.destination_city}</span>
+        </div>
+        <div className="flex items-center justify-between text-sm mb-3">
+          <span className="text-muted-foreground">{order.weight} kg</span>
+          <span className="font-bold">{order.total_price?.toLocaleString()} FCFA</span>
+        </div>
+
+        {/* Workflow buttons */}
+        {nextStatus && label && (
+          <Button 
+            variant={nextStatus === 'delivered' ? 'success' : nextStatus === 'accepted' ? 'success' : 'secondary'}
+            size="sm" 
+            className="w-full"
+            disabled={isUpdating}
+            onClick={() => updateOrderStatus(order.id, nextStatus)}
+          >
+            {isUpdating ? (
+              <div className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+            ) : (
+              <>
+                {nextStatus === 'accepted' && <CheckCircle className="w-4 h-4" />}
+                {nextStatus === 'collected' && <Package className="w-4 h-4" />}
+                {nextStatus === 'in_transit' && <Truck className="w-4 h-4" />}
+                {nextStatus === 'delivered' && <CheckCircle className="w-4 h-4" />}
+                {label}
+              </>
+            )}
+          </Button>
+        )}
+
+        {status === 'delivered' && (
+          <div className="flex items-center justify-center gap-2 text-success text-sm">
+            <CheckCircle className="w-4 h-4" />
+            Mission terminée
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
-    <div className="px-4 py-4 space-y-4">
-      <h2 className="font-semibold text-foreground">Commandes</h2>
+    <div className="px-4 py-4 space-y-6">
+      <h2 className="font-semibold text-foreground">Mes missions</h2>
 
       {orders.length === 0 ? (
         <div className="mobile-card text-center py-8">
           <Package className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
-          <p className="text-muted-foreground">Aucune commande</p>
+          <p className="text-muted-foreground">Aucune mission</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {orders.map((order: any) => (
-            <div key={order.id} className="mobile-card">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-mono text-muted-foreground">{order.order_number}</span>
-                <Badge variant={getStatusColor(order.status) as any}>{order.status}</Badge>
+        <>
+          {/* Nouvelles demandes */}
+          {pendingOrders.length > 0 && (
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Nouvelles demandes ({pendingOrders.length})
+              </h3>
+              <div className="space-y-3">
+                {pendingOrders.map((order) => (
+                  <OrderCard key={order.id} order={order} />
+                ))}
               </div>
-              <div className="flex items-center gap-2 mb-2">
-                <MapPin className="w-4 h-4 text-primary" />
-                <span className="font-medium text-sm">{order.origin_city}</span>
-                <ArrowRight className="w-3 h-3 text-muted-foreground" />
-                <span className="font-medium text-sm">{order.destination_city}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm mb-3">
-                <span className="text-muted-foreground">{order.weight} kg</span>
-                <span className="font-bold">{order.total_price} FCFA</span>
-              </div>
-
-              {order.status === 'pending' && (
-                <Button 
-                  variant="success" 
-                  size="sm" 
-                  className="w-full"
-                  onClick={() => updateOrderStatus(order.id, 'accepted')}
-                >
-                  Accepter
-                </Button>
-              )}
-              {order.status === 'accepted' && (
-                <Button 
-                  variant="secondary" 
-                  size="sm" 
-                  className="w-full"
-                  onClick={() => updateOrderStatus(order.id, 'in_transit')}
-                >
-                  Marquer en transit
-                </Button>
-              )}
-              {order.status === 'in_transit' && (
-                <Button 
-                  variant="success" 
-                  size="sm" 
-                  className="w-full"
-                  onClick={() => updateOrderStatus(order.id, 'delivered')}
-                >
-                  Marquer livré
-                </Button>
-              )}
             </div>
-          ))}
-        </div>
+          )}
+
+          {/* Missions en cours */}
+          {inProgressOrders.length > 0 && (
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                <Truck className="w-4 h-4" />
+                En cours ({inProgressOrders.length})
+              </h3>
+              <div className="space-y-3">
+                {inProgressOrders.map((order) => (
+                  <OrderCard key={order.id} order={order} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Missions terminées */}
+          {completedOrders.length > 0 && (
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4" />
+                Terminées ({completedOrders.length})
+              </h3>
+              <div className="space-y-3">
+                {completedOrders.slice(0, 5).map((order) => (
+                  <OrderCard key={order.id} order={order} />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -499,7 +633,7 @@ function WalletTab({ wallet }: { wallet: WalletData | null }) {
       </div>
 
       {/* Withdraw Button */}
-      <Button variant="outline" size="lg" className="w-full" disabled={(wallet?.balance || 0) <= 0}>
+      <Button variant="gold" size="lg" className="w-full">
         <Wallet className="w-5 h-5" />
         Retirer des fonds
       </Button>
