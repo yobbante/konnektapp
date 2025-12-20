@@ -1,25 +1,23 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { 
-  Users, Package, Truck, TrendingUp, CheckCircle, XCircle, 
-  Eye, MoreHorizontal, Search, Filter, Shield
-} from "lucide-react";
+import { Shield, Search, Filter, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { AdminStatsCards } from "@/components/admin/AdminStatsCards";
+import { AdminGPList } from "@/components/admin/AdminGPList";
+import { AdminOrdersList } from "@/components/admin/AdminOrdersList";
+import { AdminPendingGPs } from "@/components/admin/AdminPendingGPs";
 
 interface GPProfile {
   id: string;
@@ -27,20 +25,46 @@ interface GPProfile {
   gp_type: string;
   city: string;
   phone: string;
+  whatsapp?: string;
   status: string;
   created_at: string;
+  verified_at?: string;
   total_deliveries: number;
   rating: number;
+  total_reviews: number;
+  zones_covered?: string[];
+  international_destinations?: string[];
+  description?: string;
 }
 
 interface Order {
   id: string;
   order_number: string;
   origin_city: string;
+  origin_country: string;
   destination_city: string;
+  destination_country: string;
   status: string;
   total_price: number;
+  commission_amount: number;
+  weight: number;
   created_at: string;
+  gp_profile?: {
+    business_name: string;
+  };
+}
+
+interface AdminStats {
+  totalGps: number;
+  pendingGps: number;
+  verifiedGps: number;
+  suspendedGps: number;
+  totalOrders: number;
+  pendingOrders: number;
+  deliveredOrders: number;
+  totalRevenue: number;
+  commissions: number;
+  avgRating: number;
 }
 
 export default function AdminDashboard() {
@@ -48,16 +72,25 @@ export default function AdminDashboard() {
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [gps, setGps] = useState<GPProfile[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<AdminStats>({
     totalGps: 0,
     pendingGps: 0,
+    verifiedGps: 0,
+    suspendedGps: 0,
     totalOrders: 0,
+    pendingOrders: 0,
+    deliveredOrders: 0,
     totalRevenue: 0,
+    commissions: 0,
+    avgRating: 0,
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("overview");
+  const [gpFilter, setGpFilter] = useState<"all" | "pending" | "verified" | "suspended">("all");
+  const [orderFilter, setOrderFilter] = useState<"all" | "pending" | "in_transit" | "delivered" | "cancelled">("all");
 
   useEffect(() => {
     checkAdminAccess();
@@ -71,7 +104,6 @@ export default function AdminDashboard() {
         return;
       }
 
-      // Check if user has admin role using the has_role function
       const { data: hasRole, error } = await supabase.rpc("has_role", {
         _user_id: user.id,
         _role: "admin",
@@ -88,13 +120,19 @@ export default function AdminDashboard() {
       }
 
       setIsAdmin(true);
-      await Promise.all([fetchGPs(), fetchOrders(), fetchStats()]);
+      await refreshData();
     } catch (error) {
       console.error("Admin check error:", error);
       navigate("/");
     } finally {
       setLoading(false);
     }
+  };
+
+  const refreshData = async () => {
+    setRefreshing(true);
+    await Promise.all([fetchGPs(), fetchOrders(), fetchStats()]);
+    setRefreshing(false);
   };
 
   const fetchGPs = async () => {
@@ -115,9 +153,12 @@ export default function AdminDashboard() {
     try {
       const { data, error } = await supabase
         .from("orders")
-        .select("*")
+        .select(`
+          *,
+          gp_profile:gp_profiles(business_name)
+        `)
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(100);
 
       if (error) throw error;
       setOrders(data || []);
@@ -129,43 +170,76 @@ export default function AdminDashboard() {
   const fetchStats = async () => {
     try {
       const [gpsResult, ordersResult] = await Promise.all([
-        supabase.from("gp_profiles").select("id, status"),
-        supabase.from("orders").select("id, total_price"),
+        supabase.from("gp_profiles").select("id, status, rating"),
+        supabase.from("orders").select("id, total_price, commission_amount, status"),
       ]);
 
-      const totalGps = gpsResult.data?.length || 0;
-      const pendingGps = gpsResult.data?.filter(g => g.status === "pending").length || 0;
-      const totalOrders = ordersResult.data?.length || 0;
-      const totalRevenue = ordersResult.data?.reduce((acc, o) => acc + (o.total_price || 0), 0) || 0;
+      const gpsData = gpsResult.data || [];
+      const ordersData = ordersResult.data || [];
 
-      setStats({ totalGps, pendingGps, totalOrders, totalRevenue });
+      const ratings = gpsData.filter(g => g.rating > 0).map(g => g.rating);
+      const avgRating = ratings.length > 0 
+        ? ratings.reduce((a, b) => a + b, 0) / ratings.length 
+        : 0;
+
+      setStats({
+        totalGps: gpsData.length,
+        pendingGps: gpsData.filter(g => g.status === "pending").length,
+        verifiedGps: gpsData.filter(g => g.status === "verified").length,
+        suspendedGps: gpsData.filter(g => g.status === "suspended").length,
+        totalOrders: ordersData.length,
+        pendingOrders: ordersData.filter(o => !["delivered", "cancelled"].includes(o.status)).length,
+        deliveredOrders: ordersData.filter(o => o.status === "delivered").length,
+        totalRevenue: ordersData.reduce((acc, o) => acc + (o.total_price || 0), 0),
+        commissions: ordersData.reduce((acc, o) => acc + (o.commission_amount || 0), 0),
+        avgRating,
+      });
     } catch (error) {
       console.error("Error fetching stats:", error);
     }
   };
 
-  const updateGPStatus = async (gpId: string, status: "verified" | "suspended" | "rejected") => {
+  const updateGPStatus = async (gpId: string, status: "verified" | "suspended" | "rejected", reason?: string) => {
     try {
+      const updateData: Record<string, any> = { 
+        status, 
+        verified_at: status === "verified" ? new Date().toISOString() : null 
+      };
+
       const { error } = await supabase
         .from("gp_profiles")
-        .update({ status, verified_at: status === "verified" ? new Date().toISOString() : null })
+        .update(updateData)
         .eq("id", gpId);
 
       if (error) throw error;
 
-      toast({ title: "Statut mis à jour" });
-      fetchGPs();
-      fetchStats();
+      const statusLabels = {
+        verified: "validé",
+        suspended: "suspendu",
+        rejected: "rejeté"
+      };
+
+      toast({ 
+        title: `Transporteur ${statusLabels[status]}`,
+        description: reason ? `Raison: ${reason}` : undefined
+      });
+
+      await refreshData();
     } catch (error) {
       console.error("Error updating GP:", error);
-      toast({ title: "Erreur", variant: "destructive" });
+      toast({ title: "Erreur lors de la mise à jour", variant: "destructive" });
     }
+  };
+
+  const handleViewDetails = (gpId: string) => {
+    navigate(`/gp/${gpId}`);
   };
 
   const filteredGPs = gps.filter(
     (gp) =>
       gp.business_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      gp.city.toLowerCase().includes(searchQuery.toLowerCase())
+      gp.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      gp.phone.includes(searchQuery)
   );
 
   const filteredOrders = orders.filter(
@@ -193,184 +267,109 @@ export default function AdminDashboard() {
 
       <div className="px-4 py-4">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <Shield className="w-5 h-5 text-primary" />
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Shield className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold">Admin Dashboard</h1>
+              <p className="text-sm text-muted-foreground">Gestion de la plateforme</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-bold">Admin Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Gestion de la plateforme</p>
-          </div>
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={refreshData}
+            disabled={refreshing}
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+          </Button>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="mobile-card">
-            <div className="flex items-center gap-2 mb-1">
-              <Truck className="w-4 h-4 text-primary" />
-              <span className="text-xs text-muted-foreground">GPs Total</span>
-            </div>
-            <p className="text-xl font-bold">{stats.totalGps}</p>
-            {stats.pendingGps > 0 && (
-              <Badge variant="default" className="mt-1 text-xs">
-                {stats.pendingGps} en attente
-              </Badge>
-            )}
-          </div>
-          <div className="mobile-card">
-            <div className="flex items-center gap-2 mb-1">
-              <Package className="w-4 h-4 text-primary" />
-              <span className="text-xs text-muted-foreground">Commandes</span>
-            </div>
-            <p className="text-xl font-bold">{stats.totalOrders}</p>
-          </div>
-          <div className="mobile-card col-span-2">
-            <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="w-4 h-4 text-primary" />
-              <span className="text-xs text-muted-foreground">Revenus totaux</span>
-            </div>
-            <p className="text-xl font-bold">{stats.totalRevenue.toLocaleString()} FCFA</p>
-          </div>
-        </div>
+        <AdminStatsCards stats={stats} />
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3 mb-4">
             <TabsTrigger value="overview">Aperçu</TabsTrigger>
-            <TabsTrigger value="gps">GPs</TabsTrigger>
+            <TabsTrigger value="gps">
+              GPs {stats.pendingGps > 0 && `(${stats.pendingGps})`}
+            </TabsTrigger>
             <TabsTrigger value="orders">Commandes</TabsTrigger>
           </TabsList>
 
-          {/* Search */}
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher..."
-              className="pl-10"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          {/* Search and Filters */}
+          <div className="flex gap-2 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher..."
+                className="pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            
+            {activeTab === "gps" && (
+              <Select value={gpFilter} onValueChange={(v: any) => setGpFilter(v)}>
+                <SelectTrigger className="w-[130px]">
+                  <Filter className="w-4 h-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous</SelectItem>
+                  <SelectItem value="pending">En attente</SelectItem>
+                  <SelectItem value="verified">Vérifiés</SelectItem>
+                  <SelectItem value="suspended">Suspendus</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+
+            {activeTab === "orders" && (
+              <Select value={orderFilter} onValueChange={(v: any) => setOrderFilter(v)}>
+                <SelectTrigger className="w-[130px]">
+                  <Filter className="w-4 h-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous</SelectItem>
+                  <SelectItem value="pending">En attente</SelectItem>
+                  <SelectItem value="in_transit">En transit</SelectItem>
+                  <SelectItem value="delivered">Livrées</SelectItem>
+                  <SelectItem value="cancelled">Annulées</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Overview */}
           <TabsContent value="overview" className="space-y-4">
-            <div className="mobile-card">
-              <h3 className="font-semibold mb-3">GPs en attente de validation</h3>
-              {gps.filter(g => g.status === "pending").slice(0, 5).map((gp) => (
-                <div key={gp.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                  <div>
-                    <p className="font-medium text-sm">{gp.business_name}</p>
-                    <p className="text-xs text-muted-foreground">{gp.city}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      className="h-8 w-8"
-                      onClick={() => updateGPStatus(gp.id, "verified")}
-                    >
-                      <CheckCircle className="w-4 h-4 text-success" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      className="h-8 w-8"
-                      onClick={() => updateGPStatus(gp.id, "rejected")}
-                    >
-                      <XCircle className="w-4 h-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              {gps.filter(g => g.status === "pending").length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Aucun GP en attente
-                </p>
-              )}
-            </div>
+            <AdminPendingGPs 
+              gps={gps}
+              onVerify={(id) => updateGPStatus(id, "verified")}
+              onReject={(id) => updateGPStatus(id, "rejected")}
+              onViewDetails={handleViewDetails}
+            />
           </TabsContent>
 
           {/* GPs */}
-          <TabsContent value="gps" className="space-y-3">
-            {filteredGPs.map((gp) => (
-              <motion.div
-                key={gp.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mobile-card"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="font-medium">{gp.business_name}</p>
-                    <p className="text-xs text-muted-foreground">{gp.city} • {gp.gp_type}</p>
-                  </div>
-                  <Badge variant={
-                    gp.status === "verified" ? "success" :
-                    gp.status === "pending" ? "default" :
-                    "destructive"
-                  }>
-                    {gp.status}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {format(new Date(gp.created_at), "d MMM yyyy", { locale: fr })}
-                  </span>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => updateGPStatus(gp.id, "verified")}>
-                        <CheckCircle className="w-4 h-4 mr-2" /> Valider
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => updateGPStatus(gp.id, "suspended")}>
-                        <XCircle className="w-4 h-4 mr-2" /> Suspendre
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </motion.div>
-            ))}
+          <TabsContent value="gps">
+            <AdminGPList 
+              gps={filteredGPs}
+              onUpdateStatus={updateGPStatus}
+              onViewDetails={handleViewDetails}
+              filter={gpFilter}
+            />
           </TabsContent>
 
           {/* Orders */}
-          <TabsContent value="orders" className="space-y-3">
-            {filteredOrders.map((order) => (
-              <motion.div
-                key={order.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mobile-card"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="font-medium text-sm">{order.order_number}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {order.origin_city} → {order.destination_city}
-                    </p>
-                  </div>
-                  <Badge variant={
-                    order.status === "delivered" ? "success" :
-                    order.status === "in_transit" ? "default" :
-                    order.status === "cancelled" ? "destructive" :
-                    "secondary"
-                  }>
-                    {order.status}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium text-primary">
-                    {order.total_price.toLocaleString()} FCFA
-                  </span>
-                  <span className="text-muted-foreground">
-                    {format(new Date(order.created_at), "d MMM", { locale: fr })}
-                  </span>
-                </div>
-              </motion.div>
-            ))}
+          <TabsContent value="orders">
+            <AdminOrdersList 
+              orders={filteredOrders}
+              filter={orderFilter}
+            />
           </TabsContent>
         </Tabs>
       </div>
