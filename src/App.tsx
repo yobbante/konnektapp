@@ -5,17 +5,18 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import Index from "./pages/Index";
-import DemandeEnvoi from "./pages/DemandeEnvoi";
 import Offres from "./pages/Offres";
 import OfferDetail from "./pages/OfferDetail";
-import Tracking from "./pages/Tracking";
+import DemandeEnvoi from "./pages/DemandeEnvoi";
 import GPLanding from "./pages/GPLanding";
 import GPRegistration from "./pages/GPRegistration";
 import GPDashboard from "./pages/GPDashboard";
+import ClientDashboard from "./pages/ClientDashboard";
+import Auth from "./pages/Auth";
+import Tracking from "./pages/Tracking";
+import PriceCalculator from "./pages/PriceCalculator";
 import Messages from "./pages/Messages";
 import AdminDashboard from "./pages/AdminDashboard";
-import PriceCalculator from "./pages/PriceCalculator";
-import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/gp" element={<GPLanding />} />
           <Route path="/gp/inscription" element={<GPRegistration />} />
           <Route path="/gp/dashboard" element={<GPDashboard />} />
+          <Route path="/client/dashboard" element={<ClientDashboard />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/auth" element={<Auth />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

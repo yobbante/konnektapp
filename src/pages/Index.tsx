@@ -88,32 +88,39 @@ export default function Index() {
       </section>
 
       {/* Transport Types - Interactive Filter */}
-      <section className="px-4 py-2">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold text-foreground">Voir les offres</h2>
+      <section className="px-4 py-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-foreground text-lg">Voir les offres</h2>
           {selectedType && (
             <button
               onClick={() => setSelectedType(null)}
-              className="text-sm text-primary font-medium"
+              className="text-sm text-primary font-medium hover:underline"
             >
               Tout voir
             </button>
           )}
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-          {transportTypes.map((type) => (
-            <button 
-              key={type.label} 
+        
+        {/* Grid responsive pour les types de transport */}
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 md:gap-3">
+          {transportTypes.map((type, index) => (
+            <motion.button 
+              key={type.label}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.05 }}
               onClick={() => setSelectedType(selectedType === type.type ? null : type.type)}
-              className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all ${
+              className={`flex flex-col items-center justify-center p-3 md:p-4 rounded-2xl border-2 transition-all active:scale-95 ${
                 selectedType === type.type 
-                  ? "bg-primary text-primary-foreground border-primary" 
-                  : type.color
+                  ? "bg-primary text-primary-foreground border-primary shadow-lg" 
+                  : `${type.color} hover:shadow-md`
               }`}
             >
-              <type.icon className="w-4 h-4" />
-              <span className="text-sm font-medium">{type.label}</span>
-            </button>
+              <type.icon className={`w-6 h-6 md:w-7 md:h-7 mb-1.5 ${
+                selectedType === type.type ? 'text-primary-foreground' : ''
+              }`} />
+              <span className="text-xs md:text-sm font-medium text-center leading-tight">{type.label}</span>
+            </motion.button>
           ))}
         </div>
       </section>
