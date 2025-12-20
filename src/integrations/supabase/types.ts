@@ -825,6 +825,28 @@ export type Database = {
       }
     }
     Functions: {
+      admin_create_transaction: {
+        Args: {
+          p_amount: number
+          p_description?: string
+          p_order_id?: string
+          p_reference?: string
+          p_type: Database["public"]["Enums"]["transaction_type"]
+          p_wallet_id: string
+        }
+        Returns: string
+      }
+      create_transaction: {
+        Args: {
+          p_amount: number
+          p_description?: string
+          p_order_id?: string
+          p_reference?: string
+          p_type: Database["public"]["Enums"]["transaction_type"]
+          p_wallet_id: string
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
