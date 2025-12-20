@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   ArrowRight, ArrowLeft, User, Building, FileCheck, MapPin, 
-  CheckCircle, Upload, Truck, Ship, Plane, Zap, Briefcase,
-  Phone, Mail, Lock, Eye, EyeOff, AlertCircle
+  CheckCircle, Phone, Mail, Lock, Eye, EyeOff, AlertCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { DocumentUpload } from "@/components/DocumentUpload";
 import { ZoneSelectorSimple } from "@/components/ZoneSelectorSimple";
+import { transportTypes, TransportType, transportConfig } from "@/lib/transportTypes";
 import {
   Select,
   SelectContent,
@@ -24,16 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur";
-
-const transportOptions = [
-  { type: "express" as TransportType, title: "Express", description: "Livraison rapide", icon: Zap, color: "bg-transport-express/10 border-transport-express/30 text-transport-express" },
-  { type: "routier" as TransportType, title: "Routier", description: "Transport terrestre", icon: Truck, color: "bg-transport-routier/10 border-transport-routier/30 text-transport-routier" },
-  { type: "maritime" as TransportType, title: "Maritime", description: "Fret maritime", icon: Ship, color: "bg-transport-maritime/10 border-transport-maritime/30 text-transport-maritime" },
-  { type: "aerien" as TransportType, title: "Aérien", description: "Cargo aérien", icon: Plane, color: "bg-transport-aerien/10 border-transport-aerien/30 text-transport-aerien" },
-  { type: "voyageur" as TransportType, title: "Voyageur", description: "Via bagages", icon: Briefcase, color: "bg-transport-voyageur/10 border-transport-voyageur/30 text-transport-voyageur" },
-];
 
 const idTypes = [
   { value: "cni", label: "Carte Nationale d'Identité" },
@@ -48,6 +38,11 @@ export default function GPRegistration() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [existingUser, setExistingUser] = useState<{
+    email: string;
+    fullName: string;
+    phone: string;
+  } | null>(null);
   
   // Form data
   const [accountData, setAccountData] = useState({
@@ -82,23 +77,70 @@ export default function GPRegistration() {
   const [zones, setZones] = useState<string[]>([]);
   const [internationalDestinations, setInternationalDestinations] = useState<string[]>([]);
 
+  // Charger les données du profil existant si connecté
+  useEffect(() => {
+    const loadExistingProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Récupérer le profil existant
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (profile) {
+          setExistingUser({
+            email: user.email || "",
+            fullName: profile.full_name || "",
+            phone: profile.phone || "",
+          });
+          
+          // Pré-remplir les données
+          setAccountData(prev => ({
+            ...prev,
+            email: user.email || "",
+            fullName: profile.full_name || "",
+            phone: profile.phone || "",
+          }));
+
+          if (profile.city) {
+            setBusinessData(prev => ({
+              ...prev,
+              city: profile.city || "",
+            }));
+          }
+        }
+      }
+    };
+
+    loadExistingProfile();
+  }, []);
+
   const handleNext = () => setStep((prev) => Math.min(prev + 1, 5));
   const handleBack = () => setStep((prev) => Math.max(prev - 1, 1));
 
   const validateStep = (currentStep: number): boolean => {
     switch (currentStep) {
       case 1:
-        if (!accountData.email || !accountData.password || !accountData.fullName || !accountData.phone) {
+        if (!accountData.email || !accountData.fullName || !accountData.phone) {
           toast({ title: "Erreur", description: "Veuillez remplir tous les champs obligatoires", variant: "destructive" });
           return false;
         }
-        if (accountData.password !== accountData.confirmPassword) {
-          toast({ title: "Erreur", description: "Les mots de passe ne correspondent pas", variant: "destructive" });
-          return false;
-        }
-        if (accountData.password.length < 6) {
-          toast({ title: "Erreur", description: "Le mot de passe doit contenir au moins 6 caractères", variant: "destructive" });
-          return false;
+        // Ne pas valider le mot de passe si l'utilisateur est déjà connecté
+        if (!existingUser) {
+          if (!accountData.password) {
+            toast({ title: "Erreur", description: "Veuillez entrer un mot de passe", variant: "destructive" });
+            return false;
+          }
+          if (accountData.password !== accountData.confirmPassword) {
+            toast({ title: "Erreur", description: "Les mots de passe ne correspondent pas", variant: "destructive" });
+            return false;
+          }
+          if (accountData.password.length < 6) {
+            toast({ title: "Erreur", description: "Le mot de passe doit contenir au moins 6 caractères", variant: "destructive" });
+            return false;
+          }
         }
         return true;
       case 2:
@@ -108,7 +150,6 @@ export default function GPRegistration() {
         }
         return true;
       case 3:
-        // Documents are now optional
         return true;
       case 4:
         if (zones.length === 0) {
@@ -132,37 +173,49 @@ export default function GPRegistration() {
     
     setLoading(true);
     try {
-      // 1. Create user account
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: accountData.email,
-        password: accountData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: accountData.fullName,
+      let userId: string;
+
+      // Si l'utilisateur est déjà connecté, utiliser son ID
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      if (currentUser) {
+        userId = currentUser.id;
+      } else {
+        // Créer un nouveau compte
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: accountData.email,
+          password: accountData.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              full_name: accountData.fullName,
+            }
           }
-        }
-      });
+        });
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Erreur lors de la création du compte");
+        if (authError) throw authError;
+        if (!authData.user) throw new Error("Erreur lors de la création du compte");
+        userId = authData.user.id;
+      }
 
-      // 2. Update profile with is_gp flag
+      // Mettre à jour le profil avec is_gp flag
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
           phone: accountData.phone,
+          full_name: accountData.fullName,
           is_gp: true,
+          city: businessData.city,
         })
-        .eq("user_id", authData.user.id);
+        .eq("user_id", userId);
 
       if (profileError) throw profileError;
 
-      // 3. Create GP profile
+      // Créer le profil GP
       const { error: gpError } = await supabase
         .from("gp_profiles")
         .insert({
-          user_id: authData.user.id,
+          user_id: userId,
           business_name: businessData.businessName,
           gp_type: businessData.gpType,
           phone: accountData.phone,
@@ -230,6 +283,13 @@ export default function GPRegistration() {
             <p className="text-muted-foreground">
               Rejoignez le réseau Yobbanté-GP et développez votre activité
             </p>
+            {existingUser && (
+              <div className="mt-4 p-3 bg-success/10 border border-success/20 rounded-lg inline-block">
+                <p className="text-sm text-success">
+                  ✓ Connecté en tant que {existingUser.fullName || existingUser.email}
+                </p>
+              </div>
+            )}
           </motion.div>
 
           {/* Progress Steps */}
@@ -276,7 +336,7 @@ export default function GPRegistration() {
             >
               <h2 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
                 <User className="w-5 h-5 text-secondary" />
-                Créez votre compte
+                {existingUser ? "Vérifiez vos informations" : "Créez votre compte"}
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -301,6 +361,7 @@ export default function GPRegistration() {
                       className="pl-10"
                       value={accountData.email}
                       onChange={(e) => setAccountData({ ...accountData, email: e.target.value })}
+                      disabled={!!existingUser}
                     />
                   </div>
                 </div>
@@ -320,42 +381,46 @@ export default function GPRegistration() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password">Mot de passe *</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Minimum 6 caractères"
-                      className="pl-10 pr-10"
-                      value={accountData.password}
-                      onChange={(e) => setAccountData({ ...accountData, password: e.target.value })}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
+                {!existingUser && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="password">Mot de passe *</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Minimum 6 caractères"
+                          className="pl-10 pr-10"
+                          value={accountData.password}
+                          onChange={(e) => setAccountData({ ...accountData, password: e.target.value })}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirmer le mot de passe *</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="confirmPassword"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Confirmer le mot de passe"
-                      className="pl-10"
-                      value={accountData.confirmPassword}
-                      onChange={(e) => setAccountData({ ...accountData, confirmPassword: e.target.value })}
-                    />
-                  </div>
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">Confirmer le mot de passe *</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="confirmPassword"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Confirmer le mot de passe"
+                          className="pl-10"
+                          value={accountData.confirmPassword}
+                          onChange={(e) => setAccountData({ ...accountData, confirmPassword: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="flex justify-between mt-8">
@@ -386,8 +451,8 @@ export default function GPRegistration() {
                   Type de transport *
                 </h2>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                  {transportOptions.map((option) => {
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                  {transportTypes.map((option) => {
                     const IconComponent = option.icon;
                     const isSelected = businessData.gpType === option.type;
                     
@@ -401,10 +466,10 @@ export default function GPRegistration() {
                         className={`p-4 rounded-xl border-2 text-center transition-all ${
                           isSelected
                             ? "bg-secondary text-secondary-foreground border-secondary shadow-lg"
-                            : option.color + " hover:shadow-md"
+                            : option.bgColor + " hover:shadow-md"
                         }`}
                       >
-                        <IconComponent className={`w-8 h-8 mx-auto mb-2 ${isSelected ? 'text-secondary-foreground' : ''}`} />
+                        <IconComponent className={`w-8 h-8 mx-auto mb-2 ${isSelected ? 'text-secondary-foreground' : option.color}`} />
                         <p className="font-semibold text-sm">{option.title}</p>
                         <p className={`text-xs mt-1 ${isSelected ? 'text-secondary-foreground/80' : 'text-muted-foreground'}`}>
                           {option.description}
@@ -419,17 +484,17 @@ export default function GPRegistration() {
               {businessData.gpType && (
                 <div className="bg-card rounded-2xl border border-border p-6 md:p-8 shadow-card">
                   <h2 className="text-xl font-semibold text-foreground mb-6">
-                    Informations {businessData.gpType === 'voyageur' ? 'voyageur' : 'professionnelles'}
+                    Informations {businessData.gpType === 'voyageur' ? 'voyageur' : businessData.gpType === 'agence' ? "de l'agence" : 'professionnelles'}
                   </h2>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="md:col-span-2 space-y-2">
                       <Label htmlFor="businessName">
-                        {businessData.gpType === 'voyageur' ? 'Votre nom / Pseudo *' : 'Nom commercial / Entreprise *'}
+                        {businessData.gpType === 'voyageur' ? 'Votre nom / Pseudo *' : businessData.gpType === 'agence' ? "Nom de l'agence *" : 'Nom commercial / Entreprise *'}
                       </Label>
                       <Input
                         id="businessName"
-                        placeholder={businessData.gpType === 'voyageur' ? 'Ex: Moussa GP' : 'Ex: Mamadou Express Transport'}
+                        placeholder={businessData.gpType === 'voyageur' ? 'Ex: Moussa GP' : businessData.gpType === 'agence' ? 'Ex: Yobbanté Express' : 'Ex: Mamadou Express Transport'}
                         value={businessData.businessName}
                         onChange={(e) => setBusinessData({ ...businessData, businessName: e.target.value })}
                       />
@@ -501,6 +566,18 @@ export default function GPRegistration() {
                           </Select>
                         </div>
 
+                        {businessData.gpType === 'agence' && (
+                          <div className="space-y-2">
+                            <Label htmlFor="address">Adresse de l'agence</Label>
+                            <Input
+                              id="address"
+                              placeholder="Ex: 123 Rue Moussé Diop, Dakar"
+                              value={businessData.address}
+                              onChange={(e) => setBusinessData({ ...businessData, address: e.target.value })}
+                            />
+                          </div>
+                        )}
+
                         {(businessData.gpType === 'routier' || businessData.gpType === 'express') && (
                           <div className="space-y-2">
                             <Label htmlFor="fleetSize">Nombre de véhicules</Label>
@@ -548,6 +625,8 @@ export default function GPRegistration() {
                       <Label htmlFor="description">
                         {businessData.gpType === 'voyageur' 
                           ? 'Présentez-vous en quelques mots'
+                          : businessData.gpType === 'agence'
+                          ? "Description de l'agence"
                           : 'Description de votre activité'
                         }
                       </Label>
@@ -555,6 +634,8 @@ export default function GPRegistration() {
                         id="description"
                         placeholder={businessData.gpType === 'voyageur'
                           ? 'Ex: Je voyage régulièrement entre Dakar et Paris...'
+                          : businessData.gpType === 'agence'
+                          ? "Ex: Notre agence spécialisée dans l'envoi de colis vers l'Afrique de l'Ouest..."
                           : 'Décrivez votre activité, vos spécialités, vos atouts...'
                         }
                         rows={3}
@@ -624,35 +705,41 @@ export default function GPRegistration() {
                   </div>
                 </div>
 
-                {/* Business Registration */}
-                <div className="p-6 rounded-xl bg-muted/50 border border-border">
-                  <h3 className="font-medium text-foreground mb-4">Registre de commerce (optionnel)</h3>
-                  <DocumentUpload
-                    label="Document d'enregistrement de l'entreprise"
-                    onUpload={(url) => setKycData({ ...kycData, businessRegistrationUrl: url })}
-                    uploadedUrl={kycData.businessRegistrationUrl}
-                  />
-                </div>
+                {/* Business Registration - seulement pour agence */}
+                {businessData.gpType === 'agence' && (
+                  <div className="p-6 rounded-xl bg-muted/50 border border-border">
+                    <h3 className="font-medium text-foreground mb-4">Registre de commerce</h3>
+                    <DocumentUpload
+                      label="Document d'enregistrement de l'entreprise"
+                      onUpload={(url) => setKycData({ ...kycData, businessRegistrationUrl: url })}
+                      uploadedUrl={kycData.businessRegistrationUrl}
+                    />
+                  </div>
+                )}
 
-                {/* Transport License */}
-                <div className="p-6 rounded-xl bg-muted/50 border border-border">
-                  <h3 className="font-medium text-foreground mb-4">Licence de transport (optionnel)</h3>
-                  <DocumentUpload
-                    label="Licence ou autorisation de transport"
-                    onUpload={(url) => setKycData({ ...kycData, transportLicenseUrl: url })}
-                    uploadedUrl={kycData.transportLicenseUrl}
-                  />
-                </div>
+                {/* Transport License - seulement pour routier/express */}
+                {(businessData.gpType === 'routier' || businessData.gpType === 'express') && (
+                  <div className="p-6 rounded-xl bg-muted/50 border border-border">
+                    <h3 className="font-medium text-foreground mb-4">Licence de transport (optionnel)</h3>
+                    <DocumentUpload
+                      label="Licence ou autorisation de transport"
+                      onUpload={(url) => setKycData({ ...kycData, transportLicenseUrl: url })}
+                      uploadedUrl={kycData.transportLicenseUrl}
+                    />
+                  </div>
+                )}
 
                 {/* Insurance */}
-                <div className="p-6 rounded-xl bg-muted/50 border border-border">
-                  <h3 className="font-medium text-foreground mb-4">Assurance (optionnel)</h3>
-                  <DocumentUpload
-                    label="Attestation d'assurance transport"
-                    onUpload={(url) => setKycData({ ...kycData, insuranceDocumentUrl: url })}
-                    uploadedUrl={kycData.insuranceDocumentUrl}
-                  />
-                </div>
+                {businessData.gpType !== 'voyageur' && (
+                  <div className="p-6 rounded-xl bg-muted/50 border border-border">
+                    <h3 className="font-medium text-foreground mb-4">Assurance (optionnel)</h3>
+                    <DocumentUpload
+                      label="Attestation d'assurance transport"
+                      onUpload={(url) => setKycData({ ...kycData, insuranceDocumentUrl: url })}
+                      uploadedUrl={kycData.insuranceDocumentUrl}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-between mt-8">
@@ -730,12 +817,12 @@ export default function GPRegistration() {
                     <p className="font-semibold text-foreground">{accountData.phone}</p>
                   </div>
                   <div className="p-4 rounded-xl bg-muted/50">
-                    <p className="text-sm text-muted-foreground">Entreprise</p>
+                    <p className="text-sm text-muted-foreground">{businessData.gpType === 'agence' ? 'Agence' : 'Entreprise'}</p>
                     <p className="font-semibold text-foreground">{businessData.businessName}</p>
                   </div>
                   <div className="p-4 rounded-xl bg-muted/50">
                     <p className="text-sm text-muted-foreground">Type GP</p>
-                    <p className="font-semibold text-foreground capitalize">{businessData.gpType}</p>
+                    <p className="font-semibold text-foreground capitalize">{transportConfig[businessData.gpType!]?.title}</p>
                   </div>
                   <div className="p-4 rounded-xl bg-muted/50">
                     <p className="text-sm text-muted-foreground">Ville</p>
@@ -785,16 +872,20 @@ export default function GPRegistration() {
               <div className="flex justify-between">
                 <Button variant="ghost" onClick={handleBack}>
                   <ArrowLeft className="w-5 h-5" />
-                  Modifier
+                  Retour
                 </Button>
-                <Button 
-                  variant="gold" 
-                  size="lg" 
-                  onClick={handleSubmit}
-                  disabled={loading}
-                >
-                  {loading ? "Inscription en cours..." : "Soumettre mon inscription"}
-                  <ArrowRight className="w-5 h-5" />
+                <Button variant="gold" size="lg" onClick={handleSubmit} disabled={loading}>
+                  {loading ? (
+                    <>
+                      <div className="w-5 h-5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                      Inscription en cours...
+                    </>
+                  ) : (
+                    <>
+                      Valider mon inscription
+                      <CheckCircle className="w-5 h-5" />
+                    </>
+                  )}
                 </Button>
               </div>
             </motion.div>

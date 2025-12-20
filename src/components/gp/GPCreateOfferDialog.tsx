@@ -1,21 +1,18 @@
 import { useState } from "react";
-import { X, MapPin, Calendar, Package, Scale, Info } from "lucide-react";
+import { Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { TransportTypeCard } from "@/components/TransportTypeCard";
-
-type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur";
+import { transportTypes, TransportType, transportConfig } from "@/lib/transportTypes";
 
 interface GPCreateOfferDialogProps {
   open: boolean;
@@ -26,14 +23,6 @@ interface GPCreateOfferDialogProps {
   };
   onSuccess: () => void;
 }
-
-const transportOptions = [
-  { type: "express" as TransportType, title: "Express", description: "Livraison rapide" },
-  { type: "routier" as TransportType, title: "Routier", description: "Transport terrestre" },
-  { type: "maritime" as TransportType, title: "Maritime", description: "Fret maritime" },
-  { type: "aerien" as TransportType, title: "Aérien", description: "Par avion" },
-  { type: "voyageur" as TransportType, title: "Voyageur", description: "Capacité bagages" },
-];
 
 const countries = [
   { code: "SN", name: "Sénégal" },
@@ -134,21 +123,25 @@ export function GPCreateOfferDialog({ open, onClose, gpProfile, onSuccess }: GPC
           {/* Transport Type */}
           <div>
             <Label className="mb-3 block">Type de transport</Label>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-              {transportOptions.map((option) => (
-                <button
-                  key={option.type}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, transportType: option.type })}
-                  className={`p-3 rounded-xl border-2 text-center transition-all ${
-                    formData.transportType === option.type
-                      ? "border-secondary bg-secondary/10"
-                      : "border-border hover:border-muted-foreground"
-                  }`}
-                >
-                  <span className="text-sm font-medium">{option.title}</span>
-                </button>
-              ))}
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              {transportTypes.map((option) => {
+                const IconComponent = option.icon;
+                return (
+                  <button
+                    key={option.type}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, transportType: option.type })}
+                    className={`p-3 rounded-xl border-2 text-center transition-all ${
+                      formData.transportType === option.type
+                        ? "border-secondary bg-secondary/10"
+                        : "border-border hover:border-muted-foreground"
+                    }`}
+                  >
+                    <IconComponent className={`w-5 h-5 mx-auto mb-1 ${formData.transportType === option.type ? 'text-secondary' : option.color}`} />
+                    <span className="text-xs font-medium">{option.title}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

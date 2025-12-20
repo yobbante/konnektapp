@@ -1,44 +1,14 @@
 import { motion } from "framer-motion";
-import { LucideIcon, Zap, Truck, Ship, Plane, Briefcase } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur";
+import { TransportType, transportConfig } from "@/lib/transportTypes";
 
 interface TransportTypeCardProps {
   type: TransportType;
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   selected?: boolean;
   onClick?: () => void;
 }
-
-const transportConfig: Record<TransportType, { icon: LucideIcon; color: string; bgColor: string }> = {
-  express: { 
-    icon: Zap, 
-    color: "text-transport-express", 
-    bgColor: "bg-transport-express/10 border-transport-express/30" 
-  },
-  routier: { 
-    icon: Truck, 
-    color: "text-transport-routier", 
-    bgColor: "bg-transport-routier/10 border-transport-routier/30" 
-  },
-  maritime: { 
-    icon: Ship, 
-    color: "text-transport-maritime", 
-    bgColor: "bg-transport-maritime/10 border-transport-maritime/30" 
-  },
-  aerien: { 
-    icon: Plane, 
-    color: "text-transport-aerien", 
-    bgColor: "bg-transport-aerien/10 border-transport-aerien/30" 
-  },
-  voyageur: { 
-    icon: Briefcase, 
-    color: "text-transport-voyageur", 
-    bgColor: "bg-transport-voyageur/10 border-transport-voyageur/30" 
-  },
-};
 
 export function TransportTypeCard({ type, title, description, selected, onClick }: TransportTypeCardProps) {
   const config = transportConfig[type];
@@ -73,8 +43,8 @@ export function TransportTypeCard({ type, title, description, selected, onClick 
         <Icon className={cn("w-7 h-7", config.color)} />
       </div>
       
-      <h3 className="font-semibold text-lg text-foreground mb-1">{title}</h3>
-      <p className="text-sm text-muted-foreground">{description}</p>
+      <h3 className="font-semibold text-lg text-foreground mb-1">{title || config.title}</h3>
+      <p className="text-sm text-muted-foreground">{description || config.description}</p>
     </motion.button>
   );
 }
