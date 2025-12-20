@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   ArrowRight, ArrowLeft, Package, MapPin, Calendar, Scale, 
-  FileText, Zap, Truck, Ship, Plane, Briefcase, Info, CheckCircle
+  FileText, Zap, Truck, Ship, Plane, Briefcase, Info, CheckCircle,
+  Search, Star, Sparkles
 } from "lucide-react";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -16,6 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur";
+type FlowType = "offres" | "personnalisee" | null;
 
 const transportOptions = [
   { type: "express" as TransportType, icon: Zap, title: "Express", description: "Livraison rapide" },
@@ -34,11 +36,22 @@ const countries = [
   { code: "AE", name: "Dubai", flag: "🇦🇪" },
 ];
 
+// Mock offers data
+const mockOffers = [
+  { id: "YOB-GP001", origin: "Dakar", originCountry: "SN", destination: "Abidjan", destinationCountry: "CI", date: "20 déc.", price: 6500, transportType: "routier" as TransportType, gpName: "Mamadou Express", gpRating: 4.8 },
+  { id: "YOB-GP002", origin: "Dakar", originCountry: "SN", destination: "Paris", destinationCountry: "FR", date: "22 déc.", price: 8500, transportType: "aerien" as TransportType, gpName: "Air Cargo SN", gpRating: 4.9 },
+  { id: "YOB-GP003", origin: "Abidjan", originCountry: "CI", destination: "Bamako", destinationCountry: "ML", date: "21 déc.", price: 5500, transportType: "express" as TransportType, gpName: "Flash Livraison", gpRating: 4.7 },
+  { id: "YOB-GP004", origin: "Dakar", originCountry: "SN", destination: "Casablanca", destinationCountry: "MA", date: "23 déc.", price: 12000, transportType: "maritime" as TransportType, gpName: "Atlantic Freight", gpRating: 4.6 },
+  { id: "YOB-GP005", origin: "Conakry", originCountry: "GN", destination: "Dakar", destinationCountry: "SN", date: "24 déc.", price: 4500, transportType: "voyageur" as TransportType, gpName: "Moussa GP", gpRating: 4.5 },
+];
+
 export default function DemandeEnvoi() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [flowType, setFlowType] = useState<FlowType>(null);
   const [step, setStep] = useState(1);
   const [selectedTransport, setSelectedTransport] = useState<TransportType | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [formData, setFormData] = useState({
     originCity: "",
     originCountry: "SN",
@@ -54,8 +67,24 @@ export default function DemandeEnvoi() {
     urgent: false,
   });
 
+  // Filter offers based on transport type and search
+  const filteredOffers = mockOffers.filter((offer) => {
+    const matchesType = !selectedTransport || offer.transportType === selectedTransport;
+    const matchesSearch = !searchQuery || 
+      offer.origin.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      offer.destination.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      offer.gpName.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesType && matchesSearch;
+  });
+
   const handleNext = () => setStep((prev) => Math.min(prev + 1, 3));
-  const handleBack = () => setStep((prev) => Math.max(prev - 1, 1));
+  const handleBack = () => {
+    if (step === 1 && flowType === "personnalisee") {
+      setFlowType(null);
+    } else {
+      setStep((prev) => Math.max(prev - 1, 1));
+    }
+  };
 
   const handleSubmit = () => {
     toast({
@@ -65,6 +94,265 @@ export default function DemandeEnvoi() {
     navigate("/offres");
   };
 
+  const handleSelectOffer = (offerId: string) => {
+    navigate(`/offres/${offerId}`);
+  };
+
+  // Initial choice screen
+  if (!flowType) {
+    return (
+      <div className="min-h-screen bg-background pb-safe">
+        <MobileHeader />
+
+        <div className="px-4 py-6">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-8"
+          >
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Package className="w-8 h-8 text-primary" />
+            </div>
+            <h1 className="text-2xl font-bold mb-2">Envoyer un colis</h1>
+            <p className="text-muted-foreground">Choisissez votre méthode d'envoi</p>
+          </motion.div>
+
+          <div className="space-y-4">
+            <motion.button
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+              onClick={() => setFlowType("offres")}
+              className="w-full mobile-card p-5 text-left active:scale-[0.98] transition-transform"
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Search className="w-6 h-6 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-foreground mb-1">Choisir parmi les offres</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Parcourez les offres disponibles et réservez directement
+                  </p>
+                  <div className="flex items-center gap-2 mt-3">
+                    <Badge variant="secondary" className="text-xs">Rapide</Badge>
+                    <Badge variant="secondary" className="text-xs">Prix fixe</Badge>
+                  </div>
+                </div>
+                <ArrowRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+              </div>
+            </motion.button>
+
+            <motion.button
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              onClick={() => setFlowType("personnalisee")}
+              className="w-full mobile-card p-5 text-left active:scale-[0.98] transition-transform"
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-6 h-6 text-accent" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-foreground mb-1">Demande personnalisée</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Décrivez vos besoins et recevez des offres sur mesure
+                  </p>
+                  <div className="flex items-center gap-2 mt-3">
+                    <Badge variant="secondary" className="text-xs">Sur mesure</Badge>
+                    <Badge variant="secondary" className="text-xs">Multi-devis</Badge>
+                  </div>
+                </div>
+                <ArrowRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+              </div>
+            </motion.button>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="mt-8 p-4 bg-muted/50 rounded-xl"
+          >
+            <p className="text-sm text-muted-foreground text-center">
+              💡 Astuce: Les offres existantes sont généralement moins chères et plus rapides à confirmer
+            </p>
+          </motion.div>
+        </div>
+
+        <MobileNav />
+      </div>
+    );
+  }
+
+  // Flow: Browse offers
+  if (flowType === "offres") {
+    return (
+      <div className="min-h-screen bg-background pb-safe">
+        <MobileHeader />
+
+        <div className="px-4 py-4">
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-4">
+            <button
+              onClick={() => setFlowType(null)}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-muted"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className="text-lg font-bold">Offres disponibles</h1>
+              <p className="text-sm text-muted-foreground">Sélectionnez une offre</p>
+            </div>
+          </div>
+
+          {/* Search */}
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Ville, destination, transporteur..."
+              className="pl-10 h-10 bg-muted/50"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          {/* Transport Type Filter */}
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-4 -mx-4 px-4 scrollbar-hide">
+            <button
+              onClick={() => setSelectedTransport(null)}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                !selectedTransport
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              <Package className="w-3.5 h-3.5" />
+              Tous
+            </button>
+            {transportOptions.map((option) => (
+              <button
+                key={option.type}
+                onClick={() => setSelectedTransport(selectedTransport === option.type ? null : option.type)}
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  selectedTransport === option.type
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                <option.icon className="w-3.5 h-3.5" />
+                {option.title}
+              </button>
+            ))}
+          </div>
+
+          {/* Results */}
+          <p className="text-sm text-muted-foreground mb-3">
+            {filteredOffers.length} offre{filteredOffers.length > 1 ? "s" : ""} disponible{filteredOffers.length > 1 ? "s" : ""}
+          </p>
+
+          {/* Offers List */}
+          <div className="space-y-3 pb-4">
+            {filteredOffers.map((offer, index) => (
+              <motion.div
+                key={offer.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <button
+                  onClick={() => handleSelectOffer(offer.id)}
+                  className="w-full mobile-card active:scale-[0.98] transition-transform text-left"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <Badge variant={offer.transportType as any} className="text-xs">
+                      {transportOptions.find(o => o.type === offer.transportType)?.title}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">{offer.date}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="w-4 h-4 text-primary" />
+                      <span className="font-medium">{offer.origin}</span>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                    <span className="font-medium">{offer.destination}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-border">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-xs font-semibold text-primary">{offer.gpName.charAt(0)}</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{offer.gpName}</p>
+                        <div className="flex items-center gap-1">
+                          <Star className="w-3 h-3 text-warning fill-warning" />
+                          <span className="text-xs text-muted-foreground">{offer.gpRating}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-primary">{offer.price.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">FCFA/kg</p>
+                    </div>
+                  </div>
+                </button>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Empty State */}
+          {filteredOffers.length === 0 && (
+            <div className="text-center py-8">
+              <Package className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" />
+              <h3 className="font-semibold mb-1">Aucune offre trouvée</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Créez une demande personnalisée
+              </p>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => setFlowType("personnalisee")}
+              >
+                <Sparkles className="w-4 h-4" />
+                Demande personnalisée
+              </Button>
+            </div>
+          )}
+
+          {/* CTA */}
+          {filteredOffers.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="mt-4 p-4 rounded-xl bg-muted/50 border border-border text-center"
+            >
+              <p className="text-sm text-muted-foreground mb-3">
+                Vous ne trouvez pas ce que vous cherchez ?
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setFlowType("personnalisee")}
+                className="w-full"
+              >
+                <Sparkles className="w-4 h-4" />
+                Créer une demande personnalisée
+              </Button>
+            </motion.div>
+          )}
+        </div>
+
+        <MobileNav />
+      </div>
+    );
+  }
+
+  // Flow: Personalized request (existing flow)
   return (
     <div className="min-h-screen bg-background pb-safe">
       <MobileHeader />
@@ -121,16 +409,21 @@ export default function DemandeEnvoi() {
               ))}
             </div>
 
-            <Button
-              variant="default"
-              size="lg"
-              onClick={handleNext}
-              disabled={!selectedTransport}
-              className="w-full"
-            >
-              Continuer
-              <ArrowRight className="w-5 h-5" />
-            </Button>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={handleBack} className="flex-1">
+                <ArrowLeft className="w-4 h-4" />
+                Retour
+              </Button>
+              <Button
+                variant="default"
+                onClick={handleNext}
+                disabled={!selectedTransport}
+                className="flex-1"
+              >
+                Continuer
+                <ArrowRight className="w-5 h-5" />
+              </Button>
+            </div>
           </motion.div>
         )}
 
