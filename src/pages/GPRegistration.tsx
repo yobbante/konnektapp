@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { DocumentUpload } from "@/components/DocumentUpload";
-import { ZoneSelectorSimple } from "@/components/ZoneSelectorSimple";
+import { ZoneCoverageManager, CoverageZone } from "@/components/gp/ZoneCoverageManager";
 import { transportTypes, TransportType, transportConfig } from "@/lib/transportTypes";
 import {
   Select,
@@ -74,8 +74,7 @@ export default function GPRegistration() {
     insuranceDocumentUrl: "",
   });
   
-  const [zones, setZones] = useState<string[]>([]);
-  const [internationalDestinations, setInternationalDestinations] = useState<string[]>([]);
+  const [coverageZones, setCoverageZones] = useState<CoverageZone[]>([]);
 
   // Charger les données du profil existant si connecté
   useEffect(() => {
@@ -152,8 +151,8 @@ export default function GPRegistration() {
       case 3:
         return true;
       case 4:
-        if (zones.length === 0) {
-          toast({ title: "Erreur", description: "Veuillez sélectionner au moins une zone de couverture", variant: "destructive" });
+        if (coverageZones.length === 0) {
+          toast({ title: "Erreur", description: "Veuillez ajouter au moins une zone de couverture", variant: "destructive" });
           return false;
         }
         return true;
@@ -232,8 +231,8 @@ export default function GPRegistration() {
           years_experience: parseInt(businessData.yearsExperience) || 0,
           fleet_size: parseInt(businessData.fleetSize) || 1,
           description: businessData.description || null,
-          zones_covered: zones,
-          international_destinations: internationalDestinations,
+          zones_covered: coverageZones.map(z => z.city || z.cities?.join(", ") || z.country).filter(Boolean),
+          international_destinations: coverageZones.filter(z => !["SN", "CI", "ML", "BF", "GN", "CM", "TG", "BJ", "GH", "NG"].includes(z.country)).map(z => z.country),
         });
 
       if (gpError) throw gpError;
@@ -770,11 +769,9 @@ export default function GPRegistration() {
                 Sélectionnez les zones géographiques que vous desservez.
               </p>
 
-              <ZoneSelectorSimple
-                selectedZones={zones}
-                onZonesChange={setZones}
-                selectedInternational={internationalDestinations}
-                onInternationalChange={setInternationalDestinations}
+              <ZoneCoverageManager
+                zones={coverageZones}
+                onZonesChange={setCoverageZones}
                 transportType={businessData.gpType}
               />
 
@@ -830,14 +827,15 @@ export default function GPRegistration() {
                   </div>
                   <div className="p-4 rounded-xl bg-muted/50 md:col-span-2">
                     <p className="text-sm text-muted-foreground">Zones desservies</p>
-                    <p className="font-semibold text-foreground">{zones.join(", ") || "—"}</p>
+                    <p className="font-semibold text-foreground">
+                      {coverageZones.length > 0 
+                        ? coverageZones.map(z => {
+                            const cities = z.cities?.length ? z.cities.join(", ") : z.city;
+                            return cities || z.country;
+                          }).join(" • ")
+                        : "—"}
+                    </p>
                   </div>
-                  {internationalDestinations.length > 0 && (
-                    <div className="p-4 rounded-xl bg-muted/50 md:col-span-2">
-                      <p className="text-sm text-muted-foreground">Destinations internationales</p>
-                      <p className="font-semibold text-foreground">{internationalDestinations.join(", ")}</p>
-                    </div>
-                  )}
                 </div>
 
                 <div className="mt-6 p-4 rounded-xl bg-secondary/10 border border-secondary/20">

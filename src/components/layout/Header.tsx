@@ -157,11 +157,10 @@ export function Header() {
               </>
             )}
 
-            {/* Mobile Menu Toggle */}
+            {/* Menu Toggle - Always visible */}
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -177,7 +176,7 @@ export function Header() {
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
-              className="lg:hidden overflow-hidden border-t border-border/50"
+              className="overflow-hidden border-t border-border/50"
             >
               <div className="py-4 space-y-2">
                 {navLinks.map((link) => (
