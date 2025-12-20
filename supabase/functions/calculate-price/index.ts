@@ -1,9 +1,47 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Simple in-memory rate limiting (per IP, resets on function restart)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_MAX = 20; // 20 requests per hour per IP
+const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour in ms
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  
+  if (!entry || now > entry.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+  
+  if (entry.count >= RATE_LIMIT_MAX) {
+    return false;
+  }
+  
+  entry.count++;
+  return true;
+}
+
+// Input validation schema
+const priceRequestSchema = z.object({
+  weight: z.number().min(0.1).max(10000),
+  length: z.number().min(1).max(500).optional(),
+  width: z.number().min(1).max(500).optional(),
+  height: z.number().min(1).max(500).optional(),
+  originCountry: z.string().min(2).max(5),
+  originCity: z.string().min(1).max(100),
+  destinationCountry: z.string().min(2).max(5),
+  destinationCity: z.string().min(1).max(100),
+  transportType: z.enum(["express", "routier", "maritime", "aerien", "voyageur"]),
+  isUrgent: z.boolean().optional(),
+  declaredValue: z.number().min(0).max(1000000000).optional(),
+});
 
 // Base pricing data for Senegal/West Africa logistics
 const basePricing = {
@@ -21,27 +59,49 @@ const distanceFactors: Record<string, Record<string, number>> = {
   "ML": { "SN": 1.2, "CI": 1.1, "ML": 1.0, "GN": 1.2, "FR": 2.6, "AE": 2.9 },
 };
 
-interface PriceRequest {
-  weight: number;
-  length?: number;
-  width?: number;
-  height?: number;
-  originCountry: string;
-  originCity: string;
-  destinationCountry: string;
-  destinationCity: string;
-  transportType: string;
-  isUrgent?: boolean;
-  declaredValue?: number;
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const data: PriceRequest = await req.json();
+    // Rate limiting by IP
+    const clientIP = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
+                     req.headers.get("x-real-ip") || 
+                     "unknown";
+    
+    if (!checkRateLimit(clientIP)) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Trop de requêtes. Veuillez réessayer dans une heure." 
+        }),
+        { 
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Parse and validate input
+    const rawData = await req.json();
+    const parseResult = priceRequestSchema.safeParse(rawData);
+    
+    if (!parseResult.success) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Données invalides",
+          details: parseResult.error.issues.map(i => i.message).join(", ")
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const data = parseResult.data;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     // Calculate volumetric weight if dimensions provided
@@ -52,7 +112,7 @@ serve(async (req) => {
     const chargeableWeight = Math.max(data.weight, volumetricWeight);
 
     // Get base pricing
-    const typeConfig = basePricing[data.transportType as keyof typeof basePricing] || basePricing.routier;
+    const typeConfig = basePricing[data.transportType];
     
     // Get distance factor
     const originFactors = distanceFactors[data.originCountry] || distanceFactors["SN"];
@@ -86,7 +146,7 @@ serve(async (req) => {
       basePrice: Math.round(basePrice),
       insuranceAmount: Math.round(insuranceAmount),
       totalPrice: Math.round(basePrice + insuranceAmount),
-      estimatedDays: deliveryDays[data.transportType as keyof typeof deliveryDays] || 5,
+      estimatedDays: deliveryDays[data.transportType],
       currency: "FCFA",
     };
 
@@ -182,7 +242,7 @@ Donne des recommandations pour optimiser le coût et la livraison.`
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : "Erreur de calcul" 
+        error: "Erreur de calcul" 
       }),
       { 
         status: 500,

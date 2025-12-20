@@ -51,56 +51,41 @@ export function DocumentUpload({
     setUploading(true);
 
     try {
-      // Get current user
+      // SECURITY FIX: Always require authentication before upload
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        // If no user yet, create a temp path that will be updated after signup
-        const tempId = crypto.randomUUID();
-        const fileExt = file.name.split(".").pop();
-        const fileName = `temp/${tempId}/${Date.now()}.${fileExt}`;
-
-        const { data, error } = await supabase.storage
-          .from("gp-documents")
-          .upload(fileName, file, {
-            cacheControl: "3600",
-            upsert: false,
-          });
-
-        if (error) throw error;
-
-        const { data: urlData } = supabase.storage
-          .from("gp-documents")
-          .getPublicUrl(fileName);
-
-        onUpload(urlData.publicUrl);
         toast({
-          title: "Document téléchargé",
-          description: "Le fichier sera associé à votre compte après inscription",
+          title: "Authentification requise",
+          description: "Veuillez vous connecter pour télécharger des documents",
+          variant: "destructive",
         });
-      } else {
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-
-        const { data, error } = await supabase.storage
-          .from("gp-documents")
-          .upload(fileName, file, {
-            cacheControl: "3600",
-            upsert: false,
-          });
-
-        if (error) throw error;
-
-        const { data: urlData } = supabase.storage
-          .from("gp-documents")
-          .getPublicUrl(fileName);
-
-        onUpload(urlData.publicUrl);
-        toast({
-          title: "Document téléchargé",
-          description: "Votre fichier a été enregistré avec succès",
-        });
+        setUploading(false);
+        return;
       }
+
+      // Authenticated upload - use user ID as folder
+      const fileExt = file.name.split(".").pop()?.toLowerCase();
+      const safeFileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+      const { data, error } = await supabase.storage
+        .from("gp-documents")
+        .upload(safeFileName, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from("gp-documents")
+        .getPublicUrl(safeFileName);
+
+      onUpload(urlData.publicUrl);
+      toast({
+        title: "Document téléchargé",
+        description: "Votre fichier a été enregistré avec succès",
+      });
     } catch (error: any) {
       console.error("Upload error:", error);
       toast({
