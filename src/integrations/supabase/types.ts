@@ -51,6 +51,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "conversations_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "conversations_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
@@ -138,6 +145,13 @@ export type Database = {
             columns: ["gp_id"]
             isOneToOne: false
             referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_offers_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -275,6 +289,13 @@ export type Database = {
             columns: ["gp_id"]
             isOneToOne: true
             referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_wallets_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: true
+            referencedRelation: "public_gp_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -447,6 +468,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "orders_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orders_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
@@ -571,7 +599,60 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_gp_profiles: {
+        Row: {
+          business_name: string | null
+          city: string | null
+          country_code: string | null
+          created_at: string | null
+          description: string | null
+          fleet_size: number | null
+          gp_type: Database["public"]["Enums"]["gp_type"] | null
+          id: string | null
+          international_destinations: string[] | null
+          rating: number | null
+          total_deliveries: number | null
+          total_reviews: number | null
+          verified_at: string | null
+          years_experience: number | null
+          zones_covered: string[] | null
+        }
+        Insert: {
+          business_name?: string | null
+          city?: string | null
+          country_code?: string | null
+          created_at?: string | null
+          description?: string | null
+          fleet_size?: number | null
+          gp_type?: Database["public"]["Enums"]["gp_type"] | null
+          id?: string | null
+          international_destinations?: string[] | null
+          rating?: number | null
+          total_deliveries?: number | null
+          total_reviews?: number | null
+          verified_at?: string | null
+          years_experience?: number | null
+          zones_covered?: string[] | null
+        }
+        Update: {
+          business_name?: string | null
+          city?: string | null
+          country_code?: string | null
+          created_at?: string | null
+          description?: string | null
+          fleet_size?: number | null
+          gp_type?: Database["public"]["Enums"]["gp_type"] | null
+          id?: string | null
+          international_destinations?: string[] | null
+          rating?: number | null
+          total_deliveries?: number | null
+          total_reviews?: number | null
+          verified_at?: string | null
+          years_experience?: number | null
+          zones_covered?: string[] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
