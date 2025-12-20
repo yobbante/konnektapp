@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { 
   Calculator, Package, MapPin, Scale, Ruler, ArrowRight, 
   Zap, Truck, Ship, Plane, Briefcase, Sparkles, Clock,
@@ -62,12 +62,29 @@ interface AIRecommendation {
 
 export default function PriceCalculator() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [result, setResult] = useState<{
     pricing: PricingResult;
     alternatives: Alternative[];
     aiRecommendations: AIRecommendation | null;
   } | null>(null);
+
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const [formData, setFormData] = useState({
     weight: "",
@@ -84,6 +101,17 @@ export default function PriceCalculator() {
   });
 
   const calculatePrice = async () => {
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      toast({
+        title: "Connexion requise",
+        description: "Veuillez vous connecter pour utiliser le calculateur de prix",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
     if (!formData.weight || parseFloat(formData.weight) <= 0) {
       toast({
         title: "Erreur",
