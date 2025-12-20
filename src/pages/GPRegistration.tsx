@@ -15,18 +15,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { TransportTypeCard } from "@/components/TransportTypeCard";
 import { DocumentUpload } from "@/components/DocumentUpload";
-import { ZoneSelector } from "@/components/ZoneSelector";
+import { ZoneSelectorSimple } from "@/components/ZoneSelectorSimple";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur";
 
 const transportOptions = [
-  { type: "express" as TransportType, title: "Express", description: "Livraison rapide de colis" },
-  { type: "routier" as TransportType, title: "Routier", description: "Transport terrestre par camion" },
-  { type: "maritime" as TransportType, title: "Maritime", description: "Fret maritime et conteneurs" },
-  { type: "aerien" as TransportType, title: "Aérien", description: "Transport par avion cargo" },
-  { type: "voyageur" as TransportType, title: "Voyageur", description: "Via capacité bagages voyageur" },
+  { type: "express" as TransportType, title: "Express", description: "Livraison rapide", icon: Zap, color: "bg-transport-express/10 border-transport-express/30 text-transport-express" },
+  { type: "routier" as TransportType, title: "Routier", description: "Transport terrestre", icon: Truck, color: "bg-transport-routier/10 border-transport-routier/30 text-transport-routier" },
+  { type: "maritime" as TransportType, title: "Maritime", description: "Fret maritime", icon: Ship, color: "bg-transport-maritime/10 border-transport-maritime/30 text-transport-maritime" },
+  { type: "aerien" as TransportType, title: "Aérien", description: "Cargo aérien", icon: Plane, color: "bg-transport-aerien/10 border-transport-aerien/30 text-transport-aerien" },
+  { type: "voyageur" as TransportType, title: "Voyageur", description: "Via bagages", icon: Briefcase, color: "bg-transport-voyageur/10 border-transport-voyageur/30 text-transport-voyageur" },
 ];
 
 const idTypes = [
@@ -373,129 +379,199 @@ export default function GPRegistration() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
             >
+              {/* Type de transport - Sélection en grille responsive */}
               <div className="bg-card rounded-2xl border border-border p-6 md:p-8 shadow-card mb-6">
                 <h2 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
                   <Building className="w-5 h-5 text-secondary" />
                   Type de transport *
                 </h2>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {transportOptions.map((option) => (
-                    <TransportTypeCard
-                      key={option.type}
-                      type={option.type}
-                      title={option.title}
-                      description={option.description}
-                      selected={businessData.gpType === option.type}
-                      onClick={() => setBusinessData({ ...businessData, gpType: option.type })}
-                    />
-                  ))}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                  {transportOptions.map((option) => {
+                    const IconComponent = option.icon;
+                    const isSelected = businessData.gpType === option.type;
+                    
+                    return (
+                      <motion.button
+                        key={option.type}
+                        type="button"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setBusinessData({ ...businessData, gpType: option.type })}
+                        className={`p-4 rounded-xl border-2 text-center transition-all ${
+                          isSelected
+                            ? "bg-secondary text-secondary-foreground border-secondary shadow-lg"
+                            : option.color + " hover:shadow-md"
+                        }`}
+                      >
+                        <IconComponent className={`w-8 h-8 mx-auto mb-2 ${isSelected ? 'text-secondary-foreground' : ''}`} />
+                        <p className="font-semibold text-sm">{option.title}</p>
+                        <p className={`text-xs mt-1 ${isSelected ? 'text-secondary-foreground/80' : 'text-muted-foreground'}`}>
+                          {option.description}
+                        </p>
+                      </motion.button>
+                    );
+                  })}
                 </div>
               </div>
 
-              <div className="bg-card rounded-2xl border border-border p-6 md:p-8 shadow-card">
-                <h2 className="text-xl font-semibold text-foreground mb-6">
-                  Informations professionnelles
-                </h2>
+              {/* Formulaire adapté au type de transport */}
+              {businessData.gpType && (
+                <div className="bg-card rounded-2xl border border-border p-6 md:p-8 shadow-card">
+                  <h2 className="text-xl font-semibold text-foreground mb-6">
+                    Informations {businessData.gpType === 'voyageur' ? 'voyageur' : 'professionnelles'}
+                  </h2>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="md:col-span-2 space-y-2">
-                    <Label htmlFor="businessName">Nom commercial / Entreprise *</Label>
-                    <Input
-                      id="businessName"
-                      placeholder="Ex: Mamadou Express Transport"
-                      value={businessData.businessName}
-                      onChange={(e) => setBusinessData({ ...businessData, businessName: e.target.value })}
-                    />
-                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2 space-y-2">
+                      <Label htmlFor="businessName">
+                        {businessData.gpType === 'voyageur' ? 'Votre nom / Pseudo *' : 'Nom commercial / Entreprise *'}
+                      </Label>
+                      <Input
+                        id="businessName"
+                        placeholder={businessData.gpType === 'voyageur' ? 'Ex: Moussa GP' : 'Ex: Mamadou Express Transport'}
+                        value={businessData.businessName}
+                        onChange={(e) => setBusinessData({ ...businessData, businessName: e.target.value })}
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="city">Ville *</Label>
-                    <Input
-                      id="city"
-                      placeholder="Ex: Dakar"
-                      value={businessData.city}
-                      onChange={(e) => setBusinessData({ ...businessData, city: e.target.value })}
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="city">Ville de base *</Label>
+                      <Input
+                        id="city"
+                        placeholder="Ex: Dakar"
+                        value={businessData.city}
+                        onChange={(e) => setBusinessData({ ...businessData, city: e.target.value })}
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="country">Pays</Label>
-                    <select
-                      id="country"
-                      className="w-full h-11 px-3 rounded-lg border border-input bg-background text-foreground"
-                      value={businessData.countryCode}
-                      onChange={(e) => setBusinessData({ ...businessData, countryCode: e.target.value })}
-                    >
-                      <option value="SN">🇸🇳 Sénégal</option>
-                      <option value="CI">🇨🇮 Côte d'Ivoire</option>
-                      <option value="ML">🇲🇱 Mali</option>
-                      <option value="BF">🇧🇫 Burkina Faso</option>
-                      <option value="GN">🇬🇳 Guinée</option>
-                    </select>
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="country">Pays</Label>
+                      <Select
+                        value={businessData.countryCode}
+                        onValueChange={(value) => setBusinessData({ ...businessData, countryCode: value })}
+                      >
+                        <SelectTrigger className="h-11">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background border border-border z-50">
+                          <SelectItem value="SN">🇸🇳 Sénégal</SelectItem>
+                          <SelectItem value="CI">🇨🇮 Côte d'Ivoire</SelectItem>
+                          <SelectItem value="ML">🇲🇱 Mali</SelectItem>
+                          <SelectItem value="BF">🇧🇫 Burkina Faso</SelectItem>
+                          <SelectItem value="GN">🇬🇳 Guinée</SelectItem>
+                          <SelectItem value="CM">🇨🇲 Cameroun</SelectItem>
+                          <SelectItem value="TG">🇹🇬 Togo</SelectItem>
+                          <SelectItem value="BJ">🇧🇯 Bénin</SelectItem>
+                          <SelectItem value="GH">🇬🇭 Ghana</SelectItem>
+                          <SelectItem value="NG">🇳🇬 Nigeria</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="address">Adresse</Label>
-                    <Input
-                      id="address"
-                      placeholder="Adresse de votre activité"
-                      value={businessData.address}
-                      onChange={(e) => setBusinessData({ ...businessData, address: e.target.value })}
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="whatsapp">WhatsApp (recommandé)</Label>
+                      <Input
+                        id="whatsapp"
+                        placeholder="+221 77 123 45 67"
+                        value={businessData.whatsapp}
+                        onChange={(e) => setBusinessData({ ...businessData, whatsapp: e.target.value })}
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="whatsapp">WhatsApp</Label>
-                    <Input
-                      id="whatsapp"
-                      placeholder="+221 77 123 45 67"
-                      value={businessData.whatsapp}
-                      onChange={(e) => setBusinessData({ ...businessData, whatsapp: e.target.value })}
-                    />
-                  </div>
+                    {/* Champs spécifiques selon le type */}
+                    {businessData.gpType !== 'voyageur' && (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="experience">Années d'expérience</Label>
+                          <Select
+                            value={businessData.yearsExperience}
+                            onValueChange={(value) => setBusinessData({ ...businessData, yearsExperience: value })}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Sélectionnez" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-background border border-border z-50">
+                              <SelectItem value="1">Moins d'1 an</SelectItem>
+                              <SelectItem value="2">1-2 ans</SelectItem>
+                              <SelectItem value="5">3-5 ans</SelectItem>
+                              <SelectItem value="10">5-10 ans</SelectItem>
+                              <SelectItem value="15">Plus de 10 ans</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="experience">Années d'expérience</Label>
-                    <Input
-                      id="experience"
-                      type="number"
-                      placeholder="Ex: 5"
-                      value={businessData.yearsExperience}
-                      onChange={(e) => setBusinessData({ ...businessData, yearsExperience: e.target.value })}
-                    />
-                  </div>
+                        {(businessData.gpType === 'routier' || businessData.gpType === 'express') && (
+                          <div className="space-y-2">
+                            <Label htmlFor="fleetSize">Nombre de véhicules</Label>
+                            <Select
+                              value={businessData.fleetSize}
+                              onValueChange={(value) => setBusinessData({ ...businessData, fleetSize: value })}
+                            >
+                              <SelectTrigger className="h-11">
+                                <SelectValue placeholder="Sélectionnez" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background border border-border z-50">
+                                <SelectItem value="1">1 véhicule</SelectItem>
+                                <SelectItem value="3">2-3 véhicules</SelectItem>
+                                <SelectItem value="5">4-5 véhicules</SelectItem>
+                                <SelectItem value="10">6-10 véhicules</SelectItem>
+                                <SelectItem value="20">Plus de 10 véhicules</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                      </>
+                    )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="fleetSize">Taille de la flotte</Label>
-                    <Input
-                      id="fleetSize"
-                      type="number"
-                      placeholder="Nombre de véhicules"
-                      value={businessData.fleetSize}
-                      onChange={(e) => setBusinessData({ ...businessData, fleetSize: e.target.value })}
-                    />
-                  </div>
+                    {businessData.gpType === 'voyageur' && (
+                      <div className="space-y-2">
+                        <Label>Fréquence des voyages</Label>
+                        <Select
+                          value={businessData.yearsExperience}
+                          onValueChange={(value) => setBusinessData({ ...businessData, yearsExperience: value })}
+                        >
+                          <SelectTrigger className="h-11">
+                            <SelectValue placeholder="Sélectionnez" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background border border-border z-50">
+                            <SelectItem value="1">Occasionnel (1-2x/an)</SelectItem>
+                            <SelectItem value="3">Régulier (3-6x/an)</SelectItem>
+                            <SelectItem value="6">Fréquent (Mensuel)</SelectItem>
+                            <SelectItem value="12">Très fréquent (Hebdo)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
 
-                  <div className="md:col-span-2 space-y-2">
-                    <Label htmlFor="description">Description de votre activité</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Décrivez votre activité, vos spécialités, vos atouts..."
-                      rows={4}
-                      value={businessData.description}
-                      onChange={(e) => setBusinessData({ ...businessData, description: e.target.value })}
-                    />
+                    <div className="md:col-span-2 space-y-2">
+                      <Label htmlFor="description">
+                        {businessData.gpType === 'voyageur' 
+                          ? 'Présentez-vous en quelques mots'
+                          : 'Description de votre activité'
+                        }
+                      </Label>
+                      <Textarea
+                        id="description"
+                        placeholder={businessData.gpType === 'voyageur'
+                          ? 'Ex: Je voyage régulièrement entre Dakar et Paris...'
+                          : 'Décrivez votre activité, vos spécialités, vos atouts...'
+                        }
+                        rows={3}
+                        value={businessData.description}
+                        onChange={(e) => setBusinessData({ ...businessData, description: e.target.value })}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <div className="flex justify-between mt-8">
                 <Button variant="ghost" onClick={handleBack}>
                   <ArrowLeft className="w-5 h-5" />
                   Retour
                 </Button>
-                <Button variant="gold" size="lg" onClick={handleNextWithValidation}>
+                <Button variant="gold" size="lg" onClick={handleNextWithValidation} disabled={!businessData.gpType}>
                   Continuer
                   <ArrowRight className="w-5 h-5" />
                 </Button>
@@ -607,11 +683,12 @@ export default function GPRegistration() {
                 Sélectionnez les zones géographiques que vous desservez.
               </p>
 
-              <ZoneSelector
+              <ZoneSelectorSimple
                 selectedZones={zones}
                 onZonesChange={setZones}
                 selectedInternational={internationalDestinations}
                 onInternationalChange={setInternationalDestinations}
+                transportType={businessData.gpType}
               />
 
               <div className="flex justify-between mt-8">
