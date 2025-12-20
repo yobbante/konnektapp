@@ -7,7 +7,7 @@ const navItems = [
   { href: "/offres", icon: Search, label: "Offres" },
   { href: "/demande", icon: Package, label: "Envoyer" },
   { href: "/messages", icon: MessageCircle, label: "Messages" },
-  { href: "/tracking", icon: Search, label: "Suivi" },
+  { href: "/profil", icon: User, label: "Profil" },
 ];
 
 export function MobileNav() {
