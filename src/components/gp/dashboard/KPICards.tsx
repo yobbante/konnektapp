@@ -1,57 +1,82 @@
 import { motion } from "framer-motion";
-import { Package, CheckCircle, TrendingUp, Scale, Clock, Wallet } from "lucide-react";
+import { Package, CheckCircle, TrendingUp, Scale, Wallet, Users } from "lucide-react";
 
 interface KPICardsProps {
   stats: {
-    todayAvailable: number;
-    acceptedToday: number;
-    completedToday: number;
-    todayRevenue: number;
-    weekRevenue: number;
-    totalWeight: number;
+    missionsInProgress: number;
+    missionsCompleted: number;
+    totalVolume: number;
+    totalRevenue: number;
+    activeClients: number;
   };
+  gpType?: string;
 }
 
-export function KPICards({ stats }: KPICardsProps) {
+function getVolumeDisplay(volume: number, gpType?: string): { value: string; unit: string } {
+  switch (gpType) {
+    case 'maritime':
+    case 'routier':
+      // Convert to tonnes for fret
+      const tonnes = volume / 1000;
+      return { value: tonnes >= 1 ? tonnes.toFixed(1) : volume.toFixed(0), unit: tonnes >= 1 ? 't' : 'kg' };
+    case 'aerien':
+      // Use m³ for air freight
+      const m3 = volume / 100; // Approximate conversion
+      return { value: m3.toFixed(1), unit: 'm³' };
+    default:
+      // kg for voyageur, express, agence
+      return { value: volume >= 1000 ? (volume / 1000).toFixed(1) : volume.toFixed(0), unit: volume >= 1000 ? 't' : 'kg' };
+  }
+}
+
+export function KPICards({ stats, gpType }: KPICardsProps) {
+  const volumeDisplay = getVolumeDisplay(stats.totalVolume, gpType);
+
   const kpis = [
     {
-      label: "Courses dispo.",
-      value: stats.todayAvailable,
+      label: "En cours",
+      value: stats.missionsInProgress,
       icon: Package,
       color: "bg-secondary/10 text-secondary",
-      highlight: stats.todayAvailable > 0,
-    },
-    {
-      label: "Acceptées",
-      value: stats.acceptedToday,
-      icon: CheckCircle,
-      color: "bg-primary/10 text-primary",
+      highlight: stats.missionsInProgress > 0,
     },
     {
       label: "Terminées",
-      value: stats.completedToday,
-      icon: TrendingUp,
+      value: stats.missionsCompleted,
+      icon: CheckCircle,
       color: "bg-success/10 text-success",
     },
     {
-      label: "Revenus jour",
-      value: `${stats.todayRevenue.toLocaleString()}`,
+      label: "Volume total",
+      value: volumeDisplay.value,
+      suffix: volumeDisplay.unit,
+      icon: Scale,
+      color: "bg-primary/10 text-primary",
+    },
+    {
+      label: "Revenus",
+      value: stats.totalRevenue >= 1000000 
+        ? `${(stats.totalRevenue / 1000000).toFixed(1)}M` 
+        : stats.totalRevenue >= 1000 
+          ? `${(stats.totalRevenue / 1000).toFixed(0)}k`
+          : stats.totalRevenue.toLocaleString(),
       suffix: "F",
       icon: Wallet,
       color: "bg-warning/10 text-warning",
     },
     {
-      label: "Revenus sem.",
-      value: `${stats.weekRevenue.toLocaleString()}`,
-      suffix: "F",
-      icon: TrendingUp,
+      label: "Clients actifs",
+      value: stats.activeClients,
+      icon: Users,
       color: "bg-accent/10 text-accent",
     },
     {
-      label: "Poids total",
-      value: `${stats.totalWeight.toFixed(0)}`,
-      suffix: "kg",
-      icon: Scale,
+      label: "Performance",
+      value: stats.missionsCompleted > 0 
+        ? Math.round((stats.missionsCompleted / (stats.missionsCompleted + stats.missionsInProgress)) * 100) 
+        : 0,
+      suffix: "%",
+      icon: TrendingUp,
       color: "bg-muted text-foreground",
     },
   ];

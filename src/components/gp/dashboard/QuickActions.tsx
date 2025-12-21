@@ -1,43 +1,43 @@
 import { motion } from "framer-motion";
-import { Search, Package, BarChart3, Coins } from "lucide-react";
+import { Search, Package, BarChart3, Coins, UserCog, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface QuickActionsProps {
-  onViewCourses: () => void;
-  onViewDeliveries: () => void;
-  onViewPerformance: () => void;
-  onViewEarnings: () => void;
+  onUpdateProfile: () => void;
+  onViewMissions: () => void;
+  onViewHistory: () => void;
+  onViewStats: () => void;
 }
 
 export function QuickActions({ 
-  onViewCourses, 
-  onViewDeliveries, 
-  onViewPerformance, 
-  onViewEarnings 
+  onUpdateProfile, 
+  onViewMissions, 
+  onViewHistory, 
+  onViewStats 
 }: QuickActionsProps) {
   const actions = [
     {
-      label: "Courses disponibles",
-      icon: Search,
-      onClick: onViewCourses,
+      label: "Mon profil",
+      icon: UserCog,
+      onClick: onUpdateProfile,
+      variant: "outline" as const,
+    },
+    {
+      label: "Missions en cours",
+      icon: Package,
+      onClick: onViewMissions,
       variant: "default" as const,
     },
     {
-      label: "Mes livraisons",
-      icon: Package,
-      onClick: onViewDeliveries,
+      label: "Historique",
+      icon: History,
+      onClick: onViewHistory,
       variant: "outline" as const,
     },
     {
-      label: "Performances",
+      label: "Statistiques",
       icon: BarChart3,
-      onClick: onViewPerformance,
-      variant: "outline" as const,
-    },
-    {
-      label: "Mes gains",
-      icon: Coins,
-      onClick: onViewEarnings,
+      onClick: onViewStats,
       variant: "gold" as const,
     },
   ];
@@ -46,7 +46,7 @@ export function QuickActions({
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
+      transition={{ delay: 0.15 }}
       className="grid grid-cols-2 gap-2"
     >
       {actions.map((action, index) => (

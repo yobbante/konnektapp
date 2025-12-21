@@ -15,7 +15,8 @@ import { GPMobileNav } from "@/components/layout/MobileNav";
 import { GPCreateOfferDialog } from "@/components/gp/GPCreateOfferDialog";
 import { KPICards } from "@/components/gp/dashboard/KPICards";
 import { QuickActions } from "@/components/gp/dashboard/QuickActions";
-import { TrustBadge } from "@/components/gp/dashboard/TrustBadge";
+import { BadgeSystem } from "@/components/gp/dashboard/BadgeSystem";
+import { ProfileCompletionGauge } from "@/components/gp/dashboard/ProfileCompletionGauge";
 import { RecentHistory } from "@/components/gp/dashboard/RecentHistory";
 import { SmartNotifications } from "@/components/gp/dashboard/SmartNotifications";
 import { 
@@ -35,6 +36,10 @@ interface GPProfile {
   rating: number;
   total_deliveries: number;
   zones_covered?: string[];
+  phone?: string;
+  id_document_url?: string;
+  business_registration_url?: string;
+  transport_license_url?: string;
 }
 
 interface WalletData {
@@ -152,13 +157,15 @@ export default function GPDashboard() {
   weekStart.setDate(weekStart.getDate() - 7);
   const weekOrders = orders.filter(o => new Date(o.created_at) >= weekStart);
 
+  // Calculate new KPI stats
+  const uniqueClients = [...new Set(orders.map(o => o.client_id))];
+  
   const kpiStats = {
-    todayAvailable: offers.filter(o => o.status === 'active').length,
-    acceptedToday: todayOrders.filter(o => ['accepted', 'collected', 'in_transit'].includes(o.status)).length,
-    completedToday: todayOrders.filter(o => o.status === 'delivered').length,
-    todayRevenue: todayOrders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.total_price || 0), 0),
-    weekRevenue: weekOrders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.total_price || 0), 0),
-    totalWeight: orders.reduce((sum, o) => sum + (o.weight || 0), 0),
+    missionsInProgress: pendingUpdateOrders.length,
+    missionsCompleted: orders.filter(o => o.status === 'delivered').length,
+    totalVolume: orders.reduce((sum, o) => sum + (o.weight || 0), 0),
+    totalRevenue: orders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.total_price || 0), 0),
+    activeClients: uniqueClients.length,
   };
 
   const stats = {
@@ -219,6 +226,7 @@ export default function GPDashboard() {
           onSignOut={handleSignOut}
           onViewOrders={() => setActiveTab("orders")}
           onViewWallet={() => setActiveTab("wallet")}
+          onViewProfile={() => navigate("/gp/profile")}
         />
       )}
 
@@ -269,13 +277,16 @@ function ModernOverviewTab({
   onCreateOffer, 
   onSignOut, 
   onViewOrders,
-  onViewWallet 
+  onViewWallet,
+  onViewProfile
 }: any) {
+  const navigate = useNavigate();
+
   return (
     <div className="px-4 py-4 space-y-4">
       {/* Smart Notifications */}
       <SmartNotifications 
-        pendingCourses={pendingOrders}
+        pendingMissions={pendingOrders}
         lastPayment={wallet?.total_earned > 0 ? { amount: wallet.balance, date: "Récemment" } : undefined}
         highDemandZone={gpProfile.zones_covered?.[0]}
       />
@@ -297,22 +308,31 @@ function ModernOverviewTab({
         </Button>
       </motion.div>
 
+      {/* Profile Completion Gauge */}
+      <ProfileCompletionGauge 
+        profile={gpProfile}
+        onCompleteProfile={onViewProfile}
+      />
+
       {/* KPI Cards Grid */}
-      <KPICards stats={kpiStats} />
+      <KPICards stats={kpiStats} gpType={gpProfile.gp_type} />
 
       {/* Quick Actions */}
       <QuickActions 
-        onViewCourses={onCreateOffer}
-        onViewDeliveries={onViewOrders}
-        onViewPerformance={onViewOrders}
-        onViewEarnings={onViewWallet}
+        onUpdateProfile={onViewProfile}
+        onViewMissions={onViewOrders}
+        onViewHistory={onViewOrders}
+        onViewStats={onViewWallet}
       />
 
-      {/* Trust & Motivation Badge */}
-      <TrustBadge 
+      {/* Badge System */}
+      <BadgeSystem 
+        isVerified={gpProfile.status === 'verified'}
         rating={gpProfile.rating || 0}
         totalDeliveries={gpProfile.total_deliveries || 0}
-        isVerified={gpProfile.status === 'verified'}
+        totalVolume={kpiStats.totalVolume}
+        isPremium={gpProfile.subscription === 'premium'}
+        gpType={gpProfile.gp_type}
       />
 
       {/* Recent History */}
