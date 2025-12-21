@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   Package, Truck, ArrowRight, Zap, Ship, Plane, 
-  MapPin, Star, Shield, Clock, Briefcase, Building2, Filter, Scale
+  MapPin, Star, Shield, Clock, Briefcase, Building2, Filter, Scale, Weight
 } from "lucide-react";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -40,7 +40,8 @@ function IndexContent() {
         .from("gp_offers")
         .select(`
           *,
-          gp_profiles!inner(business_name, rating)
+          gp_profiles!inner(business_name, rating),
+          vehicles(id, name, vehicle_type, max_weight_kg)
         `)
         .eq("status", "active")
         .gte("departure_date", new Date().toISOString())
@@ -371,7 +372,7 @@ function OfferCard({ offer, index }: { offer: any; index: number }) {
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">{offer.gp_profiles?.business_name || "Transporteur"}</span>
+            <span className="text-xs text-muted-foreground">{offer.gp_profiles?.business_name || "Transporteur"}</span>
               {offer.gp_profiles?.rating > 0 && (
                 <div className="flex items-center gap-1">
                   <Star className="w-3 h-3 text-warning fill-warning" />
@@ -381,6 +382,22 @@ function OfferCard({ offer, index }: { offer: any; index: number }) {
             </div>
             <span className="font-bold text-primary">{offer.price_per_kg} FCFA/kg</span>
           </div>
+          {/* Vehicle & Capacity Info */}
+          {(offer.vehicles || offer.available_capacity) && (
+            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border text-xs text-muted-foreground">
+              {offer.vehicles && (
+                <div className="flex items-center gap-1">
+                  <Truck className="w-3 h-3" />
+                  <span>{offer.vehicles.name || offer.vehicles.vehicle_type}</span>
+                </div>
+              )}
+              {offer.available_capacity && (
+                <Badge variant="outline" className="text-xs ml-auto">
+                  {offer.available_capacity} kg dispo
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
       </Link>
     </motion.div>

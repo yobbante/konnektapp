@@ -248,18 +248,47 @@ export default function TransporterProfile() {
               </div>
             </div>
           </div>
-
-          {/* Status */}
-          <div className="mt-4 flex items-center gap-2 flex-wrap">
-            <Badge variant={profile.gp_type as any}>
-              <GPIcon className="w-3 h-3 mr-1" />
-              {gpTypeLabels[profile.gp_type]}
-            </Badge>
-            <Badge variant={profile.status === 'verified' ? 'success' : profile.status === 'pending' ? 'pending' : 'destructive'}>
-              {profile.status === 'verified' ? 'Actif' : profile.status === 'pending' ? 'En attente' : 'Suspendu'}
-            </Badge>
-          </div>
         </motion.div>
+
+        {/* Status Card */}
+        <Card className={profile.status === 'verified' ? 'border-success/30 bg-success/5' : 'border-warning/30 bg-warning/5'}>
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  profile.status === 'verified' ? 'bg-success/10' : 'bg-warning/10'
+                }`}>
+                  <Shield className={`w-5 h-5 ${profile.status === 'verified' ? 'text-success' : 'text-warning'}`} />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">
+                    {profile.status === 'verified' ? 'Profil vérifié' : 
+                     profile.status === 'pending' ? 'En attente de vérification' : 
+                     profile.status === 'rejected' ? 'Profil rejeté' : 'Profil suspendu'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {profile.status === 'verified' ? `Vérifié le ${new Date(profile.verified_at || '').toLocaleDateString('fr-FR')}` : 
+                     profile.status === 'pending' ? 'Votre profil est en cours de révision par notre équipe' :
+                     'Contactez le support pour plus d\'informations'}
+                  </p>
+                </div>
+              </div>
+              <Badge variant={profile.status === 'verified' ? 'success' : profile.status === 'pending' ? 'pending' : 'destructive'}>
+                {profile.status === 'verified' ? 'Vérifié' : 
+                 profile.status === 'pending' ? 'En attente' : 
+                 profile.status === 'rejected' ? 'Rejeté' : 'Suspendu'}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Type Badge */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge variant={profile.gp_type as any}>
+            <GPIcon className="w-3 h-3 mr-1" />
+            {gpTypeLabels[profile.gp_type]}
+          </Badge>
+        </div>
 
         {/* Edit/Save Toggle */}
         <div className="flex justify-end gap-2">
