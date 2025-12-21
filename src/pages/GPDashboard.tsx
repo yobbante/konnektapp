@@ -236,6 +236,7 @@ export default function GPDashboard() {
           onViewOrders={() => setActiveTab("orders")}
           onViewWallet={() => setActiveTab("wallet")}
           onViewProfile={() => navigate("/gp/profile")}
+          onRefresh={checkAuthAndLoadData}
         />
       )}
 
@@ -289,7 +290,8 @@ function ModernOverviewTab({
   onSignOut, 
   onViewOrders,
   onViewWallet,
-  onViewProfile
+  onViewProfile,
+  onRefresh,
 }: any) {
   const navigate = useNavigate();
   const [showMoreOptions, setShowMoreOptions] = useState(false);
@@ -329,6 +331,7 @@ function ModernOverviewTab({
       <RecentHistory 
         orders={orders}
         onViewAll={onViewOrders}
+        onRefresh={onRefresh}
       />
 
       {/* Smart Notifications */}

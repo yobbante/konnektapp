@@ -7,6 +7,7 @@ interface UserRoleState {
   hasAdminAccess: boolean;
   isGP: boolean;
   isAuthenticated: boolean;
+  isProfileComplete: boolean;
   loading: boolean;
   userId: string | null;
 }
@@ -18,6 +19,7 @@ export function useUserRole() {
     hasAdminAccess: false,
     isGP: false,
     isAuthenticated: false,
+    isProfileComplete: false,
     loading: true,
     userId: null,
   });
@@ -34,6 +36,7 @@ export function useUserRole() {
             hasAdminAccess: false,
             isGP: false,
             isAuthenticated: false,
+            isProfileComplete: false,
             loading: false,
             userId: null,
           });
@@ -53,9 +56,17 @@ export function useUserRole() {
         // Check if user is GP
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("is_gp")
+          .select("is_gp, full_name, email, phone, city")
           .eq("user_id", user.id)
           .maybeSingle();
+
+        // Check profile completeness
+        const isProfileComplete = !!(
+          profileData?.full_name &&
+          profileData?.email &&
+          profileData?.phone &&
+          profileData?.city
+        );
 
         setState({
           isAdmin,
@@ -63,6 +74,7 @@ export function useUserRole() {
           hasAdminAccess: isAdmin || isModerator,
           isGP: profileData?.is_gp || false,
           isAuthenticated: true,
+          isProfileComplete,
           loading: false,
           userId: user.id,
         });
@@ -74,6 +86,7 @@ export function useUserRole() {
           hasAdminAccess: false,
           isGP: false,
           isAuthenticated: false,
+          isProfileComplete: false,
           loading: false,
           userId: null,
         });
