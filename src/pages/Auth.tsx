@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, User, Phone, ArrowRight, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useSmartRedirect } from "@/hooks/useSmartRedirect";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Button } from "@/components/ui/button";
@@ -13,8 +14,10 @@ import { Label } from "@/components/ui/label";
 export default function AuthPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { detectUserRoleAndRedirect } = useSmartRedirect();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -23,6 +26,18 @@ export default function AuthPage() {
     fullName: "",
     phone: "",
   });
+
+  // Vérifier si l'utilisateur est déjà connecté
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await detectUserRoleAndRedirect(user.id);
+      }
+      setCheckingSession(false);
+    };
+    checkExistingSession();
+  }, [detectUserRoleAndRedirect]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,10 +54,13 @@ export default function AuthPage() {
 
         toast({
           title: "Connexion réussie",
-          description: "Bienvenue sur Yobbanté-GP !",
+          description: "Redirection en cours...",
         });
 
-        navigate("/");
+        // Redirection intelligente basée sur le rôle
+        if (data.user) {
+          await detectUserRoleAndRedirect(data.user.id);
+        }
       } else {
         if (!formData.fullName || !formData.phone) {
           toast({
@@ -75,22 +93,44 @@ export default function AuthPage() {
 
         toast({
           title: "Inscription réussie",
-          description: "Bienvenue sur Yobbanté-GP !",
+          description: "Redirection en cours...",
         });
 
-        navigate("/");
+        // Redirection intelligente pour les nouveaux utilisateurs (client par défaut)
+        if (data.user) {
+          await detectUserRoleAndRedirect(data.user.id);
+        }
       }
     } catch (error: any) {
       console.error("Auth error:", error);
+      
+      // Messages d'erreur personnalisés
+      let errorMessage = "Une erreur est survenue";
+      if (error.message?.includes("already registered")) {
+        errorMessage = "Cet email est déjà utilisé. Essayez de vous connecter.";
+      } else if (error.message?.includes("Invalid login credentials")) {
+        errorMessage = "Email ou mot de passe incorrect";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Erreur",
-        description: error.message || "Une erreur est survenue",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-safe">
