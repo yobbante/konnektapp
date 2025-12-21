@@ -8,6 +8,7 @@ import {
   ArrowLeft
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -62,10 +63,58 @@ export default function GPDashboard() {
   const [orders, setOrders] = useState<any[]>([]);
   const [showCreateOffer, setShowCreateOffer] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const { notify } = useNotificationSound();
 
   useEffect(() => {
     checkAuthAndLoadData();
   }, []);
+
+  // Realtime subscription for new orders
+  useEffect(() => {
+    if (!gpProfile?.id) return;
+
+    const channel = supabase
+      .channel('gp-orders-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders',
+          filter: `gp_id=eq.${gpProfile.id}`
+        },
+        (payload) => {
+          const newOrder = payload.new;
+          setOrders(prev => [newOrder, ...prev]);
+          
+          // Notify GP of new order
+          notify({ sound: true, vibrate: [200, 100, 200] });
+          toast({
+            title: "🚀 Nouvelle mission !",
+            description: `${newOrder.origin_city} → ${newOrder.destination_city}`,
+            duration: 10000,
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `gp_id=eq.${gpProfile.id}`
+        },
+        (payload) => {
+          const updatedOrder = payload.new;
+          setOrders(prev => prev.map(o => o.id === updatedOrder.id ? updatedOrder : o));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [gpProfile?.id, notify, toast]);
 
   const checkAuthAndLoadData = async () => {
     try {

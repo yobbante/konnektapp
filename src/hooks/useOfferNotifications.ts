@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNotificationSound } from "@/hooks/useNotificationSound";
 import type { AdvancedFiltersState } from "@/components/offers/AdvancedFilters";
 
 interface UseOfferNotificationsProps {
@@ -17,6 +18,7 @@ export function useOfferNotifications({
   enabled 
 }: UseOfferNotificationsProps) {
   const { toast } = useToast();
+  const { notify } = useNotificationSound();
   const lastNotifiedRef = useRef<Set<string>>(new Set());
 
   const matchesFilters = useCallback((offer: any) => {
@@ -90,12 +92,8 @@ export function useOfferNotifications({
               duration: 10000,
             });
 
-            // Play notification sound if available
-            try {
-              const audio = new Audio('/notification.mp3');
-              audio.volume = 0.3;
-              audio.play().catch(() => {});
-            } catch {}
+            // Play notification sound and vibrate
+            notify({ sound: true, vibrate: [100, 50, 100] });
           }
         }
       )
