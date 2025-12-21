@@ -2,23 +2,23 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
-  Package, Truck, Search, ArrowRight, Zap, Ship, Plane, 
-  MapPin, Star, Shield, Clock, Briefcase, Sparkles
+  Package, Truck, ArrowRight, Zap, Ship, Plane, 
+  MapPin, Star, Shield, Clock, Briefcase, Building2
 } from "lucide-react";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
-type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur";
+type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence";
 
 const transportTypes = [
+  { type: "voyageur" as TransportType, icon: Briefcase, label: "Voyageur", color: "bg-transport-voyageur/10 text-transport-voyageur border-transport-voyageur/20" },
+  { type: "agence" as TransportType, icon: Building2, label: "Agence", color: "bg-transport-agence/10 text-transport-agence border-transport-agence/20" },
   { type: "express" as TransportType, icon: Zap, label: "Express", color: "bg-transport-express/10 text-transport-express border-transport-express/20" },
   { type: "routier" as TransportType, icon: Truck, label: "Routier", color: "bg-transport-routier/10 text-transport-routier border-transport-routier/20" },
   { type: "maritime" as TransportType, icon: Ship, label: "Maritime", color: "bg-transport-maritime/10 text-transport-maritime border-transport-maritime/20" },
   { type: "aerien" as TransportType, icon: Plane, label: "Aérien", color: "bg-transport-aerien/10 text-transport-aerien border-transport-aerien/20" },
-  { type: "voyageur" as TransportType, icon: Briefcase, label: "Voyageur", color: "bg-transport-voyageur/10 text-transport-voyageur border-transport-voyageur/20" },
 ];
 
 const allOffers = [
@@ -28,21 +28,17 @@ const allOffers = [
   { id: "4", origin: "Dakar", destination: "Casablanca", price: 12000, type: "maritime" as TransportType, gpName: "Atlantic Freight", rating: 4.6 },
   { id: "5", origin: "Conakry", destination: "Dakar", price: 4500, type: "voyageur" as TransportType, gpName: "Moussa GP", rating: 4.5 },
   { id: "6", origin: "Lagos", destination: "Accra", price: 7500, type: "routier" as TransportType, gpName: "West Africa Trans", rating: 4.6 },
+  { id: "7", origin: "Dakar", destination: "Marseille", price: 9000, type: "agence" as TransportType, gpName: "Senegal Express", rating: 4.8 },
 ];
 
 export default function Index() {
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<TransportType | null>(null);
 
   const filteredOffers = allOffers.filter((offer) => {
-    const matchesType = !selectedType || offer.type === selectedType;
-    const matchesSearch = !searchQuery || 
-      offer.origin.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      offer.destination.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesType && matchesSearch;
+    return !selectedType || offer.type === selectedType;
   });
 
-  const displayedOffers = selectedType || searchQuery ? filteredOffers : filteredOffers.slice(0, 3);
+  const displayedOffers = selectedType ? filteredOffers : filteredOffers.slice(0, 4);
 
   return (
     <div className="min-h-screen bg-background pb-safe">
@@ -69,28 +65,28 @@ export default function Index() {
           </p>
 
           {/* Quick Actions */}
-          <div className="flex flex-col gap-3 mb-5">
-            <Link to="/demande">
+          <div className="flex flex-col sm:flex-row gap-3 mb-5">
+            <Link to="/demande" className="flex-1">
               <Button variant="default" size="lg" className="w-full">
                 <Package className="w-5 h-5" />
                 Envoyer un colis
                 <ArrowRight className="w-5 h-5" />
               </Button>
             </Link>
-            <Link to="/calculateur">
+            <Link to="/offres" className="flex-1">
               <Button variant="outline" size="lg" className="w-full">
-                <Sparkles className="w-5 h-5" />
-                Calculateur IA de prix
+                <Truck className="w-5 h-5" />
+                Voir les offres
               </Button>
             </Link>
           </div>
         </motion.div>
       </section>
 
-      {/* Transport Types - Interactive Filter */}
+      {/* Main Content - Responsive Layout: Selector Left, Offers Right */}
       <section className="px-4 py-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-foreground text-lg">Voir les offres</h2>
+          <h2 className="font-semibold text-foreground text-lg">Offres disponibles</h2>
           {selectedType && (
             <button
               onClick={() => setSelectedType(null)}
@@ -100,101 +96,106 @@ export default function Index() {
             </button>
           )}
         </div>
-        
-        {/* Grid responsive pour les types de transport */}
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 md:gap-3">
-          {transportTypes.map((type, index) => (
-            <motion.button 
-              key={type.label}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.05 }}
-              onClick={() => setSelectedType(selectedType === type.type ? null : type.type)}
-              className={`flex flex-col items-center justify-center p-3 md:p-4 rounded-2xl border-2 transition-all active:scale-95 ${
-                selectedType === type.type 
-                  ? "bg-primary text-primary-foreground border-primary shadow-lg" 
-                  : `${type.color} hover:shadow-md`
-              }`}
-            >
-              <type.icon className={`w-6 h-6 md:w-7 md:h-7 mb-1.5 ${
-                selectedType === type.type ? 'text-primary-foreground' : ''
-              }`} />
-              <span className="text-xs md:text-sm font-medium text-center leading-tight">{type.label}</span>
-            </motion.button>
-          ))}
-        </div>
-      </section>
 
-      {/* Filtered Offers List */}
-      <section className="px-4 py-4">
-        {(selectedType || searchQuery) && (
-          <p className="text-sm text-muted-foreground mb-3">
-            {filteredOffers.length} offre{filteredOffers.length > 1 ? "s" : ""} 
-            {selectedType && ` ${transportTypes.find(t => t.type === selectedType)?.label}`}
-          </p>
-        )}
+        {/* Responsive Grid: On desktop, selector left + offers right */}
+        <div className="flex flex-col lg:flex-row lg:gap-6">
+          
+          {/* Transport Type Selector - Left on desktop, top on mobile */}
+          <div className="lg:w-56 lg:flex-shrink-0 mb-4 lg:mb-0">
+            <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0 -mx-1 px-1 lg:mx-0 lg:px-0">
+              {transportTypes.map((type, index) => (
+                <motion.button 
+                  key={type.label}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.03 }}
+                  onClick={() => setSelectedType(selectedType === type.type ? null : type.type)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all active:scale-95 whitespace-nowrap flex-shrink-0 lg:flex-shrink lg:w-full ${
+                    selectedType === type.type 
+                      ? "bg-primary text-primary-foreground border-primary shadow-lg" 
+                      : `${type.color} hover:shadow-md bg-card`
+                  }`}
+                >
+                  <type.icon className={`w-5 h-5 flex-shrink-0 ${
+                    selectedType === type.type ? 'text-primary-foreground' : ''
+                  }`} />
+                  <span className="text-sm font-medium">{type.label}</span>
+                </motion.button>
+              ))}
+            </div>
+          </div>
+          
+          {/* Offers List - Right on desktop */}
+          <div className="flex-1">
+            {selectedType && (
+              <p className="text-sm text-muted-foreground mb-3">
+                {filteredOffers.length} offre{filteredOffers.length > 1 ? "s" : ""} {transportTypes.find(t => t.type === selectedType)?.label}
+              </p>
+            )}
 
-        <div className="space-y-3">
-          {displayedOffers.map((offer, index) => (
-            <motion.div
-              key={offer.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-            >
-              <Link to={`/offres/${offer.id}`}>
-                <div className="mobile-card active:scale-[0.98] transition-transform">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-primary" />
-                      <span className="font-medium text-sm">{offer.origin}</span>
-                      <ArrowRight className="w-3 h-3 text-muted-foreground" />
-                      <span className="font-medium text-sm">{offer.destination}</span>
-                    </div>
-                    <Badge variant={offer.type as any} className="text-xs">
-                      {offer.type}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">{offer.gpName}</span>
-                      <div className="flex items-center gap-1">
-                        <Star className="w-3 h-3 text-warning fill-warning" />
-                        <span className="text-xs">{offer.rating}</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {displayedOffers.map((offer, index) => (
+                <motion.div
+                  key={offer.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <Link to={`/offres/${offer.id}`}>
+                    <div className="mobile-card active:scale-[0.98] transition-transform h-full">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-primary" />
+                          <span className="font-medium text-sm">{offer.origin}</span>
+                          <ArrowRight className="w-3 h-3 text-muted-foreground" />
+                          <span className="font-medium text-sm">{offer.destination}</span>
+                        </div>
+                        <Badge variant={offer.type as any} className="text-xs">
+                          {offer.type}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">{offer.gpName}</span>
+                          <div className="flex items-center gap-1">
+                            <Star className="w-3 h-3 text-warning fill-warning" />
+                            <span className="text-xs">{offer.rating}</span>
+                          </div>
+                        </div>
+                        <span className="font-bold text-primary">{offer.price} FCFA/kg</span>
                       </div>
                     </div>
-                    <span className="font-bold text-primary">{offer.price} FCFA/kg</span>
-                  </div>
-                </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+
+            {filteredOffers.length === 0 && (
+              <div className="text-center py-8">
+                <Package className="w-10 h-10 text-muted-foreground/50 mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">Aucune offre trouvée</p>
+              </div>
+            )}
+
+            {!selectedType && (
+              <Link to="/offres" className="block mt-4">
+                <Button variant="outline" className="w-full">
+                  Voir toutes les offres
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
               </Link>
-            </motion.div>
-          ))}
-        </div>
+            )}
 
-        {filteredOffers.length === 0 && (
-          <div className="text-center py-8">
-            <Package className="w-10 h-10 text-muted-foreground/50 mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">Aucune offre trouvée</p>
+            {selectedType && filteredOffers.length > 0 && (
+              <Link to={`/offres?type=${selectedType}`} className="block mt-4">
+                <Button variant="outline" className="w-full">
+                  Voir sur la page offres
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            )}
           </div>
-        )}
-
-        {!selectedType && !searchQuery && (
-          <Link to="/offres" className="block mt-4">
-            <Button variant="outline" className="w-full">
-              Voir toutes les offres
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </Link>
-        )}
-
-        {(selectedType || searchQuery) && filteredOffers.length > 0 && (
-          <Link to={`/offres${selectedType ? `?type=${selectedType}` : ''}`} className="block mt-4">
-            <Button variant="outline" className="w-full">
-              Voir sur la page offres
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </Link>
-        )}
+        </div>
       </section>
 
       {/* Quick Stats */}
