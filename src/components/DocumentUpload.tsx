@@ -77,11 +77,9 @@ export function DocumentUpload({
 
       if (error) throw error;
 
-      const { data: urlData } = supabase.storage
-        .from("gp-documents")
-        .getPublicUrl(safeFileName);
-
-      onUpload(urlData.publicUrl);
+      // SECURITY FIX: Store only the file path, not public URL
+      // Use signed URLs when document access is needed
+      onUpload(safeFileName);
       toast({
         title: "Document téléchargé",
         description: "Votre fichier a été enregistré avec succès",
