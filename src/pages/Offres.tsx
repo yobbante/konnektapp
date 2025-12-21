@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Link, useSearchParams } from "react-router-dom";
 import { 
   Search, Package, ArrowRight, MapPin, Star,
-  Zap, Truck, Ship, Plane, Briefcase, Loader2
+  Zap, Truck, Ship, Plane, Briefcase, Loader2, Heart
 } from "lucide-react";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -13,6 +13,9 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { AdvancedFilters, DEFAULT_FILTERS, type AdvancedFiltersState } from "@/components/offers/AdvancedFilters";
+import { useFavorites } from "@/hooks/useFavorites";
+import { useOfferNotifications } from "@/hooks/useOfferNotifications";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence";
 
@@ -73,6 +76,15 @@ export default function OffresPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFiltersState>(DEFAULT_FILTERS);
+  
+  const { isAuthenticated, isFavorite, toggleFavorite } = useFavorites();
+  const { saveSearch } = useOfferNotifications({
+    filters: advancedFilters,
+    activeTransportType: activeFilter,
+    searchQuery,
+    enabled: isAuthenticated,
+  });
 
   useEffect(() => {
     fetchOffers();
@@ -89,7 +101,6 @@ export default function OffresPage() {
         },
         (payload) => {
           console.log('Realtime update:', payload);
-          // Refetch offers on any change
           fetchOffers();
         }
       )
@@ -104,7 +115,6 @@ export default function OffresPage() {
     try {
       setLoading(true);
       
-      // Fetch only active offers with future departure dates
       const { data, error } = await supabase
         .from("gp_offers")
         .select(`
@@ -126,7 +136,6 @@ export default function OffresPage() {
 
       if (error) throw error;
 
-      // Fetch GP profiles for each offer
       if (data && data.length > 0) {
         const gpIds = [...new Set(data.map(o => o.gp_id))];
         const { data: profiles } = await supabase
@@ -153,14 +162,52 @@ export default function OffresPage() {
     }
   };
 
-  const filteredOffers = offers.filter((offer) => {
-    const matchesType = activeFilter === "all" || offer.transport_type === activeFilter;
-    const matchesSearch = 
-      offer.origin_city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      offer.destination_city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (offer.gp_profile?.business_name || "").toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesType && matchesSearch;
-  });
+  // Apply all filters
+  const filteredOffers = useMemo(() => {
+    return offers.filter((offer) => {
+      // Transport type filter
+      if (activeFilter !== "all" && offer.transport_type !== activeFilter) {
+        return false;
+      }
+
+      // Search query filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = 
+          offer.origin_city.toLowerCase().includes(query) ||
+          offer.destination_city.toLowerCase().includes(query) ||
+          (offer.gp_profile?.business_name || "").toLowerCase().includes(query);
+        if (!matchesSearch) return false;
+      }
+
+      // Price range filter
+      if (advancedFilters.minPrice > 0 && offer.price_per_kg < advancedFilters.minPrice) {
+        return false;
+      }
+      if (advancedFilters.maxPrice < 50000 && offer.price_per_kg > advancedFilters.maxPrice) {
+        return false;
+      }
+
+      // Weight filter
+      if (advancedFilters.minWeight > 0 && offer.available_capacity < advancedFilters.minWeight) {
+        return false;
+      }
+
+      // Date filters
+      if (advancedFilters.dateFrom) {
+        const departureDate = new Date(offer.departure_date);
+        const fromDate = new Date(advancedFilters.dateFrom);
+        if (departureDate < fromDate) return false;
+      }
+      if (advancedFilters.dateTo) {
+        const departureDate = new Date(offer.departure_date);
+        const toDate = new Date(advancedFilters.dateTo);
+        if (departureDate > toDate) return false;
+      }
+
+      return true;
+    });
+  }, [offers, activeFilter, searchQuery, advancedFilters]);
 
   const formatDate = (dateStr: string) => {
     try {
@@ -170,20 +217,34 @@ export default function OffresPage() {
     }
   };
 
+  const handleFavoriteClick = async (e: React.MouseEvent, offerId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await toggleFavorite(offerId);
+  };
+
   return (
     <div className="min-h-screen bg-background pb-safe">
       <MobileHeader />
 
       {/* Sticky Search & Filters */}
       <div className="sticky top-14 z-40 bg-background/95 backdrop-blur-sm px-4 py-3 border-b border-border">
-        {/* Search */}
-        <div className="relative mb-3">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Ville, destination, transporteur..."
-            className="pl-10 h-10 bg-muted/50"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+        {/* Search Row */}
+        <div className="flex gap-2 mb-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Ville, destination, transporteur..."
+              className="pl-10 h-10 bg-muted/50"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <AdvancedFilters
+            filters={advancedFilters}
+            onFiltersChange={setAdvancedFilters}
+            onSaveSearch={saveSearch}
+            isAuthenticated={isAuthenticated}
           />
         </div>
 
@@ -223,6 +284,7 @@ export default function OffresPage() {
           <div className="space-y-3">
             {filteredOffers.map((offer, index) => {
               const TransportIcon = getTransportIcon(offer.transport_type);
+              const favorite = isFavorite(offer.id);
               return (
                 <motion.div
                   key={offer.id}
@@ -231,9 +293,23 @@ export default function OffresPage() {
                   transition={{ delay: index * 0.05 }}
                 >
                   <Link to={`/offres/${offer.id}`}>
-                    <div className="mobile-card active:scale-[0.98] transition-transform">
+                    <div className="mobile-card active:scale-[0.98] transition-transform relative">
+                      {/* Favorite Button */}
+                      <button
+                        onClick={(e) => handleFavoriteClick(e, offer.id)}
+                        className="absolute top-3 right-3 p-1.5 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background transition-colors z-10"
+                      >
+                        <Heart 
+                          className={`w-4 h-4 transition-colors ${
+                            favorite 
+                              ? "fill-destructive text-destructive" 
+                              : "text-muted-foreground hover:text-destructive"
+                          }`} 
+                        />
+                      </button>
+
                       {/* Header */}
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center justify-between mb-3 pr-8">
                         <Badge variant="secondary" className="text-xs flex items-center gap-1">
                           <TransportIcon className="w-3 h-3" />
                           {getTransportLabel(offer.transport_type)}

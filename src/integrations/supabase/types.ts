@@ -374,6 +374,35 @@ export type Database = {
         }
         Relationships: []
       }
+      offer_favorites: {
+        Row: {
+          created_at: string
+          id: string
+          offer_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          offer_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          offer_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_favorites_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "gp_offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_logistics: {
         Row: {
           created_at: string
@@ -691,6 +720,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      saved_searches: {
+        Row: {
+          created_at: string
+          destination_city: string | null
+          id: string
+          max_price: number | null
+          min_price: number | null
+          min_weight: number | null
+          notify_enabled: boolean
+          origin_city: string | null
+          transport_type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          destination_city?: string | null
+          id?: string
+          max_price?: number | null
+          min_price?: number | null
+          min_weight?: number | null
+          notify_enabled?: boolean
+          origin_city?: string | null
+          transport_type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          destination_city?: string | null
+          id?: string
+          max_price?: number | null
+          min_price?: number | null
+          min_weight?: number | null
+          notify_enabled?: boolean
+          origin_city?: string | null
+          transport_type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       transactions: {
         Row: {
