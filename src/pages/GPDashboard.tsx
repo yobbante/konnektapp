@@ -431,9 +431,6 @@ function ModernOverviewTab({
       {/* KPI Cards Grid - Compact */}
       <KPICards stats={kpiStats} gpType={gpProfile.gp_type} />
 
-      {/* KPI Cards Grid - Compact */}
-      <KPICards stats={kpiStats} gpType={gpProfile.gp_type} />
-
       {/* Quick Actions - More Discrete */}
       <Collapsible open={showMoreOptions} onOpenChange={setShowMoreOptions}>
         <CollapsibleTrigger asChild>
