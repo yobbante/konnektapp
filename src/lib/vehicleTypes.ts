@@ -13,13 +13,22 @@ export interface VehicleTypeConfig {
 // Vehicle types by transport category
 export const vehicleTypes: Record<TransportCategory, VehicleTypeConfig[]> = {
   routier: [
-    { value: "camion", label: "Camion", icon: Truck, category: "routier", defaultSpecs: ["license_plate", "brand", "model", "year"] },
-    { value: "fourgon", label: "Fourgon", icon: Bus, category: "routier", defaultSpecs: ["license_plate", "brand", "model"] },
+    { value: "camion_3_5t", label: "Camion 3,5t", icon: Truck, category: "routier", defaultSpecs: ["license_plate", "brand", "model", "year"] },
+    { value: "camion_7_5t", label: "Camion 7,5t", icon: Truck, category: "routier", defaultSpecs: ["license_plate", "brand", "model", "year"] },
+    { value: "camion_10t", label: "Camion 10t", icon: Truck, category: "routier", defaultSpecs: ["license_plate", "brand", "model", "year"] },
+    { value: "camion_15t", label: "Camion 15t", icon: Truck, category: "routier", defaultSpecs: ["license_plate", "brand", "model", "year"] },
+    { value: "camion_20t", label: "Camion 20t+", icon: Truck, category: "routier", defaultSpecs: ["license_plate", "brand", "model", "capacity_tons"] },
+    { value: "fourgon", label: "Fourgon / Van", icon: Bus, category: "routier", defaultSpecs: ["license_plate", "brand", "model"] },
+    { value: "camion_benne", label: "Camion-benne", icon: Truck, category: "routier", defaultSpecs: ["license_plate", "capacity_tons"] },
     { value: "semi_remorque", label: "Semi-remorque", icon: Container, category: "routier", defaultSpecs: ["license_plate", "trailer_type"] },
-    { value: "pickup", label: "Pick-up", icon: Car, category: "routier", defaultSpecs: ["license_plate", "brand", "model"] },
+    { value: "camion_remorque", label: "Camion-remorque", icon: Container, category: "routier", defaultSpecs: ["license_plate", "trailer_type"] },
+    { value: "pickup", label: "Pick-up double cabine", icon: Car, category: "routier", defaultSpecs: ["license_plate", "brand", "model"] },
+    { value: "minibus", label: "Mini-bus / Bus meubles", icon: Bus, category: "routier", defaultSpecs: ["license_plate", "brand", "seats"] },
+    { value: "grue", label: "Camion-grue / Grue mobile", icon: Truck, category: "routier", defaultSpecs: ["license_plate", "max_lift_tons", "reach_m"] },
     { value: "hammer", label: "Hammer/Benne", icon: Truck, category: "routier", defaultSpecs: ["license_plate", "capacity_tons"] },
-    { value: "grue", label: "Grue mobile", icon: Truck, category: "routier", defaultSpecs: ["license_plate", "max_lift_tons", "reach_m"] },
-    { value: "bulldozer", label: "Bulldozer/Engin", icon: Truck, category: "routier", defaultSpecs: ["equipment_type"] },
+    { value: "bulldozer", label: "Bulldozer/Engin BTP", icon: Truck, category: "routier", defaultSpecs: ["equipment_type", "operating_weight"] },
+    { value: "tractopelle", label: "Tractopelle", icon: Truck, category: "routier", defaultSpecs: ["equipment_type", "operating_weight"] },
+    { value: "chariot_elevateur", label: "Chariot élévateur", icon: Truck, category: "routier", defaultSpecs: ["max_lift_tons", "lift_height"] },
   ],
   aerien: [
     { value: "cargo_avion", label: "Cargo aérien", icon: Plane, category: "aerien", defaultSpecs: ["airline", "flight_routes", "frequency"] },
@@ -27,7 +36,9 @@ export const vehicleTypes: Record<TransportCategory, VehicleTypeConfig[]> = {
     { value: "charter", label: "Vol charter", icon: Plane, category: "aerien", defaultSpecs: ["charter_company", "aircraft_type"] },
   ],
   maritime: [
-    { value: "conteneur", label: "Conteneur", icon: Container, category: "maritime", defaultSpecs: ["container_size", "container_type"] },
+    { value: "conteneur_20", label: "Conteneur 20 pieds", icon: Container, category: "maritime", defaultSpecs: ["container_size", "container_type"] },
+    { value: "conteneur_40", label: "Conteneur 40 pieds", icon: Container, category: "maritime", defaultSpecs: ["container_size", "container_type"] },
+    { value: "conteneur_40hc", label: "Conteneur 40 HC", icon: Container, category: "maritime", defaultSpecs: ["container_size", "container_type"] },
     { value: "cargo_ship", label: "Cargo maritime", icon: Ship, category: "maritime", defaultSpecs: ["ship_name", "shipping_line"] },
     { value: "roro", label: "RoRo (véhicules)", icon: Ship, category: "maritime", defaultSpecs: ["ports_served"] },
     { value: "vrac", label: "Vrac", icon: Anchor, category: "maritime", defaultSpecs: ["cargo_type"] },
@@ -99,6 +110,7 @@ export const specFieldConfigs: Record<string, SpecFieldConfig> = {
   brand: { key: "brand", label: "Marque", type: "text", placeholder: "Mercedes, MAN, Renault..." },
   model: { key: "model", label: "Modèle", type: "text", placeholder: "Actros, TGX..." },
   year: { key: "year", label: "Année", type: "number", placeholder: "2020" },
+  seats: { key: "seats", label: "Nombre de places", type: "number", placeholder: "9" },
   fuel_type: { key: "fuel_type", label: "Carburant", type: "select", options: [
     { value: "diesel", label: "Diesel" },
     { value: "essence", label: "Essence" },
@@ -108,13 +120,30 @@ export const specFieldConfigs: Record<string, SpecFieldConfig> = {
   capacity_tons: { key: "capacity_tons", label: "Capacité", type: "number", placeholder: "10", unit: "tonnes" },
   max_lift_tons: { key: "max_lift_tons", label: "Charge max", type: "number", placeholder: "50", unit: "tonnes" },
   reach_m: { key: "reach_m", label: "Portée", type: "number", placeholder: "30", unit: "m" },
+  lift_height: { key: "lift_height", label: "Hauteur de levage", type: "number", placeholder: "5", unit: "m" },
+  operating_weight: { key: "operating_weight", label: "Poids en service", type: "number", placeholder: "15", unit: "tonnes" },
   trailer_type: { key: "trailer_type", label: "Type remorque", type: "select", options: [
     { value: "bache", label: "Bâché" },
     { value: "plateau", label: "Plateau" },
     { value: "frigorifique", label: "Frigorifique" },
     { value: "citerne", label: "Citerne" },
+    { value: "porte_engins", label: "Porte-engins" },
+    { value: "savoyarde", label: "Savoyarde" },
   ]},
-  equipment_type: { key: "equipment_type", label: "Type d'engin", type: "text", placeholder: "Bulldozer, Tractopelle..." },
+  equipment_type: { key: "equipment_type", label: "Type d'engin", type: "select", options: [
+    { value: "bulldozer", label: "Bulldozer" },
+    { value: "tractopelle", label: "Tractopelle" },
+    { value: "pelleteuse", label: "Pelleteuse" },
+    { value: "niveleuse", label: "Niveleuse" },
+    { value: "compacteur", label: "Compacteur" },
+    { value: "chargeuse", label: "Chargeuse" },
+  ]},
+  // Equipment for moving
+  has_hayon: { key: "has_hayon", label: "Hayon élévateur", type: "select", options: [
+    { value: "yes", label: "Oui" },
+    { value: "no", label: "Non" },
+  ]},
+  equipment_moving: { key: "equipment_moving", label: "Équipements déménagement", type: "text", placeholder: "Sangles, diables, couvertures..." },
   airline: { key: "airline", label: "Compagnie aérienne", type: "text", placeholder: "Air France, Ethiopian..." },
   flight_routes: { key: "flight_routes", label: "Routes", type: "text", placeholder: "Dakar-Paris, Dakar-Abidjan..." },
   frequency: { key: "frequency", label: "Fréquence", type: "select", options: [

@@ -52,11 +52,11 @@ export function useSmartRedirect() {
         };
       }
 
-      // 3. Sinon, c'est un client standard
-      navigate("/client/dashboard");
+      // 3. Sinon, c'est un client standard - rediriger vers le profil client
+      navigate("/client/profile");
       return { 
         success: true, 
-        destination: "/client/dashboard", 
+        destination: "/client/profile", 
         role: "client" 
       };
 

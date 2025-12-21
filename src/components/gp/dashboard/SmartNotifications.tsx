@@ -69,14 +69,15 @@ export function SmartNotifications({
     });
   }
 
-  // High demand zone
-  if (highDemandZone && !dismissed.includes("zone")) {
+  // Opportunities insight - more useful than high demand zone
+  if (pendingMissions === 0 && !dismissed.includes("opportunity")) {
     notifications.push({
-      id: "zone",
+      id: "opportunity",
       type: "zone",
-      title: "Zone à forte demande",
-      message: `Beaucoup de demandes vers ${highDemandZone}`,
-      time: "Aujourd'hui",
+      title: "Créer plus d'offres",
+      message: "Publiez des offres pour augmenter votre visibilité",
+      time: "Conseil",
+      priority: "low",
     });
   }
 
