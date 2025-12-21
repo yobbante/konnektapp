@@ -3,19 +3,21 @@ import { motion } from "framer-motion";
 import { Link, useSearchParams } from "react-router-dom";
 import { 
   Search, Package, ArrowRight, MapPin, Star,
-  Zap, Truck, Ship, Plane, Briefcase, Loader2, Heart
+  Zap, Truck, Ship, Plane, Briefcase, Loader2, Heart, Scale, Filter, Building2
 } from "lucide-react";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { AdvancedFilters, DEFAULT_FILTERS, type AdvancedFiltersState } from "@/components/offers/AdvancedFilters";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useOfferNotifications } from "@/hooks/useOfferNotifications";
+import { CompareProvider, useCompare, CompareOffer } from "@/components/offers/OfferCompare";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence";
 
@@ -38,11 +40,12 @@ interface Offer {
 
 const transportFilters = [
   { type: "all", label: "Tous", icon: Package },
+  { type: "voyageur", label: "GP", icon: Briefcase },
+  { type: "agence", label: "Agence", icon: Building2 },
   { type: "express", label: "Express", icon: Zap },
   { type: "routier", label: "Routier", icon: Truck },
   { type: "maritime", label: "Maritime", icon: Ship },
   { type: "aerien", label: "Aérien", icon: Plane },
-  { type: "voyageur", label: "Voyageur", icon: Briefcase },
 ];
 
 const getTransportIcon = (type: TransportType) => {
@@ -63,13 +66,13 @@ const getTransportLabel = (type: TransportType) => {
     routier: "Routier",
     maritime: "Maritime",
     aerien: "Aérien",
-    voyageur: "Voyageur",
+    voyageur: "GP",
     agence: "Agence",
   };
   return labels[type] || type;
 };
 
-export default function OffresPage() {
+function OffresContent() {
   const [searchParams] = useSearchParams();
   const typeFromUrl = searchParams.get("type") || "all";
   const [activeFilter, setActiveFilter] = useState(typeFromUrl);
@@ -403,5 +406,13 @@ export default function OffresPage() {
 
       <MobileNav />
     </div>
+  );
+}
+
+export default function OffresPage() {
+  return (
+    <CompareProvider>
+      <OffresContent />
+    </CompareProvider>
   );
 }

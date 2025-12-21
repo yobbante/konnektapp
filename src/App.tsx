@@ -20,6 +20,7 @@ import AdminGPProfile from "./pages/AdminGPProfile";
 import PostBookingForm from "./pages/PostBookingForm";
 import Profile from "./pages/Profile";
 import GPProfile from "./pages/GPProfile";
+import TransporterProfile from "./pages/TransporterProfile";
 import Favorites from "./pages/Favorites";
 import SavedSearches from "./pages/SavedSearches";
 import NotFound from "./pages/NotFound";
@@ -49,6 +50,7 @@ const App = () => (
           <Route path="/order/:orderId/complete" element={<PostBookingForm />} />
           <Route path="/profil" element={<Profile />} />
           <Route path="/gp/:gpId" element={<GPProfile />} />
+          <Route path="/transporter/profile" element={<TransporterProfile />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/saved-searches" element={<SavedSearches />} />
           <Route path="/auth" element={<Auth />} />

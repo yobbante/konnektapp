@@ -18,6 +18,7 @@ import { AdminStatsCards } from "@/components/admin/AdminStatsCards";
 import { AdminGPList } from "@/components/admin/AdminGPList";
 import { AdminOrdersList } from "@/components/admin/AdminOrdersList";
 import { AdminPendingGPs } from "@/components/admin/AdminPendingGPs";
+import { AdminStatsCharts } from "@/components/admin/AdminStatsCharts";
 
 interface GPProfile {
   id: string;
@@ -292,10 +293,11 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsList className="grid w-full grid-cols-4 mb-4">
             <TabsTrigger value="overview">Aperçu</TabsTrigger>
+            <TabsTrigger value="stats">Stats</TabsTrigger>
             <TabsTrigger value="gps">
-              GPs {stats.pendingGps > 0 && `(${stats.pendingGps})`}
+              Transporteurs {stats.pendingGps > 0 && `(${stats.pendingGps})`}
             </TabsTrigger>
             <TabsTrigger value="orders">Commandes</TabsTrigger>
           </TabsList>
@@ -352,6 +354,11 @@ export default function AdminDashboard() {
               onReject={(id) => updateGPStatus(id, "rejected")}
               onViewDetails={handleViewDetails}
             />
+          </TabsContent>
+
+          {/* Stats Charts */}
+          <TabsContent value="stats">
+            <AdminStatsCharts gps={gps} orders={orders} />
           </TabsContent>
 
           {/* GPs */}
