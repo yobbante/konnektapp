@@ -14,7 +14,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { VehicleManagement } from "@/components/gp/VehicleManagement";
+import { ScheduledRoutesManager } from "@/components/gp/ScheduledRoutesManager";
 
 interface GPProfileData {
   id: string;
@@ -462,6 +465,12 @@ export default function TransporterProfile() {
             </CardContent>
           </Card>
         )}
+
+        {/* Vehicle Management */}
+        <VehicleManagement gpId={profile.id} gpType={profile.gp_type} />
+
+        {/* Scheduled Routes */}
+        <ScheduledRoutesManager gpId={profile.id} vehicles={[]} />
 
         {/* Preview Link */}
         <Card>

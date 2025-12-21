@@ -89,6 +89,7 @@ export type Database = {
           total_capacity: number
           transport_type: Database["public"]["Enums"]["gp_type"]
           updated_at: string
+          vehicle_id: string | null
           views_count: number | null
         }
         Insert: {
@@ -113,6 +114,7 @@ export type Database = {
           total_capacity: number
           transport_type: Database["public"]["Enums"]["gp_type"]
           updated_at?: string
+          vehicle_id?: string | null
           views_count?: number | null
         }
         Update: {
@@ -137,6 +139,7 @@ export type Database = {
           total_capacity?: number
           transport_type?: Database["public"]["Enums"]["gp_type"]
           updated_at?: string
+          vehicle_id?: string | null
           views_count?: number | null
         }
         Relationships: [
@@ -152,6 +155,13 @@ export type Database = {
             columns: ["gp_id"]
             isOneToOne: false
             referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_offers_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
         ]
@@ -763,6 +773,88 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_routes: {
+        Row: {
+          available_capacity_kg: number | null
+          created_at: string
+          currency: string
+          days_of_week: number[]
+          departure_time: string | null
+          destination_city: string
+          destination_country: string
+          estimated_duration_hours: number | null
+          gp_id: string
+          id: string
+          is_active: boolean
+          origin_city: string
+          origin_country: string
+          price_per_kg: number
+          route_name: string
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          available_capacity_kg?: number | null
+          created_at?: string
+          currency?: string
+          days_of_week?: number[]
+          departure_time?: string | null
+          destination_city: string
+          destination_country: string
+          estimated_duration_hours?: number | null
+          gp_id: string
+          id?: string
+          is_active?: boolean
+          origin_city: string
+          origin_country?: string
+          price_per_kg: number
+          route_name: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          available_capacity_kg?: number | null
+          created_at?: string
+          currency?: string
+          days_of_week?: number[]
+          departure_time?: string | null
+          destination_city?: string
+          destination_country?: string
+          estimated_duration_hours?: number | null
+          gp_id?: string
+          id?: string
+          is_active?: boolean
+          origin_city?: string
+          origin_country?: string
+          price_per_kg?: number
+          route_name?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_routes_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_routes_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_routes_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: number
@@ -837,6 +929,75 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vehicles: {
+        Row: {
+          created_at: string
+          gp_id: string
+          height_m: number | null
+          id: string
+          is_active: boolean
+          length_m: number | null
+          max_volume_m3: number | null
+          max_weight_kg: number | null
+          name: string
+          photo_url: string | null
+          specifications: Json | null
+          transport_category: string
+          updated_at: string
+          vehicle_type: string
+          width_m: number | null
+        }
+        Insert: {
+          created_at?: string
+          gp_id: string
+          height_m?: number | null
+          id?: string
+          is_active?: boolean
+          length_m?: number | null
+          max_volume_m3?: number | null
+          max_weight_kg?: number | null
+          name: string
+          photo_url?: string | null
+          specifications?: Json | null
+          transport_category: string
+          updated_at?: string
+          vehicle_type: string
+          width_m?: number | null
+        }
+        Update: {
+          created_at?: string
+          gp_id?: string
+          height_m?: number | null
+          id?: string
+          is_active?: boolean
+          length_m?: number | null
+          max_volume_m3?: number | null
+          max_weight_kg?: number | null
+          name?: string
+          photo_url?: string | null
+          specifications?: Json | null
+          transport_category?: string
+          updated_at?: string
+          vehicle_type?: string
+          width_m?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicles_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
