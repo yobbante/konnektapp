@@ -122,17 +122,28 @@ export function Header() {
                             <span className="font-medium">Dashboard Admin</span>
                           </Link>
                         )}
-                        {isGP && (
-                          <Link to="/gp/dashboard" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
-                            <Truck className="w-5 h-5 text-primary" />
-                            <span className="font-medium">Dashboard GP</span>
-                          </Link>
-                        )}
-                        {!isGP && (
-                          <Link to="/client/dashboard" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
-                            <Package className="w-5 h-5" />
-                            <span className="font-medium">Mes envois</span>
-                          </Link>
+                        {isGP ? (
+                          <>
+                            <Link to="/gp/dashboard" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
+                              <Truck className="w-5 h-5 text-primary" />
+                              <span className="font-medium">Dashboard Transporteur</span>
+                            </Link>
+                            <Link to="/transporter/profile" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
+                              <User className="w-5 h-5 text-secondary" />
+                              <span className="font-medium">Mon profil</span>
+                            </Link>
+                          </>
+                        ) : (
+                          <>
+                            <Link to="/profile" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
+                              <User className="w-5 h-5 text-secondary" />
+                              <span className="font-medium">Mon profil</span>
+                            </Link>
+                            <Link to="/client/dashboard" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
+                              <Package className="w-5 h-5" />
+                              <span className="font-medium">Mes envois</span>
+                            </Link>
+                          </>
                         )}
                         <div className="pt-4 border-t border-border mt-4">
                           <button 

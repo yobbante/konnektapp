@@ -1,10 +1,17 @@
 import { motion } from "framer-motion";
-import { ArrowRight, MapPin, Calendar, Package, Star } from "lucide-react";
+import { ArrowRight, MapPin, Calendar, Package, Star, Truck, Weight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur";
+
+interface VehicleInfo {
+  name?: string;
+  vehicle_type?: string;
+  max_weight_kg?: number;
+  max_volume_m3?: number;
+}
 
 interface ShipmentOfferCardProps {
   id: string;
@@ -18,6 +25,8 @@ interface ShipmentOfferCardProps {
   gpRating: number;
   status: "available" | "pending" | "complete";
   delay?: number;
+  availableCapacity?: number;
+  vehicle?: VehicleInfo | null;
 }
 
 const transportLabels: Record<TransportType, string> = {
@@ -40,6 +49,8 @@ export function ShipmentOfferCard({
   gpRating,
   status,
   delay = 0,
+  availableCapacity,
+  vehicle,
 }: ShipmentOfferCardProps) {
   return (
     <motion.div
@@ -82,11 +93,26 @@ export function ShipmentOfferCard({
           <Calendar className="w-4 h-4" />
           {date}
         </div>
-        <div className="flex items-center gap-1.5">
-          <Package className="w-4 h-4" />
-          {id}
-        </div>
+        {availableCapacity && (
+          <div className="flex items-center gap-1.5">
+            <Weight className="w-4 h-4" />
+            {availableCapacity} kg dispo
+          </div>
+        )}
       </div>
+
+      {/* Vehicle Info */}
+      {vehicle && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4 p-2 bg-muted/50 rounded-lg">
+          <Truck className="w-4 h-4 text-primary" />
+          <span className="font-medium text-foreground">{vehicle.name || vehicle.vehicle_type}</span>
+          {vehicle.max_weight_kg && (
+            <Badge variant="outline" className="text-xs ml-auto">
+              Max {vehicle.max_weight_kg} kg
+            </Badge>
+          )}
+        </div>
+      )}
 
       {/* GP Info & Price */}
       <div className="flex items-center justify-between pt-4 border-t border-border">

@@ -118,21 +118,36 @@ export function MobileHeader({ title, showNotifications = true }: MobileHeaderPr
                             </Button>
                           </Link>
                         )}
-                        {isGP && (
-                          <Link to="/gp/dashboard" onClick={() => setMenuOpen(false)}>
-                            <Button variant="ghost" className="w-full justify-start text-secondary">
-                              <Truck className="w-4 h-4 mr-2" />
-                              Dashboard Transporteur
-                            </Button>
-                          </Link>
-                        )}
-                        {!isGP && (
-                          <Link to="/client/dashboard" onClick={() => setMenuOpen(false)}>
-                            <Button variant="ghost" className="w-full justify-start text-primary">
-                              <Package className="w-4 h-4 mr-2" />
-                              Mes envois
-                            </Button>
-                          </Link>
+                        {isGP ? (
+                          <>
+                            <Link to="/gp/dashboard" onClick={() => setMenuOpen(false)}>
+                              <Button variant="ghost" className="w-full justify-start text-secondary">
+                                <Truck className="w-4 h-4 mr-2" />
+                                Dashboard Transporteur
+                              </Button>
+                            </Link>
+                            <Link to="/transporter/profile" onClick={() => setMenuOpen(false)}>
+                              <Button variant="ghost" className="w-full justify-start">
+                                <User className="w-4 h-4 mr-2" />
+                                Mon profil
+                              </Button>
+                            </Link>
+                          </>
+                        ) : (
+                          <>
+                            <Link to="/profile" onClick={() => setMenuOpen(false)}>
+                              <Button variant="ghost" className="w-full justify-start">
+                                <User className="w-4 h-4 mr-2" />
+                                Mon profil
+                              </Button>
+                            </Link>
+                            <Link to="/client/dashboard" onClick={() => setMenuOpen(false)}>
+                              <Button variant="ghost" className="w-full justify-start text-primary">
+                                <Package className="w-4 h-4 mr-2" />
+                                Mes envois
+                              </Button>
+                            </Link>
+                          </>
                         )}
                         <Button 
                           variant="ghost" 

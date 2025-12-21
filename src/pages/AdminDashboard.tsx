@@ -156,7 +156,7 @@ export default function AdminDashboard() {
         .from("orders")
         .select(`
           *,
-          gp_profile:gp_profiles(business_name)
+          gp_profile:gp_profiles(business_name, phone)
         `)
         .order("created_at", { ascending: false })
         .limit(100);
