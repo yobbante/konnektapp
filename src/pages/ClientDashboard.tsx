@@ -55,6 +55,18 @@ export default function ClientDashboard() {
         return;
       }
 
+      // Check if user is a GP - redirect to GP dashboard
+      const { data: gpProfile } = await supabase
+        .from("gp_profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (gpProfile) {
+        navigate("/gp/dashboard");
+        return;
+      }
+
       // Load user profile
       const { data: profileData } = await supabase
         .from("profiles")
