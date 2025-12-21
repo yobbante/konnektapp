@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, Search, Filter, RefreshCw } from "lucide-react";
+import { Shield, Search, Filter, RefreshCw, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { AdminGPList } from "@/components/admin/AdminGPList";
 import { AdminOrdersList } from "@/components/admin/AdminOrdersList";
 import { AdminPendingGPs } from "@/components/admin/AdminPendingGPs";
 import { AdminStatsCharts } from "@/components/admin/AdminStatsCharts";
+import { AdminSupportTickets } from "@/components/admin/AdminSupportTickets";
 
 interface GPProfile {
   id: string;
@@ -293,13 +294,14 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 mb-4">
+          <TabsList className="grid w-full grid-cols-5 mb-4">
             <TabsTrigger value="overview">Aperçu</TabsTrigger>
             <TabsTrigger value="stats">Stats</TabsTrigger>
             <TabsTrigger value="gps">
-              Transporteurs {stats.pendingGps > 0 && `(${stats.pendingGps})`}
+              GPs {stats.pendingGps > 0 && `(${stats.pendingGps})`}
             </TabsTrigger>
             <TabsTrigger value="orders">Commandes</TabsTrigger>
+            <TabsTrigger value="support">Support</TabsTrigger>
           </TabsList>
 
           {/* Search and Filters */}
@@ -377,6 +379,11 @@ export default function AdminDashboard() {
               orders={filteredOrders}
               filter={orderFilter}
             />
+          </TabsContent>
+
+          {/* Support Tickets */}
+          <TabsContent value="support">
+            <AdminSupportTickets />
           </TabsContent>
         </Tabs>
       </div>

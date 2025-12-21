@@ -34,6 +34,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
 
   useEffect(() => {
     fetchMessages();
+    markMessagesAsRead();
     
     // Subscribe to realtime messages
     const channel = supabase
@@ -49,6 +50,10 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
         (payload) => {
           setMessages((prev) => [...prev, payload.new as Message]);
           scrollToBottom();
+          // Mark new messages as read if from other user
+          if ((payload.new as Message).sender_id !== currentUserId) {
+            markMessageAsRead((payload.new as Message).id);
+          }
         }
       )
       .subscribe();
@@ -57,6 +62,30 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
       supabase.removeChannel(channel);
     };
   }, [conversationId]);
+
+  const markMessagesAsRead = async () => {
+    try {
+      await supabase
+        .from("messages")
+        .update({ read_at: new Date().toISOString() })
+        .eq("conversation_id", conversationId)
+        .neq("sender_id", currentUserId)
+        .is("read_at", null);
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+    }
+  };
+
+  const markMessageAsRead = async (messageId: string) => {
+    try {
+      await supabase
+        .from("messages")
+        .update({ read_at: new Date().toISOString() })
+        .eq("id", messageId);
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+    }
+  };
 
   useEffect(() => {
     scrollToBottom();
