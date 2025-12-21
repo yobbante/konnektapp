@@ -13,6 +13,11 @@ import { Badge } from "@/components/ui/badge";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { GPMobileNav } from "@/components/layout/MobileNav";
 import { GPCreateOfferDialog } from "@/components/gp/GPCreateOfferDialog";
+import { KPICards } from "@/components/gp/dashboard/KPICards";
+import { QuickActions } from "@/components/gp/dashboard/QuickActions";
+import { TrustBadge } from "@/components/gp/dashboard/TrustBadge";
+import { RecentHistory } from "@/components/gp/dashboard/RecentHistory";
+import { SmartNotifications } from "@/components/gp/dashboard/SmartNotifications";
 import { 
   OrderStatus, 
   orderStatusConfig, 
@@ -29,6 +34,7 @@ interface GPProfile {
   subscription: string;
   rating: number;
   total_deliveries: number;
+  zones_covered?: string[];
 }
 
 interface WalletData {
@@ -133,10 +139,27 @@ export default function GPDashboard() {
 
   if (!gpProfile) return null;
 
-  // Calculer les missions en attente de mise à jour
+  // Calculate stats
   const pendingUpdateOrders = orders.filter(o => 
     ['accepted', 'collected', 'in_transit'].includes(o.status)
   );
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const todayOrders = orders.filter(o => new Date(o.created_at) >= today);
+  const weekStart = new Date(today);
+  weekStart.setDate(weekStart.getDate() - 7);
+  const weekOrders = orders.filter(o => new Date(o.created_at) >= weekStart);
+
+  const kpiStats = {
+    todayAvailable: offers.filter(o => o.status === 'active').length,
+    acceptedToday: todayOrders.filter(o => ['accepted', 'collected', 'in_transit'].includes(o.status)).length,
+    completedToday: todayOrders.filter(o => o.status === 'delivered').length,
+    todayRevenue: todayOrders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.total_price || 0), 0),
+    weekRevenue: weekOrders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.total_price || 0), 0),
+    totalWeight: orders.reduce((sum, o) => sum + (o.weight || 0), 0),
+  };
 
   const stats = {
     activeOffers: offers.filter(o => o.status === 'active').length,
@@ -184,15 +207,18 @@ export default function GPDashboard() {
 
       {/* Content based on active tab */}
       {activeTab === "overview" && (
-        <OverviewTab 
+        <ModernOverviewTab 
           gpProfile={gpProfile}
+          kpiStats={kpiStats}
           stats={stats}
           wallet={wallet}
           offers={offers}
           orders={orders}
+          pendingOrders={stats.pendingOrders}
           onCreateOffer={() => setShowCreateOffer(true)}
           onSignOut={handleSignOut}
           onViewOrders={() => setActiveTab("orders")}
+          onViewWallet={() => setActiveTab("wallet")}
         />
       )}
 
@@ -231,7 +257,86 @@ export default function GPDashboard() {
   );
 }
 
-// Overview Tab Component
+// Modern Overview Tab Component with new design
+function ModernOverviewTab({ 
+  gpProfile, 
+  kpiStats, 
+  stats, 
+  wallet, 
+  offers, 
+  orders, 
+  pendingOrders,
+  onCreateOffer, 
+  onSignOut, 
+  onViewOrders,
+  onViewWallet 
+}: any) {
+  return (
+    <div className="px-4 py-4 space-y-4">
+      {/* Smart Notifications */}
+      <SmartNotifications 
+        pendingCourses={pendingOrders}
+        lastPayment={wallet?.total_earned > 0 ? { amount: wallet.balance, date: "Récemment" } : undefined}
+        highDemandZone={gpProfile.zones_covered?.[0]}
+      />
+
+      {/* Profile Header */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between"
+      >
+        <div>
+          <h1 className="text-xl font-bold text-foreground">
+            Bienvenue, {gpProfile.business_name.split(' ')[0]} 👋
+          </h1>
+          <p className="text-sm text-muted-foreground">Tableau de bord transporteur</p>
+        </div>
+        <Button variant="ghost" size="icon" onClick={onSignOut}>
+          <LogOut className="w-5 h-5" />
+        </Button>
+      </motion.div>
+
+      {/* KPI Cards Grid */}
+      <KPICards stats={kpiStats} />
+
+      {/* Quick Actions */}
+      <QuickActions 
+        onViewCourses={onCreateOffer}
+        onViewDeliveries={onViewOrders}
+        onViewPerformance={onViewOrders}
+        onViewEarnings={onViewWallet}
+      />
+
+      {/* Trust & Motivation Badge */}
+      <TrustBadge 
+        rating={gpProfile.rating || 0}
+        totalDeliveries={gpProfile.total_deliveries || 0}
+        isVerified={gpProfile.status === 'verified'}
+      />
+
+      {/* Recent History */}
+      <RecentHistory 
+        orders={orders}
+        onViewAll={onViewOrders}
+      />
+
+      {/* Create Offer CTA */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        <Button variant="default" size="lg" className="w-full" onClick={onCreateOffer}>
+          <Plus className="w-5 h-5" />
+          Nouvelle offre de transport
+        </Button>
+      </motion.div>
+    </div>
+  );
+}
+
+// Legacy Overview Tab Component (kept for reference)
 function OverviewTab({ gpProfile, stats, wallet, offers, orders, onCreateOffer, onSignOut, onViewOrders }: any) {
   return (
     <div className="px-4 py-4 space-y-4">
