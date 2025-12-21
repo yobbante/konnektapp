@@ -21,6 +21,7 @@ import AdminGPProfile from "./pages/AdminGPProfile";
 import PostBookingForm from "./pages/PostBookingForm";
 import Profile from "./pages/Profile";
 import GPProfile from "./pages/GPProfile";
+import Favorites from "./pages/Favorites";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,7 @@ const App = () => (
           <Route path="/order/:orderId/complete" element={<PostBookingForm />} />
           <Route path="/profil" element={<Profile />} />
           <Route path="/gp/:gpId" element={<GPProfile />} />
+          <Route path="/favorites" element={<Favorites />} />
           <Route path="/auth" element={<Auth />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

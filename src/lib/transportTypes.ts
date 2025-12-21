@@ -150,3 +150,12 @@ export const getNextOrderStatus = (status: OrderStatus): { nextStatus?: OrderSta
   const config = orderStatusConfig[status];
   return { nextStatus: config?.nextStatus, label: config?.nextLabel };
 };
+
+// Helper functions for transport types
+export const getTransportIcon = (type: string): LucideIcon => {
+  return transportConfig[type as TransportType]?.icon || Truck;
+};
+
+export const getTransportLabel = (type: string): string => {
+  return transportConfig[type as TransportType]?.title || type;
+};
