@@ -12,6 +12,7 @@ import { MobileNav } from "@/components/layout/MobileNav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useFavorites } from "@/hooks/useFavorites";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur";
 
@@ -55,7 +56,8 @@ export default function OfferDetail() {
   const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
+  
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   useEffect(() => {
     loadOffer();
@@ -207,10 +209,10 @@ export default function OfferDetail() {
           <span className="font-semibold">Détail de l'offre</span>
           <div className="flex gap-1">
             <button 
-              onClick={() => setIsFavorite(!isFavorite)}
+              onClick={() => id && toggleFavorite(id)}
               className="p-2"
             >
-              <Heart className={`w-5 h-5 ${isFavorite ? "fill-destructive text-destructive" : ""}`} />
+              <Heart className={`w-5 h-5 ${id && isFavorite(id) ? "fill-destructive text-destructive" : ""}`} />
             </button>
             <button className="p-2">
               <Share2 className="w-5 h-5" />
