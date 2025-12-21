@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, Search, Package, Wallet, User, MessageCircle } from "lucide-react";
+import { Home, Search, Package, Wallet, User, MessageCircle, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -34,12 +34,13 @@ export function MobileNav() {
   );
 }
 
-// GP specific bottom nav
+// Transporteur specific bottom nav
 const gpNavItems = [
-  { href: "/gp/dashboard", icon: Home, label: "Accueil", tab: "overview" },
-  { href: "/gp/dashboard", icon: Package, label: "Offres", tab: "offers" },
-  { href: "/gp/dashboard", icon: Search, label: "Commandes", tab: "orders" },
-  { href: "/gp/dashboard", icon: Wallet, label: "Wallet", tab: "wallet" },
+  { icon: Home, label: "Accueil", tab: "overview" },
+  { icon: Package, label: "Offres", tab: "offers" },
+  { icon: Search, label: "Missions", tab: "orders" },
+  { icon: BarChart3, label: "Stats", tab: "stats" },
+  { icon: Wallet, label: "Wallet", tab: "wallet" },
 ];
 
 interface GPMobileNavProps {
@@ -60,7 +61,7 @@ export function GPMobileNav({ activeTab, onTabChange }: GPMobileNavProps) {
               className={cn("bottom-nav-item flex-1", isActive && "active")}
             >
               <item.icon className={cn(isActive && "text-primary")} />
-              <span>{item.label}</span>
+              <span className="text-[10px]">{item.label}</span>
             </button>
           );
         })}

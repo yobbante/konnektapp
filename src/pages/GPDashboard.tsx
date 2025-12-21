@@ -5,7 +5,7 @@ import {
   Package, Wallet, Plus, ChevronRight, Star, 
   TrendingUp, Clock, MapPin, ArrowRight, LogOut,
   AlertTriangle, CheckCircle, Truck, ChevronDown, ChevronUp,
-  ArrowLeft
+  ArrowLeft, BarChart3
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
@@ -22,6 +22,7 @@ import { ProfileCompletionGauge } from "@/components/gp/dashboard/ProfileComplet
 import { RecentHistory } from "@/components/gp/dashboard/RecentHistory";
 import { SmartNotifications } from "@/components/gp/dashboard/SmartNotifications";
 import { ActiveOrderBar } from "@/components/gp/dashboard/ActiveOrderBar";
+import { GPStatsCharts } from "@/components/gp/dashboard/GPStatsCharts";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   OrderStatus, 
@@ -320,6 +321,10 @@ export default function GPDashboard() {
 
       {activeTab === "wallet" && (
         <WalletTab wallet={wallet} onBack={handleBackToOverview} />
+      )}
+
+      {activeTab === "stats" && (
+        <StatsTab orders={orders} onBack={handleBackToOverview} />
       )}
 
       <GPMobileNav activeTab={activeTab} onTabChange={setActiveTab} />
@@ -729,6 +734,22 @@ function WalletTab({ wallet, onBack }: { wallet: WalletData | null; onBack: () =
         <Wallet className="w-5 h-5" />
         Retirer des fonds
       </Button>
+    </div>
+  );
+}
+
+// Stats Tab Component
+function StatsTab({ orders, onBack }: { orders: any[]; onBack: () => void }) {
+  return (
+    <div className="px-4 py-4 space-y-4">
+      <Button variant="ghost" size="sm" onClick={onBack} className="-ml-2">
+        <ArrowLeft className="w-4 h-4 mr-1" />
+        Retour
+      </Button>
+
+      <h2 className="font-semibold text-foreground">Statistiques</h2>
+
+      <GPStatsCharts orders={orders} gpType="transporteur" />
     </div>
   );
 }
