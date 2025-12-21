@@ -66,6 +66,148 @@ export type Database = {
           },
         ]
       }
+      custom_request_responses: {
+        Row: {
+          available_pickup_date: string | null
+          created_at: string
+          currency: string
+          estimated_delivery_days: number | null
+          gp_id: string
+          id: string
+          message: string | null
+          price_proposed: number
+          request_id: string
+          status: string
+        }
+        Insert: {
+          available_pickup_date?: string | null
+          created_at?: string
+          currency?: string
+          estimated_delivery_days?: number | null
+          gp_id: string
+          id?: string
+          message?: string | null
+          price_proposed: number
+          request_id: string
+          status?: string
+        }
+        Update: {
+          available_pickup_date?: string | null
+          created_at?: string
+          currency?: string
+          estimated_delivery_days?: number | null
+          gp_id?: string
+          id?: string
+          message?: string | null
+          price_proposed?: number
+          request_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_request_responses_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_request_responses_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_request_responses_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "custom_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_requests: {
+        Row: {
+          accepted_offer_id: string | null
+          additional_services: string[] | null
+          budget_max: number | null
+          budget_min: number | null
+          client_id: string
+          created_at: string
+          description: string
+          destination_city: string
+          destination_country: string
+          expires_at: string | null
+          id: string
+          is_fragile: boolean | null
+          is_urgent: boolean | null
+          origin_city: string
+          origin_country: string
+          pickup_date_from: string | null
+          pickup_date_to: string | null
+          request_number: string
+          shipment_type: string
+          status: string
+          transport_type: string | null
+          updated_at: string
+          volume_estimate: string | null
+          weight_estimate: number | null
+        }
+        Insert: {
+          accepted_offer_id?: string | null
+          additional_services?: string[] | null
+          budget_max?: number | null
+          budget_min?: number | null
+          client_id: string
+          created_at?: string
+          description: string
+          destination_city: string
+          destination_country: string
+          expires_at?: string | null
+          id?: string
+          is_fragile?: boolean | null
+          is_urgent?: boolean | null
+          origin_city: string
+          origin_country?: string
+          pickup_date_from?: string | null
+          pickup_date_to?: string | null
+          request_number: string
+          shipment_type: string
+          status?: string
+          transport_type?: string | null
+          updated_at?: string
+          volume_estimate?: string | null
+          weight_estimate?: number | null
+        }
+        Update: {
+          accepted_offer_id?: string | null
+          additional_services?: string[] | null
+          budget_max?: number | null
+          budget_min?: number | null
+          client_id?: string
+          created_at?: string
+          description?: string
+          destination_city?: string
+          destination_country?: string
+          expires_at?: string | null
+          id?: string
+          is_fragile?: boolean | null
+          is_urgent?: boolean | null
+          origin_city?: string
+          origin_country?: string
+          pickup_date_from?: string | null
+          pickup_date_to?: string | null
+          request_number?: string
+          shipment_type?: string
+          status?: string
+          transport_type?: string | null
+          updated_at?: string
+          volume_estimate?: string | null
+          weight_estimate?: number | null
+        }
+        Relationships: []
+      }
       gp_offers: {
         Row: {
           arrival_date: string | null
@@ -851,6 +993,103 @@ export type Database = {
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_messages: {
+        Row: {
+          attachments: string[] | null
+          content: string
+          created_at: string
+          id: string
+          sender_id: string
+          sender_type: string
+          ticket_id: string
+        }
+        Insert: {
+          attachments?: string[] | null
+          content: string
+          created_at?: string
+          id?: string
+          sender_id: string
+          sender_type: string
+          ticket_id: string
+        }
+        Update: {
+          attachments?: string[] | null
+          content?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+          sender_type?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          order_id: string | null
+          priority: string
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          subject: string
+          ticket_number: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          order_id?: string | null
+          priority?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          subject: string
+          ticket_number: string
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          order_id?: string | null
+          priority?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          subject?: string
+          ticket_number?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]

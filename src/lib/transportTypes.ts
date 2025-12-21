@@ -63,8 +63,16 @@ export const transportConfig: Record<TransportType, TransportConfig> = {
   },
 };
 
-// Liste des types dans l'ordre d'affichage (voyageur et agence en premier)
+// Liste des types dans l'ordre d'affichage (sans express et agence pour v1)
 export const transportTypes: TransportConfig[] = [
+  transportConfig.voyageur,
+  transportConfig.routier,
+  transportConfig.maritime,
+  transportConfig.aerien,
+];
+
+// Liste complète incluant les types masqués (pour référence interne)
+export const allTransportTypes: TransportConfig[] = [
   transportConfig.voyageur,
   transportConfig.agence,
   transportConfig.express,
@@ -72,6 +80,9 @@ export const transportTypes: TransportConfig[] = [
   transportConfig.maritime,
   transportConfig.aerien,
 ];
+
+// Types masqués pour la v1
+export const hiddenTransportTypes: TransportType[] = ["express", "agence"];
 
 // Statuts de commande avec le workflow complet
 export type OrderStatus = "pending" | "accepted" | "collected" | "in_transit" | "delivered" | "cancelled" | "disputed";

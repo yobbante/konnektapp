@@ -81,7 +81,7 @@ export function Header() {
               </Link>
             )}
             
-            {/* GP Dashboard Link */}
+            {/* GP Dashboard Link - Visible uniquement pour les utilisateurs qui ont demandé à être GP */}
             {isGP && (
               <Link to="/gp/dashboard">
                 <Button
@@ -90,6 +90,18 @@ export function Header() {
                 >
                   <Truck className="w-4 h-4" />
                   Dashboard GP
+                </Button>
+              </Link>
+            )}
+            {/* Client Dashboard Link - Pour les clients non-GP */}
+            {isAuthenticated && !isGP && !hasAdminAccess && (
+              <Link to="/client/dashboard">
+                <Button
+                  variant={location.pathname.startsWith("/client") ? "nav-active" : "nav"}
+                  size="sm"
+                >
+                  <Package className="w-4 h-4" />
+                  Mes envois
                 </Button>
               </Link>
             )}
@@ -130,12 +142,12 @@ export function Header() {
                             </Link>
                             <Link to="/transporter/profile" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
                               <User className="w-5 h-5 text-secondary" />
-                              <span className="font-medium">Mon profil</span>
+                              <span className="font-medium">Mon profil GP</span>
                             </Link>
                           </>
-                        ) : (
+                        ) : isAuthenticated ? (
                           <>
-                            <Link to="/profile" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
+                            <Link to="/client/profile" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
                               <User className="w-5 h-5 text-secondary" />
                               <span className="font-medium">Mon profil</span>
                             </Link>
@@ -144,7 +156,7 @@ export function Header() {
                               <span className="font-medium">Mes envois</span>
                             </Link>
                           </>
-                        )}
+                        ) : null}
                         <div className="pt-4 border-t border-border mt-4">
                           <button 
                             onClick={handleSignOut} 
@@ -228,6 +240,14 @@ export function Header() {
                     <Button variant="nav" className="w-full justify-start">
                       <Truck className="w-4 h-4" />
                       Dashboard GP
+                    </Button>
+                  </Link>
+                )}
+                {isAuthenticated && !isGP && !hasAdminAccess && (
+                  <Link to="/client/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="nav" className="w-full justify-start">
+                      <Package className="w-4 h-4" />
+                      Mes envois
                     </Button>
                   </Link>
                 )}

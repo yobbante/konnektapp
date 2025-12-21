@@ -31,14 +31,12 @@ export const DEFAULT_VEHICLE_FILTERS: VehicleCapacityFiltersState = {
   maxCapacity: 50000,
 };
 
-// Get unique categories from vehicle types
+// Get unique categories from vehicle types (sans agence et express pour v1)
 const VEHICLE_CATEGORIES = [
-  { id: "express", label: "Express/Moto", icon: "🏍️" },
+  { id: "voyageur", label: "Voyageur (GP)", icon: "👤" },
   { id: "routier", label: "Routier", icon: "🚛" },
   { id: "maritime", label: "Maritime", icon: "🚢" },
   { id: "aerien", label: "Aérien", icon: "✈️" },
-  { id: "voyageur", label: "Voyageur (GP)", icon: "👤" },
-  { id: "agence", label: "Agence", icon: "🏢" },
 ];
 
 export function VehicleCapacityFilter({ 
