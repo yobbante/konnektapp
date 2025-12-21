@@ -4,7 +4,8 @@ import { motion } from "framer-motion";
 import { 
   Package, Wallet, Plus, ChevronRight, Star, 
   TrendingUp, Clock, MapPin, ArrowRight, LogOut,
-  AlertTriangle, CheckCircle, Truck
+  AlertTriangle, CheckCircle, Truck, ChevronDown, ChevronUp,
+  ArrowLeft
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +20,7 @@ import { BadgeSystem } from "@/components/gp/dashboard/BadgeSystem";
 import { ProfileCompletionGauge } from "@/components/gp/dashboard/ProfileCompletionGauge";
 import { RecentHistory } from "@/components/gp/dashboard/RecentHistory";
 import { SmartNotifications } from "@/components/gp/dashboard/SmartNotifications";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   OrderStatus, 
   orderStatusConfig, 
@@ -101,10 +103,13 @@ export default function GPDashboard() {
 
       setWallet(walletData);
 
+      // Filtrer uniquement les offres actives et valides
       const { data: offersData } = await supabase
         .from("gp_offers")
         .select("*")
         .eq("gp_id", profile.id)
+        .eq("status", "active")
+        .gte("departure_date", new Date().toISOString())
         .order("created_at", { ascending: false });
 
       setOffers(offersData || []);
@@ -132,6 +137,10 @@ export default function GPDashboard() {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate("/");
+  };
+
+  const handleBackToOverview = () => {
+    setActiveTab("overview");
   };
 
   if (loading) {
@@ -235,6 +244,7 @@ export default function GPDashboard() {
           offers={offers}
           onCreateOffer={() => setShowCreateOffer(true)}
           onRefresh={checkAuthAndLoadData}
+          onBack={handleBackToOverview}
         />
       )}
 
@@ -243,11 +253,12 @@ export default function GPDashboard() {
           orders={orders}
           gpProfileId={gpProfile.id}
           onRefresh={checkAuthAndLoadData}
+          onBack={handleBackToOverview}
         />
       )}
 
       {activeTab === "wallet" && (
-        <WalletTab wallet={wallet} />
+        <WalletTab wallet={wallet} onBack={handleBackToOverview} />
       )}
 
       <GPMobileNav activeTab={activeTab} onTabChange={setActiveTab} />
@@ -265,7 +276,7 @@ export default function GPDashboard() {
   );
 }
 
-// Modern Overview Tab Component with new design
+// Modern Overview Tab Component with new design - REORGANIZED
 function ModernOverviewTab({ 
   gpProfile, 
   kpiStats, 
@@ -281,17 +292,11 @@ function ModernOverviewTab({
   onViewProfile
 }: any) {
   const navigate = useNavigate();
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
 
   return (
     <div className="px-4 py-4 space-y-4">
-      {/* Smart Notifications */}
-      <SmartNotifications 
-        pendingMissions={pendingOrders}
-        lastPayment={wallet?.total_earned > 0 ? { amount: wallet.balance, date: "Récemment" } : undefined}
-        highDemandZone={gpProfile.zones_covered?.[0]}
-      />
-
-      {/* Profile Header */}
+      {/* Profile Header - Compact */}
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -308,195 +313,82 @@ function ModernOverviewTab({
         </Button>
       </motion.div>
 
-      {/* Profile Completion Gauge */}
-      <ProfileCompletionGauge 
-        profile={gpProfile}
-        onCompleteProfile={onViewProfile}
-      />
-
-      {/* KPI Cards Grid */}
-      <KPICards stats={kpiStats} gpType={gpProfile.gp_type} />
-
-      {/* Quick Actions */}
-      <QuickActions 
-        onUpdateProfile={onViewProfile}
-        onViewMissions={onViewOrders}
-        onViewHistory={onViewOrders}
-        onViewStats={onViewWallet}
-      />
-
-      {/* Badge System */}
-      <BadgeSystem 
-        isVerified={gpProfile.status === 'verified'}
-        rating={gpProfile.rating || 0}
-        totalDeliveries={gpProfile.total_deliveries || 0}
-        totalVolume={kpiStats.totalVolume}
-        isPremium={gpProfile.subscription === 'premium'}
-        gpType={gpProfile.gp_type}
-      />
-
-      {/* Recent History */}
-      <RecentHistory 
-        orders={orders}
-        onViewAll={onViewOrders}
-      />
-
-      {/* Create Offer CTA */}
+      {/* PRIORITY 1: Create Offer CTA - EN HAUT */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
+        transition={{ delay: 0.05 }}
       >
         <Button variant="default" size="lg" className="w-full" onClick={onCreateOffer}>
           <Plus className="w-5 h-5" />
           Nouvelle offre de transport
         </Button>
       </motion.div>
-    </div>
-  );
-}
 
-// Legacy Overview Tab Component (kept for reference)
-function OverviewTab({ gpProfile, stats, wallet, offers, orders, onCreateOffer, onSignOut, onViewOrders }: any) {
-  return (
-    <div className="px-4 py-4 space-y-4">
-      {/* Profile Card */}
-      <motion.div 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mobile-card"
-      >
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h2 className="font-semibold text-foreground">{gpProfile.business_name}</h2>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant={gpProfile.status === 'verified' ? 'success' : 'pending'}>
-                {gpProfile.status === 'verified' ? 'Vérifié' : 'En attente'}
-              </Badge>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Star className="w-3 h-3 text-warning fill-warning" />
-                {gpProfile.rating?.toFixed(1) || '0.0'}
-              </div>
-            </div>
-          </div>
-          <Button variant="ghost" size="icon-sm" onClick={onSignOut}>
-            <LogOut className="w-5 h-5" />
+      {/* PRIORITY 2: Recent History - EN HAUT */}
+      <RecentHistory 
+        orders={orders}
+        onViewAll={onViewOrders}
+      />
+
+      {/* Smart Notifications */}
+      <SmartNotifications 
+        pendingMissions={pendingOrders}
+        lastPayment={wallet?.total_earned > 0 ? { amount: wallet.balance, date: "Récemment" } : undefined}
+        highDemandZone={gpProfile.zones_covered?.[0]}
+      />
+
+      {/* KPI Cards Grid - Compact */}
+      <KPICards stats={kpiStats} gpType={gpProfile.gp_type} />
+
+      {/* Quick Actions - More Discrete */}
+      <Collapsible open={showMoreOptions} onOpenChange={setShowMoreOptions}>
+        <CollapsibleTrigger asChild>
+          <Button variant="outline" size="sm" className="w-full justify-between">
+            <span>Plus d'options</span>
+            {showMoreOptions ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </Button>
-        </div>
-      </motion.div>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-3 space-y-3">
+          {/* Quick Actions */}
+          <QuickActions 
+            onUpdateProfile={onViewProfile}
+            onViewMissions={onViewOrders}
+            onViewHistory={onViewOrders}
+            onViewStats={onViewWallet}
+          />
 
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-2 gap-3">
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mobile-card"
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Package className="w-4 h-4 text-primary" />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-foreground">{stats.activeOffers}</p>
-          <p className="text-xs text-muted-foreground">Offres actives</p>
-        </motion.div>
+          {/* Profile Completion Gauge */}
+          <ProfileCompletionGauge 
+            profile={gpProfile}
+            onCompleteProfile={onViewProfile}
+          />
 
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="mobile-card cursor-pointer hover:shadow-md transition-shadow"
-          onClick={onViewOrders}
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
-              <Clock className="w-4 h-4 text-warning" />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-foreground">{stats.pendingOrders}</p>
-          <p className="text-xs text-muted-foreground">En attente</p>
-        </motion.div>
-
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mobile-card cursor-pointer hover:shadow-md transition-shadow"
-          onClick={onViewOrders}
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center">
-              <Truck className="w-4 h-4 text-secondary" />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-foreground">{stats.inProgressOrders}</p>
-          <p className="text-xs text-muted-foreground">En cours</p>
-        </motion.div>
-
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="mobile-card"
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
-              <Wallet className="w-4 h-4 text-success" />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-foreground">{stats.balance.toLocaleString()}</p>
-          <p className="text-xs text-muted-foreground">FCFA dispo.</p>
-        </motion.div>
-      </div>
-
-      {/* Quick Actions */}
-      <Button variant="default" size="lg" className="w-full" onClick={onCreateOffer}>
-        <Plus className="w-5 h-5" />
-        Nouvelle offre
-      </Button>
-
-      {/* Recent Orders */}
-      {orders.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-foreground">Missions récentes</h3>
-            <Button variant="ghost" size="sm" onClick={onViewOrders}>
-              Voir tout
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-          <div className="space-y-2">
-            {orders.slice(0, 3).map((order: any) => (
-              <div key={order.id} className="mobile-card">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium">{order.origin_city}</span>
-                    <ArrowRight className="w-3 h-3 text-muted-foreground" />
-                    <span className="text-sm font-medium">{order.destination_city}</span>
-                  </div>
-                  <Badge variant={getOrderStatusColor(order.status) as any}>
-                    {getOrderStatusLabel(order.status)}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-xs text-muted-foreground">{order.order_number}</span>
-                  <span className="font-semibold text-sm">{order.total_price} FCFA</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+          {/* Badge System */}
+          <BadgeSystem 
+            isVerified={gpProfile.status === 'verified'}
+            rating={gpProfile.rating || 0}
+            totalDeliveries={gpProfile.total_deliveries || 0}
+            totalVolume={kpiStats.totalVolume}
+            isPremium={gpProfile.subscription === 'premium'}
+            gpType={gpProfile.gp_type}
+          />
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 }
 
 // Offers Tab Component  
-function OffersTab({ offers, onCreateOffer, onRefresh }: any) {
+function OffersTab({ offers, onCreateOffer, onRefresh, onBack }: any) {
   return (
     <div className="px-4 py-4 space-y-4">
+      {/* Back Button */}
+      <Button variant="ghost" size="sm" onClick={onBack} className="mb-2 -ml-2">
+        <ArrowLeft className="w-4 h-4 mr-1" />
+        Retour
+      </Button>
+
       <div className="flex items-center justify-between">
         <h2 className="font-semibold text-foreground">Mes offres</h2>
         <Button variant="default" size="sm" onClick={onCreateOffer}>
@@ -508,7 +400,7 @@ function OffersTab({ offers, onCreateOffer, onRefresh }: any) {
       {offers.length === 0 ? (
         <div className="mobile-card text-center py-8">
           <Package className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
-          <p className="text-muted-foreground mb-4">Aucune offre</p>
+          <p className="text-muted-foreground mb-4">Aucune offre active</p>
           <Button variant="default" onClick={onCreateOffer}>Créer une offre</Button>
         </div>
       ) : (
@@ -523,7 +415,7 @@ function OffersTab({ offers, onCreateOffer, onRefresh }: any) {
                   <span className="font-medium text-sm">{offer.destination_city}</span>
                 </div>
                 <Badge variant={offer.status === 'active' ? 'success' : 'pending'}>
-                  {offer.status}
+                  {offer.status === 'active' ? 'Active' : offer.status}
                 </Badge>
               </div>
               <div className="flex items-center justify-between text-sm">
@@ -549,7 +441,7 @@ function OffersTab({ offers, onCreateOffer, onRefresh }: any) {
 }
 
 // Orders Tab Component with full workflow
-function OrdersTab({ orders, gpProfileId, onRefresh }: { orders: any[]; gpProfileId: string; onRefresh: () => void }) {
+function OrdersTab({ orders, gpProfileId, onRefresh, onBack }: { orders: any[]; gpProfileId: string; onRefresh: () => void; onBack: () => void }) {
   const { toast } = useToast();
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
@@ -663,6 +555,12 @@ function OrdersTab({ orders, gpProfileId, onRefresh }: { orders: any[]; gpProfil
 
   return (
     <div className="px-4 py-4 space-y-6">
+      {/* Back Button */}
+      <Button variant="ghost" size="sm" onClick={onBack} className="-ml-2">
+        <ArrowLeft className="w-4 h-4 mr-1" />
+        Retour
+      </Button>
+
       <h2 className="font-semibold text-foreground">Mes missions</h2>
 
       {orders.length === 0 ? (
@@ -723,9 +621,15 @@ function OrdersTab({ orders, gpProfileId, onRefresh }: { orders: any[]; gpProfil
 }
 
 // Wallet Tab Component
-function WalletTab({ wallet }: { wallet: WalletData | null }) {
+function WalletTab({ wallet, onBack }: { wallet: WalletData | null; onBack: () => void }) {
   return (
     <div className="px-4 py-4 space-y-4">
+      {/* Back Button */}
+      <Button variant="ghost" size="sm" onClick={onBack} className="-ml-2">
+        <ArrowLeft className="w-4 h-4 mr-1" />
+        Retour
+      </Button>
+
       <h2 className="font-semibold text-foreground">Mon Wallet</h2>
 
       {/* Balance Card */}

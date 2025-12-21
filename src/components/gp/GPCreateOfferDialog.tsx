@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Package } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Package, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -39,8 +39,12 @@ const countries = [
 export function GPCreateOfferDialog({ open, onClose, gpProfile, onSuccess }: GPCreateOfferDialogProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  
+  // Le type de transport est forcé par le profil GP
+  const transportType = gpProfile.gp_type as TransportType;
+  const currentTransportConfig = transportTypes.find(t => t.type === transportType);
+  
   const [formData, setFormData] = useState({
-    transportType: gpProfile.gp_type as TransportType,
     originCity: "",
     originCountry: "SN",
     destinationCity: "",
@@ -55,6 +59,26 @@ export function GPCreateOfferDialog({ open, onClose, gpProfile, onSuccess }: GPC
     conditions: "",
   });
 
+  // Reset form when dialog opens
+  useEffect(() => {
+    if (open) {
+      setFormData({
+        originCity: "",
+        originCountry: "SN",
+        destinationCity: "",
+        destinationCountry: "CI",
+        departureDate: "",
+        arrivalDate: "",
+        pricePerKg: "",
+        totalCapacity: "",
+        minWeight: "0.5",
+        maxWeight: "",
+        description: "",
+        conditions: "",
+      });
+    }
+  }, [open]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -67,13 +91,24 @@ export function GPCreateOfferDialog({ open, onClose, gpProfile, onSuccess }: GPC
       return;
     }
 
+    // Validate departure date is in the future
+    const departureDate = new Date(formData.departureDate);
+    if (departureDate <= new Date()) {
+      toast({
+        title: "Erreur",
+        description: "La date de départ doit être dans le futur",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase
         .from("gp_offers")
         .insert({
           gp_id: gpProfile.id,
-          transport_type: formData.transportType,
+          transport_type: transportType, // Type forcé par le profil
           origin_city: formData.originCity,
           origin_country: formData.originCountry,
           destination_city: formData.destinationCity,
@@ -87,6 +122,7 @@ export function GPCreateOfferDialog({ open, onClose, gpProfile, onSuccess }: GPC
           max_weight: formData.maxWeight ? parseFloat(formData.maxWeight) : null,
           description: formData.description || null,
           conditions: formData.conditions || null,
+          status: 'active',
         });
 
       if (error) throw error;
@@ -109,6 +145,8 @@ export function GPCreateOfferDialog({ open, onClose, gpProfile, onSuccess }: GPC
     }
   };
 
+  const IconComponent = currentTransportConfig?.icon || Package;
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -120,28 +158,20 @@ export function GPCreateOfferDialog({ open, onClose, gpProfile, onSuccess }: GPC
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Transport Type */}
+          {/* Transport Type - Locked to GP profile type */}
           <div>
             <Label className="mb-3 block">Type de transport</Label>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-              {transportTypes.map((option) => {
-                const IconComponent = option.icon;
-                return (
-                  <button
-                    key={option.type}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, transportType: option.type })}
-                    className={`p-3 rounded-xl border-2 text-center transition-all ${
-                      formData.transportType === option.type
-                        ? "border-secondary bg-secondary/10"
-                        : "border-border hover:border-muted-foreground"
-                    }`}
-                  >
-                    <IconComponent className={`w-5 h-5 mx-auto mb-1 ${formData.transportType === option.type ? 'text-secondary' : option.color}`} />
-                    <span className="text-xs font-medium">{option.title}</span>
-                  </button>
-                );
-              })}
+            <div className="p-4 rounded-xl border-2 border-secondary bg-secondary/10 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-secondary/20 flex items-center justify-center">
+                <IconComponent className="w-5 h-5 text-secondary" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-foreground">{currentTransportConfig?.title || transportType}</p>
+                <p className="text-xs text-muted-foreground">
+                  Synchronisé avec votre profil transporteur
+                </p>
+              </div>
+              <Lock className="w-4 h-4 text-muted-foreground" />
             </div>
           </div>
 
@@ -196,6 +226,7 @@ export function GPCreateOfferDialog({ open, onClose, gpProfile, onSuccess }: GPC
               <Input
                 type="datetime-local"
                 value={formData.departureDate}
+                min={new Date().toISOString().slice(0, 16)}
                 onChange={(e) => setFormData({ ...formData, departureDate: e.target.value })}
               />
             </div>
@@ -204,6 +235,7 @@ export function GPCreateOfferDialog({ open, onClose, gpProfile, onSuccess }: GPC
               <Input
                 type="datetime-local"
                 value={formData.arrivalDate}
+                min={formData.departureDate}
                 onChange={(e) => setFormData({ ...formData, arrivalDate: e.target.value })}
               />
             </div>
