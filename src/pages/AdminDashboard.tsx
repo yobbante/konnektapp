@@ -104,12 +104,12 @@ export default function AdminDashboard() {
         return;
       }
 
-      const { data: hasRole, error } = await supabase.rpc("has_role", {
+      // Vérifier si l'utilisateur a accès admin (admin ou moderator)
+      const { data: hasAccess, error } = await supabase.rpc("has_admin_access", {
         _user_id: user.id,
-        _role: "admin",
       });
 
-      if (error || !hasRole) {
+      if (error || !hasAccess) {
         toast({
           title: "Accès refusé",
           description: "Vous n'avez pas les permissions administrateur",
