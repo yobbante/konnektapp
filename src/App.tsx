@@ -17,6 +17,7 @@ import Tracking from "./pages/Tracking";
 import PriceCalculator from "./pages/PriceCalculator";
 import Messages from "./pages/Messages";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminGPProfile from "./pages/AdminGPProfile";
 import PostBookingForm from "./pages/PostBookingForm";
 import Profile from "./pages/Profile";
 import GPProfile from "./pages/GPProfile";
@@ -44,6 +45,7 @@ const App = () => (
           <Route path="/gp/dashboard" element={<GPDashboard />} />
           <Route path="/client/dashboard" element={<ClientDashboard />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/gp/:gpId" element={<AdminGPProfile />} />
           <Route path="/order/:orderId/complete" element={<PostBookingForm />} />
           <Route path="/profil" element={<Profile />} />
           <Route path="/gp/:gpId" element={<GPProfile />} />
