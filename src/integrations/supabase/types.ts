@@ -854,6 +854,9 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_order_gp: { Args: { order_gp_id: string }; Returns: boolean }
+      owns_gp_offer: { Args: { offer_gp_id: string }; Returns: boolean }
+      owns_gp_wallet: { Args: { wallet_gp_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
