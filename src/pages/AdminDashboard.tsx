@@ -232,7 +232,7 @@ export default function AdminDashboard() {
   };
 
   const handleViewDetails = (gpId: string) => {
-    navigate(`/gp/${gpId}`);
+    navigate(`/admin/gp/${gpId}`);
   };
 
   const filteredGPs = gps.filter(
