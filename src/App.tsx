@@ -14,7 +14,6 @@ import GPDashboard from "./pages/GPDashboard";
 import ClientDashboard from "./pages/ClientDashboard";
 import Auth from "./pages/Auth";
 import Tracking from "./pages/Tracking";
-import PriceCalculator from "./pages/PriceCalculator";
 import Messages from "./pages/Messages";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminGPProfile from "./pages/AdminGPProfile";
@@ -22,6 +21,7 @@ import PostBookingForm from "./pages/PostBookingForm";
 import Profile from "./pages/Profile";
 import GPProfile from "./pages/GPProfile";
 import Favorites from "./pages/Favorites";
+import SavedSearches from "./pages/SavedSearches";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,7 +40,6 @@ const App = () => (
           <Route path="/offres/:id" element={<OfferDetail />} />
           <Route path="/tracking" element={<Tracking />} />
           <Route path="/messages" element={<Messages />} />
-          <Route path="/calculateur" element={<PriceCalculator />} />
           <Route path="/gp" element={<GPLanding />} />
           <Route path="/gp/inscription" element={<GPRegistration />} />
           <Route path="/gp/dashboard" element={<GPDashboard />} />
@@ -51,6 +50,7 @@ const App = () => (
           <Route path="/profil" element={<Profile />} />
           <Route path="/gp/:gpId" element={<GPProfile />} />
           <Route path="/favorites" element={<Favorites />} />
+          <Route path="/saved-searches" element={<SavedSearches />} />
           <Route path="/auth" element={<Auth />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
