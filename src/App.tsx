@@ -12,6 +12,7 @@ import CustomRequest from "./pages/CustomRequest";
 import GPLanding from "./pages/GPLanding";
 import GPRegistration from "./pages/GPRegistration";
 import GPDashboard from "./pages/GPDashboard";
+import GPCustomRequests from "./pages/GPCustomRequests";
 import ClientDashboard from "./pages/ClientDashboard";
 import ClientProfile from "./pages/ClientProfile";
 import Auth from "./pages/Auth";
@@ -47,6 +48,7 @@ const App = () => (
           <Route path="/gp" element={<GPLanding />} />
           <Route path="/gp/inscription" element={<GPRegistration />} />
           <Route path="/gp/dashboard" element={<GPDashboard />} />
+          <Route path="/gp/requests" element={<GPCustomRequests />} />
           <Route path="/client/dashboard" element={<ClientDashboard />} />
           <Route path="/client/profile" element={<ClientProfile />} />
           <Route path="/admin" element={<AdminDashboard />} />

@@ -9,6 +9,7 @@ import { ChatView } from "@/components/messaging/ChatView";
 
 export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+  const [selectedContactName, setSelectedContactName] = useState<string>("Contact");
   const [currentUser, setCurrentUser] = useState<{ id: string; isGp: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -20,15 +21,16 @@ export default function MessagesPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("is_gp")
+        // Check if user is GP
+        const { data: gpProfile } = await supabase
+          .from("gp_profiles")
+          .select("id")
           .eq("user_id", user.id)
           .single();
 
         setCurrentUser({
           id: user.id,
-          isGp: profile?.is_gp || false,
+          isGp: !!gpProfile,
         });
       }
     } catch (error) {
@@ -36,6 +38,11 @@ export default function MessagesPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSelectConversation = (conversationId: string, contactName: string) => {
+    setSelectedConversation(conversationId);
+    setSelectedContactName(contactName);
   };
 
   if (loading) {
@@ -77,7 +84,7 @@ export default function MessagesPage() {
             currentUserId={currentUser.id}
             userType={currentUser.isGp ? "gp" : "client"}
             onBack={() => setSelectedConversation(null)}
-            contactName="Contact"
+            contactName={selectedContactName}
           />
         ) : (
           <motion.div
@@ -92,7 +99,7 @@ export default function MessagesPage() {
             </div>
             <ConversationList
               userType={currentUser.isGp ? "gp" : "client"}
-              onSelectConversation={setSelectedConversation}
+              onSelectConversation={handleSelectConversation}
               selectedId={selectedConversation || undefined}
             />
           </motion.div>
