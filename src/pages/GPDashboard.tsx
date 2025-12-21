@@ -5,7 +5,7 @@ import {
   Package, Wallet, Plus, ChevronRight, Star, 
   TrendingUp, Clock, MapPin, ArrowRight, LogOut,
   AlertTriangle, CheckCircle, Truck, ChevronDown, ChevronUp,
-  ArrowLeft, BarChart3
+  ArrowLeft, BarChart3, User
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
@@ -296,7 +296,7 @@ export default function GPDashboard() {
           onSignOut={handleSignOut}
           onViewOrders={() => setActiveTab("orders")}
           onViewWallet={() => setActiveTab("wallet")}
-          onViewProfile={() => navigate("/gp/profile")}
+          onViewProfile={() => navigate("/transporter/profile")}
           onRefresh={checkAuthAndLoadData}
         />
       )}
@@ -325,6 +325,28 @@ export default function GPDashboard() {
 
       {activeTab === "stats" && (
         <StatsTab orders={orders} onBack={handleBackToOverview} />
+      )}
+
+      {activeTab === "profile" && (
+        <div className="px-4 py-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleBackToOverview} 
+            className="-ml-2 mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Retour
+          </Button>
+          <Button 
+            variant="default" 
+            className="w-full"
+            onClick={() => navigate("/transporter/profile")}
+          >
+            <User className="w-4 h-4 mr-2" />
+            Voir mon profil complet
+          </Button>
+        </div>
       )}
 
       <GPMobileNav activeTab={activeTab} onTabChange={setActiveTab} />
@@ -373,7 +395,7 @@ function ModernOverviewTab({
           <h1 className="text-xl font-bold text-foreground">
             Bienvenue, {gpProfile.business_name.split(' ')[0]} 👋
           </h1>
-          <p className="text-sm text-muted-foreground">Tableau de bord transporteur</p>
+          <p className="text-sm text-muted-foreground">Tableau de bord Transporteur</p>
         </div>
         <Button variant="ghost" size="icon" onClick={onSignOut}>
           <LogOut className="w-5 h-5" />
@@ -405,6 +427,9 @@ function ModernOverviewTab({
         lastPayment={wallet?.total_earned > 0 ? { amount: wallet.balance, date: "Récemment" } : undefined}
         highDemandZone={gpProfile.zones_covered?.[0]}
       />
+
+      {/* KPI Cards Grid - Compact */}
+      <KPICards stats={kpiStats} gpType={gpProfile.gp_type} />
 
       {/* KPI Cards Grid - Compact */}
       <KPICards stats={kpiStats} gpType={gpProfile.gp_type} />

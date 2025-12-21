@@ -40,7 +40,7 @@ const gpNavItems = [
   { icon: Package, label: "Offres", tab: "offers" },
   { icon: Search, label: "Missions", tab: "orders" },
   { icon: BarChart3, label: "Stats", tab: "stats" },
-  { icon: Wallet, label: "Wallet", tab: "wallet" },
+  { icon: User, label: "Profil", tab: "profile" },
 ];
 
 interface GPMobileNavProps {

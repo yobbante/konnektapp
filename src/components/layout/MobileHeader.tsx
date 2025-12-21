@@ -122,7 +122,7 @@ export function MobileHeader({ title, showNotifications = true }: MobileHeaderPr
                           <Link to="/gp/dashboard" onClick={() => setMenuOpen(false)}>
                             <Button variant="ghost" className="w-full justify-start text-secondary">
                               <Truck className="w-4 h-4 mr-2" />
-                              Dashboard GP
+                              Dashboard Transporteur
                             </Button>
                           </Link>
                         )}
@@ -154,7 +154,7 @@ export function MobileHeader({ title, showNotifications = true }: MobileHeaderPr
                         <Link to="/gp/inscription" onClick={() => setMenuOpen(false)}>
                           <Button variant="default" className="w-full justify-start">
                             <Truck className="w-4 h-4 mr-2" />
-                            Devenir GP
+                            Devenir Transporteur
                           </Button>
                         </Link>
                       </>
