@@ -20,6 +20,7 @@ import { BadgeSystem } from "@/components/gp/dashboard/BadgeSystem";
 import { ProfileCompletionGauge } from "@/components/gp/dashboard/ProfileCompletionGauge";
 import { RecentHistory } from "@/components/gp/dashboard/RecentHistory";
 import { SmartNotifications } from "@/components/gp/dashboard/SmartNotifications";
+import { ActiveOrderBar } from "@/components/gp/dashboard/ActiveOrderBar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   OrderStatus, 
@@ -185,9 +186,19 @@ export default function GPDashboard() {
     balance: wallet?.balance || 0,
   };
 
+  // Get the most recent active order for the bar
+  const activeOrder = orders.find(o => 
+    ['accepted', 'collected', 'in_transit'].includes(o.status)
+  );
+
   return (
     <div className="min-h-screen bg-muted/30 pb-safe">
       <MobileHeader title={gpProfile.business_name} showNotifications />
+
+      {/* Active Order Bar - Fixed at top */}
+      {activeOrder && (
+        <ActiveOrderBar order={activeOrder} onRefresh={checkAuthAndLoadData} />
+      )}
 
       {/* Rappel pour les missions en cours */}
       {pendingUpdateOrders.length > 0 && activeTab === "overview" && (

@@ -9,12 +9,12 @@ import { usePageTheme } from "@/hooks/usePageTheme";
 import { supabase } from "@/integrations/supabase/client";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const navLinks = [
   { href: "/", label: "Accueil" },
@@ -104,45 +104,48 @@ export function Header() {
             {!loading && (
               <>
                 {isAuthenticated ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                  <Sheet>
+                    <SheetTrigger asChild>
                       <Button variant="outline" size="sm">
                         <User className="w-4 h-4" />
                         Mon compte
                       </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      {hasAdminAccess && (
-                        <DropdownMenuItem asChild>
-                          <Link to="/admin" className="flex items-center gap-2 cursor-pointer">
-                            <Shield className="w-4 h-4 text-primary" />
-                            Dashboard Admin
+                    </SheetTrigger>
+                    <SheetContent side="right" className="w-72">
+                      <SheetHeader>
+                        <SheetTitle>Mon compte</SheetTitle>
+                      </SheetHeader>
+                      <div className="py-4 space-y-2">
+                        {hasAdminAccess && (
+                          <Link to="/admin" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
+                            <Shield className="w-5 h-5 text-primary" />
+                            <span className="font-medium">Dashboard Admin</span>
                           </Link>
-                        </DropdownMenuItem>
-                      )}
-                      {isGP && (
-                        <DropdownMenuItem asChild>
-                          <Link to="/gp/dashboard" className="flex items-center gap-2 cursor-pointer">
-                            <Truck className="w-4 h-4 text-primary" />
-                            Dashboard GP
+                        )}
+                        {isGP && (
+                          <Link to="/gp/dashboard" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
+                            <Truck className="w-5 h-5 text-primary" />
+                            <span className="font-medium">Dashboard GP</span>
                           </Link>
-                        </DropdownMenuItem>
-                      )}
-                      {!isGP && (
-                        <DropdownMenuItem asChild>
-                          <Link to="/client/dashboard" className="flex items-center gap-2 cursor-pointer">
-                            <Package className="w-4 h-4" />
-                            Mes envois
+                        )}
+                        {!isGP && (
+                          <Link to="/client/dashboard" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
+                            <Package className="w-5 h-5" />
+                            <span className="font-medium">Mes envois</span>
                           </Link>
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Déconnexion
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        )}
+                        <div className="pt-4 border-t border-border mt-4">
+                          <button 
+                            onClick={handleSignOut} 
+                            className="flex items-center gap-3 p-3 rounded-lg hover:bg-destructive/10 transition-colors text-destructive w-full"
+                          >
+                            <LogOut className="w-5 h-5" />
+                            <span className="font-medium">Déconnexion</span>
+                          </button>
+                        </div>
+                      </div>
+                    </SheetContent>
+                  </Sheet>
                 ) : (
                   <>
                     <Link to="/auth" className="hidden sm:block">
