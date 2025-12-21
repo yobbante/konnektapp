@@ -76,6 +76,28 @@ export default function OffresPage() {
 
   useEffect(() => {
     fetchOffers();
+
+    // Subscribe to realtime updates for gp_offers
+    const channel = supabase
+      .channel('offers-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'gp_offers'
+        },
+        (payload) => {
+          console.log('Realtime update:', payload);
+          // Refetch offers on any change
+          fetchOffers();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchOffers = async () => {
