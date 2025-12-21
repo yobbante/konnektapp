@@ -5,7 +5,9 @@ import { Menu, X, Package, Truck, User, Shield, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CountrySelector } from "@/components/CountrySelector";
 import { useUserRole } from "@/hooks/useUserRole";
+import { usePageTheme } from "@/hooks/usePageTheme";
 import { supabase } from "@/integrations/supabase/client";
+import { VerifiedBadge } from "@/components/ui/verified-badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +28,8 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { hasAdminAccess, isGP, isAuthenticated, loading } = useUserRole();
+  const { hasAdminAccess, isGP, isAuthenticated, loading, isProfileComplete } = useUserRole();
+  const { logoBackground, logoColor } = usePageTheme();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -39,12 +42,15 @@ export function Header() {
         <nav className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gold-gradient flex items-center justify-center shadow-md">
-              <Package className="w-5 h-5 text-primary" />
+            <div className={`w-10 h-10 rounded-xl ${logoBackground} flex items-center justify-center shadow-md transition-colors`}>
+              <Package className={`w-5 h-5 ${logoColor}`} />
             </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-lg text-foreground leading-tight">Yobbanté</span>
-              <span className="text-xs font-semibold text-secondary -mt-1">GP</span>
+            <div className="flex items-center gap-2">
+              <div className="flex flex-col">
+                <span className="font-bold text-lg text-foreground leading-tight">Yobbanté</span>
+                <span className="text-xs font-semibold text-secondary -mt-1">GP</span>
+              </div>
+              {isProfileComplete && <VerifiedBadge size="sm" />}
             </div>
           </Link>
 
