@@ -26,7 +26,7 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAdmin, isGP, isAuthenticated, loading } = useUserRole();
+  const { hasAdminAccess, isGP, isAuthenticated, loading } = useUserRole();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -61,13 +61,13 @@ export function Header() {
               </Link>
             ))}
             
-            {/* Admin Link */}
-            {isAdmin && (
+            {/* Admin Link - visible for admin and moderator */}
+            {hasAdminAccess && (
               <Link to="/admin">
                 <Button
                   variant={location.pathname === "/admin" ? "nav-active" : "nav"}
                   size="sm"
-                  className="text-destructive"
+                  className="text-primary font-semibold"
                 >
                   <Shield className="w-4 h-4" />
                   Admin
@@ -106,10 +106,10 @@ export function Header() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
-                      {isAdmin && (
+                      {hasAdminAccess && (
                         <DropdownMenuItem asChild>
                           <Link to="/admin" className="flex items-center gap-2 cursor-pointer">
-                            <Shield className="w-4 h-4 text-destructive" />
+                            <Shield className="w-4 h-4 text-primary" />
                             Dashboard Admin
                           </Link>
                         </DropdownMenuItem>
@@ -195,9 +195,9 @@ export function Header() {
                 ))}
                 
                 {/* Admin & GP Links in mobile menu */}
-                {isAdmin && (
+                {hasAdminAccess && (
                   <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="nav" className="w-full justify-start text-destructive">
+                    <Button variant="nav" className="w-full justify-start text-primary font-semibold">
                       <Shield className="w-4 h-4" />
                       Dashboard Admin
                     </Button>
