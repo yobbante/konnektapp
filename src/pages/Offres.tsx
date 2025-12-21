@@ -40,11 +40,10 @@ interface Offer {
   } | null;
 }
 
+// Filtres de transport sans agence et express pour v1
 const transportFilters = [
   { type: "all", label: "Tous", icon: Package },
   { type: "voyageur", label: "GP", icon: Briefcase },
-  { type: "agence", label: "Agence", icon: Building2 },
-  { type: "express", label: "Express", icon: Zap },
   { type: "routier", label: "Routier", icon: Truck },
   { type: "maritime", label: "Maritime", icon: Ship },
   { type: "aerien", label: "Aérien", icon: Plane },

@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Offres from "./pages/Offres";
 import OfferDetail from "./pages/OfferDetail";
 import DemandeEnvoi from "./pages/DemandeEnvoi";
+import CustomRequest from "./pages/CustomRequest";
 import GPLanding from "./pages/GPLanding";
 import GPRegistration from "./pages/GPRegistration";
 import GPDashboard from "./pages/GPDashboard";
@@ -38,6 +39,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/demande" element={<DemandeEnvoi />} />
+          <Route path="/demande/personnalisee" element={<CustomRequest />} />
           <Route path="/offres" element={<Offres />} />
           <Route path="/offres/:id" element={<OfferDetail />} />
           <Route path="/tracking" element={<Tracking />} />
