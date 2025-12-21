@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Link, useSearchParams } from "react-router-dom";
 import { 
   Search, Package, ArrowRight, MapPin, Star,
-  Zap, Truck, Ship, Plane, Briefcase, Loader2, Heart, Scale, Filter, Building2
+  Zap, Truck, Ship, Plane, Briefcase, Loader2, Heart, Scale, Filter, Building2, Calculator
 } from "lucide-react";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -15,9 +15,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { AdvancedFilters, DEFAULT_FILTERS, type AdvancedFiltersState } from "@/components/offers/AdvancedFilters";
+import { VehicleCapacityFilter, DEFAULT_VEHICLE_FILTERS, type VehicleCapacityFiltersState } from "@/components/offers/VehicleCapacityFilter";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useOfferNotifications } from "@/hooks/useOfferNotifications";
 import { CompareProvider, useCompare, CompareOffer } from "@/components/offers/OfferCompare";
+import { MovingQuoteCalculator } from "@/components/quotes/MovingQuoteCalculator";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence";
 
@@ -80,7 +82,8 @@ function OffresContent() {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFiltersState>(DEFAULT_FILTERS);
-  
+  const [vehicleFilters, setVehicleFilters] = useState<VehicleCapacityFiltersState>(DEFAULT_VEHICLE_FILTERS);
+  const [showQuoteCalculator, setShowQuoteCalculator] = useState(false);
   const { isAuthenticated, isFavorite, toggleFavorite } = useFavorites();
   const { saveSearch } = useOfferNotifications({
     filters: advancedFilters,
@@ -173,6 +176,21 @@ function OffresContent() {
         return false;
       }
 
+      // Vehicle category filter
+      if (vehicleFilters.vehicleCategories.length > 0) {
+        if (!vehicleFilters.vehicleCategories.includes(offer.transport_type)) {
+          return false;
+        }
+      }
+
+      // Capacity filter
+      if (vehicleFilters.minCapacity > 0 && offer.available_capacity < vehicleFilters.minCapacity) {
+        return false;
+      }
+      if (vehicleFilters.maxCapacity < 50000 && offer.available_capacity > vehicleFilters.maxCapacity) {
+        return false;
+      }
+
       // Search query filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -210,7 +228,7 @@ function OffresContent() {
 
       return true;
     });
-  }, [offers, activeFilter, searchQuery, advancedFilters]);
+  }, [offers, activeFilter, searchQuery, advancedFilters, vehicleFilters]);
 
   const formatDate = (dateStr: string) => {
     try {
@@ -243,12 +261,25 @@ function OffresContent() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          <VehicleCapacityFilter
+            filters={vehicleFilters}
+            onFiltersChange={setVehicleFilters}
+          />
           <AdvancedFilters
             filters={advancedFilters}
             onFiltersChange={setAdvancedFilters}
             onSaveSearch={saveSearch}
             isAuthenticated={isAuthenticated}
           />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowQuoteCalculator(true)}
+            className="gap-2"
+          >
+            <Calculator className="w-4 h-4" />
+            Devis
+          </Button>
         </div>
 
         {/* Transport Filters - Scrollable */}
@@ -403,6 +434,15 @@ function OffresContent() {
           </motion.div>
         )}
       </div>
+
+      {/* Moving Quote Calculator */}
+      <MovingQuoteCalculator
+        open={showQuoteCalculator}
+        onOpenChange={setShowQuoteCalculator}
+        onSubmitQuote={(quote) => {
+          console.log("Quote submitted:", quote);
+        }}
+      />
 
       <MobileNav />
     </div>

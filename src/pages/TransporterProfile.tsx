@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleManagement } from "@/components/gp/VehicleManagement";
 import { ScheduledRoutesManager } from "@/components/gp/ScheduledRoutesManager";
+import { GenerateOffersFromRoutes } from "@/components/gp/GenerateOffersFromRoutes";
 
 interface GPProfileData {
   id: string;
@@ -499,7 +500,20 @@ export default function TransporterProfile() {
         <VehicleManagement gpId={profile.id} gpType={profile.gp_type} />
 
         {/* Scheduled Routes */}
-        <ScheduledRoutesManager gpId={profile.id} vehicles={[]} />
+        <ScheduledRoutesManager 
+          gpId={profile.id} 
+          vehicles={[]} 
+        />
+
+        {/* Generate Offers from Routes - Matchmaking automatique */}
+        <GenerateOffersFromRoutes
+          gpId={profile.id}
+          gpType={profile.gp_type}
+          routes={[]}
+          onOffersGenerated={() => {
+            toast({ title: "Offres générées avec succès" });
+          }}
+        />
 
         {/* Preview Link */}
         <Card>
