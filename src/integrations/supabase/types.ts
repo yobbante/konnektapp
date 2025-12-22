@@ -208,6 +208,130 @@ export type Database = {
         }
         Relationships: []
       }
+      dispute_history: {
+        Row: {
+          action: string
+          actor_id: string
+          actor_type: string
+          attachments: string[] | null
+          created_at: string
+          dispute_id: string
+          id: string
+          new_status: Database["public"]["Enums"]["dispute_status"] | null
+          notes: string | null
+          old_status: Database["public"]["Enums"]["dispute_status"] | null
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          actor_type: string
+          attachments?: string[] | null
+          created_at?: string
+          dispute_id: string
+          id?: string
+          new_status?: Database["public"]["Enums"]["dispute_status"] | null
+          notes?: string | null
+          old_status?: Database["public"]["Enums"]["dispute_status"] | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          actor_type?: string
+          attachments?: string[] | null
+          created_at?: string
+          dispute_id?: string
+          id?: string
+          new_status?: Database["public"]["Enums"]["dispute_status"] | null
+          notes?: string | null
+          old_status?: Database["public"]["Enums"]["dispute_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dispute_history_dispute_id_fkey"
+            columns: ["dispute_id"]
+            isOneToOne: false
+            referencedRelation: "disputes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      disputes: {
+        Row: {
+          assigned_moderator: string | null
+          attachments: string[] | null
+          category: Database["public"]["Enums"]["dispute_category"]
+          closed_at: string | null
+          compensation_amount: number | null
+          created_at: string
+          deadline_resolution: string | null
+          deadline_response: string | null
+          description: string
+          dispute_number: string
+          final_decision: string | null
+          id: string
+          initiated_by: string
+          initiated_by_type: string
+          order_id: string
+          provisional_decision: string | null
+          responsible_party: string | null
+          sanction_applied: Database["public"]["Enums"]["sanction_type"] | null
+          status: Database["public"]["Enums"]["dispute_status"]
+          updated_at: string
+        }
+        Insert: {
+          assigned_moderator?: string | null
+          attachments?: string[] | null
+          category: Database["public"]["Enums"]["dispute_category"]
+          closed_at?: string | null
+          compensation_amount?: number | null
+          created_at?: string
+          deadline_resolution?: string | null
+          deadline_response?: string | null
+          description: string
+          dispute_number: string
+          final_decision?: string | null
+          id?: string
+          initiated_by: string
+          initiated_by_type: string
+          order_id: string
+          provisional_decision?: string | null
+          responsible_party?: string | null
+          sanction_applied?: Database["public"]["Enums"]["sanction_type"] | null
+          status?: Database["public"]["Enums"]["dispute_status"]
+          updated_at?: string
+        }
+        Update: {
+          assigned_moderator?: string | null
+          attachments?: string[] | null
+          category?: Database["public"]["Enums"]["dispute_category"]
+          closed_at?: string | null
+          compensation_amount?: number | null
+          created_at?: string
+          deadline_resolution?: string | null
+          deadline_response?: string | null
+          description?: string
+          dispute_number?: string
+          final_decision?: string | null
+          id?: string
+          initiated_by?: string
+          initiated_by_type?: string
+          order_id?: string
+          provisional_decision?: string | null
+          responsible_party?: string | null
+          sanction_applied?: Database["public"]["Enums"]["sanction_type"] | null
+          status?: Database["public"]["Enums"]["dispute_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disputes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gp_offers: {
         Row: {
           arrival_date: string | null
@@ -821,6 +945,64 @@ export type Database = {
         }
         Relationships: []
       }
+      reputation_incidents: {
+        Row: {
+          created_at: string
+          description: string | null
+          dispute_id: string | null
+          gp_id: string
+          id: string
+          incident_type: string
+          new_score: number
+          previous_score: number
+          score_impact: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          dispute_id?: string | null
+          gp_id: string
+          id?: string
+          incident_type: string
+          new_score: number
+          previous_score: number
+          score_impact?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          dispute_id?: string | null
+          gp_id?: string
+          id?: string
+          incident_type?: string
+          new_score?: number
+          previous_score?: number
+          score_impact?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reputation_incidents_dispute_id_fkey"
+            columns: ["dispute_id"]
+            isOneToOne: false
+            referencedRelation: "disputes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reputation_incidents_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reputation_incidents_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reviews: {
         Row: {
           client_id: string
@@ -869,6 +1051,62 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: true
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sanctions: {
+        Row: {
+          applied_by: string
+          created_at: string
+          dispute_id: string | null
+          ends_at: string | null
+          id: string
+          is_active: boolean | null
+          is_permanent: boolean | null
+          notes: string | null
+          reason: string
+          sanction_type: Database["public"]["Enums"]["sanction_type"]
+          starts_at: string
+          target_type: string
+          target_user_id: string
+        }
+        Insert: {
+          applied_by: string
+          created_at?: string
+          dispute_id?: string | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_permanent?: boolean | null
+          notes?: string | null
+          reason: string
+          sanction_type: Database["public"]["Enums"]["sanction_type"]
+          starts_at?: string
+          target_type: string
+          target_user_id: string
+        }
+        Update: {
+          applied_by?: string
+          created_at?: string
+          dispute_id?: string | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_permanent?: boolean | null
+          notes?: string | null
+          reason?: string
+          sanction_type?: Database["public"]["Enums"]["sanction_type"]
+          starts_at?: string
+          target_type?: string
+          target_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sanctions_dispute_id_fkey"
+            columns: ["dispute_id"]
+            isOneToOne: false
+            referencedRelation: "disputes"
             referencedColumns: ["id"]
           },
         ]
@@ -1148,6 +1386,81 @@ export type Database = {
           },
         ]
       }
+      transporter_reputation: {
+        Row: {
+          created_at: string
+          disputes_lost: number | null
+          disputes_won: number | null
+          excluded_at: string | null
+          exclusion_reason: string | null
+          gp_id: string
+          id: string
+          internal_score: number
+          last_incident_at: string | null
+          observation_reason: string | null
+          observation_started_at: string | null
+          reputation_status: Database["public"]["Enums"]["reputation_status"]
+          suspended_until: string | null
+          total_disputes: number | null
+          total_suspensions: number | null
+          total_warnings: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          disputes_lost?: number | null
+          disputes_won?: number | null
+          excluded_at?: string | null
+          exclusion_reason?: string | null
+          gp_id: string
+          id?: string
+          internal_score?: number
+          last_incident_at?: string | null
+          observation_reason?: string | null
+          observation_started_at?: string | null
+          reputation_status?: Database["public"]["Enums"]["reputation_status"]
+          suspended_until?: string | null
+          total_disputes?: number | null
+          total_suspensions?: number | null
+          total_warnings?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          disputes_lost?: number | null
+          disputes_won?: number | null
+          excluded_at?: string | null
+          exclusion_reason?: string | null
+          gp_id?: string
+          id?: string
+          internal_score?: number
+          last_incident_at?: string | null
+          observation_reason?: string | null
+          observation_started_at?: string | null
+          reputation_status?: Database["public"]["Enums"]["reputation_status"]
+          suspended_until?: string | null
+          total_disputes?: number | null
+          total_suspensions?: number | null
+          total_warnings?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transporter_reputation_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: true
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transporter_reputation_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: true
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1332,6 +1645,20 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      dispute_category:
+        | "delay_unjustified"
+        | "partial_loss"
+        | "total_loss"
+        | "deterioration"
+        | "non_conformity"
+        | "transporter_silence"
+        | "client_fault"
+      dispute_status:
+        | "open"
+        | "under_review"
+        | "awaiting_response"
+        | "provisional_decision"
+        | "closed"
       gp_status: "pending" | "verified" | "suspended" | "rejected"
       gp_subscription: "free" | "premium"
       gp_type:
@@ -1350,12 +1677,31 @@ export type Database = {
         | "delivered"
         | "cancelled"
         | "disputed"
+      reputation_status:
+        | "verified"
+        | "under_observation"
+        | "suspended"
+        | "excluded"
+      sanction_type:
+        | "warning"
+        | "financial_compensation"
+        | "full_refund"
+        | "temporary_suspension"
+        | "permanent_exclusion"
       transaction_type:
         | "earning"
         | "withdrawal"
         | "commission"
         | "refund"
         | "bonus"
+      user_role_extended:
+        | "super_admin"
+        | "moderator_arbitrage"
+        | "transporter_verified"
+        | "transporter_observation"
+        | "transporter_suspended"
+        | "client_standard"
+        | "client_premium"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1484,6 +1830,22 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      dispute_category: [
+        "delay_unjustified",
+        "partial_loss",
+        "total_loss",
+        "deterioration",
+        "non_conformity",
+        "transporter_silence",
+        "client_fault",
+      ],
+      dispute_status: [
+        "open",
+        "under_review",
+        "awaiting_response",
+        "provisional_decision",
+        "closed",
+      ],
       gp_status: ["pending", "verified", "suspended", "rejected"],
       gp_subscription: ["free", "premium"],
       gp_type: [
@@ -1504,12 +1866,34 @@ export const Constants = {
         "cancelled",
         "disputed",
       ],
+      reputation_status: [
+        "verified",
+        "under_observation",
+        "suspended",
+        "excluded",
+      ],
+      sanction_type: [
+        "warning",
+        "financial_compensation",
+        "full_refund",
+        "temporary_suspension",
+        "permanent_exclusion",
+      ],
       transaction_type: [
         "earning",
         "withdrawal",
         "commission",
         "refund",
         "bonus",
+      ],
+      user_role_extended: [
+        "super_admin",
+        "moderator_arbitrage",
+        "transporter_verified",
+        "transporter_observation",
+        "transporter_suspended",
+        "client_standard",
+        "client_premium",
       ],
     },
   },
