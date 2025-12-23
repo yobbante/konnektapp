@@ -20,6 +20,8 @@ import { AdminOrdersList } from "@/components/admin/AdminOrdersList";
 import { AdminPendingGPs } from "@/components/admin/AdminPendingGPs";
 import { AdminStatsCharts } from "@/components/admin/AdminStatsCharts";
 import { AdminSupportTickets } from "@/components/admin/AdminSupportTickets";
+import { AdminDisputeArbitration } from "@/components/admin/AdminDisputeArbitration";
+import { AdminTransporterReputation } from "@/components/admin/AdminTransporterReputation";
 
 interface GPProfile {
   id: string;
@@ -294,14 +296,14 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5 mb-4">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7 mb-4">
             <TabsTrigger value="overview">Aperçu</TabsTrigger>
             <TabsTrigger value="stats">Stats</TabsTrigger>
-            <TabsTrigger value="gps">
-              GPs {stats.pendingGps > 0 && `(${stats.pendingGps})`}
-            </TabsTrigger>
+            <TabsTrigger value="gps">GPs</TabsTrigger>
             <TabsTrigger value="orders">Commandes</TabsTrigger>
             <TabsTrigger value="support">Support</TabsTrigger>
+            <TabsTrigger value="disputes">Litiges</TabsTrigger>
+            <TabsTrigger value="reputation">Réputation</TabsTrigger>
           </TabsList>
 
           {/* Search and Filters */}
@@ -384,6 +386,16 @@ export default function AdminDashboard() {
           {/* Support Tickets */}
           <TabsContent value="support">
             <AdminSupportTickets />
+          </TabsContent>
+
+          {/* Disputes */}
+          <TabsContent value="disputes">
+            <AdminDisputeArbitration />
+          </TabsContent>
+
+          {/* Reputation */}
+          <TabsContent value="reputation">
+            <AdminTransporterReputation />
           </TabsContent>
         </Tabs>
       </div>

@@ -96,10 +96,10 @@ function IndexContent() {
                 <ArrowRight className="w-5 h-5" />
               </Button>
             </Link>
-            <Link to="/offres" className="flex-1">
+            <Link to="/gp/inscription" className="flex-1">
               <Button variant="outline" size="lg" className="w-full">
                 <Truck className="w-5 h-5" />
-                Voir les offres
+                Devenir transporteur
               </Button>
             </Link>
           </div>
