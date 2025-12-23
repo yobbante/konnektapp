@@ -133,7 +133,7 @@ export default function CustomRequest() {
         return;
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("custom_requests")
         .insert([{
           client_id: user.id,
@@ -155,16 +155,18 @@ export default function CustomRequest() {
           additional_services: formData.additionalServices,
           expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
           request_number: `REQ-${Date.now()}`, // Will be overwritten by trigger
-        }] as any);
+        }] as any)
+        .select()
+        .single();
 
       if (error) throw error;
 
       toast({
         title: "Demande envoyée !",
-        description: "Les transporteurs vont vous envoyer leurs offres. Vous serez notifié.",
+        description: "Les transporteurs vont vous envoyer leurs offres.",
       });
 
-      navigate("/client/dashboard");
+      navigate(`/quote-confirmation?id=${data.id}`);
     } catch (error: any) {
       console.error("Submit error:", error);
       toast({

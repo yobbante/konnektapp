@@ -26,6 +26,7 @@ import GPProfile from "./pages/GPProfile";
 import TransporterProfile from "./pages/TransporterProfile";
 import Favorites from "./pages/Favorites";
 import SavedSearches from "./pages/SavedSearches";
+import QuoteConfirmation from "./pages/QuoteConfirmation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/demande" element={<DemandeEnvoi />} />
           <Route path="/demande/personnalisee" element={<CustomRequest />} />
+          <Route path="/quote-confirmation" element={<QuoteConfirmation />} />
           <Route path="/offres" element={<Offres />} />
           <Route path="/offres/:id" element={<OfferDetail />} />
           <Route path="/tracking" element={<Tracking />} />
