@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   ArrowRight, ArrowLeft, User, Building, FileCheck, MapPin, 
-  CheckCircle, Phone, Mail, Lock, Eye, EyeOff, AlertCircle
+  CheckCircle, Phone, Mail, Lock, Eye, EyeOff, AlertCircle,
+  Truck, Ship, Plane, Zap, Building2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,12 +25,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const idTypes = [
   { value: "cni", label: "Carte Nationale d'Identité" },
   { value: "passport", label: "Passeport" },
   { value: "permis", label: "Permis de conduire" },
   { value: "carte_sejour", label: "Carte de séjour" },
+];
+
+// Services spécifiques aux agences de voyage
+const agencyServices = [
+  { value: "billetterie", label: "Billetterie aérienne/maritime" },
+  { value: "fret_accompagne", label: "Fret accompagné" },
+  { value: "groupage", label: "Groupage passagers/colis" },
+  { value: "reservation", label: "Réservations voyages" },
+  { value: "visa", label: "Services visa" },
+  { value: "assurance_voyage", label: "Assurance voyage" },
+];
+
+// Services Express
+const expressServices = [
+  { value: "coursier", label: "Service coursier" },
+  { value: "livraison_express", label: "Livraison express" },
+  { value: "b2b", label: "Livraisons B2B" },
+  { value: "b2c", label: "Livraisons B2C" },
+  { value: "same_day", label: "Livraison même jour" },
 ];
 
 export default function GPRegistration() {
@@ -44,6 +65,9 @@ export default function GPRegistration() {
     phone: string;
   } | null>(null);
   
+  // Étape 1: Type d'activité (OBLIGATOIRE EN PREMIER)
+  const [activityType, setActivityType] = useState<TransportType | null>(null);
+  
   // Form data
   const [accountData, setAccountData] = useState({
     email: "",
@@ -55,7 +79,6 @@ export default function GPRegistration() {
   
   const [businessData, setBusinessData] = useState({
     businessName: "",
-    gpType: null as TransportType | null,
     city: "",
     countryCode: "SN",
     address: "",
@@ -63,6 +86,8 @@ export default function GPRegistration() {
     yearsExperience: "",
     fleetSize: "",
     description: "",
+    // Services spécifiques
+    selectedServices: [] as string[],
   });
   
   const [kycData, setKycData] = useState({
@@ -81,7 +106,6 @@ export default function GPRegistration() {
     const loadExistingProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // Récupérer le profil existant
         const { data: profile } = await supabase
           .from("profiles")
           .select("*")
@@ -95,7 +119,6 @@ export default function GPRegistration() {
             phone: profile.phone || "",
           });
           
-          // Pré-remplir les données
           setAccountData(prev => ({
             ...prev,
             email: user.email || "",
@@ -116,17 +139,38 @@ export default function GPRegistration() {
     loadExistingProfile();
   }, []);
 
-  const handleNext = () => setStep((prev) => Math.min(prev + 1, 5));
+  // Étapes dynamiques selon l'activité
+  const getSteps = () => {
+    const baseSteps = [
+      { num: 1, label: "Activité", icon: Building },
+      { num: 2, label: "Compte", icon: User },
+      { num: 3, label: "Entreprise", icon: Building },
+      { num: 4, label: "Documents", icon: FileCheck },
+      { num: 5, label: "Zones", icon: MapPin },
+      { num: 6, label: "Confirmation", icon: CheckCircle },
+    ];
+    return baseSteps;
+  };
+
+  const steps = getSteps();
+  const totalSteps = steps.length;
+
+  const handleNext = () => setStep((prev) => Math.min(prev + 1, totalSteps));
   const handleBack = () => setStep((prev) => Math.max(prev - 1, 1));
 
   const validateStep = (currentStep: number): boolean => {
     switch (currentStep) {
       case 1:
+        if (!activityType) {
+          toast({ title: "Erreur", description: "Veuillez sélectionner votre activité", variant: "destructive" });
+          return false;
+        }
+        return true;
+      case 2:
         if (!accountData.email || !accountData.fullName || !accountData.phone) {
           toast({ title: "Erreur", description: "Veuillez remplir tous les champs obligatoires", variant: "destructive" });
           return false;
         }
-        // Ne pas valider le mot de passe si l'utilisateur est déjà connecté
         if (!existingUser) {
           if (!accountData.password) {
             toast({ title: "Erreur", description: "Veuillez entrer un mot de passe", variant: "destructive" });
@@ -142,20 +186,19 @@ export default function GPRegistration() {
           }
         }
         return true;
-      case 2:
-        if (!businessData.businessName || !businessData.gpType || !businessData.city) {
+      case 3:
+        if (!businessData.businessName || !businessData.city) {
           toast({ title: "Erreur", description: "Veuillez remplir tous les champs obligatoires", variant: "destructive" });
           return false;
         }
         return true;
-      case 3:
-        return true;
       case 4:
+        return true;
+      case 5:
         if (coverageZones.length === 0) {
           toast({ title: "Erreur", description: "Veuillez ajouter au moins une zone de couverture", variant: "destructive" });
           return false;
         }
-        // Vérifier que chaque zone a au moins un pays et une ville/des villes
         const hasValidZone = coverageZones.some(z => 
           z.country && (z.city || (z.cities && z.cities.length > 0))
         );
@@ -175,6 +218,15 @@ export default function GPRegistration() {
     }
   };
 
+  const toggleService = (service: string) => {
+    setBusinessData(prev => ({
+      ...prev,
+      selectedServices: prev.selectedServices.includes(service)
+        ? prev.selectedServices.filter(s => s !== service)
+        : [...prev.selectedServices, service]
+    }));
+  };
+
   const handleSubmit = async () => {
     if (!validateStep(step)) return;
     
@@ -182,13 +234,11 @@ export default function GPRegistration() {
     try {
       let userId: string;
 
-      // Si l'utilisateur est déjà connecté, utiliser son ID
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       
       if (currentUser) {
         userId = currentUser.id;
       } else {
-        // Créer un nouveau compte
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: accountData.email,
           password: accountData.password,
@@ -205,7 +255,7 @@ export default function GPRegistration() {
         userId = authData.user.id;
       }
 
-      // Mettre à jour le profil avec is_gp flag
+      // Mettre à jour le profil
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
@@ -224,7 +274,7 @@ export default function GPRegistration() {
         .insert({
           user_id: userId,
           business_name: businessData.businessName,
-          gp_type: businessData.gpType,
+          gp_type: activityType,
           phone: accountData.phone,
           whatsapp: businessData.whatsapp || null,
           address: businessData.address || null,
@@ -268,13 +318,31 @@ export default function GPRegistration() {
     }
   };
 
-  const steps = [
-    { num: 1, label: "Compte", icon: User },
-    { num: 2, label: "Activité", icon: Building },
-    { num: 3, label: "Documents", icon: FileCheck },
-    { num: 4, label: "Zones", icon: MapPin },
-    { num: 5, label: "Confirmation", icon: CheckCircle },
-  ];
+  // Documents requis selon l'activité
+  const getRequiredDocs = () => {
+    if (!activityType) return [];
+    return transportConfig[activityType]?.requiredDocs || [];
+  };
+
+  const requiredDocs = getRequiredDocs();
+
+  // Services selon l'activité
+  const getAvailableServices = () => {
+    if (activityType === "agence") return agencyServices;
+    if (activityType === "express") return expressServices;
+    return [];
+  };
+
+  const getActivityIcon = (type: TransportType) => {
+    switch (type) {
+      case "routier": return Truck;
+      case "maritime": return Ship;
+      case "aerien": return Plane;
+      case "express": return Zap;
+      case "agence": return Building2;
+      default: return Truck;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -288,12 +356,12 @@ export default function GPRegistration() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-10"
           >
-            <Badge variant="gold" className="mb-4">Devenir GP</Badge>
+            <Badge variant="gold" className="mb-4">Devenir Transporteur</Badge>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-              Inscription Transporteur
+              Rejoignez le réseau Yobbanté Connect
             </h1>
             <p className="text-muted-foreground">
-              Rejoignez le réseau Yobbanté-GP et développez votre activité
+              Accédez à des demandes qualifiées et développez votre activité
             </p>
             {existingUser && (
               <div className="mt-4 p-3 bg-success/10 border border-success/20 rounded-lg inline-block">
@@ -306,7 +374,7 @@ export default function GPRegistration() {
 
           {/* Progress Steps */}
           <div className="mb-10 overflow-x-auto">
-            <div className="flex items-center justify-between min-w-[500px] md:min-w-0">
+            <div className="flex items-center justify-between min-w-[600px] md:min-w-0">
               {steps.map((s, i) => (
                 <div key={s.num} className="flex items-center">
                   <div className="flex flex-col items-center">
@@ -329,7 +397,7 @@ export default function GPRegistration() {
                   </div>
                   {i < steps.length - 1 && (
                     <div
-                      className={`h-1 w-12 md:w-20 mx-2 rounded ${
+                      className={`h-1 w-8 md:w-16 mx-2 rounded ${
                         step > s.num ? "bg-secondary" : "bg-muted"
                       }`}
                     />
@@ -339,8 +407,71 @@ export default function GPRegistration() {
             </div>
           </div>
 
-          {/* Step 1: Account */}
+          {/* Step 1: Type d'activité (PREMIER) */}
           {step === 1 && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-card rounded-2xl border border-border p-6 md:p-8 shadow-card"
+            >
+              <h2 className="text-xl font-semibold text-foreground mb-2 flex items-center gap-2">
+                <Building className="w-5 h-5 text-secondary" />
+                Quelle est votre activité ?
+              </h2>
+              <p className="text-muted-foreground mb-6">
+                Sélectionnez le type de transport que vous proposez
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {transportTypes.map((transport) => {
+                  const Icon = transport.icon;
+                  const isSelected = activityType === transport.type;
+                  return (
+                    <button
+                      key={transport.type}
+                      onClick={() => setActivityType(transport.type)}
+                      className={`p-6 rounded-xl border-2 text-left transition-all ${
+                        isSelected
+                          ? "border-secondary bg-secondary/10 shadow-md"
+                          : "border-border hover:border-secondary/50 hover:bg-muted/50"
+                      }`}
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
+                          isSelected ? "bg-secondary text-secondary-foreground" : "bg-muted"
+                        }`}>
+                          <Icon className="w-7 h-7" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-foreground mb-1">{transport.title}</h3>
+                          <p className="text-sm text-muted-foreground">{transport.longDescription || transport.description}</p>
+                        </div>
+                        {isSelected && (
+                          <CheckCircle className="w-6 h-6 text-secondary flex-shrink-0" />
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex justify-between mt-8">
+                <Link to="/gp">
+                  <Button variant="ghost">
+                    <ArrowLeft className="w-5 h-5" />
+                    Retour
+                  </Button>
+                </Link>
+                <Button variant="gold" size="lg" onClick={handleNextWithValidation}>
+                  Continuer
+                  <ArrowRight className="w-5 h-5" />
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Step 2: Account */}
+          {step === 2 && (
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -436,12 +567,10 @@ export default function GPRegistration() {
               </div>
 
               <div className="flex justify-between mt-8">
-                <Link to="/gp">
-                  <Button variant="ghost">
-                    <ArrowLeft className="w-5 h-5" />
-                    Retour
-                  </Button>
-                </Link>
+                <Button variant="ghost" onClick={handleBack}>
+                  <ArrowLeft className="w-5 h-5" />
+                  Retour
+                </Button>
                 <Button variant="gold" size="lg" onClick={handleNextWithValidation}>
                   Continuer
                   <ArrowRight className="w-5 h-5" />
@@ -450,221 +579,128 @@ export default function GPRegistration() {
             </motion.div>
           )}
 
-          {/* Step 2: Business Info */}
-          {step === 2 && (
+          {/* Step 3: Business Info */}
+          {step === 3 && (
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
+              className="bg-card rounded-2xl border border-border p-6 md:p-8 shadow-card"
             >
-              {/* Type de transport - Sélection en grille responsive */}
-              <div className="bg-card rounded-2xl border border-border p-6 md:p-8 shadow-card mb-6">
-                <h2 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
-                  <Building className="w-5 h-5 text-secondary" />
-                  Type de transport *
-                </h2>
+              <h2 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
+                <Building className="w-5 h-5 text-secondary" />
+                Informations professionnelles
+              </h2>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                  {transportTypes.map((option) => {
-                    const IconComponent = option.icon;
-                    const isSelected = businessData.gpType === option.type;
-                    
-                    return (
-                      <motion.button
-                        key={option.type}
-                        type="button"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setBusinessData({ ...businessData, gpType: option.type })}
-                        className={`p-4 rounded-xl border-2 text-center transition-all ${
-                          isSelected
-                            ? "bg-secondary text-secondary-foreground border-secondary shadow-lg"
-                            : option.bgColor + " hover:shadow-md"
-                        }`}
-                      >
-                        <IconComponent className={`w-8 h-8 mx-auto mb-2 ${isSelected ? 'text-secondary-foreground' : option.color}`} />
-                        <p className="font-semibold text-sm">{option.title}</p>
-                        <p className={`text-xs mt-1 ${isSelected ? 'text-secondary-foreground/80' : 'text-muted-foreground'}`}>
-                          {option.description}
-                        </p>
-                      </motion.button>
-                    );
-                  })}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2 space-y-2">
+                  <Label htmlFor="businessName">
+                    {activityType === "agence" ? "Nom de l'agence *" : "Nom commercial *"}
+                  </Label>
+                  <Input
+                    id="businessName"
+                    placeholder={activityType === "agence" ? "Ex: Agence Yobbanté Voyages" : "Ex: Transport Diallo Express"}
+                    value={businessData.businessName}
+                    onChange={(e) => setBusinessData({ ...businessData, businessName: e.target.value })}
+                  />
                 </div>
-              </div>
 
-              {/* Formulaire adapté au type de transport */}
-              {businessData.gpType && (
-                <div className="bg-card rounded-2xl border border-border p-6 md:p-8 shadow-card">
-                  <h2 className="text-xl font-semibold text-foreground mb-6">
-                    Informations {businessData.gpType === 'voyageur' ? 'voyageur' : businessData.gpType === 'agence' ? "de l'agence" : 'professionnelles'}
-                  </h2>
+                <div className="space-y-2">
+                  <Label htmlFor="city">Ville *</Label>
+                  <Input
+                    id="city"
+                    placeholder="Ex: Dakar"
+                    value={businessData.city}
+                    onChange={(e) => setBusinessData({ ...businessData, city: e.target.value })}
+                  />
+                </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="md:col-span-2 space-y-2">
-                      <Label htmlFor="businessName">
-                        {businessData.gpType === 'voyageur' ? 'Votre nom / Pseudo *' : businessData.gpType === 'agence' ? "Nom de l'agence *" : 'Nom commercial / Entreprise *'}
-                      </Label>
-                      <Input
-                        id="businessName"
-                        placeholder={businessData.gpType === 'voyageur' ? 'Ex: Moussa GP' : businessData.gpType === 'agence' ? 'Ex: Yobbanté Express' : 'Ex: Mamadou Express Transport'}
-                        value={businessData.businessName}
-                        onChange={(e) => setBusinessData({ ...businessData, businessName: e.target.value })}
-                      />
-                    </div>
+                <div className="space-y-2">
+                  <Label htmlFor="whatsapp">WhatsApp</Label>
+                  <Input
+                    id="whatsapp"
+                    placeholder="+221 77 000 00 00"
+                    value={businessData.whatsapp}
+                    onChange={(e) => setBusinessData({ ...businessData, whatsapp: e.target.value })}
+                  />
+                </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="city">Ville de base *</Label>
-                      <Input
-                        id="city"
-                        placeholder="Ex: Dakar"
-                        value={businessData.city}
-                        onChange={(e) => setBusinessData({ ...businessData, city: e.target.value })}
-                      />
-                    </div>
+                <div className="space-y-2">
+                  <Label htmlFor="yearsExperience">Années d'expérience</Label>
+                  <Input
+                    id="yearsExperience"
+                    type="number"
+                    placeholder="Ex: 5"
+                    value={businessData.yearsExperience}
+                    onChange={(e) => setBusinessData({ ...businessData, yearsExperience: e.target.value })}
+                  />
+                </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="country">Pays</Label>
-                      <Select
-                        value={businessData.countryCode}
-                        onValueChange={(value) => setBusinessData({ ...businessData, countryCode: value })}
-                      >
-                        <SelectTrigger className="h-11">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-background border border-border z-50">
-                          <SelectItem value="SN">🇸🇳 Sénégal</SelectItem>
-                          <SelectItem value="CI">🇨🇮 Côte d'Ivoire</SelectItem>
-                          <SelectItem value="ML">🇲🇱 Mali</SelectItem>
-                          <SelectItem value="BF">🇧🇫 Burkina Faso</SelectItem>
-                          <SelectItem value="GN">🇬🇳 Guinée</SelectItem>
-                          <SelectItem value="CM">🇨🇲 Cameroun</SelectItem>
-                          <SelectItem value="TG">🇹🇬 Togo</SelectItem>
-                          <SelectItem value="BJ">🇧🇯 Bénin</SelectItem>
-                          <SelectItem value="GH">🇬🇭 Ghana</SelectItem>
-                          <SelectItem value="NG">🇳🇬 Nigeria</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                {activityType !== "agence" && activityType !== "express" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="fleetSize">Taille de la flotte</Label>
+                    <Input
+                      id="fleetSize"
+                      type="number"
+                      placeholder="Nombre de véhicules"
+                      value={businessData.fleetSize}
+                      onChange={(e) => setBusinessData({ ...businessData, fleetSize: e.target.value })}
+                    />
+                  </div>
+                )}
 
-                    <div className="space-y-2">
-                      <Label htmlFor="whatsapp">WhatsApp (recommandé)</Label>
-                      <Input
-                        id="whatsapp"
-                        placeholder="+221 77 123 45 67"
-                        value={businessData.whatsapp}
-                        onChange={(e) => setBusinessData({ ...businessData, whatsapp: e.target.value })}
-                      />
-                    </div>
+                <div className="md:col-span-2 space-y-2">
+                  <Label htmlFor="address">Adresse</Label>
+                  <Input
+                    id="address"
+                    placeholder="Adresse complète"
+                    value={businessData.address}
+                    onChange={(e) => setBusinessData({ ...businessData, address: e.target.value })}
+                  />
+                </div>
 
-                    {/* Champs spécifiques selon le type */}
-                    {businessData.gpType !== 'voyageur' && (
-                      <>
-                        <div className="space-y-2">
-                          <Label htmlFor="experience">Années d'expérience</Label>
-                          <Select
-                            value={businessData.yearsExperience}
-                            onValueChange={(value) => setBusinessData({ ...businessData, yearsExperience: value })}
-                          >
-                            <SelectTrigger className="h-11">
-                              <SelectValue placeholder="Sélectionnez" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-background border border-border z-50">
-                              <SelectItem value="1">Moins d'1 an</SelectItem>
-                              <SelectItem value="2">1-2 ans</SelectItem>
-                              <SelectItem value="5">3-5 ans</SelectItem>
-                              <SelectItem value="10">5-10 ans</SelectItem>
-                              <SelectItem value="15">Plus de 10 ans</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
+                <div className="md:col-span-2 space-y-2">
+                  <Label htmlFor="description">Description de votre activité</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Décrivez vos services, votre expérience..."
+                    value={businessData.description}
+                    onChange={(e) => setBusinessData({ ...businessData, description: e.target.value })}
+                    rows={4}
+                  />
+                </div>
 
-                        {businessData.gpType === 'agence' && (
-                          <div className="space-y-2">
-                            <Label htmlFor="address">Adresse de l'agence</Label>
-                            <Input
-                              id="address"
-                              placeholder="Ex: 123 Rue Moussé Diop, Dakar"
-                              value={businessData.address}
-                              onChange={(e) => setBusinessData({ ...businessData, address: e.target.value })}
-                            />
-                          </div>
-                        )}
-
-                        {(businessData.gpType === 'routier' || businessData.gpType === 'express') && (
-                          <div className="space-y-2">
-                            <Label htmlFor="fleetSize">Nombre de véhicules</Label>
-                            <Select
-                              value={businessData.fleetSize}
-                              onValueChange={(value) => setBusinessData({ ...businessData, fleetSize: value })}
-                            >
-                              <SelectTrigger className="h-11">
-                                <SelectValue placeholder="Sélectionnez" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-background border border-border z-50">
-                                <SelectItem value="1">1 véhicule</SelectItem>
-                                <SelectItem value="3">2-3 véhicules</SelectItem>
-                                <SelectItem value="5">4-5 véhicules</SelectItem>
-                                <SelectItem value="10">6-10 véhicules</SelectItem>
-                                <SelectItem value="20">Plus de 10 véhicules</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
-                      </>
-                    )}
-
-                    {businessData.gpType === 'voyageur' && (
-                      <div className="space-y-2">
-                        <Label>Fréquence des voyages</Label>
-                        <Select
-                          value={businessData.yearsExperience}
-                          onValueChange={(value) => setBusinessData({ ...businessData, yearsExperience: value })}
+                {/* Services spécifiques selon l'activité */}
+                {getAvailableServices().length > 0 && (
+                  <div className="md:col-span-2 space-y-4">
+                    <Label>Services proposés</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {getAvailableServices().map((service) => (
+                        <div
+                          key={service.value}
+                          className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-muted/50 cursor-pointer"
+                          onClick={() => toggleService(service.value)}
                         >
-                          <SelectTrigger className="h-11">
-                            <SelectValue placeholder="Sélectionnez" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-background border border-border z-50">
-                            <SelectItem value="1">Occasionnel (1-2x/an)</SelectItem>
-                            <SelectItem value="3">Régulier (3-6x/an)</SelectItem>
-                            <SelectItem value="6">Fréquent (Mensuel)</SelectItem>
-                            <SelectItem value="12">Très fréquent (Hebdo)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    <div className="md:col-span-2 space-y-2">
-                      <Label htmlFor="description">
-                        {businessData.gpType === 'voyageur' 
-                          ? 'Présentez-vous en quelques mots'
-                          : businessData.gpType === 'agence'
-                          ? "Description de l'agence"
-                          : 'Description de votre activité'
-                        }
-                      </Label>
-                      <Textarea
-                        id="description"
-                        placeholder={businessData.gpType === 'voyageur'
-                          ? 'Ex: Je voyage régulièrement entre Dakar et Paris...'
-                          : businessData.gpType === 'agence'
-                          ? "Ex: Notre agence spécialisée dans l'envoi de colis vers l'Afrique de l'Ouest..."
-                          : 'Décrivez votre activité, vos spécialités, vos atouts...'
-                        }
-                        rows={3}
-                        value={businessData.description}
-                        onChange={(e) => setBusinessData({ ...businessData, description: e.target.value })}
-                      />
+                          <Checkbox
+                            id={service.value}
+                            checked={businessData.selectedServices.includes(service.value)}
+                            onCheckedChange={() => toggleService(service.value)}
+                          />
+                          <label htmlFor={service.value} className="text-sm cursor-pointer">
+                            {service.label}
+                          </label>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
               <div className="flex justify-between mt-8">
                 <Button variant="ghost" onClick={handleBack}>
                   <ArrowLeft className="w-5 h-5" />
                   Retour
                 </Button>
-                <Button variant="gold" size="lg" onClick={handleNextWithValidation} disabled={!businessData.gpType}>
+                <Button variant="gold" size="lg" onClick={handleNextWithValidation}>
                   Continuer
                   <ArrowRight className="w-5 h-5" />
                 </Button>
@@ -672,8 +708,8 @@ export default function GPRegistration() {
             </motion.div>
           )}
 
-          {/* Step 3: KYC Documents */}
-          {step === 3 && (
+          {/* Step 4: Documents */}
+          {step === 4 && (
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -681,76 +717,80 @@ export default function GPRegistration() {
             >
               <h2 className="text-xl font-semibold text-foreground mb-2 flex items-center gap-2">
                 <FileCheck className="w-5 h-5 text-secondary" />
-                Documents KYC/KYB
+                Documents justificatifs
               </h2>
               <p className="text-muted-foreground mb-6">
-                Ces documents sont nécessaires pour valider votre compte et sécuriser la plateforme.
+                Ces documents seront vérifiés pour valider votre inscription
               </p>
 
-              <div className="space-y-8">
-                {/* Identity Document */}
-                <div className="p-6 rounded-xl bg-muted/50 border border-border">
-                  <h3 className="font-medium text-foreground mb-4">Pièce d'identité *</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="idType">Type de document</Label>
-                      <select
-                        id="idType"
-                        className="w-full h-11 px-3 rounded-lg border border-input bg-background text-foreground"
-                        value={kycData.idType}
-                        onChange={(e) => setKycData({ ...kycData, idType: e.target.value })}
-                      >
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>Type de pièce d'identité</Label>
+                    <Select
+                      value={kycData.idType}
+                      onValueChange={(value) => setKycData({ ...kycData, idType: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
                         {idTypes.map((type) => (
-                          <option key={type.value} value={type.value}>{type.label}</option>
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
                         ))}
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="idNumber">Numéro du document *</Label>
-                      <Input
-                        id="idNumber"
-                        placeholder="Ex: 1234567890123"
-                        value={kycData.idNumber}
-                        onChange={(e) => setKycData({ ...kycData, idNumber: e.target.value })}
-                      />
-                    </div>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="idNumber">Numéro de la pièce</Label>
+                    <Input
+                      id="idNumber"
+                      placeholder="Ex: 1234567890"
+                      value={kycData.idNumber}
+                      onChange={(e) => setKycData({ ...kycData, idNumber: e.target.value })}
+                    />
                   </div>
                 </div>
 
-                {/* Business Registration - seulement pour agence */}
-                {businessData.gpType === 'agence' && (
-                  <div className="p-6 rounded-xl bg-muted/50 border border-border">
-                    <h3 className="font-medium text-foreground mb-4">Registre de commerce</h3>
-                    <DocumentUpload
-                      label="Document d'enregistrement de l'entreprise"
-                      onUpload={(url) => setKycData({ ...kycData, businessRegistrationUrl: url })}
-                      uploadedUrl={kycData.businessRegistrationUrl}
-                    />
-                  </div>
+                {/* Document d'identité - toujours requis */}
+                <DocumentUpload
+                  label="Pièce d'identité (CNI, passeport ou permis)"
+                  required
+                  onUpload={(url) => setKycData({ ...kycData, idDocumentUrl: url })}
+                  uploadedUrl={kycData.idDocumentUrl}
+                />
+
+                {/* Registre de commerce - requis pour certaines activités */}
+                {requiredDocs.includes("business_registration") && (
+                  <DocumentUpload
+                    label="Registre de commerce (NINEA/RC)"
+                    required
+                    onUpload={(url) => setKycData({ ...kycData, businessRegistrationUrl: url })}
+                    uploadedUrl={kycData.businessRegistrationUrl}
+                  />
                 )}
 
-                {/* Transport License - seulement pour routier/express */}
-                {(businessData.gpType === 'routier' || businessData.gpType === 'express') && (
-                  <div className="p-6 rounded-xl bg-muted/50 border border-border">
-                    <h3 className="font-medium text-foreground mb-4">Licence de transport (optionnel)</h3>
-                    <DocumentUpload
-                      label="Licence ou autorisation de transport"
-                      onUpload={(url) => setKycData({ ...kycData, transportLicenseUrl: url })}
-                      uploadedUrl={kycData.transportLicenseUrl}
-                    />
-                  </div>
+                {/* Licence de transport */}
+                {requiredDocs.includes("transport_license") && (
+                  <DocumentUpload
+                    label={activityType === "agence" ? "Licence agence de voyage" : "Licence de transport"}
+                    required
+                    onUpload={(url) => setKycData({ ...kycData, transportLicenseUrl: url })}
+                    uploadedUrl={kycData.transportLicenseUrl}
+                  />
                 )}
 
-                {/* Insurance */}
-                {businessData.gpType !== 'voyageur' && (
-                  <div className="p-6 rounded-xl bg-muted/50 border border-border">
-                    <h3 className="font-medium text-foreground mb-4">Assurance (optionnel)</h3>
-                    <DocumentUpload
-                      label="Attestation d'assurance transport"
-                      onUpload={(url) => setKycData({ ...kycData, insuranceDocumentUrl: url })}
-                      uploadedUrl={kycData.insuranceDocumentUrl}
-                    />
-                  </div>
+                {/* Assurance */}
+                {requiredDocs.includes("insurance") && (
+                  <DocumentUpload
+                    label="Attestation d'assurance RC Pro"
+                    required
+                    onUpload={(url) => setKycData({ ...kycData, insuranceDocumentUrl: url })}
+                    uploadedUrl={kycData.insuranceDocumentUrl}
+                  />
                 )}
               </div>
 
@@ -767,8 +807,8 @@ export default function GPRegistration() {
             </motion.div>
           )}
 
-          {/* Step 4: Zones */}
-          {step === 4 && (
+          {/* Step 5: Zones */}
+          {step === 5 && (
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -779,13 +819,13 @@ export default function GPRegistration() {
                 Zones de couverture
               </h2>
               <p className="text-muted-foreground mb-6">
-                Sélectionnez les zones géographiques que vous desservez.
+                Définissez les zones géographiques que vous desservez
               </p>
 
               <ZoneCoverageManager
                 zones={coverageZones}
                 onZonesChange={setCoverageZones}
-                transportType={businessData.gpType}
+                transportType={activityType}
               />
 
               <div className="flex justify-between mt-8">
@@ -801,99 +841,121 @@ export default function GPRegistration() {
             </motion.div>
           )}
 
-          {/* Step 5: Confirmation */}
-          {step === 5 && (
+          {/* Step 6: Confirmation */}
+          {step === 6 && (
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
+              className="bg-card rounded-2xl border border-border p-6 md:p-8 shadow-card"
             >
-              <div className="bg-card rounded-2xl border border-border p-6 md:p-8 shadow-card mb-6">
-                <h2 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-secondary" />
-                  Récapitulatif de votre inscription
-                </h2>
+              <h2 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-secondary" />
+                Confirmation
+              </h2>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-xl bg-muted/50">
-                    <p className="text-sm text-muted-foreground">Nom</p>
-                    <p className="font-semibold text-foreground">{accountData.fullName}</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-muted/50">
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-semibold text-foreground">{accountData.email}</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-muted/50">
-                    <p className="text-sm text-muted-foreground">Téléphone</p>
-                    <p className="font-semibold text-foreground">{accountData.phone}</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-muted/50">
-                    <p className="text-sm text-muted-foreground">{businessData.gpType === 'agence' ? 'Agence' : 'Entreprise'}</p>
-                    <p className="font-semibold text-foreground">{businessData.businessName}</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-muted/50">
-                    <p className="text-sm text-muted-foreground">Type GP</p>
-                    <p className="font-semibold text-foreground capitalize">{transportConfig[businessData.gpType!]?.title}</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-muted/50">
-                    <p className="text-sm text-muted-foreground">Ville</p>
-                    <p className="font-semibold text-foreground">{businessData.city}</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-muted/50 md:col-span-2">
-                    <p className="text-sm text-muted-foreground">Zones desservies</p>
-                    <p className="font-semibold text-foreground">
-                      {coverageZones.length > 0 
-                        ? coverageZones.map(z => {
-                            const cities = z.cities?.length ? z.cities.join(", ") : z.city;
-                            return cities || z.country;
-                          }).join(" • ")
-                        : "—"}
-                    </p>
+              <div className="space-y-6">
+                {/* Résumé de l'activité */}
+                <div className="p-4 bg-secondary/10 rounded-xl border border-secondary/20">
+                  <h3 className="font-semibold text-foreground mb-2">Activité</h3>
+                  <div className="flex items-center gap-3">
+                    {activityType && (
+                      <>
+                        {(() => {
+                          const Icon = getActivityIcon(activityType);
+                          return <Icon className="w-6 h-6 text-secondary" />;
+                        })()}
+                        <span className="font-medium">{transportConfig[activityType]?.title}</span>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                <div className="mt-6 p-4 rounded-xl bg-secondary/10 border border-secondary/20">
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-secondary flex-shrink-0 mt-0.5" />
+                {/* Résumé compte */}
+                <div className="p-4 bg-muted/50 rounded-xl">
+                  <h3 className="font-semibold text-foreground mb-3">Compte</h3>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <p className="font-medium text-foreground">Documents téléchargés</p>
-                      <ul className="text-sm text-muted-foreground mt-1 space-y-1">
-                        <li>✓ Pièce d'identité</li>
-                        {kycData.businessRegistrationUrl && <li>✓ Registre de commerce</li>}
-                        {kycData.transportLicenseUrl && <li>✓ Licence de transport</li>}
-                        {kycData.insuranceDocumentUrl && <li>✓ Assurance</li>}
-                      </ul>
+                      <span className="text-muted-foreground">Nom:</span>
+                      <p className="font-medium">{accountData.fullName}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Email:</span>
+                      <p className="font-medium">{accountData.email}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Téléphone:</span>
+                      <p className="font-medium">{accountData.phone}</p>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="bg-success/10 border border-success/20 rounded-xl p-4 mb-6">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-success">Prochaine étape</p>
-                    <p className="text-sm text-muted-foreground">
-                      Après soumission, notre équipe examinera votre dossier sous 24-48h. 
-                      Vous recevrez un email de confirmation dès validation.
+                {/* Résumé entreprise */}
+                <div className="p-4 bg-muted/50 rounded-xl">
+                  <h3 className="font-semibold text-foreground mb-3">Entreprise</h3>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Nom:</span>
+                      <p className="font-medium">{businessData.businessName}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Ville:</span>
+                      <p className="font-medium">{businessData.city}</p>
+                    </div>
+                    {businessData.selectedServices.length > 0 && (
+                      <div className="col-span-2">
+                        <span className="text-muted-foreground">Services:</span>
+                        <p className="font-medium">{businessData.selectedServices.join(", ")}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Résumé zones */}
+                <div className="p-4 bg-muted/50 rounded-xl">
+                  <h3 className="font-semibold text-foreground mb-3">Zones de couverture</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {coverageZones
+                      .filter(z => z.country && (z.city || (z.cities && z.cities.length > 0)))
+                      .map((zone, i) => (
+                        <Badge key={i} variant="secondary">
+                          {zone.city || zone.cities?.join(", ")} ({zone.country})
+                        </Badge>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Avertissement */}
+                <div className="p-4 bg-warning/10 border border-warning/20 rounded-xl flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium text-warning mb-1">Validation en cours</p>
+                    <p className="text-muted-foreground">
+                      Votre inscription sera examinée par notre équipe. Vous recevrez une notification
+                      dès que votre profil sera validé.
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="flex justify-between">
+              <div className="flex justify-between mt-8">
                 <Button variant="ghost" onClick={handleBack}>
                   <ArrowLeft className="w-5 h-5" />
                   Retour
                 </Button>
-                <Button variant="gold" size="lg" onClick={handleSubmit} disabled={loading}>
+                <Button 
+                  variant="gold" 
+                  size="lg" 
+                  onClick={handleSubmit}
+                  disabled={loading}
+                >
                   {loading ? (
                     <>
-                      <div className="w-5 h-5 rounded-full border-2 border-current border-t-transparent animate-spin" />
-                      Inscription en cours...
+                      <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                      Inscription...
                     </>
                   ) : (
                     <>
-                      Valider mon inscription
+                      Valider l'inscription
                       <CheckCircle className="w-5 h-5" />
                     </>
                   )}

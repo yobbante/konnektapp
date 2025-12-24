@@ -1,4 +1,4 @@
-import { Zap, Truck, Ship, Plane, Briefcase, Building2, LucideIcon } from "lucide-react";
+import { Zap, Truck, Ship, Plane, Briefcase, Building2, Bike, LucideIcon } from "lucide-react";
 
 // Types de transport centralisés pour toute l'application
 export type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence";
@@ -7,71 +7,91 @@ export interface TransportConfig {
   type: TransportType;
   title: string;
   description: string;
+  longDescription?: string;
   icon: LucideIcon;
   color: string;
   bgColor: string;
+  // Champs requis spécifiques à l'activité
+  requiredDocs?: string[];
+  // Services proposés (pour agences)
+  services?: string[];
 }
 
 export const transportConfig: Record<TransportType, TransportConfig> = {
-  voyageur: {
-    type: "voyageur",
-    title: "Voyageur",
-    description: "Via bagages",
-    icon: Briefcase,
-    color: "text-transport-voyageur",
-    bgColor: "bg-transport-voyageur/10 border-transport-voyageur/30",
-  },
-  agence: {
-    type: "agence",
-    title: "Agence",
-    description: "Agence d'envoi",
-    icon: Building2,
-    color: "text-transport-agence",
-    bgColor: "bg-transport-agence/10 border-transport-agence/30",
-  },
   express: {
     type: "express",
     title: "Express",
     description: "Livraison rapide",
+    longDescription: "Coursiers, livreurs d'entreprise, services de livraison rapide B2B/B2C",
     icon: Zap,
     color: "text-transport-express",
     bgColor: "bg-transport-express/10 border-transport-express/30",
+    requiredDocs: ["id_document", "transport_license"],
+    services: ["livraison_express", "coursier", "b2b", "b2c"],
   },
   routier: {
     type: "routier",
-    title: "Routier",
+    title: "Transport Routier",
     description: "Transport terrestre",
+    longDescription: "Camions, fourgons, transport de marchandises par route",
     icon: Truck,
     color: "text-transport-routier",
     bgColor: "bg-transport-routier/10 border-transport-routier/30",
+    requiredDocs: ["id_document", "business_registration", "transport_license", "insurance"],
   },
   maritime: {
     type: "maritime",
-    title: "Maritime",
+    title: "Transport Maritime",
     description: "Fret maritime",
+    longDescription: "Conteneurs, fret, transport par voie maritime",
     icon: Ship,
     color: "text-transport-maritime",
     bgColor: "bg-transport-maritime/10 border-transport-maritime/30",
+    requiredDocs: ["id_document", "business_registration", "transport_license", "insurance"],
   },
   aerien: {
     type: "aerien",
-    title: "Aérien",
+    title: "Transport Aérien",
     description: "Cargo aérien",
+    longDescription: "Fret aérien, cargo, transport par avion",
     icon: Plane,
     color: "text-transport-aerien",
     bgColor: "bg-transport-aerien/10 border-transport-aerien/30",
+    requiredDocs: ["id_document", "business_registration", "transport_license", "insurance"],
+  },
+  voyageur: {
+    type: "voyageur",
+    title: "Voyageur / GP",
+    description: "Via bagages",
+    longDescription: "Transport via bagages accompagnés lors de voyages",
+    icon: Briefcase,
+    color: "text-transport-voyageur",
+    bgColor: "bg-transport-voyageur/10 border-transport-voyageur/30",
+    requiredDocs: ["id_document"],
+  },
+  agence: {
+    type: "agence",
+    title: "Agence de Voyage",
+    description: "Agence logistique",
+    longDescription: "Billetterie, fret accompagné, groupage passagers/colis",
+    icon: Building2,
+    color: "text-transport-agence",
+    bgColor: "bg-transport-agence/10 border-transport-agence/30",
+    requiredDocs: ["id_document", "business_registration", "transport_license"],
+    services: ["billetterie", "fret_accompagne", "groupage", "reservation"],
   },
 };
 
-// Liste des types dans l'ordre d'affichage (sans express et agence pour v1)
+// Liste des types dans l'ordre d'affichage pour l'inscription (tous activés)
 export const transportTypes: TransportConfig[] = [
-  transportConfig.voyageur,
   transportConfig.routier,
   transportConfig.maritime,
   transportConfig.aerien,
+  transportConfig.express,
+  transportConfig.agence,
 ];
 
-// Liste complète incluant les types masqués (pour référence interne)
+// Liste complète incluant les types pour clients
 export const allTransportTypes: TransportConfig[] = [
   transportConfig.voyageur,
   transportConfig.agence,
@@ -81,8 +101,8 @@ export const allTransportTypes: TransportConfig[] = [
   transportConfig.aerien,
 ];
 
-// Types masqués pour la v1
-export const hiddenTransportTypes: TransportType[] = ["express", "agence"];
+// Types masqués pour la v1 (aucun maintenant)
+export const hiddenTransportTypes: TransportType[] = [];
 
 // Statuts de commande avec le workflow complet
 export type OrderStatus = "pending" | "accepted" | "collected" | "in_transit" | "delivered" | "cancelled" | "disputed";
