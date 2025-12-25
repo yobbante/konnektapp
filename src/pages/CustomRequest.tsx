@@ -6,6 +6,7 @@ import {
   Scale, FileText, CheckCircle, Truck, Ship, Plane, Briefcase,
   Home, Box, Car, Sparkles, AlertTriangle
 } from "lucide-react";
+import { MovingQuoteCalculator } from "@/components/quotes/MovingQuoteCalculator";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,7 @@ export default function CustomRequest() {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [showMovingCalculator, setShowMovingCalculator] = useState(false);
   
   const [formData, setFormData] = useState({
     shipmentType: "",
@@ -75,6 +77,49 @@ export default function CustomRequest() {
     isFragile: false,
     additionalServices: [] as string[],
   });
+
+  // Handle moving quote submission
+  const handleMovingQuote = async (quoteData: any) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({ title: "Connexion requise", description: "Veuillez vous connecter" });
+        navigate("/auth");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("custom_requests")
+        .insert([{
+          client_id: user.id,
+          shipment_type: "demenagement",
+          transport_type: "routier",
+          origin_city: quoteData.originCity,
+          origin_country: "SN",
+          destination_city: quoteData.destinationCity,
+          destination_country: "SN",
+          weight_estimate: quoteData.weight,
+          volume_estimate: `${quoteData.volume}m³`,
+          description: `Déménagement - Volume: ${quoteData.volume}m³, Poids: ${quoteData.weight}kg. Services: ${quoteData.services.join(", ")}`,
+          budget_min: Math.floor(quoteData.totalPrice * 0.9),
+          budget_max: Math.floor(quoteData.totalPrice * 1.1),
+          is_urgent: false,
+          is_fragile: true,
+          additional_services: quoteData.services,
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          request_number: `REQ-${Date.now()}`,
+        }] as any)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setShowMovingCalculator(false);
+      navigate(`/quote-confirmation?id=${data.id}`);
+    } catch (error: any) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    }
+  };
 
   const handleNext = () => setStep((prev) => Math.min(prev + 1, 4));
   const handleBack = () => setStep((prev) => Math.max(prev - 1, 1));
@@ -216,7 +261,13 @@ export default function CustomRequest() {
               {shipmentTypes.map((type) => (
                 <button
                   key={type.value}
-                  onClick={() => setFormData({ ...formData, shipmentType: type.value })}
+                  onClick={() => {
+                    if (type.value === "demenagement") {
+                      setShowMovingCalculator(true);
+                    } else {
+                      setFormData({ ...formData, shipmentType: type.value });
+                    }
+                  }}
                   className={`w-full mobile-card flex items-center gap-4 p-4 text-left transition-all ${
                     formData.shipmentType === type.value
                       ? "ring-2 ring-primary bg-primary/5"
@@ -237,6 +288,13 @@ export default function CustomRequest() {
                 </button>
               ))}
             </div>
+
+            {/* Moving Calculator Dialog */}
+            <MovingQuoteCalculator
+              open={showMovingCalculator}
+              onOpenChange={setShowMovingCalculator}
+              onSubmitQuote={handleMovingQuote}
+            />
 
             {/* Transport préféré (optionnel) */}
             <div className="mb-6">
