@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   Package, Clock, MapPin, ArrowRight, Plus,
-  CheckCircle, Truck, MessageSquare, User, Settings, LogOut, Search
+  CheckCircle, Truck, MessageSquare, User, Settings, LogOut, Search, FileText
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
+import { ClientCustomRequests } from "@/components/client/ClientCustomRequests";
 
 interface Order {
   id: string;
@@ -217,20 +218,29 @@ export default function ClientDashboard() {
           </div>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             <Link to="/demande">
-              <Button variant="default" size="lg" className="w-full">
-                <Plus className="w-5 h-5" />
-                Nouveau colis
+              <Button variant="default" size="lg" className="w-full flex-col h-auto py-3">
+                <Plus className="w-5 h-5 mb-1" />
+                <span className="text-xs">Nouveau colis</span>
+              </Button>
+            </Link>
+            <Link to="/demande-personnalisee">
+              <Button variant="outline" size="lg" className="w-full flex-col h-auto py-3">
+                <FileText className="w-5 h-5 mb-1" />
+                <span className="text-xs">Demande</span>
               </Button>
             </Link>
             <Link to="/offres">
-              <Button variant="outline" size="lg" className="w-full">
-                <Search className="w-5 h-5" />
-                Voir offres
+              <Button variant="outline" size="lg" className="w-full flex-col h-auto py-3">
+                <Search className="w-5 h-5 mb-1" />
+                <span className="text-xs">Offres</span>
               </Button>
             </Link>
           </div>
+
+          {/* Custom Requests Section */}
+          <ClientCustomRequests />
 
           {/* Recent Orders */}
           {orders.length > 0 && (
