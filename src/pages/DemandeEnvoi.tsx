@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   ArrowRight, ArrowLeft, Package, MapPin, Calendar, Scale, 
   FileText, Zap, Truck, Ship, Plane, Briefcase, Info, CheckCircle,
-  Search, Star, Sparkles
+  Search, Star, Sparkles, Loader2
 } from "lucide-react";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -15,9 +15,29 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur";
 type FlowType = "offres" | "personnalisee" | null;
+
+interface Offer {
+  id: string;
+  origin_city: string;
+  origin_country: string;
+  destination_city: string;
+  destination_country: string;
+  departure_date: string;
+  price_per_kg: number;
+  transport_type: TransportType;
+  available_capacity: number;
+  status: string;
+  gp_profile: {
+    business_name: string;
+    rating: number | null;
+  } | null;
+}
 
 const transportOptions = [
   { type: "express" as TransportType, icon: Zap, title: "Express", description: "Livraison rapide" },
@@ -35,16 +55,6 @@ const countries = [
   { code: "FR", name: "France", flag: "🇫🇷" },
   { code: "AE", name: "Dubai", flag: "🇦🇪" },
 ];
-
-// Mock offers data
-const mockOffers = [
-  { id: "YOB-GP001", origin: "Dakar", originCountry: "SN", destination: "Abidjan", destinationCountry: "CI", date: "20 déc.", price: 6500, transportType: "routier" as TransportType, gpName: "Mamadou Express", gpRating: 4.8 },
-  { id: "YOB-GP002", origin: "Dakar", originCountry: "SN", destination: "Paris", destinationCountry: "FR", date: "22 déc.", price: 8500, transportType: "aerien" as TransportType, gpName: "Air Cargo SN", gpRating: 4.9 },
-  { id: "YOB-GP003", origin: "Abidjan", originCountry: "CI", destination: "Bamako", destinationCountry: "ML", date: "21 déc.", price: 5500, transportType: "express" as TransportType, gpName: "Flash Livraison", gpRating: 4.7 },
-  { id: "YOB-GP004", origin: "Dakar", originCountry: "SN", destination: "Casablanca", destinationCountry: "MA", date: "23 déc.", price: 12000, transportType: "maritime" as TransportType, gpName: "Atlantic Freight", gpRating: 4.6 },
-  { id: "YOB-GP005", origin: "Conakry", originCountry: "GN", destination: "Dakar", destinationCountry: "SN", date: "24 déc.", price: 4500, transportType: "voyageur" as TransportType, gpName: "Moussa GP", gpRating: 4.5 },
-];
-
 export default function DemandeEnvoi() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -52,6 +62,8 @@ export default function DemandeEnvoi() {
   const [step, setStep] = useState(1);
   const [selectedTransport, setSelectedTransport] = useState<TransportType | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     originCity: "",
     originCountry: "SN",
@@ -67,15 +79,82 @@ export default function DemandeEnvoi() {
     urgent: false,
   });
 
+  // Fetch active offers from database
+  useEffect(() => {
+    if (flowType === "offres") {
+      fetchOffers();
+    }
+  }, [flowType]);
+
+  const fetchOffers = async () => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from("gp_offers")
+        .select(`
+          id,
+          origin_city,
+          origin_country,
+          destination_city,
+          destination_country,
+          departure_date,
+          price_per_kg,
+          transport_type,
+          available_capacity,
+          status,
+          gp_id
+        `)
+        .eq("status", "active")
+        .gte("departure_date", new Date().toISOString())
+        .order("departure_date", { ascending: true });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const gpIds = [...new Set(data.map(o => o.gp_id))];
+        const { data: profiles } = await supabase
+          .from("public_gp_profiles")
+          .select("id, business_name, rating")
+          .in("id", gpIds);
+
+        const profilesMap = new Map(profiles?.map(p => [p.id, p]) || []);
+        
+        const offersWithProfiles = data.map(offer => ({
+          ...offer,
+          transport_type: offer.transport_type as TransportType,
+          gp_profile: profilesMap.get(offer.gp_id) || null
+        }));
+
+        setOffers(offersWithProfiles);
+      } else {
+        setOffers([]);
+      }
+    } catch (error) {
+      console.error("Error fetching offers:", error);
+      setOffers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Filter offers based on transport type and search
-  const filteredOffers = mockOffers.filter((offer) => {
-    const matchesType = !selectedTransport || offer.transportType === selectedTransport;
+  const filteredOffers = offers.filter((offer) => {
+    const matchesType = !selectedTransport || offer.transport_type === selectedTransport;
     const matchesSearch = !searchQuery || 
-      offer.origin.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      offer.destination.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      offer.gpName.toLowerCase().includes(searchQuery.toLowerCase());
+      offer.origin_city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      offer.destination_city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (offer.gp_profile?.business_name || "").toLowerCase().includes(searchQuery.toLowerCase());
     return matchesType && matchesSearch;
   });
+
+  const formatDate = (dateStr: string) => {
+    try {
+      return format(new Date(dateStr), "d MMM", { locale: fr });
+    } catch {
+      return dateStr;
+    }
+  };
 
   const handleNext = () => setStep((prev) => Math.min(prev + 1, 3));
   const handleBack = () => {
@@ -249,60 +328,72 @@ export default function DemandeEnvoi() {
 
           {/* Results */}
           <p className="text-sm text-muted-foreground mb-3">
-            {filteredOffers.length} offre{filteredOffers.length > 1 ? "s" : ""} disponible{filteredOffers.length > 1 ? "s" : ""}
+            {loading ? "Chargement..." : `${filteredOffers.length} offre${filteredOffers.length > 1 ? "s" : ""} disponible${filteredOffers.length > 1 ? "s" : ""}`}
           </p>
 
           {/* Offers List */}
-          <div className="space-y-3 pb-4">
-            {filteredOffers.map((offer, index) => (
-              <motion.div
-                key={offer.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <button
-                  onClick={() => handleSelectOffer(offer.id)}
-                  className="w-full mobile-card active:scale-[0.98] transition-transform text-left"
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="space-y-3 pb-4">
+              {filteredOffers.map((offer, index) => (
+                <motion.div
+                  key={offer.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <Badge variant={offer.transportType as any} className="text-xs">
-                      {transportOptions.find(o => o.type === offer.transportType)?.title}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">{offer.date}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="w-4 h-4 text-primary" />
-                      <span className="font-medium">{offer.origin}</span>
+                  <button
+                    onClick={() => handleSelectOffer(offer.id)}
+                    className="w-full mobile-card active:scale-[0.98] transition-transform text-left"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <Badge variant="secondary" className="text-xs">
+                        {transportOptions.find(o => o.type === offer.transport_type)?.title || offer.transport_type}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">{formatDate(offer.departure_date)}</span>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-medium">{offer.destination}</span>
-                  </div>
 
-                  <div className="flex items-center justify-between pt-3 border-t border-border">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-xs font-semibold text-primary">{offer.gpName.charAt(0)}</span>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-4 h-4 text-primary" />
+                        <span className="font-medium">{offer.origin_city}</span>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium">{offer.gpName}</p>
-                        <div className="flex items-center gap-1">
-                          <Star className="w-3 h-3 text-warning fill-warning" />
-                          <span className="text-xs text-muted-foreground">{offer.gpRating}</span>
+                      <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                      <span className="font-medium">{offer.destination_city}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-3 border-t border-border">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-xs font-semibold text-primary">
+                            {(offer.gp_profile?.business_name || "T").charAt(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{offer.gp_profile?.business_name || "Transporteur"}</p>
+                          {offer.gp_profile?.rating && offer.gp_profile.rating > 0 ? (
+                            <div className="flex items-center gap-1">
+                              <Star className="w-3 h-3 text-warning fill-warning" />
+                              <span className="text-xs text-muted-foreground">{offer.gp_profile.rating.toFixed(1)}</span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Nouveau</span>
+                          )}
                         </div>
                       </div>
+                      <div className="text-right">
+                        <p className="font-bold text-primary">{offer.price_per_kg.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">FCFA/kg</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-primary">{offer.price.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">FCFA/kg</p>
-                    </div>
-                  </div>
-                </button>
-              </motion.div>
-            ))}
-          </div>
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+          )}
 
           {/* Empty State */}
           {filteredOffers.length === 0 && (
