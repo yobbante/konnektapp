@@ -140,7 +140,7 @@ export function Header() {
                               <Truck className="w-5 h-5 text-primary" />
                               <span className="font-medium">Dashboard Transporteur</span>
                             </Link>
-                            <Link to="/transporter/profile" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
+                            <Link to="/gp/profil" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
                               <User className="w-5 h-5 text-secondary" />
                               <span className="font-medium">Mon profil GP</span>
                             </Link>
