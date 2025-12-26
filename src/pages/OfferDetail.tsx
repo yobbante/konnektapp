@@ -122,7 +122,7 @@ export default function OfferDetail() {
       // Create order with pending_info status
       const { data: orderData, error: orderError } = await supabase
         .from("orders")
-        .insert([{
+        .insert({
           client_id: user.id,
           gp_id: offer.gp_id,
           offer_id: offer.id,
@@ -135,8 +135,8 @@ export default function OfferDetail() {
           total_price: offer.price_per_kg,
           status: "pending" as const,
           logistics_status: "pending_info",
-          order_number: "TEMP", // Will be overwritten by trigger
-        }])
+          order_number: "TEMP",
+        })
         .select("id")
         .single();
 

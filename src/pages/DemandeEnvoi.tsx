@@ -19,7 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
-type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur";
+type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "demenagement";
 type FlowType = "offres" | "personnalisee" | null;
 
 interface Offer {
@@ -45,6 +45,7 @@ const transportOptions = [
   { type: "maritime" as TransportType, icon: Ship, title: "Maritime", description: "Gros volumes" },
   { type: "aerien" as TransportType, icon: Plane, title: "Aérien", description: "International" },
   { type: "voyageur" as TransportType, icon: Briefcase, title: "Voyageur", description: "Via GP" },
+  { type: "demenagement" as TransportType, icon: Package, title: "Déménagement", description: "Déménagement complet" },
 ];
 
 const countries = [
