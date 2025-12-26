@@ -20,6 +20,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { useOfferNotifications } from "@/hooks/useOfferNotifications";
 import { CompareProvider, useCompare, CompareOffer } from "@/components/offers/OfferCompare";
 import { MovingQuoteCalculator } from "@/components/quotes/MovingQuoteCalculator";
+import { useToast } from "@/hooks/use-toast";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence";
 
@@ -75,6 +76,7 @@ const getTransportLabel = (type: TransportType) => {
 
 function OffresContent() {
   const [searchParams] = useSearchParams();
+  const { toast } = useToast();
   const typeFromUrl = searchParams.get("type") || "all";
   const [activeFilter, setActiveFilter] = useState(typeFromUrl);
   const [searchQuery, setSearchQuery] = useState("");
@@ -240,6 +242,17 @@ function OffresContent() {
   const handleFavoriteClick = async (e: React.MouseEvent, offerId: string) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Check if user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        title: "Connexion requise",
+        description: "Connectez-vous pour ajouter aux favoris",
+      });
+      return;
+    }
+    
     await toggleFavorite(offerId);
   };
 
