@@ -90,7 +90,7 @@ export default function PostBookingForm() {
       }
 
       if (!orderId) {
-        navigate("/dashboard");
+        navigate("/client/dashboard");
         return;
       }
 
@@ -103,13 +103,13 @@ export default function PostBookingForm() {
 
       if (error || !data) {
         toast({ title: "Commande non trouvée", variant: "destructive" });
-        navigate("/dashboard");
+        navigate("/client/dashboard");
         return;
       }
 
       if (data.logistics_status !== "pending_info") {
         toast({ title: "Formulaire déjà soumis" });
-        navigate("/dashboard");
+        navigate("/client/dashboard");
         return;
       }
 
@@ -192,7 +192,7 @@ export default function PostBookingForm() {
         title: "Informations transmises !", 
         description: "Le transporteur peut maintenant voir votre demande." 
       });
-      navigate("/dashboard");
+      navigate("/client/dashboard");
     } catch (error) {
       console.error("Submit error:", error);
       toast({ title: "Erreur lors de l'envoi", variant: "destructive" });

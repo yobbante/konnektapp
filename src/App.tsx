@@ -42,6 +42,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/demande" element={<DemandeEnvoi />} />
           <Route path="/demande/personnalisee" element={<CustomRequest />} />
+          <Route path="/demande-personnalisee" element={<CustomRequest />} />
           <Route path="/quote-confirmation" element={<QuoteConfirmation />} />
           <Route path="/offres" element={<Offres />} />
           <Route path="/offres/:id" element={<OfferDetail />} />

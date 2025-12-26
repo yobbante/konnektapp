@@ -209,7 +209,15 @@ export default function OfferDetail() {
           <span className="font-semibold">Détail de l'offre</span>
           <div className="flex gap-1">
             <button 
-              onClick={() => id && toggleFavorite(id)}
+              onClick={async () => {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                  toast({ title: "Connexion requise", description: "Connectez-vous pour ajouter aux favoris" });
+                  navigate("/auth");
+                  return;
+                }
+                id && toggleFavorite(id);
+              }}
               className="p-2"
             >
               <Heart className={`w-5 h-5 ${id && isFavorite(id) ? "fill-destructive text-destructive" : ""}`} />

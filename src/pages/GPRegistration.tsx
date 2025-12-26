@@ -26,6 +26,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const idTypes = [
   { value: "cni", label: "Carte Nationale d'Identité" },
@@ -59,6 +66,7 @@ export default function GPRegistration() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [idTypeSheetOpen, setIdTypeSheetOpen] = useState(false);
   const [existingUser, setExistingUser] = useState<{
     email: string;
     fullName: string;
@@ -727,21 +735,60 @@ export default function GPRegistration() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label>Type de pièce d'identité</Label>
-                    <Select
-                      value={kycData.idType}
-                      onValueChange={(value) => setKycData({ ...kycData, idType: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {idTypes.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    
+                    {/* Sheet for mobile - hidden on desktop */}
+                    <div className="block md:hidden">
+                      <Sheet open={idTypeSheetOpen} onOpenChange={setIdTypeSheetOpen}>
+                        <SheetTrigger asChild>
+                          <Button variant="outline" className="w-full justify-between">
+                            {idTypes.find(t => t.value === kycData.idType)?.label || "Sélectionner"}
+                            <ArrowRight className="w-4 h-4 rotate-90" />
+                          </Button>
+                        </SheetTrigger>
+                        <SheetContent side="bottom" className="rounded-t-2xl">
+                          <SheetHeader>
+                            <SheetTitle>Type de pièce d'identité</SheetTitle>
+                          </SheetHeader>
+                          <div className="py-4 space-y-2">
+                            {idTypes.map((type) => (
+                              <button
+                                key={type.value}
+                                onClick={() => {
+                                  setKycData({ ...kycData, idType: type.value });
+                                  setIdTypeSheetOpen(false);
+                                }}
+                                className={`w-full p-4 rounded-xl text-left transition-all ${
+                                  kycData.idType === type.value
+                                    ? "bg-secondary/10 border-2 border-secondary"
+                                    : "bg-muted hover:bg-muted/80 border-2 border-transparent"
+                                }`}
+                              >
+                                <span className="font-medium">{type.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </SheetContent>
+                      </Sheet>
+                    </div>
+                    
+                    {/* Select for desktop - hidden on mobile */}
+                    <div className="hidden md:block">
+                      <Select
+                        value={kycData.idType}
+                        onValueChange={(value) => setKycData({ ...kycData, idType: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {idTypes.map((type) => (
+                            <SelectItem key={type.value} value={type.value}>
+                              {type.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
