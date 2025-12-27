@@ -43,10 +43,10 @@ export function useSmartRedirect() {
         .maybeSingle();
 
       if (gpProfile) {
-        navigate("/gp/profil");
+        navigate("/transporter/profile");
         return { 
           success: true, 
-          destination: "/gp/profil", 
+          destination: "/transporter/profile", 
           role: "transporteur" 
         };
       }
