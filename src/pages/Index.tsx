@@ -36,11 +36,11 @@ function IndexContent() {
 
   const loadOffers = async () => {
     try {
-      const { data, error } = await supabase
+      // First fetch offers
+      const { data: offersData, error: offersError } = await supabase
         .from("gp_offers")
         .select(`
           *,
-          public_gp_profiles(business_name, rating),
           vehicles(id, name, vehicle_type, max_weight_kg)
         `)
         .eq("status", "active")
@@ -48,13 +48,26 @@ function IndexContent() {
         .order("created_at", { ascending: false })
         .limit(6);
 
-      if (error) throw error;
-      // Map public_gp_profiles to gp_profiles for compatibility
-      const mappedData = (data || []).map(offer => ({
-        ...offer,
-        gp_profiles: offer.public_gp_profiles
-      }));
-      setOffers(mappedData);
+      if (offersError) throw offersError;
+
+      if (offersData && offersData.length > 0) {
+        // Fetch GP profiles separately
+        const gpIds = [...new Set(offersData.map(o => o.gp_id))];
+        const { data: profiles } = await supabase
+          .from("public_gp_profiles")
+          .select("id, business_name, rating")
+          .in("id", gpIds);
+
+        const profilesMap = new Map(profiles?.map(p => [p.id, p]) || []);
+        
+        const mappedData = offersData.map(offer => ({
+          ...offer,
+          gp_profiles: profilesMap.get(offer.gp_id) || { business_name: "Transporteur", rating: 0 }
+        }));
+        setOffers(mappedData);
+      } else {
+        setOffers([]);
+      }
     } catch (error) {
       console.error("Error loading offers:", error);
     } finally {
