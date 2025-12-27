@@ -397,7 +397,7 @@ export default function DemandeEnvoi() {
           )}
 
           {/* Empty State */}
-          {filteredOffers.length === 0 && (
+          {!loading && filteredOffers.length === 0 && (
             <div className="text-center py-8">
               <Package className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" />
               <h3 className="font-semibold mb-1">Aucune offre trouvée</h3>
