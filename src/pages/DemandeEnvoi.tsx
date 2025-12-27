@@ -485,7 +485,13 @@ export default function DemandeEnvoi() {
               {transportOptions.map((option) => (
                 <button
                   key={option.type}
-                  onClick={() => setSelectedTransport(option.type)}
+                  onClick={() => {
+                    if (option.type === "demenagement") {
+                      navigate("/demande-personnalisee?tab=demenagement");
+                    } else {
+                      setSelectedTransport(option.type);
+                    }
+                  }}
                   className={`mobile-card flex flex-col items-center text-center p-4 transition-all ${
                     selectedTransport === option.type
                       ? "ring-2 ring-primary bg-primary/5"
