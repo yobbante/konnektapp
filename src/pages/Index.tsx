@@ -40,7 +40,7 @@ function IndexContent() {
         .from("gp_offers")
         .select(`
           *,
-          gp_profiles!inner(business_name, rating),
+          public_gp_profiles(business_name, rating),
           vehicles(id, name, vehicle_type, max_weight_kg)
         `)
         .eq("status", "active")
@@ -49,7 +49,12 @@ function IndexContent() {
         .limit(6);
 
       if (error) throw error;
-      setOffers(data || []);
+      // Map public_gp_profiles to gp_profiles for compatibility
+      const mappedData = (data || []).map(offer => ({
+        ...offer,
+        gp_profiles: offer.public_gp_profiles
+      }));
+      setOffers(mappedData);
     } catch (error) {
       console.error("Error loading offers:", error);
     } finally {
