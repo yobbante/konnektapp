@@ -202,7 +202,7 @@ export default function DemandeEnvoi() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
-              onClick={() => setFlowType("offres")}
+              onClick={() => navigate("/offres")}
               className="w-full mobile-card p-5 text-left active:scale-[0.98] transition-transform"
             >
               <div className="flex items-start gap-4">
@@ -217,6 +217,7 @@ export default function DemandeEnvoi() {
                   <div className="flex items-center gap-2 mt-3">
                     <Badge variant="secondary" className="text-xs">Rapide</Badge>
                     <Badge variant="secondary" className="text-xs">Prix fixe</Badge>
+                    <Badge variant="outline" className="text-xs">Visible sans connexion</Badge>
                   </div>
                 </div>
                 <ArrowRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
