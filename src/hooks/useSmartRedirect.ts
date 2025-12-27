@@ -19,7 +19,6 @@ export function useSmartRedirect() {
       });
 
       if (adminAccess) {
-        // Déterminer si admin ou moderator pour le logging
         const { data: roleData } = await supabase
           .from("user_roles")
           .select("role")
@@ -44,15 +43,15 @@ export function useSmartRedirect() {
         .maybeSingle();
 
       if (gpProfile) {
-        navigate("/gp/dashboard");
+        navigate("/gp/profil");
         return { 
           success: true, 
-          destination: "/gp/dashboard", 
+          destination: "/gp/profil", 
           role: "transporteur" 
         };
       }
 
-      // 3. Sinon, c'est un client standard - rediriger vers le profil client
+      // 3. Sinon, c'est un client standard - TOUJOURS rediriger vers le profil
       navigate("/client/profile");
       return { 
         success: true, 
