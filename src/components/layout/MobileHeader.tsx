@@ -135,7 +135,7 @@ export function MobileHeader({ title, showNotifications = true }: MobileHeaderPr
                           </>
                         ) : (
                           <>
-                            <Link to="/profile" onClick={() => setMenuOpen(false)}>
+                            <Link to="/profil" onClick={() => setMenuOpen(false)}>
                               <Button variant="ghost" className="w-full justify-start">
                                 <User className="w-4 h-4 mr-2" />
                                 Mon profil
