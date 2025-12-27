@@ -58,6 +58,7 @@ const App = () => (
           <Route path="/admin/gp/:gpId" element={<AdminGPProfile />} />
           <Route path="/order/:orderId/complete" element={<PostBookingForm />} />
           <Route path="/profil" element={<Profile />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/gp/:gpId" element={<GPProfile />} />
           <Route path="/transporter/profile" element={<TransporterProfile />} />
           <Route path="/favorites" element={<Favorites />} />
