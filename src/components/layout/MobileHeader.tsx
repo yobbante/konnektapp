@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Package, Shield, Truck, User, LogOut, Menu, Heart, Search } from "lucide-react";
+import { Home, Shield, Truck, User, LogOut, Menu, Heart, Bell, Send, MapPin, Search, LayoutDashboard, Package } from "lucide-react";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePageTheme } from "@/hooks/usePageTheme";
@@ -70,25 +70,25 @@ export function MobileHeader({ title, showNotifications = true }: MobileHeaderPr
                 <div className="space-y-1">
                   <Link to="/" onClick={() => setMenuOpen(false)}>
                     <Button variant="ghost" className="w-full justify-start">
-                      <Package className="w-4 h-4 mr-2" />
+                      <Home className="w-4 h-4 mr-2" />
                       Accueil
                     </Button>
                   </Link>
                   <Link to="/offres" onClick={() => setMenuOpen(false)}>
                     <Button variant="ghost" className="w-full justify-start">
-                      <Truck className="w-4 h-4 mr-2" />
+                      <Search className="w-4 h-4 mr-2" />
                       Offres
                     </Button>
                   </Link>
                   <Link to="/demande" onClick={() => setMenuOpen(false)}>
                     <Button variant="ghost" className="w-full justify-start">
-                      <Package className="w-4 h-4 mr-2" />
+                      <Send className="w-4 h-4 mr-2" />
                       Envoyer un colis
                     </Button>
                   </Link>
                   <Link to="/tracking" onClick={() => setMenuOpen(false)}>
                     <Button variant="ghost" className="w-full justify-start">
-                      <Truck className="w-4 h-4 mr-2" />
+                      <MapPin className="w-4 h-4 mr-2" />
                       Suivi
                     </Button>
                   </Link>
@@ -100,7 +100,7 @@ export function MobileHeader({ title, showNotifications = true }: MobileHeaderPr
                   </Link>
                   <Link to="/saved-searches" onClick={() => setMenuOpen(false)}>
                     <Button variant="ghost" className="w-full justify-start">
-                      <Search className="w-4 h-4 mr-2" />
+                      <Bell className="w-4 h-4 mr-2" />
                       Mes alertes
                     </Button>
                   </Link>
@@ -143,8 +143,8 @@ export function MobileHeader({ title, showNotifications = true }: MobileHeaderPr
                             </Link>
                             <Link to="/client/dashboard" onClick={() => setMenuOpen(false)}>
                               <Button variant="ghost" className="w-full justify-start text-primary">
-                                <Package className="w-4 h-4 mr-2" />
-                                Mes envois
+                                <LayoutDashboard className="w-4 h-4 mr-2" />
+                                Mon espace
                               </Button>
                             </Link>
                           </>
