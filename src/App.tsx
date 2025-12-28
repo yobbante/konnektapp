@@ -27,6 +27,7 @@ import TransporterProfile from "./pages/TransporterProfile";
 import Favorites from "./pages/Favorites";
 import SavedSearches from "./pages/SavedSearches";
 import QuoteConfirmation from "./pages/QuoteConfirmation";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -63,6 +64,7 @@ const App = () => (
           <Route path="/transporter/profile" element={<TransporterProfile />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/saved-searches" element={<SavedSearches />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/auth" element={<Auth />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
