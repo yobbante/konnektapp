@@ -10,8 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/use-toast";
-import { Loader2, Bell, Mail, MessageSquare, Package, TrendingUp, Megaphone, ArrowLeft, Settings as SettingsIcon } from "lucide-react";
+import { Loader2, Bell, Mail, MessageSquare, Package, TrendingUp, Megaphone, ArrowLeft, Settings as SettingsIcon, TestTube2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { SendTestNotification } from "@/components/settings/SendTestNotification";
 
 interface NotificationPreferences {
   email_notifications: boolean;
@@ -294,6 +295,29 @@ export default function Settings() {
                     checked={preferences.marketing_emails}
                     onCheckedChange={() => handleToggle("marketing_emails")}
                   />
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Test Notification Section */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                  Test des notifications
+                </h4>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
+                      <TestTube2 className="w-5 h-5 text-amber-500" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Notification test</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Vérifier le fonctionnement en temps réel
+                      </p>
+                    </div>
+                  </div>
+                  <SendTestNotification userId={userId} />
                 </div>
               </div>
 
