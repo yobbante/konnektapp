@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Home, Shield, Truck, User, LogOut, Menu, Heart, Bell, Send, MapPin, Search, LayoutDashboard, Package } from "lucide-react";
+import { Home, Shield, Truck, User, LogOut, Menu, Heart, Bell, Send, MapPin, Search, LayoutDashboard, Package, Settings } from "lucide-react";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePageTheme } from "@/hooks/usePageTheme";
@@ -102,6 +102,12 @@ export function MobileHeader({ title, showNotifications = true }: MobileHeaderPr
                     <Button variant="ghost" className="w-full justify-start">
                       <Bell className="w-4 h-4 mr-2" />
                       Mes alertes
+                    </Button>
+                  </Link>
+                  <Link to="/settings" onClick={() => setMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Paramètres
                     </Button>
                   </Link>
                 </div>

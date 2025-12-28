@@ -1,8 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Home, Search, Send, MessageCircle, User, BarChart3, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
-import { Badge } from "@/components/ui/badge";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 const navItems = [
   { href: "/", icon: Home, label: "Accueil" },
@@ -14,7 +13,7 @@ const navItems = [
 
 export function MobileNav() {
   const location = useLocation();
-  const { unreadCount } = useUnreadNotifications();
+  const { unreadCount } = useUnreadMessages();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden safe-area-bottom">

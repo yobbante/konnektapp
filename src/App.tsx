@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import Index from "./pages/Index";
 import Offres from "./pages/Offres";
 import OfferDetail from "./pages/OfferDetail";
@@ -39,36 +40,38 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <ScrollToTop />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/demande" element={<DemandeEnvoi />} />
-          <Route path="/demande/personnalisee" element={<CustomRequest />} />
-          <Route path="/demande-personnalisee" element={<CustomRequest />} />
-          <Route path="/quote-confirmation" element={<QuoteConfirmation />} />
-          <Route path="/offres" element={<Offres />} />
-          <Route path="/offres/:id" element={<OfferDetail />} />
-          <Route path="/tracking" element={<Tracking />} />
-          <Route path="/messages" element={<Messages />} />
-          <Route path="/gp" element={<GPLanding />} />
-          <Route path="/gp/inscription" element={<GPRegistration />} />
-          <Route path="/gp/dashboard" element={<GPDashboard />} />
-          <Route path="/gp/requests" element={<GPCustomRequests />} />
-          <Route path="/client/dashboard" element={<ClientDashboard />} />
-          <Route path="/client/profile" element={<ClientProfile />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/gp/:gpId" element={<AdminGPProfile />} />
-          <Route path="/order/:orderId/complete" element={<PostBookingForm />} />
-          <Route path="/profil" element={<Profile />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/gp/:gpId" element={<GPProfile />} />
-          <Route path="/transporter/profile" element={<TransporterProfile />} />
-          <Route path="/favorites" element={<Favorites />} />
-          <Route path="/saved-searches" element={<SavedSearches />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/auth" element={<Auth />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthGuard>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/demande" element={<DemandeEnvoi />} />
+            <Route path="/demande/personnalisee" element={<CustomRequest />} />
+            <Route path="/demande-personnalisee" element={<CustomRequest />} />
+            <Route path="/quote-confirmation" element={<QuoteConfirmation />} />
+            <Route path="/offres" element={<Offres />} />
+            <Route path="/offres/:id" element={<OfferDetail />} />
+            <Route path="/tracking" element={<Tracking />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/gp" element={<GPLanding />} />
+            <Route path="/gp/inscription" element={<GPRegistration />} />
+            <Route path="/gp/dashboard" element={<GPDashboard />} />
+            <Route path="/gp/requests" element={<GPCustomRequests />} />
+            <Route path="/client/dashboard" element={<ClientDashboard />} />
+            <Route path="/client/profile" element={<ClientProfile />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/gp/:gpId" element={<AdminGPProfile />} />
+            <Route path="/order/:orderId/complete" element={<PostBookingForm />} />
+            <Route path="/profil" element={<Profile />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/gp/:gpId" element={<GPProfile />} />
+            <Route path="/transporter/profile" element={<TransporterProfile />} />
+            <Route path="/favorites" element={<Favorites />} />
+            <Route path="/saved-searches" element={<SavedSearches />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/auth" element={<Auth />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthGuard>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
