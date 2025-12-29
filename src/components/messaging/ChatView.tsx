@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Send, ArrowLeft, Phone, MoreVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useTypingIndicator } from "@/hooks/useTypingIndicator";
+import { TypingIndicator } from "./TypingIndicator";
 
 interface Message {
   id: string;
@@ -31,6 +33,12 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const { isOtherTyping, handleTypingStart, stopTyping } = useTypingIndicator(
+    conversationId,
+    currentUserId,
+    userType
+  );
 
   useEffect(() => {
     fetchMessages();
@@ -117,6 +125,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
     if (!newMessage.trim() || sending) return;
 
     setSending(true);
+    stopTyping(); // Stop typing indicator when sending
     try {
       const { error } = await supabase.from("messages").insert({
         conversation_id: conversationId,
@@ -216,6 +225,14 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
             );
           })
         )}
+        
+        {/* Typing Indicator */}
+        <AnimatePresence>
+          {isOtherTyping && (
+            <TypingIndicator contactName={contactName} />
+          )}
+        </AnimatePresence>
+        
         <div ref={messagesEndRef} />
       </div>
 
@@ -225,7 +242,10 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
           <Input
             placeholder="Votre message..."
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={(e) => {
+              setNewMessage(e.target.value);
+              handleTypingStart();
+            }}
             className="flex-1 h-11"
           />
           <Button type="submit" disabled={!newMessage.trim() || sending} className="h-11 px-4">
