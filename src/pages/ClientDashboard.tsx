@@ -3,7 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   Package, Clock, MapPin, ArrowRight, Plus,
-  CheckCircle, Truck, MessageSquare, User, Settings, LogOut, Search, FileText
+  CheckCircle, Truck, MessageSquare, User, Settings, LogOut, Search, FileText,
+  Heart, Bell
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -218,7 +219,7 @@ export default function ClientDashboard() {
           </div>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2 mb-2">
             <Link to="/demande">
               <Button variant="default" size="lg" className="w-full flex-col h-auto py-3">
                 <Plus className="w-5 h-5 mb-1" />
@@ -235,6 +236,22 @@ export default function ClientDashboard() {
               <Button variant="outline" size="lg" className="w-full flex-col h-auto py-3">
                 <Search className="w-5 h-5 mb-1" />
                 <span className="text-xs">Offres</span>
+              </Button>
+            </Link>
+          </div>
+
+          {/* Alertes & Favoris */}
+          <div className="grid grid-cols-2 gap-2">
+            <Link to="/saved-searches">
+              <Button variant="outline" size="lg" className="w-full flex-col h-auto py-3">
+                <Bell className="w-5 h-5 mb-1 text-warning" />
+                <span className="text-xs">Mes alertes</span>
+              </Button>
+            </Link>
+            <Link to="/favorites">
+              <Button variant="outline" size="lg" className="w-full flex-col h-auto py-3">
+                <Heart className="w-5 h-5 mb-1 text-destructive" />
+                <span className="text-xs">Mes favoris</span>
               </Button>
             </Link>
           </div>
