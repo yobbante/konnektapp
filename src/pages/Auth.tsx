@@ -151,7 +151,7 @@ export default function AuthPage() {
           <p className="text-sm text-muted-foreground">
             {isLogin 
               ? "Accédez à votre espace" 
-              : "Rejoignez Yobbanté-GP"
+              : "Rejoignez Yobbanté Connect"
             }
           </p>
         </motion.div>
@@ -174,12 +174,8 @@ export default function AuthPage() {
               Connexion
             </button>
             <button
-              onClick={() => setIsLogin(false)}
-              className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
-                !isLogin 
-                  ? "bg-background text-foreground shadow-sm" 
-                  : "text-muted-foreground"
-              }`}
+              onClick={() => navigate("/gp/inscription")}
+              className="flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/90"
             >
               Inscription
             </button>
@@ -274,14 +270,14 @@ export default function AuthPage() {
             </Button>
           </form>
 
-          {/* GP CTA */}
+          {/* Transporteur CTA */}
           <div className="mt-6 pt-6 border-t border-border text-center">
             <p className="text-sm text-muted-foreground mb-3">
               Vous êtes transporteur ?
             </p>
             <Link to="/gp/inscription">
               <Button variant="outline" className="w-full">
-                Devenir GP partenaire
+                Devenir transporteur partenaire
               </Button>
             </Link>
           </div>
