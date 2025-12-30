@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { ReportProblemDialog } from "@/components/tracking/ReportProblemDialog";
 
 interface TrackingStep {
   status: string;
@@ -355,10 +356,15 @@ export default function TrackingPage() {
 
             {/* Actions */}
             <div className="flex gap-3">
-              <Button variant="outline" className="flex-1 h-11" onClick={() => navigate("/support")}>
-                <AlertCircle className="w-4 h-4 mr-2" />
-                Signaler un problème
-              </Button>
+              <ReportProblemDialog 
+                orderId={order.id} 
+                orderNumber={order.tracking_code || order.order_number}
+              >
+                <Button variant="outline" className="flex-1 h-11">
+                  <AlertCircle className="w-4 h-4 mr-2" />
+                  Signaler un problème
+                </Button>
+              </ReportProblemDialog>
               <Button variant="default" className="flex-1 h-11" onClick={() => navigate("/messages")}>
                 <MessageCircle className="w-4 h-4 mr-2" />
                 Contacter

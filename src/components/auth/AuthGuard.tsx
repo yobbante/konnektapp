@@ -8,7 +8,24 @@ interface AuthGuardProps {
 }
 
 // Routes publiques qui ne nécessitent pas d'authentification
-const PUBLIC_ROUTES = ["/auth", "/gp"];
+const PUBLIC_ROUTES = [
+  "/auth", 
+  "/gp", 
+  "/gp/inscription", 
+  "/tracking",
+  "/offres",
+  "/"
+];
+
+// Vérifie si le chemin correspond à une route publique
+const isPublicRoute = (pathname: string): boolean => {
+  return PUBLIC_ROUTES.some(route => {
+    if (route === pathname) return true;
+    // Gérer les routes avec paramètres
+    if (route.endsWith("/") && pathname.startsWith(route)) return true;
+    return false;
+  });
+};
 
 export function AuthGuard({ children }: AuthGuardProps) {
   const navigate = useNavigate();
@@ -22,7 +39,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT" || !session) {
         setAuthenticated(false);
-        if (!PUBLIC_ROUTES.includes(location.pathname)) {
+        if (!isPublicRoute(location.pathname)) {
           navigate("/auth", { state: { returnTo: location.pathname }, replace: true });
         }
       } else if (event === "SIGNED_IN" && session) {
@@ -37,22 +54,20 @@ export function AuthGuard({ children }: AuthGuardProps) {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      const isPublicRoute = PUBLIC_ROUTES.includes(location.pathname);
+      const isPublic = isPublicRoute(location.pathname);
       
-      if (!session && !isPublicRoute) {
+      if (!session && !isPublic) {
         navigate("/auth", { state: { returnTo: location.pathname }, replace: true });
         setAuthenticated(false);
-      } else if (session && location.pathname === "/auth") {
-        // Redirect logged-in users away from auth page
-        navigate("/", { replace: true });
-        setAuthenticated(true);
       } else {
-        setAuthenticated(!!session || isPublicRoute);
+        setAuthenticated(!!session || isPublic);
       }
     } catch (error) {
       console.error("Auth check error:", error);
       setAuthenticated(false);
-      navigate("/auth", { replace: true });
+      if (!isPublicRoute(location.pathname)) {
+        navigate("/auth", { replace: true });
+      }
     } finally {
       setLoading(false);
     }
@@ -69,7 +84,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     );
   }
 
-  if (!authenticated && !PUBLIC_ROUTES.includes(location.pathname)) {
+  if (!authenticated && !isPublicRoute(location.pathname)) {
     return null;
   }
 

@@ -1424,6 +1424,56 @@ export type Database = {
           },
         ]
       }
+      tracking_issues: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          description: string
+          id: string
+          issue_type: string
+          order_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          issue_type: string
+          order_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          issue_type?: string
+          order_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tracking_issues_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: number
@@ -1474,6 +1524,42 @@ export type Database = {
             columns: ["wallet_id"]
             isOneToOne: false
             referencedRelation: "gp_wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transporter_favorites: {
+        Row: {
+          created_at: string
+          gp_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          gp_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          gp_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transporter_favorites_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transporter_favorites_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1587,6 +1673,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          criteria: Json
+          id: string
+          is_active: boolean
+          last_triggered_at: string | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          criteria?: Json
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          criteria?: Json
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -1747,6 +1869,13 @@ export type Database = {
         }
         Returns: string
       }
+      assign_user_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _target_user_id: string
+        }
+        Returns: boolean
+      }
       create_transaction: {
         Args: {
           p_amount: number
@@ -1773,6 +1902,13 @@ export type Database = {
       is_order_gp: { Args: { order_gp_id: string }; Returns: boolean }
       owns_gp_offer: { Args: { offer_gp_id: string }; Returns: boolean }
       owns_gp_wallet: { Args: { wallet_gp_id: string }; Returns: boolean }
+      remove_user_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _target_user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
