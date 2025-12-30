@@ -232,6 +232,12 @@ export function AdminPermissionsManager() {
     }
   };
 
+  const hasRolePermission = (role: string, permissionId: string) => {
+    return rolePermissions.some(
+      (rp) => rp.role === role && rp.permission_id === permissionId
+    );
+  };
+
   const filteredUsers = users.filter(
     (user) =>
       user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -360,8 +366,8 @@ export function AdminPermissionsManager() {
                                         variant={hasRole ? "destructive" : "default"}
                                         onClick={() =>
                                           hasRole
-                                            ? removeRole(user.id, role.value)
-                                            : assignRole(user.id, role.value)
+                                            ? removeRole(user.id, role.value as "admin" | "moderator" | "user")
+                                            : assignRole(user.id, role.value as "admin" | "moderator" | "user")
                                         }
                                         disabled={savingRole}
                                       >
@@ -435,7 +441,7 @@ export function AdminPermissionsManager() {
                             <Switch
                               checked={hasRolePermission(role.value, perm.id)}
                               onCheckedChange={(checked) =>
-                                toggleRolePermission(role.value, perm.id, checked)
+                                toggleRolePermission(role.value as "admin" | "moderator" | "user", perm.id, checked)
                               }
                             />
                           </TableCell>

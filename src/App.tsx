@@ -29,6 +29,7 @@ import Favorites from "./pages/Favorites";
 import SavedSearches from "./pages/SavedSearches";
 import QuoteConfirmation from "./pages/QuoteConfirmation";
 import Settings from "./pages/Settings";
+import Alerts from "./pages/Alerts";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -67,6 +68,7 @@ const App = () => (
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/saved-searches" element={<SavedSearches />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/alerts" element={<Alerts />} />
             <Route path="/auth" element={<Auth />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

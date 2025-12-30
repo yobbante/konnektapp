@@ -85,7 +85,13 @@ export default function AlertsPage() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setAlerts(data || []);
+      
+      // Type cast for criteria
+      const typedAlerts = (data || []).map(alert => ({
+        ...alert,
+        criteria: (alert.criteria || {}) as Record<string, any>
+      }));
+      setAlerts(typedAlerts);
     } catch (error) {
       console.error("Error loading alerts:", error);
     } finally {
