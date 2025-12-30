@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { ReportProblemDialog } from "@/components/support/ReportProblemDialog";
 
 interface TrackingStep {
   status: string;
@@ -62,7 +61,6 @@ export default function TrackingPage() {
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
-  const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
   useEffect(() => {
     if (initialCode) {
@@ -357,7 +355,7 @@ export default function TrackingPage() {
 
             {/* Actions */}
             <div className="flex gap-3">
-              <Button variant="outline" className="flex-1 h-11" onClick={() => setReportDialogOpen(true)}>
+              <Button variant="outline" className="flex-1 h-11" onClick={() => navigate("/support")}>
                 <AlertCircle className="w-4 h-4 mr-2" />
                 Signaler un problème
               </Button>
@@ -366,16 +364,6 @@ export default function TrackingPage() {
                 Contacter
               </Button>
             </div>
-
-            {/* Report Problem Dialog */}
-            {order && (
-              <ReportProblemDialog
-                open={reportDialogOpen}
-                onOpenChange={setReportDialogOpen}
-                orderId={order.id}
-                orderNumber={order.tracking_code || order.order_number}
-              />
-            )}
           </motion.div>
         ) : searched ? (
           <motion.div

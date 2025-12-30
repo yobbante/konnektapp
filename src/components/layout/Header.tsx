@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Package, Truck, User, Shield, LogOut, Settings, Heart, Bell } from "lucide-react";
+import { Menu, X, Package, Truck, User, Shield, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CountrySelector } from "@/components/CountrySelector";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -48,7 +48,7 @@ export function Header() {
             <div className="flex items-center gap-2">
               <div className="flex flex-col">
                 <span className="font-bold text-lg text-foreground leading-tight">Yobbanté</span>
-                <span className="text-xs font-semibold text-secondary -mt-1">Connect</span>
+                <span className="text-xs font-semibold text-secondary -mt-1">GP</span>
               </div>
               {isProfileComplete && <VerifiedBadge size="sm" />}
             </div>
@@ -154,18 +154,6 @@ export function Header() {
                             <Link to="/client/dashboard" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
                               <Package className="w-5 h-5" />
                               <span className="font-medium">Mes envois</span>
-                            </Link>
-                            <Link to="/favorites" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
-                              <Heart className="w-5 h-5 text-destructive" />
-                              <span className="font-medium">Mes favoris</span>
-                            </Link>
-                            <Link to="/saved-searches" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
-                              <Bell className="w-5 h-5 text-warning" />
-                              <span className="font-medium">Mes alertes</span>
-                            </Link>
-                            <Link to="/settings" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
-                              <Settings className="w-5 h-5" />
-                              <span className="font-medium">Paramètres</span>
                             </Link>
                           </>
                         ) : null}

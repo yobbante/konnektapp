@@ -43,19 +43,19 @@ export function useSmartRedirect() {
         .maybeSingle();
 
       if (gpProfile) {
-        navigate("/gp/dashboard");
+        navigate("/transporter/profile");
         return { 
           success: true, 
-          destination: "/gp/dashboard", 
+          destination: "/transporter/profile", 
           role: "transporteur" 
         };
       }
 
-      // 3. Sinon, c'est un client standard - rediriger vers l'accueil
-      navigate("/");
+      // 3. Sinon, c'est un client standard - TOUJOURS rediriger vers le profil
+      navigate("/client/profile");
       return { 
         success: true, 
-        destination: "/", 
+        destination: "/client/profile", 
         role: "client" 
       };
 

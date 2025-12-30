@@ -8,7 +8,7 @@ interface AuthGuardProps {
 }
 
 // Routes publiques qui ne nécessitent pas d'authentification
-const PUBLIC_ROUTES = ["/auth", "/gp", "/gp/inscription", "/"];
+const PUBLIC_ROUTES = ["/auth", "/gp"];
 
 export function AuthGuard({ children }: AuthGuardProps) {
   const navigate = useNavigate();

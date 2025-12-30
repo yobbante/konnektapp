@@ -22,7 +22,6 @@ import { AdminStatsCharts } from "@/components/admin/AdminStatsCharts";
 import { AdminSupportTickets } from "@/components/admin/AdminSupportTickets";
 import { AdminDisputeArbitration } from "@/components/admin/AdminDisputeArbitration";
 import { AdminTransporterReputation } from "@/components/admin/AdminTransporterReputation";
-import { AdminPermissionsManager } from "@/components/admin/AdminPermissionsManager";
 
 interface GPProfile {
   id: string;
@@ -297,15 +296,14 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 mb-4">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7 mb-4">
             <TabsTrigger value="overview">Aperçu</TabsTrigger>
             <TabsTrigger value="stats">Stats</TabsTrigger>
-            <TabsTrigger value="gps">Transporteurs</TabsTrigger>
+            <TabsTrigger value="gps">GPs</TabsTrigger>
             <TabsTrigger value="orders">Commandes</TabsTrigger>
             <TabsTrigger value="support">Support</TabsTrigger>
             <TabsTrigger value="disputes">Litiges</TabsTrigger>
             <TabsTrigger value="reputation">Réputation</TabsTrigger>
-            <TabsTrigger value="permissions">Permissions</TabsTrigger>
           </TabsList>
 
           {/* Search and Filters */}
@@ -398,11 +396,6 @@ export default function AdminDashboard() {
           {/* Reputation */}
           <TabsContent value="reputation">
             <AdminTransporterReputation />
-          </TabsContent>
-
-          {/* Permissions */}
-          <TabsContent value="permissions">
-            <AdminPermissionsManager />
           </TabsContent>
         </Tabs>
       </div>
