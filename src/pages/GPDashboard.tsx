@@ -5,13 +5,15 @@ import {
   Package, Wallet, Plus, ChevronRight, Star, 
   TrendingUp, Clock, MapPin, ArrowRight, LogOut,
   AlertTriangle, CheckCircle, Truck, ChevronDown, ChevronUp,
-  ArrowLeft, BarChart3, User
+  ArrowLeft, BarChart3, User, ShieldAlert
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { useToast } from "@/hooks/use-toast";
+import { useDashboardTheme } from "@/hooks/useDashboardTheme";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { GPMobileNav } from "@/components/layout/MobileNav";
 import { GPCreateOfferDialog } from "@/components/gp/GPCreateOfferDialog";
@@ -57,6 +59,7 @@ interface WalletData {
 export default function GPDashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const theme = useDashboardTheme("partner");
   const [loading, setLoading] = useState(true);
   const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
   const [wallet, setWallet] = useState<WalletData | null>(null);
@@ -65,6 +68,11 @@ export default function GPDashboard() {
   const [showCreateOffer, setShowCreateOffer] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const { notify } = useNotificationSound();
+
+  // Check if profile is pending validation
+  const isPendingValidation = gpProfile?.status === "pending";
+  const isRejected = gpProfile?.status === "rejected";
+  const isSuspended = gpProfile?.status === "suspended";
 
   useEffect(() => {
     checkAuthAndLoadData();
@@ -242,16 +250,64 @@ export default function GPDashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-muted/30 pb-safe">
-      <MobileHeader title={gpProfile.business_name} showNotifications />
+    <div className={`min-h-screen pb-safe ${theme.bgClass}`}>
+      <div className={`${theme.headerBgClass}`}>
+        <MobileHeader title={gpProfile.business_name} showNotifications />
+      </div>
+
+      {/* Pending Validation Banner */}
+      {isPendingValidation && (
+        <div className="px-4 pt-4">
+          <Card className="border-warning/50 bg-warning/10">
+            <CardContent className="py-4">
+              <div className="flex items-start gap-3">
+                <ShieldAlert className="w-6 h-6 text-warning flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-foreground">Compte en attente de validation</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Votre compte est en cours d'examen par notre équipe. Certaines fonctionnalités sont limitées.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Vous pouvez compléter votre profil et ajouter vos documents en attendant.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Rejected/Suspended Banner */}
+      {(isRejected || isSuspended) && (
+        <div className="px-4 pt-4">
+          <Card className="border-destructive/50 bg-destructive/10">
+            <CardContent className="py-4">
+              <div className="flex items-start gap-3">
+                <ShieldAlert className="w-6 h-6 text-destructive flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-foreground">
+                    {isRejected ? "Compte refusé" : "Compte suspendu"}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {isRejected 
+                      ? "Votre demande a été refusée. Contactez le support pour plus d'informations."
+                      : "Votre compte a été suspendu. Contactez le support pour résoudre cette situation."
+                    }
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Active Order Bar - Fixed at top */}
-      {activeOrder && (
+      {activeOrder && !isPendingValidation && (
         <ActiveOrderBar order={activeOrder} onRefresh={checkAuthAndLoadData} />
       )}
 
       {/* Rappel pour les missions en cours */}
-      {pendingUpdateOrders.length > 0 && activeTab === "overview" && (
+      {pendingUpdateOrders.length > 0 && activeTab === "overview" && !isPendingValidation && (
         <div className="px-4 pt-4">
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
