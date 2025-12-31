@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, Search, Filter, RefreshCw, MessageSquare, Users } from "lucide-react";
+import { Shield, Search, Filter, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import { AdminSupportTickets } from "@/components/admin/AdminSupportTickets";
 import { AdminDisputeArbitration } from "@/components/admin/AdminDisputeArbitration";
 import { AdminTransporterReputation } from "@/components/admin/AdminTransporterReputation";
 import { AdminPermissionsManager } from "@/components/admin/AdminPermissionsManager";
+import { AdminDropdownMenu } from "@/components/admin/AdminDropdownMenu";
 
 interface GPProfile {
   id: string;
@@ -282,15 +283,21 @@ export default function AdminDashboard() {
               <p className="text-sm opacity-80">Gestion de la plateforme</p>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={refreshData}
-            disabled={refreshing}
-            className="bg-white/10 border-white/20 hover:bg-white/20"
-          >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={refreshData}
+              disabled={refreshing}
+              className="bg-white/10 border-white/20 hover:bg-white/20"
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+            </Button>
+            <AdminDropdownMenu 
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+            />
+          </div>
         </div>
       </div>
 
