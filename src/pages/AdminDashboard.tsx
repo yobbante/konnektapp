@@ -269,21 +269,17 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className={`min-h-screen pb-safe ${theme.bgClass}`}>
-      <div className={`${theme.headerBgClass} ${theme.textClass}`}>
-        <MobileHeader />
-      </div>
-
-      <div className="px-4 py-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+    <div className="min-h-screen pb-safe bg-background">
+      {/* Role-specific Header */}
+      <div className={`${theme.headerBgClass} ${theme.headerTextClass} py-3 px-4`}>
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${theme.accentClass}`}>
-              <Shield className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+              <Shield className="w-5 h-5" />
             </div>
             <div>
-              <h1 className={`text-xl font-bold ${theme.textClass}`}>Admin Dashboard</h1>
-              <p className={`text-sm opacity-80 ${theme.textClass}`}>Gestion de la plateforme</p>
+              <h1 className="text-xl font-bold">Admin Dashboard</h1>
+              <p className="text-sm opacity-80">Gestion de la plateforme</p>
             </div>
           </div>
           <Button 
@@ -291,11 +287,16 @@ export default function AdminDashboard() {
             size="icon"
             onClick={refreshData}
             disabled={refreshing}
-            className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+            className="bg-white/10 border-white/20 hover:bg-white/20"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
           </Button>
         </div>
+      </div>
+
+      <MobileHeader />
+
+      <div className="px-4 py-4">
 
         {/* Stats */}
         <AdminStatsCards stats={stats} />

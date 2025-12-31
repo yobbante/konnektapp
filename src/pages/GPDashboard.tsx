@@ -250,10 +250,22 @@ export default function GPDashboard() {
   );
 
   return (
-    <div className={`min-h-screen pb-safe ${theme.bgClass}`}>
-      <div className={`${theme.headerBgClass}`}>
-        <MobileHeader title={gpProfile.business_name} showNotifications />
+    <div className="min-h-screen pb-safe bg-background">
+      {/* Role-specific Header */}
+      <div className={`${theme.headerBgClass} ${theme.headerTextClass} py-3 px-4`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+              <Truck className="w-5 h-5" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold">{gpProfile.business_name}</h1>
+              <p className="text-sm opacity-80">Tableau de bord partenaire</p>
+            </div>
+          </div>
+        </div>
       </div>
+      <MobileHeader />
 
       {/* Pending Validation Banner */}
       {isPendingValidation && (

@@ -71,21 +71,10 @@
     --transport-voyageur: 38 92% 50%;
     --transport-agence: 260 70% 55%;
 
-    /* Role-based Dashboard Colors */
-    --dashboard-admin-bg: 240 75% 28%;
-    --dashboard-admin-accent: 24 85% 62%;
-    --dashboard-admin-text: 0 0% 96%;
-    --dashboard-admin-panel: 210 100% 55%;
-
-    --dashboard-partner-bg: 210 100% 55%;
-    --dashboard-partner-accent: 210 100% 55%;
-    --dashboard-partner-text: 0 0% 96%;
-    --dashboard-partner-panel: 185 60% 88%;
-
-    --dashboard-client-bg: 185 60% 88%;
-    --dashboard-client-accent: 210 100% 55%;
-    --dashboard-client-text: 240 75% 28%;
-    --dashboard-client-panel: 0 0% 96%;
+    /* Role-based Dashboard Header Colors (simplified) */
+    --dashboard-header-admin: 240 75% 28%;
+    --dashboard-header-partner: 210 100% 55%;
+    --dashboard-header-client: 185 60% 88%;
 
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 hsl(220 20% 20% / 0.05);
@@ -137,27 +126,6 @@
     --ring: 168 55% 50%;
   }
 
-  /* Role-based Dashboard Themes */
-  [data-dashboard-role="admin"] {
-    --dashboard-bg: hsl(240 75% 28%);
-    --dashboard-accent: hsl(24 85% 62%);
-    --dashboard-text: hsl(0 0% 96%);
-    --dashboard-panel: hsl(210 100% 55%);
-  }
-
-  [data-dashboard-role="partner"] {
-    --dashboard-bg: hsl(210 100% 55%);
-    --dashboard-accent: hsl(210 100% 55%);
-    --dashboard-text: hsl(0 0% 96%);
-    --dashboard-panel: hsl(185 60% 88%);
-  }
-
-  [data-dashboard-role="client"] {
-    --dashboard-bg: hsl(185 60% 88%);
-    --dashboard-accent: hsl(210 100% 55%);
-    --dashboard-text: hsl(240 75% 28%);
-    --dashboard-panel: hsl(0 0% 96%);
-  }
 }
 
 @layer base {
