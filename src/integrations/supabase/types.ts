@@ -1899,6 +1899,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_gp_verified: { Args: { gp_id: string }; Returns: boolean }
       is_order_gp: { Args: { order_gp_id: string }; Returns: boolean }
       owns_gp_offer: { Args: { offer_gp_id: string }; Returns: boolean }
       owns_gp_wallet: { Args: { wallet_gp_id: string }; Returns: boolean }
