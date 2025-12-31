@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   Package, Truck, ArrowRight, Zap, Ship, Plane, 
-  MapPin, Star, Shield, Clock, Briefcase, Building2, Filter, Scale, Weight
+  MapPin, Star, Shield, Clock, Briefcase, Building2, Scale, Weight
 } from "lucide-react";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { CompareProvider, useCompare, CompareOffer } from "@/components/offers/OfferCompare";
+import { HomeAdvancedFilters, HomeFiltersState, DEFAULT_HOME_FILTERS } from "@/components/home/HomeAdvancedFilters";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence";
 
@@ -29,6 +30,7 @@ function IndexContent() {
   const [offers, setOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState<HomeFiltersState>(DEFAULT_HOME_FILTERS);
 
   useEffect(() => {
     loadOffers();
@@ -76,7 +78,20 @@ function IndexContent() {
   };
 
   const filteredOffers = offers.filter((offer) => {
-    return !selectedType || offer.transport_type === selectedType;
+    // Transport type filter
+    if (selectedType && offer.transport_type !== selectedType) return false;
+    
+    // City filters
+    if (advancedFilters.originCity && !offer.origin_city.toLowerCase().includes(advancedFilters.originCity.toLowerCase())) return false;
+    if (advancedFilters.destinationCity && !offer.destination_city.toLowerCase().includes(advancedFilters.destinationCity.toLowerCase())) return false;
+    
+    // Price filter
+    if (offer.price_per_kg < advancedFilters.minPrice || offer.price_per_kg > advancedFilters.maxPrice) return false;
+    
+    // Capacity filter
+    if (advancedFilters.minCapacity > 0 && offer.available_capacity < advancedFilters.minCapacity) return false;
+    
+    return true;
   });
 
   const displayedOffers = selectedType ? filteredOffers : filteredOffers.slice(0, 4);
@@ -137,11 +152,16 @@ function IndexContent() {
                 Tout voir
               </button>
             )}
-            {/* Mobile: Sheet for filters */}
+            {/* Advanced Filters */}
+            <HomeAdvancedFilters 
+              filters={advancedFilters}
+              onFiltersChange={setAdvancedFilters}
+            />
+            {/* Mobile: Sheet for transport type */}
             <Sheet open={showFilterSheet} onOpenChange={setShowFilterSheet}>
               <SheetTrigger asChild className="lg:hidden">
                 <Button variant="outline" size="sm" className="gap-1">
-                  <Filter className="w-4 h-4" />
+                  <Truck className="w-4 h-4" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="bottom" className="h-[50vh] rounded-t-2xl">
