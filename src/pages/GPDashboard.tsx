@@ -5,7 +5,7 @@ import {
   Package, Wallet, Plus, ChevronRight, Star, 
   TrendingUp, Clock, MapPin, ArrowRight, LogOut,
   AlertTriangle, CheckCircle, Truck, ChevronDown, ChevronUp,
-  ArrowLeft, BarChart3, User, ShieldAlert
+  ArrowLeft, BarChart3, User, ShieldAlert, EyeOff
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
@@ -17,6 +17,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { GPMobileNav } from "@/components/layout/MobileNav";
 import { GPCreateOfferDialog } from "@/components/gp/GPCreateOfferDialog";
+import { GPDropdownMenu } from "@/components/gp/GPDropdownMenu";
 import { KPICards } from "@/components/gp/dashboard/KPICards";
 import { QuickActions } from "@/components/gp/dashboard/QuickActions";
 import { BadgeSystem } from "@/components/gp/dashboard/BadgeSystem";
@@ -251,8 +252,8 @@ export default function GPDashboard() {
 
   return (
     <div className="min-h-screen pb-safe bg-background">
-      {/* Role-specific Header */}
-      <div className={`${theme.headerBgClass} ${theme.headerTextClass} py-3 px-4`}>
+      {/* Role-specific Header with Dropdown */}
+      <div className={`sticky top-0 z-50 ${theme.headerBgClass} ${theme.headerTextClass} py-3 px-4 shadow-md`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
@@ -263,6 +264,11 @@ export default function GPDashboard() {
               <p className="text-sm opacity-80">Tableau de bord partenaire</p>
             </div>
           </div>
+          <GPDropdownMenu 
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            onCreateOffer={() => setShowCreateOffer(true)}
+          />
         </div>
       </div>
       <MobileHeader />
