@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MapPin, Calendar, Eye, Edit, Trash2, MoreHorizontal, Pause, Play } from "lucide-react";
+import { MapPin, Calendar, Eye, Edit, Trash2, MoreHorizontal, Pause, Play, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -34,12 +34,14 @@ interface Offer {
   transport_type: string;
   views_count: number;
   bookings_count: number;
+  gp_id?: string;
 }
 
 interface GPOffersTableProps {
   offers: Offer[];
   compact?: boolean;
   onRefresh?: () => void;
+  gpStatus?: string; // Status du transporteur pour afficher l'indicateur de visibilité
 }
 
 const transportLabels: Record<string, string> = {
@@ -57,9 +59,10 @@ const statusLabels: Record<string, { label: string; variant: "success" | "pendin
   completed: { label: "Terminée", variant: "secondary" },
 };
 
-export function GPOffersTable({ offers, compact, onRefresh }: GPOffersTableProps) {
+export function GPOffersTable({ offers, compact, onRefresh, gpStatus }: GPOffersTableProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
+  const isNotVerified = gpStatus && gpStatus !== "verified";
 
   const handleStatusChange = async (offerId: string, newStatus: "active" | "paused" | "expired" | "completed") => {
     setLoading(offerId);
@@ -175,9 +178,17 @@ export function GPOffersTable({ offers, compact, onRefresh }: GPOffersTableProps
                 </TableCell>
               )}
               <TableCell>
-                <Badge variant={statusLabels[offer.status]?.variant || "secondary"}>
-                  {statusLabels[offer.status]?.label || offer.status}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant={statusLabels[offer.status]?.variant || "secondary"}>
+                    {statusLabels[offer.status]?.label || offer.status}
+                  </Badge>
+                  {isNotVerified && (
+                    <span className="flex items-center gap-1 text-xs text-warning">
+                      <EyeOff className="w-3 h-3" />
+                      Non visible
+                    </span>
+                  )}
+                </div>
               </TableCell>
               {!compact && (
                 <TableCell>

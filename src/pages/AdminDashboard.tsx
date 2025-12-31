@@ -1,25 +1,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, Search, Filter, RefreshCw } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { MobileHeader } from "@/components/layout/MobileHeader";
+import { Shield, RefreshCw, Search, Filter } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useDashboardTheme } from "@/hooks/useDashboardTheme";
 import { AdminStatsCards } from "@/components/admin/AdminStatsCards";
-import { AdminGPList } from "@/components/admin/AdminGPList";
-import { AdminOrdersList } from "@/components/admin/AdminOrdersList";
-import { AdminPendingGPs } from "@/components/admin/AdminPendingGPs";
 import { AdminStatsCharts } from "@/components/admin/AdminStatsCharts";
+import { AdminGPList } from "@/components/admin/AdminGPList";
+import { AdminPendingGPs } from "@/components/admin/AdminPendingGPs";
+import { AdminOrdersList } from "@/components/admin/AdminOrdersList";
 import { AdminSupportTickets } from "@/components/admin/AdminSupportTickets";
 import { AdminDisputeArbitration } from "@/components/admin/AdminDisputeArbitration";
 import { AdminTransporterReputation } from "@/components/admin/AdminTransporterReputation";
@@ -30,15 +24,15 @@ interface GPProfile {
   id: string;
   business_name: string;
   gp_type: string;
+  status: string;
   city: string;
   phone: string;
   whatsapp?: string;
-  status: string;
+  rating: number;
+  total_deliveries: number;
+  total_reviews: number;
   created_at: string;
   verified_at?: string;
-  total_deliveries: number;
-  rating: number;
-  total_reviews: number;
   zones_covered?: string[];
   international_destinations?: string[];
   description?: string;
@@ -52,38 +46,34 @@ interface Order {
   destination_city: string;
   destination_country: string;
   status: string;
+  logistics_status?: string;
   total_price: number;
   commission_amount: number;
   weight: number;
   created_at: string;
-  gp_profile?: {
-    business_name: string;
-  };
-}
-
-interface AdminStats {
-  totalGps: number;
-  pendingGps: number;
-  verifiedGps: number;
-  suspendedGps: number;
-  totalOrders: number;
-  pendingOrders: number;
-  deliveredOrders: number;
-  totalRevenue: number;
-  commissions: number;
-  avgRating: number;
+  pickup_date?: string;
+  delivery_date?: string;
+  tracking_code?: string;
+  description?: string;
+  gp_profile?: { business_name: string; phone?: string };
 }
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const theme = useDashboardTheme("admin");
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { isAdmin, isModerator, loading: roleLoading } = useUserRole();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  
   const [gps, setGps] = useState<GPProfile[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [stats, setStats] = useState<AdminStats>({
+  const [searchQuery, setSearchQuery] = useState("");
+  const [gpFilter, setGpFilter] = useState<"all" | "pending" | "verified" | "suspended">("all");
+  const [orderFilter, setOrderFilter] = useState<"all" | "pending" | "in_transit" | "delivered" | "cancelled">("all");
+
+  const [stats, setStats] = useState({
     totalGps: 0,
     pendingGps: 0,
     verifiedGps: 0,
@@ -95,147 +85,87 @@ export default function AdminDashboard() {
     commissions: 0,
     avgRating: 0,
   });
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("overview");
-  const [gpFilter, setGpFilter] = useState<"all" | "pending" | "verified" | "suspended">("all");
-  const [orderFilter, setOrderFilter] = useState<"all" | "pending" | "in_transit" | "delivered" | "cancelled">("all");
 
   useEffect(() => {
-    checkAdminAccess();
-  }, []);
-
-  const checkAdminAccess = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate("/auth");
-        return;
-      }
-
-      // Vérifier si l'utilisateur a accès admin (admin ou moderator)
-      const { data: hasAccess, error } = await supabase.rpc("has_admin_access", {
-        _user_id: user.id,
-      });
-
-      if (error || !hasAccess) {
+    if (!roleLoading) {
+      if (!isAdmin && !isModerator) {
         toast({
           title: "Accès refusé",
-          description: "Vous n'avez pas les permissions administrateur",
+          description: "Vous n'avez pas les permissions nécessaires",
           variant: "destructive",
         });
         navigate("/");
         return;
       }
-
-      setIsAdmin(true);
-      await refreshData();
-    } catch (error) {
-      console.error("Admin check error:", error);
-      navigate("/");
-    } finally {
-      setLoading(false);
+      refreshData();
     }
-  };
+  }, [isAdmin, isModerator, roleLoading]);
 
   const refreshData = async () => {
     setRefreshing(true);
     await Promise.all([fetchGPs(), fetchOrders(), fetchStats()]);
     setRefreshing(false);
+    setLoading(false);
   };
 
   const fetchGPs = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("gp_profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setGps(data || []);
-    } catch (error) {
-      console.error("Error fetching GPs:", error);
-    }
+    const { data } = await supabase
+      .from("gp_profiles")
+      .select("*")
+      .order("created_at", { ascending: false });
+    setGps(data || []);
   };
 
   const fetchOrders = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(`
-          *,
-          gp_profile:gp_profiles(business_name, phone)
-        `)
-        .order("created_at", { ascending: false })
-        .limit(100);
-
-      if (error) throw error;
-      setOrders(data || []);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-    }
+    const { data } = await supabase
+      .from("orders")
+      .select(`*, gp_profile:gp_profiles(business_name, phone)`)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    setOrders(data || []);
   };
 
   const fetchStats = async () => {
-    try {
-      const [gpsResult, ordersResult] = await Promise.all([
-        supabase.from("gp_profiles").select("id, status, rating"),
-        supabase.from("orders").select("id, total_price, commission_amount, status"),
-      ]);
+    const [gpsResult, ordersResult, ticketsResult, disputesResult] = await Promise.all([
+      supabase.from("gp_profiles").select("id, status, rating"),
+      supabase.from("orders").select("id, total_price, commission_amount, status"),
+      supabase.from("support_tickets").select("status"),
+      supabase.from("disputes").select("status"),
+    ]);
 
-      const gpsData = gpsResult.data || [];
-      const ordersData = ordersResult.data || [];
+    const gpsData = gpsResult.data || [];
+    const ordersData = ordersResult.data || [];
+    const tickets = ticketsResult.data || [];
+    const disputes = disputesResult.data || [];
 
-      const ratings = gpsData.filter(g => g.rating > 0).map(g => g.rating);
-      const avgRating = ratings.length > 0 
-        ? ratings.reduce((a, b) => a + b, 0) / ratings.length 
-        : 0;
+    const ratings = gpsData.filter(g => g.rating > 0).map(g => g.rating);
+    const avgRating = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
 
-      setStats({
-        totalGps: gpsData.length,
-        pendingGps: gpsData.filter(g => g.status === "pending").length,
-        verifiedGps: gpsData.filter(g => g.status === "verified").length,
-        suspendedGps: gpsData.filter(g => g.status === "suspended").length,
-        totalOrders: ordersData.length,
-        pendingOrders: ordersData.filter(o => !["delivered", "cancelled"].includes(o.status)).length,
-        deliveredOrders: ordersData.filter(o => o.status === "delivered").length,
-        totalRevenue: ordersData.reduce((acc, o) => acc + (o.total_price || 0), 0),
-        commissions: ordersData.reduce((acc, o) => acc + (o.commission_amount || 0), 0),
-        avgRating,
-      });
-    } catch (error) {
-      console.error("Error fetching stats:", error);
-    }
+    setStats({
+      totalGps: gpsData.length,
+      pendingGps: gpsData.filter(g => g.status === "pending").length,
+      verifiedGps: gpsData.filter(g => g.status === "verified").length,
+      suspendedGps: gpsData.filter(g => g.status === "suspended").length,
+      totalOrders: ordersData.length,
+      pendingOrders: ordersData.filter(o => !["delivered", "cancelled"].includes(o.status)).length,
+      deliveredOrders: ordersData.filter(o => o.status === "delivered").length,
+      totalRevenue: ordersData.filter(o => o.status === "delivered").reduce((sum, o) => sum + (o.total_price || 0), 0),
+      commissions: ordersData.filter(o => o.status === "delivered").reduce((sum, o) => sum + (o.commission_amount || 0), 0),
+      avgRating,
+    });
   };
 
-  const updateGPStatus = async (gpId: string, status: "verified" | "suspended" | "rejected", reason?: string) => {
-    try {
-      const updateData: Record<string, any> = { 
-        status, 
-        verified_at: status === "verified" ? new Date().toISOString() : null 
-      };
+  const updateGPStatus = async (gpId: string, newStatus: "verified" | "suspended" | "rejected") => {
+    const { error } = await supabase
+      .from("gp_profiles")
+      .update({ status: newStatus })
+      .eq("id", gpId);
 
-      const { error } = await supabase
-        .from("gp_profiles")
-        .update(updateData)
-        .eq("id", gpId);
-
-      if (error) throw error;
-
-      const statusLabels = {
-        verified: "validé",
-        suspended: "suspendu",
-        rejected: "rejeté"
-      };
-
-      toast({ 
-        title: `Transporteur ${statusLabels[status]}`,
-        description: reason ? `Raison: ${reason}` : undefined
-      });
-
-      await refreshData();
-    } catch (error) {
-      console.error("Error updating GP:", error);
-      toast({ title: "Erreur lors de la mise à jour", variant: "destructive" });
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Statut mis à jour" });
+      refreshData();
     }
   };
 
@@ -243,37 +173,34 @@ export default function AdminDashboard() {
     navigate(`/admin/gp/${gpId}`);
   };
 
-  const filteredGPs = gps.filter(
-    (gp) =>
-      gp.business_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      gp.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      gp.phone.includes(searchQuery)
-  );
+  const filteredGPs = gps.filter(gp => {
+    const matchesSearch = gp.business_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      gp.city?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = gpFilter === "all" || gp.status === gpFilter;
+    return matchesSearch && matchesFilter;
+  });
 
-  const filteredOrders = orders.filter(
-    (order) =>
-      order.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.origin_city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.destination_city.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredOrders = orders.filter(order => {
+    const matchesSearch = order.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.origin_city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.destination_city?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = orderFilter === "all" || order.status === orderFilter;
+    return matchesSearch && matchesFilter;
+  });
 
-  if (loading) {
+  if (roleLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+        <div className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
       </div>
     );
   }
 
-  if (!isAdmin) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen pb-safe bg-background">
-      {/* Role-specific Header */}
-      <div className={`${theme.headerBgClass} ${theme.headerTextClass} py-3 px-4`}>
-        <div className="flex items-center justify-between">
+      {/* Fixed Admin Header with Dropdown Menu */}
+      <div className={`sticky top-0 z-50 ${theme.headerBgClass} ${theme.headerTextClass} py-3 px-4 shadow-md`}>
+        <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
               <Shield className="w-5 h-5" />
@@ -301,15 +228,12 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <MobileHeader />
-
-      <div className="px-4 py-4">
-
+      <div className="px-4 py-4 max-w-7xl mx-auto">
         {/* Stats */}
         <AdminStatsCards stats={stats} />
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
           <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 mb-4">
             <TabsTrigger value="overview">Aperçu</TabsTrigger>
             <TabsTrigger value="stats">Stats</TabsTrigger>
