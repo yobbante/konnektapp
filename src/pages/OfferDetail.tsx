@@ -107,9 +107,16 @@ export default function OfferDetail() {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
+      // Save booking state before redirecting
+      sessionStorage.setItem("pending_booking_state", JSON.stringify({
+        offerId: id,
+        returnPath: `/offres/${id}`,
+        timestamp: Date.now(),
+      }));
+      
       toast({
         title: "Connexion requise",
-        description: "Veuillez vous connecter pour réserver",
+        description: "Veuillez vous connecter pour réserver. Vous serez redirigé après.",
       });
       navigate("/auth");
       return;

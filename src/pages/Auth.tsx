@@ -42,6 +42,30 @@ export default function AuthPage() {
     checkExistingSession();
   }, [detectUserRoleAndRedirect]);
 
+  // Check for pending booking state and redirect accordingly
+  const handlePostAuthRedirect = async (userId: string) => {
+    const stored = sessionStorage.getItem("pending_booking_state");
+    if (stored) {
+      try {
+        const state = JSON.parse(stored);
+        // Only use if less than 30 minutes old
+        if (Date.now() - state.timestamp < 30 * 60 * 1000 && state.returnPath) {
+          sessionStorage.removeItem("pending_booking_state");
+          toast({
+            title: "Connexion réussie",
+            description: "Reprise de votre réservation...",
+          });
+          navigate(state.returnPath);
+          return;
+        }
+      } catch {
+        sessionStorage.removeItem("pending_booking_state");
+      }
+    }
+    // Default: role-based redirect
+    await detectUserRoleAndRedirect(userId);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -60,9 +84,9 @@ export default function AuthPage() {
           description: "Redirection en cours...",
         });
 
-        // Redirection intelligente basée sur le rôle
+        // Check for pending booking, then role-based redirect
         if (data.user) {
-          await detectUserRoleAndRedirect(data.user.id);
+          await handlePostAuthRedirect(data.user.id);
         }
       } else {
         if (!formData.fullName || !formData.phone) {
@@ -99,9 +123,9 @@ export default function AuthPage() {
           description: "Redirection en cours...",
         });
 
-        // Redirection vers le profil client
+        // Check for pending booking, then redirect to client profile
         if (data.user) {
-          navigate("/client/profile");
+          await handlePostAuthRedirect(data.user.id);
         }
       }
     } catch (error: any) {

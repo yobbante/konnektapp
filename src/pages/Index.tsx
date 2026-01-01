@@ -374,6 +374,8 @@ function OfferCard({ offer, index }: { offer: any; index: number }) {
 
   const TypeIcon = transportTypes.find(t => t.type === offer.transport_type)?.icon || Package;
 
+  const gpName = offer.gp_profiles?.business_name || "Transporteur";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -409,8 +411,17 @@ function OfferCard({ offer, index }: { offer: any; index: number }) {
             </Badge>
           </div>
           <div className="flex items-center justify-between">
+            <Link 
+              to={`/gp/${offer.gp_id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-2 hover:text-primary transition-colors"
+            >
+              <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
+                {gpName.charAt(0)}
+              </div>
+              <span className="text-xs text-muted-foreground hover:text-primary">{gpName}</span>
+            </Link>
             <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">{offer.gp_profiles?.business_name || "Transporteur"}</span>
               {offer.gp_profiles?.rating > 0 && (
                 <div className="flex items-center gap-1">
                   <Star className="w-3 h-3 text-warning fill-warning" />

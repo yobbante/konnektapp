@@ -74,10 +74,10 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-safe">
+    <div className="min-h-screen bg-background pb-safe flex flex-col">
       {!selectedConversation && <MobileHeader />}
 
-      <div className="h-[calc(100vh-8rem)]">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {selectedConversation ? (
           <ChatView
             conversationId={selectedConversation}
@@ -90,18 +90,21 @@ export default function MessagesPage() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            className="flex-1 flex flex-col overflow-hidden"
           >
-            <div className="px-4 py-4">
+            <div className="px-4 py-4 flex-shrink-0">
               <h1 className="text-xl font-bold">Messages</h1>
               <p className="text-sm text-muted-foreground">
                 Vos conversations avec {currentUser.isGp ? "les clients" : "les transporteurs"}
               </p>
             </div>
-            <ConversationList
-              userType={currentUser.isGp ? "gp" : "client"}
-              onSelectConversation={handleSelectConversation}
-              selectedId={selectedConversation || undefined}
-            />
+            <div className="flex-1 overflow-y-auto">
+              <ConversationList
+                userType={currentUser.isGp ? "gp" : "client"}
+                onSelectConversation={handleSelectConversation}
+                selectedId={selectedConversation || undefined}
+              />
+            </div>
           </motion.div>
         )}
       </div>

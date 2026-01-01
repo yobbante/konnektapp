@@ -1,10 +1,11 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, Search, Send, MessageCircle, User, BarChart3, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import { useRef, useCallback } from "react";
 
 const navItems = [
-  { href: "/", icon: Home, label: "Accueil" },
+  { href: "/", icon: Home, label: "Accueil", isHome: true },
   { href: "/offres", icon: Search, label: "Offres" },
   { href: "/demande", icon: Send, label: "Envoyer" },
   { href: "/messages", icon: MessageCircle, label: "Messages", showBadge: true },
@@ -13,7 +14,26 @@ const navItems = [
 
 export function MobileNav() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { unreadCount } = useUnreadMessages();
+  const lastHomeClickRef = useRef<number>(0);
+
+  const handleNavClick = useCallback((e: React.MouseEvent, href: string, isHome?: boolean) => {
+    if (isHome) {
+      const now = Date.now();
+      const isDoubleTap = now - lastHomeClickRef.current < 500;
+      
+      if (location.pathname === "/" && isDoubleTap) {
+        e.preventDefault();
+        window.location.reload();
+      } else if (location.pathname === "/") {
+        e.preventDefault();
+        lastHomeClickRef.current = now;
+      } else {
+        lastHomeClickRef.current = now;
+      }
+    }
+  }, [location.pathname]);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden safe-area-bottom">
@@ -24,6 +44,7 @@ export function MobileNav() {
             <Link
               key={item.href}
               to={item.href}
+              onClick={(e) => handleNavClick(e, item.href, item.isHome)}
               className={cn(
                 "flex flex-col items-center justify-center flex-1 h-full gap-1 text-muted-foreground transition-colors relative",
                 isActive && "text-primary"
