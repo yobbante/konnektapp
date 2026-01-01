@@ -5,7 +5,7 @@ import {
   Package, Wallet, Plus, ChevronRight, Star, 
   TrendingUp, Clock, MapPin, ArrowRight, LogOut,
   AlertTriangle, CheckCircle, Truck, ChevronDown, ChevronUp,
-  ArrowLeft, BarChart3, User, ShieldAlert, EyeOff
+  ArrowLeft, BarChart3, User, ShieldAlert, EyeOff, Bell
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
@@ -252,7 +252,7 @@ export default function GPDashboard() {
 
   return (
     <div className="min-h-screen pb-safe bg-background">
-      {/* Role-specific Header with Dropdown */}
+      {/* Role-specific Fixed Header with Dropdown - NO Global Header */}
       <div className={`sticky top-0 z-50 ${theme.headerBgClass} ${theme.headerTextClass} py-3 px-4 shadow-md`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -264,14 +264,25 @@ export default function GPDashboard() {
               <p className="text-sm opacity-80">Tableau de bord partenaire</p>
             </div>
           </div>
-          <GPDropdownMenu 
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            onCreateOffer={() => setShowCreateOffer(true)}
-          />
+          <div className="flex items-center gap-2">
+            {/* Notifications button - disabled badge */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="relative bg-white/10 hover:bg-white/20 text-inherit"
+              onClick={() => navigate("/alerts")}
+            >
+              <Bell className="w-5 h-5" />
+            </Button>
+            <GPDropdownMenu 
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              onCreateOffer={() => setShowCreateOffer(true)}
+            />
+          </div>
         </div>
       </div>
-      <MobileHeader />
+      {/* MobileHeader removed for GP Dashboard */}
 
       {/* Pending Validation Banner */}
       {isPendingValidation && (
