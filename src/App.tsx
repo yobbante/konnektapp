@@ -22,6 +22,7 @@ import Messages from "./pages/Messages";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminDepartures from "./pages/AdminDepartures";
 import AdminGPProfile from "./pages/AdminGPProfile";
+import AdminOrderDetail from "./pages/AdminOrderDetail";
 import PostBookingForm from "./pages/PostBookingForm";
 import Profile from "./pages/Profile";
 import GPProfile from "./pages/GPProfile";
@@ -62,6 +63,7 @@ const App = () => (
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/departures" element={<AdminDepartures />} />
             <Route path="/admin/gp/:gpId" element={<AdminGPProfile />} />
+            <Route path="/admin/order/:orderId" element={<AdminOrderDetail />} />
             <Route path="/order/:orderId/complete" element={<PostBookingForm />} />
             <Route path="/profil" element={<Profile />} />
             <Route path="/profile" element={<Profile />} />

@@ -11,7 +11,8 @@ import {
   Filter,
   AlertCircle,
   Check,
-  X
+  X,
+  ArrowLeft
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileHeader } from "@/components/layout/MobileHeader";
@@ -19,8 +20,6 @@ import { MobileNav } from "@/components/layout/MobileNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -28,13 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { GPQuoteResponseForm } from "@/components/gp/GPQuoteResponseForm";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -79,13 +72,6 @@ export default function GPCustomRequests() {
   const [filter, setFilter] = useState<"all" | "open" | "responded">("all");
   const [selectedRequest, setSelectedRequest] = useState<CustomRequest | null>(null);
   const [responseDialogOpen, setResponseDialogOpen] = useState(false);
-  const [responseData, setResponseData] = useState({
-    price: "",
-    message: "",
-    pickupDate: "",
-    deliveryDays: "",
-  });
-  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     checkGPAndFetch();
@@ -159,43 +145,12 @@ export default function GPCustomRequests() {
 
   const openResponseDialog = (request: CustomRequest) => {
     setSelectedRequest(request);
-    setResponseData({
-      price: "",
-      message: "",
-      pickupDate: "",
-      deliveryDays: "",
-    });
     setResponseDialogOpen(true);
   };
 
-  const submitResponse = async () => {
-    if (!selectedRequest || !gpProfile || !responseData.price) return;
-
-    setSubmitting(true);
-    try {
-      const { error } = await supabase.from("custom_request_responses").insert({
-        request_id: selectedRequest.id,
-        gp_id: gpProfile.id,
-        price_proposed: parseInt(responseData.price),
-        message: responseData.message || null,
-        available_pickup_date: responseData.pickupDate || null,
-        estimated_delivery_days: responseData.deliveryDays ? parseInt(responseData.deliveryDays) : null,
-      });
-
-      if (error) throw error;
-
-      toast({ title: "Offre envoyée", description: "Le client a été notifié de votre proposition" });
-      setResponseDialogOpen(false);
-      await fetchRequests(gpProfile.id);
-    } catch (error: any) {
-      console.error("Error submitting response:", error);
-      toast({ 
-        title: "Erreur", 
-        description: error.message || "Impossible d'envoyer l'offre",
-        variant: "destructive" 
-      });
-    } finally {
-      setSubmitting(false);
+  const handleQuoteSuccess = () => {
+    if (gpProfile) {
+      fetchRequests(gpProfile.id);
     }
   };
 
@@ -233,11 +188,16 @@ export default function GPCustomRequests() {
       <MobileHeader />
 
       <div className="px-4 py-4">
-        <div className="mb-6">
-          <h1 className="text-xl font-bold">Demandes personnalisées</h1>
-          <p className="text-sm text-muted-foreground">
-            Répondez aux demandes des clients et proposez vos services
-          </p>
+        <div className="flex items-center gap-3 mb-6">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-xl font-bold">Demandes personnalisées</h1>
+            <p className="text-sm text-muted-foreground">
+              Répondez aux demandes des clients
+            </p>
+          </div>
         </div>
 
         {/* Stats */}
@@ -389,80 +349,16 @@ export default function GPCustomRequests() {
         </div>
       </div>
 
-      {/* Response Dialog */}
-      <Dialog open={responseDialogOpen} onOpenChange={setResponseDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Proposer une offre</DialogTitle>
-          </DialogHeader>
-
-          {selectedRequest && (
-            <div className="space-y-4">
-              <div className="p-3 bg-muted rounded-lg">
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="w-4 h-4" />
-                  <span>{selectedRequest.origin_city} → {selectedRequest.destination_city}</span>
-                </div>
-                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                  {selectedRequest.description}
-                </p>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Prix proposé (FCFA) *</label>
-                <Input
-                  type="number"
-                  placeholder="Ex: 25000"
-                  value={responseData.price}
-                  onChange={(e) => setResponseData({ ...responseData, price: e.target.value })}
-                />
-                {selectedRequest.budget_min && selectedRequest.budget_max && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Budget client: {selectedRequest.budget_min.toLocaleString()} - {selectedRequest.budget_max.toLocaleString()} FCFA
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Date de collecte disponible</label>
-                <Input
-                  type="date"
-                  value={responseData.pickupDate}
-                  onChange={(e) => setResponseData({ ...responseData, pickupDate: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Délai de livraison estimé (jours)</label>
-                <Input
-                  type="number"
-                  placeholder="Ex: 3"
-                  value={responseData.deliveryDays}
-                  onChange={(e) => setResponseData({ ...responseData, deliveryDays: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Message au client</label>
-                <Textarea
-                  placeholder="Présentez votre offre, vos conditions..."
-                  value={responseData.message}
-                  onChange={(e) => setResponseData({ ...responseData, message: e.target.value })}
-                />
-              </div>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setResponseDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button onClick={submitResponse} disabled={!responseData.price || submitting}>
-              {submitting ? "Envoi..." : "Envoyer l'offre"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Response Dialog - Now using detailed form */}
+      {selectedRequest && gpProfile && (
+        <GPQuoteResponseForm
+          request={selectedRequest}
+          gpId={gpProfile.id}
+          open={responseDialogOpen}
+          onOpenChange={setResponseDialogOpen}
+          onSuccess={handleQuoteSuccess}
+        />
+      )}
 
       <MobileNav />
     </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Bell, Check, Truck, Package, MessageCircle, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +34,7 @@ const typeIcons: Record<string, React.ElementType> = {
 };
 
 export function NotificationBell() {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
@@ -75,6 +77,62 @@ export function NotificationBell() {
       setUnreadCount(data?.filter((n) => !n.read_at).length || 0);
     } catch (error) {
       console.error("Error fetching notifications:", error);
+    }
+  };
+
+  const handleNotificationClick = async (notif: Notification) => {
+    // Mark as read if not already
+    if (!notif.read_at) {
+      await markAsRead(notif.id);
+    }
+
+    // Close popover
+    setOpen(false);
+
+    // Navigate based on related_type and related_id
+    if (notif.related_id && notif.related_type) {
+      switch (notif.related_type) {
+        case "order":
+          navigate(`/tracking?order=${notif.related_id}`);
+          break;
+        case "offer":
+          navigate(`/offres/${notif.related_id}`);
+          break;
+        case "message":
+        case "conversation":
+          navigate("/messages");
+          break;
+        case "custom_request":
+          navigate("/client/dashboard");
+          break;
+        case "gp":
+        case "transporter":
+          navigate(`/gp/${notif.related_id}`);
+          break;
+        default:
+          // Generic handling based on type
+          if (notif.type === "order") {
+            navigate("/client/dashboard");
+          } else if (notif.type === "message") {
+            navigate("/messages");
+          }
+      }
+    } else {
+      // Fallback navigation based on notification type
+      switch (notif.type) {
+        case "order":
+          navigate("/client/dashboard");
+          break;
+        case "message":
+          navigate("/messages");
+          break;
+        case "gp":
+          navigate("/gp/dashboard");
+          break;
+        default:
+          // Do nothing, just mark as read
+          break;
+      }
     }
   };
 
@@ -156,13 +214,15 @@ export function NotificationBell() {
           ) : (
             notifications.map((notif) => {
               const Icon = typeIcons[notif.type] || Bell;
+              const isClickable = notif.related_id || ["order", "message", "gp"].includes(notif.type);
+              
               return (
                 <button
                   key={notif.id}
-                  onClick={() => !notif.read_at && markAsRead(notif.id)}
-                  className={`w-full p-4 text-left border-b border-border last:border-0 transition-colors ${
+                  onClick={() => handleNotificationClick(notif)}
+                  className={`w-full p-4 text-left border-b border-border last:border-0 transition-colors hover:bg-accent/50 ${
                     notif.read_at ? "opacity-60" : "bg-primary/5"
-                  }`}
+                  } ${isClickable ? "cursor-pointer" : ""}`}
                 >
                   <div className="flex gap-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
