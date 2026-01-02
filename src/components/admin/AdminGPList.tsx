@@ -143,16 +143,7 @@ export function AdminGPList({ gps, onUpdateStatus, onViewDetails, filter }: Admi
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-sm mb-3">
-              <Phone className="w-3 h-3 text-muted-foreground" />
-              <span>{gp.phone}</span>
-              {gp.whatsapp && (
-                <>
-                  <span className="text-muted-foreground">•</span>
-                  <span className="text-success">WhatsApp</span>
-                </>
-              )}
-            </div>
+            {/* Contact info hidden - only visible on profile click */}
 
             <div className="flex items-center justify-between pt-3 border-t border-border">
               <Button 

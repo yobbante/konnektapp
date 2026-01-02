@@ -3,7 +3,8 @@ import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   CheckCircle, Package, MapPin, Calendar, ArrowRight, 
-  User, Clock, Bell, Home, FileText
+  User, Clock, Bell, Home, FileText, Scale, Banknote,
+  AlertTriangle, Sparkles, Truck, Ship, Plane, Briefcase
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 interface RequestDetails {
   id: string;
@@ -22,7 +25,15 @@ interface RequestDetails {
   shipment_type: string;
   description: string;
   weight_estimate: number | null;
+  volume_estimate: string | null;
+  budget_min: number | null;
+  budget_max: number | null;
   is_urgent: boolean;
+  is_fragile: boolean;
+  pickup_date_from: string | null;
+  pickup_date_to: string | null;
+  additional_services: string[] | null;
+  transport_type: string | null;
   created_at: string;
   status: string;
 }
@@ -130,31 +141,98 @@ export default function QuoteConfirmation() {
           <Card className="p-4 mb-4">
             <h3 className="font-semibold mb-4 flex items-center gap-2">
               <Package className="w-5 h-5 text-primary" />
-              Récapitulatif de votre demande
+              Votre devis personnalisé
             </h3>
 
             <div className="space-y-3">
               {/* Route */}
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-muted-foreground" />
-                <span className="font-medium">{request.origin_city}</span>
+              <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg">
+                <MapPin className="w-5 h-5 text-primary" />
+                <span className="font-semibold">{request.origin_city}</span>
                 <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                <span className="font-medium">{request.destination_city}</span>
+                <span className="font-semibold">{request.destination_city}</span>
               </div>
 
-              {/* Type */}
-              <div className="flex items-center gap-2">
-                <Package className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm">{request.shipment_type}</span>
+              {/* Type and urgency */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="secondary">{request.shipment_type}</Badge>
+                {request.transport_type && (
+                  <Badge variant="outline">
+                    {request.transport_type === "routier" && <Truck className="w-3 h-3 mr-1" />}
+                    {request.transport_type === "maritime" && <Ship className="w-3 h-3 mr-1" />}
+                    {request.transport_type === "aerien" && <Plane className="w-3 h-3 mr-1" />}
+                    {request.transport_type === "voyageur" && <Briefcase className="w-3 h-3 mr-1" />}
+                    {request.transport_type}
+                  </Badge>
+                )}
                 {request.is_urgent && (
-                  <Badge variant="warning" className="ml-auto">Urgent</Badge>
+                  <Badge variant="warning">
+                    <AlertTriangle className="w-3 h-3 mr-1" />
+                    Urgent
+                  </Badge>
+                )}
+                {request.is_fragile && (
+                  <Badge variant="outline">Fragile</Badge>
                 )}
               </div>
 
-              {/* Weight if specified */}
-              {request.weight_estimate && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>Poids estimé: {request.weight_estimate} kg</span>
+              {/* Specs Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                {request.weight_estimate && (
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-1 text-muted-foreground mb-1">
+                      <Scale className="w-3 h-3" />
+                      <span className="text-xs">Poids estimé</span>
+                    </div>
+                    <p className="font-semibold">{request.weight_estimate} kg</p>
+                  </div>
+                )}
+                {request.volume_estimate && (
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-1 text-muted-foreground mb-1">
+                      <Package className="w-3 h-3" />
+                      <span className="text-xs">Volume</span>
+                    </div>
+                    <p className="font-semibold">{request.volume_estimate}</p>
+                  </div>
+                )}
+                {(request.budget_min || request.budget_max) && (
+                  <div className="p-3 bg-muted/50 rounded-lg col-span-2">
+                    <div className="flex items-center gap-1 text-muted-foreground mb-1">
+                      <Banknote className="w-3 h-3" />
+                      <span className="text-xs">Budget</span>
+                    </div>
+                    <p className="font-semibold text-primary">
+                      {request.budget_min?.toLocaleString() || "—"} - {request.budget_max?.toLocaleString() || "—"} FCFA
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Dates */}
+              {(request.pickup_date_from || request.pickup_date_to) && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  <span>
+                    {request.pickup_date_from && format(new Date(request.pickup_date_from), "d MMM", { locale: fr })}
+                    {request.pickup_date_from && request.pickup_date_to && " - "}
+                    {request.pickup_date_to && format(new Date(request.pickup_date_to), "d MMM yyyy", { locale: fr })}
+                  </span>
+                </div>
+              )}
+
+              {/* Additional Services */}
+              {request.additional_services && request.additional_services.length > 0 && (
+                <div className="pt-2 border-t border-border">
+                  <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" />
+                    Services additionnels
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {request.additional_services.map((service, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">{service}</Badge>
+                    ))}
+                  </div>
                 </div>
               )}
 
