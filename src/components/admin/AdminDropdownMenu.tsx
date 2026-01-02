@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   ChevronDown, Settings, Users, Truck, Package, 
-  MessageSquare, AlertTriangle, Shield, Award, LogOut, Home
+  MessageSquare, AlertTriangle, Shield, Award, LogOut, Home, Route
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -37,6 +37,7 @@ export function AdminDropdownMenu({ onTabChange, activeTab }: AdminDropdownMenuP
     { id: "stats", label: "Statistiques", icon: Settings },
     { id: "gps", label: "Transporteurs", icon: Truck },
     { id: "orders", label: "Commandes", icon: Package },
+    { id: "departures", label: "Départs", icon: Route, isLink: true, href: "/admin/departures" },
     { id: "support", label: "Support", icon: MessageSquare },
     { id: "disputes", label: "Litiges", icon: AlertTriangle },
     { id: "reputation", label: "Réputation", icon: Award },
@@ -62,7 +63,11 @@ export function AdminDropdownMenu({ onTabChange, activeTab }: AdminDropdownMenuP
           <DropdownMenuItem
             key={item.id}
             onClick={() => {
-              onTabChange?.(item.id);
+              if ((item as any).isLink && (item as any).href) {
+                navigate((item as any).href);
+              } else {
+                onTabChange?.(item.id);
+              }
               setIsOpen(false);
             }}
             className={activeTab === item.id ? "bg-accent" : ""}

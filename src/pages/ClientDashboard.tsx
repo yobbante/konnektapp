@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { ClientCustomRequests } from "@/components/client/ClientCustomRequests";
+import { CancelOrderButton } from "@/components/client/CancelOrderButton";
 
 interface Order {
   id: string;
@@ -307,7 +308,7 @@ export default function ClientDashboard() {
       )}
 
       {activeTab === "orders" && (
-        <OrdersTab orders={orders} getStatusBadge={getStatusBadge} />
+        <OrdersTab orders={orders} getStatusBadge={getStatusBadge} onOrderCancelled={checkAuthAndLoadData} />
       )}
 
       {activeTab === "messages" && (
@@ -330,7 +331,7 @@ export default function ClientDashboard() {
   );
 }
 
-function OrdersTab({ orders, getStatusBadge }: { orders: Order[], getStatusBadge: (status: string) => JSX.Element }) {
+function OrdersTab({ orders, getStatusBadge, onOrderCancelled }: { orders: Order[], getStatusBadge: (status: string) => JSX.Element, onOrderCancelled?: () => void }) {
   return (
     <div className="px-4 py-4 space-y-4">
       <h2 className="font-semibold text-foreground">Tous mes envois</h2>
@@ -358,9 +359,18 @@ function OrdersTab({ orders, getStatusBadge }: { orders: Order[], getStatusBadge
                 <span className="text-muted-foreground">{order.weight} kg</span>
                 <span className="font-bold">{order.total_price.toLocaleString()} FCFA</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                {new Date(order.created_at).toLocaleDateString('fr-FR')}
-              </p>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
+                <p className="text-xs text-muted-foreground">
+                  {new Date(order.created_at).toLocaleDateString('fr-FR')}
+                </p>
+                {order.status === "pending" && (
+                  <CancelOrderButton 
+                    orderId={order.id} 
+                    orderStatus={order.status}
+                    onCancelled={onOrderCancelled}
+                  />
+                )}
+              </div>
             </div>
           ))}
         </div>

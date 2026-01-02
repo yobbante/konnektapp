@@ -303,8 +303,8 @@ export default function AdminDashboard() {
       </div>
 
       <div className="px-4 py-4 max-w-7xl mx-auto">
-        {/* Stats */}
-        <AdminStatsCards stats={stats} />
+        {/* Stats - Only show on overview tab */}
+        {activeTab === "overview" && <AdminStatsCards stats={stats} />}
 
         {/* Content based on active tab - NO visible TabsList */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
