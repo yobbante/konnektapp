@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Package, MapPin, Calendar, User, Eye, Clock, Truck, Phone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +39,7 @@ interface AdminOrdersListProps {
 }
 
 export function AdminOrdersList({ orders, filter }: AdminOrdersListProps) {
+  const navigate = useNavigate();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   const filteredOrders = filter === "all" 
@@ -121,7 +123,7 @@ export function AdminOrdersList({ orders, filter }: AdminOrdersListProps) {
                 <Button 
                   variant="ghost" 
                   size="icon"
-                  onClick={() => setSelectedOrder(order)}
+                  onClick={() => navigate(`/admin/order/${order.id}`)}
                 >
                   <Eye className="w-4 h-4" />
                 </Button>
