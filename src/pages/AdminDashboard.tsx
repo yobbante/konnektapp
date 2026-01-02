@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, RefreshCw, Search, Filter } from "lucide-react";
+import { Shield, RefreshCw, Search, Filter, Truck, Package } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -196,35 +196,109 @@ export default function AdminDashboard() {
     );
   }
 
+  // Global search across all data
+  const globalSearchResults = searchQuery.length >= 2 ? {
+    gps: gps.filter(gp => 
+      gp.business_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      gp.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      gp.phone?.includes(searchQuery)
+    ),
+    orders: orders.filter(order =>
+      order.order_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.origin_city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.destination_city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.tracking_code?.toLowerCase().includes(searchQuery.toLowerCase())
+    ),
+  } : null;
+
   return (
     <div className="min-h-screen pb-safe bg-background">
       {/* Fixed Admin Header with Dropdown Menu */}
-      <div className={`sticky top-0 z-50 ${theme.headerBgClass} ${theme.headerTextClass} py-3 px-4 shadow-md`}>
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-              <Shield className="w-5 h-5" />
+      <div className={`sticky top-0 z-50 ${theme.headerBgClass} ${theme.headerTextClass} shadow-md`}>
+        <div className="py-3 px-4">
+          <div className="flex items-center justify-between max-w-7xl mx-auto">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                <Shield className="w-5 h-5" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">Admin Dashboard</h1>
+                <p className="text-sm opacity-80">Gestion de la plateforme</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold">Admin Dashboard</h1>
-              <p className="text-sm opacity-80">Gestion de la plateforme</p>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={refreshData}
+                disabled={refreshing}
+                className="bg-white/10 border-white/20 hover:bg-white/20"
+              >
+                <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+              </Button>
+              <AdminDropdownMenu 
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+              />
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={refreshData}
-              disabled={refreshing}
-              className="bg-white/10 border-white/20 hover:bg-white/20"
-            >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-            </Button>
-            <AdminDropdownMenu 
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
+        </div>
+        
+        {/* Global Search Bar */}
+        <div className="px-4 pb-3">
+          <div className="relative max-w-7xl mx-auto">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
+            <Input
+              placeholder="Recherche globale (transporteurs, commandes, tickets...)"
+              className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:bg-white/20"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          
+          {/* Global Search Results Dropdown */}
+          {globalSearchResults && (globalSearchResults.gps.length > 0 || globalSearchResults.orders.length > 0) && (
+            <div className="absolute left-4 right-4 mt-1 max-w-7xl mx-auto bg-card border border-border rounded-lg shadow-xl z-50 max-h-80 overflow-y-auto">
+              {globalSearchResults.gps.length > 0 && (
+                <div className="p-2">
+                  <p className="text-xs font-medium text-muted-foreground px-2 py-1">Transporteurs</p>
+                  {globalSearchResults.gps.slice(0, 5).map(gp => (
+                    <button
+                      key={gp.id}
+                      onClick={() => {
+                        handleViewDetails(gp.id);
+                        setSearchQuery("");
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-muted rounded-md flex items-center gap-2"
+                    >
+                      <Truck className="w-4 h-4 text-primary" />
+                      <span className="font-medium">{gp.business_name}</span>
+                      <span className="text-xs text-muted-foreground">• {gp.city}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {globalSearchResults.orders.length > 0 && (
+                <div className="p-2 border-t border-border">
+                  <p className="text-xs font-medium text-muted-foreground px-2 py-1">Commandes</p>
+                  {globalSearchResults.orders.slice(0, 5).map(order => (
+                    <button
+                      key={order.id}
+                      onClick={() => {
+                        setActiveTab("orders");
+                        setSearchQuery(order.order_number);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-muted rounded-md flex items-center gap-2"
+                    >
+                      <Package className="w-4 h-4 text-primary" />
+                      <span className="font-mono text-sm">{order.order_number}</span>
+                      <span className="text-xs text-muted-foreground">• {order.origin_city} → {order.destination_city}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -232,62 +306,43 @@ export default function AdminDashboard() {
         {/* Stats */}
         <AdminStatsCards stats={stats} />
 
-        {/* Tabs */}
+        {/* Content based on active tab - NO visible TabsList */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 mb-4">
-            <TabsTrigger value="overview">Aperçu</TabsTrigger>
-            <TabsTrigger value="stats">Stats</TabsTrigger>
-            <TabsTrigger value="gps">Transporteurs</TabsTrigger>
-            <TabsTrigger value="orders">Commandes</TabsTrigger>
-            <TabsTrigger value="support">Support</TabsTrigger>
-            <TabsTrigger value="disputes">Litiges</TabsTrigger>
-            <TabsTrigger value="reputation">Réputation</TabsTrigger>
-            <TabsTrigger value="permissions">Rôles</TabsTrigger>
-          </TabsList>
+          {/* Contextual Filters - Only show for specific tabs */}
+          {(activeTab === "gps" || activeTab === "orders") && (
+            <div className="flex gap-2 mb-4">
+              {activeTab === "gps" && (
+                <Select value={gpFilter} onValueChange={(v: any) => setGpFilter(v)}>
+                  <SelectTrigger className="w-[150px]">
+                    <Filter className="w-4 h-4 mr-2" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous</SelectItem>
+                    <SelectItem value="pending">En attente</SelectItem>
+                    <SelectItem value="verified">Vérifiés</SelectItem>
+                    <SelectItem value="suspended">Suspendus</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
 
-          {/* Search and Filters */}
-          <div className="flex gap-2 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher..."
-                className="pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+              {activeTab === "orders" && (
+                <Select value={orderFilter} onValueChange={(v: any) => setOrderFilter(v)}>
+                  <SelectTrigger className="w-[150px]">
+                    <Filter className="w-4 h-4 mr-2" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous</SelectItem>
+                    <SelectItem value="pending">En attente</SelectItem>
+                    <SelectItem value="in_transit">En transit</SelectItem>
+                    <SelectItem value="delivered">Livrées</SelectItem>
+                    <SelectItem value="cancelled">Annulées</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
             </div>
-            
-            {activeTab === "gps" && (
-              <Select value={gpFilter} onValueChange={(v: any) => setGpFilter(v)}>
-                <SelectTrigger className="w-[130px]">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous</SelectItem>
-                  <SelectItem value="pending">En attente</SelectItem>
-                  <SelectItem value="verified">Vérifiés</SelectItem>
-                  <SelectItem value="suspended">Suspendus</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-
-            {activeTab === "orders" && (
-              <Select value={orderFilter} onValueChange={(v: any) => setOrderFilter(v)}>
-                <SelectTrigger className="w-[130px]">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous</SelectItem>
-                  <SelectItem value="pending">En attente</SelectItem>
-                  <SelectItem value="in_transit">En transit</SelectItem>
-                  <SelectItem value="delivered">Livrées</SelectItem>
-                  <SelectItem value="cancelled">Annulées</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+          )}
 
           {/* Overview */}
           <TabsContent value="overview" className="space-y-4">
