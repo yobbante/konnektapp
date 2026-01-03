@@ -36,7 +36,7 @@ export function AdminDropdownMenu({ onTabChange, activeTab }: AdminDropdownMenuP
     { id: "overview", label: "Aperçu", icon: Home },
     { id: "stats", label: "Statistiques", icon: Settings },
     { id: "gps", label: "Transporteurs", icon: Truck },
-    { id: "orders", label: "Commandes", icon: Package },
+    { id: "orders", label: "Commandes", icon: Package, isLink: true, href: "/admin/orders" },
     { id: "departures", label: "Départs", icon: Route, isLink: true, href: "/admin/departures" },
     { id: "support", label: "Support", icon: MessageSquare },
     { id: "disputes", label: "Litiges", icon: AlertTriangle },

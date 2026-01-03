@@ -121,7 +121,7 @@ export function RecentHistory({ orders, onViewAll, onRefresh }: RecentHistoryPro
   };
 
   const handleViewDetails = (order: Order) => {
-    navigate(`/tracking?order=${order.order_number}`);
+    navigate(`/gp/order/${order.id}`);
   };
 
   const openContactClient = async (order: Order) => {
