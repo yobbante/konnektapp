@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { MapPin, Package, Eye, MoreHorizontal, CheckCircle, Truck, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -50,6 +51,7 @@ const statusConfig: Record<string, { label: string; variant: "success" | "pendin
 };
 
 export function GPOrdersTable({ orders, compact, onRefresh }: GPOrdersTableProps) {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
 
@@ -151,7 +153,7 @@ export function GPOrdersTable({ orders, compact, onRefresh }: GPOrdersTableProps
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate(`/gp/order/${order.id}`)}>
                         <Eye className="w-4 h-4 mr-2" />
                         Voir détails
                       </DropdownMenuItem>

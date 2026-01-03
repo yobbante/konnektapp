@@ -14,6 +14,7 @@ import GPLanding from "./pages/GPLanding";
 import GPRegistration from "./pages/GPRegistration";
 import GPDashboard from "./pages/GPDashboard";
 import GPCustomRequests from "./pages/GPCustomRequests";
+import GPOrderDetail from "./pages/GPOrderDetail";
 import ClientDashboard from "./pages/ClientDashboard";
 import ClientProfile from "./pages/ClientProfile";
 import Auth from "./pages/Auth";
@@ -21,6 +22,7 @@ import Tracking from "./pages/Tracking";
 import Messages from "./pages/Messages";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminDepartures from "./pages/AdminDepartures";
+import AdminOrders from "./pages/AdminOrders";
 import AdminGPProfile from "./pages/AdminGPProfile";
 import AdminOrderDetail from "./pages/AdminOrderDetail";
 import PostBookingForm from "./pages/PostBookingForm";
@@ -58,10 +60,12 @@ const App = () => (
             <Route path="/gp/inscription" element={<GPRegistration />} />
             <Route path="/gp/dashboard" element={<GPDashboard />} />
             <Route path="/gp/requests" element={<GPCustomRequests />} />
+            <Route path="/gp/order/:orderId" element={<GPOrderDetail />} />
             <Route path="/client/dashboard" element={<ClientDashboard />} />
             <Route path="/client/profile" element={<ClientProfile />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/departures" element={<AdminDepartures />} />
+            <Route path="/admin/orders" element={<AdminOrders />} />
             <Route path="/admin/gp/:gpId" element={<AdminGPProfile />} />
             <Route path="/admin/order/:orderId" element={<AdminOrderDetail />} />
             <Route path="/order/:orderId/complete" element={<PostBookingForm />} />
