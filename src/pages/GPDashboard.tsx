@@ -673,7 +673,7 @@ function OrdersTab({ orders, gpProfileId, onRefresh, onBack }: { orders: any[]; 
 
   const OrderCard = ({ order }: { order: any }) => {
     const status = order.status as OrderStatus;
-    const { nextStatus, label } = getNextOrderStatus(status);
+    const { nextStatus, nextLabel } = getNextOrderStatus(status);
     const isUpdating = updatingOrderId === order.id;
 
     return (
@@ -696,7 +696,7 @@ function OrdersTab({ orders, gpProfileId, onRefresh, onBack }: { orders: any[]; 
         </div>
 
         {/* Workflow buttons */}
-        {nextStatus && label && (
+        {nextStatus && nextLabel && (
           <Button 
             variant={nextStatus === 'delivered' ? 'success' : nextStatus === 'accepted' ? 'success' : 'secondary'}
             size="sm" 
@@ -712,7 +712,7 @@ function OrdersTab({ orders, gpProfileId, onRefresh, onBack }: { orders: any[]; 
                 {nextStatus === 'collected' && <Package className="w-4 h-4" />}
                 {nextStatus === 'in_transit' && <Truck className="w-4 h-4" />}
                 {nextStatus === 'delivered' && <CheckCircle className="w-4 h-4" />}
-                {label}
+                {nextLabel}
               </>
             )}
           </Button>

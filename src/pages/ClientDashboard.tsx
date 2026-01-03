@@ -13,6 +13,7 @@ import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { ClientCustomRequests } from "@/components/client/ClientCustomRequests";
 import { CancelOrderButton } from "@/components/client/CancelOrderButton";
+import { ORDER_STATUS_LABELS, isValidOrderStatus } from "@/lib/enumMappings";
 
 interface Order {
   id: string;
@@ -120,14 +121,20 @@ export default function ClientDashboard() {
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending': return <Badge variant="warning">En attente</Badge>;
-      case 'accepted': return <Badge variant="default">Accepté</Badge>;
-      case 'in_transit': return <Badge variant="secondary">En transit</Badge>;
-      case 'delivered': return <Badge variant="success">Livré</Badge>;
-      case 'cancelled': return <Badge variant="destructive">Annulé</Badge>;
-      default: return <Badge variant="outline">{status}</Badge>;
-    }
+    const validStatus = isValidOrderStatus(status) ? status : "pending";
+    const label = ORDER_STATUS_LABELS[validStatus];
+    
+    const variantMap: Record<string, "warning" | "default" | "secondary" | "success" | "destructive" | "outline"> = {
+      pending: "warning",
+      accepted: "default",
+      collected: "secondary",
+      in_transit: "secondary",
+      delivered: "success",
+      cancelled: "destructive",
+      disputed: "destructive",
+    };
+    
+    return <Badge variant={variantMap[validStatus] || "outline"}>{label}</Badge>;
   };
 
   return (

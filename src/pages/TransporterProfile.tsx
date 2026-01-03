@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { VehicleManagement } from "@/components/gp/VehicleManagement";
 import { ScheduledRoutesManager } from "@/components/gp/ScheduledRoutesManager";
 import { GenerateOffersFromRoutes } from "@/components/gp/GenerateOffersFromRoutes";
+import { GP_STATUS_LABELS, isValidGpStatus } from "@/lib/enumMappings";
 
 interface GPProfileData {
   id: string;
@@ -263,9 +264,11 @@ export default function TransporterProfile() {
                 </div>
                 <div>
                   <p className="font-semibold text-foreground">
-                    {profile.status === 'verified' ? 'Profil vérifié' : 
-                     profile.status === 'pending' ? 'En attente de vérification' : 
-                     profile.status === 'rejected' ? 'Profil rejeté' : 'Profil suspendu'}
+                    {isValidGpStatus(profile.status) 
+                      ? (profile.status === 'verified' ? 'Profil vérifié' : 
+                         profile.status === 'pending' ? 'En attente de vérification' : 
+                         profile.status === 'rejected' ? 'Profil rejeté' : 'Profil suspendu')
+                      : profile.status}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {profile.status === 'verified' ? `Vérifié le ${new Date(profile.verified_at || '').toLocaleDateString('fr-FR')}` : 
@@ -275,9 +278,7 @@ export default function TransporterProfile() {
                 </div>
               </div>
               <Badge variant={profile.status === 'verified' ? 'success' : profile.status === 'pending' ? 'pending' : 'destructive'}>
-                {profile.status === 'verified' ? 'Vérifié' : 
-                 profile.status === 'pending' ? 'En attente' : 
-                 profile.status === 'rejected' ? 'Rejeté' : 'Suspendu'}
+                {isValidGpStatus(profile.status) ? GP_STATUS_LABELS[profile.status] : profile.status}
               </Badge>
             </div>
           </CardContent>

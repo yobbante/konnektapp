@@ -47,6 +47,17 @@ import { fr } from "date-fns/locale";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  DISPUTE_CATEGORY_LABELS,
+  DISPUTE_STATUS_LABELS,
+  SANCTION_TYPE_LABELS,
+  REPUTATION_STATUS_LABELS,
+  REPUTATION_STATUS_COLORS,
+  isValidDisputeStatus,
+  isValidSanctionType,
+  type DisputeStatus,
+  type SanctionType,
+} from "@/lib/enumMappings";
 
 interface Dispute {
   id: string;
@@ -106,31 +117,10 @@ interface DisputeHistory {
   created_at: string;
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  delay_unjustified: "Retard non justifié",
-  partial_loss: "Perte partielle",
-  total_loss: "Perte totale",
-  deterioration: "Détérioration",
-  non_conformity: "Non-conformité",
-  transporter_silence: "Silence du transporteur",
-  client_fault: "Faute du client",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  open: "Ouvert",
-  under_review: "En examen",
-  awaiting_response: "Attente réponse",
-  provisional_decision: "Décision provisoire",
-  closed: "Clôturé",
-};
-
-const SANCTION_LABELS: Record<string, string> = {
-  warning: "Avertissement",
-  financial_compensation: "Compensation financière",
-  full_refund: "Remboursement total",
-  temporary_suspension: "Suspension temporaire",
-  permanent_exclusion: "Exclusion définitive",
-};
+// Use centralized enum mappings
+const CATEGORY_LABELS = DISPUTE_CATEGORY_LABELS;
+const STATUS_LABELS = DISPUTE_STATUS_LABELS;
+const SANCTION_LABELS = SANCTION_TYPE_LABELS;
 
 export function AdminDisputeArbitration() {
   const { toast } = useToast();

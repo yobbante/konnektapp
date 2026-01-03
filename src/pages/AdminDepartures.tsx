@@ -15,6 +15,12 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import {
+  OFFER_STATUS_LABELS,
+  GP_TYPE_LABELS,
+  isValidOfferStatus,
+  type OfferStatus,
+} from "@/lib/enumMappings";
 
 interface Departure {
   id: string;
@@ -124,13 +130,17 @@ export default function AdminDepartures() {
   });
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "active": return <Badge variant="success">Actif</Badge>;
-      case "paused": return <Badge variant="warning">Pausé</Badge>;
-      case "expired": return <Badge variant="secondary">Expiré</Badge>;
-      case "completed": return <Badge variant="default">Terminé</Badge>;
-      default: return <Badge variant="outline">{status}</Badge>;
+    const variantMap: Record<OfferStatus, "success" | "warning" | "secondary" | "default"> = {
+      active: "success",
+      paused: "warning",
+      expired: "secondary",
+      completed: "default",
+    };
+    
+    if (isValidOfferStatus(status)) {
+      return <Badge variant={variantMap[status]}>{OFFER_STATUS_LABELS[status]}</Badge>;
     }
+    return <Badge variant="outline">{status}</Badge>;
   };
 
   const getTransportIcon = (type: string) => {
