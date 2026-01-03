@@ -221,7 +221,7 @@ export default function GPOrderDetail() {
 
   if (!order) return null;
 
-  const { nextStatus, label: nextLabel } = getNextOrderStatus(order.status);
+  const { nextStatus, nextLabel } = getNextOrderStatus(order.status);
   const statusConfig = orderStatusConfig[order.status];
 
   return (

@@ -8,7 +8,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { orderStatusConfig, OrderStatus } from "@/lib/transportTypes";
+import { 
+  ORDER_STATUS_LABELS, 
+  ORDER_STATUS_COLORS,
+  isValidOrderStatus,
+  type OrderStatus 
+} from "@/lib/enumMappings";
 
 interface Order {
   id: string;
@@ -47,16 +52,21 @@ export function AdminOrdersList({ orders, filter }: AdminOrdersListProps) {
     : orders.filter(order => order.status === filter);
 
   const getStatusBadge = (status: string) => {
-    const config = orderStatusConfig[status as OrderStatus];
-    const variant = 
-      status === "delivered" ? "success" :
-      status === "cancelled" || status === "disputed" ? "destructive" :
-      status === "in_transit" ? "default" :
-      "secondary";
+    const validStatus = isValidOrderStatus(status) ? status : "pending";
+    const label = ORDER_STATUS_LABELS[validStatus];
+    const color = ORDER_STATUS_COLORS[validStatus];
+    
+    const variantMap: Record<string, "success" | "destructive" | "default" | "secondary"> = {
+      success: "success",
+      destructive: "destructive",
+      warning: "secondary",
+      default: "default",
+      secondary: "secondary",
+    };
     
     return (
-      <Badge variant={variant}>
-        {config?.labelFr || status}
+      <Badge variant={variantMap[color] || "secondary"}>
+        {label}
       </Badge>
     );
   };

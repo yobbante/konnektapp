@@ -19,6 +19,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  GP_TYPE_LABELS,
+  OFFER_STATUS_LABELS,
+  isValidOfferStatus,
+  type OfferStatus,
+} from "@/lib/enumMappings";
 
 interface Offer {
   id: string;
@@ -41,22 +47,14 @@ interface GPOffersTableProps {
   offers: Offer[];
   compact?: boolean;
   onRefresh?: () => void;
-  gpStatus?: string; // Status du transporteur pour afficher l'indicateur de visibilité
+  gpStatus?: string;
 }
 
-const transportLabels: Record<string, string> = {
-  express: "Express",
-  routier: "Routier",
-  maritime: "Maritime",
-  aerien: "Aérien",
-  voyageur: "Voyageur",
-};
-
-const statusLabels: Record<string, { label: string; variant: "success" | "pending" | "secondary" | "destructive" }> = {
-  active: { label: "Active", variant: "success" },
-  paused: { label: "En pause", variant: "pending" },
-  expired: { label: "Expirée", variant: "secondary" },
-  completed: { label: "Terminée", variant: "secondary" },
+const statusVariants: Record<OfferStatus, "success" | "pending" | "secondary" | "destructive"> = {
+  active: "success",
+  paused: "pending",
+  expired: "secondary",
+  completed: "secondary",
 };
 
 export function GPOffersTable({ offers, compact, onRefresh, gpStatus }: GPOffersTableProps) {
@@ -64,7 +62,17 @@ export function GPOffersTable({ offers, compact, onRefresh, gpStatus }: GPOffers
   const [loading, setLoading] = useState<string | null>(null);
   const isNotVerified = gpStatus && gpStatus !== "verified";
 
-  const handleStatusChange = async (offerId: string, newStatus: "active" | "paused" | "expired" | "completed") => {
+  const handleStatusChange = async (offerId: string, newStatus: OfferStatus) => {
+    // Validate enum before sending to database
+    if (!isValidOfferStatus(newStatus)) {
+      toast({
+        title: "Erreur",
+        description: `Statut d'offre invalide: ${newStatus}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(offerId);
     try {
       const { error } = await supabase
@@ -76,7 +84,7 @@ export function GPOffersTable({ offers, compact, onRefresh, gpStatus }: GPOffers
 
       toast({
         title: "Statut mis à jour",
-        description: `L'offre est maintenant ${statusLabels[newStatus as keyof typeof statusLabels]?.label.toLowerCase()}`,
+        description: `L'offre est maintenant ${OFFER_STATUS_LABELS[newStatus].toLowerCase()}`,
       });
 
       onRefresh?.();
@@ -155,7 +163,7 @@ export function GPOffersTable({ offers, compact, onRefresh, gpStatus }: GPOffers
               </TableCell>
               <TableCell>
                 <Badge variant={offer.transport_type as any}>
-                  {transportLabels[offer.transport_type] || offer.transport_type}
+                  {GP_TYPE_LABELS[offer.transport_type as keyof typeof GP_TYPE_LABELS] || offer.transport_type}
                 </Badge>
               </TableCell>
               <TableCell>
@@ -179,9 +187,14 @@ export function GPOffersTable({ offers, compact, onRefresh, gpStatus }: GPOffers
               )}
               <TableCell>
                 <div className="flex items-center gap-2">
-                  <Badge variant={statusLabels[offer.status]?.variant || "secondary"}>
-                    {statusLabels[offer.status]?.label || offer.status}
-                  </Badge>
+                  {(() => {
+                    const validStatus = isValidOfferStatus(offer.status) ? offer.status : "active";
+                    return (
+                      <Badge variant={statusVariants[validStatus]}>
+                        {OFFER_STATUS_LABELS[validStatus]}
+                      </Badge>
+                    );
+                  })()}
                   {isNotVerified && (
                     <span className="flex items-center gap-1 text-xs text-warning">
                       <EyeOff className="w-3 h-3" />

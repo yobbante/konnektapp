@@ -20,6 +20,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { 
+  ORDER_STATUS, 
+  ORDER_STATUS_LABELS, 
+  type OrderStatus,
+  isValidOrderStatus 
+} from "@/lib/enumMappings";
 
 interface Order {
   id: string;
@@ -41,13 +47,14 @@ interface GPOrdersTableProps {
   onRefresh?: () => void;
 }
 
-const statusConfig: Record<string, { label: string; variant: "success" | "pending" | "secondary" | "destructive" | "available"; icon: any }> = {
-  pending: { label: "En attente", variant: "pending", icon: Package },
-  accepted: { label: "Acceptée", variant: "available", icon: CheckCircle },
-  in_transit: { label: "En transit", variant: "secondary", icon: Truck },
-  delivered: { label: "Livrée", variant: "success", icon: CheckCircle },
-  cancelled: { label: "Annulée", variant: "destructive", icon: XCircle },
-  disputed: { label: "Litige", variant: "destructive", icon: XCircle },
+const statusConfig: Record<OrderStatus, { label: string; variant: "success" | "pending" | "secondary" | "destructive" | "available"; icon: any }> = {
+  pending: { label: ORDER_STATUS_LABELS.pending, variant: "pending", icon: Package },
+  accepted: { label: ORDER_STATUS_LABELS.accepted, variant: "available", icon: CheckCircle },
+  collected: { label: ORDER_STATUS_LABELS.collected, variant: "secondary", icon: Package },
+  in_transit: { label: ORDER_STATUS_LABELS.in_transit, variant: "secondary", icon: Truck },
+  delivered: { label: ORDER_STATUS_LABELS.delivered, variant: "success", icon: CheckCircle },
+  cancelled: { label: ORDER_STATUS_LABELS.cancelled, variant: "destructive", icon: XCircle },
+  disputed: { label: ORDER_STATUS_LABELS.disputed, variant: "destructive", icon: XCircle },
 };
 
 export function GPOrdersTable({ orders, compact, onRefresh }: GPOrdersTableProps) {
@@ -55,7 +62,17 @@ export function GPOrdersTable({ orders, compact, onRefresh }: GPOrdersTableProps
   const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
 
-  const handleStatusChange = async (orderId: string, newStatus: "pending" | "accepted" | "in_transit" | "delivered" | "cancelled" | "disputed") => {
+  const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
+    // Validate enum before sending to database
+    if (!isValidOrderStatus(newStatus)) {
+      toast({
+        title: "Erreur",
+        description: `Statut invalide: ${newStatus}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(orderId);
     try {
       const { error } = await supabase
@@ -67,7 +84,8 @@ export function GPOrdersTable({ orders, compact, onRefresh }: GPOrdersTableProps
 
       toast({
         title: "Statut mis à jour",
-      } as const);
+        description: `Commande marquée comme "${ORDER_STATUS_LABELS[newStatus]}"`,
+      });
 
       onRefresh?.();
     } catch (error: any) {
@@ -105,8 +123,9 @@ export function GPOrdersTable({ orders, compact, onRefresh }: GPOrdersTableProps
           </TableRow>
         </TableHeader>
         <TableBody>
-          {orders.map((order) => {
-            const status = statusConfig[order.status] || statusConfig.pending;
+        {orders.map((order) => {
+            const validStatus = isValidOrderStatus(order.status) ? order.status : "pending";
+            const status = statusConfig[validStatus];
             const StatusIcon = status.icon;
 
             return (

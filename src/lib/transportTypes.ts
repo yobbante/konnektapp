@@ -104,83 +104,49 @@ export const allTransportTypes: TransportConfig[] = [
 // Types masqués pour la v1 (aucun maintenant)
 export const hiddenTransportTypes: TransportType[] = [];
 
-// Statuts de commande avec le workflow complet
-export type OrderStatus = "pending" | "accepted" | "collected" | "in_transit" | "delivered" | "cancelled" | "disputed";
+// Re-export from centralized enum mappings for backward compatibility
+export { 
+  ORDER_STATUS,
+  type OrderStatus,
+  ORDER_STATUS_LABELS,
+  ORDER_STATUS_COLORS,
+  ORDER_STATUS_WORKFLOW,
+  getOrderStatusLabel,
+  getOrderStatusColor,
+  getNextOrderStatus,
+  isValidOrderStatus,
+} from "./enumMappings";
+
+// Legacy compatibility - orderStatusConfig format
+import { 
+  ORDER_STATUS, 
+  ORDER_STATUS_LABELS, 
+  ORDER_STATUS_COLORS, 
+  ORDER_STATUS_WORKFLOW,
+  type OrderStatus as OrderStatusType
+} from "./enumMappings";
 
 export interface OrderStatusConfig {
-  status: OrderStatus;
+  status: OrderStatusType;
   label: string;
   labelFr: string;
   color: string;
-  nextStatus?: OrderStatus;
+  nextStatus?: OrderStatusType;
   nextLabel?: string;
 }
 
-export const orderStatusConfig: Record<OrderStatus, OrderStatusConfig> = {
-  pending: {
-    status: "pending",
-    label: "Pending",
-    labelFr: "En attente",
-    color: "warning",
-    nextStatus: "accepted",
-    nextLabel: "Accepter",
-  },
-  accepted: {
-    status: "accepted",
-    label: "Accepted",
-    labelFr: "Acceptée",
-    color: "default",
-    nextStatus: "collected",
-    nextLabel: "Marquer collecté",
-  },
-  collected: {
-    status: "collected",
-    label: "Collected",
-    labelFr: "Collectée",
-    color: "secondary",
-    nextStatus: "in_transit",
-    nextLabel: "En livraison",
-  },
-  in_transit: {
-    status: "in_transit",
-    label: "In Transit",
-    labelFr: "En livraison",
-    color: "secondary",
-    nextStatus: "delivered",
-    nextLabel: "Marquer livré",
-  },
-  delivered: {
-    status: "delivered",
-    label: "Delivered",
-    labelFr: "Livrée",
-    color: "success",
-  },
-  cancelled: {
-    status: "cancelled",
-    label: "Cancelled",
-    labelFr: "Annulée",
-    color: "destructive",
-  },
-  disputed: {
-    status: "disputed",
-    label: "Disputed",
-    labelFr: "Litige",
-    color: "destructive",
-  },
-};
-
-export const getOrderStatusLabel = (status: OrderStatus): string => {
-  return orderStatusConfig[status]?.labelFr || status;
-};
-
-export const getOrderStatusColor = (status: OrderStatus): string => {
-  return orderStatusConfig[status]?.color || "default";
-};
-
-export const getNextOrderStatus = (status: OrderStatus): { nextStatus?: OrderStatus; label?: string } => {
-  const config = orderStatusConfig[status];
-  return { nextStatus: config?.nextStatus, label: config?.nextLabel };
-};
+export const orderStatusConfig: Record<OrderStatusType, OrderStatusConfig> = Object.keys(ORDER_STATUS).reduce((acc, key) => {
+  const status = key as OrderStatusType;
+  const workflow = ORDER_STATUS_WORKFLOW[status];
+  acc[status] = {
+    status,
+    label: status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' '),
+    labelFr: ORDER_STATUS_LABELS[status],
+    color: ORDER_STATUS_COLORS[status],
+    ...(workflow ? { nextStatus: workflow.nextStatus, nextLabel: workflow.nextLabel } : {}),
+  };
+  return acc;
+}, {} as Record<OrderStatusType, OrderStatusConfig>);
 
 // Helper functions for transport types
 export const getTransportIcon = (type: string): LucideIcon => {

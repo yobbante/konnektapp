@@ -4,6 +4,7 @@ import {
   LineChart, Line, PieChart, Pie, Cell
 } from "recharts";
 import { TrendingUp, Package, Wallet, Users } from "lucide-react";
+import { ORDER_STATUS_LABELS } from "@/lib/enumMappings";
 
 interface GPStatsChartsProps {
   orders: any[];
@@ -28,10 +29,10 @@ export function GPStatsCharts({ orders, gpType }: GPStatsChartsProps) {
   });
 
   const statusDistribution = [
-    { name: 'En attente', value: orders.filter(o => o.status === 'pending').length, color: '#f59e0b' },
+    { name: ORDER_STATUS_LABELS.pending, value: orders.filter(o => o.status === 'pending').length, color: '#f59e0b' },
     { name: 'En cours', value: orders.filter(o => ['accepted', 'collected', 'in_transit'].includes(o.status)).length, color: '#3b82f6' },
-    { name: 'Livrées', value: orders.filter(o => o.status === 'delivered').length, color: '#10b981' },
-    { name: 'Annulées', value: orders.filter(o => o.status === 'cancelled').length, color: '#ef4444' },
+    { name: ORDER_STATUS_LABELS.delivered, value: orders.filter(o => o.status === 'delivered').length, color: '#10b981' },
+    { name: ORDER_STATUS_LABELS.cancelled, value: orders.filter(o => o.status === 'cancelled').length, color: '#ef4444' },
   ].filter(s => s.value > 0);
 
   const monthlyRevenue = orders
