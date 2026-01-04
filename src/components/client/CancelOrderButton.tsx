@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ORDER_STATUS, assertValidOrderStatus } from "@/lib/enumMappings";
 
 interface CancelOrderButtonProps {
   orderId: string;
@@ -33,11 +34,14 @@ export function CancelOrderButton({ orderId, orderStatus, onCancelled }: CancelO
   const handleCancel = async () => {
     setLoading(true);
     try {
+      // CRITICAL: Validate enum value before DB operation
+      const validStatus = assertValidOrderStatus(ORDER_STATUS.cancelled);
+      
       const { error } = await supabase
         .from("orders")
-        .update({ status: "cancelled" })
+        .update({ status: validStatus })
         .eq("id", orderId)
-        .eq("status", "pending"); // Double-check it's still pending
+        .eq("status", ORDER_STATUS.pending); // Double-check it's still pending
 
       if (error) throw error;
 

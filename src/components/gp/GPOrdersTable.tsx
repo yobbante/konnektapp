@@ -24,7 +24,9 @@ import {
   ORDER_STATUS, 
   ORDER_STATUS_LABELS, 
   type OrderStatus,
-  isValidOrderStatus 
+  isValidOrderStatus,
+  assertValidOrderStatus,
+  isFrenchLabel
 } from "@/lib/enumMappings";
 
 interface Order {
@@ -63,11 +65,14 @@ export function GPOrdersTable({ orders, compact, onRefresh }: GPOrdersTableProps
   const [loading, setLoading] = useState<string | null>(null);
 
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
-    // Validate enum before sending to database
-    if (!isValidOrderStatus(newStatus)) {
+    // CRITICAL: Validate enum before sending to database
+    try {
+      assertValidOrderStatus(newStatus);
+    } catch (error: any) {
+      console.error("ENUM VALIDATION ERROR:", error.message);
       toast({
-        title: "Erreur",
-        description: `Statut invalide: ${newStatus}`,
+        title: "Erreur de validation",
+        description: `Statut invalide: ${newStatus}. Valeurs autorisées: ${Object.keys(ORDER_STATUS).join(", ")}`,
         variant: "destructive",
       });
       return;

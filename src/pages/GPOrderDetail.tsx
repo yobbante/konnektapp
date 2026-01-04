@@ -20,6 +20,7 @@ import {
   getOrderStatusLabel, 
   getNextOrderStatus 
 } from "@/lib/transportTypes";
+import { assertValidOrderStatus } from "@/lib/enumMappings";
 
 interface OrderDetail {
   id: string;
@@ -171,14 +172,17 @@ export default function GPOrderDetail() {
 
     setUpdating(true);
     try {
+      // CRITICAL: Validate enum before DB operation
+      const validStatus = assertValidOrderStatus(newStatus);
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
 
       const { error } = await supabase
         .from("orders")
         .update({ 
-          status: newStatus,
-          ...(newStatus === "delivered" ? { actual_delivery_date: new Date().toISOString() } : {})
+          status: validStatus,
+          ...(validStatus === "delivered" ? { actual_delivery_date: new Date().toISOString() } : {})
         })
         .eq("id", order.id);
 

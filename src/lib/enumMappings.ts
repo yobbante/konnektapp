@@ -5,11 +5,25 @@
  * - Database values: lowercase, snake_case, English only
  * - Display labels: French for UI
  * 
- * IMPORTANT RULES:
- * 1. NEVER send display labels to the database
- * 2. Always use the enum key when interacting with Supabase
+ * CRITICAL RULES:
+ * 1. NEVER send display labels (French) to the database
+ * 2. Always use the enum key (English) when interacting with Supabase
  * 3. Use helper functions to get labels for display
- * 4. Validate values before any database operation
+ * 4. Validate values before any database operation using assertValidXxx functions
+ * 5. NO FALLBACKS - invalid values must throw errors, not be silently converted
+ * 
+ * VALID PostgreSQL ENUM VALUES (from SELECT unnest(enum_range(NULL::order_status))):
+ * - order_status: pending, accepted, collected, in_transit, delivered, cancelled, disputed
+ * - gp_status: pending, verified, suspended, rejected
+ * - offer_status: active, paused, expired, completed
+ * - gp_type: express, routier, maritime, aerien, voyageur, agence
+ * - dispute_status: open, under_review, awaiting_response, provisional_decision, closed
+ * - dispute_category: delay_unjustified, partial_loss, total_loss, deterioration, non_conformity, transporter_silence, client_fault
+ * - reputation_status: verified, under_observation, suspended, excluded
+ * - sanction_type: warning, financial_compensation, full_refund, temporary_suspension, permanent_exclusion
+ * - transaction_type: earning, withdrawal, commission, refund, bonus
+ * - gp_subscription: free, premium
+ * - app_role: admin, moderator, user
  */
 
 // ============= ORDER STATUS =============
@@ -25,6 +39,7 @@ export const ORDER_STATUS = {
 
 export type OrderStatus = keyof typeof ORDER_STATUS;
 
+// French labels for UI display ONLY - NEVER send these to DB
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   pending: "En attente",
   accepted: "Acceptée",
@@ -261,6 +276,40 @@ export const APP_ROLE_LABELS: Record<AppRole, string> = {
   user: "Utilisateur",
 };
 
+// ============= FRENCH LABELS BLACKLIST =============
+// These values should NEVER be sent to the database
+const INVALID_FRENCH_VALUES = new Set([
+  // Order status French labels
+  "en attente", "En attente", "EN ATTENTE",
+  "acceptée", "Acceptée", "ACCEPTÉE",
+  "collectée", "Collectée", "COLLECTÉE",
+  "en transit", "En transit", "EN TRANSIT",
+  "livrée", "Livrée", "LIVRÉE",
+  "annulée", "Annulée", "ANNULÉE",
+  "en litige", "En litige", "EN LITIGE",
+  // GP status French labels
+  "vérifié", "Vérifié", "VÉRIFIÉ",
+  "suspendu", "Suspendu", "SUSPENDU",
+  "rejeté", "Rejeté", "REJETÉ",
+  // Offer status French labels
+  "active", "Active", "ACTIVE", // Only lowercase 'active' is valid
+  "en pause", "En pause", "EN PAUSE",
+  "expirée", "Expirée", "EXPIRÉE",
+  "terminée", "Terminée", "TERMINÉE",
+  // Other common mistakes
+  "confirmé", "Confirmé", "CONFIRMÉ",
+  "en cours", "En cours", "EN COURS",
+  "livré", "Livré", "LIVRÉ",
+  "annulé", "Annulé", "ANNULÉ",
+]);
+
+/**
+ * Check if a value is a French label that should not be sent to DB
+ */
+export function isFrenchLabel(value: string): boolean {
+  return INVALID_FRENCH_VALUES.has(value);
+}
+
 // ============= VALIDATION HELPERS =============
 
 /**
@@ -299,6 +348,13 @@ export function isValidDisputeStatus(value: string): value is DisputeStatus {
 }
 
 /**
+ * Validates if a value is a valid DisputeCategory enum
+ */
+export function isValidDisputeCategory(value: string): value is DisputeCategory {
+  return Object.keys(DISPUTE_CATEGORY).includes(value);
+}
+
+/**
  * Validates if a value is a valid ReputationStatus enum
  */
 export function isValidReputationStatus(value: string): value is ReputationStatus {
@@ -310,6 +366,98 @@ export function isValidReputationStatus(value: string): value is ReputationStatu
  */
 export function isValidSanctionType(value: string): value is SanctionType {
   return Object.keys(SANCTION_TYPE).includes(value);
+}
+
+/**
+ * Validates if a value is a valid TransactionType enum
+ */
+export function isValidTransactionType(value: string): value is TransactionType {
+  return Object.keys(TRANSACTION_TYPE).includes(value);
+}
+
+// ============= ASSERTION HELPERS (USE BEFORE DB OPERATIONS) =============
+
+/**
+ * Asserts that a value is a valid OrderStatus. Throws error if invalid.
+ * USE THIS BEFORE ANY DATABASE INSERT/UPDATE
+ */
+export function assertValidOrderStatus(value: string): OrderStatus {
+  if (isFrenchLabel(value)) {
+    throw new Error(`ENUM ERROR: Cannot send French label "${value}" to database. Use English enum key instead.`);
+  }
+  if (!isValidOrderStatus(value)) {
+    throw new Error(`ENUM ERROR: Invalid order_status "${value}". Valid values: ${Object.keys(ORDER_STATUS).join(", ")}`);
+  }
+  return value;
+}
+
+/**
+ * Asserts that a value is a valid GpStatus. Throws error if invalid.
+ */
+export function assertValidGpStatus(value: string): GpStatus {
+  if (isFrenchLabel(value)) {
+    throw new Error(`ENUM ERROR: Cannot send French label "${value}" to database. Use English enum key instead.`);
+  }
+  if (!isValidGpStatus(value)) {
+    throw new Error(`ENUM ERROR: Invalid gp_status "${value}". Valid values: ${Object.keys(GP_STATUS).join(", ")}`);
+  }
+  return value;
+}
+
+/**
+ * Asserts that a value is a valid OfferStatus. Throws error if invalid.
+ */
+export function assertValidOfferStatus(value: string): OfferStatus {
+  if (isFrenchLabel(value)) {
+    throw new Error(`ENUM ERROR: Cannot send French label "${value}" to database. Use English enum key instead.`);
+  }
+  if (!isValidOfferStatus(value)) {
+    throw new Error(`ENUM ERROR: Invalid offer_status "${value}". Valid values: ${Object.keys(OFFER_STATUS).join(", ")}`);
+  }
+  return value;
+}
+
+/**
+ * Asserts that a value is a valid GpType. Throws error if invalid.
+ */
+export function assertValidGpType(value: string): GpType {
+  if (!isValidGpType(value)) {
+    throw new Error(`ENUM ERROR: Invalid gp_type "${value}". Valid values: ${Object.keys(GP_TYPE).join(", ")}`);
+  }
+  return value;
+}
+
+/**
+ * Asserts that a value is a valid DisputeStatus. Throws error if invalid.
+ */
+export function assertValidDisputeStatus(value: string): DisputeStatus {
+  if (isFrenchLabel(value)) {
+    throw new Error(`ENUM ERROR: Cannot send French label "${value}" to database. Use English enum key instead.`);
+  }
+  if (!isValidDisputeStatus(value)) {
+    throw new Error(`ENUM ERROR: Invalid dispute_status "${value}". Valid values: ${Object.keys(DISPUTE_STATUS).join(", ")}`);
+  }
+  return value;
+}
+
+/**
+ * Asserts that a value is a valid DisputeCategory. Throws error if invalid.
+ */
+export function assertValidDisputeCategory(value: string): DisputeCategory {
+  if (!isValidDisputeCategory(value)) {
+    throw new Error(`ENUM ERROR: Invalid dispute_category "${value}". Valid values: ${Object.keys(DISPUTE_CATEGORY).join(", ")}`);
+  }
+  return value;
+}
+
+/**
+ * Asserts that a value is a valid SanctionType. Throws error if invalid.
+ */
+export function assertValidSanctionType(value: string): SanctionType {
+  if (!isValidSanctionType(value)) {
+    throw new Error(`ENUM ERROR: Invalid sanction_type "${value}". Valid values: ${Object.keys(SANCTION_TYPE).join(", ")}`);
+  }
+  return value;
 }
 
 // ============= GETTER HELPERS =============
@@ -391,6 +539,17 @@ export function getDisputeStatusLabel(status: string): string {
 }
 
 /**
+ * Get the French label for a DisputeCategory
+ */
+export function getDisputeCategoryLabel(category: string): string {
+  if (isValidDisputeCategory(category)) {
+    return DISPUTE_CATEGORY_LABELS[category];
+  }
+  console.warn(`Invalid dispute category: ${category}`);
+  return category;
+}
+
+/**
  * Get the French label for a ReputationStatus
  */
 export function getReputationStatusLabel(status: string): string {
@@ -412,10 +571,22 @@ export function getSanctionTypeLabel(type: string): string {
   return type;
 }
 
+/**
+ * Get the French label for a TransactionType
+ */
+export function getTransactionTypeLabel(type: string): string {
+  if (isValidTransactionType(type)) {
+    return TRANSACTION_TYPE_LABELS[type];
+  }
+  console.warn(`Invalid transaction type: ${type}`);
+  return type;
+}
+
 // ============= SELECT OPTIONS GENERATORS =============
 
 /**
  * Generate options for a Select component from an enum
+ * value = English key (for DB), label = French (for display)
  */
 export function generateSelectOptions<T extends Record<string, string>>(
   enumObj: T,
@@ -435,3 +606,4 @@ export const DISPUTE_STATUS_OPTIONS = generateSelectOptions(DISPUTE_STATUS, DISP
 export const DISPUTE_CATEGORY_OPTIONS = generateSelectOptions(DISPUTE_CATEGORY, DISPUTE_CATEGORY_LABELS);
 export const REPUTATION_STATUS_OPTIONS = generateSelectOptions(REPUTATION_STATUS, REPUTATION_STATUS_LABELS);
 export const SANCTION_TYPE_OPTIONS = generateSelectOptions(SANCTION_TYPE, SANCTION_TYPE_LABELS);
+export const TRANSACTION_TYPE_OPTIONS = generateSelectOptions(TRANSACTION_TYPE, TRANSACTION_TYPE_LABELS);
