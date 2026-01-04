@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ORDER_STATUS, assertValidOrderStatus } from "@/lib/enumMappings";
 
 interface Order {
   id: string;
@@ -57,12 +58,15 @@ export function RecentHistory({ orders, onViewAll, onRefresh }: RecentHistoryPro
     if (!selectedOrder) return;
     setLoading(true);
     try {
+      // CRITICAL: Validate enum value before DB operation
+      const validStatus = assertValidOrderStatus(ORDER_STATUS.accepted);
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
 
       const { error } = await supabase
         .from("orders")
-        .update({ status: "accepted" })
+        .update({ status: validStatus })
         .eq("id", selectedOrder.id);
 
       if (error) throw error;
@@ -70,7 +74,7 @@ export function RecentHistory({ orders, onViewAll, onRefresh }: RecentHistoryPro
       // Add history
       await supabase.from("order_status_history").insert({
         order_id: selectedOrder.id,
-        status: "accepted",
+        status: validStatus,
         changed_by: user.id,
         changed_by_type: "gp",
       });
@@ -90,12 +94,15 @@ export function RecentHistory({ orders, onViewAll, onRefresh }: RecentHistoryPro
     if (!selectedOrder) return;
     setLoading(true);
     try {
+      // CRITICAL: Validate enum value before DB operation
+      const validStatus = assertValidOrderStatus(ORDER_STATUS.cancelled);
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
 
       const { error } = await supabase
         .from("orders")
-        .update({ status: "cancelled" })
+        .update({ status: validStatus })
         .eq("id", selectedOrder.id);
 
       if (error) throw error;
@@ -103,7 +110,7 @@ export function RecentHistory({ orders, onViewAll, onRefresh }: RecentHistoryPro
       // Add history
       await supabase.from("order_status_history").insert({
         order_id: selectedOrder.id,
-        status: "cancelled",
+        status: validStatus,
         changed_by: user.id,
         changed_by_type: "gp",
         notes: "Refusée par le GP",

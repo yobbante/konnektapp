@@ -115,6 +115,8 @@ export {
   getOrderStatusColor,
   getNextOrderStatus,
   isValidOrderStatus,
+  assertValidOrderStatus,
+  isFrenchLabel,
 } from "./enumMappings";
 
 // Legacy compatibility - orderStatusConfig format

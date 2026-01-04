@@ -19,6 +19,7 @@ import { AdminDisputeArbitration } from "@/components/admin/AdminDisputeArbitrat
 import { AdminTransporterReputation } from "@/components/admin/AdminTransporterReputation";
 import { AdminPermissionsManager } from "@/components/admin/AdminPermissionsManager";
 import { AdminDropdownMenu } from "@/components/admin/AdminDropdownMenu";
+import { assertValidGpStatus, type GpStatus } from "@/lib/enumMappings";
 
 interface GPProfile {
   id: string;
@@ -155,17 +156,22 @@ export default function AdminDashboard() {
     });
   };
 
-  const updateGPStatus = async (gpId: string, newStatus: "verified" | "suspended" | "rejected") => {
-    const { error } = await supabase
-      .from("gp_profiles")
-      .update({ status: newStatus })
-      .eq("id", gpId);
+  const updateGPStatus = async (gpId: string, newStatus: GpStatus) => {
+    try {
+      // CRITICAL: Validate enum before DB operation
+      const validStatus = assertValidGpStatus(newStatus);
+      
+      const { error } = await supabase
+        .from("gp_profiles")
+        .update({ status: validStatus })
+        .eq("id", gpId);
 
-    if (error) {
-      toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    } else {
+      if (error) throw error;
+      
       toast({ title: "Statut mis à jour" });
       refreshData();
+    } catch (error: any) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
     }
   };
 

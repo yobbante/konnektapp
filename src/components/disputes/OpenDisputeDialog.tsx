@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AlertTriangle, Upload, X, FileText, Scale } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { ORDER_STATUS, assertValidOrderStatus } from "@/lib/enumMappings";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -122,10 +123,11 @@ export function OpenDisputeDialog({ orderId, orderNumber, orderStatus, children 
 
       if (error) throw error;
 
-      // Update order status to disputed
+      // Update order status to disputed - CRITICAL: Use validated enum value
+      const validStatus = assertValidOrderStatus(ORDER_STATUS.disputed);
       await supabase
         .from("orders")
-        .update({ status: "disputed" })
+        .update({ status: validStatus })
         .eq("id", orderId);
 
       toast({

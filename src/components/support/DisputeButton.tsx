@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AlertTriangle, MessageCircle, Send, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ORDER_STATUS, assertValidOrderStatus } from "@/lib/enumMappings";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -101,9 +102,11 @@ export function DisputeButton({ orderId, orderNumber, orderStatus }: DisputeButt
 
       // Si c'est un litige, mettre à jour le statut de la commande
       if (ticketType === "dispute") {
+        // CRITICAL: Validate enum before DB operation
+        const validStatus = assertValidOrderStatus(ORDER_STATUS.disputed);
         await supabase
           .from("orders")
-          .update({ status: "disputed" })
+          .update({ status: validStatus })
           .eq("id", orderId);
       }
 
