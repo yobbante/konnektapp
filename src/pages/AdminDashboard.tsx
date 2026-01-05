@@ -72,7 +72,7 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [gpFilter, setGpFilter] = useState<"all" | "pending" | "verified" | "suspended">("all");
-  const [orderFilter, setOrderFilter] = useState<"all" | "pending" | "in_transit" | "delivered" | "cancelled">("all");
+  const [orderFilter, setOrderFilter] = useState<"all" | "pending" | "in_progress" | "delivered" | "cancelled">("all");
 
   const [stats, setStats] = useState({
     totalGps: 0,
@@ -341,7 +341,7 @@ export default function AdminDashboard() {
                   <SelectContent>
                     <SelectItem value="all">Tous</SelectItem>
                     <SelectItem value="pending">En attente</SelectItem>
-                    <SelectItem value="in_transit">En transit</SelectItem>
+                    <SelectItem value="in_progress">En cours</SelectItem>
                     <SelectItem value="delivered">Livrées</SelectItem>
                     <SelectItem value="cancelled">Annulées</SelectItem>
                   </SelectContent>

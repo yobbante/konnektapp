@@ -40,16 +40,18 @@ interface Order {
 
 interface AdminOrdersListProps {
   orders: Order[];
-  filter: "all" | "pending" | "in_transit" | "delivered" | "cancelled";
+  filter: "all" | "pending" | "in_progress" | "delivered" | "cancelled";
 }
 
 export function AdminOrdersList({ orders, filter }: AdminOrdersListProps) {
   const navigate = useNavigate();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  const filteredOrders = filter === "all" 
-    ? orders 
-    : orders.filter(order => order.status === filter);
+  const filteredOrders = filter === "all"
+    ? orders
+    : filter === "in_progress"
+      ? orders.filter(order => ["accepted", "collected", "in_transit"].includes(order.status))
+      : orders.filter(order => order.status === filter);
 
   const getStatusBadge = (status: string) => {
     const validStatus = isValidOrderStatus(status) ? status : "pending";

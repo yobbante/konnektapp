@@ -23,11 +23,12 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { 
+import {
   OrderStatus,
   getOrderStatusLabel,
-  getOrderStatusColor 
+  getOrderStatusColor,
 } from "@/lib/transportTypes";
+import { assertValidOrderStatus } from "@/lib/enumMappings";
 
 interface Order {
   id: string;
@@ -84,36 +85,48 @@ export function ActiveOrderBar({ order, onRefresh }: ActiveOrderBarProps) {
   };
 
   const handleStatusChange = async (newStatus: string) => {
-    const typedStatus = newStatus as OrderStatus;
     setLoading(true);
     try {
+      // CRITICAL: Validate enum value before DB operation
+      const typedStatus = assertValidOrderStatus(newStatus);
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
 
       const { error } = await supabase
         .from("orders")
-        .update({ 
+        .update({
           status: typedStatus,
-          ...(typedStatus === 'delivered' ? { actual_delivery_date: new Date().toISOString() } : {})
+          ...(typedStatus === "delivered" ? { actual_delivery_date: new Date().toISOString() } : {}),
         })
         .eq("id", order.id);
 
       if (error) throw error;
 
-      await supabase.from("order_status_history").insert({
+      const { error: historyError } = await supabase.from("order_status_history").insert({
         order_id: order.id,
-        status: newStatus,
+        status: typedStatus,
         changed_by: user.id,
         changed_by_type: "gp",
       });
 
-      toast({ 
-        title: "Statut mis à jour", 
-        description: `Mission marquée comme "${getOrderStatusLabel(newStatus as OrderStatus)}"` 
+      if (historyError) {
+        console.error("History insert error:", historyError);
+      }
+
+      toast({
+        title: "Statut mis à jour",
+        description: `Mission marquée comme "${getOrderStatusLabel(typedStatus)}"`,
       });
       onRefresh?.();
     } catch (error: any) {
-      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+      const raw = error?.message || "Erreur inconnue";
+      const lower = String(raw).toLowerCase();
+      const friendly = (lower.includes("row level security") || lower.includes("permission denied"))
+        ? "Accès refusé : cette commande n’est pas assignée à votre compte transporteur."
+        : raw;
+
+      toast({ title: "Erreur", description: friendly, variant: "destructive" });
     } finally {
       setLoading(false);
     }
