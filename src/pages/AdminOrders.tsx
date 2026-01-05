@@ -25,7 +25,7 @@ export default function AdminOrders() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<any[]>([]);
-  const [filter, setFilter] = useState<"all" | "pending" | "in_transit" | "delivered" | "cancelled">("all");
+  const [filter, setFilter] = useState<"all" | "pending" | "in_progress" | "delivered" | "cancelled">("all");
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -170,7 +170,7 @@ export default function AdminOrders() {
           <SelectContent>
             <SelectItem value="all">Toutes les commandes</SelectItem>
             <SelectItem value="pending">En attente</SelectItem>
-            <SelectItem value="in_transit">En transit</SelectItem>
+            <SelectItem value="in_progress">En cours</SelectItem>
             <SelectItem value="delivered">Livrées</SelectItem>
             <SelectItem value="cancelled">Annulées</SelectItem>
           </SelectContent>

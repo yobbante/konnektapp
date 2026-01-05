@@ -80,12 +80,29 @@ export function GPOrdersTable({ orders, compact, onRefresh }: GPOrdersTableProps
 
     setLoading(orderId);
     try {
-      const { error } = await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Non authentifié");
+
+      const { error: orderError } = await supabase
         .from("orders")
-        .update({ status: newStatus })
+        .update({
+          status: newStatus,
+          ...(newStatus === "delivered" ? { actual_delivery_date: new Date().toISOString() } : {}),
+        })
         .eq("id", orderId);
 
-      if (error) throw error;
+      if (orderError) throw orderError;
+
+      const { error: historyError } = await supabase.from("order_status_history").insert({
+        order_id: orderId,
+        status: newStatus,
+        changed_by: user.id,
+        changed_by_type: "gp",
+      });
+
+      if (historyError) {
+        console.error("History insert error:", historyError);
+      }
 
       toast({
         title: "Statut mis à jour",
@@ -94,9 +111,15 @@ export function GPOrdersTable({ orders, compact, onRefresh }: GPOrdersTableProps
 
       onRefresh?.();
     } catch (error: any) {
+      const raw = error?.message || "Erreur inconnue";
+      const lower = String(raw).toLowerCase();
+      const friendly = (lower.includes("row level security") || lower.includes("permission denied"))
+        ? "Accès refusé : cette commande n’est pas assignée à votre compte transporteur."
+        : raw;
+
       toast({
         title: "Erreur",
-        description: error.message,
+        description: friendly,
         variant: "destructive",
       });
     } finally {
@@ -198,6 +221,12 @@ export function GPOrdersTable({ orders, compact, onRefresh }: GPOrdersTableProps
                         </>
                       )}
                       {order.status === "accepted" && (
+                        <DropdownMenuItem onClick={() => handleStatusChange(order.id, "collected")}>
+                          <Package className="w-4 h-4 mr-2" />
+                          Marquer collecté
+                        </DropdownMenuItem>
+                      )}
+                      {order.status === "collected" && (
                         <DropdownMenuItem onClick={() => handleStatusChange(order.id, "in_transit")}>
                           <Truck className="w-4 h-4 mr-2" />
                           Marquer en transit
