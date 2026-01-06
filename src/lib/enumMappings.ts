@@ -375,19 +375,79 @@ export function isValidTransactionType(value: string): value is TransactionType 
   return Object.keys(TRANSACTION_TYPE).includes(value);
 }
 
+// ============= FRENCH TO ENGLISH AUTO-FIX MAP =============
+// Used as a last resort to auto-correct French labels before DB operations
+const FRENCH_TO_ENGLISH_ORDER_STATUS: Record<string, OrderStatus> = {
+  "en attente": "pending",
+  "En attente": "pending",
+  "EN ATTENTE": "pending",
+  "acceptée": "accepted",
+  "Acceptée": "accepted",
+  "ACCEPTÉE": "accepted",
+  "collectée": "collected",
+  "Collectée": "collected",
+  "COLLECTÉE": "collected",
+  "en transit": "in_transit",
+  "En transit": "in_transit",
+  "EN TRANSIT": "in_transit",
+  "livrée": "delivered",
+  "Livrée": "delivered",
+  "LIVRÉE": "delivered",
+  "annulée": "cancelled",
+  "Annulée": "cancelled",
+  "ANNULÉE": "cancelled",
+  "en litige": "disputed",
+  "En litige": "disputed",
+  "EN LITIGE": "disputed",
+};
+
+/**
+ * Sanitizes an order status value, auto-correcting French labels to English keys.
+ * Returns the valid OrderStatus or throws if truly invalid.
+ * LOGS A CRITICAL WARNING when auto-fix is applied.
+ */
+export function sanitizeOrderStatus(value: string): OrderStatus {
+  // Already valid - return as-is
+  if (isValidOrderStatus(value)) {
+    return value;
+  }
+  
+  // Attempt auto-fix from French label
+  const fixed = FRENCH_TO_ENGLISH_ORDER_STATUS[value];
+  if (fixed) {
+    console.error(`[CRITICAL ENUM AUTO-FIX] French label "${value}" was about to be sent to DB. Auto-fixed to "${fixed}". Stack:`, new Error().stack);
+    return fixed;
+  }
+  
+  // Truly invalid - throw
+  throw new Error(`ENUM ERROR: Invalid order_status "${value}". Valid values: ${Object.keys(ORDER_STATUS).join(", ")}`);
+}
+
 // ============= ASSERTION HELPERS (USE BEFORE DB OPERATIONS) =============
 
 /**
  * Asserts that a value is a valid OrderStatus. Throws error if invalid.
  * USE THIS BEFORE ANY DATABASE INSERT/UPDATE
+ * 
+ * AUTO-FIXES French labels as a last resort (with console error logging)
  */
 export function assertValidOrderStatus(value: string): OrderStatus {
+  console.log(`[ENUM DEBUG] assertValidOrderStatus called with: "${value}" (type: ${typeof value})`);
+  
+  // First check if it's a French label and auto-fix with warning
   if (isFrenchLabel(value)) {
+    const fixed = FRENCH_TO_ENGLISH_ORDER_STATUS[value];
+    if (fixed) {
+      console.error(`[CRITICAL ENUM AUTO-FIX] Intercepted French label "${value}" → "${fixed}". This indicates a bug in the calling code!`);
+      return fixed;
+    }
     throw new Error(`ENUM ERROR: Cannot send French label "${value}" to database. Use English enum key instead.`);
   }
+  
   if (!isValidOrderStatus(value)) {
     throw new Error(`ENUM ERROR: Invalid order_status "${value}". Valid values: ${Object.keys(ORDER_STATUS).join(", ")}`);
   }
+  
   return value;
 }
 

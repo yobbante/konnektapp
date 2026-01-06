@@ -170,10 +170,16 @@ export default function GPOrderDetail() {
   const updateOrderStatus = async (newStatus: OrderStatus) => {
     if (!order) return;
 
+    console.log("=== GPOrderDetail updateOrderStatus ===");
+    console.log("Order:", order.order_number);
+    console.log("Current status:", order.status);
+    console.log("New Status (raw):", newStatus, "| type:", typeof newStatus);
+
     setUpdating(true);
     try {
       // CRITICAL: Validate enum before DB operation
       const validStatus = assertValidOrderStatus(newStatus);
+      console.log("Validated status:", validStatus);
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");

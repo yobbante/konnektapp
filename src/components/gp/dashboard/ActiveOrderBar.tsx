@@ -85,10 +85,15 @@ export function ActiveOrderBar({ order, onRefresh }: ActiveOrderBarProps) {
   };
 
   const handleStatusChange = async (newStatus: string) => {
+    console.log("=== ActiveOrderBar handleStatusChange ===");
+    console.log("Order:", order.order_number);
+    console.log("New Status (raw from Select):", newStatus, "| type:", typeof newStatus);
+    
     setLoading(true);
     try {
       // CRITICAL: Validate enum value before DB operation
       const typedStatus = assertValidOrderStatus(newStatus);
+      console.log("Validated status:", typedStatus);
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
