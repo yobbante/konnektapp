@@ -622,10 +622,15 @@ function OrdersTab({ orders, gpProfileId, onRefresh, onBack }: { orders: any[]; 
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
+    console.log("=== GPDashboard OrdersTab updateOrderStatus ===");
+    console.log("Order ID:", orderId);
+    console.log("New Status (raw):", newStatus, "| type:", typeof newStatus);
+    
     setUpdatingOrderId(orderId);
     try {
       // CRITICAL: Validate enum before DB operation
       const validStatus = assertValidOrderStatus(newStatus);
+      console.log("Validated status:", validStatus);
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");

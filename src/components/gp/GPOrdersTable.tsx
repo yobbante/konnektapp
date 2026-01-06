@@ -65,9 +65,15 @@ export function GPOrdersTable({ orders, compact, onRefresh }: GPOrdersTableProps
   const [loading, setLoading] = useState<string | null>(null);
 
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
+    console.log("=== GPOrdersTable handleStatusChange ===");
+    console.log("Order ID:", orderId);
+    console.log("New Status (raw):", newStatus, "| type:", typeof newStatus);
+    
     // CRITICAL: Validate enum before sending to database
+    let validatedStatus: OrderStatus;
     try {
-      assertValidOrderStatus(newStatus);
+      validatedStatus = assertValidOrderStatus(newStatus);
+      console.log("Validated Status:", validatedStatus);
     } catch (error: any) {
       console.error("ENUM VALIDATION ERROR:", error.message);
       toast({
@@ -86,8 +92,8 @@ export function GPOrdersTable({ orders, compact, onRefresh }: GPOrdersTableProps
       const { error: orderError } = await supabase
         .from("orders")
         .update({
-          status: newStatus,
-          ...(newStatus === "delivered" ? { actual_delivery_date: new Date().toISOString() } : {}),
+          status: validatedStatus,
+          ...(validatedStatus === "delivered" ? { actual_delivery_date: new Date().toISOString() } : {}),
         })
         .eq("id", orderId);
 
@@ -95,7 +101,7 @@ export function GPOrdersTable({ orders, compact, onRefresh }: GPOrdersTableProps
 
       const { error: historyError } = await supabase.from("order_status_history").insert({
         order_id: orderId,
-        status: newStatus,
+        status: validatedStatus,
         changed_by: user.id,
         changed_by_type: "gp",
       });
@@ -106,7 +112,7 @@ export function GPOrdersTable({ orders, compact, onRefresh }: GPOrdersTableProps
 
       toast({
         title: "Statut mis à jour",
-        description: `Commande marquée comme "${ORDER_STATUS_LABELS[newStatus]}"`,
+        description: `Commande marquée comme "${ORDER_STATUS_LABELS[validatedStatus]}"`,
       });
 
       onRefresh?.();

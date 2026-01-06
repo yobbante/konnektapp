@@ -57,9 +57,16 @@ export function RecentHistory({ orders, onViewAll, onRefresh }: RecentHistoryPro
   const handleAccept = async () => {
     if (!selectedOrder) return;
     setLoading(true);
+    
+    console.log("=== RecentHistory handleAccept ===");
+    console.log("Order:", selectedOrder.order_number);
+    console.log("Current status:", selectedOrder.status);
+    console.log("Target status constant:", ORDER_STATUS.accepted);
+    
     try {
       // CRITICAL: Validate enum value before DB operation
       const validStatus = assertValidOrderStatus(ORDER_STATUS.accepted);
+      console.log("Validated status:", validStatus);
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
@@ -93,9 +100,15 @@ export function RecentHistory({ orders, onViewAll, onRefresh }: RecentHistoryPro
   const handleRefuse = async () => {
     if (!selectedOrder) return;
     setLoading(true);
+    
+    console.log("=== RecentHistory handleRefuse ===");
+    console.log("Order:", selectedOrder.order_number);
+    console.log("Target status constant:", ORDER_STATUS.cancelled);
+    
     try {
       // CRITICAL: Validate enum value before DB operation
       const validStatus = assertValidOrderStatus(ORDER_STATUS.cancelled);
+      console.log("Validated status:", validStatus);
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
