@@ -54,7 +54,7 @@ export function Header() {
             </div>
           </Link>
 
-          {/* Desktop Navigation - Center */}
+          {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-1">
             {navLinks.map((link) => (
               <Link key={link.href} to={link.href}>
@@ -67,6 +67,7 @@ export function Header() {
               </Link>
             ))}
             
+            {/* Admin Link - visible for admin and moderator */}
             {hasAdminAccess && (
               <Link to="/admin">
                 <Button
@@ -80,6 +81,7 @@ export function Header() {
               </Link>
             )}
             
+            {/* GP Dashboard Link - Visible uniquement pour les utilisateurs qui ont demandé à être GP */}
             {isGP && (
               <Link to="/gp/dashboard">
                 <Button
@@ -91,7 +93,7 @@ export function Header() {
                 </Button>
               </Link>
             )}
-            
+            {/* Client Dashboard Link - Pour les clients non-GP */}
             {isAuthenticated && !isGP && !hasAdminAccess && (
               <Link to="/client/dashboard">
                 <Button
@@ -106,7 +108,7 @@ export function Header() {
           </div>
 
           {/* Right Section */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <div className="hidden md:block">
               <CountrySelector />
             </div>
@@ -116,9 +118,9 @@ export function Header() {
                 {isAuthenticated ? (
                   <Sheet>
                     <SheetTrigger asChild>
-                      <Button variant="outline" size="sm" className="hidden sm:flex">
+                      <Button variant="outline" size="sm">
                         <User className="w-4 h-4" />
-                        <span className="hidden md:inline">Mon compte</span>
+                        Mon compte
                       </Button>
                     </SheetTrigger>
                     <SheetContent side="right" className="w-72">
@@ -143,7 +145,7 @@ export function Header() {
                               <span className="font-medium">Mon profil GP</span>
                             </Link>
                           </>
-                        ) : (
+                        ) : isAuthenticated ? (
                           <>
                             <Link to="/client/profile" className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
                               <User className="w-5 h-5 text-secondary" />
@@ -154,7 +156,7 @@ export function Header() {
                               <span className="font-medium">Mes envois</span>
                             </Link>
                           </>
-                        )}
+                        ) : null}
                         <div className="pt-4 border-t border-border mt-4">
                           <button 
                             onClick={handleSignOut} 
@@ -171,12 +173,14 @@ export function Header() {
                   <>
                     <Link to="/auth" className="hidden sm:block">
                       <Button variant="outline" size="sm">
+                        <User className="w-4 h-4" />
                         Connexion
                       </Button>
                     </Link>
                     
-                    <Link to="/gp/inscription" className="hidden sm:block">
+                    <Link to="/gp/inscription" className="hidden md:block">
                       <Button variant="gold" size="sm">
+                        <Truck className="w-4 h-4" />
                         Espace GP
                       </Button>
                     </Link>
@@ -185,12 +189,11 @@ export function Header() {
               </>
             )}
 
-            {/* Mobile Menu Toggle */}
+            {/* Menu Toggle - Always visible */}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
@@ -205,7 +208,7 @@ export function Header() {
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
-              className="lg:hidden overflow-hidden border-t border-border/50"
+              className="overflow-hidden border-t border-border/50"
             >
               <div className="py-4 space-y-2">
                 {navLinks.map((link) => (
@@ -223,6 +226,7 @@ export function Header() {
                   </Link>
                 ))}
                 
+                {/* Admin & GP Links in mobile menu */}
                 {hasAdminAccess && (
                   <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="nav" className="w-full justify-start text-primary font-semibold">

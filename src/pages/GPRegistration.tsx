@@ -356,56 +356,56 @@ export default function GPRegistration() {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="pt-20 pb-20 px-4 md:px-0">
+      <main className="pt-24 pb-20">
         <div className="container max-w-4xl">
-          {/* Header - Compact on mobile */}
+          {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-6 md:mb-10"
+            className="text-center mb-10"
           >
-            <Badge variant="gold" className="mb-3">Devenir Transporteur</Badge>
-            <h1 className="text-2xl md:text-4xl font-bold text-foreground mb-2">
-              Rejoignez Yobbanté Connect
+            <Badge variant="gold" className="mb-4">Devenir Transporteur</Badge>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+              Rejoignez le réseau Yobbanté Connect
             </h1>
-            <p className="text-sm md:text-base text-muted-foreground">
-              Accédez à des demandes qualifiées
+            <p className="text-muted-foreground">
+              Accédez à des demandes qualifiées et développez votre activité
             </p>
             {existingUser && (
-              <div className="mt-3 p-2 bg-success/10 border border-success/20 rounded-lg inline-block">
-                <p className="text-xs text-success">
-                  ✓ Connecté: {existingUser.fullName || existingUser.email}
+              <div className="mt-4 p-3 bg-success/10 border border-success/20 rounded-lg inline-block">
+                <p className="text-sm text-success">
+                  ✓ Connecté en tant que {existingUser.fullName || existingUser.email}
                 </p>
               </div>
             )}
           </motion.div>
 
-          {/* Progress Steps - Compact on mobile */}
-          <div className="mb-6 md:mb-10 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-            <div className="flex items-center justify-between min-w-max md:min-w-0 gap-1">
+          {/* Progress Steps */}
+          <div className="mb-10 overflow-x-auto">
+            <div className="flex items-center justify-between min-w-[600px] md:min-w-0">
               {steps.map((s, i) => (
                 <div key={s.num} className="flex items-center">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all ${
+                      className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
                         step >= s.num
                           ? "bg-secondary text-secondary-foreground shadow-md"
                           : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {step > s.num ? (
-                        <CheckCircle className="w-5 h-5 md:w-6 md:h-6" />
+                        <CheckCircle className="w-6 h-6" />
                       ) : (
-                        <s.icon className="w-4 h-4 md:w-5 md:h-5" />
+                        <s.icon className="w-5 h-5" />
                       )}
                     </div>
-                    <span className={`text-[10px] md:text-xs mt-1.5 whitespace-nowrap ${step >= s.num ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+                    <span className={`text-xs mt-2 ${step >= s.num ? "text-foreground font-medium" : "text-muted-foreground"}`}>
                       {s.label}
                     </span>
                   </div>
                   {i < steps.length - 1 && (
                     <div
-                      className={`h-0.5 md:h-1 w-4 md:w-12 mx-1 md:mx-2 rounded ${
+                      className={`h-1 w-8 md:w-16 mx-2 rounded ${
                         step > s.num ? "bg-secondary" : "bg-muted"
                       }`}
                     />
@@ -420,17 +420,17 @@ export default function GPRegistration() {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-card rounded-2xl border border-border p-4 md:p-8 shadow-card"
+              className="bg-card rounded-2xl border border-border p-6 md:p-8 shadow-card"
             >
-              <h2 className="text-lg md:text-xl font-semibold text-foreground mb-1 flex items-center gap-2">
+              <h2 className="text-xl font-semibold text-foreground mb-2 flex items-center gap-2">
                 <Building className="w-5 h-5 text-secondary" />
                 Quelle est votre activité ?
               </h2>
-              <p className="text-sm text-muted-foreground mb-4 md:mb-6">
-                Sélectionnez votre type de transport
+              <p className="text-muted-foreground mb-6">
+                Sélectionnez le type de transport que vous proposez
               </p>
 
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {transportTypes.map((transport) => {
                   const Icon = transport.icon;
                   const isSelected = activityType === transport.type;
@@ -438,24 +438,24 @@ export default function GPRegistration() {
                     <button
                       key={transport.type}
                       onClick={() => setActivityType(transport.type)}
-                      className={`p-4 md:p-6 rounded-xl border-2 text-left transition-all ${
+                      className={`p-6 rounded-xl border-2 text-left transition-all ${
                         isSelected
                           ? "border-secondary bg-secondary/10 shadow-md"
                           : "border-border hover:border-secondary/50 hover:bg-muted/50"
                       }`}
                     >
-                      <div className="flex items-center gap-3 md:items-start md:gap-4">
-                        <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                      <div className="flex items-start gap-4">
+                        <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
                           isSelected ? "bg-secondary text-secondary-foreground" : "bg-muted"
                         }`}>
-                          <Icon className="w-6 h-6 md:w-7 md:h-7" />
+                          <Icon className="w-7 h-7" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-foreground text-sm md:text-base">{transport.title}</h3>
-                          <p className="text-xs md:text-sm text-muted-foreground line-clamp-2">{transport.description}</p>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-foreground mb-1">{transport.title}</h3>
+                          <p className="text-sm text-muted-foreground">{transport.longDescription || transport.description}</p>
                         </div>
                         {isSelected && (
-                          <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-secondary flex-shrink-0" />
+                          <CheckCircle className="w-6 h-6 text-secondary flex-shrink-0" />
                         )}
                       </div>
                     </button>
@@ -463,16 +463,16 @@ export default function GPRegistration() {
                 })}
               </div>
 
-              <div className="flex justify-between mt-6 md:mt-8">
+              <div className="flex justify-between mt-8">
                 <Link to="/gp">
-                  <Button variant="ghost" size="sm" className="md:size-default">
-                    <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
-                    <span className="hidden sm:inline">Retour</span>
+                  <Button variant="ghost">
+                    <ArrowLeft className="w-5 h-5" />
+                    Retour
                   </Button>
                 </Link>
-                <Button variant="gold" onClick={handleNextWithValidation}>
+                <Button variant="gold" size="lg" onClick={handleNextWithValidation}>
                   Continuer
-                  <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
+                  <ArrowRight className="w-5 h-5" />
                 </Button>
               </div>
             </motion.div>
@@ -483,14 +483,14 @@ export default function GPRegistration() {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-card rounded-2xl border border-border p-4 md:p-8 shadow-card"
+              className="bg-card rounded-2xl border border-border p-6 md:p-8 shadow-card"
             >
-              <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4 md:mb-6 flex items-center gap-2">
+              <h2 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
                 <User className="w-5 h-5 text-secondary" />
                 {existingUser ? "Vérifiez vos informations" : "Créez votre compte"}
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2 space-y-2">
                   <Label htmlFor="fullName">Nom complet *</Label>
                   <Input
@@ -541,7 +541,7 @@ export default function GPRegistration() {
                         <Input
                           id="password"
                           type={showPassword ? "text" : "password"}
-                          placeholder="Min. 6 caractères"
+                          placeholder="Minimum 6 caractères"
                           className="pl-10 pr-10"
                           value={accountData.password}
                           onChange={(e) => setAccountData({ ...accountData, password: e.target.value })}
@@ -557,13 +557,13 @@ export default function GPRegistration() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">Confirmer *</Label>
+                      <Label htmlFor="confirmPassword">Confirmer le mot de passe *</Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           id="confirmPassword"
                           type={showPassword ? "text" : "password"}
-                          placeholder="Confirmer"
+                          placeholder="Confirmer le mot de passe"
                           className="pl-10"
                           value={accountData.confirmPassword}
                           onChange={(e) => setAccountData({ ...accountData, confirmPassword: e.target.value })}
@@ -574,14 +574,14 @@ export default function GPRegistration() {
                 )}
               </div>
 
-              <div className="flex justify-between mt-6 md:mt-8">
-                <Button variant="ghost" size="sm" onClick={handleBack}>
-                  <ArrowLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline">Retour</span>
+              <div className="flex justify-between mt-8">
+                <Button variant="ghost" onClick={handleBack}>
+                  <ArrowLeft className="w-5 h-5" />
+                  Retour
                 </Button>
-                <Button variant="gold" onClick={handleNextWithValidation}>
+                <Button variant="gold" size="lg" onClick={handleNextWithValidation}>
                   Continuer
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-5 h-5" />
                 </Button>
               </div>
             </motion.div>
@@ -592,21 +592,21 @@ export default function GPRegistration() {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-card rounded-2xl border border-border p-4 md:p-8 shadow-card"
+              className="bg-card rounded-2xl border border-border p-6 md:p-8 shadow-card"
             >
-              <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4 md:mb-6 flex items-center gap-2">
+              <h2 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
                 <Building className="w-5 h-5 text-secondary" />
                 Informations professionnelles
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2 space-y-2">
                   <Label htmlFor="businessName">
                     {activityType === "agence" ? "Nom de l'agence *" : "Nom commercial *"}
                   </Label>
                   <Input
                     id="businessName"
-                    placeholder={activityType === "agence" ? "Ex: Agence Voyages" : "Ex: Transport Express"}
+                    placeholder={activityType === "agence" ? "Ex: Agence Yobbanté Voyages" : "Ex: Transport Diallo Express"}
                     value={businessData.businessName}
                     onChange={(e) => setBusinessData({ ...businessData, businessName: e.target.value })}
                   />
@@ -633,11 +633,11 @@ export default function GPRegistration() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="yearsExperience">Expérience (années)</Label>
+                  <Label htmlFor="yearsExperience">Années d'expérience</Label>
                   <Input
                     id="yearsExperience"
                     type="number"
-                    placeholder="5"
+                    placeholder="Ex: 5"
                     value={businessData.yearsExperience}
                     onChange={(e) => setBusinessData({ ...businessData, yearsExperience: e.target.value })}
                   />
@@ -645,11 +645,11 @@ export default function GPRegistration() {
 
                 {activityType !== "agence" && activityType !== "express" && (
                   <div className="space-y-2">
-                    <Label htmlFor="fleetSize">Taille flotte</Label>
+                    <Label htmlFor="fleetSize">Taille de la flotte</Label>
                     <Input
                       id="fleetSize"
                       type="number"
-                      placeholder="Nb véhicules"
+                      placeholder="Nombre de véhicules"
                       value={businessData.fleetSize}
                       onChange={(e) => setBusinessData({ ...businessData, fleetSize: e.target.value })}
                     />
@@ -667,21 +667,21 @@ export default function GPRegistration() {
                 </div>
 
                 <div className="md:col-span-2 space-y-2">
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description">Description de votre activité</Label>
                   <Textarea
                     id="description"
-                    placeholder="Décrivez vos services..."
+                    placeholder="Décrivez vos services, votre expérience..."
                     value={businessData.description}
                     onChange={(e) => setBusinessData({ ...businessData, description: e.target.value })}
-                    rows={3}
+                    rows={4}
                   />
                 </div>
 
                 {/* Services spécifiques selon l'activité */}
                 {getAvailableServices().length > 0 && (
-                  <div className="md:col-span-2 space-y-3">
+                  <div className="md:col-span-2 space-y-4">
                     <Label>Services proposés</Label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-3">
                       {getAvailableServices().map((service) => (
                         <div
                           key={service.value}
@@ -703,14 +703,14 @@ export default function GPRegistration() {
                 )}
               </div>
 
-              <div className="flex justify-between mt-6 md:mt-8">
-                <Button variant="ghost" size="sm" onClick={handleBack}>
-                  <ArrowLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline">Retour</span>
+              <div className="flex justify-between mt-8">
+                <Button variant="ghost" onClick={handleBack}>
+                  <ArrowLeft className="w-5 h-5" />
+                  Retour
                 </Button>
-                <Button variant="gold" onClick={handleNextWithValidation}>
+                <Button variant="gold" size="lg" onClick={handleNextWithValidation}>
                   Continuer
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-5 h-5" />
                 </Button>
               </div>
             </motion.div>
@@ -721,18 +721,18 @@ export default function GPRegistration() {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-card rounded-2xl border border-border p-4 md:p-8 shadow-card"
+              className="bg-card rounded-2xl border border-border p-6 md:p-8 shadow-card"
             >
-              <h2 className="text-lg md:text-xl font-semibold text-foreground mb-1 flex items-center gap-2">
+              <h2 className="text-xl font-semibold text-foreground mb-2 flex items-center gap-2">
                 <FileCheck className="w-5 h-5 text-secondary" />
                 Documents justificatifs
               </h2>
-              <p className="text-sm text-muted-foreground mb-4 md:mb-6">
-                Ces documents seront vérifiés
+              <p className="text-muted-foreground mb-6">
+                Ces documents seront vérifiés pour valider votre inscription
               </p>
 
-              <div className="space-y-4 md:space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label>Type de pièce d'identité</Label>
                     
@@ -740,7 +740,7 @@ export default function GPRegistration() {
                     <div className="block md:hidden">
                       <Sheet open={idTypeSheetOpen} onOpenChange={setIdTypeSheetOpen}>
                         <SheetTrigger asChild>
-                          <Button variant="outline" className="w-full justify-between text-sm">
+                          <Button variant="outline" className="w-full justify-between">
                             {idTypes.find(t => t.value === kycData.idType)?.label || "Sélectionner"}
                             <ArrowRight className="w-4 h-4 rotate-90" />
                           </Button>
@@ -804,13 +804,13 @@ export default function GPRegistration() {
 
                 {/* Document d'identité - toujours requis */}
                 <DocumentUpload
-                  label="Pièce d'identité"
+                  label="Pièce d'identité (CNI, passeport ou permis)"
                   required
                   onUpload={(url) => setKycData({ ...kycData, idDocumentUrl: url })}
                   uploadedUrl={kycData.idDocumentUrl}
                 />
 
-                {/* Registre de commerce */}
+                {/* Registre de commerce - requis pour certaines activités */}
                 {requiredDocs.includes("business_registration") && (
                   <DocumentUpload
                     label="Registre de commerce (NINEA/RC)"
@@ -823,7 +823,7 @@ export default function GPRegistration() {
                 {/* Licence de transport */}
                 {requiredDocs.includes("transport_license") && (
                   <DocumentUpload
-                    label={activityType === "agence" ? "Licence agence" : "Licence transport"}
+                    label={activityType === "agence" ? "Licence agence de voyage" : "Licence de transport"}
                     required
                     onUpload={(url) => setKycData({ ...kycData, transportLicenseUrl: url })}
                     uploadedUrl={kycData.transportLicenseUrl}
@@ -833,7 +833,7 @@ export default function GPRegistration() {
                 {/* Assurance */}
                 {requiredDocs.includes("insurance") && (
                   <DocumentUpload
-                    label="Assurance RC Pro"
+                    label="Attestation d'assurance RC Pro"
                     required
                     onUpload={(url) => setKycData({ ...kycData, insuranceDocumentUrl: url })}
                     uploadedUrl={kycData.insuranceDocumentUrl}
@@ -841,14 +841,14 @@ export default function GPRegistration() {
                 )}
               </div>
 
-              <div className="flex justify-between mt-6 md:mt-8">
-                <Button variant="ghost" size="sm" onClick={handleBack}>
-                  <ArrowLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline">Retour</span>
+              <div className="flex justify-between mt-8">
+                <Button variant="ghost" onClick={handleBack}>
+                  <ArrowLeft className="w-5 h-5" />
+                  Retour
                 </Button>
-                <Button variant="gold" onClick={handleNextWithValidation}>
+                <Button variant="gold" size="lg" onClick={handleNextWithValidation}>
                   Continuer
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-5 h-5" />
                 </Button>
               </div>
             </motion.div>
@@ -859,14 +859,14 @@ export default function GPRegistration() {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-card rounded-2xl border border-border p-4 md:p-8 shadow-card"
+              className="bg-card rounded-2xl border border-border p-6 md:p-8 shadow-card"
             >
-              <h2 className="text-lg md:text-xl font-semibold text-foreground mb-1 flex items-center gap-2">
+              <h2 className="text-xl font-semibold text-foreground mb-2 flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-secondary" />
                 Zones de couverture
               </h2>
-              <p className="text-sm text-muted-foreground mb-4 md:mb-6">
-                Définissez vos zones de desserte
+              <p className="text-muted-foreground mb-6">
+                Définissez les zones géographiques que vous desservez
               </p>
 
               <ZoneCoverageManager
@@ -875,14 +875,14 @@ export default function GPRegistration() {
                 transportType={activityType}
               />
 
-              <div className="flex justify-between mt-6 md:mt-8">
-                <Button variant="ghost" size="sm" onClick={handleBack}>
-                  <ArrowLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline">Retour</span>
+              <div className="flex justify-between mt-8">
+                <Button variant="ghost" onClick={handleBack}>
+                  <ArrowLeft className="w-5 h-5" />
+                  Retour
                 </Button>
-                <Button variant="gold" onClick={handleNextWithValidation}>
+                <Button variant="gold" size="lg" onClick={handleNextWithValidation}>
                   Continuer
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-5 h-5" />
                 </Button>
               </div>
             </motion.div>
