@@ -338,19 +338,18 @@ function IndexContent() {
         </div>
       </section>
 
-      {/* Install PWA CTA */}
-      <section className="px-4 pb-6 mb-4">
+      {/* Install PWA CTA - Compact */}
+      <section className="px-4 pb-20 mb-4">
         <Link to="/install">
-          <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl p-5 text-center hover:shadow-lg transition-shadow">
-            <Download className="w-10 h-10 text-white mx-auto mb-3" />
-            <h3 className="font-bold text-white mb-2">Installer l'application</h3>
-            <p className="text-white/80 text-sm mb-4">
-              Accédez à Yobbanté GP directement depuis votre écran d'accueil
-            </p>
-            <Button variant="secondary" size="default" className="w-full">
-              Installer maintenant
-              <ArrowRight className="w-4 h-4" />
-            </Button>
+          <div className="bg-gradient-to-r from-emerald-600 to-teal-500 rounded-xl p-4 flex items-center gap-4 hover:shadow-lg transition-shadow">
+            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+              <Download className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1 text-left">
+              <h3 className="font-semibold text-white text-sm">Installer l'app</h3>
+              <p className="text-white/80 text-xs">Accès rapide depuis l'écran d'accueil</p>
+            </div>
+            <ArrowRight className="w-5 h-5 text-white/80" />
           </div>
         </Link>
       </section>
