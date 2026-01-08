@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   Package, Truck, ArrowRight, Zap, Ship, Plane, 
-  MapPin, Star, Shield, Clock, Briefcase, Building2, Scale, Weight
+  MapPin, Star, Shield, Clock, Briefcase, Building2, Scale, Weight, Download
 } from "lucide-react";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -336,6 +336,23 @@ function IndexContent() {
             </Button>
           </Link>
         </div>
+      </section>
+
+      {/* Install PWA CTA */}
+      <section className="px-4 pb-6 mb-4">
+        <Link to="/install">
+          <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl p-5 text-center hover:shadow-lg transition-shadow">
+            <Download className="w-10 h-10 text-white mx-auto mb-3" />
+            <h3 className="font-bold text-white mb-2">Installer l'application</h3>
+            <p className="text-white/80 text-sm mb-4">
+              Accédez à Yobbanté GP directement depuis votre écran d'accueil
+            </p>
+            <Button variant="secondary" size="default" className="w-full">
+              Installer maintenant
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </Link>
       </section>
 
       <MobileNav />
