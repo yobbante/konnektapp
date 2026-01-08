@@ -92,24 +92,29 @@ export function MobileHeader({ title, showNotifications = true }: MobileHeaderPr
                       Suivi
                     </Button>
                   </Link>
-                  <Link to="/favorites" onClick={() => setMenuOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start">
-                      <Heart className="w-4 h-4 mr-2" />
-                      Mes favoris
-                    </Button>
-                  </Link>
-                  <Link to="/saved-searches" onClick={() => setMenuOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start">
-                      <Bell className="w-4 h-4 mr-2" />
-                      Mes alertes
-                    </Button>
-                  </Link>
-                  <Link to="/settings" onClick={() => setMenuOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start">
-                      <Settings className="w-4 h-4 mr-2" />
-                      Paramètres
-                    </Button>
-                  </Link>
+                  {/* Liens privés - visibles uniquement si connecté */}
+                  {isAuthenticated && (
+                    <>
+                      <Link to="/favorites" onClick={() => setMenuOpen(false)}>
+                        <Button variant="ghost" className="w-full justify-start">
+                          <Heart className="w-4 h-4 mr-2" />
+                          Mes favoris
+                        </Button>
+                      </Link>
+                      <Link to="/saved-searches" onClick={() => setMenuOpen(false)}>
+                        <Button variant="ghost" className="w-full justify-start">
+                          <Bell className="w-4 h-4 mr-2" />
+                          Mes alertes
+                        </Button>
+                      </Link>
+                      <Link to="/settings" onClick={() => setMenuOpen(false)}>
+                        <Button variant="ghost" className="w-full justify-start">
+                          <Settings className="w-4 h-4 mr-2" />
+                          Paramètres
+                        </Button>
+                      </Link>
+                    </>
+                  )}
                 </div>
 
                 {!loading && (
