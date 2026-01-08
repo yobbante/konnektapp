@@ -14,6 +14,7 @@ const PUBLIC_ROUTES = [
   "/gp/inscription", 
   "/tracking",
   "/offres",
+  "/install",
   "/"
 ];
 
