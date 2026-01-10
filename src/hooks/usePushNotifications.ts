@@ -7,22 +7,49 @@ interface UsePushNotificationsResult {
   permission: NotificationPermission | null;
   requestPermission: () => Promise<boolean>;
   showNotification: (title: string, options?: NotificationOptions) => void;
+  serviceWorkerReady: boolean;
 }
 
 export function usePushNotifications(): UsePushNotificationsResult {
   const { toast } = useToast();
   const [permission, setPermission] = useState<NotificationPermission | null>(null);
   const [isSupported, setIsSupported] = useState(false);
+  const [serviceWorkerReady, setServiceWorkerReady] = useState(false);
 
   useEffect(() => {
     // Check if notifications are supported
-    const supported = "Notification" in window;
+    const supported = "Notification" in window && "serviceWorker" in navigator;
     setIsSupported(supported);
     
     if (supported) {
       setPermission(Notification.permission);
+      
+      // Register service worker for push notifications
+      registerServiceWorker();
     }
   }, []);
+
+  const registerServiceWorker = async () => {
+    try {
+      // Check if already registered
+      const existingRegistration = await navigator.serviceWorker.getRegistration();
+      
+      if (existingRegistration) {
+        console.log("[Push] Service worker already registered:", existingRegistration);
+        setServiceWorkerReady(true);
+        return existingRegistration;
+      }
+
+      // The PWA plugin registers the main SW, but we need to ensure push is ready
+      const registration = await navigator.serviceWorker.ready;
+      console.log("[Push] Service worker ready:", registration);
+      setServiceWorkerReady(true);
+      return registration;
+    } catch (error) {
+      console.error("[Push] Service worker registration failed:", error);
+      return null;
+    }
+  };
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
     if (!isSupported) {
@@ -39,9 +66,12 @@ export function usePushNotifications(): UsePushNotificationsResult {
       setPermission(result);
       
       if (result === "granted") {
+        // Ensure service worker is ready
+        await registerServiceWorker();
+        
         toast({
           title: "Notifications activées ✓",
-          description: "Vous recevrez des alertes pour les nouvelles offres et mises à jour",
+          description: "Vous recevrez des alertes même quand l'app est fermée",
         });
         return true;
       } else if (result === "denied") {
@@ -58,37 +88,53 @@ export function usePushNotifications(): UsePushNotificationsResult {
     }
   }, [isSupported, toast]);
 
-  const showNotification = useCallback((title: string, options?: NotificationOptions) => {
+  const showNotification = useCallback(async (title: string, options?: NotificationOptions) => {
     if (!isSupported || permission !== "granted") {
       console.log("Cannot show notification - not supported or not granted");
       return;
     }
 
     try {
-      const notification = new Notification(title, {
-        icon: "/pwa-192x192.png",
-        badge: "/pwa-192x192.png",
-        requireInteraction: false,
-        ...options,
-      });
+      // Try to use service worker notification first (works when app is closed)
+      const registration = await navigator.serviceWorker.getRegistration();
+      
+      if (registration && serviceWorkerReady) {
+        // Cast to any to use ServiceWorkerRegistration.showNotification with all options
+        await registration.showNotification(title, {
+          icon: "/pwa-192x192.png",
+          badge: "/pwa-192x192.png",
+          requireInteraction: false,
+          tag: options?.tag || `yobbante-${Date.now()}`,
+          ...options,
+        } as NotificationOptions);
+      } else {
+        // Fallback to regular notification
+        const notification = new Notification(title, {
+          icon: "/pwa-192x192.png",
+          badge: "/pwa-192x192.png",
+          requireInteraction: false,
+          ...options,
+        });
 
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
+        notification.onclick = () => {
+          window.focus();
+          notification.close();
+        };
 
-      // Auto-close after 5 seconds
-      setTimeout(() => notification.close(), 5000);
+        // Auto-close after 5 seconds
+        setTimeout(() => notification.close(), 5000);
+      }
     } catch (error) {
       console.error("Error showing notification:", error);
     }
-  }, [isSupported, permission]);
+  }, [isSupported, permission, serviceWorkerReady]);
 
   return {
     isSupported,
     permission,
     requestPermission,
     showNotification,
+    serviceWorkerReady,
   };
 }
 

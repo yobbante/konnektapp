@@ -34,7 +34,15 @@ export function MobileHeader({ title, showNotifications = true }: MobileHeaderPr
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-card border-b border-border px-4 py-3">
+    <header 
+      className="sticky top-0 z-40 bg-card border-b border-border" 
+      style={{ 
+        paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
+        paddingBottom: '12px',
+        paddingLeft: 'calc(16px + env(safe-area-inset-left, 0px))',
+        paddingRight: 'calc(16px + env(safe-area-inset-right, 0px))'
+      }}
+    >
       <div className="flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
           <div className={`w-9 h-9 rounded-xl ${logoBackground} flex items-center justify-center transition-colors`}>
