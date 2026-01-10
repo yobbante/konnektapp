@@ -255,7 +255,7 @@ export default function GPDashboard() {
   return (
     <div className="min-h-screen pb-safe bg-background">
       {/* Role-specific Fixed Header with Dropdown - NO Global Header */}
-      <div className={`sticky top-0 z-50 ${theme.headerBgClass} ${theme.headerTextClass} py-3 px-4 shadow-md`}>
+      <div className={`sticky top-0 z-50 ${theme.headerBgClass} ${theme.headerTextClass} py-3 px-4 shadow-md`} style={{ paddingTop: 'calc(12px + var(--safe-top, 0px))' }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
@@ -545,12 +545,6 @@ function ModernOverviewTab({
             onViewStats={onViewWallet}
           />
 
-          {/* Profile Completion Gauge */}
-          <ProfileCompletionGauge 
-            profile={gpProfile}
-            onCompleteProfile={onViewProfile}
-          />
-
           {/* Badge System */}
           <BadgeSystem 
             isVerified={gpProfile.status === 'verified'}
@@ -567,6 +561,102 @@ function ModernOverviewTab({
       {/* Switch to Client - Airbnb style */}
       <SwitchToClientButton variant="light" className="pt-2" />
     </div>
+  );
+}
+
+// Offer Card Component with interactions
+function OfferCard({ offer, onRefresh }: { offer: any; onRefresh: () => void }) {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [updating, setUpdating] = useState(false);
+
+  const toggleOfferStatus = async () => {
+    setUpdating(true);
+    try {
+      const newStatus = offer.status === 'active' ? 'paused' : 'active';
+      const { error } = await supabase
+        .from("gp_offers")
+        .update({ status: newStatus })
+        .eq("id", offer.id);
+      
+      if (error) throw error;
+      
+      toast({ 
+        title: newStatus === 'active' ? "Offre activée" : "Offre mise en pause" 
+      });
+      onRefresh();
+    } catch (error: any) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mobile-card"
+    >
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <MapPin className="w-4 h-4 text-primary" />
+          <span className="font-medium text-sm">{offer.origin_city}</span>
+          <ArrowRight className="w-3 h-3 text-muted-foreground" />
+          <span className="font-medium text-sm">{offer.destination_city}</span>
+        </div>
+        <Badge variant={offer.status === 'active' ? 'success' : 'pending'}>
+          {offer.status === 'active' ? 'Active' : offer.status === 'paused' ? 'Pause' : offer.status}
+        </Badge>
+      </div>
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">
+          {new Date(offer.departure_date).toLocaleDateString('fr-FR')}
+        </span>
+        <span className="font-bold text-primary">{offer.price_per_kg} FCFA/kg</span>
+      </div>
+      <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
+        <span className="text-xs text-muted-foreground">
+          {offer.available_capacity}/{offer.total_capacity} kg dispo
+        </span>
+        <span className="text-xs text-muted-foreground">
+          {offer.bookings_count || 0} réservations
+        </span>
+      </div>
+      {/* Action Buttons */}
+      <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="flex-1 h-8 text-xs"
+          onClick={toggleOfferStatus}
+          disabled={updating}
+        >
+          {updating ? (
+            <div className="w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin" />
+          ) : offer.status === 'active' ? (
+            <>
+              <EyeOff className="w-3 h-3 mr-1" />
+              Pause
+            </>
+          ) : (
+            <>
+              <CheckCircle className="w-3 h-3 mr-1" />
+              Activer
+            </>
+          )}
+        </Button>
+        <Button 
+          variant="default" 
+          size="sm" 
+          className="flex-1 h-8 text-xs"
+          onClick={() => navigate(`/offres/${offer.id}`)}
+        >
+          <ChevronRight className="w-3 h-3 mr-1" />
+          Détails
+        </Button>
+      </div>
+    </motion.div>
   );
 }
 
@@ -597,33 +687,11 @@ function OffersTab({ offers, onCreateOffer, onRefresh, onBack }: any) {
       ) : (
         <div className="space-y-3">
           {offers.map((offer: any) => (
-            <div key={offer.id} className="mobile-card">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  <span className="font-medium text-sm">{offer.origin_city}</span>
-                  <ArrowRight className="w-3 h-3 text-muted-foreground" />
-                  <span className="font-medium text-sm">{offer.destination_city}</span>
-                </div>
-                <Badge variant={offer.status === 'active' ? 'success' : 'pending'}>
-                  {offer.status === 'active' ? 'Active' : offer.status}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">
-                  {new Date(offer.departure_date).toLocaleDateString('fr-FR')}
-                </span>
-                <span className="font-bold text-primary">{offer.price_per_kg} FCFA/kg</span>
-              </div>
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
-                <span className="text-xs text-muted-foreground">
-                  {offer.available_capacity}/{offer.total_capacity} kg dispo
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {offer.bookings_count || 0} réservations
-                </span>
-              </div>
-            </div>
+            <OfferCard 
+              key={offer.id} 
+              offer={offer} 
+              onRefresh={onRefresh}
+            />
           ))}
         </div>
       )}

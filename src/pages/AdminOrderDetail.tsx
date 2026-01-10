@@ -334,9 +334,42 @@ export default function AdminOrderDetail() {
                     </a>
                   </Button>
                 )}
-                <Button variant="outline" size="sm" onClick={() => navigate("/messages")}>
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  onClick={async () => {
+                    // Create or get conversation with client
+                    if (gp && client) {
+                      const { data: existing } = await supabase
+                        .from("conversations")
+                        .select("id")
+                        .eq("client_id", order.client_id)
+                        .eq("gp_id", order.gp_id)
+                        .eq("order_id", order.id)
+                        .maybeSingle();
+                      
+                      if (existing) {
+                        navigate(`/admin/messages?conversation=${existing.id}`);
+                      } else {
+                        const { data: newConv } = await supabase
+                          .from("conversations")
+                          .insert({
+                            client_id: order.client_id,
+                            gp_id: order.gp_id,
+                            order_id: order.id,
+                          })
+                          .select()
+                          .single();
+                        
+                        if (newConv) {
+                          navigate(`/admin/messages?conversation=${newConv.id}`);
+                        }
+                      }
+                    }
+                  }}
+                >
                   <MessageSquare className="w-3 h-3 mr-1" />
-                  Message
+                  Contacter
                 </Button>
               </div>
             </CardContent>
@@ -386,7 +419,7 @@ export default function AdminOrderDetail() {
                       <span className="text-muted-foreground">({gp.total_deliveries} livraisons)</span>
                     </div>
                   )}
-                  <div className="mt-3 flex gap-2">
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <Button variant="outline" size="sm" asChild>
                       <a href={`tel:${gp.phone}`}>
                         <Phone className="w-3 h-3 mr-1" />
@@ -395,6 +428,41 @@ export default function AdminOrderDetail() {
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => navigate(`/admin/gp/${gp.id}`)}>
                       Voir profil
+                    </Button>
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      onClick={async () => {
+                        // Create or get conversation with GP
+                        const { data: existing } = await supabase
+                          .from("conversations")
+                          .select("id")
+                          .eq("client_id", order.client_id)
+                          .eq("gp_id", order.gp_id)
+                          .eq("order_id", order.id)
+                          .maybeSingle();
+                        
+                        if (existing) {
+                          navigate(`/admin/messages?conversation=${existing.id}`);
+                        } else {
+                          const { data: newConv } = await supabase
+                            .from("conversations")
+                            .insert({
+                              client_id: order.client_id,
+                              gp_id: order.gp_id,
+                              order_id: order.id,
+                            })
+                            .select()
+                            .single();
+                          
+                          if (newConv) {
+                            navigate(`/admin/messages?conversation=${newConv.id}`);
+                          }
+                        }
+                      }}
+                    >
+                      <MessageSquare className="w-3 h-3 mr-1" />
+                      Contacter
                     </Button>
                   </div>
                 </div>

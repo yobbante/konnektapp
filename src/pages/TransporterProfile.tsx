@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { VehicleManagement } from "@/components/gp/VehicleManagement";
 import { ScheduledRoutesManager } from "@/components/gp/ScheduledRoutesManager";
 import { GenerateOffersFromRoutes } from "@/components/gp/GenerateOffersFromRoutes";
+import { ProfileCompletionGauge } from "@/components/gp/dashboard/ProfileCompletionGauge";
 import { GP_STATUS_LABELS, isValidGpStatus } from "@/lib/enumMappings";
 
 interface GPProfileData {
@@ -183,7 +184,7 @@ export default function TransporterProfile() {
   const GPIcon = gpTypeIcons[profile.gp_type] || Truck;
 
   return (
-    <div className="min-h-screen bg-muted/30 pb-24">
+    <div className="min-h-screen bg-muted/30 pb-24" style={{ paddingTop: 'var(--safe-top, 0px)' }}>
       <MobileHeader title="Mon Profil" />
 
       <div className="px-4 py-4 space-y-4">
@@ -197,6 +198,12 @@ export default function TransporterProfile() {
           <ArrowLeft className="w-4 h-4 mr-1" />
           Retour au tableau de bord
         </Button>
+
+        {/* Profile Completion Gauge - Moved from overview */}
+        <ProfileCompletionGauge 
+          profile={profile}
+          onCompleteProfile={() => setIsEditing(true)}
+        />
 
         {/* Profile Header */}
         <motion.div 

@@ -67,13 +67,13 @@ export function MobileNav() {
   );
 }
 
-// Transporteur specific bottom nav
+// Transporteur specific bottom nav - Profile opens TransporterProfile page directly
 const gpNavItems = [
   { icon: Home, label: "Accueil", tab: "overview" },
   { icon: Package, label: "Offres", tab: "offers" },
   { icon: Search, label: "Missions", tab: "orders" },
   { icon: BarChart3, label: "Stats", tab: "stats" },
-  { icon: User, label: "Profil", tab: "profile" },
+  { icon: User, label: "Profil", tab: "profile", navigateTo: "/transporter/profile" },
 ];
 
 interface GPMobileNavProps {
@@ -82,6 +82,16 @@ interface GPMobileNavProps {
 }
 
 export function GPMobileNav({ activeTab, onTabChange }: GPMobileNavProps) {
+  const navigate = useNavigate();
+  
+  const handleTabClick = (item: typeof gpNavItems[0]) => {
+    if (item.navigateTo) {
+      navigate(item.navigateTo);
+    } else {
+      onTabChange(item.tab);
+    }
+  };
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px))' }}>
       <div className="flex items-center justify-around h-16" style={{ paddingLeft: 'var(--safe-left, 0px)', paddingRight: 'var(--safe-right, 0px)' }}>
@@ -90,7 +100,7 @@ export function GPMobileNav({ activeTab, onTabChange }: GPMobileNavProps) {
           return (
             <button
               key={item.tab}
-              onClick={() => onTabChange(item.tab)}
+              onClick={() => handleTabClick(item)}
               className={cn(
                 "flex flex-col items-center justify-center flex-1 h-full gap-1 text-muted-foreground transition-colors",
                 isActive && "text-primary"
