@@ -9,10 +9,12 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
-import { Loader2, Bell, Mail, MessageSquare, Package, TrendingUp, Megaphone, ArrowLeft, Settings as SettingsIcon, TestTube2 } from "lucide-react";
+import { Loader2, Bell, Mail, MessageSquare, Package, TrendingUp, Megaphone, ArrowLeft, Settings as SettingsIcon, TestTube2, Smartphone, CheckCircle, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { SendTestNotification } from "@/components/settings/SendTestNotification";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 interface NotificationPreferences {
   email_notifications: boolean;
@@ -38,6 +40,7 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences);
   const [userId, setUserId] = useState<string | null>(null);
+  const { isSupported, permission, requestPermission } = usePushNotifications();
 
   useEffect(() => {
     checkAuthAndLoadPreferences();
@@ -210,6 +213,53 @@ export default function Settings() {
                     checked={preferences.push_notifications}
                     onCheckedChange={() => handleToggle("push_notifications")}
                   />
+                </div>
+
+                {/* Browser Push Permission */}
+                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                      <Smartphone className="w-5 h-5 text-accent" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Notifications navigateur</Label>
+                      <div className="flex items-center gap-2 mt-1">
+                        {!isSupported ? (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            Non supporté
+                          </Badge>
+                        ) : permission === "granted" ? (
+                          <Badge variant="success" className="gap-1">
+                            <CheckCircle className="w-3 h-3" />
+                            Activées
+                          </Badge>
+                        ) : permission === "denied" ? (
+                          <Badge variant="destructive" className="gap-1">
+                            <XCircle className="w-3 h-3" />
+                            Bloquées
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">
+                            Non activées
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  {isSupported && permission !== "granted" && permission !== "denied" && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={requestPermission}
+                    >
+                      Activer
+                    </Button>
+                  )}
+                  {permission === "denied" && (
+                    <p className="text-xs text-muted-foreground max-w-[120px] text-right">
+                      Modifiez dans les paramètres du navigateur
+                    </p>
+                  )}
                 </div>
               </div>
 
