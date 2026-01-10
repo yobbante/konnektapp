@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
+import { SwitchToTransporteurButton } from "@/components/profile/SwitchToTransporteurButton";
 
 interface Order {
   id: string;
@@ -428,6 +429,13 @@ export default function ClientProfile() {
               Recherches sauvegardées
             </Button>
           </Link>
+        </div>
+
+        {/* Switch to Transporteur - Airbnb style */}
+        <SwitchToTransporteurButton className="pt-4" />
+
+        {/* Sign Out */}
+        <div className="pt-4">
           <Button 
             variant="destructive" 
             className="w-full"
