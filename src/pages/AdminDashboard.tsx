@@ -221,7 +221,7 @@ export default function AdminDashboard() {
     <div className="min-h-screen pb-safe bg-background">
       {/* Fixed Admin Header with Dropdown Menu */}
       <div className={`sticky top-0 z-50 ${theme.headerBgClass} ${theme.headerTextClass} shadow-md`}>
-        <div className="py-3 px-4">
+        <div className="py-3 px-4" style={{ paddingTop: 'calc(12px + var(--safe-top, 0px))' }}>
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
