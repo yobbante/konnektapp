@@ -14,6 +14,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Loader2, Bell, Mail, MessageSquare, Package, TrendingUp, Megaphone, ArrowLeft, Settings as SettingsIcon, TestTube2, Smartphone, CheckCircle, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { SendTestNotification } from "@/components/settings/SendTestNotification";
+import { PushNotificationStatus } from "@/components/settings/PushNotificationStatus";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 interface NotificationPreferences {
@@ -370,6 +371,11 @@ export default function Settings() {
                   <SendTestNotification userId={userId} />
                 </div>
               </div>
+
+              <Separator />
+
+              {/* Push Notification Status Card */}
+              <PushNotificationStatus />
 
               <Separator />
 

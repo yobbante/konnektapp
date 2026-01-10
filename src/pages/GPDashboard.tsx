@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
@@ -469,7 +469,16 @@ function ModernOverviewTab({
 }: any) {
   const navigate = useNavigate();
   const [showMoreOptions, setShowMoreOptions] = useState(false);
+  const moreOptionsRef = useRef<HTMLDivElement>(null);
 
+  // Auto-scroll when opening "Plus d'options"
+  useEffect(() => {
+    if (showMoreOptions && moreOptionsRef.current) {
+      setTimeout(() => {
+        moreOptionsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+  }, [showMoreOptions]);
   return (
     <div className="px-4 py-4 space-y-4">
       {/* Profile Header - Compact */}
@@ -519,6 +528,7 @@ function ModernOverviewTab({
       <KPICards stats={kpiStats} gpType={gpProfile.gp_type} />
 
       {/* Quick Actions - More Discrete */}
+      <div ref={moreOptionsRef}>
       <Collapsible open={showMoreOptions} onOpenChange={setShowMoreOptions}>
         <CollapsibleTrigger asChild>
           <Button variant="outline" size="sm" className="w-full justify-between">
@@ -552,6 +562,7 @@ function ModernOverviewTab({
           />
         </CollapsibleContent>
       </Collapsible>
+      </div>
 
       {/* Switch to Client - Airbnb style */}
       <SwitchToClientButton variant="light" className="pt-2" />

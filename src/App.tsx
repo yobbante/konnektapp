@@ -35,6 +35,7 @@ import QuoteConfirmation from "./pages/QuoteConfirmation";
 import Settings from "./pages/Settings";
 import Alerts from "./pages/Alerts";
 import Install from "./pages/Install";
+import AdminMessages from "./pages/AdminMessages";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -79,6 +80,7 @@ const App = () => (
             <Route path="/settings" element={<Settings />} />
             <Route path="/alerts" element={<Alerts />} />
             <Route path="/install" element={<Install />} />
+            <Route path="/admin/messages" element={<AdminMessages />} />
             <Route path="/auth" element={<Auth />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
