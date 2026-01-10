@@ -17,6 +17,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { GPMobileNav } from "@/components/layout/MobileNav";
 import { GPCreateOfferDialog } from "@/components/gp/GPCreateOfferDialog";
+import { GPEditOfferDialog } from "@/components/gp/GPEditOfferDialog";
 import { GPDropdownMenu } from "@/components/gp/GPDropdownMenu";
 import { KPICards } from "@/components/gp/dashboard/KPICards";
 import { QuickActions } from "@/components/gp/dashboard/QuickActions";
@@ -569,6 +570,7 @@ function OfferCard({ offer, onRefresh }: { offer: any; onRefresh: () => void }) 
   const { toast } = useToast();
   const navigate = useNavigate();
   const [updating, setUpdating] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   const toggleOfferStatus = async () => {
     setUpdating(true);
@@ -593,70 +595,91 @@ function OfferCard({ offer, onRefresh }: { offer: any; onRefresh: () => void }) 
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 5 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mobile-card"
-    >
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-primary" />
-          <span className="font-medium text-sm">{offer.origin_city}</span>
-          <ArrowRight className="w-3 h-3 text-muted-foreground" />
-          <span className="font-medium text-sm">{offer.destination_city}</span>
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 5 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mobile-card"
+      >
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-primary" />
+            <span className="font-medium text-sm">{offer.origin_city}</span>
+            <ArrowRight className="w-3 h-3 text-muted-foreground" />
+            <span className="font-medium text-sm">{offer.destination_city}</span>
+          </div>
+          <Badge variant={offer.status === 'active' ? 'success' : 'pending'}>
+            {offer.status === 'active' ? 'Active' : offer.status === 'paused' ? 'Pause' : offer.status}
+          </Badge>
         </div>
-        <Badge variant={offer.status === 'active' ? 'success' : 'pending'}>
-          {offer.status === 'active' ? 'Active' : offer.status === 'paused' ? 'Pause' : offer.status}
-        </Badge>
-      </div>
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-muted-foreground">
-          {new Date(offer.departure_date).toLocaleDateString('fr-FR')}
-        </span>
-        <span className="font-bold text-primary">{offer.price_per_kg} FCFA/kg</span>
-      </div>
-      <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
-        <span className="text-xs text-muted-foreground">
-          {offer.available_capacity}/{offer.total_capacity} kg dispo
-        </span>
-        <span className="text-xs text-muted-foreground">
-          {offer.bookings_count || 0} réservations
-        </span>
-      </div>
-      {/* Action Buttons */}
-      <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="flex-1 h-8 text-xs"
-          onClick={toggleOfferStatus}
-          disabled={updating}
-        >
-          {updating ? (
-            <div className="w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin" />
-          ) : offer.status === 'active' ? (
-            <>
-              <EyeOff className="w-3 h-3 mr-1" />
-              Pause
-            </>
-          ) : (
-            <>
-              <CheckCircle className="w-3 h-3 mr-1" />
-              Activer
-            </>
-          )}
-        </Button>
-        <Button 
-          variant="default" 
-          size="sm" 
-          className="flex-1 h-8 text-xs"
-          onClick={() => navigate(`/offres/${offer.id}`)}
-        >
-          <ChevronRight className="w-3 h-3 mr-1" />
-          Détails
-        </Button>
-      </div>
-    </motion.div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">
+            {new Date(offer.departure_date).toLocaleDateString('fr-FR')}
+          </span>
+          <span className="font-bold text-primary">{offer.price_per_kg} FCFA/kg</span>
+        </div>
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
+          <span className="text-xs text-muted-foreground">
+            {offer.available_capacity}/{offer.total_capacity} kg dispo
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {offer.bookings_count || 0} réservations
+          </span>
+        </div>
+        {/* Action Buttons - Enhanced with Edit */}
+        <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex-1 h-8 text-xs"
+            onClick={toggleOfferStatus}
+            disabled={updating}
+          >
+            {updating ? (
+              <div className="w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin" />
+            ) : offer.status === 'active' ? (
+              <>
+                <EyeOff className="w-3 h-3 mr-1" />
+                Pause
+              </>
+            ) : (
+              <>
+                <CheckCircle className="w-3 h-3 mr-1" />
+                Activer
+              </>
+            )}
+          </Button>
+          <Button 
+            variant="secondary" 
+            size="sm" 
+            className="flex-1 h-8 text-xs"
+            onClick={() => setShowEditDialog(true)}
+          >
+            <Package className="w-3 h-3 mr-1" />
+            Modifier
+          </Button>
+          <Button 
+            variant="default" 
+            size="sm" 
+            className="h-8 text-xs px-3"
+            onClick={() => navigate(`/offres/${offer.id}`)}
+          >
+            <ChevronRight className="w-3 h-3" />
+          </Button>
+        </div>
+      </motion.div>
+
+      {/* Edit Dialog */}
+      <GPEditOfferDialog
+        open={showEditDialog}
+        onClose={() => setShowEditDialog(false)}
+        offer={offer}
+        onSuccess={() => {
+          setShowEditDialog(false);
+          onRefresh();
+        }}
+      />
+    </>
   );
 }
 
