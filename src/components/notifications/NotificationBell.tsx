@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Check, Truck, Package, MessageCircle, AlertCircle } from "lucide-react";
+import { Bell, Check, Truck, Package, MessageCircle, AlertCircle, Shield } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -31,10 +32,14 @@ const typeIcons: Record<string, React.ElementType> = {
   gp: Truck,
   alert: AlertCircle,
   info: Bell,
+  dispute: Shield,
+  account_status: Truck,
+  order_status: Package,
 };
 
 export function NotificationBell() {
   const navigate = useNavigate();
+  const { hasAdminAccess } = useUserRole();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
@@ -89,45 +94,96 @@ export function NotificationBell() {
     // Close popover
     setOpen(false);
 
-    // Navigate based on related_type and related_id
+    // Navigate based on related_type and related_id, considering admin role
     if (notif.related_id && notif.related_type) {
       switch (notif.related_type) {
         case "order":
-          navigate(`/tracking?order=${notif.related_id}`);
+          // Admin goes to admin order detail, others to tracking
+          if (hasAdminAccess) {
+            navigate(`/admin/order/${notif.related_id}`);
+          } else {
+            navigate(`/tracking?order=${notif.related_id}`);
+          }
           break;
         case "offer":
           navigate(`/offres/${notif.related_id}`);
           break;
         case "message":
         case "conversation":
-          navigate("/messages");
+          // Admin goes to admin messages, others to regular messages
+          if (hasAdminAccess) {
+            navigate(`/admin/messages?conversation=${notif.related_id}`);
+          } else {
+            navigate("/messages");
+          }
           break;
         case "custom_request":
-          navigate("/client/dashboard");
+          if (hasAdminAccess) {
+            navigate("/admin");
+          } else {
+            navigate("/client/dashboard");
+          }
           break;
         case "gp":
         case "transporter":
-          navigate(`/gp/${notif.related_id}`);
+        case "gp_profile":
+          if (hasAdminAccess) {
+            navigate(`/admin/gp/${notif.related_id}`);
+          } else {
+            navigate(`/gp/${notif.related_id}`);
+          }
+          break;
+        case "dispute":
+          if (hasAdminAccess) {
+            navigate("/admin");
+          } else {
+            navigate(`/tracking?order=${notif.related_id}`);
+          }
           break;
         default:
           // Generic handling based on type
-          if (notif.type === "order") {
-            navigate("/client/dashboard");
+          if (notif.type === "order" || notif.type === "order_status") {
+            if (hasAdminAccess) {
+              navigate("/admin/orders");
+            } else {
+              navigate("/client/dashboard");
+            }
           } else if (notif.type === "message") {
-            navigate("/messages");
+            if (hasAdminAccess) {
+              navigate("/admin/messages");
+            } else {
+              navigate("/messages");
+            }
           }
       }
     } else {
       // Fallback navigation based on notification type
       switch (notif.type) {
         case "order":
-          navigate("/client/dashboard");
+        case "order_status":
+          if (hasAdminAccess) {
+            navigate("/admin/orders");
+          } else {
+            navigate("/client/dashboard");
+          }
           break;
         case "message":
-          navigate("/messages");
+          if (hasAdminAccess) {
+            navigate("/admin/messages");
+          } else {
+            navigate("/messages");
+          }
           break;
         case "gp":
+        case "account_status":
           navigate("/gp/dashboard");
+          break;
+        case "dispute":
+          if (hasAdminAccess) {
+            navigate("/admin");
+          } else {
+            navigate("/client/dashboard");
+          }
           break;
         default:
           // Do nothing, just mark as read
