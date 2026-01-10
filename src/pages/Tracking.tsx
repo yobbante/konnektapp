@@ -4,7 +4,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { 
   Search, Package, MapPin, Clock, CheckCircle, 
   AlertCircle, Truck, MessageCircle, Phone, Map as MapIcon,
-  ArrowLeft, Calendar, Navigation
+  Calendar, Navigation, Box, RefreshCw
 } from "lucide-react";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -36,17 +36,24 @@ interface OrderDetails {
   pickup_date: string | null;
   delivery_date: string | null;
   actual_delivery_date: string | null;
+  weight?: number;
+  total_price?: number;
   gp_profile?: {
     business_name: string;
+    phone?: string;
   };
+  status_history?: Array<{
+    status: string;
+    created_at: string;
+  }>;
 }
 
 const STATUS_STEPS = [
-  { status: "pending", label: "Commande créée", icon: Package },
-  { status: "accepted", label: "Acceptée par le transporteur", icon: CheckCircle },
-  { status: "collected", label: "Colis récupéré", icon: Package },
-  { status: "in_transit", label: "En transit", icon: Truck },
-  { status: "delivered", label: "Livré", icon: CheckCircle },
+  { status: "pending", label: "Commande créée", icon: Package, color: "bg-warning" },
+  { status: "accepted", label: "Acceptée par le transporteur", icon: CheckCircle, color: "bg-primary" },
+  { status: "collected", label: "Colis récupéré", icon: Box, color: "bg-secondary" },
+  { status: "in_transit", label: "En transit", icon: Truck, color: "bg-accent" },
+  { status: "delivered", label: "Livré", icon: CheckCircle, color: "bg-success" },
 ];
 
 const getStatusIndex = (status: string) => {
@@ -62,12 +69,39 @@ export default function TrackingPage() {
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     if (initialCode) {
       handleSearch();
     }
   }, [initialCode]);
+
+  // Realtime subscription for order updates
+  useEffect(() => {
+    if (!order?.id) return;
+
+    const channel = supabase
+      .channel(`tracking-${order.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "orders",
+          filter: `id=eq.${order.id}`,
+        },
+        (payload) => {
+          const updatedOrder = payload.new as any;
+          setOrder((prev) => prev ? { ...prev, ...updatedOrder } : null);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [order?.id]);
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -92,6 +126,8 @@ export default function TrackingPage() {
           pickup_date,
           delivery_date,
           actual_delivery_date,
+          weight,
+          total_price,
           gp_id
         `)
         .or(`tracking_code.eq.${trackingCode},order_number.eq.${trackingCode}`)
@@ -109,9 +145,17 @@ export default function TrackingPage() {
         .eq("id", data.gp_id)
         .single();
 
+      // Fetch status history
+      const { data: historyData } = await supabase
+        .from("order_status_history")
+        .select("status, created_at")
+        .eq("order_id", data.id)
+        .order("created_at", { ascending: true });
+
       setOrder({
         ...data,
         gp_profile: gpData || undefined,
+        status_history: historyData || [],
       });
     } catch (error) {
       console.error("Error searching order:", error);
@@ -121,25 +165,36 @@ export default function TrackingPage() {
     }
   };
 
+  const handleRefresh = async () => {
+    if (!order) return;
+    setIsRefreshing(true);
+    await handleSearch();
+    setIsRefreshing(false);
+  };
+
   const currentStatusIndex = order ? getStatusIndex(order.status) : 0;
   const progress = order ? ((currentStatusIndex + 1) / STATUS_STEPS.length) * 100 : 0;
 
-  // Build tracking steps from order status
-  const trackingSteps: TrackingStep[] = STATUS_STEPS.map((step, index) => ({
-    status: step.label,
-    date: index <= currentStatusIndex 
-      ? (index === 0 && order?.pickup_date 
+  // Build tracking steps from order status history
+  const trackingSteps: TrackingStep[] = STATUS_STEPS.map((step, index) => {
+    const historyEntry = order?.status_history?.find(h => h.status === step.status);
+    
+    return {
+      status: step.label,
+      date: historyEntry 
+        ? format(new Date(historyEntry.created_at), "d MMM, HH:mm", { locale: fr })
+        : index <= currentStatusIndex && index === 0 && order?.pickup_date
           ? format(new Date(order.pickup_date), "d MMM, HH:mm", { locale: fr })
           : index === STATUS_STEPS.length - 1 && order?.actual_delivery_date
             ? format(new Date(order.actual_delivery_date), "d MMM, HH:mm", { locale: fr })
-            : "—")
-      : "—",
-    location: index === 0 ? order?.origin_city || "" 
-      : index === STATUS_STEPS.length - 1 ? order?.destination_city || ""
-      : "En route",
-    completed: index < currentStatusIndex,
-    current: index === currentStatusIndex,
-  }));
+            : "—",
+      location: index === 0 ? order?.origin_city || "" 
+        : index === STATUS_STEPS.length - 1 ? order?.destination_city || ""
+        : "En route",
+      completed: index < currentStatusIndex,
+      current: index === currentStatusIndex,
+    };
+  });
 
   return (
     <div className="min-h-screen bg-background pb-safe">
@@ -220,6 +275,34 @@ export default function TrackingPage() {
                     {order.tracking_code || order.order_number}
                   </h2>
                 </div>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  className="h-9 w-9"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
+
+              {/* Route Visual */}
+              <div className="relative flex items-center gap-2 mb-4 py-3 px-4 bg-muted/50 rounded-xl">
+                <div className="flex flex-col items-center">
+                  <div className="w-3 h-3 rounded-full bg-primary" />
+                  <div className="w-0.5 h-8 bg-gradient-to-b from-primary to-accent" />
+                  <div className="w-3 h-3 rounded-full bg-accent" />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <div>
+                    <p className="font-medium text-sm">{order.origin_city}</p>
+                    <p className="text-xs text-muted-foreground">{order.origin_country}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{order.destination_city}</p>
+                    <p className="text-xs text-muted-foreground">{order.destination_country}</p>
+                  </div>
+                </div>
                 <div className="text-right">
                   <p className="text-xs text-muted-foreground">Livraison estimée</p>
                   <p className="font-semibold text-sm">
@@ -230,27 +313,60 @@ export default function TrackingPage() {
                 </div>
               </div>
 
-              {/* Route */}
-              <div className="flex items-center gap-2 mb-4 text-sm">
-                <MapPin className="w-4 h-4 text-primary" />
-                <span className="font-medium">{order.origin_city}</span>
-                <div className="flex-1 h-px bg-border" />
-                <span className="font-medium">{order.destination_city}</span>
-                <MapPin className="w-4 h-4 text-accent" />
+              {/* Progress Steps - Enhanced Visual */}
+              <div className="relative mb-4">
+                <div className="flex justify-between items-center relative z-10">
+                  {STATUS_STEPS.map((step, index) => {
+                    const isCompleted = index < currentStatusIndex;
+                    const isCurrent = index === currentStatusIndex;
+                    const StepIcon = step.icon;
+                    
+                    return (
+                      <div key={step.status} className="flex flex-col items-center">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                          isCurrent
+                            ? `${step.color} text-white shadow-lg scale-110 animate-pulse`
+                            : isCompleted
+                              ? "bg-success text-white"
+                              : "bg-muted text-muted-foreground"
+                        }`}>
+                          <StepIcon className="w-5 h-5" />
+                        </div>
+                        <p className={`text-[10px] mt-1 text-center max-w-[50px] ${
+                          isCurrent ? "text-foreground font-medium" : "text-muted-foreground"
+                        }`}>
+                          {step.status === "pending" && "Créée"}
+                          {step.status === "accepted" && "Acceptée"}
+                          {step.status === "collected" && "Collecté"}
+                          {step.status === "in_transit" && "Transit"}
+                          {step.status === "delivered" && "Livré"}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Progress Bar */}
+                <div className="absolute top-5 left-5 right-5 h-0.5 bg-muted -z-0">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progress}%` }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                    className="h-full bg-success rounded-full"
+                  />
+                </div>
               </div>
 
-              {/* Progress Bar */}
-              <div className="relative h-2 bg-muted rounded-full overflow-hidden">
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className="absolute inset-y-0 left-0 bg-primary rounded-full"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-2 text-center">
-                {currentStatusIndex + 1}/{STATUS_STEPS.length} étapes
-              </p>
+              {/* Order details */}
+              {(order.weight || order.total_price) && (
+                <div className="flex items-center justify-between text-sm pt-3 border-t border-border">
+                  {order.weight && (
+                    <span className="text-muted-foreground">Poids: {order.weight} kg</span>
+                  )}
+                  {order.total_price && (
+                    <span className="font-bold">{order.total_price.toLocaleString()} FCFA</span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Interactive Map Placeholder */}
@@ -262,23 +378,70 @@ export default function TrackingPage() {
                   Carte
                 </Badge>
               </div>
-              <div className="relative h-48 bg-muted/50 rounded-xl overflow-hidden flex items-center justify-center">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5" />
-                <div className="relative text-center">
-                  <MapIcon className="w-12 h-12 text-muted-foreground/30 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    Carte interactive
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    (Bientôt disponible)
-                  </p>
+              <div className="relative h-48 bg-gradient-to-br from-primary/5 via-muted/50 to-accent/5 rounded-xl overflow-hidden flex items-center justify-center">
+                {/* Animated route visualization */}
+                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="routeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="hsl(var(--primary))" />
+                      <stop offset="100%" stopColor="hsl(var(--accent))" />
+                    </linearGradient>
+                  </defs>
+                  <motion.path 
+                    d="M 10 80 Q 30 60 50 50 T 90 20"
+                    fill="none"
+                    stroke="url(#routeGradient)"
+                    strokeWidth="0.5"
+                    strokeDasharray="3,2"
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 2, ease: "easeInOut" }}
+                  />
+                </svg>
+                
+                {/* Origin point */}
+                <motion.div 
+                  className="absolute bottom-12 left-8 w-4 h-4 rounded-full bg-primary shadow-lg"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.3 }}
+                />
+                
+                {/* Current position indicator */}
+                <motion.div 
+                  className="absolute"
+                  style={{
+                    top: `${50 - (progress * 0.3)}%`,
+                    left: `${10 + (progress * 0.8)}%`,
+                  }}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center shadow-lg">
+                    <Truck className="w-3 h-3 text-white" />
+                  </div>
+                </motion.div>
+                
+                {/* Destination point */}
+                <motion.div 
+                  className="absolute top-8 right-8 w-4 h-4 rounded-full bg-accent shadow-lg"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.5 }}
+                />
+                
+                {/* Labels */}
+                <div className="absolute bottom-8 left-4 text-xs font-medium text-foreground bg-background/80 px-2 py-1 rounded">
+                  {order.origin_city}
                 </div>
-                {/* Simulated route dots */}
-                <div className="absolute top-8 left-8 w-3 h-3 rounded-full bg-primary animate-pulse" />
-                <div className="absolute top-16 left-24 w-2 h-2 rounded-full bg-primary/60" />
-                <div className="absolute top-20 right-24 w-2 h-2 rounded-full bg-primary/40" />
-                <div className="absolute bottom-12 right-12 w-3 h-3 rounded-full bg-accent" />
+                <div className="absolute top-4 right-4 text-xs font-medium text-foreground bg-background/80 px-2 py-1 rounded">
+                  {order.destination_city}
+                </div>
               </div>
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                Carte interactive complète bientôt disponible
+              </p>
             </div>
 
             {/* GP Info */}
@@ -311,13 +474,15 @@ export default function TrackingPage() {
               <div className="space-y-0">
                 {trackingSteps.map((step, index) => {
                   const StepIcon = STATUS_STEPS[index]?.icon || Package;
+                  const stepColor = STATUS_STEPS[index]?.color || "bg-muted";
+                  
                   return (
                     <div key={index} className="relative flex gap-3">
                       {/* Line */}
                       {index < trackingSteps.length - 1 && (
                         <div 
                           className={`absolute left-[11px] top-6 w-0.5 h-full ${
-                            step.completed || step.current ? "bg-primary" : "bg-muted"
+                            step.completed || step.current ? "bg-success" : "bg-muted"
                           }`}
                         />
                       )}
@@ -325,9 +490,9 @@ export default function TrackingPage() {
                       {/* Icon */}
                       <div className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
                         step.current
-                          ? "bg-primary text-primary-foreground animate-pulse"
+                          ? `${stepColor} text-white animate-pulse`
                           : step.completed
-                          ? "bg-primary text-primary-foreground"
+                          ? "bg-success text-white"
                           : "bg-muted text-muted-foreground"
                       }`}>
                         <StepIcon className="w-3 h-3" />

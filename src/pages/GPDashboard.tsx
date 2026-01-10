@@ -26,6 +26,7 @@ import { RecentHistory } from "@/components/gp/dashboard/RecentHistory";
 import { SmartNotifications } from "@/components/gp/dashboard/SmartNotifications";
 import { ActiveOrderBar } from "@/components/gp/dashboard/ActiveOrderBar";
 import { GPStatsCharts } from "@/components/gp/dashboard/GPStatsCharts";
+import { SwitchToClientButton } from "@/components/profile/SwitchToClientButton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   OrderStatus, 
@@ -551,6 +552,9 @@ function ModernOverviewTab({
           />
         </CollapsibleContent>
       </Collapsible>
+
+      {/* Switch to Client - Airbnb style */}
+      <SwitchToClientButton variant="light" className="pt-2" />
     </div>
   );
 }
