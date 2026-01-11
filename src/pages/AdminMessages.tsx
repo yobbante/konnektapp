@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { MessageCircle, ArrowLeft, Users, Shield } from "lucide-react";
+import { MessageCircle, ArrowLeft, Users, Shield, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { ChatView } from "@/components/messaging/ChatView";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useDashboardTheme } from "@/hooks/useDashboardTheme";
+import { AdminNewConversationDialog } from "@/components/admin/AdminNewConversationDialog";
 
 interface Conversation {
   id: string;
@@ -33,6 +34,7 @@ export default function AdminMessages() {
   );
   const [selectedContactName, setSelectedContactName] = useState<string>("Conversation");
   const [loading, setLoading] = useState(true);
+  const [showNewConversation, setShowNewConversation] = useState(false);
 
   useEffect(() => {
     if (!roleLoading && !hasAdminAccess) {
@@ -97,6 +99,12 @@ export default function AdminMessages() {
     setSelectedContactName(`${conv.client_name} ↔ ${conv.gp_name}`);
   };
 
+  const handleConversationCreated = (conversationId: string, contactName: string) => {
+    setSelectedConversation(conversationId);
+    setSelectedContactName(contactName);
+    fetchConversations();
+  };
+
   const handleCreateConversation = async (clientId: string, gpId: string, orderId?: string) => {
     try {
       // Check if conversation exists
@@ -151,20 +159,36 @@ export default function AdminMessages() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Admin Header */}
-      <div className={`sticky top-0 z-50 ${theme.headerBgClass} ${theme.headerTextClass} py-3 px-4 shadow-md`}>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/admin")}
-            className="text-inherit hover:bg-white/10"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5" />
-            <span className="font-semibold">Messagerie Admin</span>
+      {/* Admin Header with Safe Area */}
+      <div 
+        className={`sticky top-0 z-50 ${theme.headerBgClass} ${theme.headerTextClass} shadow-md`}
+        style={{ paddingTop: 'calc(12px + var(--safe-top, 0px))' }}
+      >
+        <div className="py-3 px-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/admin")}
+                className="text-inherit hover:bg-white/10"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <div className="flex items-center gap-2">
+                <Shield className="w-5 h-5" />
+                <span className="font-semibold">Messagerie Admin</span>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowNewConversation(true)}
+              className="bg-white/10 hover:bg-white/20 text-inherit"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Nouvelle
+            </Button>
           </div>
         </div>
       </div>
@@ -255,6 +279,13 @@ export default function AdminMessages() {
           )}
         </div>
       </div>
+
+      {/* New Conversation Dialog */}
+      <AdminNewConversationDialog
+        open={showNewConversation}
+        onClose={() => setShowNewConversation(false)}
+        onConversationCreated={handleConversationCreated}
+      />
     </div>
   );
 }

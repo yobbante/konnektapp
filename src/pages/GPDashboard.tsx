@@ -5,7 +5,7 @@ import {
   Package, Wallet, Plus, ChevronRight, Star, 
   TrendingUp, Clock, MapPin, ArrowRight, LogOut,
   AlertTriangle, CheckCircle, Truck, ChevronDown, ChevronUp,
-  ArrowLeft, BarChart3, User, ShieldAlert, EyeOff, Bell
+  ArrowLeft, BarChart3, User, ShieldAlert, EyeOff, Bell, Copy
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
@@ -28,6 +28,7 @@ import { SmartNotifications } from "@/components/gp/dashboard/SmartNotifications
 import { ActiveOrderBar } from "@/components/gp/dashboard/ActiveOrderBar";
 import { GPStatsCharts } from "@/components/gp/dashboard/GPStatsCharts";
 import { SwitchToClientButton } from "@/components/profile/SwitchToClientButton";
+import { OfferFilters, OfferFilterState, defaultFilters } from "@/components/gp/OfferFilters";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   OrderStatus, 
@@ -566,7 +567,7 @@ function ModernOverviewTab({
 }
 
 // Offer Card Component with interactions
-function OfferCard({ offer, onRefresh }: { offer: any; onRefresh: () => void }) {
+function OfferCard({ offer, onRefresh, onDuplicate }: { offer: any; onRefresh: () => void; onDuplicate: (offer: any) => void }) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [updating, setUpdating] = useState(false);
@@ -626,7 +627,7 @@ function OfferCard({ offer, onRefresh }: { offer: any; onRefresh: () => void }) 
             {offer.bookings_count || 0} réservations
           </span>
         </div>
-        {/* Action Buttons - Enhanced with Edit */}
+        {/* Action Buttons - Enhanced with Edit and Duplicate */}
         <div className="flex gap-2 mt-3 pt-3 border-t border-border">
           <Button 
             variant="outline" 
@@ -652,16 +653,24 @@ function OfferCard({ offer, onRefresh }: { offer: any; onRefresh: () => void }) 
           <Button 
             variant="secondary" 
             size="sm" 
-            className="flex-1 h-8 text-xs"
+            className="h-8 text-xs px-2"
             onClick={() => setShowEditDialog(true)}
           >
-            <Package className="w-3 h-3 mr-1" />
-            Modifier
+            <Package className="w-3 h-3" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-8 text-xs px-2"
+            onClick={() => onDuplicate(offer)}
+            title="Dupliquer cette offre"
+          >
+            <Copy className="w-3 h-3" />
           </Button>
           <Button 
             variant="default" 
             size="sm" 
-            className="h-8 text-xs px-3"
+            className="h-8 text-xs px-2"
             onClick={() => navigate(`/offres/${offer.id}`)}
           >
             <ChevronRight className="w-3 h-3" />
@@ -683,8 +692,112 @@ function OfferCard({ offer, onRefresh }: { offer: any; onRefresh: () => void }) 
   );
 }
 
-// Offers Tab Component  
+// Offers Tab Component with filters and duplication
 function OffersTab({ offers, onCreateOffer, onRefresh, onBack }: any) {
+  const { toast } = useToast();
+  const [filters, setFilters] = useState<OfferFilterState>(defaultFilters);
+  const [duplicating, setDuplicating] = useState(false);
+
+  // Filter offers based on active filters
+  const filteredOffers = offers.filter((offer: any) => {
+    // Search filter
+    const searchMatch = filters.search === "" || 
+      offer.origin_city?.toLowerCase().includes(filters.search.toLowerCase()) ||
+      offer.destination_city?.toLowerCase().includes(filters.search.toLowerCase());
+    
+    // Status filter
+    const statusMatch = filters.status === "all" || offer.status === filters.status;
+    
+    // City filter
+    const cityMatch = filters.city === "" ||
+      offer.origin_city?.toLowerCase().includes(filters.city.toLowerCase()) ||
+      offer.destination_city?.toLowerCase().includes(filters.city.toLowerCase());
+    
+    // Date range filter
+    let dateMatch = true;
+    if (filters.dateRange !== "all") {
+      const offerDate = new Date(offer.departure_date);
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      
+      if (filters.dateRange === "today") {
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        dateMatch = offerDate >= now && offerDate < tomorrow;
+      } else if (filters.dateRange === "week") {
+        const weekEnd = new Date(now);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+        dateMatch = offerDate >= now && offerDate < weekEnd;
+      } else if (filters.dateRange === "month") {
+        const monthEnd = new Date(now);
+        monthEnd.setMonth(monthEnd.getMonth() + 1);
+        dateMatch = offerDate >= now && offerDate < monthEnd;
+      }
+    }
+    
+    return searchMatch && statusMatch && cityMatch && dateMatch;
+  });
+
+  const handleDuplicateOffer = async (offer: any) => {
+    setDuplicating(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Non authentifié");
+
+      // Get user's gp_profile
+      const { data: gpProfile } = await supabase
+        .from("gp_profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!gpProfile) throw new Error("Profil transporteur non trouvé");
+
+      // Create new offer with same data but new date
+      const newDepartureDate = new Date();
+      newDepartureDate.setDate(newDepartureDate.getDate() + 7); // Default to 1 week from now
+
+      const { error } = await supabase
+        .from("gp_offers")
+        .insert({
+          gp_id: gpProfile.id,
+          origin_city: offer.origin_city,
+          origin_country: offer.origin_country,
+          destination_city: offer.destination_city,
+          destination_country: offer.destination_country,
+          departure_date: newDepartureDate.toISOString(),
+          arrival_date: offer.arrival_date ? new Date(new Date(offer.arrival_date).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString() : null,
+          price_per_kg: offer.price_per_kg,
+          total_capacity: offer.total_capacity,
+          available_capacity: offer.total_capacity, // Reset to full capacity
+          min_weight: offer.min_weight,
+          max_weight: offer.max_weight,
+          description: offer.description,
+          conditions: offer.conditions,
+          transport_type: offer.transport_type,
+          status: "active",
+          currency: offer.currency || "XOF",
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Offre dupliquée",
+        description: "La nouvelle offre a été créée avec une date de départ dans 7 jours",
+      });
+      onRefresh();
+    } catch (error: any) {
+      console.error("Duplicate error:", error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible de dupliquer l'offre",
+        variant: "destructive",
+      });
+    } finally {
+      setDuplicating(false);
+    }
+  };
+
   return (
     <div className="px-4 py-4 space-y-4">
       {/* Back Button */}
@@ -701,19 +814,36 @@ function OffersTab({ offers, onCreateOffer, onRefresh, onBack }: any) {
         </Button>
       </div>
 
-      {offers.length === 0 ? (
+      {/* Filters */}
+      <OfferFilters 
+        activeFilters={filters}
+        onFilterChange={setFilters}
+      />
+
+      {/* Results count */}
+      <p className="text-xs text-muted-foreground">
+        {filteredOffers.length} offre{filteredOffers.length > 1 ? "s" : ""} 
+        {filteredOffers.length !== offers.length && ` (sur ${offers.length})`}
+      </p>
+
+      {filteredOffers.length === 0 ? (
         <div className="mobile-card text-center py-8">
           <Package className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
-          <p className="text-muted-foreground mb-4">Aucune offre active</p>
-          <Button variant="default" onClick={onCreateOffer}>Créer une offre</Button>
+          <p className="text-muted-foreground mb-4">
+            {offers.length === 0 ? "Aucune offre active" : "Aucune offre ne correspond aux filtres"}
+          </p>
+          {offers.length === 0 && (
+            <Button variant="default" onClick={onCreateOffer}>Créer une offre</Button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
-          {offers.map((offer: any) => (
+          {filteredOffers.map((offer: any) => (
             <OfferCard 
               key={offer.id} 
               offer={offer} 
               onRefresh={onRefresh}
+              onDuplicate={handleDuplicateOffer}
             />
           ))}
         </div>
