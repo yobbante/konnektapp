@@ -13,6 +13,7 @@ import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { ClientCustomRequests } from "@/components/client/ClientCustomRequests";
 import { CancelOrderButton } from "@/components/client/CancelOrderButton";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { ORDER_STATUS_LABELS, isValidOrderStatus } from "@/lib/enumMappings";
 
 interface Order {
@@ -106,11 +107,7 @@ export default function ClientDashboard() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-      </div>
-    );
+    return <PageLoader message="Chargement de votre espace..." />;
   }
 
   const stats = {

@@ -29,6 +29,9 @@ import { ActiveOrderBar } from "@/components/gp/dashboard/ActiveOrderBar";
 import { GPStatsCharts } from "@/components/gp/dashboard/GPStatsCharts";
 import { SwitchToClientButton } from "@/components/profile/SwitchToClientButton";
 import { OfferFilters, OfferFilterState, defaultFilters } from "@/components/gp/OfferFilters";
+import { DepartureCalendar } from "@/components/gp/DepartureCalendar";
+import { OfferStats } from "@/components/gp/OfferStats";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   OrderStatus, 
@@ -208,11 +211,7 @@ export default function GPDashboard() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-      </div>
-    );
+    return <PageLoader message="Chargement de votre tableau de bord..." />;
   }
 
   if (!gpProfile) return null;
