@@ -19,6 +19,7 @@ import { AdminDisputeArbitration } from "@/components/admin/AdminDisputeArbitrat
 import { AdminTransporterReputation } from "@/components/admin/AdminTransporterReputation";
 import { AdminPermissionsManager } from "@/components/admin/AdminPermissionsManager";
 import { AdminDropdownMenu } from "@/components/admin/AdminDropdownMenu";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { assertValidGpStatus, type GpStatus } from "@/lib/enumMappings";
 
 interface GPProfile {
@@ -195,11 +196,7 @@ export default function AdminDashboard() {
   });
 
   if (roleLoading || loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-      </div>
-    );
+    return <PageLoader message="Chargement du tableau de bord admin..." />;
   }
 
   // Global search across all data
