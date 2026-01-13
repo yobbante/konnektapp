@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { GlobalNotificationProvider } from "@/components/notifications/GlobalNotificationProvider";
 import Index from "./pages/Index";
 import Offres from "./pages/Offres";
 import OfferDetail from "./pages/OfferDetail";
@@ -44,12 +45,13 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <ScrollToTop />
-        <ScrollToTopButton />
-        <AuthGuard>
+      <GlobalNotificationProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <ScrollToTop />
+          <ScrollToTopButton />
+          <AuthGuard>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/demande" element={<DemandeEnvoi />} />
@@ -88,7 +90,8 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthGuard>
-      </BrowserRouter>
+        </BrowserRouter>
+      </GlobalNotificationProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
