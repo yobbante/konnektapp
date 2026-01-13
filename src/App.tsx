@@ -7,6 +7,7 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { GlobalNotificationProvider } from "@/components/notifications/GlobalNotificationProvider";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 import Index from "./pages/Index";
 import Offres from "./pages/Offres";
 import OfferDetail from "./pages/OfferDetail";
@@ -46,6 +47,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <GlobalNotificationProvider>
+        <OfflineIndicator />
         <Toaster />
         <Sonner />
         <BrowserRouter>

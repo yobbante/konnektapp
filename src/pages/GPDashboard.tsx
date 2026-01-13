@@ -32,6 +32,7 @@ import { OfferFilters, OfferFilterState, defaultFilters } from "@/components/gp/
 import { DepartureCalendar } from "@/components/gp/DepartureCalendar";
 import { OfferStats } from "@/components/gp/OfferStats";
 import { PageLoader } from "@/components/ui/PageLoader";
+import { GPOnboardingGuide, useGPOnboarding } from "@/components/gp/GPOnboardingGuide";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   OrderStatus, 

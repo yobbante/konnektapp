@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, ArrowLeft, Phone, MoreVertical } from "lucide-react";
+import { Send, ArrowLeft, Phone, MoreVertical, Check, CheckCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
+import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { TypingIndicator } from "./TypingIndicator";
+import { MiniLoader } from "@/components/ui/MiniLoader";
 
 interface Message {
   id: string;
@@ -33,6 +35,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { notify } = useNotificationSound();
   
   const { isOtherTyping, handleTypingStart, stopTyping } = useTypingIndicator(
     conversationId,
@@ -58,9 +61,10 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
         (payload) => {
           setMessages((prev) => [...prev, payload.new as Message]);
           scrollToBottom();
-          // Mark new messages as read if from other user
+          // Mark new messages as read if from other user and play sound
           if ((payload.new as Message).sender_id !== currentUserId) {
             markMessageAsRead((payload.new as Message).id);
+            notify({ sound: true, vibrate: [100] });
           }
         }
       )
@@ -177,12 +181,8 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className={`flex ${i % 2 === 0 ? "justify-end" : ""}`}>
-                <div className="animate-pulse w-2/3 h-12 bg-muted rounded-2xl" />
-              </div>
-            ))}
+          <div className="flex items-center justify-center py-12">
+            <MiniLoader size="md" showText text="Chargement des messages..." />
           </div>
         ) : messages.length === 0 ? (
           <div className="text-center py-8">
@@ -219,6 +219,16 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
                     }`}
                   >
                     <p className="text-sm">{msg.content}</p>
+                    {/* Read indicator for own messages */}
+                    {isOwn && (
+                      <div className="flex justify-end mt-1">
+                        {msg.read_at ? (
+                          <CheckCheck className="w-3.5 h-3.5 text-primary-foreground/70" />
+                        ) : (
+                          <Check className="w-3.5 h-3.5 text-primary-foreground/50" />
+                        )}
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               </div>
