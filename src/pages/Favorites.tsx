@@ -85,7 +85,7 @@ export default function Favorites() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 pb-20">
+    <div className="min-h-screen bg-muted/30 pb-safe">
       <MobileHeader title="Mes Favoris" showNotifications />
 
       <div className="px-4 py-4">

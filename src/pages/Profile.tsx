@@ -567,8 +567,8 @@ export default function Profile() {
             )}
           </motion.div>
 
-          {/* Switch to Transporteur - Airbnb style */}
-          <SwitchToTransporteurButton />
+          {/* Switch to Transporteur - Explicit for multi-role users */}
+          <SwitchToTransporteurButton className="mt-2" />
 
           {/* Sign Out */}
           <motion.div 

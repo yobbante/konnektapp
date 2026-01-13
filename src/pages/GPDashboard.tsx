@@ -559,6 +559,12 @@ function ModernOverviewTab({
       </Collapsible>
       </div>
 
+      {/* Departure Calendar - Integrated */}
+      <DepartureCalendar gpId={gpProfile.id} onCreateOffer={onCreateOffer} />
+
+      {/* Offer Stats - Integrated */}
+      <OfferStats gpId={gpProfile.id} />
+
       {/* Switch to Client - Airbnb style */}
       <SwitchToClientButton variant="light" className="pt-2" />
     </div>
