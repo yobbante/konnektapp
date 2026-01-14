@@ -67,7 +67,7 @@ export default function Profile() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [orderStats, setOrderStats] = useState<OrderStats>({ total: 0, pending: 0, inTransit: 0, delivered: 0 });
-  const [activeTab, setActiveTab] = useState<"profile" | "orders">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "orders" | "dashboard">("profile");
   
   // Rating dialog state
   const [ratingOrder, setRatingOrder] = useState<Order | null>(null);
@@ -277,7 +277,7 @@ export default function Profile() {
         <div className="flex rounded-xl bg-muted p-1">
           <button
             onClick={() => setActiveTab("profile")}
-            className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2.5 px-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
               activeTab === "profile" 
                 ? "bg-background text-foreground shadow-sm" 
                 : "text-muted-foreground"
@@ -288,7 +288,7 @@ export default function Profile() {
           </button>
           <button
             onClick={() => setActiveTab("orders")}
-            className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2.5 px-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
               activeTab === "orders" 
                 ? "bg-background text-foreground shadow-sm" 
                 : "text-muted-foreground"
@@ -297,10 +297,21 @@ export default function Profile() {
             <Package className="w-4 h-4" />
             Mes envois
             {orderStats.total > 0 && (
-              <span className="bg-primary text-primary-foreground text-xs px-1.5 rounded-full">
+              <span className="bg-primary text-primary-foreground text-[10px] px-1.5 rounded-full">
                 {orderStats.total}
               </span>
             )}
+          </button>
+          <button
+            onClick={() => setActiveTab("dashboard")}
+            className={`flex-1 py-2.5 px-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
+              activeTab === "dashboard" 
+                ? "bg-background text-foreground shadow-sm" 
+                : "text-muted-foreground"
+            }`}
+          >
+            <Home className="w-4 h-4" />
+            Mon espace
           </button>
         </div>
       </div>
@@ -676,6 +687,28 @@ export default function Profile() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {activeTab === "dashboard" && (
+        <div className="px-4 py-4 space-y-4">
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-8"
+          >
+            <Home className="w-16 h-16 text-primary/30 mx-auto mb-4" />
+            <h3 className="font-semibold text-foreground mb-2">Mon espace client</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Accédez à toutes vos fonctionnalités depuis votre tableau de bord
+            </p>
+            <Link to="/client/dashboard">
+              <Button>
+                Ouvrir mon tableau de bord
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </Link>
+          </motion.div>
         </div>
       )}
 

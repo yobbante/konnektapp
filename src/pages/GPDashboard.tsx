@@ -5,7 +5,7 @@ import {
   Package, Wallet, Plus, ChevronRight, Star, 
   TrendingUp, Clock, MapPin, ArrowRight, LogOut,
   AlertTriangle, CheckCircle, Truck, ChevronDown, ChevronUp,
-  ArrowLeft, BarChart3, User, ShieldAlert, EyeOff, Bell, Copy
+  ArrowLeft, BarChart3, User, ShieldAlert, EyeOff, Bell, Copy, FileText
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
@@ -34,6 +34,7 @@ import { OfferStats } from "@/components/gp/OfferStats";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { GPOnboardingGuide, useGPOnboarding } from "@/components/gp/GPOnboardingGuide";
 import { AdvancedAnalyticsDashboard } from "@/components/gp/dashboard/AdvancedAnalyticsDashboard";
+import { GPNotificationsPanel } from "@/components/gp/dashboard/GPNotificationsPanel";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   OrderStatus, 
@@ -270,12 +271,12 @@ export default function GPDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* Notifications button - disabled badge */}
+            {/* Notifications button - opens notifications tab in dashboard */}
             <Button 
               variant="ghost" 
               size="icon" 
               className="relative bg-white/10 hover:bg-white/20 text-inherit"
-              onClick={() => navigate("/alerts")}
+              onClick={() => setActiveTab("notifications")}
             >
               <Bell className="w-5 h-5" />
             </Button>
@@ -435,6 +436,32 @@ export default function GPDashboard() {
           >
             <User className="w-4 h-4 mr-2" />
             Voir mon profil complet
+          </Button>
+        </div>
+      )}
+
+      {activeTab === "notifications" && (
+        <NotificationsTab gpProfileId={gpProfile.id} onBack={handleBackToOverview} />
+      )}
+
+      {activeTab === "requests" && (
+        <div className="px-4 py-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleBackToOverview} 
+            className="-ml-2 mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Retour
+          </Button>
+          <Button 
+            variant="default" 
+            className="w-full"
+            onClick={() => navigate("/gp/demandes")}
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            Voir les demandes personnalisées
           </Button>
         </div>
       )}
@@ -1110,6 +1137,28 @@ function StatsTab({ orders, gpProfileId, onBack }: { orders: any[]; gpProfileId:
 
       {/* Advanced Analytics Dashboard */}
       <AdvancedAnalyticsDashboard gpId={gpProfileId} orders={orders} />
+    </div>
+  );
+}
+
+// Notifications Tab Component - Shows GP relevant notifications IN dashboard
+function NotificationsTab({ gpProfileId, onBack }: { gpProfileId: string; onBack: () => void }) {
+  const navigate = useNavigate();
+
+  const handleViewOrderDetail = (orderId: string) => {
+    navigate(`/gp/order/${orderId}`);
+  };
+
+  return (
+    <div className="px-4 py-4 space-y-4">
+      <Button variant="ghost" size="sm" onClick={onBack} className="-ml-2">
+        <ArrowLeft className="w-4 h-4 mr-1" />
+        Retour
+      </Button>
+
+      <h2 className="font-semibold text-foreground">Mes notifications</h2>
+
+      <GPNotificationsPanel gpProfileId={gpProfileId} onViewOrderDetail={handleViewOrderDetail} />
     </div>
   );
 }

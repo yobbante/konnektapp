@@ -1,19 +1,21 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Truck, ArrowRight, X, Repeat } from "lucide-react";
+import { User, Truck, ArrowRight, X, Repeat, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useActiveRole } from "@/hooks/useActiveRole";
+import { useUserRole } from "@/hooks/useUserRole";
 
 /**
- * Constant floating popup for multi-role users to switch between Client and Transporteur modes
- * Appears in bottom-left corner when user has both roles
+ * Constant floating popup for multi-role users to switch between Client, Transporteur, and Admin modes
+ * Centered at the bottom of the screen
  */
 export function RoleSwitchPopup() {
   const navigate = useNavigate();
   const location = useLocation();
   const { activeRole, isGP, isClient, userId } = useActiveRole();
+  const { isAdmin } = useUserRole();
   const [hasGPProfile, setHasGPProfile] = useState(false);
   const [gpBusinessName, setGPBusinessName] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
@@ -63,27 +65,47 @@ export function RoleSwitchPopup() {
     navigate("/gp/dashboard");
   };
 
+  const handleSwitchToAdmin = () => {
+    setIsExpanded(false);
+    navigate("/admin");
+  };
+
   // Don't render if:
   // - Loading
   // - User is not authenticated
-  // - User doesn't have GP profile (single role)
+  // - User doesn't have GP profile AND is not admin (single role client)
   // - On hidden routes
-  if (loading || !userId || !hasGPProfile || shouldHide) {
+  if (loading || !userId || (!hasGPProfile && !isAdmin) || shouldHide) {
     return null;
   }
 
   // Determine current mode based on route
   const isInTransporteurMode = location.pathname.startsWith("/gp") || location.pathname.startsWith("/transporter");
-  const isInClientMode = !isInTransporteurMode;
+  const isInAdminMode = location.pathname.startsWith("/admin");
+  const isInClientMode = !isInTransporteurMode && !isInAdminMode;
+
+  // Get current mode label
+  const getCurrentModeLabel = () => {
+    if (isInAdminMode) return "Admin";
+    if (isInTransporteurMode) return "Transporteur";
+    return "Client";
+  };
+
+  // Get the switch label - what user can switch TO
+  const getSwitchLabel = () => {
+    if (isInAdminMode) return "Client";
+    if (isInTransporteurMode) return "Client";
+    return hasGPProfile ? "Transporteur" : "Admin";
+  };
 
   return (
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          className="fixed bottom-24 left-4 z-50"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50"
         >
           {/* Collapsed Button */}
           {!isExpanded && (
@@ -97,7 +119,7 @@ export function RoleSwitchPopup() {
             >
               <Repeat className="w-4 h-4" />
               <span className="text-sm font-medium">
-                {isInTransporteurMode ? "Client" : "Transporteur"}
+                {getSwitchLabel()}
               </span>
             </motion.button>
           )}
@@ -132,7 +154,7 @@ export function RoleSwitchPopup() {
                   <p className="text-xs text-muted-foreground">
                     Actuellement en mode{" "}
                     <span className="font-semibold text-foreground">
-                      {isInTransporteurMode ? "Transporteur" : "Client"}
+                      {getCurrentModeLabel()}
                     </span>
                   </p>
                 </div>
@@ -166,38 +188,69 @@ export function RoleSwitchPopup() {
                     )}
                   </button>
 
-                  {/* Transporteur Mode */}
-                  <button
-                    onClick={handleSwitchToTransporteur}
-                    disabled={isInTransporteurMode}
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
-                      isInTransporteurMode
-                        ? "bg-secondary/10 border-2 border-secondary/30 cursor-default"
-                        : "bg-muted/50 hover:bg-muted border border-transparent hover:border-border"
-                    }`}
-                  >
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      isInTransporteurMode ? "bg-secondary text-secondary-foreground" : "bg-muted text-muted-foreground"
-                    }`}>
-                      <Truck className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className="font-medium text-sm">Mode Transporteur</p>
-                      <p className="text-xs text-muted-foreground truncate">{gpBusinessName}</p>
-                    </div>
-                    {isInTransporteurMode && (
-                      <span className="text-xs font-medium text-secondary">Actif</span>
-                    )}
-                    {!isInTransporteurMode && (
-                      <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                    )}
-                  </button>
+                  {/* Transporteur Mode - Only show if user has GP profile */}
+                  {hasGPProfile && (
+                    <button
+                      onClick={handleSwitchToTransporteur}
+                      disabled={isInTransporteurMode}
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
+                        isInTransporteurMode
+                          ? "bg-secondary/10 border-2 border-secondary/30 cursor-default"
+                          : "bg-muted/50 hover:bg-muted border border-transparent hover:border-border"
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        isInTransporteurMode ? "bg-secondary text-secondary-foreground" : "bg-muted text-muted-foreground"
+                      }`}>
+                        <Truck className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="font-medium text-sm">Mode Transporteur</p>
+                        <p className="text-xs text-muted-foreground truncate">{gpBusinessName}</p>
+                      </div>
+                      {isInTransporteurMode && (
+                        <span className="text-xs font-medium text-secondary">Actif</span>
+                      )}
+                      {!isInTransporteurMode && (
+                        <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                      )}
+                    </button>
+                  )}
+
+                  {/* Admin Mode - Only show if user is admin */}
+                  {isAdmin && (
+                    <button
+                      onClick={handleSwitchToAdmin}
+                      disabled={isInAdminMode}
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
+                        isInAdminMode
+                          ? "bg-destructive/10 border-2 border-destructive/30 cursor-default"
+                          : "bg-muted/50 hover:bg-muted border border-transparent hover:border-border"
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        isInAdminMode ? "bg-destructive text-destructive-foreground" : "bg-muted text-muted-foreground"
+                      }`}>
+                        <Shield className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="font-medium text-sm">Mode Admin</p>
+                        <p className="text-xs text-muted-foreground">Gestion plateforme</p>
+                      </div>
+                      {isInAdminMode && (
+                        <span className="text-xs font-medium text-destructive">Actif</span>
+                      )}
+                      {!isInAdminMode && (
+                        <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                      )}
+                    </button>
+                  )}
                 </div>
 
                 {/* Footer hint */}
                 <div className="px-4 py-2 border-t border-border bg-muted/20">
                   <p className="text-[10px] text-muted-foreground text-center">
-                    Vos données sont synchronisées entre les deux modes
+                    Vos données sont synchronisées entre les modes
                   </p>
                 </div>
               </motion.div>
