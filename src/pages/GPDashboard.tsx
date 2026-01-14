@@ -33,6 +33,7 @@ import { DepartureCalendar } from "@/components/gp/DepartureCalendar";
 import { OfferStats } from "@/components/gp/OfferStats";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { GPOnboardingGuide, useGPOnboarding } from "@/components/gp/GPOnboardingGuide";
+import { AdvancedAnalyticsDashboard } from "@/components/gp/dashboard/AdvancedAnalyticsDashboard";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   OrderStatus, 
@@ -413,7 +414,7 @@ export default function GPDashboard() {
       )}
 
       {activeTab === "stats" && (
-        <StatsTab orders={orders} onBack={handleBackToOverview} />
+        <StatsTab orders={orders} gpProfileId={gpProfile.id} onBack={handleBackToOverview} />
       )}
 
       {activeTab === "profile" && (
@@ -1096,8 +1097,8 @@ function WalletTab({ wallet, onBack }: { wallet: WalletData | null; onBack: () =
   );
 }
 
-// Stats Tab Component
-function StatsTab({ orders, onBack }: { orders: any[]; onBack: () => void }) {
+// Stats Tab Component with Advanced Analytics
+function StatsTab({ orders, gpProfileId, onBack }: { orders: any[]; gpProfileId: string; onBack: () => void }) {
   return (
     <div className="px-4 py-4 space-y-4">
       <Button variant="ghost" size="sm" onClick={onBack} className="-ml-2">
@@ -1105,9 +1106,10 @@ function StatsTab({ orders, onBack }: { orders: any[]; onBack: () => void }) {
         Retour
       </Button>
 
-      <h2 className="font-semibold text-foreground">Statistiques</h2>
+      <h2 className="font-semibold text-foreground">Statistiques & Analytiques</h2>
 
-      <GPStatsCharts orders={orders} gpType="transporteur" />
+      {/* Advanced Analytics Dashboard */}
+      <AdvancedAnalyticsDashboard gpId={gpProfileId} orders={orders} />
     </div>
   );
 }
