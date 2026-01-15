@@ -1,17 +1,22 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { ConversationList } from "@/components/messaging/ConversationList";
 import { ChatView } from "@/components/messaging/ChatView";
+import { Button } from "@/components/ui/button";
+import { AdminNewConversationDialog } from "@/components/admin/AdminNewConversationDialog";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [selectedContactName, setSelectedContactName] = useState<string>("Contact");
   const [currentUser, setCurrentUser] = useState<{ id: string; isGp: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showNewConversation, setShowNewConversation] = useState(false);
+  const { hasAdminAccess } = useUserRole();
 
   useEffect(() => {
     checkUser();
@@ -43,6 +48,12 @@ export default function MessagesPage() {
   const handleSelectConversation = (conversationId: string, contactName: string) => {
     setSelectedConversation(conversationId);
     setSelectedContactName(contactName);
+  };
+
+  const handleConversationCreated = (conversationId: string, contactName: string) => {
+    setSelectedConversation(conversationId);
+    setSelectedContactName(contactName);
+    setShowNewConversation(false);
   };
 
   if (loading) {
@@ -92,11 +103,23 @@ export default function MessagesPage() {
             animate={{ opacity: 1 }}
             className="flex-1 flex flex-col overflow-hidden"
           >
-            <div className="px-4 py-4 flex-shrink-0">
-              <h1 className="text-xl font-bold">Messages</h1>
-              <p className="text-sm text-muted-foreground">
-                Vos conversations avec {currentUser.isGp ? "les clients" : "les transporteurs"}
-              </p>
+            <div className="px-4 py-4 flex-shrink-0 flex items-center justify-between">
+              <div>
+                <h1 className="text-xl font-bold">Messages</h1>
+                <p className="text-sm text-muted-foreground">
+                  Vos conversations avec {currentUser.isGp ? "les clients" : "les transporteurs"}
+                </p>
+              </div>
+              {hasAdminAccess && (
+                <Button 
+                  variant="default" 
+                  size="sm"
+                  onClick={() => setShowNewConversation(true)}
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Nouveau
+                </Button>
+              )}
             </div>
             <div className="flex-1 overflow-y-auto">
               <ConversationList
@@ -110,6 +133,13 @@ export default function MessagesPage() {
       </div>
 
       {!selectedConversation && <MobileNav />}
+
+      {/* Admin New Conversation Dialog */}
+      <AdminNewConversationDialog
+        open={showNewConversation}
+        onClose={() => setShowNewConversation(false)}
+        onConversationCreated={handleConversationCreated}
+      />
     </div>
   );
 }
