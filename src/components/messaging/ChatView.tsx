@@ -155,34 +155,34 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b border-border bg-background">
-        <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden">
+    <div className="flex flex-col h-full" style={{ height: '100dvh' }}>
+      {/* Header - Compact for mobile */}
+      <div className="flex items-center gap-3 px-3 py-2.5 border-b border-border bg-background flex-shrink-0 sticky top-0 z-10" style={{ paddingTop: 'calc(8px + var(--safe-top, 0px))' }}>
+        <Button variant="ghost" size="icon" onClick={onBack} className="h-9 w-9">
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-          <span className="font-semibold text-primary">
+        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+          <span className="font-semibold text-primary text-sm">
             {contactName?.charAt(0) || "?"}
           </span>
         </div>
-        <div className="flex-1">
-          <p className="font-medium">{contactName || "Contact"}</p>
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-sm truncate">{contactName || "Contact"}</p>
           <p className="text-xs text-muted-foreground">En ligne</p>
         </div>
-        <Button variant="ghost" size="icon">
-          <Phone className="w-5 h-5" />
+        <Button variant="ghost" size="icon" className="h-9 w-9">
+          <Phone className="w-4 h-4" />
         </Button>
-        <Button variant="ghost" size="icon">
-          <MoreVertical className="w-5 h-5" />
+        <Button variant="ghost" size="icon" className="h-9 w-9">
+          <MoreVertical className="w-4 h-4" />
         </Button>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      {/* Messages - Maximized view area for mobile */}
+      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2" style={{ minHeight: 0 }}>
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <MiniLoader size="md" showText text="Chargement des messages..." />
+            <MiniLoader size="md" showText text="Chargement..." />
           </div>
         ) : messages.length === 0 ? (
           <div className="text-center py-8">
@@ -202,7 +202,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
             return (
               <div key={msg.id}>
                 {showTime && (
-                  <p className="text-xs text-center text-muted-foreground mb-2">
+                  <p className="text-[10px] text-center text-muted-foreground mb-2">
                     {format(new Date(msg.created_at), "d MMM, HH:mm", { locale: fr })}
                   </p>
                 )}
@@ -212,20 +212,20 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
                   className={`flex ${isOwn ? "justify-end" : ""}`}
                 >
                   <div
-                    className={`max-w-[75%] px-4 py-2.5 rounded-2xl ${
+                    className={`max-w-[80%] px-3 py-2 rounded-2xl ${
                       isOwn
                         ? "bg-primary text-primary-foreground rounded-br-md"
                         : "bg-muted text-foreground rounded-bl-md"
                     }`}
                   >
-                    <p className="text-sm">{msg.content}</p>
+                    <p className="text-sm leading-relaxed">{msg.content}</p>
                     {/* Read indicator for own messages */}
                     {isOwn && (
-                      <div className="flex justify-end mt-1">
+                      <div className="flex justify-end mt-0.5">
                         {msg.read_at ? (
-                          <CheckCheck className="w-3.5 h-3.5 text-primary-foreground/70" />
+                          <CheckCheck className="w-3 h-3 text-primary-foreground/70" />
                         ) : (
-                          <Check className="w-3.5 h-3.5 text-primary-foreground/50" />
+                          <Check className="w-3 h-3 text-primary-foreground/50" />
                         )}
                       </div>
                     )}
@@ -246,9 +246,13 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <form onSubmit={sendMessage} className="p-4 border-t border-border bg-background">
-        <div className="flex gap-2">
+      {/* Input - Mobile optimized with larger touch target */}
+      <form 
+        onSubmit={sendMessage} 
+        className="p-3 border-t border-border bg-background flex-shrink-0"
+        style={{ paddingBottom: 'calc(12px + var(--safe-bottom, 0px))' }}
+      >
+        <div className="flex gap-2 items-end">
           <Input
             placeholder="Votre message..."
             value={newMessage}
@@ -256,9 +260,15 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
               setNewMessage(e.target.value);
               handleTypingStart();
             }}
-            className="flex-1 h-11"
+            className="flex-1 min-h-[44px] text-base"
+            autoComplete="off"
+            autoCorrect="on"
           />
-          <Button type="submit" disabled={!newMessage.trim() || sending} className="h-11 px-4">
+          <Button 
+            type="submit" 
+            disabled={!newMessage.trim() || sending} 
+            className="h-11 w-11 p-0 flex-shrink-0"
+          >
             <Send className="w-5 h-5" />
           </Button>
         </div>

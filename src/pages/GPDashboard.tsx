@@ -34,7 +34,7 @@ import { OfferStats } from "@/components/gp/OfferStats";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { GPOnboardingGuide, useGPOnboarding } from "@/components/gp/GPOnboardingGuide";
 import { AdvancedAnalyticsDashboard } from "@/components/gp/dashboard/AdvancedAnalyticsDashboard";
-import { GPNotificationsPanel } from "@/components/gp/dashboard/GPNotificationsPanel";
+import { GPNotificationsDropdown } from "@/components/gp/dashboard/GPNotificationsDropdown";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   OrderStatus, 
@@ -78,6 +78,7 @@ export default function GPDashboard() {
   const [orders, setOrders] = useState<any[]>([]);
   const [showCreateOffer, setShowCreateOffer] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [showNotifications, setShowNotifications] = useState(false);
   const { notify } = useNotificationSound();
 
   // Check if profile is pending validation
@@ -271,12 +272,12 @@ export default function GPDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* Notifications button - opens notifications tab in dashboard */}
+            {/* Notifications button - opens dropdown */}
             <Button 
               variant="ghost" 
               size="icon" 
               className="relative bg-white/10 hover:bg-white/20 text-inherit"
-              onClick={() => setActiveTab("notifications")}
+              onClick={() => setShowNotifications(true)}
             >
               <Bell className="w-5 h-5" />
             </Button>
@@ -440,9 +441,13 @@ export default function GPDashboard() {
         </div>
       )}
 
-      {activeTab === "notifications" && (
-        <NotificationsTab gpProfileId={gpProfile.id} onBack={handleBackToOverview} />
-      )}
+      {/* Notifications Dropdown */}
+      <GPNotificationsDropdown 
+        gpProfileId={gpProfile.id}
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+        onViewOrderDetail={(orderId) => navigate(`/gp/order/${orderId}`)}
+      />
 
       {activeTab === "requests" && (
         <div className="px-4 py-4">
@@ -1141,24 +1146,4 @@ function StatsTab({ orders, gpProfileId, onBack }: { orders: any[]; gpProfileId:
   );
 }
 
-// Notifications Tab Component - Shows GP relevant notifications IN dashboard
-function NotificationsTab({ gpProfileId, onBack }: { gpProfileId: string; onBack: () => void }) {
-  const navigate = useNavigate();
-
-  const handleViewOrderDetail = (orderId: string) => {
-    navigate(`/gp/order/${orderId}`);
-  };
-
-  return (
-    <div className="px-4 py-4 space-y-4">
-      <Button variant="ghost" size="sm" onClick={onBack} className="-ml-2">
-        <ArrowLeft className="w-4 h-4 mr-1" />
-        Retour
-      </Button>
-
-      <h2 className="font-semibold text-foreground">Mes notifications</h2>
-
-      <GPNotificationsPanel gpProfileId={gpProfileId} onViewOrderDetail={handleViewOrderDetail} />
-    </div>
-  );
-}
+// Old NotificationsTab removed - now using GPNotificationsDropdown

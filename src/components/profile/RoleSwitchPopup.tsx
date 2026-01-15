@@ -105,9 +105,14 @@ export function RoleSwitchPopup() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
-          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50"
+          className="fixed z-50"
+          style={{
+            bottom: 'calc(90px + var(--safe-bottom, 0px))',
+            left: '50%',
+            transform: 'translateX(-50%)',
+          }}
         >
-          {/* Collapsed Button */}
+          {/* Collapsed Button - Mobile optimized */}
           {!isExpanded && (
             <motion.button
               initial={{ scale: 0.9 }}
@@ -115,26 +120,27 @@ export function RoleSwitchPopup() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsExpanded(true)}
-              className="flex items-center gap-2 px-4 py-3 bg-foreground text-background rounded-full shadow-xl hover:shadow-2xl transition-all"
+              className="flex items-center gap-2 px-4 py-2.5 bg-foreground text-background rounded-full shadow-xl hover:shadow-2xl transition-all text-sm"
             >
               <Repeat className="w-4 h-4" />
-              <span className="text-sm font-medium">
+              <span className="font-medium">
                 {getSwitchLabel()}
               </span>
             </motion.button>
           )}
 
-          {/* Expanded Popup */}
+          {/* Expanded Popup - Mobile optimized */}
           <AnimatePresence>
             {isExpanded && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                className="bg-card border border-border rounded-2xl shadow-2xl overflow-hidden w-72"
+                className="bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
+                style={{ width: 'min(calc(100vw - 32px), 280px)' }}
               >
                 {/* Header */}
-                <div className="px-4 py-3 bg-gradient-to-r from-primary/10 to-secondary/10 border-b border-border flex items-center justify-between">
+                <div className="px-3 py-2 bg-gradient-to-r from-primary/10 to-secondary/10 border-b border-border flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Repeat className="w-4 h-4 text-primary" />
                     <span className="font-semibold text-sm">Changer de mode</span>
@@ -150,40 +156,39 @@ export function RoleSwitchPopup() {
                 </div>
 
                 {/* Current Mode Indicator */}
-                <div className="px-4 py-2 bg-muted/30">
+                <div className="px-3 py-1.5 bg-muted/30">
                   <p className="text-xs text-muted-foreground">
-                    Actuellement en mode{" "}
+                    Mode actuel:{" "}
                     <span className="font-semibold text-foreground">
                       {getCurrentModeLabel()}
                     </span>
                   </p>
                 </div>
 
-                {/* Switch Options */}
-                <div className="p-3 space-y-2">
+                {/* Switch Options - Compact for mobile */}
+                <div className="p-2 space-y-1.5">
                   {/* Client Mode */}
                   <button
                     onClick={handleSwitchToClient}
                     disabled={isInClientMode}
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
+                    className={`w-full flex items-center gap-2 p-2.5 rounded-xl transition-all ${
                       isInClientMode
                         ? "bg-primary/10 border-2 border-primary/30 cursor-default"
-                        : "bg-muted/50 hover:bg-muted border border-transparent hover:border-border"
+                        : "bg-muted/50 hover:bg-muted border border-transparent hover:border-border active:scale-[0.98]"
                     }`}
                   >
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                       isInClientMode ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                     }`}>
-                      <User className="w-5 h-5" />
+                      <User className="w-4 h-4" />
                     </div>
                     <div className="flex-1 text-left">
-                      <p className="font-medium text-sm">Mode Client</p>
-                      <p className="text-xs text-muted-foreground">Envoyez vos colis</p>
+                      <p className="font-medium text-sm">Client</p>
+                      <p className="text-[10px] text-muted-foreground">Envoyez vos colis</p>
                     </div>
-                    {isInClientMode && (
-                      <span className="text-xs font-medium text-primary">Actif</span>
-                    )}
-                    {!isInClientMode && (
+                    {isInClientMode ? (
+                      <span className="text-[10px] font-medium text-primary">Actif</span>
+                    ) : (
                       <ArrowRight className="w-4 h-4 text-muted-foreground" />
                     )}
                   </button>
@@ -193,25 +198,24 @@ export function RoleSwitchPopup() {
                     <button
                       onClick={handleSwitchToTransporteur}
                       disabled={isInTransporteurMode}
-                      className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
+                      className={`w-full flex items-center gap-2 p-2.5 rounded-xl transition-all ${
                         isInTransporteurMode
                           ? "bg-secondary/10 border-2 border-secondary/30 cursor-default"
-                          : "bg-muted/50 hover:bg-muted border border-transparent hover:border-border"
+                          : "bg-muted/50 hover:bg-muted border border-transparent hover:border-border active:scale-[0.98]"
                       }`}
                     >
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                         isInTransporteurMode ? "bg-secondary text-secondary-foreground" : "bg-muted text-muted-foreground"
                       }`}>
-                        <Truck className="w-5 h-5" />
+                        <Truck className="w-4 h-4" />
                       </div>
-                      <div className="flex-1 text-left">
-                        <p className="font-medium text-sm">Mode Transporteur</p>
-                        <p className="text-xs text-muted-foreground truncate">{gpBusinessName}</p>
+                      <div className="flex-1 text-left min-w-0">
+                        <p className="font-medium text-sm">Transporteur</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{gpBusinessName}</p>
                       </div>
-                      {isInTransporteurMode && (
-                        <span className="text-xs font-medium text-secondary">Actif</span>
-                      )}
-                      {!isInTransporteurMode && (
+                      {isInTransporteurMode ? (
+                        <span className="text-[10px] font-medium text-secondary">Actif</span>
+                      ) : (
                         <ArrowRight className="w-4 h-4 text-muted-foreground" />
                       )}
                     </button>
@@ -222,36 +226,28 @@ export function RoleSwitchPopup() {
                     <button
                       onClick={handleSwitchToAdmin}
                       disabled={isInAdminMode}
-                      className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
+                      className={`w-full flex items-center gap-2 p-2.5 rounded-xl transition-all ${
                         isInAdminMode
                           ? "bg-destructive/10 border-2 border-destructive/30 cursor-default"
-                          : "bg-muted/50 hover:bg-muted border border-transparent hover:border-border"
+                          : "bg-muted/50 hover:bg-muted border border-transparent hover:border-border active:scale-[0.98]"
                       }`}
                     >
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                         isInAdminMode ? "bg-destructive text-destructive-foreground" : "bg-muted text-muted-foreground"
                       }`}>
-                        <Shield className="w-5 h-5" />
+                        <Shield className="w-4 h-4" />
                       </div>
                       <div className="flex-1 text-left">
-                        <p className="font-medium text-sm">Mode Admin</p>
-                        <p className="text-xs text-muted-foreground">Gestion plateforme</p>
+                        <p className="font-medium text-sm">Admin</p>
+                        <p className="text-[10px] text-muted-foreground">Gestion plateforme</p>
                       </div>
-                      {isInAdminMode && (
-                        <span className="text-xs font-medium text-destructive">Actif</span>
-                      )}
-                      {!isInAdminMode && (
+                      {isInAdminMode ? (
+                        <span className="text-[10px] font-medium text-destructive">Actif</span>
+                      ) : (
                         <ArrowRight className="w-4 h-4 text-muted-foreground" />
                       )}
                     </button>
                   )}
-                </div>
-
-                {/* Footer hint */}
-                <div className="px-4 py-2 border-t border-border bg-muted/20">
-                  <p className="text-[10px] text-muted-foreground text-center">
-                    Vos données sont synchronisées entre les modes
-                  </p>
                 </div>
               </motion.div>
             )}

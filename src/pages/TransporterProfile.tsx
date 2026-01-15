@@ -20,6 +20,7 @@ import { VehicleManagement } from "@/components/gp/VehicleManagement";
 import { ScheduledRoutesManager } from "@/components/gp/ScheduledRoutesManager";
 import { GenerateOffersFromRoutes } from "@/components/gp/GenerateOffersFromRoutes";
 import { ProfileCompletionGauge } from "@/components/gp/dashboard/ProfileCompletionGauge";
+import { TransporterReviewsSection } from "@/components/gp/dashboard/TransporterReviewsSection";
 import { GP_STATUS_LABELS, isValidGpStatus } from "@/lib/enumMappings";
 
 interface GPProfileData {
@@ -199,12 +200,6 @@ export default function TransporterProfile() {
           Retour au tableau de bord
         </Button>
 
-        {/* Profile Completion Gauge - Moved from overview */}
-        <ProfileCompletionGauge 
-          profile={profile}
-          onCompleteProfile={() => setIsEditing(true)}
-        />
-
         {/* Profile Header */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
@@ -342,6 +337,19 @@ export default function TransporterProfile() {
             <p className="text-xs text-muted-foreground">Avis</p>
           </div>
         </div>
+
+        {/* Reviews Section - Directly after stats */}
+        <TransporterReviewsSection 
+          gpId={profile.id} 
+          totalReviews={profile.total_reviews} 
+          rating={profile.rating} 
+        />
+
+        {/* Profile Completion Gauge - After reviews */}
+        <ProfileCompletionGauge 
+          profile={profile}
+          onCompleteProfile={() => setIsEditing(true)}
+        />
 
         {/* Details Form */}
         <Card>

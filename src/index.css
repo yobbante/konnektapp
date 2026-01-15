@@ -99,6 +99,7 @@
     --sidebar-ring: 24 85% 55%;
   }
 
+  /* Dark mode base */
   .dark {
     --background: 220 20% 10%;
     --foreground: 0 0% 98%;
@@ -130,8 +131,34 @@
     --border: 220 15% 25%;
     --input: 220 15% 25%;
     --ring: 168 55% 50%;
+
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4);
+    --shadow-lg: 0 10px 20px -5px hsl(0 0% 0% / 0.5);
+    --shadow-card: 0 2px 12px -2px hsl(0 0% 0% / 0.3);
   }
 
+  /* Role-based dark themes */
+  .dark.theme-admin {
+    --primary: 240 70% 60%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 240 60% 50%;
+    --ring: 240 70% 60%;
+  }
+
+  .dark.theme-transporter {
+    --primary: 210 100% 60%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 210 80% 50%;
+    --ring: 210 100% 60%;
+  }
+
+  .dark.theme-client {
+    --primary: 168 60% 50%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 168 55% 45%;
+    --ring: 168 60% 50%;
+  }
 }
 
 @layer base {
