@@ -11,12 +11,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
-import { Loader2, Bell, Mail, MessageSquare, Package, TrendingUp, Megaphone, ArrowLeft, Settings as SettingsIcon, Smartphone, CheckCircle, XCircle, Palette } from "lucide-react";
+import { Loader2, Bell, Mail, MessageSquare, Package, TrendingUp, Megaphone, ArrowLeft, Settings as SettingsIcon, Smartphone, CheckCircle, XCircle, Palette, HelpCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { SendTestNotification } from "@/components/settings/SendTestNotification";
 import { PushNotificationStatus } from "@/components/settings/PushNotificationStatus";
 import { NotificationTestPanel } from "@/components/settings/NotificationTestPanel";
 import { ThemeToggle } from "@/components/settings/ThemeToggle";
+import { ResetAllOnboardingButton } from "@/components/onboarding/OnboardingMenuItem";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 interface NotificationPreferences {
