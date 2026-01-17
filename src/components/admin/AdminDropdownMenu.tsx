@@ -38,6 +38,7 @@ export function AdminDropdownMenu({ onTabChange, activeTab }: AdminDropdownMenuP
     { id: "gps", label: "Transporteurs", icon: Truck },
     { id: "orders", label: "Commandes", icon: Package, isLink: true, href: "/admin/orders" },
     { id: "departures", label: "Départs", icon: Route, isLink: true, href: "/admin/departures" },
+    { id: "messages", label: "Messages", icon: MessageSquare, isLink: true, href: "/admin/messages" },
     { id: "support", label: "Support", icon: MessageSquare },
     { id: "disputes", label: "Litiges", icon: AlertTriangle },
     { id: "reputation", label: "Réputation", icon: Award },

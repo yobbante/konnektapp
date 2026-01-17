@@ -9,6 +9,7 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import { GlobalNotificationProvider } from "@/components/notifications/GlobalNotificationProvider";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { RoleSwitchPopup } from "@/components/profile/RoleSwitchPopup";
+import { ThemeInitializer } from "@/components/ThemeInitializer";
 import Index from "./pages/Index";
 import Offres from "./pages/Offres";
 import OfferDetail from "./pages/OfferDetail";
@@ -52,6 +53,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ThemeInitializer />
           <ScrollToTop />
           <ScrollToTopButton />
           <RoleSwitchPopup />

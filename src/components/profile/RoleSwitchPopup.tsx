@@ -8,8 +8,8 @@ import { useActiveRole } from "@/hooks/useActiveRole";
 import { useUserRole } from "@/hooks/useUserRole";
 
 /**
- * Constant floating popup for multi-role users to switch between Client, Transporteur, and Admin modes
- * Centered at the bottom of the screen
+ * Modern floating popup for multi-role users to switch between Client, Transporteur, and Admin modes
+ * Centered at the bottom of the screen - optimized for mobile
  */
 export function RoleSwitchPopup() {
   const navigate = useNavigate();
@@ -19,7 +19,6 @@ export function RoleSwitchPopup() {
   const [hasGPProfile, setHasGPProfile] = useState(false);
   const [gpBusinessName, setGPBusinessName] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
   const [loading, setLoading] = useState(true);
 
   // Routes where popup should be hidden
@@ -98,162 +97,200 @@ export function RoleSwitchPopup() {
     return hasGPProfile ? "Transporteur" : "Admin";
   };
 
+  // Get icon and color for current role
+  const getRoleIcon = () => {
+    if (isInAdminMode) return <Shield className="w-4 h-4" />;
+    if (isInTransporteurMode) return <Truck className="w-4 h-4" />;
+    return <User className="w-4 h-4" />;
+  };
+
+  const getRoleColor = () => {
+    if (isInAdminMode) return "bg-gradient-to-r from-red-500 to-pink-500";
+    if (isInTransporteurMode) return "bg-gradient-to-r from-orange-500 to-amber-500";
+    return "bg-gradient-to-r from-primary to-teal-400";
+  };
+
   return (
     <AnimatePresence>
-      {isVisible && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
-          className="fixed z-50"
-          style={{
-            bottom: 'calc(90px + var(--safe-bottom, 0px))',
-            left: '50%',
-            transform: 'translateX(-50%)',
-          }}
-        >
-          {/* Collapsed Button - Mobile optimized */}
-          {!isExpanded && (
-            <motion.button
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setIsExpanded(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-foreground text-background rounded-full shadow-xl hover:shadow-2xl transition-all text-sm"
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.9 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 20, scale: 0.9 }}
+        className="fixed z-50"
+        style={{
+          bottom: 'calc(100px + var(--safe-bottom, 0px))',
+          left: '50%',
+          transform: 'translateX(-50%)',
+        }}
+      >
+        {/* Collapsed Pill Button - Modern glass design */}
+        {!isExpanded && (
+          <motion.button
+            initial={{ scale: 0.9 }}
+            animate={{ scale: 1 }}
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setIsExpanded(true)}
+            className={`flex items-center gap-2.5 px-5 py-3 rounded-full shadow-2xl transition-all text-white ${getRoleColor()}`}
+            style={{
+              backdropFilter: 'blur(20px)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1)',
+            }}
+          >
+            {getRoleIcon()}
+            <span className="font-semibold text-sm tracking-wide">
+              {getCurrentModeLabel()}
+            </span>
+            <motion.div
+              animate={{ rotate: isExpanded ? 180 : 0 }}
+              className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center"
             >
-              <Repeat className="w-4 h-4" />
-              <span className="font-medium">
-                {getSwitchLabel()}
-              </span>
-            </motion.button>
-          )}
+              <Repeat className="w-3 h-3" />
+            </motion.div>
+          </motion.button>
+        )}
 
-          {/* Expanded Popup - Mobile optimized */}
-          <AnimatePresence>
-            {isExpanded && (
+        {/* Expanded Modal - Clean modern card */}
+        <AnimatePresence>
+          {isExpanded && (
+            <>
+              {/* Backdrop */}
               <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/30 backdrop-blur-sm -z-10"
+                onClick={() => setIsExpanded(false)}
+              />
+              
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                className="bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
-                style={{ width: 'min(calc(100vw - 32px), 280px)' }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="bg-card border border-border/50 rounded-3xl shadow-2xl overflow-hidden"
+                style={{ 
+                  width: 'min(calc(100vw - 32px), 300px)',
+                  boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+                }}
               >
-                {/* Header */}
-                <div className="px-3 py-2 bg-gradient-to-r from-primary/10 to-secondary/10 border-b border-border flex items-center justify-between">
+                {/* Header with gradient */}
+                <div className={`px-4 py-3 ${getRoleColor()} text-white flex items-center justify-between`}>
                   <div className="flex items-center gap-2">
-                    <Repeat className="w-4 h-4 text-primary" />
-                    <span className="font-semibold text-sm">Changer de mode</span>
+                    <Repeat className="w-5 h-5" />
+                    <span className="font-bold text-base">Changer de mode</span>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7"
+                    className="h-8 w-8 text-white hover:bg-white/20"
                     onClick={() => setIsExpanded(false)}
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-5 h-5" />
                   </Button>
                 </div>
 
-                {/* Current Mode Indicator */}
-                <div className="px-3 py-1.5 bg-muted/30">
-                  <p className="text-xs text-muted-foreground">
-                    Mode actuel:{" "}
-                    <span className="font-semibold text-foreground">
-                      {getCurrentModeLabel()}
-                    </span>
-                  </p>
-                </div>
-
-                {/* Switch Options - Compact for mobile */}
-                <div className="p-2 space-y-1.5">
+                {/* Role Options */}
+                <div className="p-3 space-y-2">
                   {/* Client Mode */}
-                  <button
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={handleSwitchToClient}
                     disabled={isInClientMode}
-                    className={`w-full flex items-center gap-2 p-2.5 rounded-xl transition-all ${
+                    className={`w-full flex items-center gap-3 p-3.5 rounded-2xl transition-all ${
                       isInClientMode
-                        ? "bg-primary/10 border-2 border-primary/30 cursor-default"
-                        : "bg-muted/50 hover:bg-muted border border-transparent hover:border-border active:scale-[0.98]"
+                        ? "bg-gradient-to-r from-primary/15 to-teal-400/10 border-2 border-primary/40"
+                        : "bg-muted/50 hover:bg-muted border-2 border-transparent"
                     }`}
                   >
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      isInClientMode ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                      isInClientMode 
+                        ? "bg-gradient-to-br from-primary to-teal-400 text-white" 
+                        : "bg-muted-foreground/10 text-muted-foreground"
                     }`}>
-                      <User className="w-4 h-4" />
+                      <User className="w-5 h-5" />
                     </div>
                     <div className="flex-1 text-left">
-                      <p className="font-medium text-sm">Client</p>
-                      <p className="text-[10px] text-muted-foreground">Envoyez vos colis</p>
+                      <p className="font-semibold">Client</p>
+                      <p className="text-xs text-muted-foreground">Envoyez vos colis</p>
                     </div>
                     {isInClientMode ? (
-                      <span className="text-[10px] font-medium text-primary">Actif</span>
+                      <span className="text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full">Actif</span>
                     ) : (
-                      <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                      <ArrowRight className="w-5 h-5 text-muted-foreground" />
                     )}
-                  </button>
+                  </motion.button>
 
-                  {/* Transporteur Mode - Only show if user has GP profile */}
+                  {/* Transporteur Mode */}
                   {hasGPProfile && (
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={handleSwitchToTransporteur}
                       disabled={isInTransporteurMode}
-                      className={`w-full flex items-center gap-2 p-2.5 rounded-xl transition-all ${
+                      className={`w-full flex items-center gap-3 p-3.5 rounded-2xl transition-all ${
                         isInTransporteurMode
-                          ? "bg-secondary/10 border-2 border-secondary/30 cursor-default"
-                          : "bg-muted/50 hover:bg-muted border border-transparent hover:border-border active:scale-[0.98]"
+                          ? "bg-gradient-to-r from-orange-500/15 to-amber-400/10 border-2 border-orange-400/40"
+                          : "bg-muted/50 hover:bg-muted border-2 border-transparent"
                       }`}
                     >
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        isInTransporteurMode ? "bg-secondary text-secondary-foreground" : "bg-muted text-muted-foreground"
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                        isInTransporteurMode 
+                          ? "bg-gradient-to-br from-orange-500 to-amber-400 text-white" 
+                          : "bg-muted-foreground/10 text-muted-foreground"
                       }`}>
-                        <Truck className="w-4 h-4" />
+                        <Truck className="w-5 h-5" />
                       </div>
                       <div className="flex-1 text-left min-w-0">
-                        <p className="font-medium text-sm">Transporteur</p>
-                        <p className="text-[10px] text-muted-foreground truncate">{gpBusinessName}</p>
+                        <p className="font-semibold">Transporteur</p>
+                        <p className="text-xs text-muted-foreground truncate">{gpBusinessName}</p>
                       </div>
                       {isInTransporteurMode ? (
-                        <span className="text-[10px] font-medium text-secondary">Actif</span>
+                        <span className="text-xs font-bold text-orange-500 bg-orange-500/10 px-2.5 py-1 rounded-full">Actif</span>
                       ) : (
-                        <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                        <ArrowRight className="w-5 h-5 text-muted-foreground" />
                       )}
-                    </button>
+                    </motion.button>
                   )}
 
-                  {/* Admin Mode - Only show if user is admin */}
+                  {/* Admin Mode */}
                   {isAdmin && (
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={handleSwitchToAdmin}
                       disabled={isInAdminMode}
-                      className={`w-full flex items-center gap-2 p-2.5 rounded-xl transition-all ${
+                      className={`w-full flex items-center gap-3 p-3.5 rounded-2xl transition-all ${
                         isInAdminMode
-                          ? "bg-destructive/10 border-2 border-destructive/30 cursor-default"
-                          : "bg-muted/50 hover:bg-muted border border-transparent hover:border-border active:scale-[0.98]"
+                          ? "bg-gradient-to-r from-red-500/15 to-pink-400/10 border-2 border-red-400/40"
+                          : "bg-muted/50 hover:bg-muted border-2 border-transparent"
                       }`}
                     >
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        isInAdminMode ? "bg-destructive text-destructive-foreground" : "bg-muted text-muted-foreground"
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                        isInAdminMode 
+                          ? "bg-gradient-to-br from-red-500 to-pink-500 text-white" 
+                          : "bg-muted-foreground/10 text-muted-foreground"
                       }`}>
-                        <Shield className="w-4 h-4" />
+                        <Shield className="w-5 h-5" />
                       </div>
                       <div className="flex-1 text-left">
-                        <p className="font-medium text-sm">Admin</p>
-                        <p className="text-[10px] text-muted-foreground">Gestion plateforme</p>
+                        <p className="font-semibold">Admin</p>
+                        <p className="text-xs text-muted-foreground">Gestion plateforme</p>
                       </div>
                       {isInAdminMode ? (
-                        <span className="text-[10px] font-medium text-destructive">Actif</span>
+                        <span className="text-xs font-bold text-red-500 bg-red-500/10 px-2.5 py-1 rounded-full">Actif</span>
                       ) : (
-                        <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                        <ArrowRight className="w-5 h-5 text-muted-foreground" />
                       )}
-                    </button>
+                    </motion.button>
                   )}
                 </div>
               </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-      )}
+            </>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </AnimatePresence>
   );
 }
