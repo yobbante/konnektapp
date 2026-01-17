@@ -35,15 +35,14 @@ export function ScrollToTopButton() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8, y: 20 }}
           transition={{ duration: 0.2 }}
-          className="fixed bottom-20 right-4 z-40 md:bottom-8"
+          className="fixed bottom-24 right-4 z-40 md:bottom-8"
         >
           <Button
             onClick={scrollToTop}
             size="icon"
-            variant="secondary"
-            className="w-10 h-10 rounded-full shadow-lg bg-card/90 backdrop-blur-sm border border-border hover:bg-card"
+            className="w-12 h-12 rounded-full shadow-xl bg-primary text-primary-foreground hover:bg-primary/90 border-2 border-primary-foreground/20"
           >
-            <ChevronUp className="w-5 h-5" />
+            <ChevronUp className="w-6 h-6" />
           </Button>
         </motion.div>
       )}
