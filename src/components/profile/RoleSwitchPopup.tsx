@@ -116,11 +116,9 @@ export function RoleSwitchPopup() {
         initial={{ opacity: 0, y: 20, scale: 0.9 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20, scale: 0.9 }}
-        className="fixed z-50"
+        className="fixed z-50 left-4"
         style={{
           bottom: 'calc(100px + var(--safe-bottom, 0px))',
-          left: '50%',
-          transform: 'translateX(-50%)',
         }}
       >
         {/* Collapsed Pill Button - Modern glass design */}

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AdminDropdownMenu } from "@/components/admin/AdminDropdownMenu";
+import { AdminMobileNav } from "@/components/layout/AdminMobileNav";
 import { useDashboardTheme } from "@/hooks/useDashboardTheme";
 
 interface AdminDashboardLayoutProps {
@@ -25,7 +26,7 @@ interface AdminDashboardLayoutProps {
  * - Header bleu foncé spécifique aux admins
  * - Barre de recherche globale
  * - Navigation dropdown admin
- * - Aucun composant client ou transporteur
+ * - Mobile nav en bas
  */
 export function AdminDashboardLayout({
   children,
@@ -46,7 +47,7 @@ export function AdminDashboardLayout({
   };
 
   return (
-    <div className="min-h-screen pb-safe bg-background">
+    <div className="min-h-screen pb-20 md:pb-4 bg-background">
       {/* Fixed Admin Header */}
       <div className={`sticky top-0 z-50 ${theme.headerBgClass} ${theme.headerTextClass} shadow-md`}>
         <div className="py-3 px-4" style={{ paddingTop: 'calc(12px + var(--safe-top, 0px))' }}>
@@ -57,7 +58,7 @@ export function AdminDashboardLayout({
               </div>
               <div>
                 <h1 className="text-xl font-bold">Admin Dashboard</h1>
-                <p className="text-sm opacity-80">Gestion de la plateforme</p>
+                <p className="text-sm opacity-80 hidden sm:block">Gestion de la plateforme</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -83,7 +84,7 @@ export function AdminDashboardLayout({
           <div className="relative max-w-7xl mx-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
             <Input
-              placeholder="Recherche globale (transporteurs, commandes, tickets...)"
+              placeholder="Recherche globale (transporteurs, commandes...)"
               className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:bg-white/20"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
@@ -136,6 +137,9 @@ export function AdminDashboardLayout({
       <main className="px-4 py-4 max-w-7xl mx-auto">
         {children}
       </main>
+
+      {/* Mobile Navigation */}
+      <AdminMobileNav activeTab={activeTab} onTabChange={onTabChange} />
     </div>
   );
 }
