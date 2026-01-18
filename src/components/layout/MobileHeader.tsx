@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
-import { Home, Shield, Truck, User, LogOut, Menu, Heart, Bell, Send, MapPin, Search, LayoutDashboard, Package, Settings } from "lucide-react";
+import { Home, Shield, Truck, User, LogOut, Menu, Heart, Bell, Send, MapPin, Search, LayoutDashboard, Package, Settings, Moon, Sun } from "lucide-react";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePageTheme } from "@/hooks/usePageTheme";
+import { useThemeManager } from "@/hooks/useThemeManager";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -25,12 +26,17 @@ interface MobileHeaderProps {
 export function MobileHeader({ title, showNotifications = true }: MobileHeaderProps) {
   const { isAdmin, isGP, isAuthenticated, loading, isProfileComplete } = useUserRole();
   const { logoBackground, logoColor } = usePageTheme();
+  const { mode, isDark, setMode } = useThemeManager();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate("/");
+  };
+
+  const toggleDarkMode = () => {
+    setMode(isDark ? "light" : "dark");
   };
 
   return (
@@ -128,8 +134,29 @@ export function MobileHeader({ title, showNotifications = true }: MobileHeaderPr
                   )}
                 </div>
 
+                {/* Dark Mode Toggle - Always visible */}
+                <div className="mt-4 pt-4 border-t border-border">
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start"
+                    onClick={toggleDarkMode}
+                  >
+                    {isDark ? (
+                      <>
+                        <Sun className="w-4 h-4 mr-2" />
+                        Mode clair
+                      </>
+                    ) : (
+                      <>
+                        <Moon className="w-4 h-4 mr-2" />
+                        Mode sombre
+                      </>
+                    )}
+                  </Button>
+                </div>
+
                 {!loading && (
-                  <div className="mt-6 pt-6 border-t border-border space-y-1">
+                  <div className="mt-4 pt-4 border-t border-border space-y-1">
                     {isAuthenticated ? (
                       <>
                         {isAdmin && (

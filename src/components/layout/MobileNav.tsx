@@ -2,23 +2,49 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, Search, Send, MessageCircle, User, BarChart3, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
-import { useRef, useCallback } from "react";
-
-const navItems = [
-  { href: "/", icon: Home, label: "Accueil", isHome: true },
-  { href: "/offres", icon: Search, label: "Offres" },
-  { href: "/demande", icon: Send, label: "Envoyer" },
-  { href: "/messages", icon: MessageCircle, label: "Messages", showBadge: true },
-  { href: "/profil", icon: User, label: "Profil" },
-];
+import { useRef, useCallback, useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export function MobileNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { unreadCount } = useUnreadMessages();
   const lastHomeClickRef = useRef<number>(0);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const handleNavClick = useCallback((e: React.MouseEvent, href: string, isHome?: boolean) => {
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const navItems = [
+    { href: "/", icon: Home, label: "Accueil", isHome: true, requiresAuth: false },
+    { href: "/offres", icon: Search, label: "Offres", requiresAuth: false },
+    { href: "/demande", icon: Send, label: "Envoyer", requiresAuth: true },
+    { href: "/messages", icon: MessageCircle, label: "Messages", showBadge: true, requiresAuth: true },
+    { href: "/client/dashboard", icon: User, label: "Profil", requiresAuth: true },
+  ];
+
+  // Filter items based on auth status
+  const visibleItems = navItems.filter(item => !item.requiresAuth || isAuthenticated);
+
+  const handleNavClick = useCallback((e: React.MouseEvent, href: string, isHome?: boolean, requiresAuth?: boolean) => {
+    // If requires auth and not authenticated, redirect to auth
+    if (requiresAuth && !isAuthenticated) {
+      e.preventDefault();
+      navigate("/auth");
+      return;
+    }
+
     if (isHome) {
       const now = Date.now();
       const isDoubleTap = now - lastHomeClickRef.current < 500;
@@ -33,18 +59,19 @@ export function MobileNav() {
         lastHomeClickRef.current = now;
       }
     }
-  }, [location.pathname]);
+  }, [location.pathname, isAuthenticated, navigate]);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px))' }}>
       <div className="flex items-center justify-around h-16" style={{ paddingLeft: 'var(--safe-left, 0px)', paddingRight: 'var(--safe-right, 0px)' }}>
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.href;
+        {visibleItems.map((item) => {
+          const isActive = location.pathname === item.href || 
+            (item.href === "/client/dashboard" && location.pathname === "/profil");
           return (
             <Link
               key={item.href}
               to={item.href}
-              onClick={(e) => handleNavClick(e, item.href, item.isHome)}
+              onClick={(e) => handleNavClick(e, item.href, item.isHome, item.requiresAuth)}
               className={cn(
                 "flex flex-col items-center justify-center flex-1 h-full gap-1 text-muted-foreground transition-colors relative",
                 isActive && "text-primary"
@@ -66,7 +93,6 @@ export function MobileNav() {
     </nav>
   );
 }
-
 // Transporteur specific bottom nav - Profile opens TransporterProfile page directly
 const gpNavItems = [
   { icon: Home, label: "Accueil", tab: "overview" },
