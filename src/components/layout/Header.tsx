@@ -7,7 +7,7 @@ import { CountrySelector } from "@/components/CountrySelector";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePageTheme } from "@/hooks/usePageTheme";
 import { supabase } from "@/integrations/supabase/client";
-import { VerifiedBadge } from "@/components/ui/verified-badge";
+import { TrustLevelBadge, calculateTrustLevel } from "@/components/ui/trust-level-badge";
 import {
   Sheet,
   SheetContent,
@@ -50,7 +50,12 @@ export function Header() {
                 <span className="font-bold text-lg text-foreground leading-tight">Yobbanté</span>
                 <span className="text-xs font-semibold text-secondary -mt-1">GP</span>
               </div>
-              {isProfileComplete && <VerifiedBadge size="sm" />}
+              {isAuthenticated && (
+                <TrustLevelBadge 
+                  level={calculateTrustLevel({ profileCompletion: isProfileComplete ? 100 : 50 })} 
+                  size="sm" 
+                />
+              )}
             </div>
           </Link>
 

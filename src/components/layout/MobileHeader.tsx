@@ -15,7 +15,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { VerifiedBadge } from "@/components/ui/verified-badge";
+import { TrustLevelBadge, calculateTrustLevel } from "@/components/ui/trust-level-badge";
 
 interface MobileHeaderProps {
   title?: string;
@@ -51,7 +51,12 @@ export function MobileHeader({ title, showNotifications = true }: MobileHeaderPr
           {title ? (
             <div className="flex items-center gap-1.5">
               <span className="font-semibold text-foreground">{title}</span>
-              {isProfileComplete && <VerifiedBadge size="sm" />}
+              {isAuthenticated && (
+                <TrustLevelBadge 
+                  level={calculateTrustLevel({ profileCompletion: isProfileComplete ? 100 : 50 })} 
+                  size="sm" 
+                />
+              )}
             </div>
           ) : (
             <div className="flex flex-col">
@@ -63,8 +68,6 @@ export function MobileHeader({ title, showNotifications = true }: MobileHeaderPr
 
         <div className="flex items-center gap-2">
           {showNotifications && <NotificationBell />}
-          
-          {isProfileComplete && !title && <VerifiedBadge size="sm" />}
 
           {/* Hamburger Menu - Always visible */}
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
