@@ -123,6 +123,7 @@ export const GP_TYPE = {
   aerien: "aerien",
   voyageur: "voyageur",
   agence: "agence",
+  bagages_international: "bagages_international",
 } as const;
 
 export type GpType = keyof typeof GP_TYPE;
@@ -134,6 +135,7 @@ export const GP_TYPE_LABELS: Record<GpType, string> = {
   aerien: "Transport Aérien",
   voyageur: "Voyageur / GP",
   agence: "Agence de Voyage",
+  bagages_international: "GP Via Bagages International",
 };
 
 // ============= DISPUTE STATUS =============

@@ -334,8 +334,11 @@ export type Database = {
       }
       gp_offers: {
         Row: {
+          airline: string | null
           arrival_date: string | null
           available_capacity: number
+          baggage_restrictions: string | null
+          baggage_types_accepted: string[] | null
           bookings_count: number | null
           conditions: string | null
           created_at: string
@@ -344,6 +347,7 @@ export type Database = {
           description: string | null
           destination_city: string
           destination_country: string
+          flight_number: string | null
           gp_id: string
           id: string
           max_weight: number | null
@@ -359,8 +363,11 @@ export type Database = {
           views_count: number | null
         }
         Insert: {
+          airline?: string | null
           arrival_date?: string | null
           available_capacity: number
+          baggage_restrictions?: string | null
+          baggage_types_accepted?: string[] | null
           bookings_count?: number | null
           conditions?: string | null
           created_at?: string
@@ -369,6 +376,7 @@ export type Database = {
           description?: string | null
           destination_city: string
           destination_country: string
+          flight_number?: string | null
           gp_id: string
           id?: string
           max_weight?: number | null
@@ -384,8 +392,11 @@ export type Database = {
           views_count?: number | null
         }
         Update: {
+          airline?: string | null
           arrival_date?: string | null
           available_capacity?: number
+          baggage_restrictions?: string | null
+          baggage_types_accepted?: string[] | null
           bookings_count?: number | null
           conditions?: string | null
           created_at?: string
@@ -394,6 +405,7 @@ export type Database = {
           description?: string | null
           destination_city?: string
           destination_country?: string
+          flight_number?: string | null
           gp_id?: string
           id?: string
           max_weight?: number | null
@@ -1936,6 +1948,7 @@ export type Database = {
         | "aerien"
         | "voyageur"
         | "agence"
+        | "bagages_international"
       offer_status: "active" | "paused" | "expired" | "completed"
       order_status:
         | "pending"
@@ -2123,6 +2136,7 @@ export const Constants = {
         "aerien",
         "voyageur",
         "agence",
+        "bagages_international",
       ],
       offer_status: ["active", "paused", "expired", "completed"],
       order_status: [
