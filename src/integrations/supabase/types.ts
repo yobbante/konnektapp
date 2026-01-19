@@ -332,6 +332,85 @@ export type Database = {
           },
         ]
       }
+      escrow_transactions: {
+        Row: {
+          amount: number
+          client_id: string
+          created_at: string
+          currency: string
+          gp_id: string
+          held_at: string | null
+          id: string
+          order_id: string
+          payment_method: string | null
+          payment_reference: string | null
+          refund_reason: string | null
+          refunded_at: string | null
+          release_reason: string | null
+          released_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          client_id: string
+          created_at?: string
+          currency?: string
+          gp_id: string
+          held_at?: string | null
+          id?: string
+          order_id: string
+          payment_method?: string | null
+          payment_reference?: string | null
+          refund_reason?: string | null
+          refunded_at?: string | null
+          release_reason?: string | null
+          released_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string
+          created_at?: string
+          currency?: string
+          gp_id?: string
+          held_at?: string | null
+          id?: string
+          order_id?: string
+          payment_method?: string | null
+          payment_reference?: string | null
+          refund_reason?: string | null
+          refunded_at?: string | null
+          release_reason?: string | null
+          released_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escrow_transactions_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escrow_transactions_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escrow_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gp_offers: {
         Row: {
           airline: string | null
@@ -852,6 +931,7 @@ export type Database = {
           destination_city: string
           destination_country: string
           dimensions: string | null
+          escrow_id: string | null
           gp_id: string
           has_insurance: boolean | null
           id: string
@@ -861,6 +941,7 @@ export type Database = {
           order_number: string
           origin_city: string
           origin_country: string
+          payment_status: string | null
           pickup_date: string | null
           price_per_kg: number
           status: Database["public"]["Enums"]["order_status"]
@@ -881,6 +962,7 @@ export type Database = {
           destination_city: string
           destination_country: string
           dimensions?: string | null
+          escrow_id?: string | null
           gp_id: string
           has_insurance?: boolean | null
           id?: string
@@ -890,6 +972,7 @@ export type Database = {
           order_number: string
           origin_city: string
           origin_country: string
+          payment_status?: string | null
           pickup_date?: string | null
           price_per_kg: number
           status?: Database["public"]["Enums"]["order_status"]
@@ -910,6 +993,7 @@ export type Database = {
           destination_city?: string
           destination_country?: string
           dimensions?: string | null
+          escrow_id?: string | null
           gp_id?: string
           has_insurance?: boolean | null
           id?: string
@@ -919,6 +1003,7 @@ export type Database = {
           order_number?: string
           origin_city?: string
           origin_country?: string
+          payment_status?: string | null
           pickup_date?: string | null
           price_per_kg?: number
           status?: Database["public"]["Enums"]["order_status"]
@@ -928,6 +1013,13 @@ export type Database = {
           weight?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_escrow_id_fkey"
+            columns: ["escrow_id"]
+            isOneToOne: false
+            referencedRelation: "escrow_transactions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_gp_id_fkey"
             columns: ["gp_id"]
