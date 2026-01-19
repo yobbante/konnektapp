@@ -90,6 +90,7 @@ export default {
           aerien: "hsl(var(--transport-aerien))",
           voyageur: "hsl(var(--transport-voyageur))",
           agence: "hsl(var(--transport-agence))",
+          bagages: "hsl(280 60% 55%)",
         },
       },
       borderRadius: {

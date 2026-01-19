@@ -18,6 +18,7 @@ import CustomRequest from "./pages/CustomRequest";
 import GPLanding from "./pages/GPLanding";
 import GPRegistration from "./pages/GPRegistration";
 import GPDashboard from "./pages/GPDashboard";
+import GPBagagesInternationalDashboard from "./pages/GPBagagesInternationalDashboard";
 import GPCustomRequests from "./pages/GPCustomRequests";
 import GPOrderDetail from "./pages/GPOrderDetail";
 import ClientDashboard from "./pages/ClientDashboard";
@@ -71,7 +72,9 @@ const App = () => (
             <Route path="/gp" element={<GPLanding />} />
             <Route path="/gp/inscription" element={<GPRegistration />} />
             <Route path="/gp/dashboard" element={<GPDashboard />} />
+            <Route path="/gp/bagages" element={<GPBagagesInternationalDashboard />} />
             <Route path="/gp/requests" element={<GPCustomRequests />} />
+            <Route path="/gp/demandes" element={<GPCustomRequests />} />
             <Route path="/gp/order/:orderId" element={<GPOrderDetail />} />
             <Route path="/client/dashboard" element={<ClientDashboard />} />
             <Route path="/client/profile" element={<ClientProfile />} />

@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Link, useSearchParams } from "react-router-dom";
 import { 
   Search, Package, ArrowRight, MapPin, Star,
-  Zap, Truck, Ship, Plane, Briefcase, Loader2, Heart, Scale, Filter, Building2, Calculator
+  Zap, Truck, Ship, Plane, Briefcase, Loader2, Heart, Scale, Filter, Building2, Calculator, Luggage
 } from "lucide-react";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -22,7 +22,7 @@ import { CompareProvider, useCompare, CompareOffer } from "@/components/offers/O
 import { MovingQuoteCalculator } from "@/components/quotes/MovingQuoteCalculator";
 import { useToast } from "@/hooks/use-toast";
 
-type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence";
+type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence" | "bagages_international";
 
 interface Offer {
   id: string;
@@ -41,9 +41,10 @@ interface Offer {
   } | null;
 }
 
-// Filtres de transport sans agence et express pour v1
+// Filtres de transport avec GP Bagages International
 const transportFilters = [
   { type: "all", label: "Tous", icon: Package },
+  { type: "bagages_international", label: "GP Bagages", icon: Luggage },
   { type: "voyageur", label: "GP", icon: Briefcase },
   { type: "routier", label: "Routier", icon: Truck },
   { type: "maritime", label: "Maritime", icon: Ship },
@@ -58,6 +59,7 @@ const getTransportIcon = (type: TransportType) => {
     aerien: Plane,
     voyageur: Briefcase,
     agence: Package,
+    bagages_international: Luggage,
   };
   return icons[type] || Package;
 };
@@ -70,6 +72,7 @@ const getTransportLabel = (type: TransportType) => {
     aerien: "Aérien",
     voyageur: "GP",
     agence: "Agence",
+    bagages_international: "GP Bagages Int.",
   };
   return labels[type] || type;
 };

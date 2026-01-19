@@ -1,7 +1,7 @@
-import { Zap, Truck, Ship, Plane, Briefcase, Building2, Bike, LucideIcon } from "lucide-react";
+import { Zap, Truck, Ship, Plane, Briefcase, Building2, Bike, Luggage, LucideIcon } from "lucide-react";
 
 // Types de transport centralisés pour toute l'application
-export type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence";
+export type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence" | "bagages_international";
 
 export interface TransportConfig {
   type: TransportType;
@@ -80,10 +80,21 @@ export const transportConfig: Record<TransportType, TransportConfig> = {
     requiredDocs: ["id_document", "business_registration", "transport_license"],
     services: ["billetterie", "fret_accompagne", "groupage", "reservation"],
   },
+  bagages_international: {
+    type: "bagages_international",
+    title: "GP Via Bagages",
+    description: "International",
+    longDescription: "Transport de bagages accompagnés lors de voyages internationaux (diaspora)",
+    icon: Luggage,
+    color: "text-transport-bagages",
+    bgColor: "bg-transport-bagages/10 border-transport-bagages/30",
+    requiredDocs: ["id_document", "passport"],
+  },
 };
 
 // Liste des types dans l'ordre d'affichage pour l'inscription (tous activés)
 export const transportTypes: TransportConfig[] = [
+  transportConfig.bagages_international,
   transportConfig.routier,
   transportConfig.maritime,
   transportConfig.aerien,
@@ -93,6 +104,7 @@ export const transportTypes: TransportConfig[] = [
 
 // Liste complète incluant les types pour clients
 export const allTransportTypes: TransportConfig[] = [
+  transportConfig.bagages_international,
   transportConfig.voyageur,
   transportConfig.agence,
   transportConfig.express,
