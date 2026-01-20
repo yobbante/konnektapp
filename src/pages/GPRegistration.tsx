@@ -222,6 +222,11 @@ export default function GPRegistration() {
 
   const handleNextWithValidation = () => {
     if (validateStep(step)) {
+      // Redirect to specialized registration for bagages_international
+      if (step === 1 && activityType === "bagages_international") {
+        navigate("/gp/bagages/inscription");
+        return;
+      }
       handleNext();
     }
   };
