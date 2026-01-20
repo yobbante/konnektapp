@@ -1,4 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
+import GPBagagesRegistration from "./pages/GPBagagesRegistration";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -73,6 +74,7 @@ const App = () => (
             <Route path="/gp/inscription" element={<GPRegistration />} />
             <Route path="/gp/dashboard" element={<GPDashboard />} />
             <Route path="/gp/bagages" element={<GPBagagesInternationalDashboard />} />
+            <Route path="/gp/bagages/inscription" element={<GPBagagesRegistration />} />
             <Route path="/gp/requests" element={<GPCustomRequests />} />
             <Route path="/gp/demandes" element={<GPCustomRequests />} />
             <Route path="/gp/order/:orderId" element={<GPOrderDetail />} />
