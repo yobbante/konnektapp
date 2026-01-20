@@ -411,6 +411,91 @@ export type Database = {
           },
         ]
       }
+      flat_rate_object_types: {
+        Row: {
+          created_at: string
+          default_price: number | null
+          id: string
+          is_active: boolean | null
+          label: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_price?: number | null
+          id?: string
+          is_active?: boolean | null
+          label: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_price?: number | null
+          id?: string
+          is_active?: boolean | null
+          label?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      gp_flat_rate_pricing: {
+        Row: {
+          created_at: string
+          currency: string | null
+          gp_id: string
+          id: string
+          is_active: boolean | null
+          object_type_id: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string | null
+          gp_id: string
+          id?: string
+          is_active?: boolean | null
+          object_type_id: string
+          price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string | null
+          gp_id?: string
+          id?: string
+          is_active?: boolean | null
+          object_type_id?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gp_flat_rate_pricing_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_flat_rate_pricing_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_flat_rate_pricing_object_type_id_fkey"
+            columns: ["object_type_id"]
+            isOneToOne: false
+            referencedRelation: "flat_rate_object_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gp_offers: {
         Row: {
           airline: string | null
@@ -426,6 +511,7 @@ export type Database = {
           description: string | null
           destination_city: string
           destination_country: string
+          explicit_restrictions: string[] | null
           flight_number: string | null
           gp_id: string
           id: string
@@ -455,6 +541,7 @@ export type Database = {
           description?: string | null
           destination_city: string
           destination_country: string
+          explicit_restrictions?: string[] | null
           flight_number?: string | null
           gp_id: string
           id?: string
@@ -484,6 +571,7 @@ export type Database = {
           description?: string | null
           destination_city?: string
           destination_country?: string
+          explicit_restrictions?: string[] | null
           flight_number?: string | null
           gp_id?: string
           id?: string
