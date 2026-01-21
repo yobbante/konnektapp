@@ -41,6 +41,13 @@ interface DepartureCalendarViewProps {
     type: "aller" | "retour";
   }) => Promise<void>;
   onDeleteDeparture?: (id: string) => Promise<void>;
+  defaultRoute?: {
+    originCity: string;
+    originCountry: string;
+    destinationCity: string;
+    destinationCountry: string;
+  };
+  defaultPricePerKg?: number;
 }
 
 const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -48,20 +55,30 @@ const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 export function DepartureCalendarView({ 
   departures, 
   onAddDeparture,
-  onDeleteDeparture 
+  onDeleteDeparture,
+  defaultRoute,
+  defaultPricePerKg = 8
 }: DepartureCalendarViewProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Get the last departure to inverse for return trip logic
+  const lastDeparture = useMemo(() => {
+    const sorted = [...departures].sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    return sorted[0] || null;
+  }, [departures]);
+
   const [newDeparture, setNewDeparture] = useState({
-    originCity: "",
-    originCountry: "FR",
-    destinationCity: "",
-    destinationCountry: "SN",
+    originCity: defaultRoute?.originCity || "",
+    originCountry: defaultRoute?.originCountry || "FR",
+    destinationCity: defaultRoute?.destinationCity || "",
+    destinationCountry: defaultRoute?.destinationCountry || "SN",
     capacity: "",
-    pricePerKg: "",
+    pricePerKg: String(defaultPricePerKg),
     type: "aller" as "aller" | "retour",
   });
 
@@ -101,15 +118,39 @@ export function DepartureCalendarView({
     if (isBefore(date, startOfDay(new Date()))) return;
     setSelectedDate(date);
     setShowAddDialog(true);
-    setNewDeparture({
-      originCity: "",
-      originCountry: "FR",
-      destinationCity: "",
-      destinationCountry: "SN",
-      capacity: "",
-      pricePerKg: "",
-      type: "aller",
-    });
+    
+    // Smart pre-fill: inverse last departure for return trip
+    if (lastDeparture) {
+      setNewDeparture({
+        originCity: lastDeparture.destinationCity,
+        originCountry: lastDeparture.destinationCountry,
+        destinationCity: lastDeparture.originCity,
+        destinationCountry: lastDeparture.originCountry,
+        capacity: "",
+        pricePerKg: String(lastDeparture.pricePerKg || defaultPricePerKg),
+        type: lastDeparture.type === "aller" ? "retour" : "aller",
+      });
+    } else if (defaultRoute) {
+      setNewDeparture({
+        originCity: defaultRoute.originCity,
+        originCountry: defaultRoute.originCountry,
+        destinationCity: defaultRoute.destinationCity,
+        destinationCountry: defaultRoute.destinationCountry,
+        capacity: "",
+        pricePerKg: String(defaultPricePerKg),
+        type: "aller",
+      });
+    } else {
+      setNewDeparture({
+        originCity: "",
+        originCountry: "FR",
+        destinationCity: "",
+        destinationCountry: "SN",
+        capacity: "",
+        pricePerKg: String(defaultPricePerKg),
+        type: "aller",
+      });
+    }
   };
 
   const handleAddDeparture = async () => {
