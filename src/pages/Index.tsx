@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { supabase } from "@/integrations/supabase/client";
 import { CompareProvider, useCompare, CompareOffer } from "@/components/offers/OfferCompare";
 import { HomeAdvancedFilters, HomeFiltersState, DEFAULT_HOME_FILTERS } from "@/components/home/HomeAdvancedFilters";
+import { useUserRole } from "@/hooks/useUserRole";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence";
 
@@ -26,6 +27,7 @@ const transportTypes = [
 ];
 
 function IndexContent() {
+  const { isGP } = useUserRole();
   const [selectedType, setSelectedType] = useState<TransportType | null>(null);
   const [offers, setOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,12 +131,15 @@ function IndexContent() {
                 <ArrowRight className="w-5 h-5" />
               </Button>
             </Link>
-            <Link to="/gp/inscription" className="flex-1">
-              <Button variant="outline" size="lg" className="w-full">
-                <Truck className="w-5 h-5" />
-                Devenir transporteur
-              </Button>
-            </Link>
+            {/* Hide "Devenir transporteur" for existing transporters */}
+            {!isGP && (
+              <Link to="/gp/inscription" className="flex-1">
+                <Button variant="outline" size="lg" className="w-full">
+                  <Truck className="w-5 h-5" />
+                  Devenir transporteur
+                </Button>
+              </Link>
+            )}
           </div>
         </motion.div>
       </section>
