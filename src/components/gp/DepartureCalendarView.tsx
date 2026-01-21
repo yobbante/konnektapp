@@ -10,10 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, addMonths, subMonths, isBefore, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import { COUNTRIES, CITIES } from "./InteractiveRouteSelector";
+import { SearchableCitySelect, WORLD_CITIES } from "./SearchableCitySelect";
 
 interface Departure {
   id: string;
@@ -456,86 +456,44 @@ export function DepartureCalendarView({
                 </Button>
               </div>
 
-              {/* City dropdowns - stacked on mobile for better touch */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div className="space-y-1">
+              {/* City dropdowns - searchable with filter */}
+              <div className="grid grid-cols-1 gap-3">
+                <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    <span>{COUNTRIES[newDeparture.originCountry]?.flag || "🌍"}</span> Départ
+                    Ville de départ
                   </Label>
-                  <Select 
-                    value={newDeparture.originCity} 
-                    onValueChange={(city) => {
-                      const cityInfo = CITIES.find(c => c.city === city);
-                      if (cityInfo) {
-                        setNewDeparture(prev => ({ 
-                          ...prev, 
-                          originCity: cityInfo.city, 
-                          originCountry: cityInfo.country 
-                        }));
-                      }
+                  <SearchableCitySelect
+                    value={newDeparture.originCity}
+                    countryCode={newDeparture.originCountry}
+                    onSelect={(city, country) => {
+                      setNewDeparture(prev => ({
+                        ...prev,
+                        originCity: city,
+                        originCountry: country,
+                      }));
                     }}
-                  >
-                    <SelectTrigger className="w-full h-11">
-                      <SelectValue placeholder="Choisir une ville">
-                        {newDeparture.originCity && (
-                          <span className="flex items-center gap-2">
-                            <span>{COUNTRIES[newDeparture.originCountry]?.flag || "🌍"}</span>
-                            <span>{newDeparture.originCity}</span>
-                          </span>
-                        )}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[200px] bg-popover z-50">
-                      {CITIES.map((item) => (
-                        <SelectItem key={`origin-${item.city}-${item.country}`} value={item.city}>
-                          <span className="flex items-center gap-2">
-                            <span>{COUNTRIES[item.country]?.flag || "🌍"}</span>
-                            <span>{item.city}</span>
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    label="Ville de départ"
+                    placeholder="Tapez pour rechercher..."
+                  />
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    <span>{COUNTRIES[newDeparture.destinationCountry]?.flag || "🌍"}</span> Arrivée
+                    Ville d'arrivée
                   </Label>
-                  <Select 
-                    value={newDeparture.destinationCity} 
-                    onValueChange={(city) => {
-                      const cityInfo = CITIES.find(c => c.city === city);
-                      if (cityInfo) {
-                        setNewDeparture(prev => ({ 
-                          ...prev, 
-                          destinationCity: cityInfo.city, 
-                          destinationCountry: cityInfo.country 
-                        }));
-                      }
+                  <SearchableCitySelect
+                    value={newDeparture.destinationCity}
+                    countryCode={newDeparture.destinationCountry}
+                    onSelect={(city, country) => {
+                      setNewDeparture(prev => ({
+                        ...prev,
+                        destinationCity: city,
+                        destinationCountry: country,
+                      }));
                     }}
-                  >
-                    <SelectTrigger className="w-full h-11">
-                      <SelectValue placeholder="Choisir une ville">
-                        {newDeparture.destinationCity && (
-                          <span className="flex items-center gap-2">
-                            <span>{COUNTRIES[newDeparture.destinationCountry]?.flag || "🌍"}</span>
-                            <span>{newDeparture.destinationCity}</span>
-                          </span>
-                        )}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[200px] bg-popover z-50">
-                      {CITIES.map((item) => (
-                        <SelectItem key={`dest-${item.city}-${item.country}`} value={item.city}>
-                          <span className="flex items-center gap-2">
-                            <span>{COUNTRIES[item.country]?.flag || "🌍"}</span>
-                            <span>{item.city}</span>
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    label="Ville d'arrivée"
+                    placeholder="Tapez pour rechercher..."
+                  />
                 </div>
               </div>
 
