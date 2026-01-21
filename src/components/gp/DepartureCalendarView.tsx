@@ -174,11 +174,11 @@ export function DepartureCalendarView({
         destinationCountry: newDeparture.destinationCountry,
         capacity: parseFloat(newDeparture.capacity),
         pricePerKg: newDeparture.pricePerKg ? parseFloat(newDeparture.pricePerKg) : 8,
-        type: newDeparture.type,
+        type: "aller",
       });
 
-      // If return date is set, also add the return trip
-      if (newDeparture.returnDate && newDeparture.type === "aller") {
+      // If return date is set, also add the return trip automatically
+      if (newDeparture.returnDate) {
         await onAddDeparture({
           date: newDeparture.returnDate,
           originCity: newDeparture.destinationCity,
@@ -371,97 +371,62 @@ export function DepartureCalendarView({
         </Card>
       )}
 
-      {/* Add Departure Dialog - Mobile-friendly */}
+      {/* Add Departure Dialog - Mobile-optimized */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base">
-              <Plus className="w-5 h-5" />
-              Nouveau voyage
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-md p-4 gap-3 max-h-[85vh] overflow-y-auto">
+          <DialogHeader className="pb-0">
+            <DialogTitle className="flex items-center justify-between text-base">
+              <div className="flex items-center gap-2">
+                <Plane className="w-4 h-4 text-primary" />
+                <span>Nouveau voyage</span>
+              </div>
+              {selectedDate && (
+                <Badge variant="secondary" className="text-xs font-normal">
+                  {format(selectedDate, 'EEE d MMM', { locale: fr })}
+                </Badge>
+              )}
             </DialogTitle>
           </DialogHeader>
 
           {selectedDate && (
             <div className="space-y-3">
-              {/* Date display - compact on mobile */}
-              <div className="flex items-center justify-center gap-2 p-2 bg-muted rounded-lg">
-                <Calendar className="w-4 h-4 text-primary" />
-                <p className="font-medium text-sm">
-                  {format(selectedDate, 'EEE d MMM yyyy', { locale: fr })}
-                </p>
-              </div>
-
-              {/* Current selection with flags - compact */}
-              <div className="p-3 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border">
-                <div className="flex items-center justify-center gap-3 mb-2">
-                  <div className="text-center">
-                    <span className="text-2xl">{COUNTRIES[newDeparture.originCountry]?.flag || "🌍"}</span>
-                    <p className="text-xs font-medium mt-0.5 truncate max-w-[70px]">{newDeparture.originCity || "Ville"}</p>
-                  </div>
-                  
-                  <Button 
-                    type="button"
-                    variant="ghost" 
-                    size="icon"
-                    onClick={() => {
-                      const temp = { city: newDeparture.originCity, country: newDeparture.originCountry };
-                      setNewDeparture(prev => ({
-                        ...prev,
-                        originCity: prev.destinationCity,
-                        originCountry: prev.destinationCountry,
-                        destinationCity: temp.city,
-                        destinationCountry: temp.country,
-                        type: prev.type === "aller" ? "retour" : "aller",
-                      }));
-                    }}
-                    className="h-8 w-8 rounded-full bg-background border hover:bg-accent"
-                  >
-                    <ArrowLeftRight className="w-3.5 h-3.5" />
-                  </Button>
-                  
-                  <div className="text-center">
-                    <span className="text-2xl">{COUNTRIES[newDeparture.destinationCountry]?.flag || "🌍"}</span>
-                    <p className="text-xs font-medium mt-0.5 truncate max-w-[70px]">{newDeparture.destinationCity || "Ville"}</p>
-                  </div>
+              {/* Route display with swap button - compact */}
+              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border gap-2">
+                <div className="flex-1 text-center min-w-0">
+                  <span className="text-xl">{COUNTRIES[newDeparture.originCountry]?.flag || "🌍"}</span>
+                  <p className="text-xs font-medium mt-0.5 truncate">{newDeparture.originCity || "Départ"}</p>
                 </div>
-
-                {/* Type badge */}
-                <div className="flex justify-center">
-                  <Badge variant={newDeparture.type === "aller" ? "default" : "secondary"} className="px-2 py-0.5 text-xs">
-                    <Plane className="w-3 h-3 mr-1" />
-                    {newDeparture.type === "aller" ? "Aller" : "Retour"}
-                  </Badge>
+                
+                <Button 
+                  type="button"
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => {
+                    const temp = { city: newDeparture.originCity, country: newDeparture.originCountry };
+                    setNewDeparture(prev => ({
+                      ...prev,
+                      originCity: prev.destinationCity,
+                      originCountry: prev.destinationCountry,
+                      destinationCity: temp.city,
+                      destinationCountry: temp.country,
+                      type: prev.type === "aller" ? "retour" : "aller",
+                    }));
+                  }}
+                  className="h-8 w-8 rounded-full bg-background border hover:bg-accent flex-shrink-0"
+                >
+                  <ArrowLeftRight className="w-3.5 h-3.5" />
+                </Button>
+                
+                <div className="flex-1 text-center min-w-0">
+                  <span className="text-xl">{COUNTRIES[newDeparture.destinationCountry]?.flag || "🌍"}</span>
+                  <p className="text-xs font-medium mt-0.5 truncate">{newDeparture.destinationCity || "Arrivée"}</p>
                 </div>
               </div>
 
-              {/* Type toggle - larger touch targets */}
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  type="button"
-                  variant={newDeparture.type === "aller" ? "default" : "outline"}
-                  size="sm"
-                  className="h-10"
-                  onClick={() => setNewDeparture(prev => ({ ...prev, type: "aller" }))}
-                >
-                  <Plane className="w-4 h-4 mr-1.5" /> Aller
-                </Button>
-                <Button
-                  type="button"
-                  variant={newDeparture.type === "retour" ? "default" : "outline"}
-                  size="sm"
-                  className="h-10"
-                  onClick={() => setNewDeparture(prev => ({ ...prev, type: "retour" }))}
-                >
-                  <Plane className="w-4 h-4 mr-1.5 rotate-180" /> Retour
-                </Button>
-              </div>
-
-              {/* City dropdowns - searchable with filter */}
-              <div className="grid grid-cols-1 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    Ville de départ
-                  </Label>
+              {/* City selectors - stacked for mobile */}
+              <div className="space-y-2">
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-1 block">Départ</Label>
                   <SearchableCitySelect
                     value={newDeparture.originCity}
                     countryCode={newDeparture.originCountry}
@@ -473,14 +438,12 @@ export function DepartureCalendarView({
                       }));
                     }}
                     label="Ville de départ"
-                    placeholder="Tapez pour rechercher..."
+                    placeholder="Rechercher..."
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    Ville d'arrivée
-                  </Label>
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-1 block">Arrivée</Label>
                   <SearchableCitySelect
                     value={newDeparture.destinationCity}
                     countryCode={newDeparture.destinationCountry}
@@ -492,43 +455,39 @@ export function DepartureCalendarView({
                       }));
                     }}
                     label="Ville d'arrivée"
-                    placeholder="Tapez pour rechercher..."
+                    placeholder="Rechercher..."
                   />
                 </div>
               </div>
 
-              {/* Popular routes - scrollable on mobile */}
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Trajets populaires</Label>
-                <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
-                  {[
-                    { o: "Dakar", oC: "SN", d: "Paris", dC: "FR" },
-                    { o: "Paris", oC: "FR", d: "Dakar", dC: "SN" },
-                    { o: "Dakar", oC: "SN", d: "New York", dC: "US" },
-                    { o: "Paris", oC: "FR", d: "Abidjan", dC: "CI" },
-                    { o: "Dakar", oC: "SN", d: "Montréal", dC: "CA" },
-                  ].map((r, i) => (
-                    <Badge
-                      key={i}
-                      variant={newDeparture.originCity === r.o && newDeparture.destinationCity === r.d ? "default" : "outline"}
-                      className="cursor-pointer text-xs hover:bg-accent whitespace-nowrap flex-shrink-0"
-                      onClick={() => setNewDeparture(prev => ({
-                        ...prev,
-                        originCity: r.o,
-                        originCountry: r.oC,
-                        destinationCity: r.d,
-                        destinationCountry: r.dC,
-                      }))}
-                    >
-                      {r.o} - {r.d}
-                    </Badge>
-                  ))}
-                </div>
+              {/* Popular routes - horizontal scroll */}
+              <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+                {[
+                  { o: "Dakar", oC: "SN", d: "Paris", dC: "FR" },
+                  { o: "Paris", oC: "FR", d: "Dakar", dC: "SN" },
+                  { o: "Dakar", oC: "SN", d: "New York", dC: "US" },
+                  { o: "Paris", oC: "FR", d: "Abidjan", dC: "CI" },
+                ].map((r, i) => (
+                  <Badge
+                    key={i}
+                    variant={newDeparture.originCity === r.o && newDeparture.destinationCity === r.d ? "default" : "outline"}
+                    className="cursor-pointer text-xs hover:bg-accent whitespace-nowrap flex-shrink-0 py-1"
+                    onClick={() => setNewDeparture(prev => ({
+                      ...prev,
+                      originCity: r.o,
+                      originCountry: r.oC,
+                      destinationCity: r.d,
+                      destinationCountry: r.dC,
+                    }))}
+                  >
+                    {r.o} → {r.d}
+                  </Badge>
+                ))}
               </div>
 
-              {/* Capacity - larger input for mobile */}
-              <div className="space-y-1">
-                <Label className="text-xs">Capacité disponible (kg) *</Label>
+              {/* Capacity input */}
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1 block">Capacité (kg) *</Label>
                 <div className="relative">
                   <Weight className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
@@ -542,34 +501,30 @@ export function DepartureCalendarView({
                 </div>
               </div>
 
-              {/* Return trip option - only show when adding an "aller" trip */}
-              {newDeparture.type === "aller" && (
-                <div className="p-3 bg-secondary/10 rounded-lg border border-secondary/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Plane className="w-4 h-4 text-secondary rotate-180" />
-                    <span className="text-sm font-medium">Ajouter le retour ?</span>
+              {/* Return trip option - simplified */}
+              <div className="p-3 bg-muted/50 rounded-lg border">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Plane className="w-4 h-4 text-muted-foreground rotate-180" />
+                    <span className="text-sm font-medium">Retour ?</span>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Programmez directement votre voyage retour
-                  </p>
-                  <Input
-                    type="date"
-                    className="h-10 text-sm"
-                    min={format(selectedDate, 'yyyy-MM-dd')}
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        // Store return date for later use
-                        setNewDeparture(prev => ({
-                          ...prev,
-                          returnDate: e.target.value,
-                        }));
-                      }
-                    }}
-                  />
                 </div>
-              )}
+                <Input
+                  type="date"
+                  className="h-10 text-sm"
+                  min={format(selectedDate, 'yyyy-MM-dd')}
+                  value={newDeparture.returnDate}
+                  onChange={(e) => {
+                    setNewDeparture(prev => ({
+                      ...prev,
+                      returnDate: e.target.value,
+                    }));
+                  }}
+                  placeholder="Date de retour (optionnel)"
+                />
+              </div>
 
-              {/* Action buttons - full width on mobile */}
+              {/* Action buttons */}
               <div className="flex gap-2 pt-1">
                 <Button variant="outline" className="flex-1 h-11" onClick={() => setShowAddDialog(false)}>
                   Annuler
