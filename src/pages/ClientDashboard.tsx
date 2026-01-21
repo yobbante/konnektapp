@@ -29,7 +29,7 @@ import { ORDER_STATUS_LABELS, isValidOrderStatus } from "@/lib/enumMappings";
 import { useFavorites } from "@/hooks/useFavorites";
 import { getTransportIcon, getTransportLabel } from "@/lib/transportTypes";
 import { TrustLevelBadge, calculateTrustLevel } from "@/components/ui/trust-level-badge";
-import { LoyaltyCard } from "@/components/loyalty/LoyaltySystem";
+import { LoyaltyCard, useLoyaltyNotifications } from "@/components/loyalty/LoyaltySystem";
 
 interface Order {
   id: string;

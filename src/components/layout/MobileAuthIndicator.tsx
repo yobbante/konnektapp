@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogIn, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,9 +10,13 @@ interface MobileAuthIndicatorProps {
 /**
  * Indicateur visuel de connexion pour la navigation mobile
  * Affiche un CTA d'inscription/connexion pour les visiteurs non connectés
+ * Masqué sur /auth et quand l'utilisateur est connecté
  */
 export function MobileAuthIndicator({ isAuthenticated }: MobileAuthIndicatorProps) {
-  if (isAuthenticated) return null;
+  const location = useLocation();
+  
+  // Hide on auth pages or when authenticated
+  if (isAuthenticated || location.pathname.startsWith("/auth")) return null;
 
   return (
     <AnimatePresence>
