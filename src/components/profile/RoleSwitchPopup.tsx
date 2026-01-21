@@ -22,7 +22,8 @@ export function RoleSwitchPopup() {
   const [loading, setLoading] = useState(true);
 
   // Routes where popup should be hidden
-  const hiddenRoutes = ["/auth", "/gp/inscription", "/install"];
+  // Masquer sur les pages auth, inscription, et AUSSI dans le dashboard transporteur
+  const hiddenRoutes = ["/auth", "/gp/inscription", "/install", "/gp/dashboard", "/gp/", "/transporter"];
   const shouldHide = hiddenRoutes.some(route => location.pathname.startsWith(route));
 
   useEffect(() => {

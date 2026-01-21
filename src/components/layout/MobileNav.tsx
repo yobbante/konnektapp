@@ -62,35 +62,64 @@ export function MobileNav() {
   }, [location.pathname, isAuthenticated, navigate]);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px))' }}>
-      <div className="flex items-center justify-around h-16" style={{ paddingLeft: 'var(--safe-left, 0px)', paddingRight: 'var(--safe-right, 0px)' }}>
-        {visibleItems.map((item) => {
-          const isActive = location.pathname === item.href || 
-            (item.href === "/client/dashboard" && location.pathname === "/profil");
-          return (
-            <Link
-              key={item.href}
-              to={item.href}
-              onClick={(e) => handleNavClick(e, item.href, item.isHome, item.requiresAuth)}
-              className={cn(
-                "flex flex-col items-center justify-center flex-1 h-full gap-1 text-muted-foreground transition-colors relative",
-                isActive && "text-primary"
-              )}
-            >
-              <div className="relative">
-                <item.icon className={cn("w-5 h-5", isActive && "text-primary")} />
-                {item.showBadge && unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
+    <>
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px))' }}>
+        <div className="flex items-center justify-around h-16" style={{ paddingLeft: 'var(--safe-left, 0px)', paddingRight: 'var(--safe-right, 0px)' }}>
+          {visibleItems.map((item) => {
+            const isActive = location.pathname === item.href || 
+              (item.href === "/client/dashboard" && location.pathname === "/profil");
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                onClick={(e) => handleNavClick(e, item.href, item.isHome, item.requiresAuth)}
+                className={cn(
+                  "flex flex-col items-center justify-center flex-1 h-full gap-1 text-muted-foreground transition-colors relative",
+                  isActive && "text-primary"
                 )}
+              >
+                <div className="relative">
+                  <item.icon className={cn("w-5 h-5", isActive && "text-primary")} />
+                  {item.showBadge && unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </div>
+                <span className={cn("text-[10px] font-medium", isActive && "text-primary")}>{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+      
+      {/* Indicateur d'inscription pour visiteurs non connectés */}
+      {!isAuthenticated && (
+        <div 
+          className="fixed left-4 right-4 z-40 md:hidden"
+          style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}
+        >
+          <Link to="/auth">
+            <div className="bg-gradient-to-r from-primary to-primary/80 rounded-2xl p-3 shadow-lg border border-primary/20">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-primary-foreground">
+                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">Rejoignez Yobbanté</p>
+                    <p className="text-xs opacity-80">Créez un compte gratuit</p>
+                  </div>
+                </div>
+                <div className="bg-white text-primary px-3 py-1.5 rounded-full text-xs font-semibold">
+                  S'inscrire
+                </div>
               </div>
-              <span className={cn("text-[10px] font-medium", isActive && "text-primary")}>{item.label}</span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
+            </div>
+          </Link>
+        </div>
+      )}
+    </>
   );
 }
 // Transporteur specific bottom nav - Profile opens TransporterProfile page directly
