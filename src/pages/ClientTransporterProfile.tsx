@@ -136,14 +136,18 @@ export default function ClientTransporterProfile() {
 
   const loadGPProfile = async () => {
     try {
-      // Load GP profile from public view
+      // Load GP profile from public view (no RLS restrictions)
       const { data: gpData, error: gpError } = await supabase
         .from("public_gp_profiles")
         .select("*")
         .eq("id", gpId)
         .maybeSingle();
 
-      if (gpError) throw gpError;
+      if (gpError) {
+        console.error("Error loading GP profile:", gpError);
+        throw gpError;
+      }
+      console.log("GP Profile data:", gpData);
       setProfile(gpData);
 
       // Load active offers with all details
