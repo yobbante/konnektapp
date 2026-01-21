@@ -436,28 +436,45 @@ export default function GPRegistration() {
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {transportTypes.map((transport) => {
+                {transportTypes.map((transport, index) => {
                   const Icon = transport.icon;
                   const isSelected = activityType === transport.type;
+                  const isBagages = transport.type === "bagages_international";
                   return (
                     <button
                       key={transport.type}
                       onClick={() => setActivityType(transport.type)}
-                      className={`p-6 rounded-xl border-2 text-left transition-all ${
+                      className={`p-6 rounded-xl border-2 text-left transition-all relative ${
                         isSelected
                           ? "border-secondary bg-secondary/10 shadow-md"
-                          : "border-border hover:border-secondary/50 hover:bg-muted/50"
+                          : isBagages
+                            ? "border-amber-500/50 bg-amber-500/5 hover:border-amber-500 hover:bg-amber-500/10"
+                            : "border-border hover:border-secondary/50 hover:bg-muted/50"
                       }`}
                     >
+                      {isBagages && !isSelected && (
+                        <Badge className="absolute -top-2 right-4 bg-amber-500 text-white text-xs">
+                          Populaire
+                        </Badge>
+                      )}
                       <div className="flex items-start gap-4">
                         <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
-                          isSelected ? "bg-secondary text-secondary-foreground" : "bg-muted"
+                          isSelected 
+                            ? "bg-secondary text-secondary-foreground" 
+                            : isBagages 
+                              ? "bg-amber-500/20 text-amber-600"
+                              : "bg-muted"
                         }`}>
                           <Icon className="w-7 h-7" />
                         </div>
                         <div className="flex-1">
                           <h3 className="font-semibold text-foreground mb-1">{transport.title}</h3>
                           <p className="text-sm text-muted-foreground">{transport.longDescription || transport.description}</p>
+                          {isBagages && (
+                            <p className="text-xs text-amber-600 mt-2 font-medium">
+                              ✈️ Inscription rapide en 2 min
+                            </p>
+                          )}
                         </div>
                         {isSelected && (
                           <CheckCircle className="w-6 h-6 text-secondary flex-shrink-0" />

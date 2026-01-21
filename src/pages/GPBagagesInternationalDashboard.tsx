@@ -5,7 +5,7 @@ import {
   Luggage, Plane, MapPin, Calendar, Package, 
   CheckCircle, XCircle, MessageCircle, Plus,
   ArrowRight, Clock, Weight, AlertTriangle, User,
-  LogOut, Bell, ChevronRight, RefreshCw
+  LogOut, Bell, ChevronRight, RefreshCw, Euro, Edit
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +20,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageLoader } from "@/components/ui/PageLoader";
+import { EditVoyageDialog } from "@/components/gp/EditVoyageDialog";
+import { EditPricingDialog } from "@/components/gp/EditPricingDialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -102,6 +104,9 @@ export default function GPBagagesInternationalDashboard() {
   const [orders, setOrders] = useState<BaggageOrder[]>([]);
   const [activeTab, setActiveTab] = useState("voyages");
   const [showCreateVoyage, setShowCreateVoyage] = useState(false);
+  const [showEditVoyage, setShowEditVoyage] = useState(false);
+  const [showEditPricing, setShowEditPricing] = useState(false);
+  const [selectedVoyage, setSelectedVoyage] = useState<VoyageOffer | null>(null);
 
   useEffect(() => {
     loadData();
@@ -341,7 +346,7 @@ export default function GPBagagesInternationalDashboard() {
       {/* Main Content */}
       <div className="px-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsList className="grid w-full grid-cols-4 mb-4">
             <TabsTrigger value="voyages" className="text-xs">
               <Plane className="w-4 h-4 mr-1" />
               Voyages
@@ -358,6 +363,10 @@ export default function GPBagagesInternationalDashboard() {
             <TabsTrigger value="missions" className="text-xs">
               <CheckCircle className="w-4 h-4 mr-1" />
               Missions
+            </TabsTrigger>
+            <TabsTrigger value="tarifs" className="text-xs">
+              <Euro className="w-4 h-4 mr-1" />
+              Tarifs
             </TabsTrigger>
           </TabsList>
 
@@ -384,7 +393,15 @@ export default function GPBagagesInternationalDashboard() {
               </Card>
             ) : (
               upcomingVoyages.map((voyage) => (
-                <VoyageCard key={voyage.id} voyage={voyage} onRefresh={loadData} />
+                <VoyageCard 
+                  key={voyage.id} 
+                  voyage={voyage} 
+                  onRefresh={loadData}
+                  onEdit={() => {
+                    setSelectedVoyage(voyage);
+                    setShowEditVoyage(true);
+                  }}
+                />
               ))
             )}
           </TabsContent>
@@ -446,6 +463,38 @@ export default function GPBagagesInternationalDashboard() {
               </>
             )}
           </TabsContent>
+
+          {/* Tarifs Tab */}
+          <TabsContent value="tarifs" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Mes Tarifs</h2>
+              <Button size="sm" onClick={() => setShowEditPricing(true)}>
+                <Edit className="w-4 h-4 mr-1" />
+                Modifier
+              </Button>
+            </div>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div>
+                      <p className="font-medium">Prix au kilo</p>
+                      <p className="text-sm text-muted-foreground">Défini par voyage</p>
+                    </div>
+                    <p className="text-xl font-bold text-primary">Variable</p>
+                  </div>
+                  
+                  <div className="border-t pt-4">
+                    <p className="text-sm font-medium text-muted-foreground mb-3">Tarifs forfaitaires</p>
+                    <p className="text-sm text-muted-foreground">
+                      Cliquez sur "Modifier" pour configurer vos tarifs forfaitaires par objet.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -459,12 +508,38 @@ export default function GPBagagesInternationalDashboard() {
           loadData();
         }}
       />
+
+      {/* Edit Voyage Dialog */}
+      <EditVoyageDialog 
+        open={showEditVoyage} 
+        onClose={() => {
+          setShowEditVoyage(false);
+          setSelectedVoyage(null);
+        }}
+        voyage={selectedVoyage}
+        onSuccess={() => {
+          setShowEditVoyage(false);
+          setSelectedVoyage(null);
+          loadData();
+        }}
+      />
+
+      {/* Edit Pricing Dialog */}
+      <EditPricingDialog 
+        open={showEditPricing} 
+        onClose={() => setShowEditPricing(false)}
+        gpId={gpProfile.id}
+        onSuccess={() => {
+          setShowEditPricing(false);
+          loadData();
+        }}
+      />
     </div>
   );
 }
 
 // Voyage Card Component
-function VoyageCard({ voyage, onRefresh }: { voyage: VoyageOffer; onRefresh: () => void }) {
+function VoyageCard({ voyage, onRefresh, onEdit }: { voyage: VoyageOffer; onRefresh: () => void; onEdit: () => void }) {
   const remainingCapacity = voyage.available_capacity;
   const capacityPercent = (remainingCapacity / voyage.total_capacity) * 100;
 
@@ -473,7 +548,7 @@ function VoyageCard({ voyage, onRefresh }: { voyage: VoyageOffer; onRefresh: () 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <Card>
+      <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={onEdit}>
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-2">
