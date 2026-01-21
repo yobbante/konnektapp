@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { 
   ArrowRight, ArrowLeft, User, Luggage, MapPin, 
   CheckCircle, Phone, Calendar, Weight, Plane,
-  Mail, Lock, Eye, EyeOff, ShieldX, Euro, AlertTriangle
+  Mail, Lock, Eye, EyeOff, ShieldX, Euro, AlertTriangle, Coins
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,7 @@ import { Switch } from "@/components/ui/switch";
 import { DepartureCalendarView } from "@/components/gp/DepartureCalendarView";
 import { STANDARD_RESTRICTIONS } from "@/components/gp/BaggageRestrictions";
 import { InteractiveRouteSelector } from "@/components/gp/InteractiveRouteSelector";
+import { CurrencySelector, getCurrencySymbol, type CurrencyCode } from "@/components/ui/currency-selector";
 
 // Popular destinations for quick selection
 const POPULAR_ROUTES = [
@@ -79,6 +80,7 @@ export default function GPBagagesRegistration() {
 
   // Step 5: Pricing
   const [pricePerKg, setPricePerKg] = useState("");
+  const [defaultCurrency, setDefaultCurrency] = useState<CurrencyCode>("XOF");
   const [flatRatePricing, setFlatRatePricing] = useState<Map<string, { price: string; isActive: boolean }>>(
     new Map(DEFAULT_FLAT_RATE_OBJECTS.map(o => [o.id, { price: o.defaultPrice.toString(), isActive: false }]))
   );
@@ -370,6 +372,7 @@ export default function GPBagagesRegistration() {
           country_code: profileData.originCountry,
           status: "pending",
           explicit_restrictions: acceptedRestrictions,
+          default_currency: defaultCurrency,
         })
         .select()
         .single();
@@ -390,7 +393,7 @@ export default function GPBagagesRegistration() {
             total_capacity: dep.capacity,
             available_capacity: dep.capacity,
             price_per_kg: pricePerKg ? parseFloat(pricePerKg) : 8,
-            currency: "EUR",
+            currency: defaultCurrency,
             transport_type: "bagages_international",
             explicit_restrictions: acceptedRestrictions,
             status: "active",
@@ -816,6 +819,22 @@ export default function GPBagagesRegistration() {
                       <h2 className="text-lg font-semibold">Vos tarifs</h2>
                     </div>
 
+                    {/* Currency selector */}
+                    <div className="p-4 rounded-lg border bg-muted/30">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <p className="font-medium">Devise de facturation</p>
+                          <p className="text-xs text-muted-foreground">Tous vos prix seront affichés dans cette devise</p>
+                        </div>
+                        <Coins className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                      <CurrencySelector
+                        value={defaultCurrency}
+                        onValueChange={(value) => setDefaultCurrency(value as CurrencyCode)}
+                        className="w-full"
+                      />
+                    </div>
+
                     {/* Price per kg */}
                     <div className="p-4 rounded-lg border bg-muted/30">
                       <div className="flex items-center justify-between mb-3">
@@ -831,10 +850,10 @@ export default function GPBagagesRegistration() {
                           placeholder="8"
                           value={pricePerKg}
                           onChange={(e) => setPricePerKg(e.target.value)}
-                          className="pr-12"
+                          className="pr-16"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                          € / kg
+                          {getCurrencySymbol(defaultCurrency)} / kg
                         </span>
                       </div>
                     </div>
@@ -867,7 +886,7 @@ export default function GPBagagesRegistration() {
                               onChange={(e) => handleFlatRateChange(obj.id, "price", e.target.value)}
                               className="w-20 h-8 text-sm text-center"
                             />
-                            <span className="text-xs text-muted-foreground">€</span>
+                            <span className="text-xs text-muted-foreground">{getCurrencySymbol(defaultCurrency)}</span>
                             <Switch
                               checked={pricing.isActive && !!pricing.price}
                               onCheckedChange={(checked) => handleFlatRateChange(obj.id, "isActive", checked)}
