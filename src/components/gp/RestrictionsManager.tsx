@@ -309,7 +309,6 @@ export function RestrictionsManager({
             return (
               <div
                 key={restriction.id}
-                onClick={() => toggleRestriction(restriction.id)}
                 className={`
                   flex items-center gap-3 p-3 rounded-lg border transition-all
                   ${readOnly ? '' : 'cursor-pointer hover:bg-muted/50'}
@@ -339,6 +338,7 @@ export function RestrictionsManager({
                   <Switch
                     checked={isSelected}
                     onCheckedChange={() => toggleRestriction(restriction.id)}
+                    onClick={(e) => e.stopPropagation()}
                   />
                 )}
 

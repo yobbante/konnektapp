@@ -26,6 +26,7 @@ type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" 
 
 interface Offer {
   id: string;
+  gp_id: string;
   origin_city: string;
   origin_country: string;
   destination_city: string;
@@ -383,14 +384,18 @@ function OffresContent() {
 
                       {/* Footer */}
                       <div className="flex items-center justify-between pt-3 border-t border-border">
-                        <div className="flex items-center gap-2">
+                        <Link 
+                          to={`/gp/${offer.gp_id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                        >
                           <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
                             <span className="text-xs font-semibold text-primary">
                               {(offer.gp_profile?.business_name || "?").charAt(0).toUpperCase()}
                             </span>
                           </div>
                           <div>
-                            <p className="text-sm font-medium">{offer.gp_profile?.business_name || "Transporteur"}</p>
+                            <p className="text-sm font-medium hover:text-primary transition-colors">{offer.gp_profile?.business_name || "Transporteur"}</p>
                             {offer.gp_profile?.rating && offer.gp_profile.rating > 0 ? (
                               <div className="flex items-center gap-1">
                                 <Star className="w-3 h-3 text-warning fill-warning" />
@@ -400,7 +405,7 @@ function OffresContent() {
                               <span className="text-xs text-muted-foreground">Nouveau</span>
                             )}
                           </div>
-                        </div>
+                        </Link>
                         <div className="text-right">
                           <p className="font-bold text-primary">{offer.price_per_kg.toLocaleString()}</p>
                           <p className="text-xs text-muted-foreground">FCFA/kg</p>

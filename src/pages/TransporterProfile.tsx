@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { 
   User, MapPin, Star, Truck, Ship, Plane, Zap, Briefcase, Building2,
   Package, Calendar, Shield, ArrowLeft, Phone, MessageCircle, 
-  Upload, Save, Edit2, Check, X
+  Upload, Save, Edit2, Check, X, Euro, Luggage
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,8 @@ import { ScheduledRoutesManager } from "@/components/gp/ScheduledRoutesManager";
 import { GenerateOffersFromRoutes } from "@/components/gp/GenerateOffersFromRoutes";
 import { ProfileCompletionGauge } from "@/components/gp/dashboard/ProfileCompletionGauge";
 import { TransporterReviewsSection } from "@/components/gp/dashboard/TransporterReviewsSection";
+import { RestrictionsManager } from "@/components/gp/RestrictionsManager";
+import { EditPricingDialog } from "@/components/gp/EditPricingDialog";
 import { GP_STATUS_LABELS, isValidGpStatus } from "@/lib/enumMappings";
 
 interface GPProfileData {
@@ -45,6 +47,7 @@ interface GPProfileData {
   status: string;
   subscription: string;
   created_at: string;
+  explicit_restrictions?: string[] | null;
 }
 
 const gpTypeIcons: Record<string, any> = {
@@ -54,6 +57,7 @@ const gpTypeIcons: Record<string, any> = {
   aerien: Plane,
   voyageur: Briefcase,
   agence: Building2,
+  bagages_international: Luggage,
 };
 
 const gpTypeLabels: Record<string, string> = {
@@ -63,6 +67,7 @@ const gpTypeLabels: Record<string, string> = {
   aerien: "Aérien",
   voyageur: "Voyageur (GP)",
   agence: "Agence",
+  bagages_international: "GP Bagages Int.",
 };
 
 export default function TransporterProfile() {
@@ -73,6 +78,8 @@ export default function TransporterProfile() {
   const [profile, setProfile] = useState<GPProfileData | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<GPProfileData>>({});
+  const [showEditPricing, setShowEditPricing] = useState(false);
+  const [restrictions, setRestrictions] = useState<string[]>([]);
 
   useEffect(() => {
     loadProfile();
@@ -100,6 +107,7 @@ export default function TransporterProfile() {
       }
 
       setProfile(data);
+      setRestrictions(data.explicit_restrictions || []);
       setEditData({
         business_name: data.business_name,
         description: data.description,
@@ -512,6 +520,35 @@ export default function TransporterProfile() {
           </Card>
         )}
 
+        {/* Tarifs et Restrictions - Only for bagages_international */}
+        {profile.gp_type === "bagages_international" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Euro className="w-4 h-4 text-primary" />
+                Tarifs & Restrictions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setShowEditPricing(true)}
+              >
+                <Euro className="w-4 h-4 mr-2" />
+                Gérer mes tarifs forfaitaires
+              </Button>
+
+              <RestrictionsManager
+                selectedRestrictions={restrictions}
+                onChange={setRestrictions}
+                gpId={profile.id}
+                showSaveButton={true}
+              />
+            </CardContent>
+          </Card>
+        )}
+
         {/* Vehicle Management */}
         <VehicleManagement gpId={profile.id} gpType={profile.gp_type} />
 
@@ -546,6 +583,16 @@ export default function TransporterProfile() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Edit Pricing Dialog */}
+        <EditPricingDialog
+          open={showEditPricing}
+          onClose={() => setShowEditPricing(false)}
+          gpId={profile.id}
+          onSuccess={() => {
+            setShowEditPricing(false);
+          }}
+        />
       </div>
     </div>
   );
