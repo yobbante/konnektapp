@@ -4,6 +4,7 @@ import { ArrowRight, MapPin, Calendar, Package, Star, Truck, Weight } from "luci
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { getCurrencySymbol } from "@/components/ui/currency-selector";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur";
 
@@ -139,7 +140,7 @@ export function ShipmentOfferCard({
         <div className="text-right">
           <p className="text-xs text-muted-foreground">Prix/kg</p>
           <p className="text-lg font-bold text-foreground">
-            {price.toLocaleString()} <span className="text-sm font-normal">{currency}</span>
+            {price.toLocaleString()} <span className="text-sm font-normal">{getCurrencySymbol(currency)}</span>
           </p>
         </div>
       </div>

@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CompareProvider, useCompare, CompareOffer } from "@/components/offers/OfferCompare";
 import { HomeAdvancedFilters, HomeFiltersState, DEFAULT_HOME_FILTERS } from "@/components/home/HomeAdvancedFilters";
 import { useUserRole } from "@/hooks/useUserRole";
+import { formatPricePerKg } from "@/components/ui/currency-selector";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence";
 
@@ -474,7 +475,7 @@ function OfferCard({ offer, index }: { offer: any; index: number }) {
                 </div>
               )}
             </div>
-            <span className="font-bold text-primary">{offer.price_per_kg} FCFA/kg</span>
+            <span className="font-bold text-primary">{formatPricePerKg(offer.price_per_kg, offer.currency || "FCFA")}</span>
           </div>
           {/* Vehicle & Capacity Info */}
           {(offer.vehicles || offer.available_capacity) && (

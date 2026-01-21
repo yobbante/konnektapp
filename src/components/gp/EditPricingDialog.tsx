@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CurrencySelector, getCurrencySymbol } from "@/components/ui/currency-selector";
 
 interface FlatRateObjectType {
   id: string;
@@ -22,6 +23,7 @@ interface GPFlatRatePricing {
   object_type_id: string;
   price: number;
   is_active: boolean;
+  currency?: string;
 }
 
 interface EditPricingDialogProps {
@@ -35,6 +37,7 @@ export function EditPricingDialog({ open, onClose, gpId, onSuccess }: EditPricin
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [pricePerKg, setPricePerKg] = useState("");
+  const [gpCurrency, setGpCurrency] = useState("EUR");
   const [objectTypes, setObjectTypes] = useState<FlatRateObjectType[]>([]);
   const [gpPricing, setGpPricing] = useState<Map<string, { price: string; isActive: boolean; id?: string }>>(new Map());
 
@@ -74,16 +77,18 @@ export function EditPricingDialog({ open, onClose, gpId, onSuccess }: EditPricin
         setGpPricing(pricingMap);
       }
 
-      // Load GP's average price per kg from offers
+      // Load GP's average price per kg and currency from offers
       const { data: offers } = await supabase
         .from("gp_offers")
-        .select("price_per_kg")
+        .select("price_per_kg, currency")
         .eq("gp_id", gpId)
         .eq("status", "active")
+        .order("created_at", { ascending: false })
         .limit(1);
 
       if (offers && offers.length > 0) {
         setPricePerKg(offers[0].price_per_kg.toString());
+        setGpCurrency(offers[0].currency || "EUR");
       }
     } catch (error) {
       console.error("Error loading pricing data:", error);
@@ -125,7 +130,7 @@ export function EditPricingDialog({ open, onClose, gpId, onSuccess }: EditPricin
                 object_type_id: objectTypeId,
                 price: parseFloat(pricing.price),
                 is_active: pricing.isActive,
-                currency: "EUR",
+                currency: gpCurrency,
               });
           }
         }
@@ -160,17 +165,27 @@ export function EditPricingDialog({ open, onClose, gpId, onSuccess }: EditPricin
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Price per kg info */}
-          <div className="p-4 bg-muted/50 rounded-lg">
-            <Label className="text-sm font-medium">Prix au kilo (défini par voyage)</Label>
-            <p className="text-sm text-muted-foreground mt-1">
-              Le prix au kilo est défini individuellement pour chaque voyage que vous publiez.
-            </p>
-            {pricePerKg && (
-              <p className="text-sm font-medium mt-2">
-                Dernier prix utilisé: <span className="text-primary">{pricePerKg} €/kg</span>
+          {/* Price per kg info with currency */}
+          <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Devise par défaut</Label>
+              <CurrencySelector
+                value={gpCurrency}
+                onValueChange={setGpCurrency}
+                className="w-36"
+              />
+            </div>
+            <div className="pt-2 border-t">
+              <Label className="text-sm font-medium">Prix au kilo (défini par voyage)</Label>
+              <p className="text-sm text-muted-foreground mt-1">
+                Le prix au kilo est défini individuellement pour chaque voyage que vous publiez.
               </p>
-            )}
+              {pricePerKg && (
+                <p className="text-sm font-medium mt-2">
+                  Dernier prix utilisé: <span className="text-primary">{pricePerKg} {getCurrencySymbol(gpCurrency)}/kg</span>
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Flat rate pricing */}
@@ -207,7 +222,7 @@ export function EditPricingDialog({ open, onClose, gpId, onSuccess }: EditPricin
                             placeholder="Prix"
                             disabled={!pricing.isActive}
                           />
-                          <span className="text-sm text-muted-foreground">€</span>
+                          <span className="text-sm text-muted-foreground">{getCurrencySymbol(gpCurrency)}</span>
                         </div>
                       </div>
                     </CardContent>

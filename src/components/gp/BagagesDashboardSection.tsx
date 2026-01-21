@@ -18,6 +18,7 @@ import { RestrictionsManager } from "@/components/gp/RestrictionsManager";
 import { GPOrderDetailsSheet } from "@/components/gp/GPOrderDetailsSheet";
 import { MissionStatusUpdater } from "@/components/gp/MissionStatusUpdater";
 import { CreateBaggageVoyageDialog } from "@/components/gp/CreateBaggageVoyageDialog";
+import { getCurrencySymbol, formatPricePerKg } from "@/components/ui/currency-selector";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -435,7 +436,7 @@ function VoyageCard({ voyage, onEdit }: { voyage: VoyageOffer; onEdit: () => voi
           </span>
         </div>
         <Badge variant={voyage.status === "active" ? "success" : "secondary"}>
-          {voyage.price_per_kg} FCFA/kg
+          {formatPricePerKg(voyage.price_per_kg, voyage.currency || "EUR")}
         </Badge>
       </div>
     </motion.div>

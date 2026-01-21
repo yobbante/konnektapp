@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { formatPricePerKg } from "@/components/ui/currency-selector";
 
 interface TransporterInfoCardProps {
   gpId: string;
@@ -36,6 +37,7 @@ interface OfferData {
   arrival_date: string | null;
   available_capacity: number;
   price_per_kg: number;
+  currency: string | null;
   flight_number: string | null;
   airline: string | null;
 }
@@ -102,7 +104,7 @@ export function TransporterInfoCard({
       // Fetch GP's active offer for this route
       const { data: offerData } = await supabase
         .from("gp_offers")
-        .select("baggage_types_accepted, baggage_restrictions, explicit_restrictions, conditions, departure_date, arrival_date, available_capacity, price_per_kg, flight_number, airline")
+        .select("baggage_types_accepted, baggage_restrictions, explicit_restrictions, conditions, departure_date, arrival_date, available_capacity, price_per_kg, currency, flight_number, airline")
         .eq("gp_id", gpId)
         .eq("status", "active")
         .order("departure_date", { ascending: true })
@@ -193,6 +195,10 @@ export function TransporterInfoCard({
                 </p>
               </div>
             )}
+            <div>
+              <p className="text-muted-foreground">Tarif</p>
+              <p className="font-medium text-primary">{formatPricePerKg(offerDetails.price_per_kg, offerDetails.currency || "EUR")}</p>
+            </div>
             <div>
               <p className="text-muted-foreground">Capacité restante</p>
               <p className="font-medium">{offerDetails.available_capacity} kg</p>

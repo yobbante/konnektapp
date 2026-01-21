@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { SearchableCountrySelect, CITIES_BY_COUNTRY, ALL_COUNTRIES } from "@/components/gp/SearchableCountrySelect";
+import { CurrencySelector, getCurrencySymbol } from "@/components/ui/currency-selector";
 
 interface CreateBaggageVoyageDialogProps {
   open: boolean;
@@ -25,6 +26,7 @@ interface CreateBaggageVoyageDialogProps {
     destination_city: string;
     destination_country: string;
     price_per_kg: number;
+    currency?: string;
   } | null;
   onSuccess: () => void;
 }
@@ -48,6 +50,7 @@ export function CreateBaggageVoyageDialog({
     departureDate: "",
     arrivalDate: "",
     pricePerKg: "",
+    currency: "EUR",
     totalCapacity: "23",
     flightNumber: "",
     airline: "",
@@ -65,6 +68,7 @@ export function CreateBaggageVoyageDialog({
         departureDate: "",
         arrivalDate: "",
         pricePerKg: String(lastVoyage.price_per_kg),
+        currency: lastVoyage.currency || "EUR",
         totalCapacity: "23",
         flightNumber: "",
         airline: "",
@@ -80,6 +84,7 @@ export function CreateBaggageVoyageDialog({
         departureDate: "",
         arrivalDate: "",
         pricePerKg: "8",
+        currency: "EUR",
         totalCapacity: "23",
         flightNumber: "",
         airline: "",
@@ -136,6 +141,7 @@ export function CreateBaggageVoyageDialog({
           departure_date: formData.departureDate,
           arrival_date: formData.arrivalDate || null,
           price_per_kg: parseInt(formData.pricePerKg),
+          currency: formData.currency,
           total_capacity: parseFloat(formData.totalCapacity),
           available_capacity: parseFloat(formData.totalCapacity),
           flight_number: formData.flightNumber || null,
@@ -298,32 +304,41 @@ export function CreateBaggageVoyageDialog({
             </div>
           </div>
 
-          {/* Pricing */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1 text-sm">
-                <DollarSign className="w-3 h-3" />
-                Prix/kg (€) *
-              </Label>
+          {/* Pricing with Currency */}
+          <div className="space-y-3">
+            <Label className="flex items-center gap-1 text-sm">
+              <DollarSign className="w-3 h-3" />
+              Tarification *
+            </Label>
+            <div className="grid grid-cols-3 gap-2">
+              <CurrencySelector
+                value={formData.currency}
+                onValueChange={(value) => setFormData({ ...formData, currency: value })}
+              />
               <Input
                 type="number"
                 placeholder="8"
                 value={formData.pricePerKg}
                 onChange={(e) => setFormData({ ...formData, pricePerKg: e.target.value })}
               />
+              <div className="flex items-center text-sm text-muted-foreground">
+                {getCurrencySymbol(formData.currency)}/kg
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1 text-sm">
-                <Weight className="w-3 h-3" />
-                Capacité (kg) *
-              </Label>
-              <Input
-                type="number"
-                placeholder="23"
-                value={formData.totalCapacity}
-                onChange={(e) => setFormData({ ...formData, totalCapacity: e.target.value })}
-              />
-            </div>
+          </div>
+
+          {/* Capacity */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1 text-sm">
+              <Weight className="w-3 h-3" />
+              Capacité (kg) *
+            </Label>
+            <Input
+              type="number"
+              placeholder="23"
+              value={formData.totalCapacity}
+              onChange={(e) => setFormData({ ...formData, totalCapacity: e.target.value })}
+            />
           </div>
 
           {/* Summary */}
@@ -343,7 +358,7 @@ export function CreateBaggageVoyageDialog({
                 </div>
                 {formData.pricePerKg && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    {formData.pricePerKg}€/kg • {formData.totalCapacity || 23}kg dispo
+                    {formData.pricePerKg} {getCurrencySymbol(formData.currency)}/kg • {formData.totalCapacity || 23}kg dispo
                   </p>
                 )}
               </CardContent>
