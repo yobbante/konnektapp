@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { ArrowRight, MapPin, Calendar, Package, Star, Truck, Weight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,7 @@ interface VehicleInfo {
 
 interface ShipmentOfferCardProps {
   id: string;
+  gpId?: string;
   origin: string;
   destination: string;
   date: string;
@@ -39,6 +41,7 @@ const transportLabels: Record<TransportType, string> = {
 
 export function ShipmentOfferCard({
   id,
+  gpId,
   origin,
   destination,
   date,
@@ -116,18 +119,22 @@ export function ShipmentOfferCard({
 
       {/* GP Info & Price */}
       <div className="flex items-center justify-between pt-4 border-t border-border">
-        <div className="flex items-center gap-2">
+        <Link 
+          to={gpId ? `/gp/${gpId}` : "#"} 
+          onClick={(e) => !gpId && e.preventDefault()}
+          className={`flex items-center gap-2 ${gpId ? 'hover:opacity-80 transition-opacity' : ''}`}
+        >
           <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center font-semibold text-sm">
             {gpName.charAt(0)}
           </div>
           <div>
-            <p className="text-sm font-medium text-foreground">{gpName}</p>
+            <p className={`text-sm font-medium text-foreground ${gpId ? 'hover:text-primary transition-colors' : ''}`}>{gpName}</p>
             <div className="flex items-center gap-1">
               <Star className="w-3 h-3 text-secondary fill-secondary" />
               <span className="text-xs text-muted-foreground">{gpRating.toFixed(1)}</span>
             </div>
           </div>
-        </div>
+        </Link>
         
         <div className="text-right">
           <p className="text-xs text-muted-foreground">Prix/kg</p>

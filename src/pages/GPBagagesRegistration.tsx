@@ -414,7 +414,7 @@ export default function GPBagagesRegistration() {
         description: "Bienvenue dans l'espace GP Via Bagages",
       });
 
-      navigate("/gp/bagages");
+      navigate("/gp/dashboard");
     } catch (error: any) {
       console.error("Registration error:", error);
       toast({
@@ -887,17 +887,17 @@ export default function GPBagagesRegistration() {
                       })}
                     </div>
 
-                    <div className="flex justify-between pt-4">
-                      <Button variant="ghost" onClick={handleBack}>
+                    <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-4">
+                      <Button variant="ghost" onClick={handleBack} className="w-full sm:w-auto">
                         <ArrowLeft className="w-5 h-5 mr-1" />
                         Retour
                       </Button>
-                      <Button variant="gold" onClick={handleSubmit} disabled={loading}>
+                      <Button variant="gold" onClick={handleSubmit} disabled={loading} className="w-full sm:w-auto">
                         {loading ? (
                           <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
                         ) : (
                           <>
-                            Valider mon inscription
+                            S'inscrire
                             <CheckCircle className="w-5 h-5 ml-1" />
                           </>
                         )}

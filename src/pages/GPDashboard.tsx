@@ -516,6 +516,8 @@ function ModernOverviewTab({
       }, 100);
     }
   }, [showMoreOptions]);
+  const isBagagesGP = gpProfile.gp_type === "bagages_international";
+
   return (
     <div className="px-4 py-4 space-y-4">
       {/* Profile Header - Compact */}
@@ -535,17 +537,31 @@ function ModernOverviewTab({
         </Button>
       </motion.div>
 
-      {/* PRIORITY 1: Create Offer CTA - EN HAUT */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05 }}
-      >
-        <Button variant="default" size="lg" className="w-full" onClick={onCreateOffer}>
-          <Plus className="w-5 h-5" />
-          Nouvelle offre de transport
-        </Button>
-      </motion.div>
+      {/* Bagages International Mode Indicator - RIGHT BELOW WELCOME */}
+      {isBagagesGP && (
+        <BagagesDashboardSection
+          gpId={gpProfile.id}
+          gpProfile={gpProfile}
+          voyages={offers}
+          orders={orders}
+          onRefresh={onRefresh}
+          onCreateVoyage={onCreateOffer}
+        />
+      )}
+
+      {/* PRIORITY 1: Create Offer CTA - EN HAUT (only for non-bagages GPs) */}
+      {!isBagagesGP && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+        >
+          <Button variant="default" size="lg" className="w-full" onClick={onCreateOffer}>
+            <Plus className="w-5 h-5" />
+            Nouvelle offre de transport
+          </Button>
+        </motion.div>
+      )}
 
       {/* PRIORITY 2: Recent History - EN HAUT */}
       <RecentHistory 
@@ -595,20 +611,8 @@ function ModernOverviewTab({
       </Collapsible>
       </div>
 
-      {/* Bagages International Section - Only for bagages GPs */}
-      {gpProfile.gp_type === "bagages_international" && (
-        <BagagesDashboardSection
-          gpId={gpProfile.id}
-          gpProfile={gpProfile}
-          voyages={offers}
-          orders={orders}
-          onRefresh={onRefresh}
-          onCreateVoyage={onCreateOffer}
-        />
-      )}
-
       {/* Departure Calendar - Integrated (only for non-bagages GPs) */}
-      {gpProfile.gp_type !== "bagages_international" && (
+      {!isBagagesGP && (
         <DepartureCalendar gpId={gpProfile.id} onCreateOffer={onCreateOffer} />
       )}
 
