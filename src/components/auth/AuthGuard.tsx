@@ -15,7 +15,8 @@ const PUBLIC_ROUTES = [
   "/tracking",
   "/offres",
   "/install",
-  "/"
+  "/",
+  "/client/transporteurs", // Public transporter profiles for clients
 ];
 
 // Routes réservées aux admins
@@ -46,7 +47,8 @@ const CLIENT_ROUTES = [
 const isPublicRoute = (pathname: string): boolean => {
   return PUBLIC_ROUTES.some(route => {
     if (route === pathname) return true;
-    // Gérer les routes avec paramètres
+    // Gérer les routes avec paramètres (ex: /offres/:id, /client/transporteurs/:gpId)
+    if (pathname.startsWith(route + "/")) return true;
     if (route.endsWith("/") && pathname.startsWith(route)) return true;
     return false;
   });
