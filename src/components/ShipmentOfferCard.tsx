@@ -121,7 +121,7 @@ export function ShipmentOfferCard({
       {/* GP Info & Price */}
       <div className="flex items-center justify-between pt-4 border-t border-border">
         <Link 
-          to={gpId ? `/gp/${gpId}` : "#"} 
+          to={gpId ? `/client/transporteurs/${gpId}` : "#"} 
           onClick={(e) => !gpId && e.preventDefault()}
           className={`flex items-center gap-2 ${gpId ? 'hover:opacity-80 transition-opacity' : ''}`}
         >

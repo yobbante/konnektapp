@@ -307,13 +307,13 @@ export default function OfferDetail() {
           transition={{ delay: 0.1 }}
           className="mobile-card mb-4"
         >
-          <div className="flex items-center gap-3 mb-4">
+          <Link to={`/client/transporteurs/${offer.gp_id}`} className="flex items-center gap-3 mb-4 group">
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
               <User className="w-6 h-6 text-primary" />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <p className="font-semibold">{gpProfile?.business_name || "Transporteur"}</p>
+                <p className="font-semibold group-hover:text-primary transition-colors">{gpProfile?.business_name || "Transporteur"}</p>
                 {gpProfile?.verified_at && (
                   <CheckCircle className="w-4 h-4 text-primary" />
                 )}
@@ -326,10 +326,10 @@ export default function OfferDetail() {
                 <span className="text-muted-foreground">{gpProfile?.total_deliveries || 0} livraisons</span>
               </div>
             </div>
-            <Button variant="outline" size="icon" onClick={handleContact}>
+            <Button variant="outline" size="icon" onClick={(e) => { e.preventDefault(); handleContact(); }}>
               <MessageCircle className="w-4 h-4" />
             </Button>
-          </div>
+          </Link>
 
           {gpProfile?.verified_at && (
             <div className="flex items-center gap-2 p-2 bg-primary/5 rounded-lg">

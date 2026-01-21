@@ -24,6 +24,7 @@ import GPCustomRequests from "./pages/GPCustomRequests";
 import GPOrderDetail from "./pages/GPOrderDetail";
 import ClientDashboard from "./pages/ClientDashboard";
 import ClientProfile from "./pages/ClientProfile";
+import ClientTransporterProfile from "./pages/ClientTransporterProfile";
 import Auth from "./pages/Auth";
 import Tracking from "./pages/Tracking";
 import Messages from "./pages/Messages";
@@ -80,6 +81,7 @@ const App = () => (
             <Route path="/gp/order/:orderId" element={<GPOrderDetail />} />
             <Route path="/client/dashboard" element={<ClientDashboard />} />
             <Route path="/client/profile" element={<ClientProfile />} />
+            <Route path="/client/transporteurs/:gpId" element={<ClientTransporterProfile />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/departures" element={<AdminDepartures />} />
             <Route path="/admin/orders" element={<AdminOrders />} />
