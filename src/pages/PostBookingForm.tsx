@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   ArrowLeft, Package, MapPin, Calendar, Clock, 
-  AlertTriangle, Zap, CheckCircle, Info, CreditCard, MessageCircle
+  AlertTriangle, Zap, CheckCircle, Info, CreditCard, MessageCircle, User
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileHeader } from "@/components/layout/MobileHeader";
@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { EscrowPaymentFlow } from "@/components/escrow/EscrowPaymentFlow";
 import { createAutoConversationAfterBooking } from "@/lib/autoChat";
+import { TransporterInfoCard } from "@/components/booking/TransporterInfoCard";
 import {
   Select,
   SelectContent,
@@ -297,6 +298,17 @@ export default function PostBookingForm() {
             Ces informations sont <strong>obligatoires</strong> pour que le transporteur puisse traiter votre demande.
           </p>
         </div>
+
+        {/* Transporter Info Card for Bagages International */}
+        {isBagagesInternational && order && step === 1 && (
+          <div className="mb-6">
+            <TransporterInfoCard
+              gpId={order.gp_id}
+              originCity={order.origin_city}
+              destinationCity={order.destination_city}
+            />
+          </div>
+        )}
 
         {/* Progress */}
         <div className="flex items-center justify-center gap-2 mb-6">
