@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ChevronLeft, ChevronRight, Plus, Plane, MapPin,
-  Weight, Calendar, Clock, CheckCircle, Users
+  Weight, Calendar, Clock, CheckCircle, Users, ArrowLeftRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, addMonths, subMonths, isBefore, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
+import { COUNTRIES, CITIES } from "./InteractiveRouteSelector";
 
 interface Departure {
   id: string;
@@ -350,18 +351,19 @@ export function DepartureCalendarView({
         </Card>
       )}
 
-      {/* Add Departure Dialog */}
+      {/* Add Departure Dialog - Interactive Route Selector */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="w-5 h-5" />
-              Ajouter un départ
+              Nouveau voyage
             </DialogTitle>
           </DialogHeader>
 
           {selectedDate && (
             <div className="space-y-4">
+              {/* Date display */}
               <div className="text-center p-3 bg-muted rounded-lg">
                 <Calendar className="w-5 h-5 mx-auto mb-1 text-primary" />
                 <p className="font-medium">
@@ -369,30 +371,50 @@ export function DepartureCalendarView({
                 </p>
               </div>
 
-              {/* Quick routes */}
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Trajets rapides</Label>
-                <div className="flex flex-wrap gap-2">
-                  {quickRoutes.map((r, i) => (
-                    <Badge
-                      key={i}
-                      variant="outline"
-                      className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
-                      onClick={() => setNewDeparture(prev => ({
+              {/* Current selection with flags */}
+              <div className="p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border">
+                <div className="flex items-center justify-center gap-4 mb-3">
+                  <div className="text-center">
+                    <span className="text-3xl">{COUNTRIES[newDeparture.originCountry]?.flag || "🌍"}</span>
+                    <p className="text-sm font-medium mt-1">{newDeparture.originCity || "Ville"}</p>
+                  </div>
+                  
+                  <Button 
+                    type="button"
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => {
+                      const temp = { city: newDeparture.originCity, country: newDeparture.originCountry };
+                      setNewDeparture(prev => ({
                         ...prev,
-                        originCity: r.origin,
-                        originCountry: r.oC,
-                        destinationCity: r.dest,
-                        destinationCountry: r.dC,
-                      }))}
-                    >
-                      {r.origin} → {r.dest}
-                    </Badge>
-                  ))}
+                        originCity: prev.destinationCity,
+                        originCountry: prev.destinationCountry,
+                        destinationCity: temp.city,
+                        destinationCountry: temp.country,
+                        type: prev.type === "aller" ? "retour" : "aller",
+                      }));
+                    }}
+                    className="h-10 w-10 rounded-full bg-background border hover:bg-accent"
+                  >
+                    <ArrowLeftRight className="w-4 h-4" />
+                  </Button>
+                  
+                  <div className="text-center">
+                    <span className="text-3xl">{COUNTRIES[newDeparture.destinationCountry]?.flag || "🌍"}</span>
+                    <p className="text-sm font-medium mt-1">{newDeparture.destinationCity || "Ville"}</p>
+                  </div>
+                </div>
+
+                {/* Route badge with type */}
+                <div className="flex justify-center gap-2">
+                  <Badge variant={newDeparture.type === "aller" ? "default" : "secondary"} className="px-3">
+                    <Plane className="w-3 h-3 mr-1" />
+                    {newDeparture.type === "aller" ? "Aller" : "Retour"}
+                  </Badge>
                 </div>
               </div>
 
-              {/* Type */}
+              {/* Type toggle */}
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   type="button"
@@ -400,7 +422,7 @@ export function DepartureCalendarView({
                   size="sm"
                   onClick={() => setNewDeparture(prev => ({ ...prev, type: "aller" }))}
                 >
-                  Aller
+                  <Plane className="w-4 h-4 mr-1" /> Aller
                 </Button>
                 <Button
                   type="button"
@@ -408,33 +430,125 @@ export function DepartureCalendarView({
                   size="sm"
                   onClick={() => setNewDeparture(prev => ({ ...prev, type: "retour" }))}
                 >
-                  Retour
+                  <Plane className="w-4 h-4 mr-1 rotate-180" /> Retour
                 </Button>
               </div>
 
-              {/* Route */}
+              {/* City dropdowns */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-xs">Départ</Label>
-                  <Input
-                    placeholder="Paris"
-                    value={newDeparture.originCity}
-                    onChange={(e) => setNewDeparture(prev => ({ ...prev, originCity: e.target.value }))}
-                  />
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <span>{COUNTRIES[newDeparture.originCountry]?.flag || "🌍"}</span> Ville de départ
+                  </Label>
+                  <Select 
+                    value={newDeparture.originCity} 
+                    onValueChange={(city) => {
+                      const cityInfo = CITIES.find(c => c.city === city);
+                      if (cityInfo) {
+                        setNewDeparture(prev => ({ 
+                          ...prev, 
+                          originCity: cityInfo.city, 
+                          originCountry: cityInfo.country 
+                        }));
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choisir">
+                        {newDeparture.originCity && (
+                          <span className="flex items-center gap-2">
+                            <span>{COUNTRIES[newDeparture.originCountry]?.flag || "🌍"}</span>
+                            <span>{newDeparture.originCity}</span>
+                          </span>
+                        )}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[250px] bg-popover z-50">
+                      {CITIES.map((item) => (
+                        <SelectItem key={`${item.city}-${item.country}`} value={item.city}>
+                          <span className="flex items-center gap-2">
+                            <span>{COUNTRIES[item.country]?.flag || "🌍"}</span>
+                            <span>{item.city}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Arrivée</Label>
-                  <Input
-                    placeholder="Dakar"
-                    value={newDeparture.destinationCity}
-                    onChange={(e) => setNewDeparture(prev => ({ ...prev, destinationCity: e.target.value }))}
-                  />
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <span>{COUNTRIES[newDeparture.destinationCountry]?.flag || "🌍"}</span> Ville d'arrivée
+                  </Label>
+                  <Select 
+                    value={newDeparture.destinationCity} 
+                    onValueChange={(city) => {
+                      const cityInfo = CITIES.find(c => c.city === city);
+                      if (cityInfo) {
+                        setNewDeparture(prev => ({ 
+                          ...prev, 
+                          destinationCity: cityInfo.city, 
+                          destinationCountry: cityInfo.country 
+                        }));
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choisir">
+                        {newDeparture.destinationCity && (
+                          <span className="flex items-center gap-2">
+                            <span>{COUNTRIES[newDeparture.destinationCountry]?.flag || "🌍"}</span>
+                            <span>{newDeparture.destinationCity}</span>
+                          </span>
+                        )}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[250px] bg-popover z-50">
+                      {CITIES.map((item) => (
+                        <SelectItem key={`${item.city}-${item.country}`} value={item.city}>
+                          <span className="flex items-center gap-2">
+                            <span>{COUNTRIES[item.country]?.flag || "🌍"}</span>
+                            <span>{item.city}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Popular routes */}
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Trajets populaires</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { o: "Dakar", oC: "SN", d: "Paris", dC: "FR" },
+                    { o: "Paris", oC: "FR", d: "Dakar", dC: "SN" },
+                    { o: "Dakar", oC: "SN", d: "New York", dC: "US" },
+                    { o: "Paris", oC: "FR", d: "Abidjan", dC: "CI" },
+                    { o: "Dakar", oC: "SN", d: "Montréal", dC: "CA" },
+                  ].map((r, i) => (
+                    <Badge
+                      key={i}
+                      variant={newDeparture.originCity === r.o && newDeparture.destinationCity === r.d ? "default" : "outline"}
+                      className="cursor-pointer text-xs hover:bg-accent"
+                      onClick={() => setNewDeparture(prev => ({
+                        ...prev,
+                        originCity: r.o,
+                        originCountry: r.oC,
+                        destinationCity: r.d,
+                        destinationCountry: r.dC,
+                      }))}
+                    >
+                      {r.o} - {r.d}
+                    </Badge>
+                  ))}
                 </div>
               </div>
 
               {/* Capacity */}
-              <div className="space-y-1">
-                <Label className="text-xs">Capacité (kg) *</Label>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Capacité disponible (kg) *</Label>
                 <div className="relative">
                   <Weight className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
