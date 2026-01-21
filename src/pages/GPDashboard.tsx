@@ -35,6 +35,7 @@ import { PageLoader } from "@/components/ui/PageLoader";
 import { GPOnboardingGuide, useGPOnboarding } from "@/components/gp/GPOnboardingGuide";
 import { AdvancedAnalyticsDashboard } from "@/components/gp/dashboard/AdvancedAnalyticsDashboard";
 import { GPNotificationsDropdown } from "@/components/gp/dashboard/GPNotificationsDropdown";
+import { BagagesDashboardSection } from "@/components/gp/BagagesDashboardSection";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   OrderStatus, 
@@ -58,6 +59,7 @@ interface GPProfile {
   id_document_url?: string;
   business_registration_url?: string;
   transport_license_url?: string;
+  explicit_restrictions?: string[] | null;
 }
 
 interface WalletData {
@@ -593,8 +595,22 @@ function ModernOverviewTab({
       </Collapsible>
       </div>
 
-      {/* Departure Calendar - Integrated */}
-      <DepartureCalendar gpId={gpProfile.id} onCreateOffer={onCreateOffer} />
+      {/* Bagages International Section - Only for bagages GPs */}
+      {gpProfile.gp_type === "bagages_international" && (
+        <BagagesDashboardSection
+          gpId={gpProfile.id}
+          gpProfile={gpProfile}
+          voyages={offers}
+          orders={orders}
+          onRefresh={onRefresh}
+          onCreateVoyage={onCreateOffer}
+        />
+      )}
+
+      {/* Departure Calendar - Integrated (only for non-bagages GPs) */}
+      {gpProfile.gp_type !== "bagages_international" && (
+        <DepartureCalendar gpId={gpProfile.id} onCreateOffer={onCreateOffer} />
+      )}
 
       {/* Offer Stats - Integrated */}
       <OfferStats gpId={gpProfile.id} />
