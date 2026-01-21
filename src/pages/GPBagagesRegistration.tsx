@@ -19,6 +19,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { DepartureCalendarView } from "@/components/gp/DepartureCalendarView";
 import { STANDARD_RESTRICTIONS } from "@/components/gp/BaggageRestrictions";
+import { InteractiveRouteSelector } from "@/components/gp/InteractiveRouteSelector";
 
 // Popular destinations for quick selection
 const POPULAR_ROUTES = [
@@ -630,27 +631,13 @@ export default function GPBagagesRegistration() {
                       </p>
                     </div>
 
-                    {/* Quick route selection for countries */}
-                    <div className="space-y-2">
-                      <Label>Trajets fréquents (optionnel)</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {POPULAR_ROUTES.slice(0, 4).map((route, i) => (
-                          <Badge
-                            key={i}
-                            variant={
-                              profileData.originCountry === route.originCountry && 
-                              profileData.destinationCountry === route.destCountry 
-                                ? "default" 
-                                : "outline"
-                            }
-                            className="cursor-pointer py-1.5"
-                            onClick={() => selectRoute(route)}
-                          >
-                            {route.origin} → {route.destination}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
+                    {/* Interactive Route Selector with dropdowns and flags */}
+                    <InteractiveRouteSelector
+                      originCountry={profileData.originCountry}
+                      destinationCountry={profileData.destinationCountry}
+                      onOriginChange={(code) => setProfileData({ ...profileData, originCountry: code })}
+                      onDestinationChange={(code) => setProfileData({ ...profileData, destinationCountry: code })}
+                    />
 
                     <div className="flex justify-between pt-4">
                       <Button variant="ghost" onClick={handleBack}>
