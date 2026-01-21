@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { 
   Luggage, Plane, MapPin, Package, CheckCircle, 
   XCircle, MessageCircle, Clock, Weight, ArrowRight,
-  Edit, Euro, Settings, Eye
+  Edit, Euro, Settings, Eye, Plus
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { EditPricingDialog } from "@/components/gp/EditPricingDialog";
 import { RestrictionsManager } from "@/components/gp/RestrictionsManager";
 import { GPOrderDetailsSheet } from "@/components/gp/GPOrderDetailsSheet";
 import { MissionStatusUpdater } from "@/components/gp/MissionStatusUpdater";
+import { CreateBaggageVoyageDialog } from "@/components/gp/CreateBaggageVoyageDialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -80,14 +81,19 @@ export function BagagesDashboardSection({
   const [activeTab, setActiveTab] = useState("voyages");
   const [showEditVoyage, setShowEditVoyage] = useState(false);
   const [showEditPricing, setShowEditPricing] = useState(false);
+  const [showCreateVoyage, setShowCreateVoyage] = useState(false);
   const [selectedVoyage, setSelectedVoyage] = useState<VoyageOffer | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
+  const [localRestrictions, setLocalRestrictions] = useState<string[]>(gpProfile.explicit_restrictions || []);
 
   const pendingOrders = orders.filter(o => o.status === "pending");
   const activeOrders = orders.filter(o => ["accepted", "collected", "in_transit"].includes(o.status));
   const completedOrders = orders.filter(o => o.status === "delivered");
   const upcomingVoyages = voyages.filter(v => v.status === "active" && new Date(v.departure_date) > new Date());
+  
+  // Get last voyage for smart pre-fill
+  const lastVoyage = voyages.length > 0 ? voyages[0] : null;
 
   const handleAcceptOrder = async (orderId: string) => {
     try {
@@ -161,9 +167,12 @@ export function BagagesDashboardSection({
     }
   };
 
-  const handleRestrictionsChange = (restrictions: string[]) => {
-    // This is handled by the RestrictionsManager with showSaveButton
-    // Just refresh the parent
+  const handleRestrictionsChange = useCallback((restrictions: string[]) => {
+    setLocalRestrictions(restrictions);
+  }, []);
+  
+  const handleOpenCreateVoyage = () => {
+    setShowCreateVoyage(true);
   };
 
   const handleViewOrderDetails = (orderId: string) => {
@@ -243,10 +252,9 @@ export function BagagesDashboardSection({
           </TabsTrigger>
         </TabsList>
 
-        {/* Voyages Tab */}
         <TabsContent value="voyages" className="mt-3 space-y-3">
-          <Button onClick={onCreateVoyage} className="w-full">
-            <Plane className="w-4 h-4 mr-2" />
+          <Button onClick={handleOpenCreateVoyage} className="w-full">
+            <Plus className="w-4 h-4 mr-2" />
             Nouveau voyage
           </Button>
           
@@ -329,7 +337,7 @@ export function BagagesDashboardSection({
 
           {/* Restrictions Manager */}
           <RestrictionsManager
-            selectedRestrictions={gpProfile.explicit_restrictions || []}
+            selectedRestrictions={localRestrictions}
             onChange={handleRestrictionsChange}
             gpId={gpId}
             showSaveButton={true}
@@ -360,6 +368,18 @@ export function BagagesDashboardSection({
         gpId={gpId}
         onSuccess={() => {
           setShowEditPricing(false);
+          onRefresh();
+        }}
+      />
+
+      {/* Create Baggage Voyage Dialog */}
+      <CreateBaggageVoyageDialog
+        open={showCreateVoyage}
+        onClose={() => setShowCreateVoyage(false)}
+        gpId={gpId}
+        lastVoyage={lastVoyage}
+        onSuccess={() => {
+          setShowCreateVoyage(false);
           onRefresh();
         }}
       />

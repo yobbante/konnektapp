@@ -37,6 +37,7 @@ import { AdvancedAnalyticsDashboard } from "@/components/gp/dashboard/AdvancedAn
 import { GPNotificationsDropdown } from "@/components/gp/dashboard/GPNotificationsDropdown";
 import { BagagesDashboardSection } from "@/components/gp/BagagesDashboardSection";
 import { AddDepartureFAB } from "@/components/gp/AddDepartureFAB";
+import { CreateBaggageVoyageDialog } from "@/components/gp/CreateBaggageVoyageDialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   OrderStatus, 
@@ -80,6 +81,7 @@ export default function GPDashboard() {
   const [offers, setOffers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [showCreateOffer, setShowCreateOffer] = useState(false);
+  const [showCreateBaggageVoyage, setShowCreateBaggageVoyage] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [showNotifications, setShowNotifications] = useState(false);
   const { notify } = useNotificationSound();
@@ -476,17 +478,30 @@ export default function GPDashboard() {
 
       {/* Floating Action Button for GP Bagages - Always visible on overview */}
       {gpProfile.gp_type === "bagages_international" && activeTab === "overview" && !isPendingValidation && (
-        <AddDepartureFAB onClick={() => setShowCreateOffer(true)} />
+        <AddDepartureFAB onClick={() => setShowCreateBaggageVoyage(true)} />
       )}
 
       <GPMobileNav activeTab={activeTab} onTabChange={setActiveTab} />
 
+      {/* Create Offer Dialog for non-baggage GPs */}
       <GPCreateOfferDialog
         open={showCreateOffer}
         onClose={() => setShowCreateOffer(false)}
         gpProfile={gpProfile}
         onSuccess={() => {
           setShowCreateOffer(false);
+          checkAuthAndLoadData();
+        }}
+      />
+
+      {/* Create Baggage Voyage Dialog for baggage GPs */}
+      <CreateBaggageVoyageDialog
+        open={showCreateBaggageVoyage}
+        onClose={() => setShowCreateBaggageVoyage(false)}
+        gpId={gpProfile.id}
+        lastVoyage={offers.length > 0 ? offers[0] : null}
+        onSuccess={() => {
+          setShowCreateBaggageVoyage(false);
           checkAuthAndLoadData();
         }}
       />
