@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { ReportProblemDialog } from "@/components/tracking/ReportProblemDialog";
+import { RealTimeTrackingMap } from "@/components/tracking/RealTimeTrackingMap";
 
 interface TrackingStep {
   status: string;
@@ -369,79 +370,22 @@ export default function TrackingPage() {
               )}
             </div>
 
-            {/* Interactive Map Placeholder */}
+            {/* Real-Time Interactive Map */}
             <div className="mobile-card">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-sm">Suivi en direct</h3>
                 <Badge variant="secondary" className="gap-1">
                   <MapIcon className="w-3 h-3" />
-                  Carte
+                  Temps réel
                 </Badge>
               </div>
-              <div className="relative h-48 bg-gradient-to-br from-primary/5 via-muted/50 to-accent/5 rounded-xl overflow-hidden flex items-center justify-center">
-                {/* Animated route visualization */}
-                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="routeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" />
-                      <stop offset="100%" stopColor="hsl(var(--accent))" />
-                    </linearGradient>
-                  </defs>
-                  <motion.path 
-                    d="M 10 80 Q 30 60 50 50 T 90 20"
-                    fill="none"
-                    stroke="url(#routeGradient)"
-                    strokeWidth="0.5"
-                    strokeDasharray="3,2"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                    transition={{ duration: 2, ease: "easeInOut" }}
-                  />
-                </svg>
-                
-                {/* Origin point */}
-                <motion.div 
-                  className="absolute bottom-12 left-8 w-4 h-4 rounded-full bg-primary shadow-lg"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.3 }}
-                />
-                
-                {/* Current position indicator */}
-                <motion.div 
-                  className="absolute"
-                  style={{
-                    top: `${50 - (progress * 0.3)}%`,
-                    left: `${10 + (progress * 0.8)}%`,
-                  }}
-                  initial={{ scale: 0 }}
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center shadow-lg">
-                    <Truck className="w-3 h-3 text-white" />
-                  </div>
-                </motion.div>
-                
-                {/* Destination point */}
-                <motion.div 
-                  className="absolute top-8 right-8 w-4 h-4 rounded-full bg-accent shadow-lg"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.5 }}
-                />
-                
-                {/* Labels */}
-                <div className="absolute bottom-8 left-4 text-xs font-medium text-foreground bg-background/80 px-2 py-1 rounded">
-                  {order.origin_city}
-                </div>
-                <div className="absolute top-4 right-4 text-xs font-medium text-foreground bg-background/80 px-2 py-1 rounded">
-                  {order.destination_city}
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground text-center mt-2">
-                Carte interactive complète bientôt disponible
-              </p>
+              <RealTimeTrackingMap
+                originCity={order.origin_city}
+                destinationCity={order.destination_city}
+                currentStatus={order.status}
+                progress={progress}
+                transportType="bagages_international"
+              />
             </div>
 
             {/* GP Info */}

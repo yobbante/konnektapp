@@ -2,48 +2,12 @@ import { useState } from "react";
 import { MapPin, ArrowRight, ArrowLeftRight, Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { SearchableCountrySelect, SearchableCityInput, ALL_COUNTRIES, CITIES_BY_COUNTRY } from "./SearchableCountrySelect";
 
-// Popular countries for GP Bagages
-const COUNTRIES = [
-  { code: "FR", name: "France", flag: "🇫🇷" },
-  { code: "SN", name: "Sénégal", flag: "🇸🇳" },
-  { code: "CI", name: "Côte d'Ivoire", flag: "🇨🇮" },
-  { code: "CM", name: "Cameroun", flag: "🇨🇲" },
-  { code: "ML", name: "Mali", flag: "🇲🇱" },
-  { code: "BF", name: "Burkina Faso", flag: "🇧🇫" },
-  { code: "GN", name: "Guinée", flag: "🇬🇳" },
-  { code: "TG", name: "Togo", flag: "🇹🇬" },
-  { code: "BJ", name: "Bénin", flag: "🇧🇯" },
-  { code: "GH", name: "Ghana", flag: "🇬🇭" },
-  { code: "NG", name: "Nigeria", flag: "🇳🇬" },
-  { code: "MA", name: "Maroc", flag: "🇲🇦" },
-  { code: "DZ", name: "Algérie", flag: "🇩🇿" },
-  { code: "TN", name: "Tunisie", flag: "🇹🇳" },
-  { code: "AE", name: "Émirats", flag: "🇦🇪" },
-  { code: "CA", name: "Canada", flag: "🇨🇦" },
-  { code: "US", name: "États-Unis", flag: "🇺🇸" },
-  { code: "GB", name: "Royaume-Uni", flag: "🇬🇧" },
-  { code: "BE", name: "Belgique", flag: "🇧🇪" },
-  { code: "DE", name: "Allemagne", flag: "🇩🇪" },
-  { code: "ES", name: "Espagne", flag: "🇪🇸" },
-  { code: "IT", name: "Italie", flag: "🇮🇹" },
-  { code: "CH", name: "Suisse", flag: "🇨🇭" },
-];
-
-// Popular city presets by country
-const POPULAR_CITIES: Record<string, string[]> = {
-  FR: ["Paris", "Lyon", "Marseille", "Toulouse", "Bordeaux", "Lille", "Nice"],
-  SN: ["Dakar", "Thiès", "Saint-Louis", "Kaolack", "Ziguinchor"],
-  CI: ["Abidjan", "Bouaké", "Yamoussoukro", "San-Pédro"],
-  CM: ["Douala", "Yaoundé", "Bafoussam", "Garoua"],
-  MA: ["Casablanca", "Rabat", "Marrakech", "Fès", "Tanger"],
-  CA: ["Montréal", "Toronto", "Vancouver", "Ottawa"],
-  US: ["New York", "Los Angeles", "Chicago", "Houston", "Miami"],
-  AE: ["Dubaï", "Abu Dhabi", "Sharjah"],
-};
+// Re-export for backwards compatibility
+export const COUNTRIES = ALL_COUNTRIES;
+export const POPULAR_CITIES = CITIES_BY_COUNTRY;
 
 interface CountryRouteSelectorProps {
   originCountry: string;
@@ -79,13 +43,8 @@ export function CountryRouteSelector({
     onDestinationCityChange(tempCity);
   };
 
-  const originCities = POPULAR_CITIES[originCountry] || [];
-  const destinationCities = POPULAR_CITIES[destinationCountry] || [];
-
-  const getCountryDisplay = (code: string) => {
-    const country = COUNTRIES.find(c => c.code === code);
-    return country ? `${country.flag} ${country.name}` : code;
-  };
+  const originCities = CITIES_BY_COUNTRY[originCountry] || [];
+  const destinationCities = CITIES_BY_COUNTRY[destinationCountry] || [];
 
   if (compact) {
     return (
@@ -93,18 +52,12 @@ export function CountryRouteSelector({
         <div className="flex items-center gap-2">
           {/* Origin */}
           <div className="flex-1">
-            <Select value={originCountry} onValueChange={onOriginCountryChange}>
-              <SelectTrigger className="h-9 text-sm">
-                <SelectValue placeholder="Pays départ" />
-              </SelectTrigger>
-              <SelectContent>
-                {COUNTRIES.map((country) => (
-                  <SelectItem key={country.code} value={country.code}>
-                    {country.flag} {country.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableCountrySelect
+              value={originCountry}
+              onValueChange={onOriginCountryChange}
+              placeholder="Pays départ"
+              className="w-full h-9 text-sm"
+            />
           </div>
 
           {showSwapButton && (
@@ -121,50 +74,34 @@ export function CountryRouteSelector({
 
           {/* Destination */}
           <div className="flex-1">
-            <Select value={destinationCountry} onValueChange={onDestinationCountryChange}>
-              <SelectTrigger className="h-9 text-sm">
-                <SelectValue placeholder="Pays arrivée" />
-              </SelectTrigger>
-              <SelectContent>
-                {COUNTRIES.map((country) => (
-                  <SelectItem key={country.code} value={country.code}>
-                    {country.flag} {country.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableCountrySelect
+              value={destinationCountry}
+              onValueChange={onDestinationCountryChange}
+              placeholder="Pays arrivée"
+              className="w-full h-9 text-sm"
+            />
           </div>
         </div>
 
         {/* Cities row */}
         <div className="flex items-center gap-2">
-          <Input
-            placeholder="Ville départ"
+          <SearchableCityInput
             value={originCity}
-            onChange={(e) => onOriginCityChange(e.target.value)}
+            onValueChange={onOriginCityChange}
+            countryCode={originCountry}
+            placeholder="Ville départ"
             className="flex-1 h-9 text-sm"
-            list="origin-cities"
           />
-          <datalist id="origin-cities">
-            {originCities.map(city => (
-              <option key={city} value={city} />
-            ))}
-          </datalist>
 
           <Plane className="w-4 h-4 text-muted-foreground flex-shrink-0" />
 
-          <Input
-            placeholder="Ville arrivée"
+          <SearchableCityInput
             value={destinationCity}
-            onChange={(e) => onDestinationCityChange(e.target.value)}
+            onValueChange={onDestinationCityChange}
+            countryCode={destinationCountry}
+            placeholder="Ville arrivée"
             className="flex-1 h-9 text-sm"
-            list="dest-cities"
           />
-          <datalist id="dest-cities">
-            {destinationCities.map(city => (
-              <option key={city} value={city} />
-            ))}
-          </datalist>
         </div>
       </div>
     );
@@ -179,32 +116,17 @@ export function CountryRouteSelector({
           Départ
         </Label>
         <div className="grid grid-cols-2 gap-2">
-          <Select value={originCountry} onValueChange={onOriginCountryChange}>
-            <SelectTrigger>
-              <SelectValue placeholder="Pays" />
-            </SelectTrigger>
-            <SelectContent>
-              {COUNTRIES.map((country) => (
-                <SelectItem key={country.code} value={country.code}>
-                  {country.flag} {country.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <div className="relative">
-            <Input
-              placeholder="Ville"
-              value={originCity}
-              onChange={(e) => onOriginCityChange(e.target.value)}
-              list="origin-cities-full"
-            />
-            <datalist id="origin-cities-full">
-              {originCities.map(city => (
-                <option key={city} value={city} />
-              ))}
-            </datalist>
-          </div>
+          <SearchableCountrySelect
+            value={originCountry}
+            onValueChange={onOriginCountryChange}
+            placeholder="Pays"
+          />
+          <SearchableCityInput
+            value={originCity}
+            onValueChange={onOriginCityChange}
+            countryCode={originCountry}
+            placeholder="Ville"
+          />
         </div>
 
         {/* Quick city selection */}
@@ -247,32 +169,17 @@ export function CountryRouteSelector({
           Arrivée
         </Label>
         <div className="grid grid-cols-2 gap-2">
-          <Select value={destinationCountry} onValueChange={onDestinationCountryChange}>
-            <SelectTrigger>
-              <SelectValue placeholder="Pays" />
-            </SelectTrigger>
-            <SelectContent>
-              {COUNTRIES.map((country) => (
-                <SelectItem key={country.code} value={country.code}>
-                  {country.flag} {country.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <div className="relative">
-            <Input
-              placeholder="Ville"
-              value={destinationCity}
-              onChange={(e) => onDestinationCityChange(e.target.value)}
-              list="dest-cities-full"
-            />
-            <datalist id="dest-cities-full">
-              {destinationCities.map(city => (
-                <option key={city} value={city} />
-              ))}
-            </datalist>
-          </div>
+          <SearchableCountrySelect
+            value={destinationCountry}
+            onValueChange={onDestinationCountryChange}
+            placeholder="Pays"
+          />
+          <SearchableCityInput
+            value={destinationCity}
+            onValueChange={onDestinationCityChange}
+            countryCode={destinationCountry}
+            placeholder="Ville"
+          />
         </div>
 
         {/* Quick city selection */}
@@ -294,5 +201,3 @@ export function CountryRouteSelector({
     </div>
   );
 }
-
-export { COUNTRIES, POPULAR_CITIES };

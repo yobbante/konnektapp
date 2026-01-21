@@ -131,8 +131,15 @@ function IndexContent() {
                 <ArrowRight className="w-5 h-5" />
               </Button>
             </Link>
-            {/* Hide "Devenir transporteur" for existing transporters */}
-            {!isGP && (
+            {/* Show "Dashboard GP" for existing transporters, hide "Devenir transporteur" */}
+            {isGP ? (
+              <Link to="/gp/dashboard" className="flex-1">
+                <Button variant="outline" size="lg" className="w-full">
+                  <Truck className="w-5 h-5" />
+                  Mon Dashboard GP
+                </Button>
+              </Link>
+            ) : (
               <Link to="/gp/inscription" className="flex-1">
                 <Button variant="outline" size="lg" className="w-full">
                   <Truck className="w-5 h-5" />
@@ -326,20 +333,37 @@ function IndexContent() {
         </div>
       </section>
 
-      {/* Transporter CTA */}
+      {/* Transporter CTA - Different for GPs vs non-GPs */}
       <section className="px-4 py-6 mb-4">
         <div className="bg-primary rounded-2xl p-5 text-center">
           <Truck className="w-10 h-10 text-primary-foreground mx-auto mb-3" />
-          <h3 className="font-bold text-primary-foreground mb-2">Vous êtes transporteur ?</h3>
-          <p className="text-primary-foreground/80 text-sm mb-4">
-            Rejoignez notre réseau et développez votre activité
-          </p>
-          <Link to="/gp/inscription">
-            <Button variant="secondary" size="default" className="w-full">
-              Devenir transporteur
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </Link>
+          {isGP ? (
+            <>
+              <h3 className="font-bold text-primary-foreground mb-2">Gérez vos missions</h3>
+              <p className="text-primary-foreground/80 text-sm mb-4">
+                Accédez à votre tableau de bord et gérez vos offres
+              </p>
+              <Link to="/gp/dashboard">
+                <Button variant="secondary" size="default" className="w-full">
+                  Accéder au Dashboard
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            </>
+          ) : (
+            <>
+              <h3 className="font-bold text-primary-foreground mb-2">Vous êtes transporteur ?</h3>
+              <p className="text-primary-foreground/80 text-sm mb-4">
+                Rejoignez notre réseau et développez votre activité
+              </p>
+              <Link to="/gp/inscription">
+                <Button variant="secondary" size="default" className="w-full">
+                  Devenir transporteur
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
       </section>
 
