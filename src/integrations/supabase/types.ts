@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_loyalty: {
+        Row: {
+          created_at: string
+          current_tier_id: string | null
+          id: string
+          joined_at: string
+          points_redeemed: number
+          tier_updated_at: string | null
+          total_orders: number
+          total_points: number
+          total_spent: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_tier_id?: string | null
+          id?: string
+          joined_at?: string
+          points_redeemed?: number
+          tier_updated_at?: string | null
+          total_orders?: number
+          total_points?: number
+          total_spent?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_tier_id?: string | null
+          id?: string
+          joined_at?: string
+          points_redeemed?: number
+          tier_updated_at?: string | null
+          total_orders?: number
+          total_points?: number
+          total_spent?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_loyalty_current_tier_id_fkey"
+            columns: ["current_tier_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           client_id: string
@@ -710,6 +760,7 @@ export type Database = {
           city: string
           country_code: string
           created_at: string
+          default_currency: string | null
           description: string | null
           explicit_restrictions: string[] | null
           fleet_size: number | null
@@ -741,6 +792,7 @@ export type Database = {
           city: string
           country_code?: string
           created_at?: string
+          default_currency?: string | null
           description?: string | null
           explicit_restrictions?: string[] | null
           fleet_size?: number | null
@@ -772,6 +824,7 @@ export type Database = {
           city?: string
           country_code?: string
           created_at?: string
+          default_currency?: string | null
           description?: string | null
           explicit_restrictions?: string[] | null
           fleet_size?: number | null
@@ -848,6 +901,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      loyalty_tiers: {
+        Row: {
+          badge_color: string | null
+          badge_icon: string | null
+          created_at: string
+          discount_percent: number
+          id: string
+          min_orders: number
+          min_spent: number
+          name: string
+          perks: string[] | null
+        }
+        Insert: {
+          badge_color?: string | null
+          badge_icon?: string | null
+          created_at?: string
+          discount_percent?: number
+          id?: string
+          min_orders?: number
+          min_spent?: number
+          name: string
+          perks?: string[] | null
+        }
+        Update: {
+          badge_color?: string | null
+          badge_icon?: string | null
+          created_at?: string
+          discount_percent?: number
+          id?: string
+          min_orders?: number
+          min_spent?: number
+          name?: string
+          perks?: string[] | null
+        }
+        Relationships: []
       }
       messages: {
         Row: {

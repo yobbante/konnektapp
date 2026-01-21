@@ -96,6 +96,7 @@ export default function GPRegistration() {
     yearsExperience: "",
     fleetSize: "",
     description: "",
+    defaultCurrency: "XOF",
     // Services spécifiques
     selectedServices: [] as string[],
   });
@@ -317,6 +318,7 @@ export default function GPRegistration() {
           address: businessData.address || null,
           city: businessData.city,
           country_code: businessData.countryCode,
+          default_currency: businessData.defaultCurrency,
           id_type: kycData.idType,
           id_number: kycData.idNumber,
           id_document_url: kycData.idDocumentUrl,
@@ -731,6 +733,31 @@ export default function GPRegistration() {
                     />
                   </div>
                 )}
+
+                {/* Currency selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="defaultCurrency">Devise de facturation *</Label>
+                  <Select
+                    value={businessData.defaultCurrency}
+                    onValueChange={(value) => setBusinessData({ ...businessData, defaultCurrency: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choisissez votre devise" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="XOF">🇸🇳 FCFA (XOF)</SelectItem>
+                      <SelectItem value="EUR">🇪🇺 Euro (EUR)</SelectItem>
+                      <SelectItem value="USD">🇺🇸 Dollar US (USD)</SelectItem>
+                      <SelectItem value="CAD">🇨🇦 Dollar Canadien (CAD)</SelectItem>
+                      <SelectItem value="GBP">🇬🇧 Livre Sterling (GBP)</SelectItem>
+                      <SelectItem value="MAD">🇲🇦 Dirham (MAD)</SelectItem>
+                      <SelectItem value="AED">🇦🇪 Dirham EAU (AED)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Cette devise sera utilisée par défaut pour vos tarifs
+                  </p>
+                </div>
 
                 <div className="md:col-span-2 space-y-2">
                   <Label htmlFor="address">Adresse</Label>

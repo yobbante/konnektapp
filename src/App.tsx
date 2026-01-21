@@ -38,6 +38,7 @@ import Profile from "./pages/Profile";
 import GPProfile from "./pages/GPProfile";
 import TransporterProfile from "./pages/TransporterProfile";
 import Favorites from "./pages/Favorites";
+import FavoriteTransporters from "./pages/FavoriteTransporters";
 import SavedSearches from "./pages/SavedSearches";
 import QuoteConfirmation from "./pages/QuoteConfirmation";
 import Settings from "./pages/Settings";
@@ -93,6 +94,7 @@ const App = () => (
             <Route path="/gp/:gpId" element={<GPProfile />} />
             <Route path="/transporter/profile" element={<TransporterProfile />} />
             <Route path="/favorites" element={<Favorites />} />
+            <Route path="/favorites/transporters" element={<FavoriteTransporters />} />
             <Route path="/saved-searches" element={<SavedSearches />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/alerts" element={<Alerts />} />

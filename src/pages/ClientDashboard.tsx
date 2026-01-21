@@ -5,7 +5,7 @@ import {
   Package, Clock, MapPin, ArrowRight, Plus,
   CheckCircle, Truck, User, LogOut, Search, FileText,
   Heart, History, Send, Star, Edit2, Save, X, Mail, Phone,
-  Home, Camera, Settings, AlertCircle, HelpCircle, Scale
+  Home, Camera, Settings, AlertCircle, HelpCircle, Scale, Gift
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +29,7 @@ import { ORDER_STATUS_LABELS, isValidOrderStatus } from "@/lib/enumMappings";
 import { useFavorites } from "@/hooks/useFavorites";
 import { getTransportIcon, getTransportLabel } from "@/lib/transportTypes";
 import { TrustLevelBadge, calculateTrustLevel } from "@/components/ui/trust-level-badge";
+import { LoyaltyCard } from "@/components/loyalty/LoyaltySystem";
 
 interface Order {
   id: string;
@@ -395,18 +396,27 @@ export default function ClientDashboard() {
           </motion.div>
         </div>
 
+        {/* Loyalty Card */}
+        <LoyaltyCard className="mb-2" />
+
         {/* Quick Actions */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-4 gap-2">
           <Link to="/demande">
             <Button variant="default" size="lg" className="w-full flex-col h-auto py-3">
               <Plus className="w-5 h-5 mb-1" />
-              <span className="text-xs">Nouveau colis</span>
+              <span className="text-xs">Nouveau</span>
             </Button>
           </Link>
           <Link to="/demande-personnalisee">
             <Button variant="outline" size="lg" className="w-full flex-col h-auto py-3">
               <FileText className="w-5 h-5 mb-1" />
               <span className="text-xs">Demande</span>
+            </Button>
+          </Link>
+          <Link to="/favorites/transporters">
+            <Button variant="outline" size="lg" className="w-full flex-col h-auto py-3">
+              <Heart className="w-5 h-5 mb-1" />
+              <span className="text-xs">Favoris</span>
             </Button>
           </Link>
           <Link to="/offres">
