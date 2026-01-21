@@ -173,13 +173,12 @@ export default function GPBagagesRegistration() {
         return true;
 
       case 5:
-        // At least one pricing method required
+        // Price per kg is mandatory
         const hasKgPrice = pricePerKg && parseFloat(pricePerKg) > 0;
-        const hasFlatRate = Array.from(flatRatePricing.values()).some(p => p.isActive && parseFloat(p.price) > 0);
-        if (!hasKgPrice && !hasFlatRate) {
+        if (!hasKgPrice) {
           toast({ 
-            title: "Tarification requise", 
-            description: "Définissez au moins un prix au kilo ou un forfait objet", 
+            title: "Prix au kilo requis", 
+            description: "Veuillez définir votre prix au kilo avant de vous inscrire", 
             variant: "destructive" 
           });
           return false;
@@ -504,24 +503,11 @@ export default function GPBagagesRegistration() {
                       </div>
                     ) : (
                       <>
-                        {/* Toggle login/signup */}
-                        <div className="flex rounded-xl bg-muted p-1">
-                          <button
-                            onClick={() => setIsLogin(false)}
-                            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-                              !isLogin ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
-                            }`}
-                          >
-                            Inscription
-                          </button>
-                          <button
-                            onClick={() => setIsLogin(true)}
-                            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-                              isLogin ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
-                            }`}
-                          >
-                            Connexion
-                          </button>
+                        {/* Only show Inscription for non-connected users */}
+                        <div className="text-center mb-2">
+                          <p className="text-sm text-muted-foreground">
+                            {isLogin ? "Connectez-vous pour continuer" : "Créez votre compte GP"}
+                          </p>
                         </div>
 
                         <div className="space-y-2">
