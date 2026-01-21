@@ -81,6 +81,7 @@ export function DepartureCalendarView({
     capacity: "",
     pricePerKg: String(defaultPricePerKg),
     type: "aller" as "aller" | "retour",
+    returnDate: "" as string,
   });
 
   // Get days in current month view
@@ -130,6 +131,7 @@ export function DepartureCalendarView({
         capacity: "",
         pricePerKg: String(lastDeparture.pricePerKg || defaultPricePerKg),
         type: lastDeparture.type === "aller" ? "retour" : "aller",
+        returnDate: "",
       });
     } else if (defaultRoute) {
       setNewDeparture({
@@ -140,6 +142,7 @@ export function DepartureCalendarView({
         capacity: "",
         pricePerKg: String(defaultPricePerKg),
         type: "aller",
+        returnDate: "",
       });
     } else {
       setNewDeparture({
@@ -150,6 +153,7 @@ export function DepartureCalendarView({
         capacity: "",
         pricePerKg: String(defaultPricePerKg),
         type: "aller",
+        returnDate: "",
       });
     }
   };
@@ -161,6 +165,7 @@ export function DepartureCalendarView({
 
     setLoading(true);
     try {
+      // Add the main departure
       await onAddDeparture({
         date: format(selectedDate, 'yyyy-MM-dd'),
         originCity: newDeparture.originCity,
@@ -171,6 +176,21 @@ export function DepartureCalendarView({
         pricePerKg: newDeparture.pricePerKg ? parseFloat(newDeparture.pricePerKg) : 8,
         type: newDeparture.type,
       });
+
+      // If return date is set, also add the return trip
+      if (newDeparture.returnDate && newDeparture.type === "aller") {
+        await onAddDeparture({
+          date: newDeparture.returnDate,
+          originCity: newDeparture.destinationCity,
+          originCountry: newDeparture.destinationCountry,
+          destinationCity: newDeparture.originCity,
+          destinationCountry: newDeparture.originCountry,
+          capacity: parseFloat(newDeparture.capacity),
+          pricePerKg: newDeparture.pricePerKg ? parseFloat(newDeparture.pricePerKg) : 8,
+          type: "retour",
+        });
+      }
+
       setShowAddDialog(false);
     } finally {
       setLoading(false);
@@ -351,32 +371,32 @@ export function DepartureCalendarView({
         </Card>
       )}
 
-      {/* Add Departure Dialog - Interactive Route Selector */}
+      {/* Add Departure Dialog - Mobile-friendly */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-base">
               <Plus className="w-5 h-5" />
               Nouveau voyage
             </DialogTitle>
           </DialogHeader>
 
           {selectedDate && (
-            <div className="space-y-4">
-              {/* Date display */}
-              <div className="text-center p-3 bg-muted rounded-lg">
-                <Calendar className="w-5 h-5 mx-auto mb-1 text-primary" />
-                <p className="font-medium">
-                  {format(selectedDate, 'EEEE d MMMM yyyy', { locale: fr })}
+            <div className="space-y-3">
+              {/* Date display - compact on mobile */}
+              <div className="flex items-center justify-center gap-2 p-2 bg-muted rounded-lg">
+                <Calendar className="w-4 h-4 text-primary" />
+                <p className="font-medium text-sm">
+                  {format(selectedDate, 'EEE d MMM yyyy', { locale: fr })}
                 </p>
               </div>
 
-              {/* Current selection with flags */}
-              <div className="p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border">
-                <div className="flex items-center justify-center gap-4 mb-3">
+              {/* Current selection with flags - compact */}
+              <div className="p-3 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border">
+                <div className="flex items-center justify-center gap-3 mb-2">
                   <div className="text-center">
-                    <span className="text-3xl">{COUNTRIES[newDeparture.originCountry]?.flag || "🌍"}</span>
-                    <p className="text-sm font-medium mt-1">{newDeparture.originCity || "Ville"}</p>
+                    <span className="text-2xl">{COUNTRIES[newDeparture.originCountry]?.flag || "🌍"}</span>
+                    <p className="text-xs font-medium mt-0.5 truncate max-w-[70px]">{newDeparture.originCity || "Ville"}</p>
                   </div>
                   
                   <Button 
@@ -394,51 +414,53 @@ export function DepartureCalendarView({
                         type: prev.type === "aller" ? "retour" : "aller",
                       }));
                     }}
-                    className="h-10 w-10 rounded-full bg-background border hover:bg-accent"
+                    className="h-8 w-8 rounded-full bg-background border hover:bg-accent"
                   >
-                    <ArrowLeftRight className="w-4 h-4" />
+                    <ArrowLeftRight className="w-3.5 h-3.5" />
                   </Button>
                   
                   <div className="text-center">
-                    <span className="text-3xl">{COUNTRIES[newDeparture.destinationCountry]?.flag || "🌍"}</span>
-                    <p className="text-sm font-medium mt-1">{newDeparture.destinationCity || "Ville"}</p>
+                    <span className="text-2xl">{COUNTRIES[newDeparture.destinationCountry]?.flag || "🌍"}</span>
+                    <p className="text-xs font-medium mt-0.5 truncate max-w-[70px]">{newDeparture.destinationCity || "Ville"}</p>
                   </div>
                 </div>
 
-                {/* Route badge with type */}
-                <div className="flex justify-center gap-2">
-                  <Badge variant={newDeparture.type === "aller" ? "default" : "secondary"} className="px-3">
+                {/* Type badge */}
+                <div className="flex justify-center">
+                  <Badge variant={newDeparture.type === "aller" ? "default" : "secondary"} className="px-2 py-0.5 text-xs">
                     <Plane className="w-3 h-3 mr-1" />
                     {newDeparture.type === "aller" ? "Aller" : "Retour"}
                   </Badge>
                 </div>
               </div>
 
-              {/* Type toggle */}
+              {/* Type toggle - larger touch targets */}
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   type="button"
                   variant={newDeparture.type === "aller" ? "default" : "outline"}
                   size="sm"
+                  className="h-10"
                   onClick={() => setNewDeparture(prev => ({ ...prev, type: "aller" }))}
                 >
-                  <Plane className="w-4 h-4 mr-1" /> Aller
+                  <Plane className="w-4 h-4 mr-1.5" /> Aller
                 </Button>
                 <Button
                   type="button"
                   variant={newDeparture.type === "retour" ? "default" : "outline"}
                   size="sm"
+                  className="h-10"
                   onClick={() => setNewDeparture(prev => ({ ...prev, type: "retour" }))}
                 >
-                  <Plane className="w-4 h-4 mr-1 rotate-180" /> Retour
+                  <Plane className="w-4 h-4 mr-1.5 rotate-180" /> Retour
                 </Button>
               </div>
 
-              {/* City dropdowns */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
+              {/* City dropdowns - stacked on mobile for better touch */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    <span>{COUNTRIES[newDeparture.originCountry]?.flag || "🌍"}</span> Ville de départ
+                    <span>{COUNTRIES[newDeparture.originCountry]?.flag || "🌍"}</span> Départ
                   </Label>
                   <Select 
                     value={newDeparture.originCity} 
@@ -453,8 +475,8 @@ export function DepartureCalendarView({
                       }
                     }}
                   >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Choisir">
+                    <SelectTrigger className="w-full h-11">
+                      <SelectValue placeholder="Choisir une ville">
                         {newDeparture.originCity && (
                           <span className="flex items-center gap-2">
                             <span>{COUNTRIES[newDeparture.originCountry]?.flag || "🌍"}</span>
@@ -463,9 +485,9 @@ export function DepartureCalendarView({
                         )}
                       </SelectValue>
                     </SelectTrigger>
-                    <SelectContent className="max-h-[250px] bg-popover z-50">
+                    <SelectContent className="max-h-[200px] bg-popover z-50">
                       {CITIES.map((item) => (
-                        <SelectItem key={`${item.city}-${item.country}`} value={item.city}>
+                        <SelectItem key={`origin-${item.city}-${item.country}`} value={item.city}>
                           <span className="flex items-center gap-2">
                             <span>{COUNTRIES[item.country]?.flag || "🌍"}</span>
                             <span>{item.city}</span>
@@ -476,9 +498,9 @@ export function DepartureCalendarView({
                   </Select>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    <span>{COUNTRIES[newDeparture.destinationCountry]?.flag || "🌍"}</span> Ville d'arrivée
+                    <span>{COUNTRIES[newDeparture.destinationCountry]?.flag || "🌍"}</span> Arrivée
                   </Label>
                   <Select 
                     value={newDeparture.destinationCity} 
@@ -493,8 +515,8 @@ export function DepartureCalendarView({
                       }
                     }}
                   >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Choisir">
+                    <SelectTrigger className="w-full h-11">
+                      <SelectValue placeholder="Choisir une ville">
                         {newDeparture.destinationCity && (
                           <span className="flex items-center gap-2">
                             <span>{COUNTRIES[newDeparture.destinationCountry]?.flag || "🌍"}</span>
@@ -503,9 +525,9 @@ export function DepartureCalendarView({
                         )}
                       </SelectValue>
                     </SelectTrigger>
-                    <SelectContent className="max-h-[250px] bg-popover z-50">
+                    <SelectContent className="max-h-[200px] bg-popover z-50">
                       {CITIES.map((item) => (
-                        <SelectItem key={`${item.city}-${item.country}`} value={item.city}>
+                        <SelectItem key={`dest-${item.city}-${item.country}`} value={item.city}>
                           <span className="flex items-center gap-2">
                             <span>{COUNTRIES[item.country]?.flag || "🌍"}</span>
                             <span>{item.city}</span>
@@ -517,10 +539,10 @@ export function DepartureCalendarView({
                 </div>
               </div>
 
-              {/* Popular routes */}
-              <div className="space-y-2">
+              {/* Popular routes - scrollable on mobile */}
+              <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground">Trajets populaires</Label>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
                   {[
                     { o: "Dakar", oC: "SN", d: "Paris", dC: "FR" },
                     { o: "Paris", oC: "FR", d: "Dakar", dC: "SN" },
@@ -531,7 +553,7 @@ export function DepartureCalendarView({
                     <Badge
                       key={i}
                       variant={newDeparture.originCity === r.o && newDeparture.destinationCity === r.d ? "default" : "outline"}
-                      className="cursor-pointer text-xs hover:bg-accent"
+                      className="cursor-pointer text-xs hover:bg-accent whitespace-nowrap flex-shrink-0"
                       onClick={() => setNewDeparture(prev => ({
                         ...prev,
                         originCity: r.o,
@@ -546,27 +568,56 @@ export function DepartureCalendarView({
                 </div>
               </div>
 
-              {/* Capacity */}
-              <div className="space-y-1.5">
+              {/* Capacity - larger input for mobile */}
+              <div className="space-y-1">
                 <Label className="text-xs">Capacité disponible (kg) *</Label>
                 <div className="relative">
                   <Weight className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     type="number"
+                    inputMode="numeric"
                     placeholder="30"
-                    className="pl-9"
+                    className="pl-9 h-11 text-base"
                     value={newDeparture.capacity}
                     onChange={(e) => setNewDeparture(prev => ({ ...prev, capacity: e.target.value }))}
                   />
                 </div>
               </div>
 
-              <div className="flex gap-2 pt-2">
-                <Button variant="outline" className="flex-1" onClick={() => setShowAddDialog(false)}>
+              {/* Return trip option - only show when adding an "aller" trip */}
+              {newDeparture.type === "aller" && (
+                <div className="p-3 bg-secondary/10 rounded-lg border border-secondary/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Plane className="w-4 h-4 text-secondary rotate-180" />
+                    <span className="text-sm font-medium">Ajouter le retour ?</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Programmez directement votre voyage retour
+                  </p>
+                  <Input
+                    type="date"
+                    className="h-10 text-sm"
+                    min={format(selectedDate, 'yyyy-MM-dd')}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        // Store return date for later use
+                        setNewDeparture(prev => ({
+                          ...prev,
+                          returnDate: e.target.value,
+                        }));
+                      }
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Action buttons - full width on mobile */}
+              <div className="flex gap-2 pt-1">
+                <Button variant="outline" className="flex-1 h-11" onClick={() => setShowAddDialog(false)}>
                   Annuler
                 </Button>
                 <Button 
-                  className="flex-1" 
+                  className="flex-1 h-11" 
                   onClick={handleAddDeparture}
                   disabled={loading || !newDeparture.originCity || !newDeparture.destinationCity || !newDeparture.capacity}
                 >

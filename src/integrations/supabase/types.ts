@@ -411,6 +411,36 @@ export type Database = {
           },
         ]
       }
+      exchange_rates: {
+        Row: {
+          created_at: string
+          from_currency: string
+          id: string
+          rate: number
+          to_currency: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          from_currency: string
+          id?: string
+          rate: number
+          to_currency: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          from_currency?: string
+          id?: string
+          rate?: number
+          to_currency?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       flat_rate_object_types: {
         Row: {
           created_at: string
@@ -607,6 +637,67 @@ export type Database = {
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gp_price_history: {
+        Row: {
+          currency: string
+          destination_city: string | null
+          destination_country: string | null
+          gp_id: string
+          id: string
+          offer_id: string | null
+          origin_city: string | null
+          origin_country: string | null
+          price_per_kg: number
+          recorded_at: string
+        }
+        Insert: {
+          currency?: string
+          destination_city?: string | null
+          destination_country?: string | null
+          gp_id: string
+          id?: string
+          offer_id?: string | null
+          origin_city?: string | null
+          origin_country?: string | null
+          price_per_kg: number
+          recorded_at?: string
+        }
+        Update: {
+          currency?: string
+          destination_city?: string | null
+          destination_country?: string | null
+          gp_id?: string
+          id?: string
+          offer_id?: string | null
+          origin_city?: string | null
+          origin_country?: string | null
+          price_per_kg?: number
+          recorded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gp_price_history_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_price_history_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_price_history_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "gp_offers"
             referencedColumns: ["id"]
           },
         ]
