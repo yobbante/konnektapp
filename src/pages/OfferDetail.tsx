@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useFavorites } from "@/hooks/useFavorites";
+import { createAutoConversationAfterBooking } from "@/lib/autoChat";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur";
 

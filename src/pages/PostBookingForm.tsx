@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   ArrowLeft, Package, MapPin, Calendar, Clock, 
-  AlertTriangle, Zap, CheckCircle, Info
+  AlertTriangle, Zap, CheckCircle, Info, CreditCard, MessageCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileHeader } from "@/components/layout/MobileHeader";
@@ -14,6 +14,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { EscrowPaymentFlow } from "@/components/escrow/EscrowPaymentFlow";
+import { createAutoConversationAfterBooking } from "@/lib/autoChat";
 import {
   Select,
   SelectContent,
@@ -46,6 +48,10 @@ interface OrderInfo {
   origin_city: string;
   destination_city: string;
   gp_id: string;
+  total_price: number;
+  price_per_kg: number;
+  gp_name?: string;
+  transport_type?: string;
 }
 
 export default function PostBookingForm() {
@@ -56,6 +62,9 @@ export default function PostBookingForm() {
   const [submitting, setSubmitting] = useState(false);
   const [order, setOrder] = useState<OrderInfo | null>(null);
   const [step, setStep] = useState(1);
+  const [showEscrow, setShowEscrow] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isBagagesInternational, setIsBagagesInternational] = useState(false);
   
   const [formData, setFormData] = useState({
     // A. Marchandise
@@ -88,6 +97,7 @@ export default function PostBookingForm() {
         navigate("/auth");
         return;
       }
+      setUserId(user.id);
 
       if (!orderId) {
         navigate("/client/dashboard");
@@ -96,7 +106,7 @@ export default function PostBookingForm() {
 
       const { data, error } = await supabase
         .from("orders")
-        .select("id, order_number, origin_city, destination_city, gp_id, logistics_status")
+        .select("id, order_number, origin_city, destination_city, gp_id, logistics_status, total_price, price_per_kg")
         .eq("id", orderId)
         .eq("client_id", user.id)
         .single();
@@ -113,7 +123,21 @@ export default function PostBookingForm() {
         return;
       }
 
-      setOrder(data);
+      // Get GP name for auto chat
+      const { data: gpData } = await supabase
+        .from("gp_profiles")
+        .select("business_name, gp_type")
+        .eq("id", data.gp_id)
+        .single();
+
+      setOrder({
+        ...data,
+        gp_name: gpData?.business_name || "Transporteur",
+        transport_type: gpData?.gp_type,
+      });
+      
+      // Check if this is a bagages_international GP for escrow
+      setIsBagagesInternational(gpData?.gp_type === "bagages_international");
     } catch (error) {
       console.error("Error loading order:", error);
     } finally {
@@ -156,6 +180,16 @@ export default function PostBookingForm() {
       return;
     }
 
+    // Pour les bagages internationaux, montrer le flux escrow
+    if (isBagagesInternational && !showEscrow) {
+      setShowEscrow(true);
+      return;
+    }
+
+    await completeBooking();
+  };
+
+  const completeBooking = async () => {
     setSubmitting(true);
     try {
       // Insert logistics data
@@ -183,22 +217,46 @@ export default function PostBookingForm() {
       // Update order status
       const { error: orderError } = await supabase
         .from("orders")
-        .update({ logistics_status: "submitted" })
+        .update({ 
+          logistics_status: "submitted",
+          weight: parseFloat(formData.estimatedWeight),
+          total_price: parseFloat(formData.estimatedWeight) * (order?.price_per_kg || 0),
+        })
         .eq("id", orderId);
 
       if (orderError) throw orderError;
 
+      // Créer la conversation automatique avec message d'accroche
+      if (userId && order) {
+        await createAutoConversationAfterBooking(
+          userId,
+          order.gp_id,
+          order.id,
+          {
+            orderNumber: order.order_number,
+            originCity: order.origin_city,
+            destinationCity: order.destination_city,
+            gpName: order.gp_name || "Transporteur",
+          }
+        );
+      }
+
       toast({ 
-        title: "Informations transmises !", 
-        description: "Le transporteur peut maintenant voir votre demande." 
+        title: "🎉 Réservation confirmée !", 
+        description: "Le transporteur a été notifié. Consultez vos messages." 
       });
-      navigate("/client/dashboard");
+      navigate("/messages");
     } catch (error) {
       console.error("Submit error:", error);
       toast({ title: "Erreur lors de l'envoi", variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleEscrowComplete = async () => {
+    setShowEscrow(false);
+    await completeBooking();
   };
 
   if (loading) {
@@ -552,6 +610,18 @@ export default function PostBookingForm() {
               </div>
             </div>
 
+            {isBagagesInternational && (
+              <div className="p-4 bg-primary/10 rounded-xl flex items-start gap-3">
+                <CreditCard className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">Paiement sécurisé par séquestre</p>
+                  <p className="text-xs text-muted-foreground">
+                    Votre paiement sera conservé en sécurité et libéré au transporteur une fois la livraison confirmée.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="p-4 bg-muted/50 rounded-xl">
               <p className="text-sm text-muted-foreground text-center">
                 ⚠️ Après validation, ces informations seront transmises au transporteur. 
@@ -561,27 +631,52 @@ export default function PostBookingForm() {
           </motion.div>
         )}
 
-        {/* Navigation */}
-        <div className="flex gap-3 mt-6">
-          {step > 1 && (
-            <Button variant="outline" onClick={handleBack} className="flex-1">
-              Retour
-            </Button>
-          )}
-          {step < 4 ? (
-            <Button onClick={handleNext} className="flex-1">
-              Continuer
-            </Button>
-          ) : (
-            <Button 
-              onClick={handleSubmit} 
-              disabled={submitting}
-              className="flex-1"
-            >
-              {submitting ? "Envoi..." : "Valider et transmettre"}
-            </Button>
-          )}
-        </div>
+        {/* Escrow Payment Flow */}
+        {showEscrow && order && userId && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <CreditCard className="w-5 h-5 text-primary" />
+              <h2 className="font-semibold">Paiement sécurisé</h2>
+            </div>
+            
+            <EscrowPaymentFlow
+              orderId={order.id}
+              amount={parseFloat(formData.estimatedWeight) * order.price_per_kg}
+              gpId={order.gp_id}
+              onPaymentComplete={handleEscrowComplete}
+              onCancel={() => setShowEscrow(false)}
+            />
+          </motion.div>
+        )}
+
+        {/* Navigation - Hide when showing escrow */}
+        {!showEscrow && (
+          <div className="flex gap-3 mt-6">
+            {step > 1 && (
+              <Button variant="outline" onClick={handleBack} className="flex-1">
+                Retour
+              </Button>
+            )}
+            {step < 4 ? (
+              <Button onClick={handleNext} className="flex-1">
+                Continuer
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleSubmit} 
+                disabled={submitting}
+                className="flex-1 gap-2"
+              >
+                {isBagagesInternational && <CreditCard className="w-4 h-4" />}
+                {submitting ? "Envoi..." : isBagagesInternational ? "Passer au paiement" : "Valider et transmettre"}
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       <MobileNav />

@@ -14,8 +14,7 @@ import { AdminStatsCharts } from "@/components/admin/AdminStatsCharts";
 import { AdminGPList } from "@/components/admin/AdminGPList";
 import { AdminPendingGPs } from "@/components/admin/AdminPendingGPs";
 import { AdminOrdersList } from "@/components/admin/AdminOrdersList";
-import { AdminSupportTickets } from "@/components/admin/AdminSupportTickets";
-import { AdminDisputeArbitration } from "@/components/admin/AdminDisputeArbitration";
+import { AdminSupportAndDisputes } from "@/components/admin/AdminSupportAndDisputes";
 import { AdminTransporterReputation } from "@/components/admin/AdminTransporterReputation";
 import { AdminPermissionsManager } from "@/components/admin/AdminPermissionsManager";
 import { AdminDropdownMenu } from "@/components/admin/AdminDropdownMenu";
@@ -380,14 +379,9 @@ export default function AdminDashboard() {
             />
           </TabsContent>
 
-          {/* Support Tickets */}
+          {/* Support & Litiges combinés */}
           <TabsContent value="support">
-            <AdminSupportTickets />
-          </TabsContent>
-
-          {/* Disputes */}
-          <TabsContent value="disputes">
-            <AdminDisputeArbitration />
+            <AdminSupportAndDisputes />
           </TabsContent>
 
           {/* Reputation */}
