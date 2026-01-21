@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { CurrencySelector, getCurrencySymbol } from "@/components/ui/currency-selector";
 
 interface VoyageOffer {
   id: string;
@@ -60,6 +61,7 @@ export function EditVoyageDialog({ open, onClose, voyage, onSuccess }: EditVoyag
     totalCapacity: "",
     availableCapacity: "",
     pricePerKg: "",
+    currency: "EUR",
     flightNumber: "",
     airline: "",
     baggageTypesAccepted: [] as string[],
@@ -79,6 +81,7 @@ export function EditVoyageDialog({ open, onClose, voyage, onSuccess }: EditVoyag
         totalCapacity: voyage.total_capacity?.toString() || "",
         availableCapacity: voyage.available_capacity?.toString() || "",
         pricePerKg: voyage.price_per_kg?.toString() || "",
+        currency: voyage.currency || "EUR",
         flightNumber: voyage.flight_number || "",
         airline: voyage.airline || "",
         baggageTypesAccepted: voyage.baggage_types_accepted || [],
@@ -116,6 +119,7 @@ export function EditVoyageDialog({ open, onClose, voyage, onSuccess }: EditVoyag
           total_capacity: parseFloat(formData.totalCapacity),
           available_capacity: parseFloat(formData.availableCapacity) || parseFloat(formData.totalCapacity),
           price_per_kg: parseFloat(formData.pricePerKg),
+          currency: formData.currency,
           flight_number: formData.flightNumber || null,
           airline: formData.airline || null,
           baggage_types_accepted: formData.baggageTypesAccepted.length > 0 ? formData.baggageTypesAccepted : null,
@@ -257,34 +261,47 @@ export function EditVoyageDialog({ open, onClose, voyage, onSuccess }: EditVoyag
           </div>
 
           {/* Capacity & Price */}
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <Label>Capacité (kg) *</Label>
-              <Input 
-                type="number"
-                value={formData.totalCapacity}
-                onChange={(e) => setFormData({...formData, totalCapacity: e.target.value})}
-                placeholder="30"
-              />
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Capacité (kg) *</Label>
+                <Input 
+                  type="number"
+                  value={formData.totalCapacity}
+                  onChange={(e) => setFormData({...formData, totalCapacity: e.target.value})}
+                  placeholder="30"
+                />
+              </div>
+              <div>
+                <Label>Disponible (kg)</Label>
+                <Input 
+                  type="number"
+                  value={formData.availableCapacity}
+                  onChange={(e) => setFormData({...formData, availableCapacity: e.target.value})}
+                  placeholder="30"
+                />
+              </div>
             </div>
+            
+            {/* Price with Currency */}
             <div>
-              <Label>Disponible (kg)</Label>
-              <Input 
-                type="number"
-                value={formData.availableCapacity}
-                onChange={(e) => setFormData({...formData, availableCapacity: e.target.value})}
-                placeholder="30"
-              />
-            </div>
-            <div>
-              <Label>Prix/kg (€) *</Label>
-              <Input 
-                type="number"
-                step="0.5"
-                value={formData.pricePerKg}
-                onChange={(e) => setFormData({...formData, pricePerKg: e.target.value})}
-                placeholder="8"
-              />
+              <Label>Prix par kg *</Label>
+              <div className="grid grid-cols-3 gap-2 mt-1">
+                <CurrencySelector
+                  value={formData.currency}
+                  onValueChange={(value) => setFormData({...formData, currency: value})}
+                />
+                <Input 
+                  type="number"
+                  step="0.5"
+                  value={formData.pricePerKg}
+                  onChange={(e) => setFormData({...formData, pricePerKg: e.target.value})}
+                  placeholder="8"
+                />
+                <div className="flex items-center text-sm text-muted-foreground">
+                  {getCurrencySymbol(formData.currency)}/kg
+                </div>
+              </div>
             </div>
           </div>
 

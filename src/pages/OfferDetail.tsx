@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useFavorites } from "@/hooks/useFavorites";
 import { createAutoConversationAfterBooking } from "@/lib/autoChat";
+import { getCurrencySymbol } from "@/components/ui/currency-selector";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur";
 
@@ -34,6 +35,7 @@ interface GPOffer {
   departure_date: string;
   arrival_date: string | null;
   price_per_kg: number;
+  currency: string;
   transport_type: string;
   available_capacity: number;
   total_capacity: number;
@@ -390,7 +392,7 @@ export default function OfferDetail() {
           <div>
             <p className="text-xs text-muted-foreground">Prix par kg</p>
             <p className="text-2xl font-bold text-primary">
-              {offer.price_per_kg.toLocaleString()} <span className="text-sm font-normal">FCFA</span>
+              {offer.price_per_kg.toLocaleString()} <span className="text-sm font-normal">{getCurrencySymbol(offer.currency || "FCFA")}</span>
             </p>
           </div>
           <Button 
