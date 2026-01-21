@@ -162,15 +162,13 @@ export default function GPBagagesRegistration() {
         return true;
 
       case 4:
-        // All mandatory restrictions must be accepted
-        const missingMandatory = MANDATORY_RESTRICTIONS.filter(r => !acceptedRestrictions.includes(r));
-        if (missingMandatory.length > 0) {
+        // Restrictions are optional - GP can choose which ones to apply
+        // Just show a tip if none selected
+        if (acceptedRestrictions.length === 0) {
           toast({ 
-            title: "Restrictions obligatoires", 
-            description: "Vous devez accepter toutes les restrictions de sécurité pour continuer", 
-            variant: "destructive" 
+            title: "Conseil", 
+            description: "Définir des restrictions vous protège et rassure vos clients",
           });
-          return false;
         }
         return true;
 

@@ -620,6 +620,7 @@ export type Database = {
           country_code: string
           created_at: string
           description: string | null
+          explicit_restrictions: string[] | null
           fleet_size: number | null
           gp_type: Database["public"]["Enums"]["gp_type"]
           id: string
@@ -650,6 +651,7 @@ export type Database = {
           country_code?: string
           created_at?: string
           description?: string | null
+          explicit_restrictions?: string[] | null
           fleet_size?: number | null
           gp_type: Database["public"]["Enums"]["gp_type"]
           id?: string
@@ -680,6 +682,7 @@ export type Database = {
           country_code?: string
           created_at?: string
           description?: string | null
+          explicit_restrictions?: string[] | null
           fleet_size?: number | null
           gp_type?: Database["public"]["Enums"]["gp_type"]
           id?: string
