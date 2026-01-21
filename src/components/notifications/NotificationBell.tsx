@@ -94,15 +94,35 @@ export function NotificationBell() {
     // Close popover
     setOpen(false);
 
+    // For order-related notifications, fetch the tracking code to navigate properly
+    const navigateToTracking = async (orderId: string) => {
+      try {
+        const { data: order } = await supabase
+          .from("orders")
+          .select("tracking_code, order_number")
+          .eq("id", orderId)
+          .single();
+        
+        if (order) {
+          const code = order.tracking_code || order.order_number;
+          navigate(`/tracking?code=${code}`);
+        } else {
+          navigate("/client/dashboard");
+        }
+      } catch {
+        navigate("/client/dashboard");
+      }
+    };
+
     // Navigate based on related_type and related_id, considering admin role
     if (notif.related_id && notif.related_type) {
       switch (notif.related_type) {
         case "order":
-          // Admin goes to admin order detail, others to tracking
+          // Admin goes to admin order detail, others to tracking with proper code
           if (hasAdminAccess) {
             navigate(`/admin/order/${notif.related_id}`);
           } else {
-            navigate(`/tracking?order=${notif.related_id}`);
+            await navigateToTracking(notif.related_id);
           }
           break;
         case "offer":
@@ -137,7 +157,7 @@ export function NotificationBell() {
           if (hasAdminAccess) {
             navigate("/admin");
           } else {
-            navigate(`/tracking?order=${notif.related_id}`);
+            await navigateToTracking(notif.related_id);
           }
           break;
         default:
@@ -145,6 +165,8 @@ export function NotificationBell() {
           if (notif.type === "order" || notif.type === "order_status") {
             if (hasAdminAccess) {
               navigate("/admin/orders");
+            } else if (notif.related_id) {
+              await navigateToTracking(notif.related_id);
             } else {
               navigate("/client/dashboard");
             }

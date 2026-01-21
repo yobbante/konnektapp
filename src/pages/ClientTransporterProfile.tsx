@@ -5,7 +5,7 @@ import {
   User, MapPin, Star, Truck, Ship, Plane, Zap, Briefcase, Luggage,
   Package, CheckCircle, Calendar, Shield, ArrowLeft, MessageCircle,
   Clock, TrendingUp, Award, Globe, AlertTriangle, Euro, Phone, 
-  Mail, ShieldX, ChevronDown, ChevronUp, Info, Lock
+  Mail, ShieldX, ChevronDown, ChevronUp, Info, Lock, Heart, Scale
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,9 @@ import { TrustLevelBadge, calculateTrustLevel } from "@/components/ui/trust-leve
 import { FULL_RESTRICTIONS_LIST, RestrictionBadgesDisplay } from "@/components/gp/RestrictionsManager";
 import { FlatRateDisplay } from "@/components/gp/FlatRatePricing";
 import { getCurrencySymbol } from "@/lib/utils";
+import { ShareProfileButton } from "@/components/share/ShareProfileButton";
+import { useFavoriteTransporters } from "@/hooks/useFavoriteTransporters";
+import { TransporterCompareProvider, useTransporterCompare } from "@/components/compare/TransporterCompare";
 
 interface GPProfileData {
   id: string;
@@ -105,7 +108,7 @@ const countryFlags: Record<string, string> = {
   IT: "🇮🇹", ES: "🇪🇸", GB: "🇬🇧", US: "🇺🇸", CA: "🇨🇦", AE: "🇦🇪",
 };
 
-export default function ClientTransporterProfile() {
+function ClientTransporterProfileContent() {
   const { gpId } = useParams<{ gpId: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -115,6 +118,8 @@ export default function ClientTransporterProfile() {
   const [flatRatePricing, setFlatRatePricing] = useState<FlatRatePricing[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAllRestrictions, setShowAllRestrictions] = useState(false);
+  const { toggleFavoriteGP, isFavoriteGP, isAuthenticated: isFavAuthd } = useFavoriteTransporters();
+  const { addToCompare, isInCompare } = useTransporterCompare();
   const [stats, setStats] = useState<GPStats>({
     responseRate: 0,
     avgDeliveryTime: 0,
@@ -328,11 +333,52 @@ export default function ClientTransporterProfile() {
       <MobileHeader />
 
       <div className="px-4 py-4 space-y-4 max-w-2xl mx-auto">
-        {/* Back Button */}
-        <Link to="/offres" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="w-4 h-4" />
-          Retour aux offres
-        </Link>
+        {/* Header Actions */}
+        <div className="flex items-center justify-between">
+          <Link to="/offres" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="w-4 h-4" />
+            Retour aux offres
+          </Link>
+          <div className="flex items-center gap-2">
+            {/* Favorite Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => gpId && toggleFavoriteGP(gpId)}
+              className={isFavoriteGP(gpId || "") ? "text-destructive" : "text-muted-foreground"}
+            >
+              <Heart className={`w-5 h-5 ${isFavoriteGP(gpId || "") ? "fill-current" : ""}`} />
+            </Button>
+            {/* Compare Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => profile && addToCompare({
+                id: profile.id,
+                business_name: profile.business_name,
+                gp_type: profile.gp_type,
+                rating: profile.rating,
+                total_reviews: profile.total_reviews,
+                total_deliveries: profile.total_deliveries,
+                verified_at: profile.verified_at,
+                price_per_kg: activeOffers[0]?.price_per_kg,
+                currency: activeOffers[0]?.currency,
+                city: profile.city,
+                country_code: profile.country_code,
+              })}
+              className={isInCompare(gpId || "") ? "text-primary" : "text-muted-foreground"}
+              disabled={isInCompare(gpId || "")}
+            >
+              <Scale className="w-5 h-5" />
+            </Button>
+            {/* Share Button */}
+            <ShareProfileButton 
+              gpId={gpId || ""} 
+              gpName={profile?.business_name || "Transporteur"} 
+              variant="icon"
+            />
+          </div>
+        </div>
 
         {/* ========================== SECTION 1: PROFIL GP ========================== */}
         <motion.div 
@@ -793,5 +839,14 @@ export default function ClientTransporterProfile() {
 
       <MobileNav />
     </div>
+  );
+}
+
+// Wrapper component with TransporterCompareProvider
+export default function ClientTransporterProfile() {
+  return (
+    <TransporterCompareProvider>
+      <ClientTransporterProfileContent />
+    </TransporterCompareProvider>
   );
 }
