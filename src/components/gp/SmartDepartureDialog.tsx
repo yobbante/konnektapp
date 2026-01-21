@@ -6,10 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { SearchableCountrySelect, SearchableCityInput, ALL_COUNTRIES } from "./SearchableCountrySelect";
 
 interface SmartDepartureDialogProps {
   open: boolean;
@@ -41,22 +40,6 @@ interface SmartDepartureDialogProps {
   }) => Promise<void>;
 }
 
-const COUNTRIES = [
-  { code: "FR", name: "France", flag: "🇫🇷" },
-  { code: "SN", name: "Sénégal", flag: "🇸🇳" },
-  { code: "CI", name: "Côte d'Ivoire", flag: "🇨🇮" },
-  { code: "ML", name: "Mali", flag: "🇲🇱" },
-  { code: "CM", name: "Cameroun", flag: "🇨🇲" },
-  { code: "MA", name: "Maroc", flag: "🇲🇦" },
-  { code: "DZ", name: "Algérie", flag: "🇩🇿" },
-  { code: "TN", name: "Tunisie", flag: "🇹🇳" },
-  { code: "BE", name: "Belgique", flag: "🇧🇪" },
-  { code: "GB", name: "Royaume-Uni", flag: "🇬🇧" },
-  { code: "US", name: "États-Unis", flag: "🇺🇸" },
-  { code: "CA", name: "Canada", flag: "🇨🇦" },
-  { code: "AE", name: "Émirats", flag: "🇦🇪" },
-];
-
 export function SmartDepartureDialog({
   open,
   onClose,
@@ -79,12 +62,13 @@ export function SmartDepartureDialog({
     type: "aller" as "aller" | "retour",
   });
 
-  // Smart pre-fill logic
+  // Smart pre-fill logic - properly syncs isReturnTrip with type
   useEffect(() => {
     if (open && selectedDate) {
       let origin = { city: "", country: "FR" };
       let destination = { city: "", country: "SN" };
       let price = defaultPricePerKg;
+      let tripType: "aller" | "retour" = "aller";
 
       // Priority 1: If last departure exists, inverse it for return trip logic
       if (lastDeparture) {
@@ -97,6 +81,7 @@ export function SmartDepartureDialog({
           country: lastDeparture.originCountry,
         };
         price = lastDeparture.pricePerKg;
+        tripType = "retour";
         setIsReturnTrip(true);
       }
       // Priority 2: Use default route if no last departure
@@ -109,6 +94,9 @@ export function SmartDepartureDialog({
           city: defaultRoute.destinationCity,
           country: defaultRoute.destinationCountry,
         };
+        tripType = "aller";
+        setIsReturnTrip(false);
+      } else {
         setIsReturnTrip(false);
       }
 
@@ -119,22 +107,23 @@ export function SmartDepartureDialog({
         destinationCountry: destination.country,
         capacity: "",
         pricePerKg: String(price),
-        type: isReturnTrip ? "retour" : "aller",
+        type: tripType,
       });
     }
   }, [open, selectedDate, defaultRoute, lastDeparture, defaultPricePerKg]);
 
-  // Handle switch for return trip
+  // Handle switch for return trip - properly toggles type
   const handleSwitchRoute = () => {
+    const newType = departure.type === "aller" ? "retour" : "aller";
     setDeparture(prev => ({
       ...prev,
       originCity: prev.destinationCity,
       originCountry: prev.destinationCountry,
       destinationCity: prev.originCity,
       destinationCountry: prev.originCountry,
-      type: prev.type === "aller" ? "retour" : "aller",
+      type: newType,
     }));
-    setIsReturnTrip(!isReturnTrip);
+    setIsReturnTrip(newType === "retour");
   };
 
   const handleSubmit = async () => {
@@ -161,7 +150,7 @@ export function SmartDepartureDialog({
   };
 
   const getCountryFlag = (code: string) => {
-    return COUNTRIES.find(c => c.code === code)?.flag || "🌍";
+    return ALL_COUNTRIES.find(c => c.code === code)?.flag || "🌍";
   };
 
   return (
@@ -209,27 +198,16 @@ export function SmartDepartureDialog({
               Départ
             </Label>
             <div className="flex gap-2">
-              <Select
+              <SearchableCountrySelect
                 value={departure.originCountry}
                 onValueChange={(v) => setDeparture(prev => ({ ...prev, originCountry: v }))}
-              >
-                <SelectTrigger className="w-24">
-                  <SelectValue>
-                    {getCountryFlag(departure.originCountry)}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {COUNTRIES.map(c => (
-                    <SelectItem key={c.code} value={c.code}>
-                      {c.flag} {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input
-                placeholder="Ville de départ"
+                className="w-[140px]"
+              />
+              <SearchableCityInput
                 value={departure.originCity}
-                onChange={(e) => setDeparture(prev => ({ ...prev, originCity: e.target.value }))}
+                onValueChange={(v) => setDeparture(prev => ({ ...prev, originCity: v }))}
+                countryCode={departure.originCountry}
+                placeholder="Ville de départ"
                 className="flex-1"
               />
             </div>
@@ -242,27 +220,16 @@ export function SmartDepartureDialog({
               Destination
             </Label>
             <div className="flex gap-2">
-              <Select
+              <SearchableCountrySelect
                 value={departure.destinationCountry}
                 onValueChange={(v) => setDeparture(prev => ({ ...prev, destinationCountry: v }))}
-              >
-                <SelectTrigger className="w-24">
-                  <SelectValue>
-                    {getCountryFlag(departure.destinationCountry)}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {COUNTRIES.map(c => (
-                    <SelectItem key={c.code} value={c.code}>
-                      {c.flag} {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input
-                placeholder="Ville d'arrivée"
+                className="w-[140px]"
+              />
+              <SearchableCityInput
                 value={departure.destinationCity}
-                onChange={(e) => setDeparture(prev => ({ ...prev, destinationCity: e.target.value }))}
+                onValueChange={(v) => setDeparture(prev => ({ ...prev, destinationCity: v }))}
+                countryCode={departure.destinationCountry}
+                placeholder="Ville d'arrivée"
                 className="flex-1"
               />
             </div>

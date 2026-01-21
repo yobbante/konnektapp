@@ -36,6 +36,7 @@ import { GPOnboardingGuide, useGPOnboarding } from "@/components/gp/GPOnboarding
 import { AdvancedAnalyticsDashboard } from "@/components/gp/dashboard/AdvancedAnalyticsDashboard";
 import { GPNotificationsDropdown } from "@/components/gp/dashboard/GPNotificationsDropdown";
 import { BagagesDashboardSection } from "@/components/gp/BagagesDashboardSection";
+import { AddDepartureFAB } from "@/components/gp/AddDepartureFAB";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   OrderStatus, 
@@ -471,6 +472,11 @@ export default function GPDashboard() {
             Voir les demandes personnalisées
           </Button>
         </div>
+      )}
+
+      {/* Floating Action Button for GP Bagages - Always visible on overview */}
+      {gpProfile.gp_type === "bagages_international" && activeTab === "overview" && !isPendingValidation && (
+        <AddDepartureFAB onClick={() => setShowCreateOffer(true)} />
       )}
 
       <GPMobileNav activeTab={activeTab} onTabChange={setActiveTab} />

@@ -309,6 +309,7 @@ export function RestrictionsManager({
             return (
               <div
                 key={restriction.id}
+                onClick={() => !readOnly && toggleRestriction(restriction.id)}
                 className={`
                   flex items-center gap-3 p-3 rounded-lg border transition-all
                   ${readOnly ? '' : 'cursor-pointer hover:bg-muted/50'}
@@ -335,11 +336,19 @@ export function RestrictionsManager({
                 </div>
 
                 {!readOnly && (
-                  <Switch
-                    checked={isSelected}
-                    onCheckedChange={() => toggleRestriction(restriction.id)}
+                  <div 
                     onClick={(e) => e.stopPropagation()}
-                  />
+                    className="flex-shrink-0"
+                  >
+                    <Switch
+                      checked={isSelected}
+                      onCheckedChange={(checked) => {
+                        if (checked !== isSelected) {
+                          toggleRestriction(restriction.id);
+                        }
+                      }}
+                    />
+                  </div>
                 )}
 
                 {readOnly && isSelected && (
