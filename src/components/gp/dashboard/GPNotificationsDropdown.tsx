@@ -5,6 +5,7 @@ import { Bell, Check, Package, MessageCircle, Truck, AlertCircle, X } from "luci
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SwipeableNotificationItem } from "@/components/gp/SwipeableNotificationItem";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -19,16 +20,6 @@ interface Notification {
   read_at: string | null;
   created_at: string;
 }
-
-const typeIcons: Record<string, React.ElementType> = {
-  order: Package,
-  order_status: Package,
-  message: MessageCircle,
-  gp: Truck,
-  account_status: Truck,
-  alert: AlertCircle,
-  info: Bell,
-};
 
 // Types relevant to transporters
 const gpRelevantTypes = ["order", "order_status", "message", "gp", "account_status"];
@@ -126,49 +117,6 @@ export function GPNotificationsDropdown({ gpProfileId, isOpen, onClose, onViewOr
     }
   };
 
-  const handleNotificationClick = async (notif: Notification) => {
-    // Mark as read if not already
-    if (!notif.read_at) {
-      await markAsRead(notif.id);
-    }
-
-    onClose();
-
-    // Navigate based on related_type and related_id
-    if (notif.related_id && notif.related_type) {
-      switch (notif.related_type) {
-        case "order":
-          if (onViewOrderDetail) {
-            onViewOrderDetail(notif.related_id);
-          } else {
-            navigate(`/gp/order/${notif.related_id}`);
-          }
-          break;
-        case "message":
-        case "conversation":
-          navigate("/messages");
-          break;
-        case "custom_request":
-          navigate("/gp/demandes");
-          break;
-        default:
-          break;
-      }
-    } else {
-      switch (notif.type) {
-        case "message":
-          navigate("/messages");
-          break;
-        case "gp":
-        case "account_status":
-          navigate("/transporter/profile");
-          break;
-        default:
-          break;
-      }
-    }
-  };
-
   const markAsRead = async (notificationId: string) => {
     try {
       await supabase
@@ -227,7 +175,7 @@ export function GPNotificationsDropdown({ gpProfileId, isOpen, onClose, onViewOr
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             className="fixed right-3 top-20 z-50 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
             style={{ 
-              width: 'min(calc(100vw - 24px), 340px)',
+              width: 'min(calc(100vw - 24px), 360px)',
               maxHeight: 'calc(100vh - 140px)',
               top: 'calc(70px + var(--safe-top, 0px))'
             }}
@@ -256,8 +204,17 @@ export function GPNotificationsDropdown({ gpProfileId, isOpen, onClose, onViewOr
               </div>
             </div>
 
+            {/* Swipe hint */}
+            {unreadCount > 0 && (
+              <div className="px-4 py-2 bg-primary/5 border-b border-border">
+                <p className="text-xs text-muted-foreground text-center">
+                  👉 Glissez vers la droite pour marquer comme lu
+                </p>
+              </div>
+            )}
+
             {/* Content */}
-            <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+            <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 240px)' }}>
               {loading ? (
                 <div className="p-6 flex items-center justify-center">
                   <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -269,40 +226,19 @@ export function GPNotificationsDropdown({ gpProfileId, isOpen, onClose, onViewOr
                 </div>
               ) : (
                 <div className="divide-y divide-border">
-                  {notifications.map((notif, index) => {
-                    const Icon = typeIcons[notif.type] || Bell;
-                    
-                    return (
-                      <motion.button
-                        key={notif.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.02 }}
-                        onClick={() => handleNotificationClick(notif)}
-                        className={`w-full p-3 text-left transition-colors hover:bg-accent/50 ${
-                          notif.read_at ? "opacity-60" : "bg-primary/5"
-                        }`}
-                      >
-                        <div className="flex gap-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                            notif.read_at ? "bg-muted" : "bg-primary/10"
-                          }`}>
-                            <Icon className={`w-4 h-4 ${notif.read_at ? "text-muted-foreground" : "text-primary"}`} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{notif.title}</p>
-                            <p className="text-xs text-muted-foreground line-clamp-2">{notif.message}</p>
-                            <p className="text-[10px] text-muted-foreground mt-1">
-                              {format(new Date(notif.created_at), "d MMM, HH:mm", { locale: fr })}
-                            </p>
-                          </div>
-                          {!notif.read_at && (
-                            <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-2" />
-                          )}
-                        </div>
-                      </motion.button>
-                    );
-                  })}
+                  {notifications.map((notif, index) => (
+                    <motion.div
+                      key={notif.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.02 }}
+                    >
+                      <SwipeableNotificationItem
+                        notification={notif}
+                        onMarkAsRead={markAsRead}
+                      />
+                    </motion.div>
+                  ))}
                 </div>
               )}
             </div>

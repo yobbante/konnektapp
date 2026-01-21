@@ -476,10 +476,22 @@ export default function GPRegistration() {
                   const Icon = transport.icon;
                   const isSelected = activityType === transport.type;
                   const isBagages = transport.type === "bagages_international";
+                  const handleActivityClick = () => {
+                    setActivityType(transport.type);
+                    // Auto-advance after selection
+                    setTimeout(() => {
+                      if (transport.type === "bagages_international") {
+                        navigate("/gp/bagages/inscription");
+                      } else {
+                        handleNext();
+                      }
+                    }, 300);
+                  };
+                  
                   return (
                     <button
                       key={transport.type}
-                      onClick={() => setActivityType(transport.type)}
+                      onClick={handleActivityClick}
                       className={`p-6 rounded-xl border-2 text-left transition-all relative ${
                         isSelected
                           ? "border-secondary bg-secondary/10 shadow-md"
