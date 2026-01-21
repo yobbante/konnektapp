@@ -450,6 +450,19 @@ function OfferCard({ offer, index }: { offer: any; index: number }) {
               <span className="font-medium text-sm">{offer.destination_city}</span>
             </div>
           </div>
+          
+          {/* Departure date - always visible */}
+          <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+            <Clock className="w-3 h-3" />
+            <span>
+              Départ: {new Date(offer.departure_date).toLocaleDateString('fr-FR', { 
+                day: 'numeric', 
+                month: 'short',
+                year: new Date(offer.departure_date).getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+              })}
+            </span>
+          </div>
+          
           <div className="flex items-center gap-2 mb-2">
             <Badge variant={offer.transport_type as any} className="text-xs">
               <TypeIcon className="w-3 h-3 mr-1" />

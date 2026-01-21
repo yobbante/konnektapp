@@ -39,6 +39,7 @@ interface GPProfile {
   zones_covered?: string[];
   international_destinations?: string[];
   description?: string;
+  user_email?: string;
 }
 
 interface Order {
@@ -114,9 +115,15 @@ export default function AdminDashboard() {
   const fetchGPs = async () => {
     const { data } = await supabase
       .from("gp_profiles")
-      .select("*")
+      .select("*, profiles(email)")
       .order("created_at", { ascending: false });
-    setGps(data || []);
+    
+    // Map profiles email to user_email for easy access
+    const gpsWithEmail = (data || []).map((gp: any) => ({
+      ...gp,
+      user_email: gp.profiles?.email,
+    }));
+    setGps(gpsWithEmail);
   };
 
   const fetchOrders = async () => {

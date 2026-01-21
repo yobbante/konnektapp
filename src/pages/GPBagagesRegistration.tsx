@@ -283,6 +283,8 @@ export default function GPBagagesRegistration() {
     }
 
     setStep(prev => Math.min(prev + 1, 5));
+    // Scroll to top on step change
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBack = () => {
@@ -294,6 +296,8 @@ export default function GPBagagesRegistration() {
     } else {
       setStep(prev => Math.max(prev - 1, 1));
     }
+    // Scroll to top on step change
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const selectRoute = (route: typeof POPULAR_ROUTES[0]) => {

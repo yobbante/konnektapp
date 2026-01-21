@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       client_loyalty: {
         Row: {
+          available_points: number
           created_at: string
           current_tier_id: string | null
           id: string
@@ -29,6 +30,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          available_points?: number
           created_at?: string
           current_tier_id?: string | null
           id?: string
@@ -42,6 +44,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          available_points?: number
           created_at?: string
           current_tier_id?: string | null
           id?: string
@@ -898,6 +901,76 @@ export type Database = {
             columns: ["gp_id"]
             isOneToOne: true
             referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loyalty_points_history: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          order_id: string | null
+          points: number
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          points: number
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          points?: number
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_points_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loyalty_tier_notifications: {
+        Row: {
+          id: string
+          notification_type: string
+          sent_at: string
+          tier_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          notification_type: string
+          sent_at?: string
+          tier_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          notification_type?: string
+          sent_at?: string
+          tier_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_tier_notifications_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "loyalty_tiers"
             referencedColumns: ["id"]
           },
         ]
@@ -2250,6 +2323,14 @@ export type Database = {
           _target_user_id: string
         }
         Returns: boolean
+      }
+      check_loyalty_tier_progress: {
+        Args: { p_user_id: string }
+        Returns: {
+          notification_type: string
+          progress_percent: number
+          tier_name: string
+        }[]
       }
       create_transaction: {
         Args: {

@@ -1,4 +1,4 @@
-import { CheckCircle, XCircle, Eye, MapPin, Truck, Clock } from "lucide-react";
+import { CheckCircle, XCircle, Eye, MapPin, Truck, Clock, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -12,6 +12,7 @@ interface GPProfile {
   phone: string;
   status: string;
   created_at: string;
+  user_email?: string;
 }
 
 interface AdminPendingGPsProps {
@@ -65,6 +66,13 @@ export function AdminPendingGPs({ gps, onVerify, onReject, onViewDetails }: Admi
                   <Truck className="w-3 h-3" />
                   <span>{getTransportLabel(gp.gp_type)}</span>
                 </div>
+                {/* Email display */}
+                {gp.user_email && (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                    <Mail className="w-3 h-3" />
+                    <span className="truncate max-w-[180px]">{gp.user_email}</span>
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Clock className="w-3 h-3" />
