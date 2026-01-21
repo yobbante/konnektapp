@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { 
   Luggage, Plane, MapPin, Package, CheckCircle, 
   XCircle, MessageCircle, Clock, Weight, ArrowRight,
-  Edit, Euro, Settings
+  Edit, Euro, Settings, Eye
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { EditVoyageDialog } from "@/components/gp/EditVoyageDialog";
 import { EditPricingDialog } from "@/components/gp/EditPricingDialog";
 import { RestrictionsManager } from "@/components/gp/RestrictionsManager";
+import { GPOrderDetailsSheet } from "@/components/gp/GPOrderDetailsSheet";
+import { MissionStatusUpdater } from "@/components/gp/MissionStatusUpdater";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -79,6 +81,8 @@ export function BagagesDashboardSection({
   const [showEditVoyage, setShowEditVoyage] = useState(false);
   const [showEditPricing, setShowEditPricing] = useState(false);
   const [selectedVoyage, setSelectedVoyage] = useState<VoyageOffer | null>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [showOrderDetails, setShowOrderDetails] = useState(false);
 
   const pendingOrders = orders.filter(o => o.status === "pending");
   const activeOrders = orders.filter(o => ["accepted", "collected", "in_transit"].includes(o.status));
@@ -160,6 +164,15 @@ export function BagagesDashboardSection({
   const handleRestrictionsChange = (restrictions: string[]) => {
     // This is handled by the RestrictionsManager with showSaveButton
     // Just refresh the parent
+  };
+
+  const handleViewOrderDetails = (orderId: string) => {
+    setSelectedOrderId(orderId);
+    setShowOrderDetails(true);
+  };
+
+  const handleContactClient = (clientId: string, orderId?: string) => {
+    navigate(`/messages?client=${clientId}${orderId ? `&order=${orderId}` : ""}`);
   };
 
   return (
@@ -274,7 +287,8 @@ export function BagagesDashboardSection({
                 order={order}
                 onAccept={() => handleAcceptOrder(order.id)}
                 onRefuse={() => handleRefuseOrder(order.id)}
-                onContact={() => navigate(`/messages?client=${order.client_id}&order=${order.id}`)}
+                onContact={() => handleContactClient(order.client_id, order.id)}
+                onViewDetails={() => handleViewOrderDetails(order.id)}
               />
             ))
           )}
@@ -294,8 +308,9 @@ export function BagagesDashboardSection({
               <ActiveMissionCard
                 key={order.id}
                 order={order}
-                onMarkDelivered={() => handleMarkDelivered(order.id)}
-                onContact={() => navigate(`/messages?client=${order.client_id}&order=${order.id}`)}
+                onContact={() => handleContactClient(order.client_id, order.id)}
+                onViewDetails={() => handleViewOrderDetails(order.id)}
+                onRefresh={onRefresh}
               />
             ))
           )}
@@ -348,6 +363,19 @@ export function BagagesDashboardSection({
           onRefresh();
         }}
       />
+
+      {/* Order Details Sheet */}
+      {selectedOrderId && (
+        <GPOrderDetailsSheet
+          open={showOrderDetails}
+          onClose={() => {
+            setShowOrderDetails(false);
+            setSelectedOrderId(null);
+          }}
+          orderId={selectedOrderId}
+          onContact={(clientId) => handleContactClient(clientId, selectedOrderId)}
+        />
+      )}
     </div>
   );
 }
@@ -399,21 +427,28 @@ function OrderCard({
   order, 
   onAccept, 
   onRefuse, 
-  onContact 
+  onContact,
+  onViewDetails,
 }: { 
   order: BaggageOrder; 
   onAccept: () => void; 
   onRefuse: () => void; 
   onContact: () => void;
+  onViewDetails: () => void;
 }) {
   return (
-    <Card>
+    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={onViewDetails}>
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-3">
           <Badge variant="warning">{order.order_number}</Badge>
-          <span className="text-xs text-muted-foreground">
-            {format(new Date(order.created_at), "d MMM HH:mm", { locale: fr })}
-          </span>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onViewDetails(); }}>
+              <Eye className="w-3 h-3" />
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              {format(new Date(order.created_at), "d MMM HH:mm", { locale: fr })}
+            </span>
+          </div>
         </div>
         
         <div className="flex items-center gap-2 mb-2">
@@ -428,7 +463,7 @@ function OrderCard({
           <span className="font-semibold text-foreground">{order.total_price} {order.currency}</span>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
           <Button size="sm" className="flex-1" onClick={onAccept}>
             <CheckCircle className="w-3 h-3 mr-1" />
             Accepter
@@ -445,22 +480,35 @@ function OrderCard({
   );
 }
 
-// Active Mission Card
+// Active Mission Card with status management
 function ActiveMissionCard({ 
   order, 
-  onMarkDelivered, 
-  onContact 
+  onContact,
+  onViewDetails,
+  onRefresh,
 }: { 
   order: BaggageOrder; 
-  onMarkDelivered: () => void; 
   onContact: () => void;
+  onViewDetails: () => void;
+  onRefresh: () => void;
 }) {
+  const statusLabels: Record<string, string> = {
+    accepted: "Acceptée",
+    collected: "Collectée",
+    in_transit: "En transit",
+  };
+
   return (
-    <Card className="border-primary/20">
+    <Card className="border-primary/20 cursor-pointer hover:shadow-md transition-shadow" onClick={onViewDetails}>
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-2">
           <Badge variant="default">{order.order_number}</Badge>
-          <Badge variant="secondary">{order.status}</Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">{statusLabels[order.status] || order.status}</Badge>
+            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onViewDetails(); }}>
+              <Eye className="w-3 h-3" />
+            </Button>
+          </div>
         </div>
         
         <div className="flex items-center gap-2 mb-3">
@@ -469,12 +517,18 @@ function ActiveMissionCard({
           <ArrowRight className="w-3 h-3" />
           <span className="font-medium text-sm">{order.destination_city}</span>
         </div>
+
+        <div className="flex items-center justify-between mb-3 text-sm">
+          <span className="text-muted-foreground">{order.weight} kg</span>
+          <span className="font-semibold">{order.total_price} {order.currency}</span>
+        </div>
         
-        <div className="flex gap-2">
-          <Button size="sm" className="flex-1" onClick={onMarkDelivered}>
-            <CheckCircle className="w-3 h-3 mr-1" />
-            Marquer livré
-          </Button>
+        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+          <MissionStatusUpdater
+            orderId={order.id}
+            currentStatus={order.status}
+            onStatusUpdated={onRefresh}
+          />
           <Button size="sm" variant="outline" onClick={onContact}>
             <MessageCircle className="w-3 h-3" />
           </Button>
