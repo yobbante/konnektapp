@@ -18,6 +18,8 @@ import { AdminSupportAndDisputes } from "@/components/admin/AdminSupportAndDispu
 import { AdminTransporterReputation } from "@/components/admin/AdminTransporterReputation";
 import { AdminPermissionsManager } from "@/components/admin/AdminPermissionsManager";
 import { AdminDropdownMenu } from "@/components/admin/AdminDropdownMenu";
+import { ExchangeRatesManager } from "@/components/admin/ExchangeRatesManager";
+import { GPPriceHistoryChart } from "@/components/admin/GPPriceHistoryChart";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { assertValidGpStatus, type GpStatus } from "@/lib/enumMappings";
 
@@ -357,8 +359,12 @@ export default function AdminDashboard() {
           </TabsContent>
 
           {/* Stats Charts */}
-          <TabsContent value="stats">
+          <TabsContent value="stats" className="space-y-4">
             <AdminStatsCharts gps={gps} orders={orders} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <ExchangeRatesManager />
+              <GPPriceHistoryChart />
+            </div>
           </TabsContent>
 
           {/* GPs */}
