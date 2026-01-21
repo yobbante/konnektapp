@@ -63,8 +63,10 @@ export default function GPBagagesRegistration() {
   const [profileData, setProfileData] = useState({
     fullName: "",
     phone: "",
-    originCountry: "FR",
-    destinationCountry: "SN",
+    originCity: "Dakar",
+    originCountry: "SN",
+    destinationCity: "Paris",
+    destinationCountry: "FR",
     photoUrl: "",
     languages: [] as string[],
   });
@@ -633,10 +635,12 @@ export default function GPBagagesRegistration() {
 
                     {/* Interactive Route Selector with dropdowns and flags */}
                     <InteractiveRouteSelector
+                      originCity={profileData.originCity}
                       originCountry={profileData.originCountry}
+                      destinationCity={profileData.destinationCity}
                       destinationCountry={profileData.destinationCountry}
-                      onOriginChange={(code) => setProfileData({ ...profileData, originCountry: code })}
-                      onDestinationChange={(code) => setProfileData({ ...profileData, destinationCountry: code })}
+                      onOriginChange={(city, country) => setProfileData({ ...profileData, originCity: city, originCountry: country })}
+                      onDestinationChange={(city, country) => setProfileData({ ...profileData, destinationCity: city, destinationCountry: country })}
                     />
 
                     <div className="flex justify-between pt-4">
