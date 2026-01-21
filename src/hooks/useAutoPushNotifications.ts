@@ -14,6 +14,7 @@ interface UseAutoPushNotificationsProps {
  * - Order status changes (for clients)
  * - New messages
  * - GP profile status changes
+ * - New offers from favorite transporters (for clients)
  */
 export function useAutoPushNotifications({
   userId,
@@ -110,7 +111,12 @@ export function useAutoPushNotifications({
             showNotification(`${emoji} Colis ${label}`, {
               body: `Commande ${order.order_number}: ${order.origin_city} → ${order.destination_city}`,
               tag: `order-status-${order.id}`,
-              data: { type: "order", id: order.id, action: "status_change" },
+              data: { 
+                type: "order_status", 
+                id: order.id, 
+                trackingCode: order.tracking_code || order.order_number,
+                action: "status_change" 
+              },
             });
           }
         }
@@ -234,6 +240,66 @@ export function useAutoPushNotifications({
       supabase.removeChannel(channel);
     };
   }, [canNotify, userId, userType, showNotification]);
+
+  // Subscribe to new offers from favorite transporters (for clients)
+  useEffect(() => {
+    if (!canNotify || userType !== "client") return;
+
+    const subscribeToFavoriteOffers = async () => {
+      // Get user's favorite transporters
+      const { data: favorites } = await supabase
+        .from("transporter_favorites")
+        .select("gp_id")
+        .eq("user_id", userId);
+
+      if (!favorites || favorites.length === 0) return;
+
+      const favoriteGpIds = favorites.map(f => f.gp_id);
+
+      const channel = supabase
+        .channel(`favorite-offers-push-${userId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "gp_offers",
+          },
+          async (payload) => {
+            const offer = payload.new as any;
+            
+            // Check if this offer is from a favorite transporter
+            if (!favoriteGpIds.includes(offer.gp_id)) return;
+
+            // Get transporter name
+            const { data: gpProfile } = await supabase
+              .from("public_gp_profiles")
+              .select("business_name")
+              .eq("id", offer.gp_id)
+              .single();
+
+            const gpName = gpProfile?.business_name || "Un transporteur favori";
+
+            showNotification(`⭐ Nouveau trajet de ${gpName}`, {
+              body: `${offer.origin_city} → ${offer.destination_city} • ${new Date(offer.departure_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`,
+              tag: `favorite-offer-${offer.id}`,
+              data: { 
+                type: "favorite_offer", 
+                offerId: offer.id,
+                gpId: offer.gp_id 
+              },
+            });
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    };
+
+    subscribeToFavoriteOffers();
+  }, [canNotify, userType, userId, showNotification]);
 
   return {
     isEnabled: canNotify,
