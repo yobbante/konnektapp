@@ -67,6 +67,8 @@ export default function GPRegistration() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [idTypeSheetOpen, setIdTypeSheetOpen] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isExistingGP, setIsExistingGP] = useState(false);
   const [existingUser, setExistingUser] = useState<{
     email: string;
     fullName: string;
@@ -109,11 +111,32 @@ export default function GPRegistration() {
   
   const [coverageZones, setCoverageZones] = useState<CoverageZone[]>([]);
 
-  // Charger les données du profil existant si connecté
+  // Check if user is already a GP and redirect
   useEffect(() => {
-    const loadExistingProfile = async () => {
+    const checkExistingGP = async () => {
+      setIsCheckingAuth(true);
       const { data: { user } } = await supabase.auth.getUser();
+      
       if (user) {
+        // Check if already a GP
+        const { data: gpProfile } = await supabase
+          .from("gp_profiles")
+          .select("id, gp_type")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        
+        if (gpProfile) {
+          // User is already a GP, redirect to dashboard
+          setIsExistingGP(true);
+          toast({
+            title: "Vous êtes déjà transporteur",
+            description: "Accédez à votre dashboard pour gérer vos activités",
+          });
+          navigate("/gp/dashboard", { replace: true });
+          return;
+        }
+
+        // Load existing profile data
         const { data: profile } = await supabase
           .from("profiles")
           .select("*")
@@ -142,10 +165,11 @@ export default function GPRegistration() {
           }
         }
       }
+      setIsCheckingAuth(false);
     };
 
-    loadExistingProfile();
-  }, []);
+    checkExistingGP();
+  }, [navigate, toast]);
 
   // Étapes dynamiques selon l'activité
   const getSteps = () => {
@@ -357,6 +381,18 @@ export default function GPRegistration() {
     }
   };
 
+  // Show loading while checking auth
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-secondary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -492,8 +528,14 @@ export default function GPRegistration() {
                     Retour
                   </Button>
                 </Link>
-                <Button variant="gold" size="lg" onClick={handleNextWithValidation}>
-                  Continuer
+                <Button 
+                  variant="gold" 
+                  size="lg" 
+                  onClick={handleNextWithValidation}
+                  disabled={!activityType}
+                >
+                  {/* Show "Inscription" for non-connected users who selected an activity */}
+                  {!existingUser && activityType ? "Inscription" : "Continuer"}
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </div>

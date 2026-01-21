@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { 
@@ -10,6 +11,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FeatureCard } from "@/components/FeatureCard";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const activityTypes = [
   { 
@@ -110,6 +112,14 @@ const testimonials = [
 
 export default function GPLanding() {
   const navigate = useNavigate();
+  const { isGP, isAuthenticated } = useUserRole();
+  
+  // Redirect existing transporters to their dashboard
+  useEffect(() => {
+    if (isGP) {
+      navigate("/gp/dashboard", { replace: true });
+    }
+  }, [isGP, navigate]);
 
   return (
     <div className="min-h-screen bg-background">

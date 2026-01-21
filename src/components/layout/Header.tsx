@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Package, Truck, User, Shield, LogOut } from "lucide-react";
+import { Menu, X, Package, Truck, User, Shield, LogOut, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CountrySelector } from "@/components/CountrySelector";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -16,10 +16,11 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-const navLinks = [
+// Nav links - "Devenir GP" only for non-transporters
+const getNavLinks = (isGP: boolean) => [
   { href: "/", label: "Accueil" },
   { href: "/demande", label: "Envoyer un colis" },
-  { href: "/gp", label: "Devenir GP" },
+  ...(!isGP ? [{ href: "/gp", label: "Devenir GP" }] : []),
   { href: "/tracking", label: "Suivi" },
   { href: "/contact", label: "Contact" },
 ];
@@ -61,7 +62,7 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-1">
-            {navLinks.map((link) => (
+            {getNavLinks(isGP).map((link) => (
               <Link key={link.href} to={link.href}>
                 <Button
                   variant={location.pathname === link.href ? "nav-active" : "nav"}
@@ -186,7 +187,7 @@ export function Header() {
                     <Link to="/gp/inscription" className="hidden md:block">
                       <Button variant="gold" size="sm">
                         <Truck className="w-4 h-4" />
-                        Espace GP
+                        Devenir Transporteur
                       </Button>
                     </Link>
                   </>
@@ -216,7 +217,7 @@ export function Header() {
               className="overflow-hidden border-t border-border/50"
             >
               <div className="py-4 space-y-2">
-                {navLinks.map((link) => (
+                {getNavLinks(isGP).map((link) => (
                   <Link
                     key={link.href}
                     to={link.href}
@@ -275,7 +276,7 @@ export function Header() {
                       <Link to="/gp/inscription" onClick={() => setMobileMenuOpen(false)}>
                         <Button variant="gold" className="w-full">
                           <Truck className="w-4 h-4" />
-                          Espace GP
+                          Devenir Transporteur
                         </Button>
                       </Link>
                     </>

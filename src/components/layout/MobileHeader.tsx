@@ -218,7 +218,7 @@ export function MobileHeader({ title, showNotifications = true }: MobileHeaderPr
                         <Link to="/gp/inscription" onClick={() => setMenuOpen(false)}>
                           <Button variant="default" className="w-full justify-start">
                             <Truck className="w-4 h-4 mr-2" />
-                            Devenir Transporteur
+                            Inscription Transporteur
                           </Button>
                         </Link>
                       </>
