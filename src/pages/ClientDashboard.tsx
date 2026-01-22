@@ -30,6 +30,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { getTransportIcon, getTransportLabel } from "@/lib/transportTypes";
 import { TrustLevelBadge, calculateTrustLevel } from "@/components/ui/trust-level-badge";
 import { LoyaltyCard, useLoyaltyNotifications } from "@/components/loyalty/LoyaltySystem";
+import { useLoyaltyPushNotifications } from "@/hooks/useLoyaltyPushNotifications";
 
 interface Order {
   id: string;
@@ -96,6 +97,9 @@ export default function ClientDashboard() {
   
   const { showOnboarding, completeOnboarding, skipOnboarding } = useOnboarding("client");
   const { favorites } = useFavorites();
+  
+  // Enable loyalty push notifications
+  useLoyaltyPushNotifications({ userId: profile?.user_id || null, enabled: true });
 
   useEffect(() => {
     checkAuthAndLoadData();
@@ -397,7 +401,9 @@ export default function ClientDashboard() {
         </div>
 
         {/* Loyalty Card */}
-        <LoyaltyCard className="mb-2" />
+        <Link to="/loyalty" className="block">
+          <LoyaltyCard className="mb-2 hover:shadow-md transition-shadow cursor-pointer" />
+        </Link>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-4 gap-2">
