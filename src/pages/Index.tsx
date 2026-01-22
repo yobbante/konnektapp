@@ -15,6 +15,7 @@ import { CompareProvider, useCompare, CompareOffer } from "@/components/offers/O
 import { HomeAdvancedFilters, HomeFiltersState, DEFAULT_HOME_FILTERS } from "@/components/home/HomeAdvancedFilters";
 import { useUserRole } from "@/hooks/useUserRole";
 import { formatPricePerKg } from "@/components/ui/currency-selector";
+import { ShipmentOfferCard } from "@/components/ShipmentOfferCard";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence";
 
@@ -266,9 +267,29 @@ function IndexContent() {
                 <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {displayedOffers.map((offer, index) => (
-                  <OfferCard key={offer.id} offer={offer} index={index} />
+                  <ShipmentOfferCard
+                    key={offer.id}
+                    id={offer.id}
+                    gpId={offer.gp_id}
+                    origin={offer.origin_city}
+                    destination={offer.destination_city}
+                    originCountry={offer.origin_country}
+                    destinationCountry={offer.destination_country}
+                    date={offer.departure_date}
+                    arrivalDate={offer.arrival_date}
+                    price={offer.price_per_kg}
+                    currency={offer.currency}
+                    transportType={offer.transport_type}
+                    gpName={offer.gp_profiles?.business_name || "Transporteur"}
+                    gpRating={offer.gp_profiles?.rating || 0}
+                    status="available"
+                    delay={index * 0.08}
+                    availableCapacity={offer.available_capacity}
+                    vehicle={offer.vehicles}
+                    isVerified={true}
+                  />
                 ))}
               </div>
             )}
@@ -388,130 +409,6 @@ function IndexContent() {
     </div>
   );
 }
-
-// Offer Card with compare functionality
-function OfferCard({ offer, index }: { offer: any; index: number }) {
-  const { addToCompare, isInCompare, removeFromCompare } = useCompare();
-  
-  const handleCompare = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (isInCompare(offer.id)) {
-      removeFromCompare(offer.id);
-    } else {
-      const compareOffer: CompareOffer = {
-        id: offer.id,
-        origin_city: offer.origin_city,
-        origin_country: offer.origin_country,
-        destination_city: offer.destination_city,
-        destination_country: offer.destination_country,
-        departure_date: offer.departure_date,
-        price_per_kg: offer.price_per_kg,
-        currency: offer.currency,
-        transport_type: offer.transport_type,
-        available_capacity: offer.available_capacity,
-        gp_name: offer.gp_profiles?.business_name || "Transporteur",
-        gp_rating: offer.gp_profiles?.rating,
-      };
-      addToCompare(compareOffer);
-    }
-  };
-
-  const TypeIcon = transportTypes.find(t => t.type === offer.transport_type)?.icon || Package;
-
-  const gpName = offer.gp_profiles?.business_name || "Transporteur";
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-    >
-      <Link to={`/offres/${offer.id}`}>
-        <div className="mobile-card active:scale-[0.98] transition-transform h-full relative">
-          {/* Compare Button */}
-          <button
-            onClick={handleCompare}
-            className={`absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center transition-colors z-10 ${
-              isInCompare(offer.id) 
-                ? 'bg-primary text-primary-foreground' 
-                : 'bg-muted hover:bg-muted/80'
-            }`}
-          >
-            <Scale className="w-4 h-4" />
-          </button>
-
-          <div className="flex items-center justify-between mb-2 pr-10">
-            <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-primary" />
-              <span className="font-medium text-sm">{offer.origin_city}</span>
-              <ArrowRight className="w-3 h-3 text-muted-foreground" />
-              <span className="font-medium text-sm">{offer.destination_city}</span>
-            </div>
-          </div>
-          
-          {/* Departure date - always visible */}
-          <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
-            <Clock className="w-3 h-3" />
-            <span>
-              Départ: {new Date(offer.departure_date).toLocaleDateString('fr-FR', { 
-                day: 'numeric', 
-                month: 'short',
-                year: new Date(offer.departure_date).getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
-              })}
-            </span>
-          </div>
-          
-          <div className="flex items-center gap-2 mb-2">
-            <Badge variant={offer.transport_type as any} className="text-xs">
-              <TypeIcon className="w-3 h-3 mr-1" />
-              {offer.transport_type === 'voyageur' ? 'GP' : transportTypes.find(t => t.type === offer.transport_type)?.label || offer.transport_type}
-            </Badge>
-          </div>
-          <div className="flex items-center justify-between">
-            <Link 
-              to={`/gp/${offer.gp_id}`}
-              onClick={(e) => e.stopPropagation()}
-              className="flex items-center gap-2 hover:text-primary transition-colors"
-            >
-              <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
-                {gpName.charAt(0)}
-              </div>
-              <span className="text-xs text-muted-foreground hover:text-primary">{gpName}</span>
-            </Link>
-            <div className="flex items-center gap-2">
-              {offer.gp_profiles?.rating > 0 && (
-                <div className="flex items-center gap-1">
-                  <Star className="w-3 h-3 text-warning fill-warning" />
-                  <span className="text-xs">{offer.gp_profiles?.rating?.toFixed(1)}</span>
-                </div>
-              )}
-            </div>
-            <span className="font-bold text-primary">{formatPricePerKg(offer.price_per_kg, offer.currency || "FCFA")}</span>
-          </div>
-          {/* Vehicle & Capacity Info */}
-          {(offer.vehicles || offer.available_capacity) && (
-            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border text-xs text-muted-foreground">
-              {offer.vehicles && (
-                <div className="flex items-center gap-1">
-                  <Truck className="w-3 h-3" />
-                  <span>{offer.vehicles.name || offer.vehicles.vehicle_type}</span>
-                </div>
-              )}
-              {offer.available_capacity && (
-                <Badge variant="outline" className="text-xs ml-auto">
-                  {offer.available_capacity} kg dispo
-                </Badge>
-              )}
-            </div>
-          )}
-        </div>
-      </Link>
-    </motion.div>
-  );
-}
-
 export default function Index() {
   return (
     <CompareProvider>
