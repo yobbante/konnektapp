@@ -109,6 +109,8 @@ export default function SmartBookingPage() {
 
   // Form State - Section A: Colis au kilo
   const [kiloWeight, setKiloWeight] = useState<string>("");
+  const [kiloNatures, setKiloNatures] = useState<string[]>([]); // alimentaire, vetements, tissus, autres
+  const [autresNature, setAutresNature] = useState<string>("");
 
   // Form State - Section B: Articles forfaitaires (quantities stored in flatRateItems)
 
@@ -240,7 +242,11 @@ export default function SmartBookingPage() {
   // Validation
   const canProceed = (currentStep: number): boolean => {
     if (currentStep === 1) {
-      return calculations.hasAnyItems;
+      // Must have items AND if kilo items, must have nature selected
+      if (!calculations.hasAnyItems) return false;
+      if (calculations.hasKiloItems && kiloNatures.length === 0) return false;
+      if (kiloNatures.includes("autres") && !autresNature.trim()) return false;
+      return true;
     }
     if (currentStep === 2) {
       return true; // Calculation is auto
@@ -251,11 +257,26 @@ export default function SmartBookingPage() {
     return true;
   };
 
+  // Toggle kilo nature
+  const toggleKiloNature = (nature: string) => {
+    setKiloNatures(prev => 
+      prev.includes(nature) 
+        ? prev.filter(n => n !== nature)
+        : [...prev, nature]
+    );
+  };
+
   // Navigation
   const handleNext = () => {
     if (!canProceed(step)) {
       if (step === 1) {
-        toast({ title: "Déclaration requise", description: "Ajoutez au moins un colis au kilo ou un article forfaitaire", variant: "destructive" });
+        if (!calculations.hasAnyItems) {
+          toast({ title: "Déclaration requise", description: "Ajoutez au moins un colis au kilo ou un article forfaitaire", variant: "destructive" });
+        } else if (calculations.hasKiloItems && kiloNatures.length === 0) {
+          toast({ title: "Nature requise", description: "Sélectionnez le type de contenu de vos colis au kilo", variant: "destructive" });
+        } else if (kiloNatures.includes("autres") && !autresNature.trim()) {
+          toast({ title: "Précision requise", description: "Veuillez préciser la nature de vos articles", variant: "destructive" });
+        }
       } else if (step === 3) {
         toast({ title: "Acceptation requise", description: "Vous devez accepter les règles du transporteur", variant: "destructive" });
       }
@@ -368,11 +389,21 @@ export default function SmartBookingPage() {
   };
 
   // Helpers
+  const getKiloNatureLabels = (): string => {
+    const labels: Record<string, string> = {
+      alimentaire: "Alimentaire",
+      vetements: "Vêtements",
+      tissus: "Tissus",
+      autres: autresNature || "Autres",
+    };
+    return kiloNatures.map(n => labels[n]).join(", ");
+  };
+
   const buildOrderDescription = (): string => {
     const parts: string[] = [];
     
     if (calculations.hasKiloItems) {
-      parts.push(`${calculations.weight}kg (alimentaire/vêtements/tissus)`);
+      parts.push(`${calculations.weight}kg (${getKiloNatureLabels()})`);
     }
     
     flatRateItems.filter(i => i.quantity > 0).forEach(item => {
@@ -542,7 +573,7 @@ export default function SmartBookingPage() {
                 </div>
 
                 {/* Section A: Colis au kilo */}
-                <div className="p-4 bg-card border rounded-xl space-y-3">
+                <div className="p-4 bg-card border rounded-xl space-y-4">
                   <div className="flex items-center gap-2">
                     <Scale className="w-5 h-5 text-primary" />
                     <h3 className="font-medium">Colis au kilo</h3>
@@ -550,10 +581,6 @@ export default function SmartBookingPage() {
                       {offer.price_per_kg.toLocaleString()} {currencySymbol}/kg
                     </Badge>
                   </div>
-                  
-                  <p className="text-xs text-muted-foreground">
-                    Pour: alimentaire, vêtements, tissus, produits non sensibles
-                  </p>
 
                   <div>
                     <Label className="text-sm">Poids total estimé (kg)</Label>
@@ -568,9 +595,68 @@ export default function SmartBookingPage() {
                     />
                   </div>
 
+                  {/* Nature selection - Only show when weight is entered */}
                   {calculations.hasKiloItems && (
-                    <div className="flex justify-between items-center pt-2 border-t text-sm">
-                      <span className="text-muted-foreground">{calculations.weight} kg × {offer.price_per_kg.toLocaleString()} {currencySymbol}</span>
+                    <div className="space-y-3 pt-3 border-t">
+                      <Label className="text-sm font-medium flex items-center gap-2">
+                        <Package className="w-4 h-4 text-muted-foreground" />
+                        Nature du contenu <span className="text-destructive">*</span>
+                      </Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { id: "alimentaire", label: "🍲 Alimentaire" },
+                          { id: "vetements", label: "👕 Vêtements" },
+                          { id: "tissus", label: "🧵 Tissus" },
+                          { id: "autres", label: "📦 Autres" },
+                        ].map((nature) => (
+                          <button
+                            key={nature.id}
+                            type="button"
+                            onClick={() => toggleKiloNature(nature.id)}
+                            className={`
+                              flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all text-sm font-medium
+                              ${kiloNatures.includes(nature.id)
+                                ? "border-primary bg-primary/10 text-primary"
+                                : "border-border bg-muted/30 text-muted-foreground hover:border-primary/50"
+                              }
+                            `}
+                          >
+                            {nature.label}
+                            {kiloNatures.includes(nature.id) && (
+                              <CheckCircle className="w-4 h-4" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                      
+                      {/* Autres input field */}
+                      {kiloNatures.includes("autres") && (
+                        <div className="mt-2">
+                          <Label className="text-sm text-muted-foreground">Précisez la nature *</Label>
+                          <Input
+                            placeholder="Ex: jouets, livres, accessoires..."
+                            value={autresNature}
+                            onChange={(e) => setAutresNature(e.target.value)}
+                            className="mt-1"
+                          />
+                        </div>
+                      )}
+
+                      {kiloNatures.length === 0 && (
+                        <p className="text-xs text-destructive flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          Sélectionnez au moins un type de contenu
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {calculations.hasKiloItems && kiloNatures.length > 0 && (
+                    <div className="flex justify-between items-center pt-3 border-t text-sm">
+                      <div>
+                        <span className="text-muted-foreground">{calculations.weight} kg × {offer.price_per_kg.toLocaleString()} {currencySymbol}</span>
+                        <p className="text-xs text-muted-foreground">{getKiloNatureLabels()}</p>
+                      </div>
                       <span className="font-semibold text-primary">{calculations.kiloTotal.toLocaleString()} {currencySymbol}</span>
                     </div>
                   )}

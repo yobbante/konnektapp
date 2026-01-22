@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { 
   Smartphone, Laptop, Car, FileText, Gem, 
-  Tablet, Gamepad2, Wine, Plus, Check, Euro
+  Tablet, Gamepad2, Wine, Plus, Check, Euro, X, Package
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +12,13 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface ObjectType {
   id: string;
@@ -50,6 +57,12 @@ export function FlatRatePricing({ gpId, readOnly = false }: FlatRatePricingProps
   const [objectTypes, setObjectTypes] = useState<ObjectType[]>([]);
   const [gpPricing, setGpPricing] = useState<Map<string, GPPricing>>(new Map());
   const [editedPrices, setEditedPrices] = useState<Map<string, { price: string; isActive: boolean }>>(new Map());
+  
+  // Custom item creation state
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemPrice, setNewItemPrice] = useState("");
+  const [addingItem, setAddingItem] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -169,6 +182,67 @@ export function FlatRatePricing({ gpId, readOnly = false }: FlatRatePricingProps
     }
   };
 
+  const handleAddCustomItem = async () => {
+    if (!newItemName.trim() || !newItemPrice || parseFloat(newItemPrice) <= 0) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez remplir le nom et le prix",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAddingItem(true);
+    try {
+      // First, create the object type
+      const slug = newItemName.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+      
+      const { data: newType, error: typeError } = await supabase
+        .from("flat_rate_object_types")
+        .insert({
+          name: slug,
+          label: newItemName.trim(),
+          default_price: parseFloat(newItemPrice),
+          is_active: true,
+        })
+        .select()
+        .single();
+
+      if (typeError) throw typeError;
+
+      // Then, create the GP's pricing for this type
+      const { error: pricingError } = await supabase
+        .from("gp_flat_rate_pricing")
+        .insert({
+          gp_id: gpId,
+          object_type_id: newType.id,
+          price: parseFloat(newItemPrice),
+          is_active: true,
+        });
+
+      if (pricingError) throw pricingError;
+
+      toast({
+        title: "✅ Article ajouté",
+        description: `${newItemName} a été ajouté à vos tarifs forfaitaires`,
+      });
+
+      setNewItemName("");
+      setNewItemPrice("");
+      setShowAddDialog(false);
+      loadData();
+    } catch (error) {
+      console.error("Error adding custom item:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'ajouter l'article",
+        variant: "destructive",
+      });
+    } finally {
+      setAddingItem(false);
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -257,6 +331,17 @@ export function FlatRatePricing({ gpId, readOnly = false }: FlatRatePricingProps
           );
         })}
 
+        {/* Add custom item button */}
+        {!readOnly && (
+          <button
+            onClick={() => setShowAddDialog(true)}
+            className="w-full flex items-center justify-center gap-2 p-3 rounded-lg border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="text-sm font-medium">Ajouter un article personnalisé</span>
+          </button>
+        )}
+
         {!readOnly && (
           <Button 
             onClick={handleSave} 
@@ -271,6 +356,52 @@ export function FlatRatePricing({ gpId, readOnly = false }: FlatRatePricingProps
           Les objets activés seront proposés aux clients à un tarif fixe
         </p>
       </CardContent>
+
+      {/* Add custom item dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5 text-primary" />
+              Ajouter un article forfaitaire
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div>
+              <Label className="text-sm">Nom de l'article *</Label>
+              <Input
+                placeholder="Ex: Console de jeux, Parfum..."
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <Label className="text-sm">Prix forfaitaire (€) *</Label>
+              <Input
+                type="number"
+                step="1"
+                min="1"
+                placeholder="Ex: 25"
+                value={newItemPrice}
+                onChange={(e) => setNewItemPrice(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleAddCustomItem} disabled={addingItem}>
+              {addingItem ? "Ajout..." : "Ajouter"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

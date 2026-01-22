@@ -86,6 +86,10 @@ function OffresContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
+  const ITEMS_PER_PAGE = 20;
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFiltersState>(DEFAULT_FILTERS);
   const [vehicleFilters, setVehicleFilters] = useState<VehicleCapacityFiltersState>(DEFAULT_VEHICLE_FILTERS);
   const [showQuoteCalculator, setShowQuoteCalculator] = useState(false);
@@ -98,7 +102,7 @@ function OffresContent() {
   });
 
   useEffect(() => {
-    fetchOffers();
+    fetchOffers(true);
 
     // Subscribe to realtime updates for gp_offers
     const channel = supabase
@@ -112,7 +116,7 @@ function OffresContent() {
         },
         (payload) => {
           console.log('Realtime update:', payload);
-          fetchOffers();
+          fetchOffers(true);
         }
       )
       .subscribe();
@@ -122,9 +126,33 @@ function OffresContent() {
     };
   }, []);
 
-  const fetchOffers = async () => {
+  // Infinite scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      if (loadingMore || !hasMore) return;
+      
+      const scrollPosition = window.innerHeight + window.scrollY;
+      const threshold = document.documentElement.scrollHeight - 500;
+      
+      if (scrollPosition >= threshold) {
+        loadMore();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loadingMore, hasMore]);
+
+  const fetchOffers = async (reset = false) => {
     try {
-      setLoading(true);
+      if (reset) {
+        setLoading(true);
+        setPage(0);
+      } else {
+        setLoadingMore(true);
+      }
+      
+      const currentPage = reset ? 0 : page;
       
       const { data, error } = await supabase
         .from("gp_offers")
@@ -143,7 +171,8 @@ function OffresContent() {
         `)
         .eq("status", "active")
         .gte("departure_date", new Date().toISOString())
-        .order("departure_date", { ascending: true });
+        .order("departure_date", { ascending: true })
+        .range(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE - 1);
 
       if (error) throw error;
 
@@ -161,15 +190,30 @@ function OffresContent() {
           gp_profile: profilesMap.get(offer.gp_id) || null
         }));
 
-        setOffers(offersWithProfiles);
+        if (reset) {
+          setOffers(offersWithProfiles);
+        } else {
+          setOffers(prev => [...prev, ...offersWithProfiles]);
+        }
+        
+        setHasMore(data.length === ITEMS_PER_PAGE);
       } else {
-        setOffers([]);
+        if (reset) setOffers([]);
+        setHasMore(false);
       }
     } catch (error) {
       console.error("Error fetching offers:", error);
-      setOffers([]);
+      if (reset) setOffers([]);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMore = () => {
+    if (!loadingMore && hasMore) {
+      setPage(prev => prev + 1);
+      fetchOffers(false);
     }
   };
 
@@ -416,6 +460,19 @@ function OffresContent() {
                 </motion.div>
               );
             })}
+            
+            {/* Infinite scroll loader */}
+            {loadingMore && (
+              <div className="flex justify-center py-4">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            )}
+            
+            {!hasMore && offers.length > ITEMS_PER_PAGE && (
+              <p className="text-center text-sm text-muted-foreground py-4">
+                Toutes les offres ont été chargées
+              </p>
+            )}
           </div>
         ) : (
           <div className="text-center py-12">
