@@ -3,14 +3,13 @@ import { motion } from "framer-motion";
 import { Link, useSearchParams } from "react-router-dom";
 import { 
   Search, Package, ArrowRight, MapPin, Star,
-  Zap, Truck, Ship, Plane, Briefcase, Loader2, Heart, Scale, Filter, Building2, Calculator, Luggage
+  Zap, Truck, Ship, Plane, Briefcase, Loader2, Heart, Scale, Filter, Building2, Calculator, Luggage, CheckCircle, Calendar
 } from "lucide-react";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -42,7 +41,17 @@ interface Offer {
   } | null;
 }
 
-// Filtres de transport avec GP Bagages International
+// Transport configurations with gradients and colors
+const transportConfig: Record<TransportType, { icon: typeof Package; label: string; color: string; gradient: string }> = {
+  bagages_international: { icon: Luggage, label: "GP Bagages", color: "text-primary", gradient: "from-primary/20 to-primary/5" },
+  voyageur: { icon: Briefcase, label: "GP", color: "text-green-500", gradient: "from-green-500/20 to-emerald-500/5" },
+  express: { icon: Zap, label: "Express", color: "text-orange-500", gradient: "from-orange-500/20 to-amber-500/5" },
+  routier: { icon: Truck, label: "Routier", color: "text-blue-500", gradient: "from-blue-500/20 to-cyan-500/5" },
+  maritime: { icon: Ship, label: "Maritime", color: "text-cyan-500", gradient: "from-cyan-500/20 to-teal-500/5" },
+  aerien: { icon: Plane, label: "Aérien", color: "text-purple-500", gradient: "from-purple-500/20 to-pink-500/5" },
+  agence: { icon: Building2, label: "Agence", color: "text-gray-500", gradient: "from-gray-500/20 to-slate-500/5" },
+};
+
 const transportFilters = [
   { type: "all", label: "Tous", icon: Package },
   { type: "bagages_international", label: "GP Bagages", icon: Luggage },
@@ -53,29 +62,15 @@ const transportFilters = [
 ];
 
 const getTransportIcon = (type: TransportType) => {
-  const icons: Record<TransportType, typeof Package> = {
-    express: Zap,
-    routier: Truck,
-    maritime: Ship,
-    aerien: Plane,
-    voyageur: Briefcase,
-    agence: Package,
-    bagages_international: Luggage,
-  };
-  return icons[type] || Package;
+  return transportConfig[type]?.icon || Package;
 };
 
 const getTransportLabel = (type: TransportType) => {
-  const labels: Record<TransportType, string> = {
-    express: "Express",
-    routier: "Routier",
-    maritime: "Maritime",
-    aerien: "Aérien",
-    voyageur: "GP",
-    agence: "Agence",
-    bagages_international: "GP Bagages Int.",
-  };
-  return labels[type] || type;
+  return transportConfig[type]?.label || type;
+};
+
+const getTransportConfig = (type: TransportType) => {
+  return transportConfig[type] || transportConfig.routier;
 };
 
 function OffresContent() {
@@ -375,84 +370,131 @@ function OffresContent() {
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : filteredOffers.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {filteredOffers.map((offer, index) => {
-              const TransportIcon = getTransportIcon(offer.transport_type);
+              const config = getTransportConfig(offer.transport_type);
+              const TransportIcon = config.icon;
               const favorite = isFavorite(offer.id);
+              
               return (
                 <motion.div
                   key={offer.id}
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
+                  transition={{ delay: Math.min(index * 0.03, 0.3) }}
+                  whileHover={{ scale: 1.01 }}
+                  className="group"
                 >
                   <Link to={`/offres/${offer.id}`}>
-                    <div className="mobile-card active:scale-[0.98] transition-transform relative">
+                    <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${config.gradient} border border-border/50 p-4 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10`}>
+                      {/* Animated background */}
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                        <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-primary/10 blur-2xl" />
+                      </div>
+
                       {/* Favorite Button */}
-                      <button
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
                         onClick={(e) => handleFavoriteClick(e, offer.id)}
-                        className="absolute top-3 right-3 p-1.5 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background transition-colors z-10"
+                        className="absolute top-3 right-3 p-2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background transition-all z-10 shadow-sm"
                       >
                         <Heart 
-                          className={`w-4 h-4 transition-colors ${
+                          className={`w-4 h-4 transition-all ${
                             favorite 
-                              ? "fill-destructive text-destructive" 
-                              : "text-muted-foreground hover:text-destructive"
+                              ? "fill-destructive text-destructive scale-110" 
+                              : "text-muted-foreground group-hover:text-destructive"
                           }`} 
                         />
-                      </button>
+                      </motion.button>
 
-                      {/* Header */}
-                      <div className="flex items-center justify-between mb-3 pr-8">
-                        <Badge variant="secondary" className="text-xs flex items-center gap-1">
-                          <TransportIcon className="w-3 h-3" />
-                          {getTransportLabel(offer.transport_type)}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">{formatDate(offer.departure_date)}</span>
-                      </div>
-
-                      {/* Route */}
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="flex items-center gap-1.5">
-                          <MapPin className="w-4 h-4 text-primary" />
-                          <span className="font-medium">{offer.origin_city}</span>
+                      <div className="relative z-10">
+                        {/* Header */}
+                        <div className="flex items-center justify-between mb-4 pr-10">
+                          <Badge className={`gap-1.5 px-3 py-1 ${config.color} bg-background/80 backdrop-blur-sm`}>
+                            <TransportIcon className="w-3.5 h-3.5" />
+                            {getTransportLabel(offer.transport_type)}
+                          </Badge>
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background/60 px-2 py-1 rounded-full">
+                            <Calendar className="w-3 h-3" />
+                            {formatDate(offer.departure_date)}
+                          </div>
                         </div>
-                        <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium">{offer.destination_city}</span>
-                      </div>
 
-                      {/* Capacity info */}
-                      <div className="text-xs text-muted-foreground mb-3">
-                        Capacité disponible: {offer.available_capacity} kg
-                      </div>
+                        {/* Animated Route */}
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-primary shadow-lg shadow-primary/30" />
+                            <span className="font-semibold">{offer.origin_city}</span>
+                          </div>
+                          
+                          <div className="flex-1 relative h-0.5 bg-border/50 mx-2">
+                            <motion.div 
+                              className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-primary/50"
+                              initial={{ width: "0%" }}
+                              whileInView={{ width: "100%" }}
+                              transition={{ duration: 0.8, delay: 0.2 }}
+                            />
+                            <motion.div
+                              className="absolute top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-background border-2 border-primary flex items-center justify-center shadow-md"
+                              initial={{ left: "0%", opacity: 0 }}
+                              whileInView={{ left: "calc(50% - 12px)", opacity: 1 }}
+                              transition={{ duration: 0.6, delay: 0.3 }}
+                            >
+                              <TransportIcon className={`w-3 h-3 ${config.color}`} />
+                            </motion.div>
+                          </div>
 
-                      {/* Footer */}
-                      <div className="flex items-center justify-between pt-3 border-t border-border">
-                        <Link 
-                          to={`/gp/${offer.gp_id}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                        >
-                          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
-                            <span className="text-xs font-semibold text-primary">
-                              {(offer.gp_profile?.business_name || "?").charAt(0).toUpperCase()}
-                            </span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">{offer.destination_city}</span>
+                            <div className="w-3 h-3 rounded-full bg-accent shadow-lg shadow-accent/30" />
                           </div>
-                          <div>
-                            <p className="text-sm font-medium hover:text-primary transition-colors">{offer.gp_profile?.business_name || "Transporteur"}</p>
-                            {offer.gp_profile?.rating && offer.gp_profile.rating > 0 ? (
-                              <div className="flex items-center gap-1">
-                                <Star className="w-3 h-3 text-warning fill-warning" />
-                                <span className="text-xs text-muted-foreground">{offer.gp_profile.rating.toFixed(1)}</span>
-                              </div>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">Nouveau</span>
-                            )}
+                        </div>
+
+                        {/* Capacity & Price Row */}
+                        <div className="flex items-center justify-between p-3 bg-background/60 backdrop-blur-sm rounded-xl">
+                          <div className="flex items-center gap-2">
+                            <Scale className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">{offer.available_capacity} kg dispo</span>
                           </div>
-                        </Link>
-                        <div className="text-right">
-                          <p className="font-bold text-primary">{offer.price_per_kg.toLocaleString()}</p>
-                          <p className="text-xs text-muted-foreground">FCFA/kg</p>
+                          <div className="text-right">
+                            <span className="text-lg font-bold text-primary">{offer.price_per_kg.toLocaleString()}</span>
+                            <span className="text-xs text-muted-foreground ml-1">FCFA/kg</span>
+                          </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/30">
+                          <Link 
+                            to={`/gp/${offer.gp_id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                          >
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                              <span className="text-xs font-bold text-primary">
+                                {(offer.gp_profile?.business_name || "?").charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">{offer.gp_profile?.business_name || "Transporteur"}</p>
+                              {offer.gp_profile?.rating && offer.gp_profile.rating > 0 ? (
+                                <div className="flex items-center gap-1">
+                                  <Star className="w-3 h-3 text-warning fill-warning" />
+                                  <span className="text-xs text-muted-foreground">{offer.gp_profile.rating.toFixed(1)}</span>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">Nouveau</span>
+                              )}
+                            </div>
+                          </Link>
+                          
+                          <motion.div
+                            initial={{ opacity: 0, x: 10 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            className="flex items-center gap-1 text-primary text-sm font-medium"
+                          >
+                            Voir détails
+                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                          </motion.div>
                         </div>
                       </div>
                     </div>

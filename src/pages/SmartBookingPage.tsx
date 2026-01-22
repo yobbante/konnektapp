@@ -100,6 +100,7 @@ export default function SmartBookingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState(1);
   const [showEscrow, setShowEscrow] = useState(false);
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
   // Data
@@ -298,12 +299,7 @@ export default function SmartBookingPage() {
       return;
     }
 
-    // For bagages_international, show escrow first
-    if (gpProfile?.gp_type === "bagages_international" && !showEscrow) {
-      setShowEscrow(true);
-      return;
-    }
-
+    // Complete booking first, then show escrow if needed
     await completeBooking();
   };
 
@@ -339,6 +335,9 @@ export default function SmartBookingPage() {
 
       if (orderError) throw orderError;
 
+      // Save the order ID for escrow
+      setCreatedOrderId(orderData.id);
+
       // Create order logistics
       const { error: logisticsError } = await supabase
         .from("order_logistics")
@@ -356,6 +355,13 @@ export default function SmartBookingPage() {
         });
 
       if (logisticsError) throw logisticsError;
+
+      // For bagages_international, show escrow payment after order creation
+      if (gpProfile.gp_type === "bagages_international") {
+        setShowEscrow(true);
+        setSubmitting(false);
+        return;
+      }
 
       // Create auto conversation
       await createAutoConversationAfterBooking(
@@ -384,8 +390,28 @@ export default function SmartBookingPage() {
   };
 
   const handleEscrowComplete = async () => {
+    if (!userId || !gpProfile || !createdOrderId) return;
+    
     setShowEscrow(false);
-    await completeBooking();
+    
+    // Create auto conversation after escrow payment
+    await createAutoConversationAfterBooking(
+      userId,
+      gpProfile.id,
+      createdOrderId,
+      {
+        orderNumber: `ORD-${createdOrderId.slice(0, 8).toUpperCase()}`,
+        originCity: offer?.origin_city || "",
+        destinationCity: offer?.destination_city || "",
+        gpName: gpProfile.business_name,
+      }
+    );
+
+    toast({
+      title: "🎉 Réservation confirmée !",
+      description: "Paiement sécurisé. Le transporteur a été notifié.",
+    });
+    navigate("/messages");
   };
 
   // Helpers
@@ -538,14 +564,17 @@ export default function SmartBookingPage() {
         </div>
 
         {/* Escrow Flow */}
-        {showEscrow && offer && (
+        {showEscrow && offer && createdOrderId && (
           <EscrowPaymentFlow
-            orderId=""
+            orderId={createdOrderId}
             amount={calculations.grandTotal}
             currency={currency}
             gpId={gpProfile.id}
             onPaymentComplete={handleEscrowComplete}
-            onCancel={() => setShowEscrow(false)}
+            onCancel={() => {
+              setShowEscrow(false);
+              navigate("/messages");
+            }}
           />
         )}
 
