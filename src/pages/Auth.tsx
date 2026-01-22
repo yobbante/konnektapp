@@ -381,18 +381,7 @@ export default function AuthPage() {
                 </Button>
               </form>
 
-              {/* Transporteur CTA */}
-              <div className="mt-6 pt-6 border-t border-border text-center">
-                <p className="text-sm text-muted-foreground mb-3">
-                  Vous êtes transporteur ?
-                </p>
-                <Link to="/gp/inscription">
-                  <Button variant="secondary" className="w-full">
-                    <Truck className="w-4 h-4 mr-2" />
-                    Devenir transporteur partenaire
-                  </Button>
-                </Link>
-              </div>
+              {/* Transporteur CTA - Hidden */}
             </>
           )}
         </motion.div>

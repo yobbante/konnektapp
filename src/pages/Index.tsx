@@ -51,7 +51,7 @@ function IndexContent() {
         `)
         .eq("status", "active")
         .gte("departure_date", new Date().toISOString())
-        .order("created_at", { ascending: false })
+        .order("departure_date", { ascending: true })
         .limit(6);
 
       if (offersError) throw offersError;
