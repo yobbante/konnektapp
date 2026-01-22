@@ -58,7 +58,6 @@ export default function OfferDetail() {
   const [offer, setOffer] = useState<GPOffer | null>(null);
   const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [booking, setBooking] = useState(false);
   
   const { isFavorite, toggleFavorite } = useFavorites();
 
@@ -113,7 +112,8 @@ export default function OfferDetail() {
       // Save booking state before redirecting
       sessionStorage.setItem("pending_booking_state", JSON.stringify({
         offerId: id,
-        returnPath: `/offres/${id}`,
+        gpId: offer?.gp_id,
+        returnPath: `/reservation/gp/${offer?.gp_id}?offer=${id}`,
         timestamp: Date.now(),
       }));
       
@@ -127,46 +127,8 @@ export default function OfferDetail() {
 
     if (!offer) return;
 
-    setBooking(true);
-    try {
-      // Create order with pending_info status
-      const { data: orderData, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          client_id: user.id,
-          gp_id: offer.gp_id,
-          offer_id: offer.id,
-          origin_city: offer.origin_city,
-          origin_country: offer.origin_country,
-          destination_city: offer.destination_city,
-          destination_country: offer.destination_country,
-          price_per_kg: offer.price_per_kg,
-          weight: 1,
-          total_price: offer.price_per_kg,
-          status: "pending" as const,
-          logistics_status: "pending_info",
-          order_number: "TEMP",
-        })
-        .select("id")
-        .single();
-
-      if (orderError) throw orderError;
-
-      toast({
-        title: "Réservation créée",
-        description: "Complétez le formulaire pour finaliser",
-      });
-      navigate(`/order/${orderData.id}/complete`);
-    } catch (error) {
-      console.error("Booking error:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de créer la réservation",
-        variant: "destructive",
-      });
-    } finally {
-      setBooking(false);
-    }
+    // Navigate to smart booking page
+    navigate(`/reservation/gp/${offer.gp_id}?offer=${id}`);
   };
 
   const handleContact = () => {
@@ -399,10 +361,9 @@ export default function OfferDetail() {
             variant="default" 
             size="lg" 
             onClick={handleBook} 
-            disabled={booking}
             className="px-8"
           >
-            {booking ? "Réservation..." : "Réserver maintenant"}
+            Réserver maintenant
           </Button>
         </div>
       </div>

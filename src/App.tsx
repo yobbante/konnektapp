@@ -14,6 +14,7 @@ import { ThemeInitializer } from "@/components/ThemeInitializer";
 import Index from "./pages/Index";
 import Offres from "./pages/Offres";
 import OfferDetail from "./pages/OfferDetail";
+import SmartBookingPage from "./pages/SmartBookingPage";
 import DemandeEnvoi from "./pages/DemandeEnvoi";
 import CustomRequest from "./pages/CustomRequest";
 import GPLanding from "./pages/GPLanding";
@@ -70,6 +71,7 @@ const App = () => (
             <Route path="/quote-confirmation" element={<QuoteConfirmation />} />
             <Route path="/offres" element={<Offres />} />
             <Route path="/offres/:id" element={<OfferDetail />} />
+            <Route path="/reservation/gp/:gpId" element={<SmartBookingPage />} />
             <Route path="/tracking" element={<Tracking />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/gp" element={<GPLanding />} />
