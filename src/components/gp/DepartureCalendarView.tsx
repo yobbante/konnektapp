@@ -373,7 +373,7 @@ export function DepartureCalendarView({
 
       {/* Add Departure Dialog - Mobile-friendly */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[calc(100vw-32px)] max-w-md mx-auto max-h-[85vh] overflow-y-auto rounded-xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <Plus className="w-5 h-5" />

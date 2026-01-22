@@ -113,15 +113,31 @@ export default function AdminDashboard() {
   };
 
   const fetchGPs = async () => {
-    const { data } = await supabase
+    // Use a subquery to get email from profiles where profiles.user_id = gp_profiles.user_id
+    const { data, error } = await supabase
       .from("gp_profiles")
-      .select("*, profiles(email)")
+      .select("*")
       .order("created_at", { ascending: false });
+    
+    if (error) {
+      console.error("Error fetching GPs:", error);
+      setGps([]);
+      return;
+    }
+
+    // Fetch profiles separately to get emails
+    const userIds = (data || []).map((gp: any) => gp.user_id);
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id, email")
+      .in("user_id", userIds);
+
+    const profileMap = new Map((profiles || []).map(p => [p.user_id, p.email]));
     
     // Map profiles email to user_email for easy access
     const gpsWithEmail = (data || []).map((gp: any) => ({
       ...gp,
-      user_email: gp.profiles?.email,
+      user_email: profileMap.get(gp.user_id) || null,
     }));
     setGps(gpsWithEmail);
   };

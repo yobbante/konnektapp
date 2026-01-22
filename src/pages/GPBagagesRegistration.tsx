@@ -85,11 +85,27 @@ export default function GPBagagesRegistration() {
     new Map(DEFAULT_FLAT_RATE_OBJECTS.map(o => [o.id, { price: o.defaultPrice.toString(), isActive: false }]))
   );
 
-  // Check for existing user
+  // Check for existing user and if already a GP
   useEffect(() => {
     const loadExistingProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        // Check if already a GP - redirect to dashboard
+        const { data: gpProfile } = await supabase
+          .from("gp_profiles")
+          .select("id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (gpProfile) {
+          toast({
+            title: "Vous êtes déjà transporteur",
+            description: "Accédez à votre dashboard pour gérer vos activités",
+          });
+          navigate("/gp/dashboard", { replace: true });
+          return;
+        }
+
         const { data: profile } = await supabase
           .from("profiles")
           .select("*")
@@ -114,7 +130,7 @@ export default function GPBagagesRegistration() {
       }
     };
     loadExistingProfile();
-  }, []);
+  }, [navigate, toast]);
 
   const steps = [
     { num: 1, label: "Accès", icon: Lock },

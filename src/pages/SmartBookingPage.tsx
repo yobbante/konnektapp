@@ -418,7 +418,7 @@ export default function SmartBookingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-safe">
+    <div className="min-h-screen bg-background" style={{ paddingBottom: 'calc(100px + var(--safe-bottom, 0px))' }}>
       <MobileHeader />
 
       <div className="px-4 py-4">
@@ -840,20 +840,23 @@ export default function SmartBookingPage() {
 
       {/* Bottom Navigation */}
       {!showEscrow && (
-        <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 pb-safe">
-          <div className="flex gap-3">
+        <div 
+          className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4"
+          style={{ paddingBottom: 'calc(16px + var(--safe-bottom, 0px))' }}
+        >
+          <div className="flex gap-3 max-w-lg mx-auto">
             {step > 1 && (
-              <Button variant="outline" onClick={handleBack} className="flex-1">
+              <Button variant="outline" onClick={handleBack} className="flex-1 h-12">
                 Retour
               </Button>
             )}
             
             {step < 4 ? (
-              <Button onClick={handleNext} disabled={!canProceed(step)} className="flex-1">
+              <Button onClick={handleNext} disabled={!canProceed(step)} className="flex-1 h-12">
                 Continuer
               </Button>
             ) : (
-              <Button onClick={handleSubmit} disabled={submitting} className="flex-1">
+              <Button onClick={handleSubmit} disabled={submitting} className="flex-1 h-12">
                 {submitting ? "Réservation..." : "Confirmer la réservation"}
               </Button>
             )}
