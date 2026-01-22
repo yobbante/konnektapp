@@ -111,12 +111,12 @@ function IndexContent() {
           className="text-center"
         >
           <Badge variant="default" className="mb-4">
-            🚀 #1 en Afrique de l'Ouest
+            🌍 Leader du transport international
           </Badge>
           
           <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-3 leading-tight">
             Envoyez vos colis <br />
-            <span className="text-primary">partout en Afrique</span>
+            <span className="text-primary">partout dans le monde</span>
           </h1>
           
           <p className="text-muted-foreground text-sm mb-5">
