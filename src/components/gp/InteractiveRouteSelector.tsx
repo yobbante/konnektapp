@@ -137,7 +137,7 @@ export function InteractiveRouteSelector({
 
   return (
     <div className="space-y-4">
-      <Label>Trajets fréquents</Label>
+      <Label>Trajet de base</Label>
       
       {/* Current selection with flags and cities */}
       <div className="p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border">
@@ -239,7 +239,7 @@ export function InteractiveRouteSelector({
 
       {/* Quick routes with city names */}
       <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground">Trajets populaires</Label>
+        <Label className="text-xs text-muted-foreground">Trajets de base suggérés</Label>
         <div className="flex flex-wrap gap-2">
           {POPULAR_ROUTES.map((route, i) => {
             const isSelected = originCity === route.originCity && destinationCity === route.destCity;

@@ -35,6 +35,7 @@ import AdminOrders from "./pages/AdminOrders";
 import AdminGPProfile from "./pages/AdminGPProfile";
 import AdminOrderDetail from "./pages/AdminOrderDetail";
 import PostBookingForm from "./pages/PostBookingForm";
+import BookingConfirmation from "./pages/BookingConfirmation";
 import Profile from "./pages/Profile";
 import GPProfile from "./pages/GPProfile";
 import TransporterProfile from "./pages/TransporterProfile";
@@ -92,6 +93,7 @@ const App = () => (
             <Route path="/admin/gp/:gpId" element={<AdminGPProfile />} />
             <Route path="/admin/order/:orderId" element={<AdminOrderDetail />} />
             <Route path="/order/:orderId/complete" element={<PostBookingForm />} />
+            <Route path="/booking/confirmation/:orderId" element={<BookingConfirmation />} />
             <Route path="/profil" element={<Profile />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/gp/:gpId" element={<GPProfile />} />
