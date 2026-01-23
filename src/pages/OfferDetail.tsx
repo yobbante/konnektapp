@@ -448,13 +448,15 @@ export default function OfferDetail() {
         )}
       </div>
 
-      {/* Fixed Bottom CTA with proper safe area */}
+      {/* Fixed Bottom CTA with proper safe area - positioned above MobileNav */}
       <motion.div 
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        className="fixed left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border z-30"
+        style={{ 
+          bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))'
+        }}
       >
         <div className="p-4">
           <div className="flex items-center justify-between">
@@ -471,7 +473,7 @@ export default function OfferDetail() {
                 onClick={handleBook} 
                 className="px-8 gap-2 shadow-lg shadow-primary/20"
               >
-                Réserver
+                Réserver maintenant
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </motion.div>

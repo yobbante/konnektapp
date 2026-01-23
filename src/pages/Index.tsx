@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
@@ -16,6 +16,8 @@ import { HomeAdvancedFilters, HomeFiltersState, DEFAULT_HOME_FILTERS } from "@/c
 import { useUserRole } from "@/hooks/useUserRole";
 import { formatPricePerKg } from "@/components/ui/currency-selector";
 import { ShipmentOfferCard } from "@/components/ShipmentOfferCard";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence";
 
@@ -35,6 +37,15 @@ function IndexContent() {
   const [loading, setLoading] = useState(true);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState<HomeFiltersState>(DEFAULT_HOME_FILTERS);
+
+  // Pull to refresh
+  const handleRefresh = useCallback(async () => {
+    await loadOffers();
+  }, []);
+
+  const { isRefreshing, pullDistance, progress } = usePullToRefresh({
+    onRefresh: handleRefresh,
+  });
 
   useEffect(() => {
     loadOffers();
@@ -102,6 +113,7 @@ function IndexContent() {
 
   return (
     <div className="min-h-screen bg-background pb-safe">
+      <PullToRefreshIndicator isRefreshing={isRefreshing} progress={progress} pullDistance={pullDistance} />
       <MobileHeader />
 
       {/* Hero Section */}

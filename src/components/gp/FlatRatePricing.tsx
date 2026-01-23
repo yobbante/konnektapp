@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { 
   Smartphone, Laptop, Car, FileText, Gem, 
-  Tablet, Gamepad2, Wine, Plus, Check, Euro, X, Package
+  Tablet, Gamepad2, Wine, Plus, X, Euro, Package, Trash2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +19,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ObjectType {
   id: string;
@@ -63,6 +73,10 @@ export function FlatRatePricing({ gpId, readOnly = false }: FlatRatePricingProps
   const [newItemName, setNewItemName] = useState("");
   const [newItemPrice, setNewItemPrice] = useState("");
   const [addingItem, setAddingItem] = useState(false);
+  
+  // Delete confirmation state
+  const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
+  const [deletingItem, setDeletingItem] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -243,6 +257,39 @@ export function FlatRatePricing({ gpId, readOnly = false }: FlatRatePricingProps
     }
   };
 
+  const handleDeleteItem = async () => {
+    if (!deleteItemId) return;
+    
+    setDeletingItem(true);
+    try {
+      // Delete the GP's pricing for this item
+      const { error: pricingError } = await supabase
+        .from("gp_flat_rate_pricing")
+        .delete()
+        .eq("gp_id", gpId)
+        .eq("object_type_id", deleteItemId);
+
+      if (pricingError) throw pricingError;
+
+      toast({
+        title: "✅ Article supprimé",
+        description: "L'article a été retiré de vos tarifs forfaitaires",
+      });
+
+      setDeleteItemId(null);
+      loadData();
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer l'article",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingItem(false);
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -271,9 +318,10 @@ export function FlatRatePricing({ gpId, readOnly = false }: FlatRatePricingProps
       </CardHeader>
       <CardContent className="space-y-3">
         {objectTypes.map((type) => {
-          const Icon = OBJECT_ICONS[type.name] || FileText;
+          const Icon = OBJECT_ICONS[type.name] || Package;
           const edited = editedPrices.get(type.id) || { price: "", isActive: false };
           const hasPrice = edited.price && parseFloat(edited.price) > 0;
+          const hasPricing = gpPricing.has(type.id);
           
           return (
             <div
@@ -319,6 +367,17 @@ export function FlatRatePricing({ gpId, readOnly = false }: FlatRatePricingProps
                     onCheckedChange={() => handleToggle(type.id)}
                     disabled={!hasPrice}
                   />
+                  {/* Delete button - only show for items with GP pricing */}
+                  {hasPricing && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={() => setDeleteItemId(type.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
                 </>
               )}
 
@@ -402,6 +461,28 @@ export function FlatRatePricing({ gpId, readOnly = false }: FlatRatePricingProps
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!deleteItemId} onOpenChange={(open) => !open && setDeleteItemId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cet article ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              L'article sera retiré de vos tarifs forfaitaires. Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteItem}
+              disabled={deletingItem}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletingItem ? "Suppression..." : "Supprimer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

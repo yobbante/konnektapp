@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Link, useSearchParams } from "react-router-dom";
 import { 
@@ -20,6 +20,8 @@ import { useOfferNotifications } from "@/hooks/useOfferNotifications";
 import { CompareProvider, useCompare, CompareOffer } from "@/components/offers/OfferCompare";
 import { MovingQuoteCalculator } from "@/components/quotes/MovingQuoteCalculator";
 import { useToast } from "@/hooks/use-toast";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence" | "bagages_international";
 
@@ -94,6 +96,15 @@ function OffresContent() {
     activeTransportType: activeFilter,
     searchQuery,
     enabled: isAuthenticated,
+  });
+
+  // Pull to refresh
+  const handleRefresh = useCallback(async () => {
+    await fetchOffers(true);
+  }, []);
+
+  const { isRefreshing, pullDistance, progress } = usePullToRefresh({
+    onRefresh: handleRefresh,
   });
 
   useEffect(() => {
@@ -301,6 +312,7 @@ function OffresContent() {
 
   return (
     <div className="min-h-screen bg-background pb-safe">
+      <PullToRefreshIndicator isRefreshing={isRefreshing} progress={progress} pullDistance={pullDistance} />
       <MobileHeader />
 
       {/* Sticky Search & Filters */}

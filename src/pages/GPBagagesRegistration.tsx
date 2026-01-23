@@ -23,14 +23,7 @@ import { InteractiveRouteSelector } from "@/components/gp/InteractiveRouteSelect
 import { CurrencySelector, getCurrencySymbol, type CurrencyCode } from "@/components/ui/currency-selector";
 
 // Popular destinations for quick selection
-const POPULAR_ROUTES = [
-  { origin: "Paris", destination: "Dakar", originCountry: "FR", destCountry: "SN" },
-  { origin: "Paris", destination: "Abidjan", originCountry: "FR", destCountry: "CI" },
-  { origin: "Dakar", destination: "Paris", originCountry: "SN", destCountry: "FR" },
-  { origin: "Paris", destination: "Douala", originCountry: "FR", destCountry: "CM" },
-  { origin: "Dubaï", destination: "Dakar", originCountry: "AE", destCountry: "SN" },
-  { origin: "Montréal", destination: "Dakar", originCountry: "CA", destCountry: "SN" },
-];
+// Default base routes - removed popular routes section from bottom of form
 
 // Mandatory restrictions (must be accepted)
 const MANDATORY_RESTRICTIONS = ["marques", "objets_precieux", "contrefacons"];
@@ -315,14 +308,7 @@ export default function GPBagagesRegistration() {
     // Scroll to top on step change
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  const selectRoute = (route: typeof POPULAR_ROUTES[0]) => {
-    setProfileData(prev => ({
-      ...prev,
-      originCountry: route.originCountry,
-      destinationCountry: route.destCountry,
-    }));
-  };
+  // Route selection now handled by InteractiveRouteSelector component
 
   const handleAddDeparture = async (data: any) => {
     // Store departure locally for now, will save to DB on final submit
@@ -420,20 +406,33 @@ export default function GPBagagesRegistration() {
           });
       }
 
-      // Save flat rate pricing
-      const flatRateEntries: { object_type: string; price: number; is_active: boolean }[] = [];
-      flatRatePricing.forEach((value, key) => {
-        if (value.price && parseFloat(value.price) > 0) {
-          flatRateEntries.push({
-            object_type: key,
-            price: parseFloat(value.price),
-            is_active: value.isActive,
-          });
-        }
-      });
+      // Save flat rate pricing - sync with gp_flat_rate_pricing table
+      // First, load object type IDs from flat_rate_object_types
+      const { data: objectTypes } = await supabase
+        .from("flat_rate_object_types")
+        .select("id, name")
+        .eq("is_active", true);
 
-      // Note: Would need to match object_type_id from flat_rate_object_types table
-      // For now, storing in gp_profile metadata or a separate call after types are loaded
+      if (objectTypes && objectTypes.length > 0) {
+        const objectTypeMap = new Map(objectTypes.map(t => [t.name, t.id]));
+        
+        for (const [key, value] of flatRatePricing.entries()) {
+          if (value.price && parseFloat(value.price) > 0) {
+            const objectTypeId = objectTypeMap.get(key);
+            if (objectTypeId) {
+              await supabase
+                .from("gp_flat_rate_pricing")
+                .upsert({
+                  gp_id: gpProfile.id,
+                  object_type_id: objectTypeId,
+                  price: parseFloat(value.price),
+                  is_active: value.isActive,
+                  currency: defaultCurrency,
+                }, { onConflict: 'gp_id,object_type_id' });
+            }
+          }
+        }
+      }
 
       toast({
         title: "✈️ Inscription réussie !",

@@ -378,9 +378,11 @@ export default function SmartBookingPage() {
 
       toast({
         title: "🎉 Réservation confirmée !",
-        description: "Le transporteur a été notifié. Consultez vos messages.",
+        description: "Redirection vers la confirmation...",
       });
-      navigate("/messages");
+      
+      // Redirect to confirmation page instead of messages
+      navigate(`/booking/confirmation/${orderData.id}`);
     } catch (error) {
       console.error("Booking error:", error);
       toast({ title: "Erreur de réservation", variant: "destructive" });
@@ -409,9 +411,11 @@ export default function SmartBookingPage() {
 
     toast({
       title: "🎉 Réservation confirmée !",
-      description: "Paiement sécurisé. Le transporteur a été notifié.",
+      description: "Paiement sécurisé. Redirection...",
     });
-    navigate("/messages");
+    
+    // Redirect to confirmation page instead of messages
+    navigate(`/booking/confirmation/${createdOrderId}`);
   };
 
   // Helpers
