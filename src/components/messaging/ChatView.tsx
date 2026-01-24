@@ -9,6 +9,7 @@ import { fr } from "date-fns/locale";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { TypingIndicator } from "./TypingIndicator";
+import { MessageTemplates } from "./MessageTemplates";
 import { MiniLoader } from "@/components/ui/MiniLoader";
 
 interface Message {
@@ -34,6 +35,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [templatesExpanded, setTemplatesExpanded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { notify } = useNotificationSound();
   
@@ -124,6 +126,11 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const handleSelectTemplate = (content: string) => {
+    setNewMessage(content);
+    setTemplatesExpanded(false);
+  };
+
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || sending) return;
@@ -189,6 +196,9 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
             <p className="text-sm text-muted-foreground">
               Commencez la conversation !
             </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Utilisez les messages rapides pour communiquer efficacement
+            </p>
           </div>
         ) : (
           messages.map((msg, index) => {
@@ -245,6 +255,14 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
         
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Message Templates - Collapsible panel above input */}
+      <MessageTemplates
+        userType={userType}
+        onSelectTemplate={handleSelectTemplate}
+        isExpanded={templatesExpanded}
+        onToggleExpand={() => setTemplatesExpanded(!templatesExpanded)}
+      />
 
       {/* Input - Mobile optimized with larger touch target */}
       <form 
