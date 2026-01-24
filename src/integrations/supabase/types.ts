@@ -114,6 +114,13 @@ export type Database = {
             foreignKeyName: "conversations_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "conversations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -380,6 +387,13 @@ export type Database = {
             foreignKeyName: "disputes_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "disputes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -454,6 +468,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "public_gp_profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "escrow_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
           },
           {
             foreignKeyName: "escrow_transactions_order_id_fkey"
@@ -758,12 +779,15 @@ export type Database = {
       gp_profiles: {
         Row: {
           address: string | null
+          auto_accept_enabled: boolean | null
           business_name: string
           business_registration_url: string | null
           city: string
+          consecutive_no_responses: number | null
           country_code: string
           created_at: string
           default_currency: string | null
+          deposit_address: string | null
           description: string | null
           explicit_restrictions: string[] | null
           fleet_size: number | null
@@ -774,8 +798,12 @@ export type Database = {
           id_type: string | null
           insurance_document_url: string | null
           international_destinations: string[] | null
+          last_warning_at: string | null
+          max_response_delay_hours: number | null
           phone: string
+          phone_secondary: string | null
           rating: number | null
+          reception_address: string | null
           status: Database["public"]["Enums"]["gp_status"]
           subscription: Database["public"]["Enums"]["gp_subscription"]
           total_deliveries: number | null
@@ -785,17 +813,21 @@ export type Database = {
           user_id: string
           verified_at: string | null
           whatsapp: string | null
+          whatsapp_phone: string | null
           years_experience: number | null
           zones_covered: string[] | null
         }
         Insert: {
           address?: string | null
+          auto_accept_enabled?: boolean | null
           business_name: string
           business_registration_url?: string | null
           city: string
+          consecutive_no_responses?: number | null
           country_code?: string
           created_at?: string
           default_currency?: string | null
+          deposit_address?: string | null
           description?: string | null
           explicit_restrictions?: string[] | null
           fleet_size?: number | null
@@ -806,8 +838,12 @@ export type Database = {
           id_type?: string | null
           insurance_document_url?: string | null
           international_destinations?: string[] | null
+          last_warning_at?: string | null
+          max_response_delay_hours?: number | null
           phone: string
+          phone_secondary?: string | null
           rating?: number | null
+          reception_address?: string | null
           status?: Database["public"]["Enums"]["gp_status"]
           subscription?: Database["public"]["Enums"]["gp_subscription"]
           total_deliveries?: number | null
@@ -817,17 +853,21 @@ export type Database = {
           user_id: string
           verified_at?: string | null
           whatsapp?: string | null
+          whatsapp_phone?: string | null
           years_experience?: number | null
           zones_covered?: string[] | null
         }
         Update: {
           address?: string | null
+          auto_accept_enabled?: boolean | null
           business_name?: string
           business_registration_url?: string | null
           city?: string
+          consecutive_no_responses?: number | null
           country_code?: string
           created_at?: string
           default_currency?: string | null
+          deposit_address?: string | null
           description?: string | null
           explicit_restrictions?: string[] | null
           fleet_size?: number | null
@@ -838,8 +878,12 @@ export type Database = {
           id_type?: string | null
           insurance_document_url?: string | null
           international_destinations?: string[] | null
+          last_warning_at?: string | null
+          max_response_delay_hours?: number | null
           phone?: string
+          phone_secondary?: string | null
           rating?: number | null
+          reception_address?: string | null
           status?: Database["public"]["Enums"]["gp_status"]
           subscription?: Database["public"]["Enums"]["gp_subscription"]
           total_deliveries?: number | null
@@ -849,10 +893,73 @@ export type Database = {
           user_id?: string
           verified_at?: string | null
           whatsapp?: string | null
+          whatsapp_phone?: string | null
           years_experience?: number | null
           zones_covered?: string[] | null
         }
         Relationships: []
+      }
+      gp_response_tracking: {
+        Row: {
+          auto_cancelled_at: string | null
+          created_at: string
+          deadline_at: string
+          gp_id: string
+          id: string
+          order_id: string
+          responded_at: string | null
+          warning_sent_at: string | null
+        }
+        Insert: {
+          auto_cancelled_at?: string | null
+          created_at?: string
+          deadline_at: string
+          gp_id: string
+          id?: string
+          order_id: string
+          responded_at?: string | null
+          warning_sent_at?: string | null
+        }
+        Update: {
+          auto_cancelled_at?: string | null
+          created_at?: string
+          deadline_at?: string
+          gp_id?: string
+          id?: string
+          order_id?: string
+          responded_at?: string | null
+          warning_sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gp_response_tracking_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_response_tracking_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_response_tracking_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "gp_response_tracking_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       gp_wallets: {
         Row: {
@@ -905,6 +1012,93 @@ export type Database = {
           },
         ]
       }
+      gp_weight_tiers: {
+        Row: {
+          created_at: string
+          currency: string
+          gp_id: string
+          id: string
+          is_active: boolean | null
+          max_weight: number
+          min_weight: number
+          price_per_kg: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          gp_id: string
+          id?: string
+          is_active?: boolean | null
+          max_weight: number
+          min_weight: number
+          price_per_kg: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          gp_id?: string
+          id?: string
+          is_active?: boolean | null
+          max_weight?: number
+          min_weight?: number
+          price_per_kg?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gp_weight_tiers_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_weight_tiers_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insurance_tiers: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          insurance_fee: number
+          is_active: boolean | null
+          label: string
+          max_declared_value: number
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          insurance_fee: number
+          is_active?: boolean | null
+          label: string
+          max_declared_value: number
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          insurance_fee?: number
+          is_active?: boolean | null
+          label?: string
+          max_declared_value?: number
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       loyalty_points_history: {
         Row: {
           created_at: string
@@ -934,6 +1128,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "loyalty_points_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
           {
             foreignKeyName: "loyalty_points_history_order_id_fkey"
             columns: ["order_id"]
@@ -1008,6 +1209,42 @@ export type Database = {
           min_spent?: number
           name?: string
           perks?: string[] | null
+        }
+        Relationships: []
+      }
+      message_templates: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          sender_type: string
+          sort_order: number | null
+          template_key: string
+        }
+        Insert: {
+          category: string
+          content: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          sender_type: string
+          sort_order?: number | null
+          template_key: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          sender_type?: string
+          sort_order?: number | null
+          template_key?: string
         }
         Relationships: []
       }
@@ -1219,6 +1456,13 @@ export type Database = {
             foreignKeyName: "order_logistics_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: true
+            referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_logistics_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -1257,6 +1501,13 @@ export type Database = {
             foreignKeyName: "order_status_history_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_status_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -1265,8 +1516,11 @@ export type Database = {
       orders: {
         Row: {
           actual_delivery_date: string | null
+          client_disclaimer_accepted_at: string | null
           client_id: string
           commission_amount: number
+          content_nature: string[] | null
+          content_nature_other: string | null
           created_at: string
           currency: string
           declared_value: number | null
@@ -1276,10 +1530,13 @@ export type Database = {
           destination_country: string
           dimensions: string | null
           escrow_id: string | null
+          flat_rate_items: Json | null
           gp_id: string
+          gp_response_deadline: string | null
           has_insurance: boolean | null
           id: string
           insurance_amount: number | null
+          insurance_tier_id: string | null
           logistics_status: string
           offer_id: string | null
           order_number: string
@@ -1293,11 +1550,15 @@ export type Database = {
           tracking_code: string | null
           updated_at: string
           weight: number
+          weight_tier_applied: string | null
         }
         Insert: {
           actual_delivery_date?: string | null
+          client_disclaimer_accepted_at?: string | null
           client_id: string
           commission_amount?: number
+          content_nature?: string[] | null
+          content_nature_other?: string | null
           created_at?: string
           currency?: string
           declared_value?: number | null
@@ -1307,10 +1568,13 @@ export type Database = {
           destination_country: string
           dimensions?: string | null
           escrow_id?: string | null
+          flat_rate_items?: Json | null
           gp_id: string
+          gp_response_deadline?: string | null
           has_insurance?: boolean | null
           id?: string
           insurance_amount?: number | null
+          insurance_tier_id?: string | null
           logistics_status?: string
           offer_id?: string | null
           order_number: string
@@ -1324,11 +1588,15 @@ export type Database = {
           tracking_code?: string | null
           updated_at?: string
           weight: number
+          weight_tier_applied?: string | null
         }
         Update: {
           actual_delivery_date?: string | null
+          client_disclaimer_accepted_at?: string | null
           client_id?: string
           commission_amount?: number
+          content_nature?: string[] | null
+          content_nature_other?: string | null
           created_at?: string
           currency?: string
           declared_value?: number | null
@@ -1338,10 +1606,13 @@ export type Database = {
           destination_country?: string
           dimensions?: string | null
           escrow_id?: string | null
+          flat_rate_items?: Json | null
           gp_id?: string
+          gp_response_deadline?: string | null
           has_insurance?: boolean | null
           id?: string
           insurance_amount?: number | null
+          insurance_tier_id?: string | null
           logistics_status?: string
           offer_id?: string | null
           order_number?: string
@@ -1355,6 +1626,7 @@ export type Database = {
           tracking_code?: string | null
           updated_at?: string
           weight?: number
+          weight_tier_applied?: string | null
         }
         Relationships: [
           {
@@ -1376,6 +1648,13 @@ export type Database = {
             columns: ["gp_id"]
             isOneToOne: false
             referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_insurance_tier_id_fkey"
+            columns: ["insurance_tier_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_tiers"
             referencedColumns: ["id"]
           },
           {
@@ -1556,6 +1835,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "public_gp_profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
           },
           {
             foreignKeyName: "reviews_order_id_fkey"
@@ -1867,6 +2153,13 @@ export type Database = {
             foreignKeyName: "support_tickets_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "support_tickets_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -1917,6 +2210,13 @@ export type Database = {
             foreignKeyName: "tracking_issues_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "tracking_issues_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -1960,6 +2260,13 @@ export type Database = {
           wallet_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
           {
             foreignKeyName: "transactions_order_id_fkey"
             columns: ["order_id"]
@@ -2250,13 +2557,51 @@ export type Database = {
       }
     }
     Views: {
+      gp_contact_release: {
+        Row: {
+          business_name: string | null
+          city: string | null
+          client_id: string | null
+          country_code: string | null
+          default_currency: string | null
+          deposit_address: string | null
+          explicit_restrictions: string[] | null
+          gp_id: string | null
+          order_id: string | null
+          order_status: Database["public"]["Enums"]["order_status"] | null
+          payment_status: string | null
+          phone_secondary: string | null
+          rating: number | null
+          reception_address: string | null
+          verified_at: string | null
+          whatsapp_number: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_gp_profiles: {
         Row: {
           business_name: string | null
           city: string | null
           country_code: string | null
           created_at: string | null
+          default_currency: string | null
           description: string | null
+          explicit_restrictions: string[] | null
           fleet_size: number | null
           gp_type: Database["public"]["Enums"]["gp_type"] | null
           id: string | null
@@ -2273,7 +2618,9 @@ export type Database = {
           city?: string | null
           country_code?: string | null
           created_at?: string | null
+          default_currency?: string | null
           description?: string | null
+          explicit_restrictions?: string[] | null
           fleet_size?: number | null
           gp_type?: Database["public"]["Enums"]["gp_type"] | null
           id?: string | null
@@ -2290,7 +2637,9 @@ export type Database = {
           city?: string | null
           country_code?: string | null
           created_at?: string | null
+          default_currency?: string | null
           description?: string | null
+          explicit_restrictions?: string[] | null
           fleet_size?: number | null
           gp_type?: Database["public"]["Enums"]["gp_type"] | null
           id?: string | null
@@ -2331,6 +2680,10 @@ export type Database = {
           progress_percent: number
           tier_name: string
         }[]
+      }
+      create_default_weight_tiers: {
+        Args: { p_currency?: string; p_gp_id: string }
+        Returns: undefined
       }
       create_transaction: {
         Args: {

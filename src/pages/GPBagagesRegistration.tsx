@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { 
   ArrowRight, ArrowLeft, User, Luggage, MapPin, 
   CheckCircle, Phone, Calendar, Weight, Plane,
-  Mail, Lock, Eye, EyeOff, ShieldX, Euro, AlertTriangle, Coins
+  Mail, Lock, Eye, EyeOff, ShieldX, Euro, AlertTriangle, Coins, Building
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,10 +20,9 @@ import { Switch } from "@/components/ui/switch";
 import { DepartureCalendarView } from "@/components/gp/DepartureCalendarView";
 import { STANDARD_RESTRICTIONS } from "@/components/gp/BaggageRestrictions";
 import { InteractiveRouteSelector } from "@/components/gp/InteractiveRouteSelector";
+import { GPContactAddressesForm } from "@/components/gp/GPContactAddressesForm";
+import { WeightTiersPricing } from "@/components/gp/WeightTiersPricing";
 import { CurrencySelector, getCurrencySymbol, type CurrencyCode } from "@/components/ui/currency-selector";
-
-// Popular destinations for quick selection
-// Default base routes - removed popular routes section from bottom of form
 
 // Mandatory restrictions (must be accepted)
 const MANDATORY_RESTRICTIONS = ["marques", "objets_precieux", "contrefacons"];
@@ -36,6 +35,24 @@ const DEFAULT_FLAT_RATE_OBJECTS = [
   { id: "piece_auto", label: "Pièces auto", defaultPrice: 30 },
   { id: "bijoux", label: "Bijoux", defaultPrice: 20 },
 ];
+
+// Weight tier interface
+interface WeightTier {
+  min_weight: number;
+  max_weight: number;
+  price_per_kg: number;
+  currency: string;
+  is_active: boolean;
+}
+
+// Contact addresses interface
+interface ContactAddresses {
+  deposit_address: string;
+  reception_address: string;
+  phone: string;
+  phone_secondary: string;
+  whatsapp_phone: string;
+}
 
 export default function GPBagagesRegistration() {
   const navigate = useNavigate();
@@ -53,7 +70,7 @@ export default function GPBagagesRegistration() {
     confirmPassword: "",
   });
 
-  // Step 2: GP Essential Info
+  // Step 2: GP Essential Info + Contact Addresses (V1 mandatory)
   const [profileData, setProfileData] = useState({
     fullName: "",
     phone: "",
@@ -65,15 +82,26 @@ export default function GPBagagesRegistration() {
     languages: [] as string[],
   });
 
+  // Contact addresses (PRD V1 Section 9 - mandatory)
+  const [contactAddresses, setContactAddresses] = useState<ContactAddresses>({
+    deposit_address: "",
+    reception_address: "",
+    phone: "",
+    phone_secondary: "",
+    whatsapp_phone: "primary",
+  });
+  const [contactAddressesValid, setContactAddressesValid] = useState(false);
+
   // Step 3: Voyages (calendrier)
   const [departures, setDepartures] = useState<any[]>([]);
 
   // Step 4: Restrictions (obligatoire)
   const [acceptedRestrictions, setAcceptedRestrictions] = useState<string[]>([]);
 
-  // Step 5: Pricing
+  // Step 5: Pricing with weight tiers (PRD V1 Section 5.1)
   const [pricePerKg, setPricePerKg] = useState("");
   const [defaultCurrency, setDefaultCurrency] = useState<CurrencyCode>("XOF");
+  const [weightTiers, setWeightTiers] = useState<WeightTier[]>([]);
   const [flatRatePricing, setFlatRatePricing] = useState<Map<string, { price: string; isActive: boolean }>>(
     new Map(DEFAULT_FLAT_RATE_OBJECTS.map(o => [o.id, { price: o.defaultPrice.toString(), isActive: false }]))
   );
@@ -127,9 +155,9 @@ export default function GPBagagesRegistration() {
 
   const steps = [
     { num: 1, label: "Accès", icon: Lock },
-    { num: 2, label: "Infos GP", icon: User },
-    { num: 3, label: "Voyages", icon: Plane },
-    { num: 4, label: "Règles", icon: ShieldX },
+    { num: 2, label: "Profil", icon: User },
+    { num: 3, label: "Adresses", icon: Building },
+    { num: 4, label: "Voyages", icon: Plane },
     { num: 5, label: "Tarifs", icon: Euro },
   ];
 
@@ -166,6 +194,18 @@ export default function GPBagagesRegistration() {
         return true;
 
       case 3:
+        // Contact addresses are MANDATORY per PRD V1 Section 9
+        if (!contactAddressesValid) {
+          toast({ 
+            title: "Adresses incomplètes", 
+            description: "Veuillez remplir toutes les adresses et numéros de téléphone obligatoires",
+            variant: "destructive"
+          });
+          return false;
+        }
+        return true;
+
+      case 4:
         // Voyages can be added later, but encourage at least one
         if (departures.length === 0) {
           toast({ 
@@ -175,24 +215,13 @@ export default function GPBagagesRegistration() {
         }
         return true;
 
-      case 4:
-        // Restrictions are optional - GP can choose which ones to apply
-        // Just show a tip if none selected
-        if (acceptedRestrictions.length === 0) {
-          toast({ 
-            title: "Conseil", 
-            description: "Définir des restrictions vous protège et rassure vos clients",
-          });
-        }
-        return true;
-
       case 5:
-        // Price per kg is mandatory
-        const hasKgPrice = pricePerKg && parseFloat(pricePerKg) > 0;
-        if (!hasKgPrice) {
+        // Weight tiers validation - at least some prices should be set
+        const hasValidTiers = weightTiers.some(t => t.price_per_kg > 0);
+        if (!hasValidTiers && (!pricePerKg || parseFloat(pricePerKg) <= 0)) {
           toast({ 
-            title: "Prix au kilo requis", 
-            description: "Veuillez définir votre prix au kilo avant de vous inscrire", 
+            title: "Tarifs requis", 
+            description: "Définissez au moins un prix au kilo ou des paliers de poids", 
             variant: "destructive" 
           });
           return false;
@@ -359,22 +388,31 @@ export default function GPBagagesRegistration() {
       await supabase
         .from("profiles")
         .update({
-          phone: profileData.phone,
+          phone: contactAddresses.phone || profileData.phone,
           full_name: profileData.fullName,
           is_gp: true,
         })
         .eq("user_id", existingUser.id);
 
-      // Create GP profile
+      // Create GP profile with V1 mandatory fields (PRD Section 9)
+      const whatsappPhone = contactAddresses.whatsapp_phone === "primary" 
+        ? contactAddresses.phone 
+        : contactAddresses.phone_secondary;
+
       const { data: gpProfile, error: gpError } = await supabase
         .from("gp_profiles")
         .insert({
           user_id: existingUser.id,
           business_name: profileData.fullName,
           gp_type: "bagages_international",
-          phone: profileData.phone,
-          whatsapp: profileData.phone,
-          city: "International",
+          phone: contactAddresses.phone || profileData.phone,
+          whatsapp: whatsappPhone,
+          // V1 mandatory contact fields
+          deposit_address: contactAddresses.deposit_address,
+          reception_address: contactAddresses.reception_address || contactAddresses.deposit_address,
+          phone_secondary: contactAddresses.phone_secondary,
+          whatsapp_phone: whatsappPhone,
+          city: profileData.originCity || "International",
           country_code: profileData.originCountry,
           status: "pending",
           explicit_restrictions: acceptedRestrictions,
@@ -385,8 +423,31 @@ export default function GPBagagesRegistration() {
 
       if (gpError) throw gpError;
 
+      // Save weight tiers (PRD V1 Section 5.1)
+      if (weightTiers.length > 0) {
+        const tiersToInsert = weightTiers
+          .filter(t => t.price_per_kg > 0)
+          .map(t => ({
+            gp_id: gpProfile.id,
+            min_weight: t.min_weight,
+            max_weight: t.max_weight,
+            price_per_kg: t.price_per_kg,
+            currency: defaultCurrency,
+            is_active: true,
+          }));
+
+        if (tiersToInsert.length > 0) {
+          await supabase.from("gp_weight_tiers").insert(tiersToInsert);
+        }
+      }
+
       // Create voyage offers
       for (const dep of departures) {
+        // Use average price from tiers or fallback to pricePerKg
+        const avgPrice = weightTiers.length > 0 
+          ? weightTiers.reduce((sum, t) => sum + t.price_per_kg, 0) / weightTiers.length
+          : (pricePerKg ? parseFloat(pricePerKg) : 8);
+
         await supabase
           .from("gp_offers")
           .insert({
@@ -398,7 +459,7 @@ export default function GPBagagesRegistration() {
             departure_date: dep.date,
             total_capacity: dep.capacity,
             available_capacity: dep.capacity,
-            price_per_kg: pricePerKg ? parseFloat(pricePerKg) : 8,
+            price_per_kg: avgPrice,
             currency: defaultCurrency,
             transport_type: "bagages_international",
             explicit_restrictions: acceptedRestrictions,
@@ -680,10 +741,46 @@ export default function GPBagagesRegistration() {
               </motion.div>
             )}
 
-            {/* Step 3: Voyages Calendar */}
+            {/* Step 3: Contact Addresses (V1 Mandatory) */}
             {step === 3 && (
               <motion.div
                 key="step3"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+              >
+                <div className="space-y-4">
+                  <GPContactAddressesForm
+                    initialData={contactAddresses}
+                    onChange={(data, isValid) => {
+                      setContactAddresses(data);
+                      setContactAddressesValid(isValid);
+                    }}
+                    showValidation={true}
+                  />
+
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex justify-between pt-2">
+                        <Button variant="ghost" onClick={handleBack}>
+                          <ArrowLeft className="w-5 h-5 mr-1" />
+                          Retour
+                        </Button>
+                        <Button variant="gold" onClick={handleNext}>
+                          Continuer
+                          <ArrowRight className="w-5 h-5 ml-1" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 4: Voyages Calendar */}
+            {step === 4 && (
+              <motion.div
+                key="step4"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -727,103 +824,7 @@ export default function GPBagagesRegistration() {
               </motion.div>
             )}
 
-            {/* Step 4: Restrictions */}
-            {step === 4 && (
-              <motion.div
-                key="step4"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-              >
-                <Card>
-                  <CardContent className="p-6 space-y-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <ShieldX className="w-5 h-5 text-destructive" />
-                      <h2 className="text-lg font-semibold">Règles de sécurité</h2>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Vous devez accepter ces restrictions pour continuer
-                    </p>
-
-                    <div className="space-y-3">
-                      {STANDARD_RESTRICTIONS.filter(r => MANDATORY_RESTRICTIONS.includes(r.id)).map((restriction) => {
-                        const isAccepted = acceptedRestrictions.includes(restriction.id);
-                        const Icon = restriction.icon;
-                        
-                        return (
-                          <div
-                            key={restriction.id}
-                            onClick={() => toggleRestriction(restriction.id)}
-                            className={`
-                              flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all
-                              ${isAccepted 
-                                ? 'border-destructive/50 bg-destructive/5' 
-                                : 'border-border hover:border-destructive/30'
-                              }
-                            `}
-                          >
-                            <Checkbox
-                              checked={isAccepted}
-                              onCheckedChange={() => toggleRestriction(restriction.id)}
-                            />
-                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                              isAccepted ? 'bg-destructive/10' : 'bg-muted'
-                            }`}>
-                              <Icon className={`w-5 h-5 ${isAccepted ? 'text-destructive' : 'text-muted-foreground'}`} />
-                            </div>
-                            <div className="flex-1">
-                              <p className={`font-medium text-sm ${isAccepted ? 'text-destructive' : ''}`}>
-                                ⛔ Je refuse : {restriction.label}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {restriction.description}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Optional restrictions */}
-                    <div className="pt-4">
-                      <p className="text-sm font-medium text-muted-foreground mb-3">Restrictions optionnelles</p>
-                      <div className="space-y-2">
-                        {STANDARD_RESTRICTIONS.filter(r => !MANDATORY_RESTRICTIONS.includes(r.id)).map((restriction) => {
-                          const isAccepted = acceptedRestrictions.includes(restriction.id);
-                          
-                          return (
-                            <div
-                              key={restriction.id}
-                              onClick={() => toggleRestriction(restriction.id)}
-                              className={`
-                                flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all
-                                ${isAccepted ? 'border-amber-500/50 bg-amber-500/5' : 'border-border'}
-                              `}
-                            >
-                              <Checkbox checked={isAccepted} onCheckedChange={() => toggleRestriction(restriction.id)} />
-                              <span className="text-sm">{restriction.label}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between pt-4">
-                      <Button variant="ghost" onClick={handleBack}>
-                        <ArrowLeft className="w-5 h-5 mr-1" />
-                        Retour
-                      </Button>
-                      <Button variant="gold" onClick={handleNext}>
-                        Continuer
-                        <ArrowRight className="w-5 h-5 ml-1" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
-
-            {/* Step 5: Pricing */}
+            {/* Step 5: Pricing with Weight Tiers (PRD V1 Section 5) */}
             {step === 5 && (
               <motion.div
                 key="step5"
