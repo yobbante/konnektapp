@@ -28,14 +28,22 @@ interface WeightTiersPricingProps {
   onTiersChange?: (tiers: WeightTier[]) => void;
 }
 
-// Default weight tiers from PRD V1
+// Default weight tiers from PRD V1 - <1kg at top
 const DEFAULT_TIERS: Omit<WeightTier, "id" | "currency">[] = [
-  { min_weight: 0, max_weight: 1, price_per_kg: 0, is_active: true },
+  { min_weight: 0, max_weight: 1, price_per_kg: 0, is_active: true },    // <1kg tier at top
   { min_weight: 1, max_weight: 5, price_per_kg: 0, is_active: true },
   { min_weight: 5, max_weight: 10, price_per_kg: 0, is_active: true },
   { min_weight: 10, max_weight: 15, price_per_kg: 0, is_active: true },
   { min_weight: 15, max_weight: 20, price_per_kg: 0, is_active: true },
 ];
+
+// Format tier label for display
+const formatTierLabel = (tier: WeightTier): string => {
+  if (tier.min_weight === 0) {
+    return `< ${tier.max_weight} kg`;
+  }
+  return `${tier.min_weight}-${tier.max_weight} kg`;
+};
 
 export function WeightTiersPricing({
   gpId,
@@ -217,8 +225,8 @@ export function WeightTiersPricing({
             className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border"
           >
             <div className="flex items-center gap-2 min-w-[100px]">
-              <Badge variant="outline" className="font-mono whitespace-nowrap">
-                {tier.min_weight === 0 ? "< " : ""}{tier.min_weight === 0 ? tier.max_weight : `${tier.min_weight}-${tier.max_weight}`} kg
+              <Badge variant={tier.min_weight === 0 ? "default" : "outline"} className="font-mono whitespace-nowrap">
+                {formatTierLabel(tier)}
               </Badge>
             </div>
             <div className="flex-1 flex items-center gap-2">

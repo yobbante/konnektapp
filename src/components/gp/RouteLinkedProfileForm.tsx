@@ -11,28 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue 
-} from "@/components/ui/select";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { SearchableCitySelect, WORLD_CITIES } from "./SearchableCitySelect";
+import { getCountryPhoneCode, getPhonePlaceholder } from "@/lib/phoneCountryCodes";
 
 // Countries with flags
 const COUNTRIES: Record<string, { name: string; flag: string }> = {
@@ -50,41 +30,21 @@ const COUNTRIES: Record<string, { name: string; flag: string }> = {
   TN: { name: "Tunisie", flag: "🇹🇳" },
   GA: { name: "Gabon", flag: "🇬🇦" },
   CG: { name: "Congo", flag: "🇨🇬" },
+  DE: { name: "Allemagne", flag: "🇩🇪" },
+  ES: { name: "Espagne", flag: "🇪🇸" },
+  IT: { name: "Italie", flag: "🇮🇹" },
+  CH: { name: "Suisse", flag: "🇨🇭" },
+  NL: { name: "Pays-Bas", flag: "🇳🇱" },
+  GN: { name: "Guinée", flag: "🇬🇳" },
+  BF: { name: "Burkina Faso", flag: "🇧🇫" },
+  TG: { name: "Togo", flag: "🇹🇬" },
+  BJ: { name: "Bénin", flag: "🇧🇯" },
+  GH: { name: "Ghana", flag: "🇬🇭" },
+  NG: { name: "Nigeria", flag: "🇳🇬" },
 };
 
-// Cities grouped by country
-const CITIES = [
-  { city: "Dakar", country: "SN" },
-  { city: "Thiès", country: "SN" },
-  { city: "Saint-Louis", country: "SN" },
-  { city: "Paris", country: "FR" },
-  { city: "Marseille", country: "FR" },
-  { city: "Lyon", country: "FR" },
-  { city: "Bordeaux", country: "FR" },
-  { city: "New York", country: "US" },
-  { city: "Washington", country: "US" },
-  { city: "Los Angeles", country: "US" },
-  { city: "Miami", country: "US" },
-  { city: "Houston", country: "US" },
-  { city: "Montréal", country: "CA" },
-  { city: "Toronto", country: "CA" },
-  { city: "Ottawa", country: "CA" },
-  { city: "Abidjan", country: "CI" },
-  { city: "Yamoussoukro", country: "CI" },
-  { city: "Douala", country: "CM" },
-  { city: "Yaoundé", country: "CM" },
-  { city: "Bamako", country: "ML" },
-  { city: "Dubaï", country: "AE" },
-  { city: "Abu Dhabi", country: "AE" },
-  { city: "Londres", country: "GB" },
-  { city: "Manchester", country: "GB" },
-  { city: "Bruxelles", country: "BE" },
-  { city: "Casablanca", country: "MA" },
-  { city: "Rabat", country: "MA" },
-  { city: "Tunis", country: "TN" },
-  { city: "Libreville", country: "GA" },
-  { city: "Brazzaville", country: "CG" },
-];
+// Cities grouped by country (legacy export)
+const CITIES = WORLD_CITIES.map(c => ({ city: c.city, country: c.country }));
 
 // Popular routes
 const POPULAR_ROUTES = [
@@ -119,8 +79,6 @@ export function RouteLinkedProfileForm({
   showValidation = false,
 }: RouteLinkedProfileFormProps) {
   const isMobile = useIsMobile();
-  const [cityDrawerOpen, setCityDrawerOpen] = useState<"origin" | "destination" | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
 
   const [data, setData] = useState<RouteLinkedProfileData>({
     fullName: initialData.fullName || "",
@@ -148,23 +106,47 @@ export function RouteLinkedProfileForm({
     onChange(data, isValid);
   }, [data, isValid]);
 
+  // Auto-prefix phone with country code when country changes
+  useEffect(() => {
+    const code = getCountryPhoneCode(data.originCountry);
+    if (!data.originPhone || data.originPhone === "") {
+      setData(prev => ({ ...prev, originPhone: code + " " }));
+    } else if (!data.originPhone.startsWith("+")) {
+      setData(prev => ({ ...prev, originPhone: code + " " + prev.originPhone }));
+    }
+  }, [data.originCountry]);
+
+  useEffect(() => {
+    const code = getCountryPhoneCode(data.destinationCountry);
+    if (!data.destinationPhone || data.destinationPhone === "") {
+      setData(prev => ({ ...prev, destinationPhone: code + " " }));
+    } else if (!data.destinationPhone.startsWith("+")) {
+      setData(prev => ({ ...prev, destinationPhone: code + " " + prev.destinationPhone }));
+    }
+  }, [data.destinationCountry]);
+
   const handleChange = <K extends keyof RouteLinkedProfileData>(field: K, value: RouteLinkedProfileData[K]) => {
     setData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleCitySelect = (type: "origin" | "destination", cityName: string) => {
-    const cityInfo = CITIES.find(c => c.city === cityName);
-    if (cityInfo) {
-      if (type === "origin") {
-        handleChange("originCity", cityInfo.city);
-        handleChange("originCountry", cityInfo.country);
-      } else {
-        handleChange("destinationCity", cityInfo.city);
-        handleChange("destinationCountry", cityInfo.country);
-      }
+  const handleCitySelect = (type: "origin" | "destination", cityName: string, countryCode: string) => {
+    if (type === "origin") {
+      const newCode = getCountryPhoneCode(countryCode);
+      setData(prev => ({
+        ...prev,
+        originCity: cityName,
+        originCountry: countryCode,
+        originPhone: prev.originPhone.startsWith("+") ? newCode + " " + prev.originPhone.replace(/^\+[\d\s]+/, "").trim() : newCode + " ",
+      }));
+    } else {
+      const newCode = getCountryPhoneCode(countryCode);
+      setData(prev => ({
+        ...prev,
+        destinationCity: cityName,
+        destinationCountry: countryCode,
+        destinationPhone: prev.destinationPhone.startsWith("+") ? newCode + " " + prev.destinationPhone.replace(/^\+[\d\s]+/, "").trim() : newCode + " ",
+      }));
     }
-    setCityDrawerOpen(null);
-    setSearchQuery("");
   };
 
   const handleSwapRoute = () => {
@@ -182,12 +164,16 @@ export function RouteLinkedProfileForm({
   };
 
   const handleQuickRoute = (route: typeof POPULAR_ROUTES[0]) => {
+    const originCode = getCountryPhoneCode(route.originCountry);
+    const destCode = getCountryPhoneCode(route.destCountry);
     setData(prev => ({
       ...prev,
       originCity: route.originCity,
       originCountry: route.originCountry,
       destinationCity: route.destCity,
       destinationCountry: route.destCountry,
+      originPhone: originCode + " ",
+      destinationPhone: destCode + " ",
     }));
   };
 
@@ -195,104 +181,12 @@ export function RouteLinkedProfileForm({
   const originFlag = getCountryInfo(data.originCountry).flag;
   const destFlag = getCountryInfo(data.destinationCountry).flag;
 
-  const filteredCities = CITIES.filter(c => 
-    c.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    getCountryInfo(c.country).name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   const ValidationIcon = ({ isValid }: { isValid: boolean }) => {
     if (!showValidation) return null;
     return isValid ? (
       <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
     ) : (
       <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0" />
-    );
-  };
-
-  const CitySelector = ({ type }: { type: "origin" | "destination" }) => {
-    const cityValue = type === "origin" ? data.originCity : data.destinationCity;
-    const countryCode = type === "origin" ? data.originCountry : data.destinationCountry;
-    const flag = getCountryInfo(countryCode).flag;
-    const label = type === "origin" ? "Ville de départ" : "Ville d'arrivée";
-
-    const TriggerButton = (
-      <Button
-        variant="outline"
-        className="w-full justify-start text-left h-12 px-3"
-        onClick={() => isMobile && setCityDrawerOpen(type)}
-      >
-        <span className="text-xl mr-2">{flag}</span>
-        <span className="font-medium">{cityValue}</span>
-      </Button>
-    );
-
-    if (isMobile) {
-      return (
-        <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">{label}</Label>
-          <Drawer open={cityDrawerOpen === type} onOpenChange={(open) => setCityDrawerOpen(open ? type : null)}>
-            <DrawerTrigger asChild>{TriggerButton}</DrawerTrigger>
-            <DrawerContent className="max-h-[85vh]">
-              <DrawerHeader className="pb-2">
-                <DrawerTitle>{label}</DrawerTitle>
-              </DrawerHeader>
-              <Command className="px-2 pb-4">
-                <CommandInput 
-                  placeholder="Rechercher une ville..." 
-                  value={searchQuery}
-                  onValueChange={setSearchQuery}
-                />
-                <CommandList className="max-h-[50vh]">
-                  <CommandEmpty>Aucune ville trouvée</CommandEmpty>
-                  <CommandGroup>
-                    {filteredCities.map((item) => (
-                      <CommandItem
-                        key={`${item.city}-${item.country}`}
-                        value={item.city}
-                        onSelect={() => handleCitySelect(type, item.city)}
-                        className="flex items-center gap-3 py-3"
-                      >
-                        <span className="text-xl">{getCountryInfo(item.country).flag}</span>
-                        <div>
-                          <p className="font-medium">{item.city}</p>
-                          <p className="text-xs text-muted-foreground">{getCountryInfo(item.country).name}</p>
-                        </div>
-                        {cityValue === item.city && <Check className="w-4 h-4 ml-auto text-primary" />}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </DrawerContent>
-          </Drawer>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">{label}</Label>
-        <Select value={cityValue} onValueChange={(v) => handleCitySelect(type, v)}>
-          <SelectTrigger className="h-12">
-            <SelectValue>
-              <span className="flex items-center gap-2">
-                <span className="text-lg">{flag}</span>
-                <span>{cityValue}</span>
-              </span>
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent className="max-h-[300px] bg-popover z-50">
-            {CITIES.map((item) => (
-              <SelectItem key={`${item.city}-${item.country}`} value={item.city}>
-                <span className="flex items-center gap-2">
-                  <span>{getCountryInfo(item.country).flag}</span>
-                  <span>{item.city}</span>
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
     );
   };
 
@@ -375,10 +269,28 @@ export function RouteLinkedProfileForm({
             </Badge>
           </div>
 
-          {/* City selectors */}
+          {/* City selectors - Using SearchableCitySelect */}
           <div className="grid grid-cols-2 gap-3">
-            <CitySelector type="origin" />
-            <CitySelector type="destination" />
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Ville de départ</Label>
+              <SearchableCitySelect
+                value={data.originCity}
+                countryCode={data.originCountry}
+                onSelect={(city, country) => handleCitySelect("origin", city, country)}
+                label="Ville de départ"
+                placeholder="Rechercher..."
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Ville d'arrivée</Label>
+              <SearchableCitySelect
+                value={data.destinationCity}
+                countryCode={data.destinationCountry}
+                onSelect={(city, country) => handleCitySelect("destination", city, country)}
+                label="Ville d'arrivée"
+                placeholder="Rechercher..."
+              />
+            </div>
           </div>
 
           {/* Quick routes */}
@@ -457,16 +369,24 @@ export function RouteLinkedProfileForm({
               </Label>
               <ValidationIcon isValid={isOriginPhoneValid} />
             </div>
-            <Input
-              type="tel"
-              placeholder={data.originCountry === "SN" ? "+221 77 123 45 67" : "+33 6 12 34 56 78"}
-              value={data.originPhone}
-              onChange={(e) => handleChange("originPhone", e.target.value)}
-              className={cn(
-                "h-12",
-                showValidation && !isOriginPhoneValid && "border-destructive"
-              )}
-            />
+            <div className="relative">
+              <Badge 
+                variant="secondary" 
+                className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-mono z-10"
+              >
+                {getCountryPhoneCode(data.originCountry)}
+              </Badge>
+              <Input
+                type="tel"
+                placeholder={getPhonePlaceholder(data.originCountry).replace(/^\+[\d\s]+/, "").trim()}
+                value={data.originPhone.replace(getCountryPhoneCode(data.originCountry), "").trim()}
+                onChange={(e) => handleChange("originPhone", getCountryPhoneCode(data.originCountry) + " " + e.target.value)}
+                className={cn(
+                  "h-12 pl-16",
+                  showValidation && !isOriginPhoneValid && "border-destructive"
+                )}
+              />
+            </div>
           </motion.div>
         </CardContent>
       </Card>
@@ -522,16 +442,24 @@ export function RouteLinkedProfileForm({
               </Label>
               <ValidationIcon isValid={isDestPhoneValid} />
             </div>
-            <Input
-              type="tel"
-              placeholder={data.destinationCountry === "FR" ? "+33 6 12 34 56 78" : "+221 77 123 45 67"}
-              value={data.destinationPhone}
-              onChange={(e) => handleChange("destinationPhone", e.target.value)}
-              className={cn(
-                "h-12",
-                showValidation && !isDestPhoneValid && "border-destructive"
-              )}
-            />
+            <div className="relative">
+              <Badge 
+                variant="secondary" 
+                className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-mono z-10"
+              >
+                {getCountryPhoneCode(data.destinationCountry)}
+              </Badge>
+              <Input
+                type="tel"
+                placeholder={getPhonePlaceholder(data.destinationCountry).replace(/^\+[\d\s]+/, "").trim()}
+                value={data.destinationPhone.replace(getCountryPhoneCode(data.destinationCountry), "").trim()}
+                onChange={(e) => handleChange("destinationPhone", getCountryPhoneCode(data.destinationCountry) + " " + e.target.value)}
+                className={cn(
+                  "h-12 pl-16",
+                  showValidation && !isDestPhoneValid && "border-destructive"
+                )}
+              />
+            </div>
           </motion.div>
         </CardContent>
       </Card>

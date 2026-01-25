@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { supabase } from "@/integrations/supabase/client";
 import { CompareProvider, useCompare, CompareOffer } from "@/components/offers/OfferCompare";
 import { HomeAdvancedFilters, HomeFiltersState, DEFAULT_HOME_FILTERS } from "@/components/home/HomeAdvancedFilters";
+import { LoggedInHomeDashboard } from "@/components/home/LoggedInHomeDashboard";
 import { useUserRole } from "@/hooks/useUserRole";
 import { formatPricePerKg } from "@/components/ui/currency-selector";
 import { ShipmentOfferCard } from "@/components/ShipmentOfferCard";
@@ -31,12 +32,14 @@ const transportTypes = [
 ];
 
 function IndexContent() {
-  const { isGP } = useUserRole();
+  const { isGP, isAuthenticated, userId } = useUserRole();
   const [selectedType, setSelectedType] = useState<TransportType | null>(null);
   const [offers, setOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState<HomeFiltersState>(DEFAULT_HOME_FILTERS);
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   // Pull to refresh
   const handleRefresh = useCallback(async () => {
@@ -49,7 +52,34 @@ function IndexContent() {
 
   useEffect(() => {
     loadOffers();
-  }, []);
+    if (isAuthenticated && userId) {
+      loadUserData();
+    }
+  }, [isAuthenticated, userId]);
+
+  const loadUserData = async () => {
+    if (!userId) return;
+    try {
+      // Load recent orders
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("id, origin_city, destination_city, weight, status")
+        .eq("client_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(3);
+      if (orders) setRecentOrders(orders);
+
+      // Load unread messages count
+      const { count } = await supabase
+        .from("messages")
+        .select("*", { count: "exact", head: true })
+        .is("read_at", null)
+        .neq("sender_id", userId);
+      if (count) setUnreadMessages(count);
+    } catch (error) {
+      console.error("Error loading user data:", error);
+    }
+  };
 
   const loadOffers = async () => {
     try {
@@ -116,7 +146,19 @@ function IndexContent() {
       <PullToRefreshIndicator isRefreshing={isRefreshing} progress={progress} pullDistance={pullDistance} />
       <MobileHeader />
 
-      {/* Hero Section */}
+      {/* Logged-in User Dashboard */}
+      {isAuthenticated && !isGP && (
+        <section className="px-4 py-6">
+          <LoggedInHomeDashboard
+            userName={undefined}
+            recentOrders={recentOrders}
+            unreadMessages={unreadMessages}
+          />
+        </section>
+      )}
+
+      {/* Hero Section - Show for guests or GPs */}
+      {(!isAuthenticated || isGP) && (
       <section className="px-4 py-6">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -164,6 +206,7 @@ function IndexContent() {
           </div>
         </motion.div>
       </section>
+      )}
 
       {/* Main Content */}
       <section className="px-4 py-4">

@@ -2,18 +2,16 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ChevronLeft, ChevronRight, Plus, Plane, MapPin,
-  Weight, Calendar, Clock, CheckCircle, Users, ArrowLeftRight
+  Weight, Calendar, Clock, CheckCircle, ArrowLeftRight, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, addMonths, subMonths, isBefore, startOfDay } from "date-fns";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths, isBefore, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
-import { COUNTRIES, CITIES } from "./InteractiveRouteSelector";
-import { SearchableCitySelect, WORLD_CITIES } from "./SearchableCitySelect";
 
 interface Departure {
   id: string;
@@ -53,6 +51,13 @@ interface DepartureCalendarViewProps {
 
 const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
+// Country flags map
+const FLAGS: Record<string, string> = {
+  FR: "🇫🇷", SN: "🇸🇳", CI: "🇨🇮", CM: "🇨🇲", ML: "🇲🇱", US: "🇺🇸", CA: "🇨🇦",
+  AE: "🇦🇪", GB: "🇬🇧", BE: "🇧🇪", MA: "🇲🇦", TN: "🇹🇳", GA: "🇬🇦", CG: "🇨🇬",
+  DE: "🇩🇪", ES: "🇪🇸", IT: "🇮🇹", CH: "🇨🇭", NL: "🇳🇱", GN: "🇬🇳",
+};
+
 export function DepartureCalendarView({ 
   departures, 
   onAddDeparture,
@@ -62,7 +67,7 @@ export function DepartureCalendarView({
 }: DepartureCalendarViewProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showAddSheet, setShowAddSheet] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Get the last departure to inverse for return trip logic
@@ -74,10 +79,6 @@ export function DepartureCalendarView({
   }, [departures]);
 
   const [newDeparture, setNewDeparture] = useState({
-    originCity: defaultRoute?.originCity || "",
-    originCountry: defaultRoute?.originCountry || "FR",
-    destinationCity: defaultRoute?.destinationCity || "",
-    destinationCountry: defaultRoute?.destinationCountry || "SN",
     capacity: "",
     pricePerKg: String(defaultPricePerKg),
     type: "aller" as "aller" | "retour",
@@ -116,64 +117,61 @@ export function DepartureCalendarView({
     return departuresByDate.get(dateKey) || [];
   };
 
-  const handleDateClick = (date: Date) => {
-    if (isBefore(date, startOfDay(new Date()))) return;
-    setSelectedDate(date);
-    setShowAddDialog(true);
-    
-    // Smart pre-fill: inverse last departure for return trip
+  // Determine current route based on last departure or default
+  const currentRoute = useMemo(() => {
     if (lastDeparture) {
-      setNewDeparture({
+      // Smart inversion: next trip is the return of the last one
+      return {
         originCity: lastDeparture.destinationCity,
         originCountry: lastDeparture.destinationCountry,
         destinationCity: lastDeparture.originCity,
         destinationCountry: lastDeparture.originCountry,
-        capacity: "",
-        pricePerKg: String(lastDeparture.pricePerKg || defaultPricePerKg),
-        type: lastDeparture.type === "aller" ? "retour" : "aller",
-        returnDate: "",
-      });
-    } else if (defaultRoute) {
-      setNewDeparture({
-        originCity: defaultRoute.originCity,
-        originCountry: defaultRoute.originCountry,
-        destinationCity: defaultRoute.destinationCity,
-        destinationCountry: defaultRoute.destinationCountry,
-        capacity: "",
-        pricePerKg: String(defaultPricePerKg),
-        type: "aller",
-        returnDate: "",
-      });
-    } else {
-      setNewDeparture({
-        originCity: "",
-        originCountry: "FR",
-        destinationCity: "",
-        destinationCountry: "SN",
-        capacity: "",
-        pricePerKg: String(defaultPricePerKg),
-        type: "aller",
-        returnDate: "",
-      });
+        type: lastDeparture.type === "aller" ? "retour" as const : "aller" as const,
+      };
     }
+    if (defaultRoute) {
+      return {
+        ...defaultRoute,
+        type: "aller" as const,
+      };
+    }
+    return {
+      originCity: "Dakar",
+      originCountry: "SN",
+      destinationCity: "Paris",
+      destinationCountry: "FR",
+      type: "aller" as const,
+    };
+  }, [lastDeparture, defaultRoute]);
+
+  const handleDateClick = (date: Date) => {
+    if (isBefore(date, startOfDay(new Date()))) return;
+    setSelectedDate(date);
+    setNewDeparture({
+      capacity: "",
+      pricePerKg: String(lastDeparture?.pricePerKg || defaultPricePerKg),
+      type: currentRoute.type,
+      returnDate: "",
+    });
+    setShowAddSheet(true);
   };
 
   const handleAddDeparture = async () => {
-    if (!selectedDate || !newDeparture.originCity || !newDeparture.destinationCity || !newDeparture.capacity) {
+    if (!selectedDate || !newDeparture.capacity) {
       return;
     }
 
     setLoading(true);
     try {
-      // Add the main departure
+      // Add the main departure using the fixed route
       await onAddDeparture({
         date: format(selectedDate, 'yyyy-MM-dd'),
-        originCity: newDeparture.originCity,
-        originCountry: newDeparture.originCountry,
-        destinationCity: newDeparture.destinationCity,
-        destinationCountry: newDeparture.destinationCountry,
+        originCity: currentRoute.originCity,
+        originCountry: currentRoute.originCountry,
+        destinationCity: currentRoute.destinationCity,
+        destinationCountry: currentRoute.destinationCountry,
         capacity: parseFloat(newDeparture.capacity),
-        pricePerKg: newDeparture.pricePerKg ? parseFloat(newDeparture.pricePerKg) : 8,
+        pricePerKg: newDeparture.pricePerKg ? parseFloat(newDeparture.pricePerKg) : defaultPricePerKg,
         type: newDeparture.type,
       });
 
@@ -181,31 +179,55 @@ export function DepartureCalendarView({
       if (newDeparture.returnDate && newDeparture.type === "aller") {
         await onAddDeparture({
           date: newDeparture.returnDate,
-          originCity: newDeparture.destinationCity,
-          originCountry: newDeparture.destinationCountry,
-          destinationCity: newDeparture.originCity,
-          destinationCountry: newDeparture.originCountry,
+          originCity: currentRoute.destinationCity,
+          originCountry: currentRoute.destinationCountry,
+          destinationCity: currentRoute.originCity,
+          destinationCountry: currentRoute.originCountry,
           capacity: parseFloat(newDeparture.capacity),
-          pricePerKg: newDeparture.pricePerKg ? parseFloat(newDeparture.pricePerKg) : 8,
+          pricePerKg: newDeparture.pricePerKg ? parseFloat(newDeparture.pricePerKg) : defaultPricePerKg,
           type: "retour",
         });
       }
 
-      setShowAddDialog(false);
+      setShowAddSheet(false);
     } finally {
       setLoading(false);
     }
   };
 
-  // Quick route presets
-  const quickRoutes = [
-    { origin: "Paris", dest: "Dakar", oC: "FR", dC: "SN" },
-    { origin: "Paris", dest: "Abidjan", oC: "FR", dC: "CI" },
-    { origin: "Dakar", dest: "Paris", oC: "SN", dC: "FR" },
-  ];
+  const swapType = () => {
+    setNewDeparture(prev => ({
+      ...prev,
+      type: prev.type === "aller" ? "retour" : "aller",
+    }));
+  };
+
+  const getFlag = (code: string) => FLAGS[code] || "🌍";
 
   return (
     <div className="space-y-4">
+      {/* Current Route Display */}
+      {defaultRoute && (
+        <Card className="bg-gradient-to-r from-primary/5 to-secondary/5 border-primary/20">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-center gap-3">
+              <div className="text-center">
+                <span className="text-2xl">{getFlag(defaultRoute.originCountry)}</span>
+                <p className="text-xs font-medium">{defaultRoute.originCity}</p>
+              </div>
+              <ArrowLeftRight className="w-4 h-4 text-muted-foreground" />
+              <div className="text-center">
+                <span className="text-2xl">{getFlag(defaultRoute.destinationCountry)}</span>
+                <p className="text-xs font-medium">{defaultRoute.destinationCity}</p>
+              </div>
+            </div>
+            <p className="text-center text-xs text-muted-foreground mt-2">
+              Votre navette fixe
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Calendar Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -227,7 +249,7 @@ export function DepartureCalendarView({
             <ChevronRight className="w-5 h-5" />
           </Button>
         </div>
-        <Button size="sm" onClick={() => setCurrentMonth(new Date())}>
+        <Button size="sm" variant="outline" onClick={() => setCurrentMonth(new Date())}>
           Aujourd'hui
         </Button>
       </div>
@@ -248,7 +270,7 @@ export function DepartureCalendarView({
           <div className="grid grid-cols-7 gap-1">
             {monthDays.map((day, index) => {
               if (!day) {
-                return <div key={`pad-${index}`} className="h-16" />;
+                return <div key={`pad-${index}`} className="h-14 md:h-16" />;
               }
 
               const dayDepartures = getDeparturesForDate(day);
@@ -264,7 +286,7 @@ export function DepartureCalendarView({
                   onClick={() => !isPast && handleDateClick(day)}
                   disabled={isPast}
                   className={`
-                    h-16 rounded-lg flex flex-col items-center justify-center relative
+                    h-14 md:h-16 rounded-lg flex flex-col items-center justify-center relative
                     transition-all border
                     ${isPast 
                       ? 'opacity-40 cursor-not-allowed bg-muted/50 border-transparent' 
@@ -320,7 +342,7 @@ export function DepartureCalendarView({
         </div>
         <div className="flex items-center gap-1.5">
           <Plus className="w-3 h-3" />
-          <span>Clic pour ajouter</span>
+          <span>Ajouter</span>
         </div>
       </div>
 
@@ -371,221 +393,137 @@ export function DepartureCalendarView({
         </Card>
       )}
 
-      {/* Add Departure Dialog - Mobile-friendly */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="w-[calc(100vw-32px)] max-w-md mx-auto max-h-[85vh] overflow-y-auto rounded-xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base">
+      {/* Add Departure Sheet - Mobile-optimized */}
+      <Sheet open={showAddSheet} onOpenChange={setShowAddSheet}>
+        <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl">
+          <SheetHeader className="pb-4">
+            <SheetTitle className="flex items-center gap-2 text-base">
               <Plus className="w-5 h-5" />
               Nouveau voyage
-            </DialogTitle>
-          </DialogHeader>
+            </SheetTitle>
+          </SheetHeader>
 
           {selectedDate && (
-            <div className="space-y-3">
-              {/* Date display - compact on mobile */}
-              <div className="flex items-center justify-center gap-2 p-2 bg-muted rounded-lg">
-                <Calendar className="w-4 h-4 text-primary" />
-                <p className="font-medium text-sm">
-                  {format(selectedDate, 'EEE d MMM yyyy', { locale: fr })}
+            <div className="space-y-5 overflow-y-auto max-h-[calc(85vh-100px)] pb-safe">
+              {/* Date display */}
+              <div className="flex items-center justify-center gap-2 p-3 bg-muted rounded-xl">
+                <Calendar className="w-5 h-5 text-primary" />
+                <p className="font-semibold text-base">
+                  {format(selectedDate, 'EEEE d MMMM yyyy', { locale: fr })}
                 </p>
               </div>
 
-              {/* Current selection with flags - compact */}
-              <div className="p-3 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border">
-                <div className="flex items-center justify-center gap-3 mb-2">
+              {/* Fixed Route Display */}
+              <div className="p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border">
+                <div className="flex items-center justify-center gap-4">
                   <div className="text-center">
-                    <span className="text-2xl">{COUNTRIES[newDeparture.originCountry]?.flag || "🌍"}</span>
-                    <p className="text-xs font-medium mt-0.5 truncate max-w-[70px]">{newDeparture.originCity || "Ville"}</p>
+                    <span className="text-3xl">{getFlag(currentRoute.originCountry)}</span>
+                    <p className="text-sm font-semibold mt-1">{currentRoute.originCity}</p>
                   </div>
                   
-                  <Button 
-                    type="button"
-                    variant="ghost" 
-                    size="icon"
-                    onClick={() => {
-                      const temp = { city: newDeparture.originCity, country: newDeparture.originCountry };
-                      setNewDeparture(prev => ({
-                        ...prev,
-                        originCity: prev.destinationCity,
-                        originCountry: prev.destinationCountry,
-                        destinationCity: temp.city,
-                        destinationCountry: temp.country,
-                        type: prev.type === "aller" ? "retour" : "aller",
-                      }));
-                    }}
-                    className="h-8 w-8 rounded-full bg-background border hover:bg-accent"
-                  >
-                    <ArrowLeftRight className="w-3.5 h-3.5" />
-                  </Button>
+                  <div className="flex flex-col items-center">
+                    <Plane className={`w-6 h-6 text-primary ${newDeparture.type === 'retour' ? 'rotate-180' : ''}`} />
+                  </div>
                   
                   <div className="text-center">
-                    <span className="text-2xl">{COUNTRIES[newDeparture.destinationCountry]?.flag || "🌍"}</span>
-                    <p className="text-xs font-medium mt-0.5 truncate max-w-[70px]">{newDeparture.destinationCity || "Ville"}</p>
+                    <span className="text-3xl">{getFlag(currentRoute.destinationCountry)}</span>
+                    <p className="text-sm font-semibold mt-1">{currentRoute.destinationCity}</p>
                   </div>
                 </div>
 
                 {/* Type badge */}
-                <div className="flex justify-center">
-                  <Badge variant={newDeparture.type === "aller" ? "default" : "secondary"} className="px-2 py-0.5 text-xs">
-                    <Plane className="w-3 h-3 mr-1" />
+                <div className="flex justify-center mt-3">
+                  <Badge variant={newDeparture.type === "aller" ? "default" : "secondary"} className="px-4 py-1.5">
+                    <Plane className={`w-4 h-4 mr-2 ${newDeparture.type === 'retour' ? 'rotate-180' : ''}`} />
                     {newDeparture.type === "aller" ? "Aller" : "Retour"}
                   </Badge>
                 </div>
               </div>
 
-              {/* Type toggle - larger touch targets */}
-              <div className="grid grid-cols-2 gap-2">
+              {/* Type toggle */}
+              <div className="grid grid-cols-2 gap-3">
                 <Button
                   type="button"
                   variant={newDeparture.type === "aller" ? "default" : "outline"}
-                  size="sm"
-                  className="h-10"
+                  size="lg"
+                  className="h-14"
                   onClick={() => setNewDeparture(prev => ({ ...prev, type: "aller" }))}
                 >
-                  <Plane className="w-4 h-4 mr-1.5" /> Aller
+                  <Plane className="w-5 h-5 mr-2" /> Aller
                 </Button>
                 <Button
                   type="button"
                   variant={newDeparture.type === "retour" ? "default" : "outline"}
-                  size="sm"
-                  className="h-10"
+                  size="lg"
+                  className="h-14"
                   onClick={() => setNewDeparture(prev => ({ ...prev, type: "retour" }))}
                 >
-                  <Plane className="w-4 h-4 mr-1.5 rotate-180" /> Retour
+                  <Plane className="w-5 h-5 mr-2 rotate-180" /> Retour
                 </Button>
               </div>
 
-              {/* City dropdowns - searchable with filter */}
-              <div className="grid grid-cols-1 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    Ville de départ
-                  </Label>
-                  <SearchableCitySelect
-                    value={newDeparture.originCity}
-                    countryCode={newDeparture.originCountry}
-                    onSelect={(city, country) => {
-                      setNewDeparture(prev => ({
-                        ...prev,
-                        originCity: city,
-                        originCountry: country,
-                      }));
-                    }}
-                    label="Ville de départ"
-                    placeholder="Tapez pour rechercher..."
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    Ville d'arrivée
-                  </Label>
-                  <SearchableCitySelect
-                    value={newDeparture.destinationCity}
-                    countryCode={newDeparture.destinationCountry}
-                    onSelect={(city, country) => {
-                      setNewDeparture(prev => ({
-                        ...prev,
-                        destinationCity: city,
-                        destinationCountry: country,
-                      }));
-                    }}
-                    label="Ville d'arrivée"
-                    placeholder="Tapez pour rechercher..."
-                  />
-                </div>
-              </div>
-
-              {/* Popular routes - scrollable on mobile */}
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Trajets populaires</Label>
-                <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
-                  {[
-                    { o: "Dakar", oC: "SN", d: "Paris", dC: "FR" },
-                    { o: "Paris", oC: "FR", d: "Dakar", dC: "SN" },
-                    { o: "Dakar", oC: "SN", d: "New York", dC: "US" },
-                    { o: "Paris", oC: "FR", d: "Abidjan", dC: "CI" },
-                    { o: "Dakar", oC: "SN", d: "Montréal", dC: "CA" },
-                  ].map((r, i) => (
-                    <Badge
-                      key={i}
-                      variant={newDeparture.originCity === r.o && newDeparture.destinationCity === r.d ? "default" : "outline"}
-                      className="cursor-pointer text-xs hover:bg-accent whitespace-nowrap flex-shrink-0"
-                      onClick={() => setNewDeparture(prev => ({
-                        ...prev,
-                        originCity: r.o,
-                        originCountry: r.oC,
-                        destinationCity: r.d,
-                        destinationCountry: r.dC,
-                      }))}
-                    >
-                      {r.o} - {r.d}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              {/* Capacity - larger input for mobile */}
-              <div className="space-y-1">
-                <Label className="text-xs">Capacité disponible (kg) *</Label>
+              {/* Capacity input */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Capacité disponible (kg) *</Label>
                 <div className="relative">
-                  <Weight className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Weight className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     type="number"
                     inputMode="numeric"
-                    placeholder="30"
-                    className="pl-9 h-11 text-base"
+                    placeholder="Ex: 30"
+                    className="pl-10 h-14 text-lg"
                     value={newDeparture.capacity}
                     onChange={(e) => setNewDeparture(prev => ({ ...prev, capacity: e.target.value }))}
                   />
                 </div>
               </div>
 
-              {/* Return trip option - only show when adding an "aller" trip */}
+              {/* Return trip option */}
               {newDeparture.type === "aller" && (
-                <div className="p-3 bg-secondary/10 rounded-lg border border-secondary/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Plane className="w-4 h-4 text-secondary rotate-180" />
-                    <span className="text-sm font-medium">Ajouter le retour ?</span>
+                <div className="p-4 bg-secondary/10 rounded-xl border border-secondary/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Plane className="w-5 h-5 text-secondary rotate-180" />
+                    <span className="font-medium">Ajouter le retour ?</span>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-2">
+                  <p className="text-sm text-muted-foreground mb-3">
                     Programmez directement votre voyage retour
                   </p>
                   <Input
                     type="date"
-                    className="h-10 text-sm"
+                    className="h-12"
                     min={format(selectedDate, 'yyyy-MM-dd')}
+                    value={newDeparture.returnDate}
                     onChange={(e) => {
-                      if (e.target.value) {
-                        // Store return date for later use
-                        setNewDeparture(prev => ({
-                          ...prev,
-                          returnDate: e.target.value,
-                        }));
-                      }
+                      setNewDeparture(prev => ({
+                        ...prev,
+                        returnDate: e.target.value,
+                      }));
                     }}
                   />
                 </div>
               )}
 
-              {/* Action buttons - full width on mobile */}
-              <div className="flex gap-2 pt-1">
-                <Button variant="outline" className="flex-1 h-11" onClick={() => setShowAddDialog(false)}>
+              {/* Action buttons */}
+              <div className="flex gap-3 pt-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1 h-14 text-base" 
+                  onClick={() => setShowAddSheet(false)}
+                >
                   Annuler
                 </Button>
                 <Button 
-                  className="flex-1 h-11" 
+                  className="flex-1 h-14 text-base" 
                   onClick={handleAddDeparture}
-                  disabled={loading || !newDeparture.originCity || !newDeparture.destinationCity || !newDeparture.capacity}
+                  disabled={loading || !newDeparture.capacity}
                 >
                   {loading ? "..." : "Ajouter"}
                 </Button>
               </div>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
