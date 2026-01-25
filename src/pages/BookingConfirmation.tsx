@@ -3,8 +3,8 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   CheckCircle, Package, MapPin, Calendar, User, 
-  MessageCircle, Home, Download, ArrowRight, Plane, Clock,
-  Shield, Star, Copy, ExternalLink
+  MessageCircle, Home, ArrowRight, Plane, Clock,
+  Shield, Copy, Phone, MapPinned, Lock, Eye
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileHeader } from "@/components/layout/MobileHeader";
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useGPContactRelease } from "@/hooks/useGPContactRelease";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -28,17 +29,11 @@ interface OrderDetails {
   currency: string;
   weight: number;
   status: string;
+  payment_status: string;
   description: string | null;
   created_at: string;
   gp_id: string;
   offer_id: string | null;
-}
-
-interface GPProfile {
-  business_name: string;
-  phone: string | null;
-  whatsapp: string | null;
-  verified_at: string | null;
 }
 
 interface OfferDetails {
@@ -52,8 +47,24 @@ export default function BookingConfirmation() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState<OrderDetails | null>(null);
-  const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
   const [offer, setOffer] = useState<OfferDetails | null>(null);
+
+  // Progressive release hook
+  const { 
+    publicInfo, 
+    contactInfo, 
+    canSeeDepositAddress, 
+    canSeeWhatsApp,
+    canSeeReceptionAddress,
+    canSeeSecondaryPhone 
+  } = useGPContactRelease(
+    order?.gp_id,
+    order ? {
+      orderId: order.id,
+      status: order.status,
+      paymentStatus: order.payment_status,
+    } : undefined
+  );
 
   useEffect(() => {
     loadOrderDetails();
@@ -72,7 +83,6 @@ export default function BookingConfirmation() {
         return;
       }
 
-      // Fetch order
       const { data: orderData, error: orderError } = await supabase
         .from("orders")
         .select("*")
@@ -88,16 +98,6 @@ export default function BookingConfirmation() {
 
       setOrder(orderData);
 
-      // Fetch GP profile
-      const { data: gpData } = await supabase
-        .from("gp_profiles")
-        .select("business_name, phone, whatsapp, verified_at")
-        .eq("id", orderData.gp_id)
-        .single();
-
-      if (gpData) setGpProfile(gpData);
-
-      // Fetch offer details
       if (orderData.offer_id) {
         const { data: offerData } = await supabase
           .from("gp_offers")
@@ -146,6 +146,8 @@ export default function BookingConfirmation() {
   }
 
   const currencySymbol = getCurrencySymbol(order.currency);
+  const isPaid = order.payment_status === "paid" || ["accepted", "collected", "in_transit", "delivered"].includes(order.status);
+  const isDelivered = order.status === "delivered";
 
   return (
     <div className="min-h-screen bg-background pb-safe">
@@ -291,8 +293,8 @@ export default function BookingConfirmation() {
           </Card>
         </motion.div>
 
-        {/* Transporter Info */}
-        {gpProfile && (
+        {/* Transporter Info with Progressive Release */}
+        {publicInfo && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -305,21 +307,117 @@ export default function BookingConfirmation() {
                   <h3 className="font-semibold">Votre transporteur</h3>
                 </div>
                 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                     <User className="w-6 h-6 text-primary" />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <p className="font-semibold">{gpProfile.business_name}</p>
-                      {gpProfile.verified_at && (
+                      <p className="font-semibold">{publicInfo.business_name}</p>
+                      {publicInfo.verified_at && (
                         <Shield className="w-4 h-4 text-primary" />
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {gpProfile.whatsapp || gpProfile.phone || "Contact via messagerie"}
+                      {publicInfo.city}, {publicInfo.country_code}
                     </p>
                   </div>
+                </div>
+
+                {/* Progressive Contact Info Release */}
+                <div className="space-y-3 pt-3 border-t">
+                  {/* Deposit Address - Visible after payment */}
+                  <div className="flex items-start gap-3">
+                    <MapPinned className={`w-5 h-5 mt-0.5 ${canSeeDepositAddress ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-medium">Adresse de dépôt</p>
+                        {!canSeeDepositAddress && (
+                          <Badge variant="secondary" className="text-[10px] gap-1">
+                            <Lock className="w-3 h-3" />
+                            Après paiement
+                          </Badge>
+                        )}
+                      </div>
+                      {canSeeDepositAddress && contactInfo.deposit_address ? (
+                        <p className="text-sm text-muted-foreground">{contactInfo.deposit_address}</p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">
+                          {isPaid ? "Non renseignée" : "Visible après paiement"}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* WhatsApp - Visible after payment */}
+                  <div className="flex items-start gap-3">
+                    <Phone className={`w-5 h-5 mt-0.5 ${canSeeWhatsApp ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-medium">WhatsApp</p>
+                        {!canSeeWhatsApp && (
+                          <Badge variant="secondary" className="text-[10px] gap-1">
+                            <Lock className="w-3 h-3" />
+                            Après paiement
+                          </Badge>
+                        )}
+                        {canSeeWhatsApp && (
+                          <Badge variant="default" className="text-[10px] gap-1">
+                            <Eye className="w-3 h-3" />
+                            Visible
+                          </Badge>
+                        )}
+                      </div>
+                      {canSeeWhatsApp && contactInfo.whatsapp_number ? (
+                        <a 
+                          href={`https://wa.me/${contactInfo.whatsapp_number.replace(/\D/g, '')}`}
+                          className="text-sm text-primary underline"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {contactInfo.whatsapp_number}
+                        </a>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">
+                          {isPaid ? "Non renseigné" : "Visible après paiement"}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Reception Address - Visible after delivery */}
+                  <div className="flex items-start gap-3">
+                    <MapPin className={`w-5 h-5 mt-0.5 ${canSeeReceptionAddress ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-medium">Adresse de réception</p>
+                        {!canSeeReceptionAddress && (
+                          <Badge variant="secondary" className="text-[10px] gap-1">
+                            <Lock className="w-3 h-3" />
+                            Après livraison
+                          </Badge>
+                        )}
+                      </div>
+                      {canSeeReceptionAddress && contactInfo.reception_address ? (
+                        <p className="text-sm text-muted-foreground">{contactInfo.reception_address}</p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">
+                          {isDelivered ? "Non renseignée" : "Visible après livraison"}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Secondary Phone - Visible after delivery */}
+                  {(canSeeSecondaryPhone && contactInfo.phone_secondary) && (
+                    <div className="flex items-start gap-3">
+                      <Phone className="w-5 h-5 mt-0.5 text-primary" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Téléphone secondaire</p>
+                        <p className="text-sm text-muted-foreground">{contactInfo.phone_secondary}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <Button 
@@ -328,7 +426,7 @@ export default function BookingConfirmation() {
                   variant="outline"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  Contacter le transporteur
+                  Contacter via messagerie
                 </Button>
               </CardContent>
             </Card>
@@ -346,8 +444,10 @@ export default function BookingConfirmation() {
               <h3 className="font-semibold mb-3">Prochaines étapes</h3>
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-xs font-bold text-primary">1</span>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                    order.status !== 'pending' ? 'bg-success/20' : 'bg-primary/10'
+                  }`}>
+                    <span className={`text-xs font-bold ${order.status !== 'pending' ? 'text-success' : 'text-primary'}`}>1</span>
                   </div>
                   <div>
                     <p className="text-sm font-medium">Confirmation du transporteur</p>
@@ -357,24 +457,32 @@ export default function BookingConfirmation() {
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-xs font-bold text-muted-foreground">2</span>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                    isPaid ? 'bg-success/20' : 'bg-muted'
+                  }`}>
+                    <span className={`text-xs font-bold ${isPaid ? 'text-success' : 'text-muted-foreground'}`}>2</span>
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Remise du colis</p>
+                    <p className="text-sm font-medium">Paiement & adresse de dépôt</p>
                     <p className="text-xs text-muted-foreground">
-                      Coordonnez le point de collecte via la messagerie
+                      {isPaid 
+                        ? "✅ Adresse de dépôt disponible ci-dessus" 
+                        : "L'adresse de dépôt s'affichera après paiement"}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-xs font-bold text-muted-foreground">3</span>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                    isDelivered ? 'bg-success/20' : 'bg-muted'
+                  }`}>
+                    <span className={`text-xs font-bold ${isDelivered ? 'text-success' : 'text-muted-foreground'}`}>3</span>
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Suivi en temps réel</p>
+                    <p className="text-sm font-medium">Livraison & adresse de réception</p>
                     <p className="text-xs text-muted-foreground">
-                      Recevez des notifications à chaque étape
+                      {isDelivered 
+                        ? "✅ Adresse de réception disponible" 
+                        : "L'adresse de réception s'affichera après livraison"}
                     </p>
                   </div>
                 </div>

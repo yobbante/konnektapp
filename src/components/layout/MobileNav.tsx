@@ -93,8 +93,8 @@ export function MobileNav() {
         </div>
       </nav>
       
-      {/* Indicateur d'inscription pour visiteurs non connectés - Design subtil en bas */}
-      {!isAuthenticated && (
+      {/* Indicateur d'inscription - UNIQUEMENT sur la page d'accueil et non connecté */}
+      {!isAuthenticated && location.pathname === "/" && (
         <div 
           className="fixed left-0 right-0 z-40 md:hidden px-4 pointer-events-none"
           style={{ bottom: 'calc(64px + env(safe-area-inset-bottom, 0px) + 8px)' }}
