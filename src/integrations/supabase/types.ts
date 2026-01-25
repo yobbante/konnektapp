@@ -948,14 +948,14 @@ export type Database = {
           {
             foreignKeyName: "gp_response_tracking_order_id_fkey"
             columns: ["order_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "gp_contact_release"
             referencedColumns: ["order_id"]
           },
           {
             foreignKeyName: "gp_response_tracking_order_id_fkey"
             columns: ["order_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },

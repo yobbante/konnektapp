@@ -20,6 +20,8 @@ import { AdminPermissionsManager } from "@/components/admin/AdminPermissionsMana
 import { AdminDropdownMenu } from "@/components/admin/AdminDropdownMenu";
 import { ExchangeRatesManager } from "@/components/admin/ExchangeRatesManager";
 import { GPPriceHistoryChart } from "@/components/admin/GPPriceHistoryChart";
+import { AdminInsuranceTiers } from "@/components/admin/AdminInsuranceTiers";
+import { AdminMessageTemplates } from "@/components/admin/AdminMessageTemplates";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { assertValidGpStatus, type GpStatus } from "@/lib/enumMappings";
 
@@ -421,6 +423,14 @@ export default function AdminDashboard() {
           {/* Permissions & Roles */}
           <TabsContent value="permissions">
             <AdminPermissionsManager />
+          </TabsContent>
+
+          {/* Configuration - Insurance & Templates */}
+          <TabsContent value="config" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <AdminInsuranceTiers />
+              <AdminMessageTemplates />
+            </div>
           </TabsContent>
         </Tabs>
       </div>
