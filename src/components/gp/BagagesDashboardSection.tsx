@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { 
   Luggage, Plane, MapPin, Package, CheckCircle, 
   XCircle, MessageCircle, Clock, Weight, ArrowRight,
-  Edit, Euro, Settings, Eye, Plus
+  Edit, Euro, Settings, Eye, Plus, Users
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { RestrictionsManager } from "@/components/gp/RestrictionsManager";
 import { GPOrderDetailsSheet } from "@/components/gp/GPOrderDetailsSheet";
 import { MissionStatusUpdater } from "@/components/gp/MissionStatusUpdater";
 import { CreateBaggageVoyageDialog } from "@/components/gp/CreateBaggageVoyageDialog";
+import { CustomRequestsTab } from "@/components/gp/dashboard/CustomRequestsTab";
 import { getCurrencySymbol, formatPricePerKg } from "@/components/ui/currency-selector";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -229,7 +230,7 @@ export function BagagesDashboardSection({
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full grid grid-cols-4">
+        <TabsList className="w-full grid grid-cols-5">
           <TabsTrigger value="voyages" className="text-xs">
             <Plane className="w-3 h-3 mr-1" />
             Voyages
@@ -246,6 +247,10 @@ export function BagagesDashboardSection({
           <TabsTrigger value="missions" className="text-xs">
             <Clock className="w-3 h-3 mr-1" />
             Missions
+          </TabsTrigger>
+          <TabsTrigger value="custom" className="text-xs">
+            <Users className="w-3 h-3 mr-1" />
+            Perso.
           </TabsTrigger>
           <TabsTrigger value="tarifs" className="text-xs">
             <Settings className="w-3 h-3 mr-1" />
@@ -323,6 +328,11 @@ export function BagagesDashboardSection({
               />
             ))
           )}
+        </TabsContent>
+
+        {/* Custom Requests Tab - Demandes Personnalisées */}
+        <TabsContent value="custom" className="mt-3">
+          <CustomRequestsTab gpId={gpId} />
         </TabsContent>
 
         {/* Tarifs Tab */}
