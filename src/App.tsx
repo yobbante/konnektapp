@@ -79,7 +79,6 @@ const App = () => (
             <Route path="/gp" element={<GPLanding />} />
             <Route path="/gp/inscription" element={<GPRegistration />} />
             <Route path="/gp/dashboard" element={<GPDashboard />} />
-            <Route path="/gp/bagages" element={<GPBagagesInternationalDashboard />} />
             <Route path="/gp/bagages/inscription" element={<GPBagagesRegistration />} />
             <Route path="/gp/requests" element={<GPCustomRequests />} />
             <Route path="/gp/demandes" element={<GPCustomRequests />} />

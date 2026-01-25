@@ -15,8 +15,9 @@ interface MobileAuthIndicatorProps {
 export function MobileAuthIndicator({ isAuthenticated }: MobileAuthIndicatorProps) {
   const location = useLocation();
   
-  // Hide on auth pages or when authenticated
-  if (isAuthenticated || location.pathname.startsWith("/auth")) return null;
+  // Hide everywhere EXCEPT homepage when not authenticated
+  // Only show on "/" for non-authenticated users
+  if (isAuthenticated || location.pathname !== "/") return null;
 
   return (
     <AnimatePresence>
