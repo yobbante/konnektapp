@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { 
-  ArrowRight, ArrowLeft, User, Luggage, MapPin, 
-  CheckCircle, Phone, Calendar, Weight, Plane,
-  Mail, Lock, Eye, EyeOff, ShieldX, Euro, AlertTriangle, Coins, Building
+  ArrowRight, ArrowLeft, Luggage, 
+  CheckCircle, Lock, Eye, EyeOff, Euro, AlertTriangle, Coins, Plane,
+  Mail, User
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,17 +15,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
 import { DepartureCalendarView } from "@/components/gp/DepartureCalendarView";
-import { STANDARD_RESTRICTIONS } from "@/components/gp/BaggageRestrictions";
-import { InteractiveRouteSelector } from "@/components/gp/InteractiveRouteSelector";
-import { GPContactAddressesForm } from "@/components/gp/GPContactAddressesForm";
-import { WeightTiersPricing } from "@/components/gp/WeightTiersPricing";
+import { RouteLinkedProfileForm, type RouteLinkedProfileData } from "@/components/gp/RouteLinkedProfileForm";
 import { CurrencySelector, getCurrencySymbol, type CurrencyCode } from "@/components/ui/currency-selector";
-
-// Mandatory restrictions (must be accepted)
-const MANDATORY_RESTRICTIONS = ["marques", "objets_precieux", "contrefacons"];
 
 // Flat rate object types (matching the database)
 const DEFAULT_FLAT_RATE_OBJECTS = [
@@ -45,15 +37,6 @@ interface WeightTier {
   is_active: boolean;
 }
 
-// Contact addresses interface
-interface ContactAddresses {
-  deposit_address: string;
-  reception_address: string;
-  phone: string;
-  phone_secondary: string;
-  whatsapp_phone: string;
-}
-
 export default function GPBagagesRegistration() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -70,38 +53,33 @@ export default function GPBagagesRegistration() {
     confirmPassword: "",
   });
 
-  // Step 2: GP Essential Info + Contact Addresses (V1 mandatory)
-  const [profileData, setProfileData] = useState({
+  // Step 2: Profile + Route + Addresses (combined)
+  const [profileData, setProfileData] = useState<RouteLinkedProfileData>({
     fullName: "",
-    phone: "",
     originCity: "Dakar",
     originCountry: "SN",
     destinationCity: "Paris",
     destinationCountry: "FR",
-    photoUrl: "",
-    languages: [] as string[],
+    originAddress: "",
+    originPhone: "",
+    destinationAddress: "",
+    destinationPhone: "",
+    whatsappPhone: "origin",
   });
-
-  // Contact addresses (PRD V1 Section 9 - mandatory)
-  const [contactAddresses, setContactAddresses] = useState<ContactAddresses>({
-    deposit_address: "",
-    reception_address: "",
-    phone: "",
-    phone_secondary: "",
-    whatsapp_phone: "primary",
-  });
-  const [contactAddressesValid, setContactAddressesValid] = useState(false);
+  const [profileValid, setProfileValid] = useState(false);
 
   // Step 3: Voyages (calendrier)
   const [departures, setDepartures] = useState<any[]>([]);
 
-  // Step 4: Restrictions (obligatoire)
-  const [acceptedRestrictions, setAcceptedRestrictions] = useState<string[]>([]);
-
-  // Step 5: Pricing with weight tiers (PRD V1 Section 5.1)
+  // Step 4: Pricing with weight tiers
   const [pricePerKg, setPricePerKg] = useState("");
   const [defaultCurrency, setDefaultCurrency] = useState<CurrencyCode>("XOF");
-  const [weightTiers, setWeightTiers] = useState<WeightTier[]>([]);
+  const [weightTiers, setWeightTiers] = useState<WeightTier[]>([
+    { min_weight: 0, max_weight: 5, price_per_kg: 0, currency: "XOF", is_active: true },
+    { min_weight: 5, max_weight: 10, price_per_kg: 0, currency: "XOF", is_active: true },
+    { min_weight: 10, max_weight: 20, price_per_kg: 0, currency: "XOF", is_active: true },
+    { min_weight: 20, max_weight: 30, price_per_kg: 0, currency: "XOF", is_active: true },
+  ]);
   const [flatRatePricing, setFlatRatePricing] = useState<Map<string, { price: string; isActive: boolean }>>(
     new Map(DEFAULT_FLAT_RATE_OBJECTS.map(o => [o.id, { price: o.defaultPrice.toString(), isActive: false }]))
   );
@@ -143,7 +121,6 @@ export default function GPBagagesRegistration() {
           setProfileData(prev => ({
             ...prev,
             fullName: profile.full_name || "",
-            phone: profile.phone || "",
           }));
           // Skip auth step if already logged in
           setStep(2);
@@ -153,18 +130,18 @@ export default function GPBagagesRegistration() {
     loadExistingProfile();
   }, [navigate, toast]);
 
+  // New 4-step flow
   const steps = [
     { num: 1, label: "Accès", icon: Lock },
-    { num: 2, label: "Profil", icon: User },
-    { num: 3, label: "Adresses", icon: Building },
-    { num: 4, label: "Voyages", icon: Plane },
-    { num: 5, label: "Tarifs", icon: Euro },
+    { num: 2, label: "Profil & Trajet", icon: User },
+    { num: 3, label: "Voyages", icon: Plane },
+    { num: 4, label: "Tarifs", icon: Euro },
   ];
 
   const validateStep = (currentStep: number): boolean => {
     switch (currentStep) {
       case 1:
-        if (existingUser) return true; // Already logged in
+        if (existingUser) return true;
         if (!authData.email) {
           toast({ title: "Email requis", description: "Veuillez entrer votre email", variant: "destructive" });
           return false;
@@ -187,26 +164,17 @@ export default function GPBagagesRegistration() {
         return true;
 
       case 2:
-        if (!profileData.fullName || !profileData.phone) {
-          toast({ title: "Champs requis", description: "Nom et téléphone sont obligatoires", variant: "destructive" });
-          return false;
-        }
-        return true;
-
-      case 3:
-        // Contact addresses are MANDATORY per PRD V1 Section 9
-        if (!contactAddressesValid) {
+        if (!profileValid) {
           toast({ 
-            title: "Adresses incomplètes", 
-            description: "Veuillez remplir toutes les adresses et numéros de téléphone obligatoires",
+            title: "Profil incomplet", 
+            description: "Veuillez remplir tous les champs obligatoires",
             variant: "destructive"
           });
           return false;
         }
         return true;
 
-      case 4:
-        // Voyages can be added later, but encourage at least one
+      case 3:
         if (departures.length === 0) {
           toast({ 
             title: "Conseil", 
@@ -215,8 +183,7 @@ export default function GPBagagesRegistration() {
         }
         return true;
 
-      case 5:
-        // Weight tiers validation - at least some prices should be set
+      case 4:
         const hasValidTiers = weightTiers.some(t => t.price_per_kg > 0);
         if (!hasValidTiers && (!pricePerKg || parseFloat(pricePerKg) <= 0)) {
           toast({ 
@@ -239,7 +206,6 @@ export default function GPBagagesRegistration() {
     setLoading(true);
     try {
       if (isLogin) {
-        // Login
         const { data, error } = await supabase.auth.signInWithPassword({
           email: authData.email,
           password: authData.password,
@@ -264,19 +230,17 @@ export default function GPBagagesRegistration() {
           setProfileData(prev => ({
             ...prev,
             fullName: profile?.full_name || prev.fullName,
-            phone: profile?.phone || prev.phone,
           }));
 
           toast({ title: "Connexion réussie", description: "Continuez votre inscription GP" });
         }
         return true;
       } else {
-        // Sign up
         const { data, error } = await supabase.auth.signUp({
           email: authData.email,
           password: authData.password,
           options: {
-            emailRedirectTo: `${window.location.origin}/gp/bagages`,
+            emailRedirectTo: `${window.location.origin}/gp/bagages/inscription`,
           }
         });
 
@@ -314,14 +278,12 @@ export default function GPBagagesRegistration() {
   const handleNext = async () => {
     if (!validateStep(step)) return;
 
-    // Special handling for auth step
     if (step === 1 && !existingUser) {
       const success = await handleAuthStep();
       if (!success) return;
     }
 
-    setStep(prev => Math.min(prev + 1, 5));
-    // Scroll to top on step change
+    setStep(prev => Math.min(prev + 1, 4));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -329,54 +291,49 @@ export default function GPBagagesRegistration() {
     if (step === 1) {
       navigate("/gp/inscription");
     } else if (step === 2 && existingUser) {
-      // If logged in, go back to registration selection
       navigate("/gp/inscription");
     } else {
       setStep(prev => Math.max(prev - 1, 1));
     }
-    // Scroll to top on step change
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-  // Route selection now handled by InteractiveRouteSelector component
 
   const handleAddDeparture = async (data: any) => {
-    // Store departure locally for now, will save to DB on final submit
     setDepartures(prev => [...prev, {
       id: `temp-${Date.now()}`,
       date: data.date,
-      originCity: data.originCity,
-      originCountry: data.originCountry,
-      destinationCity: data.destinationCity,
-      destinationCountry: data.destinationCountry,
+      originCity: data.originCity || profileData.originCity,
+      originCountry: data.originCountry || profileData.originCountry,
+      destinationCity: data.destinationCity || profileData.destinationCity,
+      destinationCountry: data.destinationCountry || profileData.destinationCountry,
       capacity: data.capacity,
       availableCapacity: data.capacity,
       pricePerKg: data.pricePerKg,
       type: data.type,
       status: "open",
     }]);
-    toast({ title: "Voyage ajouté", description: `${data.originCity} → ${data.destinationCity}` });
-  };
-
-  const toggleRestriction = (id: string) => {
-    setAcceptedRestrictions(prev => 
-      prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]
-    );
+    toast({ title: "Voyage ajouté", description: `${data.originCity || profileData.originCity} → ${data.destinationCity || profileData.destinationCity}` });
   };
 
   const handleFlatRateChange = (id: string, field: "price" | "isActive", value: string | boolean) => {
     setFlatRatePricing(prev => {
       const newMap = new Map(prev);
       const current = newMap.get(id) || { price: "", isActive: false };
-      newMap.set(id, { 
-        ...current, 
-        [field]: value 
-      });
+      newMap.set(id, { ...current, [field]: value });
       return newMap;
     });
   };
 
+  const handleWeightTierChange = (index: number, field: keyof WeightTier, value: number | boolean) => {
+    setWeightTiers(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
   const handleSubmit = async () => {
-    if (!validateStep(5)) return;
+    if (!validateStep(4)) return;
     if (!existingUser) {
       toast({ title: "Erreur", description: "Veuillez vous connecter d'abord", variant: "destructive" });
       return;
@@ -388,64 +345,62 @@ export default function GPBagagesRegistration() {
       await supabase
         .from("profiles")
         .update({
-          phone: contactAddresses.phone || profileData.phone,
+          phone: profileData.originPhone,
           full_name: profileData.fullName,
           is_gp: true,
         })
         .eq("user_id", existingUser.id);
 
-      // Create GP profile with V1 mandatory fields (PRD Section 9)
-      const whatsappPhone = contactAddresses.whatsapp_phone === "primary" 
-        ? contactAddresses.phone 
-        : contactAddresses.phone_secondary;
+      // Determine WhatsApp phone
+      const whatsappPhone = profileData.whatsappPhone === "origin" 
+        ? profileData.originPhone 
+        : profileData.destinationPhone;
 
+      // Create GP profile with route-linked contact fields
       const { data: gpProfile, error: gpError } = await supabase
         .from("gp_profiles")
         .insert({
           user_id: existingUser.id,
           business_name: profileData.fullName,
           gp_type: "bagages_international",
-          phone: contactAddresses.phone || profileData.phone,
+          phone: profileData.originPhone,
           whatsapp: whatsappPhone,
-          // V1 mandatory contact fields
-          deposit_address: contactAddresses.deposit_address,
-          reception_address: contactAddresses.reception_address || contactAddresses.deposit_address,
-          phone_secondary: contactAddresses.phone_secondary,
+          deposit_address: profileData.originAddress,
+          reception_address: profileData.destinationAddress,
+          phone_secondary: profileData.destinationPhone,
           whatsapp_phone: whatsappPhone,
-          city: profileData.originCity || "International",
+          city: profileData.originCity,
           country_code: profileData.originCountry,
           status: "pending",
-          explicit_restrictions: acceptedRestrictions,
           default_currency: defaultCurrency,
+          international_destinations: [`${profileData.destinationCity}, ${profileData.destinationCountry}`],
+          zones_covered: [`${profileData.originCity}, ${profileData.originCountry}`],
         })
         .select()
         .single();
 
       if (gpError) throw gpError;
 
-      // Save weight tiers (PRD V1 Section 5.1)
-      if (weightTiers.length > 0) {
-        const tiersToInsert = weightTiers
-          .filter(t => t.price_per_kg > 0)
-          .map(t => ({
-            gp_id: gpProfile.id,
-            min_weight: t.min_weight,
-            max_weight: t.max_weight,
-            price_per_kg: t.price_per_kg,
-            currency: defaultCurrency,
-            is_active: true,
-          }));
+      // Save weight tiers
+      const tiersToInsert = weightTiers
+        .filter(t => t.price_per_kg > 0)
+        .map(t => ({
+          gp_id: gpProfile.id,
+          min_weight: t.min_weight,
+          max_weight: t.max_weight,
+          price_per_kg: t.price_per_kg,
+          currency: defaultCurrency,
+          is_active: true,
+        }));
 
-        if (tiersToInsert.length > 0) {
-          await supabase.from("gp_weight_tiers").insert(tiersToInsert);
-        }
+      if (tiersToInsert.length > 0) {
+        await supabase.from("gp_weight_tiers").insert(tiersToInsert);
       }
 
       // Create voyage offers
       for (const dep of departures) {
-        // Use average price from tiers or fallback to pricePerKg
-        const avgPrice = weightTiers.length > 0 
-          ? weightTiers.reduce((sum, t) => sum + t.price_per_kg, 0) / weightTiers.length
+        const avgPrice = weightTiers.length > 0 && tiersToInsert.length > 0
+          ? tiersToInsert.reduce((sum, t) => sum + t.price_per_kg, 0) / tiersToInsert.length
           : (pricePerKg ? parseFloat(pricePerKg) : 8);
 
         await supabase
@@ -462,13 +417,11 @@ export default function GPBagagesRegistration() {
             price_per_kg: avgPrice,
             currency: defaultCurrency,
             transport_type: "bagages_international",
-            explicit_restrictions: acceptedRestrictions,
             status: "active",
           });
       }
 
-      // Save flat rate pricing - sync with gp_flat_rate_pricing table
-      // First, load object type IDs from flat_rate_object_types
+      // Save flat rate pricing
       const { data: objectTypes } = await supabase
         .from("flat_rate_object_types")
         .select("id, name")
@@ -518,18 +471,18 @@ export default function GPBagagesRegistration() {
       <Header />
       
       <main className="pt-24 pb-20">
-        <div className="container max-w-lg">
+        <div className="container max-w-lg px-4">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-8"
+            className="text-center mb-6"
           >
-            <div className="w-16 h-16 mx-auto bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center mb-4">
+            <div className="w-16 h-16 mx-auto bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
               <Luggage className="w-8 h-8 text-white" />
             </div>
             <Badge variant="gold" className="mb-3">Inscription rapide</Badge>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+            <h1 className="text-2xl font-bold text-foreground mb-2">
               Devenir GP Via Bagages
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -537,8 +490,8 @@ export default function GPBagagesRegistration() {
             </p>
           </motion.div>
 
-          {/* Progress */}
-          <div className="flex items-center justify-center gap-1 mb-8 overflow-x-auto pb-2">
+          {/* Progress - 4 steps now */}
+          <div className="flex items-center justify-center gap-1 mb-6 overflow-x-auto pb-2">
             {steps.map((s, i) => (
               <div key={s.num} className="flex items-center">
                 <div className="flex flex-col items-center">
@@ -551,12 +504,12 @@ export default function GPBagagesRegistration() {
                   >
                     {step > s.num ? <CheckCircle className="w-5 h-5" /> : <s.icon className="w-4 h-4" />}
                   </div>
-                  <span className={`text-[10px] mt-1 ${step >= s.num ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+                  <span className={`text-[10px] mt-1 whitespace-nowrap ${step >= s.num ? "text-foreground font-medium" : "text-muted-foreground"}`}>
                     {s.label}
                   </span>
                 </div>
                 {i < steps.length - 1 && (
-                  <div className={`w-6 h-1 mx-0.5 rounded ${step > s.num ? "bg-secondary" : "bg-muted"}`} />
+                  <div className={`w-8 h-1 mx-1 rounded ${step > s.num ? "bg-secondary" : "bg-muted"}`} />
                 )}
               </div>
             ))}
@@ -589,7 +542,6 @@ export default function GPBagagesRegistration() {
                       </div>
                     ) : (
                       <>
-                        {/* Only show Inscription for non-connected users */}
                         <div className="text-center mb-2">
                           <p className="text-sm text-muted-foreground">
                             {isLogin ? "Connectez-vous pour continuer" : "Créez votre compte GP"}
@@ -604,7 +556,7 @@ export default function GPBagagesRegistration() {
                               id="email"
                               type="email"
                               placeholder="votre@email.com"
-                              className="pl-10"
+                              className="pl-10 h-12"
                               value={authData.email}
                               onChange={(e) => setAuthData({ ...authData, email: e.target.value })}
                             />
@@ -619,7 +571,7 @@ export default function GPBagagesRegistration() {
                               id="password"
                               type={showPassword ? "text" : "password"}
                               placeholder="••••••••"
-                              className="pl-10 pr-10"
+                              className="pl-10 pr-10 h-12"
                               value={authData.password}
                               onChange={(e) => setAuthData({ ...authData, password: e.target.value })}
                             />
@@ -642,13 +594,21 @@ export default function GPBagagesRegistration() {
                                 id="confirmPassword"
                                 type={showPassword ? "text" : "password"}
                                 placeholder="••••••••"
-                                className="pl-10"
+                                className="pl-10 h-12"
                                 value={authData.confirmPassword}
                                 onChange={(e) => setAuthData({ ...authData, confirmPassword: e.target.value })}
                               />
                             </div>
                           </div>
                         )}
+
+                        <button
+                          type="button"
+                          onClick={() => setIsLogin(!isLogin)}
+                          className="text-sm text-primary hover:underline w-full text-center pt-2"
+                        >
+                          {isLogin ? "Pas encore de compte ? S'inscrire" : "Déjà un compte ? Se connecter"}
+                        </button>
                       </>
                     )}
 
@@ -673,7 +633,7 @@ export default function GPBagagesRegistration() {
               </motion.div>
             )}
 
-            {/* Step 2: GP Essential Info */}
+            {/* Step 2: Combined Profile + Route + Addresses */}
             {step === 2 && (
               <motion.div
                 key="step2"
@@ -681,87 +641,19 @@ export default function GPBagagesRegistration() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
               >
-                <Card>
-                  <CardContent className="p-6 space-y-4">
-                    <div className="flex items-center gap-2 mb-4">
-                      <User className="w-5 h-5 text-secondary" />
-                      <h2 className="text-lg font-semibold">Vos informations</h2>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName">Nom & Prénom *</Label>
-                      <Input
-                        id="fullName"
-                        placeholder="Ex: Mamadou Diallo"
-                        value={profileData.fullName}
-                        onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Téléphone (WhatsApp) *</Label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="phone"
-                          type="tel"
-                          placeholder="+33 6 12 34 56 78"
-                          className="pl-10"
-                          value={profileData.phone}
-                          onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Les clients vous contacteront via WhatsApp
-                      </p>
-                    </div>
-
-                    {/* Interactive Route Selector with dropdowns and flags */}
-                    <InteractiveRouteSelector
-                      originCity={profileData.originCity}
-                      originCountry={profileData.originCountry}
-                      destinationCity={profileData.destinationCity}
-                      destinationCountry={profileData.destinationCountry}
-                      onOriginChange={(city, country) => setProfileData({ ...profileData, originCity: city, originCountry: country })}
-                      onDestinationChange={(city, country) => setProfileData({ ...profileData, destinationCity: city, destinationCountry: country })}
-                    />
-
-                    <div className="flex justify-between pt-4">
-                      <Button variant="ghost" onClick={handleBack}>
-                        <ArrowLeft className="w-5 h-5 mr-1" />
-                        Retour
-                      </Button>
-                      <Button variant="gold" onClick={handleNext}>
-                        Continuer
-                        <ArrowRight className="w-5 h-5 ml-1" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
-
-            {/* Step 3: Contact Addresses (V1 Mandatory) */}
-            {step === 3 && (
-              <motion.div
-                key="step3"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-              >
                 <div className="space-y-4">
-                  <GPContactAddressesForm
-                    initialData={contactAddresses}
+                  <RouteLinkedProfileForm
+                    initialData={profileData}
                     onChange={(data, isValid) => {
-                      setContactAddresses(data);
-                      setContactAddressesValid(isValid);
+                      setProfileData(data);
+                      setProfileValid(isValid);
                     }}
                     showValidation={true}
                   />
 
                   <Card>
                     <CardContent className="p-4">
-                      <div className="flex justify-between pt-2">
+                      <div className="flex justify-between">
                         <Button variant="ghost" onClick={handleBack}>
                           <ArrowLeft className="w-5 h-5 mr-1" />
                           Retour
@@ -777,10 +669,10 @@ export default function GPBagagesRegistration() {
               </motion.div>
             )}
 
-            {/* Step 4: Voyages Calendar */}
-            {step === 4 && (
+            {/* Step 3: Voyages Calendar */}
+            {step === 3 && (
               <motion.div
-                key="step4"
+                key="step3"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -798,6 +690,12 @@ export default function GPBagagesRegistration() {
                     <DepartureCalendarView
                       departures={departures}
                       onAddDeparture={handleAddDeparture}
+                      defaultRoute={{
+                        originCity: profileData.originCity,
+                        originCountry: profileData.originCountry,
+                        destinationCity: profileData.destinationCity,
+                        destinationCountry: profileData.destinationCountry,
+                      }}
                     />
 
                     {departures.length === 0 && (
@@ -805,6 +703,15 @@ export default function GPBagagesRegistration() {
                         <p className="text-sm text-amber-700 dark:text-amber-400 flex items-center gap-2">
                           <AlertTriangle className="w-4 h-4" />
                           Ajoutez au moins un voyage pour recevoir des demandes
+                        </p>
+                      </div>
+                    )}
+
+                    {departures.length > 0 && (
+                      <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                        <p className="text-sm text-green-700 dark:text-green-400 flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4" />
+                          {departures.length} voyage(s) programmé(s)
                         </p>
                       </div>
                     )}
@@ -824,10 +731,10 @@ export default function GPBagagesRegistration() {
               </motion.div>
             )}
 
-            {/* Step 5: Pricing with Weight Tiers (PRD V1 Section 5) */}
-            {step === 5 && (
+            {/* Step 4: Pricing */}
+            {step === 4 && (
               <motion.div
-                key="step5"
+                key="step4"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -855,33 +762,34 @@ export default function GPBagagesRegistration() {
                       />
                     </div>
 
-                    {/* Price per kg */}
-                    <div className="p-4 rounded-lg border bg-muted/30">
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <p className="font-medium">Prix au kilo</p>
-                          <p className="text-xs text-muted-foreground">Tarif standard par kilogramme</p>
+                    {/* Weight tiers */}
+                    <div className="space-y-3">
+                      <div>
+                        <p className="font-medium">Tarifs par palier de poids</p>
+                        <p className="text-xs text-muted-foreground">Définissez vos prix selon le poids</p>
+                      </div>
+
+                      {weightTiers.map((tier, index) => (
+                        <div key={index} className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {tier.min_weight}-{tier.max_weight} kg
+                          </span>
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            value={tier.price_per_kg || ""}
+                            onChange={(e) => handleWeightTierChange(index, "price_per_kg", parseFloat(e.target.value) || 0)}
+                            className="h-10 flex-1"
+                          />
+                          <span className="text-xs text-muted-foreground">{getCurrencySymbol(defaultCurrency)}/kg</span>
                         </div>
-                        <Weight className="w-5 h-5 text-muted-foreground" />
-                      </div>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          placeholder="8"
-                          value={pricePerKg}
-                          onChange={(e) => setPricePerKg(e.target.value)}
-                          className="pr-16"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                          {getCurrencySymbol(defaultCurrency)} / kg
-                        </span>
-                      </div>
+                      ))}
                     </div>
 
                     {/* Flat rate pricing */}
                     <div className="space-y-3">
                       <div>
-                        <p className="font-medium">Forfaits par objet</p>
+                        <p className="font-medium">Forfaits par objet (optionnel)</p>
                         <p className="text-xs text-muted-foreground">Prix fixes pour certains objets</p>
                       </div>
 
@@ -889,45 +797,32 @@ export default function GPBagagesRegistration() {
                         const pricing = flatRatePricing.get(obj.id) || { price: "", isActive: false };
                         
                         return (
-                          <div
-                            key={obj.id}
-                            className={`
-                              flex items-center gap-3 p-3 rounded-lg border transition-all
-                              ${pricing.isActive && pricing.price ? 'border-primary/50 bg-primary/5' : 'border-border'}
-                            `}
-                          >
-                            <div className="flex-1">
-                              <p className="text-sm font-medium">{obj.label}</p>
-                            </div>
+                          <div key={obj.id} className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
+                            <span className="text-sm flex-1">{obj.label}</span>
                             <Input
                               type="number"
                               placeholder={obj.defaultPrice.toString()}
                               value={pricing.price}
                               onChange={(e) => handleFlatRateChange(obj.id, "price", e.target.value)}
-                              className="w-20 h-8 text-sm text-center"
+                              className="h-10 w-24"
                             />
                             <span className="text-xs text-muted-foreground">{getCurrencySymbol(defaultCurrency)}</span>
-                            <Switch
-                              checked={pricing.isActive && !!pricing.price}
-                              onCheckedChange={(checked) => handleFlatRateChange(obj.id, "isActive", checked)}
-                              disabled={!pricing.price}
-                            />
                           </div>
                         );
                       })}
                     </div>
 
-                    <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-4">
-                      <Button variant="ghost" onClick={handleBack} className="w-full sm:w-auto">
+                    <div className="flex justify-between pt-4">
+                      <Button variant="ghost" onClick={handleBack}>
                         <ArrowLeft className="w-5 h-5 mr-1" />
                         Retour
                       </Button>
-                      <Button variant="gold" onClick={handleSubmit} disabled={loading} className="w-full sm:w-auto">
+                      <Button variant="gold" onClick={handleSubmit} disabled={loading}>
                         {loading ? (
                           <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
                         ) : (
                           <>
-                            S'inscrire
+                            Terminer
                             <CheckCircle className="w-5 h-5 ml-1" />
                           </>
                         )}
