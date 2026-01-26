@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CompareProvider, useCompare, CompareOffer } from "@/components/offers/OfferCompare";
 import { HomeAdvancedFilters, HomeFiltersState, DEFAULT_HOME_FILTERS } from "@/components/home/HomeAdvancedFilters";
 import { LoggedInHomeDashboard } from "@/components/home/LoggedInHomeDashboard";
+import { ActiveReservationBanner } from "@/components/client/ActiveReservationBanner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { formatPricePerKg } from "@/components/ui/currency-selector";
 import { ShipmentOfferCard } from "@/components/ShipmentOfferCard";
@@ -143,6 +144,9 @@ function IndexContent() {
 
   return (
     <div className="min-h-screen bg-background pb-safe">
+      {/* RÈGLE NOTIF-01: Bande persistante pour réservations acceptées */}
+      {isAuthenticated && !isGP && <ActiveReservationBanner />}
+      
       <PullToRefreshIndicator isRefreshing={isRefreshing} progress={progress} pullDistance={pullDistance} />
       <MobileHeader />
 

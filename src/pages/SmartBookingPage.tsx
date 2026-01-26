@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { EscrowPaymentFlow } from "@/components/escrow/EscrowPaymentFlow";
+import { MandatoryInsuranceChoice, type InsuranceChoice } from "@/components/booking/MandatoryInsuranceChoice";
 import { createAutoConversationAfterBooking } from "@/lib/autoChat";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -86,6 +87,12 @@ const RESTRICTION_LABELS: Record<string, string> = {
   oversized: "Objets surdimensionnés",
   documents_official: "Documents officiels",
   currency: "Devises/Argent liquide",
+  marques: "Marques",
+  objets_precieux: "Objets précieux",
+  contrefacons: "Contrefaçons",
+  liquides: "Liquides",
+  perissables: "Périssables",
+  dangereux: "Dangereux",
 };
 
 export default function SmartBookingPage() {
@@ -115,7 +122,16 @@ export default function SmartBookingPage() {
 
   // Form State - Section B: Articles forfaitaires (quantities stored in flatRateItems)
 
-  // Form State - Step 3: Validation
+  // Form State - Step 3: Insurance (RÈGLE INS-01)
+  const [insuranceChoice, setInsuranceChoice] = useState<InsuranceChoice>({
+    hasInsurance: false,
+    insuranceAmount: 0,
+    tierId: null,
+    declaredValue: 0,
+    choiceMade: false,
+  });
+
+  // Form State - Step 4: Validation
   const [acceptedRestrictions, setAcceptedRestrictions] = useState(false);
 
   // Load data
@@ -206,28 +222,37 @@ export default function SmartBookingPage() {
     }
   };
 
-  // Calculate totals
+  // Calculate totals - TARIFICATION LINÉAIRE V1 (pas de paliers)
+  // Formule: Prix = (Poids × Prix/kg) + Σ(Quantité × Prix forfaitaire) + Assurance
   const calculations = useMemo(() => {
     const pricePerKg = offer?.price_per_kg || 0;
     const weight = parseFloat(kiloWeight) || 0;
+    
+    // V1: Prix linéaire = kg × prix/kg (pas de paliers)
     const kiloTotal = weight * pricePerKg;
 
     const flatRateTotal = flatRateItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const flatRateCount = flatRateItems.reduce((sum, item) => sum + item.quantity, 0);
 
-    const grandTotal = kiloTotal + flatRateTotal;
+    const transportTotal = kiloTotal + flatRateTotal;
+    
+    // Add insurance if selected
+    const insuranceTotal = insuranceChoice.hasInsurance ? insuranceChoice.insuranceAmount : 0;
+    const grandTotal = transportTotal + insuranceTotal;
 
     return {
       weight,
       kiloTotal,
       flatRateTotal,
       flatRateCount,
+      transportTotal,
+      insuranceTotal,
       grandTotal,
       hasKiloItems: weight > 0,
       hasFlatRateItems: flatRateCount > 0,
       hasAnyItems: weight > 0 || flatRateCount > 0,
     };
-  }, [kiloWeight, flatRateItems, offer?.price_per_kg]);
+  }, [kiloWeight, flatRateItems, offer?.price_per_kg, insuranceChoice]);
 
   // Update flat-rate quantity
   const updateFlatRateQuantity = (id: string, delta: number) => {
@@ -240,7 +265,14 @@ export default function SmartBookingPage() {
     }));
   };
 
-  // Validation
+  // Get all selected content types for insurance
+  const getAllContentTypes = (): string[] => {
+    const types = [...kiloNatures];
+    flatRateItems.filter(i => i.quantity > 0).forEach(i => types.push(i.name));
+    return types;
+  };
+
+  // Validation - Updated for 5 steps with mandatory insurance
   const canProceed = (currentStep: number): boolean => {
     if (currentStep === 1) {
       // Must have items AND if kilo items, must have nature selected
@@ -253,6 +285,10 @@ export default function SmartBookingPage() {
       return true; // Calculation is auto
     }
     if (currentStep === 3) {
+      // RÈGLE INS-01: Choix assurance obligatoire
+      return insuranceChoice.choiceMade;
+    }
+    if (currentStep === 4) {
       return acceptedRestrictions;
     }
     return true;
@@ -267,7 +303,7 @@ export default function SmartBookingPage() {
     );
   };
 
-  // Navigation
+  // Navigation - 5 steps now
   const handleNext = () => {
     if (!canProceed(step)) {
       if (step === 1) {
@@ -279,11 +315,13 @@ export default function SmartBookingPage() {
           toast({ title: "Précision requise", description: "Veuillez préciser la nature de vos articles", variant: "destructive" });
         }
       } else if (step === 3) {
+        toast({ title: "Choix d'assurance requis", description: "Vous devez faire un choix d'assurance pour continuer", variant: "destructive" });
+      } else if (step === 4) {
         toast({ title: "Acceptation requise", description: "Vous devez accepter les règles du transporteur", variant: "destructive" });
       }
       return;
     }
-    setStep(prev => Math.min(prev + 1, 4));
+    setStep(prev => Math.min(prev + 1, 5));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -294,7 +332,7 @@ export default function SmartBookingPage() {
 
   // Submit
   const handleSubmit = async () => {
-    if (!canProceed(3)) {
+    if (!canProceed(4)) {
       toast({ title: "Veuillez accepter les conditions", variant: "destructive" });
       return;
     }
@@ -308,7 +346,7 @@ export default function SmartBookingPage() {
 
     setSubmitting(true);
     try {
-      // Create order
+      // Create order with insurance info
       const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}`;
       
       const { data: orderData, error: orderError } = await supabase
@@ -329,6 +367,13 @@ export default function SmartBookingPage() {
           logistics_status: "submitted",
           order_number: orderNumber,
           description: buildOrderDescription(),
+          // Insurance fields
+          has_insurance: insuranceChoice.hasInsurance,
+          insurance_amount: insuranceChoice.insuranceAmount,
+          insurance_tier_id: insuranceChoice.tierId,
+          declared_value: insuranceChoice.declaredValue || null,
+          content_nature: kiloNatures,
+          content_nature_other: kiloNatures.includes("autres") ? autresNature : null,
         })
         .select("id")
         .single();
@@ -547,21 +592,21 @@ export default function SmartBookingPage() {
           </div>
         </motion.div>
 
-        {/* Progress */}
-        <div className="flex items-center justify-center gap-2 mb-6">
-          {[1, 2, 3, 4].map((s) => (
+        {/* Progress - 5 steps */}
+        <div className="flex items-center justify-center gap-1 mb-6">
+          {[1, 2, 3, 4, 5].map((s) => (
             <div key={s} className="flex items-center">
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
                   step >= s
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground"
                 }`}
               >
-                {step > s ? <CheckCircle className="w-4 h-4" /> : s}
+                {step > s ? <CheckCircle className="w-3 h-3" /> : s}
               </div>
-              {s < 4 && (
-                <div className={`w-6 h-1 mx-1 rounded ${step > s ? "bg-primary" : "bg-muted"}`} />
+              {s < 5 && (
+                <div className={`w-4 h-0.5 mx-0.5 rounded ${step > s ? "bg-primary" : "bg-muted"}`} />
               )}
             </div>
           ))}
@@ -806,23 +851,84 @@ export default function SmartBookingPage() {
                     </div>
                   ))}
 
-                  {/* Total */}
-                  <div className="flex justify-between items-center pt-2">
-                    <p className="text-lg font-bold">Total</p>
-                    <p className="text-2xl font-bold text-primary">{calculations.grandTotal.toLocaleString()} {currencySymbol}</p>
+                  {/* Transport subtotal */}
+                  <div className="flex justify-between items-center py-2 border-t">
+                    <p className="text-sm text-muted-foreground">Sous-total transport</p>
+                    <p className="font-semibold">{calculations.transportTotal.toLocaleString()} {currencySymbol}</p>
+                  </div>
+
+                  {/* Insurance (will be added in step 3) */}
+                  <div className="flex justify-between items-center py-2 border-b">
+                    <p className="text-sm text-muted-foreground">Assurance Yobbanté</p>
+                    <p className="text-sm italic text-muted-foreground">→ Étape suivante</p>
                   </div>
                 </div>
 
                 <div className="p-3 bg-muted/50 rounded-xl">
                   <p className="text-xs text-muted-foreground text-center">
-                    Formule: <strong>(kg × prix/kg) + Σ(quantité × prix forfaitaire)</strong>
+                    Formule V1: <strong>(kg × prix/kg) + Σ(quantité × prix forfaitaire)</strong>
                   </p>
                 </div>
               </motion.div>
             )}
 
-            {/* STEP 3: Restrictions & Validation */}
+            {/* STEP 3: Insurance (RÈGLE INS-01) */}
             {step === 3 && (
+              <motion.div
+                key="step3"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-6"
+              >
+                <div className="flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-primary" />
+                  <h2 className="font-semibold text-lg">Assurance</h2>
+                </div>
+
+                <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl flex items-start gap-2">
+                  <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-muted-foreground">
+                    Vous devez faire un choix d'assurance avant de continuer. Cette étape est obligatoire.
+                  </p>
+                </div>
+
+                {/* Mandatory insurance choice component */}
+                <MandatoryInsuranceChoice
+                  selectedContentTypes={getAllContentTypes()}
+                  currency={currency as any}
+                  onChoiceChange={setInsuranceChoice}
+                />
+
+                {/* Updated total preview */}
+                {insuranceChoice.choiceMade && (
+                  <div className="p-4 bg-card border rounded-xl space-y-2">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Transport</span>
+                      <span>{calculations.transportTotal.toLocaleString()} {currencySymbol}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Assurance</span>
+                      <span className={insuranceChoice.hasInsurance ? "text-primary" : "text-muted-foreground"}>
+                        {insuranceChoice.hasInsurance 
+                          ? `+${calculations.insuranceTotal.toLocaleString()} ${currencySymbol}`
+                          : "Non souscrite"
+                        }
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <span className="font-semibold">Total</span>
+                      <span className="text-xl font-bold text-primary">
+                        {calculations.grandTotal.toLocaleString()} {currencySymbol}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* STEP 4: Restrictions & Validation */}
+            {step === 4 && (
               <motion.div
                 key="step3"
                 initial={{ opacity: 0, x: 20 }}
@@ -893,10 +999,10 @@ export default function SmartBookingPage() {
               </motion.div>
             )}
 
-            {/* STEP 4: Recap */}
-            {step === 4 && (
+            {/* STEP 5: Recap */}
+            {step === 5 && (
               <motion.div
-                key="step4"
+                key="step5"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -931,7 +1037,7 @@ export default function SmartBookingPage() {
                     <p className="text-sm text-muted-foreground mb-2">Contenu déclaré</p>
                     <div className="space-y-1">
                       {calculations.hasKiloItems && (
-                        <p className="text-sm">• {calculations.weight} kg (alimentaire/vêtements/tissus)</p>
+                        <p className="text-sm">• {calculations.weight} kg ({getKiloNatureLabels()})</p>
                       )}
                       {flatRateItems.filter(i => i.quantity > 0).map((item) => (
                         <p key={item.id} className="text-sm">• {item.quantity}× {item.label}</p>
@@ -939,8 +1045,35 @@ export default function SmartBookingPage() {
                     </div>
                   </div>
 
+                  {/* Insurance status */}
+                  <div className="pb-3 border-b">
+                    <div className="flex items-center gap-2">
+                      <Shield className={`w-4 h-4 ${insuranceChoice.hasInsurance ? 'text-primary' : 'text-muted-foreground'}`} />
+                      <span className="text-sm">
+                        {insuranceChoice.hasInsurance 
+                          ? `Assurance Yobbanté: ${calculations.insuranceTotal.toLocaleString()} ${currencySymbol}`
+                          : "Sans assurance"
+                        }
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Price breakdown */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Transport</span>
+                      <span>{calculations.transportTotal.toLocaleString()} {currencySymbol}</span>
+                    </div>
+                    {insuranceChoice.hasInsurance && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Assurance</span>
+                        <span>{calculations.insuranceTotal.toLocaleString()} {currencySymbol}</span>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Total */}
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center pt-2 border-t">
                     <p className="font-semibold">Total à payer</p>
                     <p className="text-2xl font-bold text-primary">{calculations.grandTotal.toLocaleString()} {currencySymbol}</p>
                   </div>
@@ -970,7 +1103,7 @@ export default function SmartBookingPage() {
               </Button>
             )}
             
-            {step < 4 ? (
+            {step < 5 ? (
               <Button onClick={handleNext} disabled={!canProceed(step)} className="flex-1 h-12">
                 Continuer
               </Button>
