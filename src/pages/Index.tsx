@@ -20,6 +20,7 @@ import { formatPricePerKg } from "@/components/ui/currency-selector";
 import { ShipmentOfferCard } from "@/components/ShipmentOfferCard";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh";
+import { AppLikeHome } from "@/components/home/AppLikeHome";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence";
 
@@ -150,7 +151,13 @@ function IndexContent() {
       <PullToRefreshIndicator isRefreshing={isRefreshing} progress={progress} pullDistance={pullDistance} />
       <MobileHeader />
 
-      {/* Logged-in User Dashboard */}
+      {/* APP-LIKE HOME: 1 écran, pas de scroll, conversion first */}
+      {/* Show for guests OR GPs - single screen app-like experience */}
+      {(!isAuthenticated || isGP) && (
+        <AppLikeHome />
+      )}
+
+      {/* Logged-in Client Dashboard - with scroll allowed */}
       {isAuthenticated && !isGP && (
         <section className="px-4 py-6">
           <LoggedInHomeDashboard
@@ -161,58 +168,8 @@ function IndexContent() {
         </section>
       )}
 
-      {/* Hero Section - Show for guests or GPs */}
-      {(!isAuthenticated || isGP) && (
-      <section className="px-4 py-6">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center"
-        >
-          <Badge variant="default" className="mb-4">
-            🌍 Leader du transport international
-          </Badge>
-          
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-3 leading-tight">
-            Envoyez vos colis <br />
-            <span className="text-primary">partout dans le monde</span>
-          </h1>
-          
-          <p className="text-muted-foreground text-sm mb-5">
-            Connectez-vous avec des transporteurs vérifiés
-          </p>
-
-          {/* Quick Actions */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-5">
-            <Link to="/demande" className="flex-1">
-              <Button variant="default" size="lg" className="w-full">
-                <Package className="w-5 h-5" />
-                Envoyer un colis
-                <ArrowRight className="w-5 h-5" />
-              </Button>
-            </Link>
-            {/* Show "Dashboard GP" for existing transporters, hide "Devenir transporteur" */}
-            {isGP ? (
-              <Link to="/gp/dashboard" className="flex-1">
-                <Button variant="outline" size="lg" className="w-full">
-                  <Truck className="w-5 h-5" />
-                  Mon Dashboard GP
-                </Button>
-              </Link>
-            ) : (
-              <Link to="/gp/inscription" className="flex-1">
-                <Button variant="outline" size="lg" className="w-full">
-                  <Truck className="w-5 h-5" />
-                  Devenir transporteur
-                </Button>
-              </Link>
-            )}
-          </div>
-        </motion.div>
-      </section>
-      )}
-
-      {/* Main Content */}
+      {/* Main Content - Only shown for authenticated clients (scroll allowed for them) */}
+      {isAuthenticated && !isGP && (
       <section className="px-4 py-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-foreground text-lg">Offres disponibles</h2>
@@ -380,8 +337,10 @@ function IndexContent() {
           </div>
         </div>
       </section>
+      )}
 
-      {/* Quick Stats */}
+      {/* Quick Stats - Only for authenticated clients */}
+      {isAuthenticated && !isGP && (
       <section className="px-4 py-4">
         <div className="grid grid-cols-3 gap-3">
           <div className="mobile-card text-center">
@@ -398,8 +357,10 @@ function IndexContent() {
           </div>
         </div>
       </section>
+      )}
 
-      {/* Why Us */}
+      {/* Why Us - Only for authenticated clients */}
+      {isAuthenticated && !isGP && (
       <section className="px-4 py-4">
         <h2 className="font-semibold text-foreground mb-4">Pourquoi nous choisir</h2>
         <div className="grid grid-cols-2 gap-3">
@@ -413,42 +374,10 @@ function IndexContent() {
           </div>
         </div>
       </section>
+      )}
 
-      {/* Transporter CTA - Different for GPs vs non-GPs */}
-      <section className="px-4 py-6 mb-4">
-        <div className="bg-primary rounded-2xl p-5 text-center">
-          <Truck className="w-10 h-10 text-primary-foreground mx-auto mb-3" />
-          {isGP ? (
-            <>
-              <h3 className="font-bold text-primary-foreground mb-2">Gérez vos missions</h3>
-              <p className="text-primary-foreground/80 text-sm mb-4">
-                Accédez à votre tableau de bord et gérez vos offres
-              </p>
-              <Link to="/gp/dashboard">
-                <Button variant="secondary" size="default" className="w-full">
-                  Accéder au Dashboard
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </Link>
-            </>
-          ) : (
-            <>
-              <h3 className="font-bold text-primary-foreground mb-2">Vous êtes transporteur ?</h3>
-              <p className="text-primary-foreground/80 text-sm mb-4">
-                Rejoignez notre réseau et développez votre activité
-              </p>
-              <Link to="/gp/inscription">
-                <Button variant="secondary" size="default" className="w-full">
-                  Devenir transporteur
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </Link>
-            </>
-          )}
-        </div>
-      </section>
-
-      {/* Install PWA CTA - Compact */}
+      {/* Install PWA CTA - Only for authenticated clients */}
+      {isAuthenticated && !isGP && (
       <section className="px-4 pb-20 mb-4">
         <Link to="/install">
           <div className="bg-gradient-to-r from-emerald-600 to-teal-500 rounded-xl p-4 flex items-center gap-4 hover:shadow-lg transition-shadow">
@@ -463,6 +392,7 @@ function IndexContent() {
           </div>
         </Link>
       </section>
+      )}
 
       <MobileNav />
     </div>

@@ -160,23 +160,7 @@ export function MobileNav() {
         </div>
       </nav>
       
-      {/* Indicateur d'inscription - UNIQUEMENT sur la page d'accueil et non connecté */}
-      {!isAuthenticated && location.pathname === "/" && (
-        <div 
-          className="fixed left-0 right-0 z-40 md:hidden px-4 pointer-events-none"
-          style={{ bottom: 'calc(64px + env(safe-area-inset-bottom, 0px) + 8px)' }}
-        >
-          <Link to="/auth" className="pointer-events-auto">
-            <div className="bg-primary/95 backdrop-blur-sm rounded-full py-2 px-4 shadow-md border border-primary/30 max-w-[280px] mx-auto">
-              <div className="flex items-center justify-center gap-2 text-primary-foreground">
-                <User className="w-4 h-4" />
-                <span className="text-sm font-medium">Rejoignez Yobbanté</span>
-                <span className="bg-white/20 rounded-full px-2 py-0.5 text-xs">→</span>
-              </div>
-            </div>
-          </Link>
-        </div>
-      )}
+      {/* Indicateur d'inscription - masqué en mode app-like (les CTAs sont dans AppLikeHome) */}
     </>
   );
 }
