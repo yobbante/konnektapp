@@ -3,7 +3,7 @@ import GPBagagesRegistration from "./pages/GPBagagesRegistration";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { AuthGuard } from "@/components/auth/AuthGuard";
@@ -19,14 +19,12 @@ import DemandeEnvoi from "./pages/DemandeEnvoi";
 import CustomRequest from "./pages/CustomRequest";
 import GPLanding from "./pages/GPLanding";
 import GPRegistration from "./pages/GPRegistration";
-import GPDashboard from "./pages/GPDashboard";
 import GPDemandesPage from "./pages/gp/GPDemandesPage";
 import GPEnCoursPage from "./pages/gp/GPEnCoursPage";
 import GPHistoriquePage from "./pages/gp/GPHistoriquePage";
 import GPCalendrierPage from "./pages/gp/GPCalendrierPage";
 import GPTarificationPage from "./pages/gp/GPTarificationPage";
 import GPProfilPublicPage from "./pages/gp/GPProfilPublicPage";
-import GPBagagesInternationalDashboard from "./pages/GPBagagesInternationalDashboard";
 import GPCustomRequests from "./pages/GPCustomRequests";
 import GPOrderDetail from "./pages/GPOrderDetail";
 import ClientDashboard from "./pages/ClientDashboard";
@@ -42,7 +40,6 @@ import AdminGPProfile from "./pages/AdminGPProfile";
 import AdminOrderDetail from "./pages/AdminOrderDetail";
 import PostBookingForm from "./pages/PostBookingForm";
 import BookingConfirmation from "./pages/BookingConfirmation";
-// Profile.tsx is now replaced by ClientDashboard (legacy support kept via routes)
 import GPProfile from "./pages/GPProfile";
 import TransporterProfile from "./pages/TransporterProfile";
 import Favorites from "./pages/Favorites";
@@ -72,7 +69,9 @@ const App = () => (
           <RoleSwitchPopup />
           <AuthGuard>
           <Routes>
-            {/* PUBLIC ROUTES - Accessibles sans authentification */}
+            {/* ============================================
+                PUBLIC ROUTES - Accessibles sans authentification
+            ============================================ */}
             <Route path="/" element={<Index />} />
             <Route path="/offres" element={<Offres />} />
             <Route path="/offres/:id" element={<OfferDetail />} />
@@ -82,7 +81,9 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/install" element={<Install />} />
             
-            {/* CLIENT ROUTES - Dashboard client unifié */}
+            {/* ============================================
+                CLIENT ROUTES - Dashboard client unifié
+            ============================================ */}
             <Route path="/demande" element={<DemandeEnvoi />} />
             <Route path="/demande-personnalisee" element={<CustomRequest />} />
             <Route path="/quote-confirmation" element={<QuoteConfirmation />} />
@@ -99,11 +100,15 @@ const App = () => (
             <Route path="/order/:orderId/complete" element={<PostBookingForm />} />
             <Route path="/booking/confirmation/:orderId" element={<BookingConfirmation />} />
             
-            {/* GP/TRANSPORTER ROUTES - Dashboard transporteur */}
+            {/* ============================================
+                GP/TRANSPORTER ROUTES - Dashboard transporteur épuré
+                /gp/dashboard redirige vers /gp/demandes (page principale)
+            ============================================ */}
             <Route path="/gp" element={<GPLanding />} />
             <Route path="/gp/inscription" element={<GPRegistration />} />
             <Route path="/gp/bagages/inscription" element={<GPBagagesRegistration />} />
-            <Route path="/gp/dashboard" element={<GPDashboard />} />
+            {/* Redirection: /gp/dashboard → /gp/demandes */}
+            <Route path="/gp/dashboard" element={<Navigate to="/gp/demandes" replace />} />
             <Route path="/gp/demandes" element={<GPDemandesPage />} />
             <Route path="/gp/en-cours" element={<GPEnCoursPage />} />
             <Route path="/gp/historique" element={<GPHistoriquePage />} />
@@ -114,7 +119,9 @@ const App = () => (
             <Route path="/gp/order/:orderId" element={<GPOrderDetail />} />
             <Route path="/transporter/profile" element={<TransporterProfile />} />
             
-            {/* ADMIN ROUTES - Dashboard admin */}
+            {/* ============================================
+                ADMIN ROUTES - Dashboard admin
+            ============================================ */}
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/departures" element={<AdminDepartures />} />
             <Route path="/admin/orders" element={<AdminOrders />} />
@@ -122,11 +129,12 @@ const App = () => (
             <Route path="/admin/order/:orderId" element={<AdminOrderDetail />} />
             <Route path="/admin/messages" element={<AdminMessages />} />
             
-            {/* LEGACY REDIRECTS - Redirige les anciennes routes */}
-            <Route path="/profil" element={<ClientDashboard />} />
-            <Route path="/profile" element={<ClientDashboard />} />
-            <Route path="/demande/personnalisee" element={<CustomRequest />} />
-            <Route path="/gp/demandes" element={<GPCustomRequests />} />
+            {/* ============================================
+                LEGACY REDIRECTS - Routes obsolètes vers nouvelles
+            ============================================ */}
+            <Route path="/profil" element={<Navigate to="/client/dashboard" replace />} />
+            <Route path="/profile" element={<Navigate to="/client/dashboard" replace />} />
+            <Route path="/demande/personnalisee" element={<Navigate to="/demande-personnalisee" replace />} />
             
             {/* 404 - Catch-all */}
             <Route path="*" element={<NotFound />} />

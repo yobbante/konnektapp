@@ -2,20 +2,13 @@ import { ReactNode, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
   Truck, Bell, Package, Clock, Calendar, 
-  DollarSign, User, History, ChevronDown 
+  DollarSign, User, History, Menu 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useDashboardTheme } from "@/hooks/useDashboardTheme";
 import { GPNotificationsDropdown } from "@/components/gp/dashboard/GPNotificationsDropdown";
-import { GPMobileNav } from "@/components/layout/MobileNav";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { GPDashboardHubSheet } from "@/components/layout/GPDashboardHubSheet";
 import { cn } from "@/lib/utils";
 
 interface GPDashboardLayoutProps {
@@ -27,6 +20,7 @@ interface GPDashboardLayoutProps {
     status: string;
   };
   pendingCount?: number;
+  activeOrdersCount?: number;
   activeTab?: string;
   onTabChange?: (tab: string) => void;
 }
@@ -40,21 +34,20 @@ interface NavTab {
 }
 
 /**
- * GPDashboardLayout V1 - Layout épuré pour Dashboard Transporteur
+ * GPDashboardLayout V2 - Layout avec menu hub central
  * 
  * Structure:
- * - Header avec statut et notifications
+ * - Header avec statut, notifications et menu hub
  * - Navigation interne par onglets (tabs horizontaux)
  * - Contenu principal
- * - Bottom nav mobile global
  * 
  * Principe: Dashboard = outil de travail
- * ❌ Pas de paramètres, pas de wallet, pas de légal
  */
 export function GPDashboardLayout({
   children,
   gpProfile,
   pendingCount = 0,
+  activeOrdersCount = 0,
   activeTab = "demandes",
   onTabChange,
 }: GPDashboardLayoutProps) {
@@ -62,11 +55,12 @@ export function GPDashboardLayout({
   const location = useLocation();
   const theme = useDashboardTheme("partner");
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showHubMenu, setShowHubMenu] = useState(false);
 
   // Navigation tabs for GP Dashboard
   const navTabs: NavTab[] = [
-    { id: "demandes", label: "Demandes", icon: Package, path: "/gp/dashboard", badge: pendingCount },
-    { id: "en-cours", label: "En cours", icon: Clock, path: "/gp/en-cours" },
+    { id: "demandes", label: "Demandes", icon: Package, path: "/gp/demandes", badge: pendingCount },
+    { id: "en-cours", label: "En cours", icon: Clock, path: "/gp/en-cours", badge: activeOrdersCount },
     { id: "historique", label: "Historique", icon: History, path: "/gp/historique" },
     { id: "calendrier", label: "Départs", icon: Calendar, path: "/gp/calendrier" },
     { id: "tarifs", label: "Tarifs", icon: DollarSign, path: "/gp/tarification" },
@@ -152,6 +146,23 @@ export function GPDashboardLayout({
                   </span>
                 )}
               </Button>
+              
+              {/* Hub Menu Button */}
+              <GPDashboardHubSheet
+                open={showHubMenu}
+                onOpenChange={setShowHubMenu}
+                pendingCount={pendingCount}
+                activeOrdersCount={activeOrdersCount}
+                gpProfile={gpProfile}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="bg-white/10 hover:bg-white/20 text-inherit"
+                >
+                  <Menu className="w-5 h-5" />
+                </Button>
+              </GPDashboardHubSheet>
             </div>
           </div>
         </div>
@@ -203,9 +214,6 @@ export function GPDashboardLayout({
         onClose={() => setShowNotifications(false)}
         onViewOrderDetail={(orderId) => navigate(`/gp/order/${orderId}`)}
       />
-
-      {/* Mobile Navigation */}
-      <GPMobileNav activeTab="dashboard" onTabChange={() => {}} />
     </div>
   );
 }

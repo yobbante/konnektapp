@@ -105,7 +105,7 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
       sections.push({
         title: "Espace Transporteur",
         items: [
-          { icon: Truck, label: gpBusinessName || "Dashboard GP", href: "/gp/dashboard", highlight: true },
+          { icon: Truck, label: gpBusinessName || "Dashboard GP", href: "/gp/demandes", highlight: true },
         ]
       });
     }

@@ -46,6 +46,7 @@ export default function GPDemandesPage() {
   const [loading, setLoading] = useState(true);
   const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
   const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
+  const [activeOrdersCount, setActiveOrdersCount] = useState(0);
 
   useEffect(() => {
     loadData();
@@ -72,15 +73,19 @@ export default function GPDemandesPage() {
 
       setGpProfile(profile);
 
-      // Load pending orders only
+      // Load pending orders and active orders count
       const { data: orders } = await supabase
         .from("orders")
         .select("*")
         .eq("gp_id", profile.id)
-        .eq("status", "pending")
+        .in("status", ["pending", "accepted", "collected", "in_transit"])
         .order("created_at", { ascending: false });
 
-      setPendingOrders(orders || []);
+      const pendingOnly = orders?.filter(o => o.status === "pending") || [];
+      const activeOnly = orders?.filter(o => ["accepted", "collected", "in_transit"].includes(o.status)) || [];
+      
+      setPendingOrders(pendingOnly);
+      setActiveOrdersCount(activeOnly.length);
     } catch (error) {
       console.error("Error loading data:", error);
       toast({
@@ -149,6 +154,7 @@ export default function GPDemandesPage() {
     <GPDashboardLayout
       gpProfile={gpProfile}
       pendingCount={pendingOrders.length}
+      activeOrdersCount={activeOrdersCount}
       activeTab="demandes"
     >
       <div className="px-4 py-4 space-y-4">
