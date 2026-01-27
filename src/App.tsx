@@ -36,7 +36,7 @@ import AdminGPProfile from "./pages/AdminGPProfile";
 import AdminOrderDetail from "./pages/AdminOrderDetail";
 import PostBookingForm from "./pages/PostBookingForm";
 import BookingConfirmation from "./pages/BookingConfirmation";
-import Profile from "./pages/Profile";
+// Profile.tsx is now replaced by ClientDashboard (legacy support kept via routes)
 import GPProfile from "./pages/GPProfile";
 import TransporterProfile from "./pages/TransporterProfile";
 import Favorites from "./pages/Favorites";
@@ -66,47 +66,57 @@ const App = () => (
           <RoleSwitchPopup />
           <AuthGuard>
           <Routes>
+            {/* PUBLIC ROUTES - Accessibles sans authentification */}
             <Route path="/" element={<Index />} />
-            <Route path="/demande" element={<DemandeEnvoi />} />
-            <Route path="/demande/personnalisee" element={<CustomRequest />} />
-            <Route path="/demande-personnalisee" element={<CustomRequest />} />
-            <Route path="/quote-confirmation" element={<QuoteConfirmation />} />
             <Route path="/offres" element={<Offres />} />
             <Route path="/offres/:id" element={<OfferDetail />} />
-            <Route path="/reservation/gp/:gpId" element={<SmartBookingPage />} />
             <Route path="/tracking" element={<Tracking />} />
+            <Route path="/gp/:gpId" element={<GPProfile />} />
+            <Route path="/client/transporteurs/:gpId" element={<ClientTransporterProfile />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/install" element={<Install />} />
+            
+            {/* CLIENT ROUTES - Dashboard client unifié */}
+            <Route path="/demande" element={<DemandeEnvoi />} />
+            <Route path="/demande-personnalisee" element={<CustomRequest />} />
+            <Route path="/quote-confirmation" element={<QuoteConfirmation />} />
+            <Route path="/reservation/gp/:gpId" element={<SmartBookingPage />} />
             <Route path="/messages" element={<Messages />} />
-            <Route path="/gp" element={<GPLanding />} />
-            <Route path="/gp/inscription" element={<GPRegistration />} />
-            <Route path="/gp/dashboard" element={<GPDashboard />} />
-            <Route path="/gp/bagages/inscription" element={<GPBagagesRegistration />} />
-            <Route path="/gp/requests" element={<GPCustomRequests />} />
-            <Route path="/gp/demandes" element={<GPCustomRequests />} />
-            <Route path="/gp/order/:orderId" element={<GPOrderDetail />} />
             <Route path="/client/dashboard" element={<ClientDashboard />} />
             <Route path="/client/profile" element={<ClientProfile />} />
-            <Route path="/client/transporteurs/:gpId" element={<ClientTransporterProfile />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/departures" element={<AdminDepartures />} />
-            <Route path="/admin/orders" element={<AdminOrders />} />
-            <Route path="/admin/gp/:gpId" element={<AdminGPProfile />} />
-            <Route path="/admin/order/:orderId" element={<AdminOrderDetail />} />
-            <Route path="/order/:orderId/complete" element={<PostBookingForm />} />
-            <Route path="/booking/confirmation/:orderId" element={<BookingConfirmation />} />
-            <Route path="/profil" element={<Profile />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/gp/:gpId" element={<GPProfile />} />
-            <Route path="/transporter/profile" element={<TransporterProfile />} />
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/favorites/transporters" element={<FavoriteTransporters />} />
             <Route path="/saved-searches" element={<SavedSearches />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/alerts" element={<Alerts />} />
-            <Route path="/install" element={<Install />} />
             <Route path="/loyalty" element={<LoyaltyTiersPage />} />
+            <Route path="/order/:orderId/complete" element={<PostBookingForm />} />
+            <Route path="/booking/confirmation/:orderId" element={<BookingConfirmation />} />
+            
+            {/* GP/TRANSPORTER ROUTES - Dashboard transporteur */}
+            <Route path="/gp" element={<GPLanding />} />
+            <Route path="/gp/inscription" element={<GPRegistration />} />
+            <Route path="/gp/bagages/inscription" element={<GPBagagesRegistration />} />
+            <Route path="/gp/dashboard" element={<GPDashboard />} />
+            <Route path="/gp/requests" element={<GPCustomRequests />} />
+            <Route path="/gp/order/:orderId" element={<GPOrderDetail />} />
+            <Route path="/transporter/profile" element={<TransporterProfile />} />
+            
+            {/* ADMIN ROUTES - Dashboard admin */}
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/departures" element={<AdminDepartures />} />
+            <Route path="/admin/orders" element={<AdminOrders />} />
+            <Route path="/admin/gp/:gpId" element={<AdminGPProfile />} />
+            <Route path="/admin/order/:orderId" element={<AdminOrderDetail />} />
             <Route path="/admin/messages" element={<AdminMessages />} />
-            <Route path="/auth" element={<Auth />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            
+            {/* LEGACY REDIRECTS - Redirige les anciennes routes */}
+            <Route path="/profil" element={<ClientDashboard />} />
+            <Route path="/profile" element={<ClientDashboard />} />
+            <Route path="/demande/personnalisee" element={<CustomRequest />} />
+            <Route path="/gp/demandes" element={<GPCustomRequests />} />
+            
+            {/* 404 - Catch-all */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthGuard>
