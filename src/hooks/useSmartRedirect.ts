@@ -84,10 +84,10 @@ export function useSmartRedirect() {
         .maybeSingle();
 
       if (gpProfile) {
-        navigate("/gp/dashboard");
+        navigate("/gp/demandes");
         return { 
           success: true, 
-          destination: "/gp/dashboard", 
+          destination: "/gp/demandes", 
           role: "transporteur" 
         };
       }
@@ -125,8 +125,8 @@ export function useSmartRedirect() {
         .maybeSingle();
 
       if (gpProfile) {
-        // Already a GP - redirect to dashboard instead
-        navigate("/gp/dashboard");
+        // Already a GP - redirect to demandes page instead
+        navigate("/gp/demandes");
         return false;
       }
 

@@ -169,7 +169,7 @@ export function MobileHeader({ title, showNotifications = true }: MobileHeaderPr
                         )}
                         {isGP ? (
                           <>
-                            <Link to="/gp/dashboard" onClick={() => setMenuOpen(false)}>
+                            <Link to="/gp/demandes" onClick={() => setMenuOpen(false)}>
                               <Button variant="ghost" className="w-full justify-start text-secondary">
                                 <Truck className="w-4 h-4 mr-2" />
                                 Dashboard Transporteur
