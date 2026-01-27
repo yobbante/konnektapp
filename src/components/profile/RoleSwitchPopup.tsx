@@ -57,7 +57,7 @@ export function RoleSwitchPopup() {
 
   const handleSwitchToClient = () => {
     setIsExpanded(false);
-    navigate("/profile");
+    navigate("/client/dashboard");
   };
 
   const handleSwitchToTransporteur = () => {

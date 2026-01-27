@@ -8,12 +8,53 @@ interface RedirectResult {
   role: string | null;
 }
 
+/**
+ * useSmartRedirect V1 - Redirections intelligentes
+ * 
+ * Règles:
+ * 1. Vérifie d'abord le pending_booking_state pour retour post-login
+ * 2. Admin/Moderator → /admin
+ * 3. GP (transporteur) → /gp/dashboard
+ * 4. Client standard → /client/dashboard (PAS /, car connecté = dashboard)
+ */
 export function useSmartRedirect() {
   const navigate = useNavigate();
 
+  /**
+   * Check for pending booking state and return the path if valid
+   */
+  const getPendingReturnPath = useCallback((): string | null => {
+    const stored = sessionStorage.getItem("pending_booking_state");
+    if (!stored) return null;
+
+    try {
+      const state = JSON.parse(stored);
+      // Only use if less than 30 minutes old
+      if (Date.now() - state.timestamp < 30 * 60 * 1000 && state.returnPath) {
+        sessionStorage.removeItem("pending_booking_state");
+        return state.returnPath;
+      }
+    } catch {
+      // Invalid state
+    }
+    sessionStorage.removeItem("pending_booking_state");
+    return null;
+  }, []);
+
   const detectUserRoleAndRedirect = useCallback(async (userId: string): Promise<RedirectResult> => {
     try {
-      // 1. Vérifier si l'utilisateur est admin ou moderator
+      // 1. Check for pending booking/action first (retour exact post-login)
+      const pendingPath = getPendingReturnPath();
+      if (pendingPath) {
+        navigate(pendingPath);
+        return {
+          success: true,
+          destination: pendingPath,
+          role: "pending_action",
+        };
+      }
+
+      // 2. Vérifier si l'utilisateur est admin ou moderator
       const { data: adminAccess } = await supabase.rpc("has_admin_access", {
         _user_id: userId,
       });
@@ -35,7 +76,7 @@ export function useSmartRedirect() {
         };
       }
 
-      // 2. Vérifier si l'utilisateur est un GP (transporteur)
+      // 3. Vérifier si l'utilisateur est un GP (transporteur)
       const { data: gpProfile } = await supabase
         .from("gp_profiles")
         .select("id, status")
@@ -51,25 +92,55 @@ export function useSmartRedirect() {
         };
       }
 
-      // 3. Sinon, c'est un client standard - rediriger vers l'accueil
-      navigate("/");
+      // 4. Client standard → Dashboard client (PAS accueil générique)
+      navigate("/client/dashboard");
       return { 
         success: true, 
-        destination: "/", 
+        destination: "/client/dashboard", 
         role: "client" 
       };
 
     } catch (error) {
       console.error("Error detecting user role:", error);
-      // Fallback vers la page d'accueil en cas d'erreur
-      navigate("/");
+      // Fallback vers le dashboard client en cas d'erreur
+      navigate("/client/dashboard");
       return { 
         success: false, 
-        destination: "/", 
+        destination: "/client/dashboard", 
         role: null 
       };
     }
+  }, [navigate, getPendingReturnPath]);
+
+  /**
+   * Redirect to GP registration only if user is NOT already a GP
+   * Prevents duplicate transporter creation
+   */
+  const redirectToGPRegistration = useCallback(async (userId: string): Promise<boolean> => {
+    try {
+      const { data: gpProfile } = await supabase
+        .from("gp_profiles")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (gpProfile) {
+        // Already a GP - redirect to dashboard instead
+        navigate("/gp/dashboard");
+        return false;
+      }
+
+      // Not a GP - allow registration
+      return true;
+    } catch (error) {
+      console.error("Error checking GP status:", error);
+      return true;
+    }
   }, [navigate]);
 
-  return { detectUserRoleAndRedirect };
+  return { 
+    detectUserRoleAndRedirect, 
+    redirectToGPRegistration,
+    getPendingReturnPath 
+  };
 }
