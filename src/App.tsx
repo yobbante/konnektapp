@@ -20,6 +20,12 @@ import CustomRequest from "./pages/CustomRequest";
 import GPLanding from "./pages/GPLanding";
 import GPRegistration from "./pages/GPRegistration";
 import GPDashboard from "./pages/GPDashboard";
+import GPDemandesPage from "./pages/gp/GPDemandesPage";
+import GPEnCoursPage from "./pages/gp/GPEnCoursPage";
+import GPHistoriquePage from "./pages/gp/GPHistoriquePage";
+import GPCalendrierPage from "./pages/gp/GPCalendrierPage";
+import GPTarificationPage from "./pages/gp/GPTarificationPage";
+import GPProfilPublicPage from "./pages/gp/GPProfilPublicPage";
 import GPBagagesInternationalDashboard from "./pages/GPBagagesInternationalDashboard";
 import GPCustomRequests from "./pages/GPCustomRequests";
 import GPOrderDetail from "./pages/GPOrderDetail";
@@ -98,6 +104,12 @@ const App = () => (
             <Route path="/gp/inscription" element={<GPRegistration />} />
             <Route path="/gp/bagages/inscription" element={<GPBagagesRegistration />} />
             <Route path="/gp/dashboard" element={<GPDashboard />} />
+            <Route path="/gp/demandes" element={<GPDemandesPage />} />
+            <Route path="/gp/en-cours" element={<GPEnCoursPage />} />
+            <Route path="/gp/historique" element={<GPHistoriquePage />} />
+            <Route path="/gp/calendrier" element={<GPCalendrierPage />} />
+            <Route path="/gp/tarification" element={<GPTarificationPage />} />
+            <Route path="/gp/profil-public" element={<GPProfilPublicPage />} />
             <Route path="/gp/requests" element={<GPCustomRequests />} />
             <Route path="/gp/order/:orderId" element={<GPOrderDetail />} />
             <Route path="/transporter/profile" element={<TransporterProfile />} />
