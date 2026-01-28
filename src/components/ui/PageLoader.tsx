@@ -1,11 +1,18 @@
 import { motion } from "framer-motion";
 import { Package } from "lucide-react";
+import { TransportLoader, TransportPageLoader as TransportFullLoader } from "./TransportLoader";
 
 interface PageLoaderProps {
   message?: string;
+  variant?: "default" | "transport";
 }
 
-export function PageLoader({ message = "Chargement..." }: PageLoaderProps) {
+export function PageLoader({ message = "Chargement...", variant = "transport" }: PageLoaderProps) {
+  // Use transport loader by default for better branding
+  if (variant === "transport") {
+    return <TransportFullLoader message={message} />;
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-6">
       {/* Animated Box Container */}
@@ -133,3 +140,7 @@ export function PageLoader({ message = "Chargement..." }: PageLoaderProps) {
     </div>
   );
 }
+
+// Re-export TransportLoader components for convenience
+export { TransportLoader, TransportPageLoader } from "./TransportLoader";
+

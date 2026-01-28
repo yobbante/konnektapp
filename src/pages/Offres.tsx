@@ -5,7 +5,7 @@ import {
   Search, Package, ArrowRight, MapPin, Star,
   Zap, Truck, Ship, Plane, Briefcase, Loader2, Heart, Scale, Filter, Building2, Calculator, Luggage, CheckCircle, Calendar
 } from "lucide-react";
-import { MobileHeader } from "@/components/layout/MobileHeader";
+import { AppHeader } from "@/components/layout/AppHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -313,7 +313,7 @@ function OffresContent() {
   return (
     <div className="min-h-screen bg-background pb-safe">
       <PullToRefreshIndicator isRefreshing={isRefreshing} progress={progress} pullDistance={pullDistance} />
-      <MobileHeader />
+      <AppHeader title="Offres" />
 
       {/* Sticky Search & Filters */}
       <div className="sticky top-14 z-40 bg-background/95 backdrop-blur-sm px-4 py-3 border-b border-border">
