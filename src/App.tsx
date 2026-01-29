@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import GPBagagesRegistration from "./pages/GPBagagesRegistration";
+import RoutierRegistration from "./pages/RoutierRegistration";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -52,6 +53,13 @@ import Install from "./pages/Install";
 import LoyaltyTiersPage from "./pages/LoyaltyTiersPage";
 import AdminMessages from "./pages/AdminMessages";
 import NotFound from "./pages/NotFound";
+// Routier pages
+import RoutierDemandesPage from "./pages/routier/RoutierDemandesPage";
+import RoutierEnCoursPage from "./pages/routier/RoutierEnCoursPage";
+import RoutierHistoriquePage from "./pages/routier/RoutierHistoriquePage";
+import RoutierVehiculesPage from "./pages/routier/RoutierVehiculesPage";
+import RoutierTarificationPage from "./pages/routier/RoutierTarificationPage";
+import RoutierProfilPublicPage from "./pages/routier/RoutierProfilPublicPage";
 
 const queryClient = new QueryClient();
 
@@ -118,6 +126,18 @@ const App = () => (
             <Route path="/gp/requests" element={<GPCustomRequests />} />
             <Route path="/gp/order/:orderId" element={<GPOrderDetail />} />
             <Route path="/transporter/profile" element={<TransporterProfile />} />
+            
+            {/* ============================================
+                ROUTIER ROUTES - Dashboard transport routier
+            ============================================ */}
+            <Route path="/routier/inscription" element={<RoutierRegistration />} />
+            <Route path="/routier/dashboard" element={<Navigate to="/routier/demandes" replace />} />
+            <Route path="/routier/demandes" element={<RoutierDemandesPage />} />
+            <Route path="/routier/en-cours" element={<RoutierEnCoursPage />} />
+            <Route path="/routier/historique" element={<RoutierHistoriquePage />} />
+            <Route path="/routier/vehicules" element={<RoutierVehiculesPage />} />
+            <Route path="/routier/tarification" element={<RoutierTarificationPage />} />
+            <Route path="/routier/profil-public" element={<RoutierProfilPublicPage />} />
             
             {/* ============================================
                 ADMIN ROUTES - Dashboard admin
