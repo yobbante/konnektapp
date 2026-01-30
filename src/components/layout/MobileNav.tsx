@@ -34,10 +34,11 @@ export function MobileNav() {
   }, []);
 
   // Nav items - V1 Simplifié: 5 items max
+  // "Envoyer" CTA now goes to universal type selector
   const navItems = [
     { href: "/", icon: Home, label: "Accueil", isHome: true },
     { href: "/offres", icon: Search, label: "Offres" },
-    { href: "/demande", icon: Send, label: "Envoyer", isCTA: true, requiresAuth: true },
+    { href: "/envoyer", icon: Send, label: "Envoyer", isCTA: true, requiresAuth: true },
     { href: "/messages", icon: MessageCircle, label: "Messages", showBadge: true, requiresAuth: true },
     { href: "#menu", icon: Menu, label: "Menu", isMenu: true },
   ];

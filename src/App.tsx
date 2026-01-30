@@ -60,6 +60,9 @@ import RoutierHistoriquePage from "./pages/routier/RoutierHistoriquePage";
 import RoutierVehiculesPage from "./pages/routier/RoutierVehiculesPage";
 import RoutierTarificationPage from "./pages/routier/RoutierTarificationPage";
 import RoutierProfilPublicPage from "./pages/routier/RoutierProfilPublicPage";
+import RoutierDemandePage from "./pages/routier/RoutierDemandePage";
+// Universal shipment entry
+import ShipmentTypeSelector from "./pages/ShipmentTypeSelector";
 
 const queryClient = new QueryClient();
 
@@ -92,6 +95,8 @@ const App = () => (
             {/* ============================================
                 CLIENT ROUTES - Dashboard client unifié
             ============================================ */}
+            {/* Point d'entrée universel "Envoyer un colis" */}
+            <Route path="/envoyer" element={<ShipmentTypeSelector />} />
             <Route path="/demande" element={<DemandeEnvoi />} />
             <Route path="/demande-personnalisee" element={<CustomRequest />} />
             <Route path="/quote-confirmation" element={<QuoteConfirmation />} />
@@ -138,6 +143,8 @@ const App = () => (
             <Route path="/routier/vehicules" element={<RoutierVehiculesPage />} />
             <Route path="/routier/tarification" element={<RoutierTarificationPage />} />
             <Route path="/routier/profil-public" element={<RoutierProfilPublicPage />} />
+            {/* Client-facing routier booking */}
+            <Route path="/routier/demande" element={<RoutierDemandePage />} />
             
             {/* ============================================
                 ADMIN ROUTES - Dashboard admin

@@ -43,14 +43,15 @@ export function AppLikeHome() {
   }, []);
 
   const handleSendClick = () => {
+    // Point d'entrée universel vers le sélecteur de type d'envoi
     if (!isAuthenticated) {
       sessionStorage.setItem("pending_booking_state", JSON.stringify({
-        returnPath: "/demande",
+        returnPath: "/envoyer",
         timestamp: Date.now(),
       }));
       navigate("/auth");
     } else {
-      navigate("/demande");
+      navigate("/envoyer");
     }
   };
 

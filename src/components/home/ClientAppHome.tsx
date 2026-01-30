@@ -82,8 +82,8 @@ export function ClientAppHome({
         transition={{ delay: 0.15 }}
         className="grid grid-cols-2 gap-3 px-4 flex-1"
       >
-        {/* Envoyer un colis - Primary CTA */}
-        <Link to="/demande" className="block">
+        {/* Envoyer un colis - Primary CTA → Universal selector */}
+        <Link to="/envoyer" className="block">
           <motion.div 
             whileTap={{ scale: 0.97 }}
             className="h-full bg-gradient-to-br from-primary to-primary/80 rounded-2xl p-4 flex flex-col justify-between shadow-lg"
