@@ -96,7 +96,7 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
       items: [
         { icon: Home, label: "Accueil", href: "/" },
         { icon: Search, label: "Offres disponibles", href: "/offres" },
-        { icon: Package, label: "Suivre un colis", href: "/tracking" },
+        { icon: Package, label: "Envoyer un colis", href: "/envoyer" },
       ]
     });
 
