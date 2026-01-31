@@ -49,13 +49,7 @@ const transportConfig: Record<TransportType, { icon: typeof Package; label: stri
   agence: { icon: Building2, label: "Agence", color: "text-gray-500", gradient: "from-gray-500/20 to-slate-500/5" },
 };
 
-const transportFilters = [
-  { type: "all", label: "Tous", icon: Package },
-  { type: "bagages_international", label: "GP", icon: Luggage },
-  { type: "routier", label: "Routier", icon: Truck },
-  { type: "maritime", label: "Maritime", icon: Ship },
-  { type: "aerien", label: "Aérien", icon: Plane },
-];
+// Filters removed - only GP offers displayed for now
 
 const getTransportLabel = (type: TransportType) => {
   return transportConfig[type]?.label || type;
@@ -67,7 +61,7 @@ const getTransportConfig = (type: TransportType) => {
 
 export default function Offres() {
   const { toast } = useToast();
-  const [activeFilter, setActiveFilter] = useState("all");
+  // activeFilter removed - only GP offers for now
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOrigin, setSearchOrigin] = useState<string | undefined>();
   const [searchDestination, setSearchDestination] = useState<string | undefined>();
@@ -208,17 +202,9 @@ export default function Offres() {
     setSearchDestination(destination);
   };
 
-  // Apply all filters
+  // Apply search filters only (no transport type filter for now)
   const filteredOffers = useMemo(() => {
     return offers.filter((offer) => {
-      // Transport type filter
-      if (activeFilter !== "all" && offer.transport_type !== activeFilter) {
-        // Also include voyageur for bagages_international filter
-        if (!(activeFilter === "bagages_international" && offer.transport_type === "voyageur")) {
-          return false;
-        }
-      }
-
       // Route-based search (origin)
       if (searchOrigin) {
         const originMatch = offer.origin_city.toLowerCase().includes(searchOrigin.toLowerCase());
@@ -243,7 +229,7 @@ export default function Offres() {
 
       return true;
     });
-  }, [offers, activeFilter, searchQuery, searchOrigin, searchDestination]);
+  }, [offers, searchQuery, searchOrigin, searchDestination]);
 
   const formatDate = (dateStr: string) => {
     try {
@@ -277,24 +263,6 @@ export default function Offres() {
       {/* Smart Search */}
       <div className="sticky top-14 z-40 bg-background/95 backdrop-blur-sm px-4 py-3 border-b border-border">
         <SmartRouteSearch onSearch={handleSearch} />
-        
-        {/* Transport Type Quick Filters */}
-        <div className="flex gap-2 overflow-x-auto pb-1 mt-3 -mx-4 px-4 scrollbar-hide">
-          {transportFilters.map((filter) => (
-            <button
-              key={filter.type}
-              onClick={() => setActiveFilter(filter.type)}
-              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                activeFilter === filter.type
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              <filter.icon className="w-3.5 h-3.5" />
-              {filter.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Results Count */}
