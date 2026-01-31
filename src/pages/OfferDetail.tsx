@@ -318,8 +318,34 @@ export default function OfferDetail() {
               </div>
             </div>
 
+            {/* GP Profile Card - Inline */}
+            <Link to={`/client/transporteurs/${offer.gp_id}`} className="flex items-center gap-3 p-3 bg-background/60 backdrop-blur-sm rounded-xl group mt-4">
+              <motion.div 
+                whileHover={{ scale: 1.05 }}
+                className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center"
+              >
+                <User className="w-6 h-6 text-primary" />
+              </motion.div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <p className="font-semibold text-sm group-hover:text-primary transition-colors">{gpProfile?.business_name || "Transporteur"}</p>
+                  {gpProfile?.verified_at && (
+                    <CheckCircle className="w-4 h-4 text-primary" />
+                  )}
+                </div>
+                <div className="flex items-center gap-3 text-xs">
+                  <div className="flex items-center gap-1">
+                    <Star className="w-3 h-3 text-warning fill-warning" />
+                    <span className="font-medium">{gpProfile?.rating?.toFixed(1) || "0.0"}</span>
+                  </div>
+                  <span className="text-muted-foreground">{gpProfile?.total_deliveries || 0} livraisons</span>
+                </div>
+              </div>
+              <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            </Link>
+
             {/* Dates with icons */}
-            <div className="grid grid-cols-2 gap-3 p-4 bg-background/60 backdrop-blur-sm rounded-xl">
+            <div className="grid grid-cols-2 gap-3 p-4 bg-background/60 backdrop-blur-sm rounded-xl mt-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <Calendar className="w-5 h-5 text-primary" />
@@ -344,59 +370,6 @@ export default function OfferDetail() {
               </div>
             </div>
           </div>
-        </motion.div>
-
-        {/* GP Profile Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="bg-card rounded-2xl border border-border p-4 mb-4"
-        >
-          <Link to={`/client/transporteurs/${offer.gp_id}`} className="flex items-center gap-4 group">
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center"
-            >
-              <User className="w-7 h-7 text-primary" />
-            </motion.div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <p className="font-semibold group-hover:text-primary transition-colors">{gpProfile?.business_name || "Transporteur"}</p>
-                {gpProfile?.verified_at && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    <CheckCircle className="w-4 h-4 text-primary" />
-                  </motion.div>
-                )}
-              </div>
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 text-warning fill-warning" />
-                  <span className="font-medium">{gpProfile?.rating?.toFixed(1) || "0.0"}</span>
-                </div>
-                <span className="text-muted-foreground">{gpProfile?.total_deliveries || 0} livraisons</span>
-              </div>
-            </div>
-            <Button variant="outline" size="icon" className="rounded-full" onClick={(e) => { e.preventDefault(); handleContact(); }}>
-              <MessageCircle className="w-4 h-4" />
-            </Button>
-          </Link>
-
-          {gpProfile?.verified_at && (
-            <motion.div 
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              transition={{ delay: 0.2 }}
-              className="mt-4 flex items-center gap-2 p-3 bg-primary/5 rounded-xl"
-            >
-              <Shield className="w-4 h-4 text-primary" />
-              <span className="text-sm text-primary font-medium">Transporteur vérifié par Yobbanté</span>
-            </motion.div>
-          )}
         </motion.div>
 
         {/* Route Map Visualization */}

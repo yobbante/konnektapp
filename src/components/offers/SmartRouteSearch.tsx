@@ -1,14 +1,14 @@
-import { useState, useMemo } from "react";
-import { Search, MapPin, ArrowRight, X, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { Search, MapPin, ArrowRight, X, Truck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
 
 interface SmartRouteSearchProps {
   onSearch: (query: string, origin?: string, destination?: string) => void;
-  suggestions?: { origin: string; destination: string; count: number }[];
 }
 
 /**
@@ -17,12 +17,10 @@ interface SmartRouteSearchProps {
  * Features:
  * - Recherche libre texte
  * - Sélection interactive origine → destination
- * - Suggestions de routes populaires
  * - Mode route directe (ex: "Dakar → Abidjan")
  */
-export function SmartRouteSearch({ onSearch, suggestions = [] }: SmartRouteSearchProps) {
+export function SmartRouteSearch({ onSearch }: SmartRouteSearchProps) {
   const [query, setQuery] = useState("");
-  const [mode, setMode] = useState<"text" | "route">("text");
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -32,17 +30,6 @@ export function SmartRouteSearch({ onSearch, suggestions = [] }: SmartRouteSearc
     "Dakar", "Abidjan", "Paris", "Bamako", "Conakry", 
     "Casablanca", "Bruxelles", "Douala", "Cotonou", "Lomé"
   ];
-
-  // Default route suggestions if none provided
-  const defaultSuggestions = [
-    { origin: "Dakar", destination: "Abidjan", count: 45 },
-    { origin: "Paris", destination: "Dakar", count: 32 },
-    { origin: "Dakar", destination: "Bamako", count: 28 },
-    { origin: "Abidjan", destination: "Paris", count: 24 },
-    { origin: "Casablanca", destination: "Dakar", count: 18 },
-  ];
-
-  const routeSuggestions = suggestions.length > 0 ? suggestions : defaultSuggestions;
 
   // Parse route from query (e.g., "Dakar → Abidjan" or "Dakar Abidjan")
   const parseRouteFromQuery = (q: string) => {
@@ -68,14 +55,6 @@ export function SmartRouteSearch({ onSearch, suggestions = [] }: SmartRouteSearc
     
     // Trigger search
     onSearch(value, route?.origin, route?.destination);
-  };
-
-  const handleRouteSelect = (o: string, d: string) => {
-    setOrigin(o);
-    setDestination(d);
-    setQuery(`${o} → ${d}`);
-    onSearch(`${o} → ${d}`, o, d);
-    setShowSuggestions(false);
   };
 
   const handleCityClick = (city: string) => {
@@ -167,37 +146,22 @@ export function SmartRouteSearch({ onSearch, suggestions = [] }: SmartRouteSearc
           animate={{ opacity: 1, y: 0 }}
           className="space-y-4"
         >
-          {/* Route Suggestions */}
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-muted-foreground">Routes populaires</span>
-            </div>
-            <div className="grid grid-cols-1 gap-2">
-              {routeSuggestions.slice(0, 4).map((route, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleRouteSelect(route.origin, route.destination)}
-                  className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors text-left"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-green-500" />
-                      <span className="font-medium">{route.origin}</span>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-red-500" />
-                      <span className="font-medium">{route.destination}</span>
-                    </div>
-                  </div>
-                  <Badge variant="outline" className="text-xs">
-                    {route.count} offres
-                  </Badge>
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Routier CTA */}
+          <Link to="/routier/demande">
+            <motion.div 
+              whileHover={{ scale: 1.01 }}
+              className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-200/50 rounded-xl"
+            >
+              <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                <Truck className="w-5 h-5 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-sm">Besoin d'un transport routier ?</p>
+                <p className="text-xs text-muted-foreground">Envoyez une demande aux transporteurs pros</p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-blue-500" />
+            </motion.div>
+          </Link>
 
           {/* Popular Cities */}
           <div>
