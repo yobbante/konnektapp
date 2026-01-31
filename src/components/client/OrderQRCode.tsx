@@ -21,9 +21,13 @@ interface OrderQRCodeProps {
 export function OrderQRCode({ orderNumber, orderId, status }: OrderQRCodeProps) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const [qrLoaded, setQrLoaded] = useState(false);
+  const [qrError, setQrError] = useState(false);
 
-  // Generate QR code URL (using a public QR API)
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(orderNumber)}&format=svg`;
+  // Generate QR code URL with proper encoding and cache busting
+  const qrData = encodeURIComponent(orderNumber);
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}&format=png&margin=10`;
+  const qrCodeSvgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}&format=svg&margin=10`;
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(orderNumber);
@@ -96,12 +100,27 @@ export function OrderQRCode({ orderNumber, orderId, status }: OrderQRCodeProps) 
           animate={{ scale: 1, opacity: 1 }}
           className="flex justify-center"
         >
-          <div className="p-4 bg-white rounded-xl shadow-sm border">
-            <img 
-              src={qrCodeUrl} 
-              alt={`QR Code ${orderNumber}`}
-              className="w-48 h-48"
-            />
+          <div className="p-4 bg-white rounded-xl shadow-sm border relative">
+            {!qrLoaded && !qrError && (
+              <div className="w-48 h-48 flex items-center justify-center">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+            {qrError ? (
+              <div className="w-48 h-48 flex flex-col items-center justify-center text-center">
+                <QrCode className="w-12 h-12 text-muted-foreground/30 mb-2" />
+                <p className="text-xs text-muted-foreground">QR Code</p>
+                <p className="font-mono text-sm font-bold mt-1">{orderNumber}</p>
+              </div>
+            ) : (
+              <img 
+                src={qrCodeUrl} 
+                alt={`QR Code ${orderNumber}`}
+                className={`w-48 h-48 ${qrLoaded ? 'block' : 'hidden'}`}
+                onLoad={() => setQrLoaded(true)}
+                onError={() => setQrError(true)}
+              />
+            )}
           </div>
         </motion.div>
 
