@@ -346,27 +346,11 @@ export default function OfferDetail() {
           </div>
         </motion.div>
 
-        {/* Route Map Visualization */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="mb-4"
-        >
-          <RealTimeTrackingMap
-            originCity={offer.origin_city}
-            destinationCity={offer.destination_city}
-            currentStatus="pending"
-            progress={0}
-            transportType={offer.transport_type}
-          />
-        </motion.div>
-
         {/* GP Profile Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.05 }}
           className="bg-card rounded-2xl border border-border p-4 mb-4"
         >
           <Link to={`/client/transporteurs/${offer.gp_id}`} className="flex items-center gap-4 group">
@@ -413,6 +397,22 @@ export default function OfferDetail() {
               <span className="text-sm text-primary font-medium">Transporteur vérifié par Yobbanté</span>
             </motion.div>
           )}
+        </motion.div>
+
+        {/* Route Map Visualization */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-4"
+        >
+          <RealTimeTrackingMap
+            originCity={offer.origin_city}
+            destinationCity={offer.destination_city}
+            currentStatus="pending"
+            progress={0}
+            transportType={offer.transport_type}
+          />
         </motion.div>
 
         {/* Capacity Card */}
