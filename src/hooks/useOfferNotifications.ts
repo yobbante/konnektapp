@@ -2,17 +2,34 @@ import { useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
-import type { AdvancedFiltersState } from "@/components/offers/AdvancedFilters";
+
+interface OfferFiltersState {
+  minPrice: number;
+  maxPrice: number;
+  minWeight: number;
+  dateFrom: string;
+  dateTo: string;
+  notifyEnabled: boolean;
+}
 
 interface UseOfferNotificationsProps {
-  filters: AdvancedFiltersState;
+  filters?: Partial<OfferFiltersState>;
   activeTransportType: string;
   searchQuery: string;
   enabled: boolean;
 }
 
+const defaultFilters: OfferFiltersState = {
+  minPrice: 0,
+  maxPrice: 50000,
+  minWeight: 0,
+  dateFrom: "",
+  dateTo: "",
+  notifyEnabled: false,
+};
+
 export function useOfferNotifications({ 
-  filters, 
+  filters = defaultFilters, 
   activeTransportType, 
   searchQuery,
   enabled 
@@ -20,6 +37,8 @@ export function useOfferNotifications({
   const { toast } = useToast();
   const { notify } = useNotificationSound();
   const lastNotifiedRef = useRef<Set<string>>(new Set());
+
+  const mergedFilters = { ...defaultFilters, ...filters };
 
   const matchesFilters = useCallback((offer: any) => {
     // Check transport type
@@ -37,35 +56,35 @@ export function useOfferNotifications({
     }
 
     // Check price range
-    if (filters.minPrice > 0 && offer.price_per_kg < filters.minPrice) {
+    if (mergedFilters.minPrice > 0 && offer.price_per_kg < mergedFilters.minPrice) {
       return false;
     }
-    if (filters.maxPrice < 50000 && offer.price_per_kg > filters.maxPrice) {
+    if (mergedFilters.maxPrice < 50000 && offer.price_per_kg > mergedFilters.maxPrice) {
       return false;
     }
 
     // Check weight
-    if (filters.minWeight > 0 && offer.available_capacity < filters.minWeight) {
+    if (mergedFilters.minWeight > 0 && offer.available_capacity < mergedFilters.minWeight) {
       return false;
     }
 
     // Check dates
-    if (filters.dateFrom) {
+    if (mergedFilters.dateFrom) {
       const departureDate = new Date(offer.departure_date);
-      const fromDate = new Date(filters.dateFrom);
+      const fromDate = new Date(mergedFilters.dateFrom);
       if (departureDate < fromDate) return false;
     }
-    if (filters.dateTo) {
+    if (mergedFilters.dateTo) {
       const departureDate = new Date(offer.departure_date);
-      const toDate = new Date(filters.dateTo);
+      const toDate = new Date(mergedFilters.dateTo);
       if (departureDate > toDate) return false;
     }
 
     return true;
-  }, [filters, activeTransportType, searchQuery]);
+  }, [mergedFilters, activeTransportType, searchQuery]);
 
   useEffect(() => {
-    if (!enabled || !filters.notifyEnabled) return;
+    if (!enabled || !mergedFilters.notifyEnabled) return;
 
     const channel = supabase
       .channel('offer-notifications')
@@ -102,7 +121,7 @@ export function useOfferNotifications({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [enabled, filters, matchesFilters, toast]);
+  }, [enabled, mergedFilters, matchesFilters, toast, notify]);
 
   const saveSearch = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -120,9 +139,9 @@ export function useOfferNotifications({
         .insert({
           user_id: user.id,
           transport_type: activeTransportType !== "all" ? activeTransportType : null,
-          min_price: filters.minPrice > 0 ? filters.minPrice : null,
-          max_price: filters.maxPrice < 50000 ? filters.maxPrice : null,
-          min_weight: filters.minWeight > 0 ? filters.minWeight : null,
+          min_price: mergedFilters.minPrice > 0 ? mergedFilters.minPrice : null,
+          max_price: mergedFilters.maxPrice < 50000 ? mergedFilters.maxPrice : null,
+          min_weight: mergedFilters.minWeight > 0 ? mergedFilters.minWeight : null,
           notify_enabled: true,
         });
 
@@ -140,7 +159,7 @@ export function useOfferNotifications({
         variant: "destructive",
       });
     }
-  }, [filters, activeTransportType, toast]);
+  }, [mergedFilters, activeTransportType, toast]);
 
   return { saveSearch };
 }

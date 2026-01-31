@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, MapPin, Scale, Clock, Check, X, Truck } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  Package, MapPin, Scale, Clock, Check, X, Truck, 
+  ChevronDown, ArrowRight, AlertCircle, RefreshCw
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { RoutierDashboardLayout } from "@/components/layout/RoutierDashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,14 +13,18 @@ import { Badge } from "@/components/ui/badge";
 import { TransportPageLoader } from "@/components/ui/TransportLoader";
 import { useToast } from "@/hooks/use-toast";
 import { RefusalReasonDialog, RefusalReason } from "@/components/routier/RefusalReasonDialog";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 /**
- * RoutierDemandesPage - Dashboard transporteur V1.1
+ * RoutierDemandesPage - Dashboard transporteur V1.1 Interactif
  * 
- * Améliorations V1.1:
- * - Carte simplifiée (minimum d'infos, détail au clic)
- * - Motifs de refus structurés obligatoires
- * - Données de refus pour ajustement pricing
+ * Améliorations:
+ * - Cartes mission lisibles et interactives
+ * - Expansion fluide avec détails
+ * - Actions claires Accepter/Refuser
+ * - Animations smooth
  */
 
 interface FreightRequest {
@@ -32,27 +40,50 @@ interface FreightRequest {
   currency: string;
   status: string;
   created_at: string;
+  pickup_date?: string;
 }
 
-// Simulated vehicle type based on freight (same logic as client side)
-const getVehicleType = (description: string, weight: number): string => {
+// Vehicle type inference
+const getVehicleType = (description: string, weight: number): { type: string; icon: string } => {
   const desc = description?.toLowerCase() || "";
-  if (desc.includes("benne") || desc.includes("sable") || desc.includes("ciment")) return "Camion benne";
-  if (desc.includes("frigo") || desc.includes("alimentaire")) return "Camion frigorifique";
-  if (desc.includes("liquide") || desc.includes("citerne")) return "Camion citerne";
-  if (desc.includes("btp") || desc.includes("machine")) return "Plateau-grue";
-  if (weight > 3500) return "Camion moyen";
-  if (weight > 1000) return "Fourgon";
-  return "Fourgonnette";
+  if (desc.includes("benne") || desc.includes("sable") || desc.includes("ciment")) {
+    return { type: "Camion benne", icon: "🚛" };
+  }
+  if (desc.includes("frigo") || desc.includes("alimentaire")) {
+    return { type: "Frigorifique", icon: "❄️" };
+  }
+  if (desc.includes("liquide") || desc.includes("citerne")) {
+    return { type: "Citerne", icon: "🛢️" };
+  }
+  if (desc.includes("btp") || desc.includes("machine")) {
+    return { type: "Plateau-grue", icon: "🏗️" };
+  }
+  if (weight > 3500) return { type: "Camion", icon: "🚚" };
+  if (weight > 1000) return { type: "Fourgon", icon: "🚐" };
+  return { type: "Fourgonnette", icon: "🚙" };
+};
+
+// Estimate distance (simulation)
+const estimateDistance = (origin: string, dest: string): number => {
+  const distances: Record<string, number> = {
+    "dakar-abidjan": 2450,
+    "dakar-bamako": 1250,
+    "abidjan-bamako": 1100,
+    "dakar-conakry": 950,
+    "default": Math.floor(Math.random() * 500) + 100,
+  };
+  const key = `${origin.toLowerCase()}-${dest.toLowerCase()}`;
+  return distances[key] || distances["default"];
 };
 
 export default function RoutierDemandesPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [gpProfile, setGpProfile] = useState<any>(null);
   const [requests, setRequests] = useState<FreightRequest[]>([]);
-  const [selectedRequest, setSelectedRequest] = useState<FreightRequest | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [refusalDialogOpen, setRefusalDialogOpen] = useState(false);
   const [refusingOrderId, setRefusingOrderId] = useState<string | null>(null);
 
@@ -60,15 +91,16 @@ export default function RoutierDemandesPage() {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const loadData = async (showRefresh = false) => {
     try {
+      if (showRefresh) setRefreshing(true);
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         navigate("/auth");
         return;
       }
 
-      // Load GP profile
       const { data: gp, error: gpError } = await supabase
         .from("gp_profiles")
         .select("*")
@@ -83,7 +115,6 @@ export default function RoutierDemandesPage() {
 
       setGpProfile(gp);
 
-      // Load pending orders for this transporter
       const { data: orders, error: ordersError } = await supabase
         .from("orders")
         .select("*")
@@ -98,6 +129,7 @@ export default function RoutierDemandesPage() {
       console.error("Error loading data:", error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -110,26 +142,26 @@ export default function RoutierDemandesPage() {
 
       if (error) throw error;
 
-      toast({ title: "Transport accepté ✓", description: "Le client a été notifié." });
-      setSelectedRequest(null);
+      toast({ 
+        title: "✅ Mission acceptée", 
+        description: "Le client a été notifié. Rendez-vous dans 'En cours'." 
+      });
+      setExpandedId(null);
       loadData();
     } catch (error) {
       toast({ title: "Erreur", variant: "destructive" });
     }
   };
 
-  // V1.1: Open refusal dialog instead of direct refusal
   const handleRefuseClick = (orderId: string) => {
     setRefusingOrderId(orderId);
     setRefusalDialogOpen(true);
   };
 
-  // V1.1: Process refusal with structured reason
   const handleRefuseConfirm = async (reason: RefusalReason, notes?: string) => {
     if (!refusingOrderId) return;
 
     try {
-      // Update order status
       const { error } = await supabase
         .from("orders")
         .update({ status: "cancelled" })
@@ -137,7 +169,6 @@ export default function RoutierDemandesPage() {
 
       if (error) throw error;
 
-      // V1.1: Log refusal reason for pricing adjustment (in real app, store in dedicated table)
       console.log("[Routier V1.1] Refusal logged:", {
         orderId: refusingOrderId,
         reason,
@@ -147,12 +178,12 @@ export default function RoutierDemandesPage() {
 
       toast({ 
         title: "Demande refusée", 
-        description: "Merci pour votre retour, ces données aident à améliorer le système." 
+        description: "Merci pour votre retour." 
       });
       
       setRefusalDialogOpen(false);
       setRefusingOrderId(null);
-      setSelectedRequest(null);
+      setExpandedId(null);
       loadData();
     } catch (error) {
       toast({ title: "Erreur", variant: "destructive" });
@@ -160,140 +191,211 @@ export default function RoutierDemandesPage() {
   };
 
   if (loading) {
-    return <TransportPageLoader message="Chargement..." vehicle="truck" />;
+    return <TransportPageLoader message="Chargement des missions..." vehicle="truck" />;
   }
 
-  if (!gpProfile) {
-    return null;
-  }
-
-  const pendingCount = requests.length;
+  if (!gpProfile) return null;
 
   return (
     <RoutierDashboardLayout
       gpProfile={gpProfile}
-      pendingCount={pendingCount}
+      pendingCount={requests.length}
       activeOrdersCount={0}
     >
       <div className="p-4 space-y-4">
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold">Missions disponibles</h2>
-          <Badge variant="secondary">{pendingCount} en attente</Badge>
+          <div>
+            <h2 className="text-xl font-bold">Missions disponibles</h2>
+            <p className="text-sm text-muted-foreground">
+              Missions compatibles avec vos véhicules
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => loadData(true)}
+              disabled={refreshing}
+            >
+              <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
+            </Button>
+            <Badge variant="secondary" className="bg-primary/10 text-primary">
+              {requests.length} en attente
+            </Badge>
+          </div>
         </div>
 
+        {/* Mission Cards */}
         {requests.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Package className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-              <p className="text-muted-foreground mb-2">Aucune mission disponible</p>
-              <p className="text-xs text-muted-foreground">
-                Les missions compatibles avec vos véhicules apparaîtront ici.
+          <Card className="border-dashed">
+            <CardContent className="py-16 text-center">
+              <Truck className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
+              <h3 className="font-semibold mb-2">Aucune mission disponible</h3>
+              <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                Les missions compatibles avec vos véhicules et zones apparaîtront ici automatiquement.
               </p>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-3">
-            {requests.map((request) => {
-              const vehicleType = getVehicleType(request.description, request.weight);
-              const isExpanded = selectedRequest?.id === request.id;
+            <AnimatePresence>
+              {requests.map((request) => {
+                const vehicle = getVehicleType(request.description, request.weight);
+                const distance = estimateDistance(request.origin_city, request.destination_city);
+                const isExpanded = expandedId === request.id;
 
-              return (
-                <Card 
-                  key={request.id} 
-                  className={`overflow-hidden transition-all cursor-pointer ${isExpanded ? 'ring-2 ring-primary' : ''}`}
-                  onClick={() => setSelectedRequest(isExpanded ? null : request)}
-                >
-                  <CardContent className="p-4">
-                    {/* V1.1: Simplified card - Route only */}
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <div className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0" />
-                        <span className="text-sm font-medium truncate">{request.origin_city}</span>
-                        <span className="text-muted-foreground mx-1">→</span>
-                        <div className="w-3 h-3 rounded-full bg-red-500 flex-shrink-0" />
-                        <span className="text-sm font-medium truncate">{request.destination_city}</span>
-                      </div>
-                      <Badge variant="outline" className="flex-shrink-0">
-                        <Truck className="w-3 h-3 mr-1" />
-                        {vehicleType.split(" ")[0]}
-                      </Badge>
-                    </div>
+                return (
+                  <motion.div
+                    key={request.id}
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -100 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Card 
+                      className={cn(
+                        "overflow-hidden cursor-pointer transition-all",
+                        isExpanded && "ring-2 ring-primary shadow-lg"
+                      )}
+                      onClick={() => setExpandedId(isExpanded ? null : request.id)}
+                    >
+                      <CardContent className="p-0">
+                        {/* Main Row - Always Visible */}
+                        <div className="p-4">
+                          {/* Route Line */}
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="flex items-center gap-2 flex-1">
+                              <div className="w-3 h-3 rounded-full bg-green-500 ring-2 ring-green-200" />
+                              <span className="font-semibold truncate">{request.origin_city}</span>
+                            </div>
+                            <div className="flex-1 flex items-center justify-center">
+                              <div className="h-0.5 w-full bg-gradient-to-r from-green-500 to-red-500 rounded-full" />
+                            </div>
+                            <div className="flex items-center gap-2 flex-1 justify-end">
+                              <span className="font-semibold truncate">{request.destination_city}</span>
+                              <div className="w-3 h-3 rounded-full bg-red-500 ring-2 ring-red-200" />
+                            </div>
+                          </div>
 
-                    {/* V1.1: Expanded details on click */}
-                    {isExpanded && (
-                      <div className="pt-3 border-t space-y-3 animate-in slide-in-from-top-2">
-                        {/* Details grid */}
-                        <div className="grid grid-cols-3 gap-2 text-xs">
-                          <div className="flex items-center gap-1">
-                            <Scale className="w-3 h-3 text-muted-foreground" />
-                            <span>{request.weight} kg</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-muted-foreground" />
-                            <span>{new Date(request.created_at).toLocaleDateString("fr-FR")}</span>
-                          </div>
-                          <div className="font-semibold text-primary text-right">
-                            {request.total_price.toLocaleString()} {request.currency}
+                          {/* Quick Info Row */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Badge variant="outline" className="gap-1">
+                                <span>{vehicle.icon}</span>
+                                {vehicle.type}
+                              </Badge>
+                              <span className="text-sm text-muted-foreground">
+                                ~{distance} km
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-primary">
+                                {request.total_price.toLocaleString()} {request.currency}
+                              </span>
+                              <ChevronDown 
+                                className={cn(
+                                  "w-5 h-5 text-muted-foreground transition-transform",
+                                  isExpanded && "rotate-180"
+                                )} 
+                              />
+                            </div>
                           </div>
                         </div>
 
-                        {/* Vehicle type */}
-                        <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
-                          <Truck className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm">{vehicleType}</span>
-                        </div>
+                        {/* Expanded Details */}
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="px-4 pb-4 pt-2 border-t bg-muted/30 space-y-4">
+                                {/* Detail Grid */}
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <Scale className="w-4 h-4 text-muted-foreground" />
+                                    <span className="text-muted-foreground">Poids:</span>
+                                    <span className="font-medium">{request.weight} kg</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <Clock className="w-4 h-4 text-muted-foreground" />
+                                    <span className="text-muted-foreground">Reçu:</span>
+                                    <span className="font-medium">
+                                      {format(new Date(request.created_at), "d MMM HH:mm", { locale: fr })}
+                                    </span>
+                                  </div>
+                                  {request.pickup_date && (
+                                    <div className="col-span-2 flex items-center gap-2 text-sm">
+                                      <MapPin className="w-4 h-4 text-muted-foreground" />
+                                      <span className="text-muted-foreground">Enlèvement:</span>
+                                      <span className="font-medium">
+                                        {format(new Date(request.pickup_date), "d MMMM yyyy", { locale: fr })}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
 
-                        {/* Description */}
-                        {request.description && (
-                          <p className="text-xs text-muted-foreground line-clamp-2">
-                            {request.description}
-                          </p>
-                        )}
+                                {/* Description */}
+                                {request.description && (
+                                  <div className="p-3 bg-background rounded-lg">
+                                    <p className="text-sm text-muted-foreground">
+                                      {request.description}
+                                    </p>
+                                  </div>
+                                )}
 
-                        {/* V1.1: Actions with structured refusal */}
-                        <div className="flex gap-2 pt-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1 text-destructive border-destructive/30"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRefuseClick(request.id);
-                            }}
-                          >
-                            <X className="w-4 h-4 mr-1" />
-                            Refuser
-                          </Button>
-                          <Button
-                            size="sm"
-                            className="flex-1"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAccept(request.id);
-                            }}
-                          >
-                            <Check className="w-4 h-4 mr-1" />
-                            Accepter
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+                                {/* Price Estimate Notice */}
+                                <div className="flex items-start gap-2 p-3 bg-amber-500/10 rounded-lg border border-amber-200">
+                                  <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                                  <p className="text-xs text-amber-700">
+                                    Prix et distance estimés. Les conditions réelles peuvent varier.
+                                  </p>
+                                </div>
 
-                    {/* Collapsed hint */}
-                    {!isExpanded && (
-                      <p className="text-xs text-muted-foreground text-center">
-                        Appuyez pour voir les détails
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
+                                {/* Actions */}
+                                <div className="flex gap-3 pt-2">
+                                  <Button
+                                    variant="outline"
+                                    className="flex-1 border-destructive/30 text-destructive hover:bg-destructive/10"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRefuseClick(request.id);
+                                    }}
+                                  >
+                                    <X className="w-4 h-4 mr-2" />
+                                    Refuser
+                                  </Button>
+                                  <Button
+                                    className="flex-1 bg-green-600 hover:bg-green-700"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleAccept(request.id);
+                                    }}
+                                  >
+                                    <Check className="w-4 h-4 mr-2" />
+                                    Accepter
+                                  </Button>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
         )}
       </div>
 
-      {/* V1.1: Refusal reason dialog */}
+      {/* Refusal Dialog */}
       <RefusalReasonDialog
         open={refusalDialogOpen}
         onOpenChange={setRefusalDialogOpen}
