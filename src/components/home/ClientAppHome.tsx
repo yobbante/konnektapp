@@ -48,7 +48,7 @@ export function ClientAppHome({
         </h1>
       </motion.div>
 
-      {/* Active Order Banner - Only if exists */}
+      {/* Active Order Banner - Interactive */}
       {activeOrder && (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -57,20 +57,101 @@ export function ClientAppHome({
           className="mx-4 mb-3"
         >
           <Link to={`/tracking?order=${activeOrder.id}`}>
-            <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-xl p-3 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-primary" />
+            <motion.div 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="relative overflow-hidden bg-gradient-to-r from-primary/15 via-secondary/10 to-primary/15 border border-primary/30 rounded-2xl p-4 flex items-center gap-4 shadow-lg shadow-primary/10"
+            >
+              {/* Animated background pulse */}
+              <motion.div 
+                className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent"
+                animate={{ 
+                  x: ['-100%', '100%'],
+                }}
+                transition={{ 
+                  duration: 3, 
+                  repeat: Infinity, 
+                  ease: "linear" 
+                }}
+              />
+              
+              {/* Status indicator with pulse */}
+              <div className="relative">
+                <motion.div 
+                  className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md"
+                  animate={{ 
+                    boxShadow: [
+                      "0 0 0 0 rgba(var(--primary), 0.4)",
+                      "0 0 0 8px rgba(var(--primary), 0)",
+                    ]
+                  }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  {activeOrder.status === 'in_transit' ? (
+                    <MapPin className="w-6 h-6 text-white" />
+                  ) : activeOrder.status === 'collected' ? (
+                    <Package className="w-6 h-6 text-white" />
+                  ) : (
+                    <Clock className="w-6 h-6 text-white" />
+                  )}
+                </motion.div>
+                {/* Live indicator dot */}
+                <motion.div 
+                  className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
-                  {activeOrder.origin_city} → {activeOrder.destination_city}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {activeOrder.status === 'in_transit' ? 'En transit' : 'En cours'}
-                </p>
+              
+              <div className="flex-1 min-w-0 relative z-10">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-sm font-bold text-foreground truncate">
+                    {activeOrder.origin_city}
+                  </p>
+                  <motion.div
+                    animate={{ x: [0, 4, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    <ArrowRight className="w-4 h-4 text-primary flex-shrink-0" />
+                  </motion.div>
+                  <p className="text-sm font-bold text-foreground truncate">
+                    {activeOrder.destination_city}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                    activeOrder.status === 'in_transit' 
+                      ? 'bg-blue-500/20 text-blue-600' 
+                      : activeOrder.status === 'collected'
+                      ? 'bg-amber-500/20 text-amber-600'
+                      : 'bg-primary/20 text-primary'
+                  }`}>
+                    <motion.span 
+                      className="w-1.5 h-1.5 rounded-full bg-current"
+                      animate={{ opacity: [1, 0.5, 1] }}
+                      transition={{ duration: 1, repeat: Infinity }}
+                    />
+                    {activeOrder.status === 'in_transit' ? 'En transit' : 
+                     activeOrder.status === 'collected' ? 'Collecté' :
+                     activeOrder.status === 'accepted' ? 'Accepté' : 'En attente'}
+                  </span>
+                  {activeOrder.weight && (
+                    <span className="text-xs text-muted-foreground">
+                      {activeOrder.weight} kg
+                    </span>
+                  )}
+                </div>
               </div>
-              <ArrowRight className="w-4 h-4 text-primary flex-shrink-0" />
-            </div>
+              
+              {/* CTA Arrow */}
+              <motion.div 
+                className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center relative z-10"
+                animate={{ x: [0, 4, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <ArrowRight className="w-4 h-4 text-primary" />
+              </motion.div>
+            </motion.div>
           </Link>
         </motion.div>
       )}
