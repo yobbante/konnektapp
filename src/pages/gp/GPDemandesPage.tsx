@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, MessageCircle, Eye, CheckCircle, XCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  Package, Eye, CheckCircle, XCircle, ChevronDown, 
+  Scale, Calendar, RefreshCw, Sparkles 
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -8,9 +12,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
 import { PageLoader } from "@/components/ui/PageLoader";
+import { GPQuickStats } from "@/components/gp/dashboard/GPQuickStats";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface Order {
   id: string;
@@ -35,25 +41,33 @@ interface GPProfile {
 }
 
 /**
- * GPDemandesPage - Page des nouvelles demandes
+ * GPDemandesPage V2 - Page des nouvelles demandes améliorée
  * 
- * Affiche les demandes en attente (status = 'pending')
- * Actions: Accepter / Refuser / Voir détails / Contacter
+ * Features:
+ * - Quick stats en haut
+ * - Cartes interactives expansibles
+ * - Animations fluides
+ * - Actions rapides
  */
 export default function GPDemandesPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
   const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
   const [activeOrdersCount, setActiveOrdersCount] = useState(0);
+  const [completedThisMonth, setCompletedThisMonth] = useState(0);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const loadData = async (showRefresh = false) => {
     try {
+      if (showRefresh) setRefreshing(true);
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         navigate("/auth");
@@ -73,19 +87,34 @@ export default function GPDemandesPage() {
 
       setGpProfile(profile);
 
-      // Load pending orders and active orders count
+      // Load all orders for stats
+      const { data: allOrders } = await supabase
+        .from("orders")
+        .select("status, created_at")
+        .eq("gp_id", profile.id);
+
+      const pending = allOrders?.filter(o => o.status === "pending") || [];
+      const active = allOrders?.filter(o => ["accepted", "collected", "in_transit"].includes(o.status)) || [];
+      
+      // Count completed this month
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const completed = allOrders?.filter(o => 
+        o.status === "delivered" && 
+        new Date(o.created_at) >= startOfMonth
+      ) || [];
+
+      // Load pending orders with full details
       const { data: orders } = await supabase
         .from("orders")
         .select("*")
         .eq("gp_id", profile.id)
-        .in("status", ["pending", "accepted", "collected", "in_transit"])
+        .eq("status", "pending")
         .order("created_at", { ascending: false });
-
-      const pendingOnly = orders?.filter(o => o.status === "pending") || [];
-      const activeOnly = orders?.filter(o => ["accepted", "collected", "in_transit"].includes(o.status)) || [];
       
-      setPendingOrders(pendingOnly);
-      setActiveOrdersCount(activeOnly.length);
+      setPendingOrders(orders || []);
+      setActiveOrdersCount(active.length);
+      setCompletedThisMonth(completed.length);
     } catch (error) {
       console.error("Error loading data:", error);
       toast({
@@ -95,6 +124,7 @@ export default function GPDemandesPage() {
       });
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -109,8 +139,9 @@ export default function GPDemandesPage() {
 
       toast({
         title: "✅ Demande acceptée",
-        description: "Le client sera notifié",
+        description: "Le client sera notifié. RDV dans 'En cours'",
       });
+      setExpandedId(null);
       loadData();
     } catch (error) {
       toast({
@@ -134,6 +165,7 @@ export default function GPDemandesPage() {
         title: "Demande refusée",
         description: "Le client sera notifié",
       });
+      setExpandedId(null);
       loadData();
     } catch (error) {
       toast({
@@ -158,95 +190,205 @@ export default function GPDemandesPage() {
       activeTab="demandes"
     >
       <div className="px-4 py-4 space-y-4">
+        {/* Quick Stats */}
+        <GPQuickStats 
+          pendingCount={pendingOrders.length}
+          activeCount={activeOrdersCount}
+          completedThisMonth={completedThisMonth}
+        />
+
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">
-            Nouvelles demandes
-          </h2>
-          <Badge variant="secondary" className="bg-primary/10 text-primary">
-            {pendingOrders.length} en attente
-          </Badge>
+          <div>
+            <h2 className="text-lg font-semibold">Nouvelles demandes</h2>
+            <p className="text-xs text-muted-foreground">
+              Répondez rapidement pour maintenir votre score
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => loadData(true)}
+            disabled={refreshing}
+          >
+            <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
+          </Button>
         </div>
 
+        {/* Orders List */}
         {pendingOrders.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="py-12 text-center text-muted-foreground">
-              <Package className="w-12 h-12 mx-auto mb-4 opacity-30" />
-              <p className="font-medium">Aucune demande en attente</p>
-              <p className="text-sm mt-1">Les nouvelles réservations apparaîtront ici</p>
+              <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-30" />
+              <p className="font-medium">Tout est à jour !</p>
+              <p className="text-sm mt-1">Aucune demande en attente</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-4"
+                onClick={() => navigate("/gp/calendrier")}
+              >
+                Gérer mes voyages
+              </Button>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-3">
-            {pendingOrders.map((order) => (
-              <Card key={order.id} className="overflow-hidden">
-                <CardContent className="p-4">
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="font-medium text-sm">
-                        {order.origin_city} → {order.destination_city}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        #{order.order_number}
-                      </p>
-                    </div>
-                    <Badge className="bg-amber-500/10 text-amber-600 border-amber-200">
-                      En attente
-                    </Badge>
-                  </div>
+            <AnimatePresence>
+              {pendingOrders.map((order) => {
+                const isExpanded = expandedId === order.id;
+                
+                return (
+                  <motion.div
+                    key={order.id}
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -100 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Card 
+                      className={cn(
+                        "overflow-hidden cursor-pointer transition-all",
+                        isExpanded && "ring-2 ring-primary shadow-lg"
+                      )}
+                      onClick={() => setExpandedId(isExpanded ? null : order.id)}
+                    >
+                      <CardContent className="p-0">
+                        {/* Main Row */}
+                        <div className="p-4">
+                          {/* Route */}
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="flex items-center gap-2 flex-1">
+                              <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                              <span className="font-semibold text-sm truncate">
+                                {order.origin_city}
+                              </span>
+                            </div>
+                            <div className="flex-1 flex items-center justify-center">
+                              <div className="h-0.5 w-full bg-gradient-to-r from-green-500 to-primary rounded-full" />
+                            </div>
+                            <div className="flex items-center gap-2 flex-1 justify-end">
+                              <span className="font-semibold text-sm truncate">
+                                {order.destination_city}
+                              </span>
+                              <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                            </div>
+                          </div>
 
-                  {/* Details */}
-                  <div className="grid grid-cols-2 gap-2 text-sm mb-4">
-                    <div>
-                      <span className="text-muted-foreground">Poids:</span>
-                      <span className="ml-1 font-medium">{order.weight} kg</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Prix:</span>
-                      <span className="ml-1 font-medium">
-                        {order.total_price.toLocaleString()} {getCurrencySymbol(order.currency)}
-                      </span>
-                    </div>
-                    {order.pickup_date && (
-                      <div className="col-span-2">
-                        <span className="text-muted-foreground">Dépôt prévu:</span>
-                        <span className="ml-1 font-medium">
-                          {format(new Date(order.pickup_date), "d MMMM yyyy", { locale: fr })}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                          {/* Quick Info */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Scale className="w-3.5 h-3.5" />
+                                {order.weight} kg
+                              </span>
+                              <span className="font-mono text-xs">
+                                #{order.order_number.slice(-6)}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-primary">
+                                {order.total_price.toLocaleString()} {getCurrencySymbol(order.currency)}
+                              </span>
+                              <ChevronDown 
+                                className={cn(
+                                  "w-5 h-5 text-muted-foreground transition-transform",
+                                  isExpanded && "rotate-180"
+                                )} 
+                              />
+                            </div>
+                          </div>
+                        </div>
 
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      className="flex-1 bg-green-600 hover:bg-green-700"
-                      onClick={() => handleAccept(order.id)}
-                    >
-                      <CheckCircle className="w-4 h-4 mr-1" />
-                      Accepter
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1 text-destructive border-destructive/30 hover:bg-destructive/10"
-                      onClick={() => handleRefuse(order.id)}
-                    >
-                      <XCircle className="w-4 h-4 mr-1" />
-                      Refuser
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => navigate(`/gp/order/${order.id}`)}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                        {/* Expanded Details */}
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="px-4 pb-4 pt-2 border-t bg-muted/30 space-y-4">
+                                {/* Details Grid */}
+                                <div className="grid grid-cols-2 gap-3 text-sm">
+                                  <div className="flex items-center gap-2">
+                                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                                    <span className="text-muted-foreground">Reçu:</span>
+                                    <span className="font-medium">
+                                      {format(new Date(order.created_at), "d MMM HH:mm", { locale: fr })}
+                                    </span>
+                                  </div>
+                                  {order.pickup_date && (
+                                    <div className="flex items-center gap-2">
+                                      <Package className="w-4 h-4 text-muted-foreground" />
+                                      <span className="text-muted-foreground">Dépôt:</span>
+                                      <span className="font-medium">
+                                        {format(new Date(order.pickup_date), "d MMM", { locale: fr })}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Description */}
+                                {order.description && (
+                                  <div className="p-3 bg-background rounded-lg">
+                                    <p className="text-sm text-muted-foreground">
+                                      {order.description}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Actions */}
+                                <div className="flex gap-3 pt-2">
+                                  <Button
+                                    variant="outline"
+                                    className="flex-1 border-destructive/30 text-destructive hover:bg-destructive/10"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRefuse(order.id);
+                                    }}
+                                  >
+                                    <XCircle className="w-4 h-4 mr-2" />
+                                    Refuser
+                                  </Button>
+                                  <Button
+                                    className="flex-1 bg-green-600 hover:bg-green-700"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleAccept(order.id);
+                                    }}
+                                  >
+                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                    Accepter
+                                  </Button>
+                                </div>
+
+                                {/* View Details Link */}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full text-muted-foreground"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/gp/order/${order.id}`);
+                                  }}
+                                >
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  Voir tous les détails
+                                </Button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
         )}
       </div>

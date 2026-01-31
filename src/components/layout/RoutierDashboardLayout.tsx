@@ -1,8 +1,8 @@
 import { ReactNode, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
-  Truck, Bell, Package, Clock, Calendar, 
-  DollarSign, User, History, Menu, Car 
+  Truck, Bell, Package, Clock, 
+  User, History, Menu, Car 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,12 +59,12 @@ export function RoutierDashboardLayout({
   const [showHubMenu, setShowHubMenu] = useState(false);
 
   // Navigation tabs for Routier Dashboard
+  // ⚠️ Pas d'onglet Tarifs - le prix est calculé automatiquement par le système
   const navTabs: NavTab[] = [
-    { id: "demandes", label: "Demandes", icon: Package, path: "/routier/demandes", badge: pendingCount },
+    { id: "demandes", label: "Missions", icon: Package, path: "/routier/demandes", badge: pendingCount },
     { id: "en-cours", label: "En cours", icon: Clock, path: "/routier/en-cours", badge: activeOrdersCount },
     { id: "historique", label: "Historique", icon: History, path: "/routier/historique" },
-    { id: "vehicules", label: "Véhicules", icon: Car, path: "/routier/vehicules" },
-    { id: "tarifs", label: "Tarifs", icon: DollarSign, path: "/routier/tarification" },
+    { id: "vehicules", label: "Flotte", icon: Car, path: "/routier/vehicules" },
     { id: "profil", label: "Profil", icon: User, path: "/routier/profil-public" },
   ];
 
@@ -75,7 +75,6 @@ export function RoutierDashboardLayout({
     if (currentPath.includes("en-cours")) return "en-cours";
     if (currentPath.includes("historique")) return "historique";
     if (currentPath.includes("vehicules")) return "vehicules";
-    if (currentPath.includes("tarification")) return "tarifs";
     if (currentPath.includes("profil-public")) return "profil";
     return activeTab;
   };
