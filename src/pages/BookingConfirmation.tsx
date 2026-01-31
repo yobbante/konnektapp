@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   CheckCircle, Package, MapPin, Calendar, User, 
   MessageCircle, Home, ArrowRight, Plane, Clock,
-  Shield, Copy, Phone, MapPinned, Lock, Eye
+  Shield, Copy, Phone, MapPinned, Lock, Eye, QrCode
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileHeader } from "@/components/layout/MobileHeader";
@@ -15,6 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useGPContactRelease } from "@/hooks/useGPContactRelease";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
+import { OrderQRCode } from "@/components/client/OrderQRCode";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -489,6 +490,19 @@ export default function BookingConfirmation() {
               </div>
             </CardContent>
           </Card>
+        </motion.div>
+
+        {/* QR Code for Deposit/Delivery */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.55 }}
+        >
+          <OrderQRCode 
+            orderNumber={order.order_number}
+            orderId={order.id}
+            status={order.status}
+          />
         </motion.div>
 
         {/* Action Buttons */}

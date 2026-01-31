@@ -2,7 +2,7 @@ import { ReactNode, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
   Truck, Bell, Package, Clock, Calendar, 
-  DollarSign, User, History, Menu 
+  DollarSign, User, History, Menu, QrCode 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,10 +61,10 @@ export function GPDashboardLayout({
   const navTabs: NavTab[] = [
     { id: "demandes", label: "Demandes", icon: Package, path: "/gp/demandes", badge: pendingCount },
     { id: "en-cours", label: "En cours", icon: Clock, path: "/gp/en-cours", badge: activeOrdersCount },
-    { id: "historique", label: "Historique", icon: History, path: "/gp/historique" },
+    { id: "scan", label: "Scan", icon: QrCode, path: "/gp/scan" },
     { id: "calendrier", label: "Départs", icon: Calendar, path: "/gp/calendrier" },
     { id: "tarifs", label: "Tarifs", icon: DollarSign, path: "/gp/tarification" },
-    { id: "profil", label: "Profil", icon: User, path: "/gp/profil-public" },
+    { id: "historique", label: "Historique", icon: History, path: "/gp/historique" },
   ];
 
   // Detect active tab from path
@@ -72,10 +72,10 @@ export function GPDashboardLayout({
   const getActiveFromPath = () => {
     if (currentPath === "/gp/dashboard" || currentPath === "/gp/demandes") return "demandes";
     if (currentPath.includes("en-cours")) return "en-cours";
+    if (currentPath.includes("scan")) return "scan";
     if (currentPath.includes("historique")) return "historique";
     if (currentPath.includes("calendrier")) return "calendrier";
     if (currentPath.includes("tarification")) return "tarifs";
-    if (currentPath.includes("profil-public")) return "profil";
     return activeTab;
   };
 
