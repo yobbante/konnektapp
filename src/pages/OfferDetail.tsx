@@ -4,17 +4,20 @@ import { motion } from "framer-motion";
 import { 
   ArrowLeft, MapPin, Calendar, Clock, Star, Package, 
   Truck, Shield, MessageCircle, Share2, Heart,
-  Zap, Ship, Plane, Briefcase, User, CheckCircle, ArrowRight, Scale, Luggage
+  Zap, Ship, Plane, Briefcase, User, CheckCircle, ArrowRight, Scale, Luggage,
+  Info, AlertCircle, FileText
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useFavorites } from "@/hooks/useFavorites";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { RealTimeTrackingMap } from "@/components/tracking/RealTimeTrackingMap";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "bagages_international";
 
@@ -343,6 +346,22 @@ export default function OfferDetail() {
           </div>
         </motion.div>
 
+        {/* Route Map Visualization */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="mb-4"
+        >
+          <RealTimeTrackingMap
+            originCity={offer.origin_city}
+            destinationCity={offer.destination_city}
+            currentStatus="pending"
+            progress={0}
+            transportType={offer.transport_type}
+          />
+        </motion.div>
+
         {/* GP Profile Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -446,6 +465,47 @@ export default function OfferDetail() {
             <p className="text-sm text-muted-foreground leading-relaxed">{offer.conditions}</p>
           </motion.div>
         )}
+
+        {/* Additional Info Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card className="border-border/50 bg-gradient-to-br from-muted/30 to-muted/10">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Info className="w-4 h-4 text-primary" />
+                Informations importantes
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-start gap-3 p-3 bg-background/60 rounded-xl">
+                <Shield className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-sm">Protection Yobbanté</p>
+                  <p className="text-xs text-muted-foreground">Vos envois sont protégés par notre assurance incluse jusqu'à 50 000 FCFA</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 p-3 bg-background/60 rounded-xl">
+                <FileText className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-sm">Documents requis</p>
+                  <p className="text-xs text-muted-foreground">Pièce d'identité valide et description du contenu du colis</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 bg-warning/5 border border-warning/20 rounded-xl">
+                <AlertCircle className="w-5 h-5 text-warning mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-sm text-warning">Articles interdits</p>
+                  <p className="text-xs text-muted-foreground">Produits illicites, armes, denrées périssables non emballées</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
 
       {/* Fixed Bottom CTA with proper safe area - positioned above MobileNav */}
