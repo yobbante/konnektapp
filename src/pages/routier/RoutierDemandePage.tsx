@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, ArrowRight, Package, MapPin, Truck, Scale, Box, 
   Thermometer, AlertTriangle, Droplets, Shield, Clock, Check,
-  Calculator, ChevronRight, Loader2
+  Calculator, ChevronRight, Loader2, Calendar, Info
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Button } from "@/components/ui/button";
@@ -12,17 +12,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * RoutierDemandePage - Parcours client transport routier
+ * RoutierDemandePage - Parcours client transport routier V1.1
  * 
- * Règles PRV:
- * - Client décrit son fret → système calcule véhicule + prix
- * - AUCUNE offre visible, AUCUN choix de transporteur
- * - Calcul automatique basé sur: fret, poids, distance, contraintes
- * - Mission envoyée aux transporteurs compatibles
+ * Améliorations V1.1 terrain-proof:
+ * - Créneau flexible (+24/+48h) pour augmenter le matching
+ * - Verrou anti-doublon (même client + même trajet + 10min)
+ * - Labels "estimé" explicites
+ * - Feedback client explicite
  */
 
 type FreightType = 
@@ -48,7 +49,9 @@ interface FormData {
   destinationAddress: string;
   destinationCity: string;
   description: string;
-  pickupDate: string;
+  pickupDateStart: string;
+  pickupDateEnd: string;
+  flexibleDeparture: boolean;
   urgent: boolean;
 }
 
@@ -124,16 +127,25 @@ const calculatePrice = (freightType: FreightType, weight: number, distance: numb
   return Math.round(total);
 };
 
+// Anti-duplicate key generator
+const getDuplicateKey = (formData: FormData): string => {
+  return `${formData.originCity}-${formData.destinationCity}-${formData.freightType}-${formData.weight}`;
+};
+
 export default function RoutierDemandePage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [submittedKeys, setSubmittedKeys] = useState<Map<string, number>>(new Map());
   const [calculatedResult, setCalculatedResult] = useState<{
     vehicle: string;
     price: number;
     estimatedDelivery: string;
+    estimatedDistance: number;
   } | null>(null);
+
+  const today = new Date().toISOString().split('T')[0];
 
   const [formData, setFormData] = useState<FormData>({
     freightType: null,
@@ -146,7 +158,9 @@ export default function RoutierDemandePage() {
     destinationAddress: "",
     destinationCity: "",
     description: "",
-    pickupDate: "",
+    pickupDateStart: today,
+    pickupDateEnd: "",
+    flexibleDeparture: false,
     urgent: false,
   });
 
@@ -166,7 +180,7 @@ export default function RoutierDemandePage() {
       case 1:
         return !!formData.freightType && !!formData.weight && parseFloat(formData.weight) > 0;
       case 2:
-        return !!formData.originCity && !!formData.destinationCity;
+        return !!formData.originCity && !!formData.destinationCity && !!formData.pickupDateStart;
       case 3:
         return true; // Review step
       case 4:
@@ -193,6 +207,7 @@ export default function RoutierDemandePage() {
         vehicle,
         price,
         estimatedDelivery: formData.constraints.includes("urgent") ? "24-48h" : "3-5 jours",
+        estimatedDistance: simulatedDistance,
       });
     }
     setStep(prev => Math.min(prev + 1, totalSteps));
@@ -206,7 +221,28 @@ export default function RoutierDemandePage() {
     }
   };
 
+  // Check for duplicate submission
+  const isDuplicate = (): boolean => {
+    const key = getDuplicateKey(formData);
+    const lastSubmission = submittedKeys.get(key);
+    if (lastSubmission) {
+      const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
+      return lastSubmission > tenMinutesAgo;
+    }
+    return false;
+  };
+
   const handleSubmit = async () => {
+    // V1.1: Anti-duplicate lock
+    if (isDuplicate()) {
+      toast({
+        title: "Demande déjà envoyée",
+        description: "Une demande similaire a été soumise il y a moins de 10 minutes.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     
     try {
@@ -215,6 +251,14 @@ export default function RoutierDemandePage() {
         toast({ title: "Erreur", description: "Vous devez être connecté", variant: "destructive" });
         navigate("/auth");
         return;
+      }
+
+      // Calculate end date with flexible option
+      let endDate = formData.pickupDateEnd || formData.pickupDateStart;
+      if (formData.flexibleDeparture && !formData.pickupDateEnd) {
+        const startDate = new Date(formData.pickupDateStart);
+        startDate.setDate(startDate.getDate() + 2); // +48h flexibility
+        endDate = startDate.toISOString().split('T')[0];
       }
 
       // In V1, we create a custom_request that will be sent to compatible transporters
@@ -236,10 +280,16 @@ export default function RoutierDemandePage() {
         is_urgent: formData.constraints.includes("urgent"),
         budget_min: Math.round(calculatedResult!.price * 0.8),
         budget_max: Math.round(calculatedResult!.price * 1.2),
+        pickup_date_from: formData.pickupDateStart,
+        pickup_date_to: endDate,
         status: "open",
       });
 
       if (error) throw error;
+
+      // Record submission to prevent duplicates
+      const key = getDuplicateKey(formData);
+      setSubmittedKeys(prev => new Map(prev).set(key, Date.now()));
 
       toast({
         title: "Demande envoyée !",
@@ -413,7 +463,7 @@ export default function RoutierDemandePage() {
             </motion.div>
           )}
 
-          {/* Step 2: Itinerary */}
+          {/* Step 2: Itinerary + Schedule (V1.1) */}
           {step === 2 && (
             <motion.div
               key="step2"
@@ -424,8 +474,8 @@ export default function RoutierDemandePage() {
             >
               <div className="text-center">
                 <MapPin className="w-10 h-10 text-primary mx-auto mb-2" />
-                <h2 className="text-xl font-bold">Itinéraire</h2>
-                <p className="text-sm text-muted-foreground">Point de départ et destination</p>
+                <h2 className="text-xl font-bold">Itinéraire & Créneau</h2>
+                <p className="text-sm text-muted-foreground">Trajet et dates souhaitées</p>
               </div>
 
               {/* Origin */}
@@ -473,13 +523,68 @@ export default function RoutierDemandePage() {
                 />
               </div>
 
-              {/* Distance estimate */}
+              {/* Distance estimate (V1.1: explicit "estimée") */}
               {formData.originCity && formData.destinationCity && (
                 <div className="p-3 bg-muted/50 rounded-xl text-center">
                   <p className="text-sm text-muted-foreground">Distance estimée</p>
                   <p className="font-bold text-lg">~150 km</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Basée sur une estimation terrain
+                  </p>
                 </div>
               )}
+
+              {/* V1.1: Schedule with flexible option */}
+              <div className="space-y-4 pt-4 border-t">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  Créneau d'enlèvement *
+                </Label>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs text-muted-foreground mb-1 block">Date début</Label>
+                    <Input
+                      type="date"
+                      value={formData.pickupDateStart}
+                      onChange={(e) => setFormData(prev => ({ ...prev, pickupDateStart: e.target.value }))}
+                      min={today}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground mb-1 block">Date fin (optionnel)</Label>
+                    <Input
+                      type="date"
+                      value={formData.pickupDateEnd}
+                      onChange={(e) => setFormData(prev => ({ ...prev, pickupDateEnd: e.target.value }))}
+                      min={formData.pickupDateStart || today}
+                    />
+                  </div>
+                </div>
+
+                {/* V1.1: Flexible departure toggle */}
+                <div className="flex items-center justify-between p-3 bg-primary/5 rounded-xl border border-primary/20">
+                  <div className="flex items-start gap-3">
+                    <Clock className="w-5 h-5 text-primary mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium">Départ flexible (+48h)</p>
+                      <p className="text-xs text-muted-foreground">
+                        Augmente vos chances de trouver un transporteur
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={formData.flexibleDeparture}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, flexibleDeparture: checked }))}
+                  />
+                </div>
+
+                {/* V1.1: Pedagogical hint */}
+                <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <p>Plus le créneau est large, plus vous avez de chances de trouver un transporteur disponible.</p>
+                </div>
+              </div>
             </motion.div>
           )}
 
@@ -513,7 +618,7 @@ export default function RoutierDemandePage() {
                 </div>
               </div>
 
-              {/* Price */}
+              {/* V1.1: Price with "estimé" label */}
               <div className="p-4 rounded-2xl bg-muted/50">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-muted-foreground">Prix estimé</span>
@@ -531,6 +636,13 @@ export default function RoutierDemandePage() {
                 </div>
               </div>
 
+              {/* V1.1: Legal disclaimer */}
+              <div className="p-3 bg-blue-500/10 rounded-xl text-sm border border-blue-500/20">
+                <p className="text-blue-700 dark:text-blue-300">
+                  ⚖️ Prix indicatif basé sur une estimation terrain. Le montant final peut varier selon les conditions réelles.
+                </p>
+              </div>
+
               {/* Summary */}
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
@@ -545,6 +657,16 @@ export default function RoutierDemandePage() {
                   <span className="text-muted-foreground">Trajet</span>
                   <span className="font-medium">{formData.originCity} → {formData.destinationCity}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Distance estimée</span>
+                  <span className="font-medium">~{calculatedResult.estimatedDistance} km</span>
+                </div>
+                {formData.flexibleDeparture && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Flexibilité</span>
+                    <Badge variant="outline" className="text-xs">+48h</Badge>
+                  </div>
+                )}
                 {formData.constraints.length > 0 && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Contraintes</span>
@@ -590,17 +712,6 @@ export default function RoutierDemandePage() {
                 />
               </div>
 
-              {/* Pickup Date */}
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Date d'enlèvement souhaitée</Label>
-                <Input
-                  type="date"
-                  value={formData.pickupDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, pickupDate: e.target.value }))}
-                  min={new Date().toISOString().split('T')[0]}
-                />
-              </div>
-
               {/* Final price reminder */}
               {calculatedResult && (
                 <div className="p-4 rounded-2xl border-2 border-primary bg-primary/5">
@@ -627,6 +738,15 @@ export default function RoutierDemandePage() {
                   Le premier à accepter sera assigné à votre mission.
                 </p>
               </div>
+
+              {/* V1.1: Flexibility reminder */}
+              {formData.flexibleDeparture && (
+                <div className="p-3 bg-green-500/10 rounded-xl text-sm border border-green-500/20">
+                  <p className="text-green-700 dark:text-green-300">
+                    ✓ Départ flexible activé — Votre demande sera visible pendant 48h supplémentaires.
+                  </p>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -657,7 +777,7 @@ export default function RoutierDemandePage() {
             ) : (
               <>
                 <Check className="w-5 h-5 mr-2" />
-                Réserver ce transport
+                Lancer la recherche
               </>
             )}
           </Button>
