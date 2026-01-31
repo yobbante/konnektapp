@@ -1,24 +1,19 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { 
-  Search, Package, ArrowRight, MapPin, Star,
-  Zap, Truck, Ship, Plane, Briefcase, Loader2, Heart, Scale, Filter, Building2, Calculator, Luggage, CheckCircle, Calendar
+  Package, ArrowRight, Star, Loader2, Heart, Calendar,
+  Zap, Truck, Ship, Plane, Briefcase, Luggage, Building2
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { AdvancedFilters, DEFAULT_FILTERS, type AdvancedFiltersState } from "@/components/offers/AdvancedFilters";
-import { VehicleCapacityFilter, DEFAULT_VEHICLE_FILTERS, type VehicleCapacityFiltersState } from "@/components/offers/VehicleCapacityFilter";
+import { SmartRouteSearch } from "@/components/offers/SmartRouteSearch";
 import { useFavorites } from "@/hooks/useFavorites";
-import { useOfferNotifications } from "@/hooks/useOfferNotifications";
-import { CompareProvider, useCompare, CompareOffer } from "@/components/offers/OfferCompare";
-import { MovingQuoteCalculator } from "@/components/quotes/MovingQuoteCalculator";
 import { useToast } from "@/hooks/use-toast";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh";
@@ -56,16 +51,11 @@ const transportConfig: Record<TransportType, { icon: typeof Package; label: stri
 
 const transportFilters = [
   { type: "all", label: "Tous", icon: Package },
-  { type: "bagages_international", label: "GP Bagages", icon: Luggage },
-  { type: "voyageur", label: "GP", icon: Briefcase },
+  { type: "bagages_international", label: "GP", icon: Luggage },
   { type: "routier", label: "Routier", icon: Truck },
   { type: "maritime", label: "Maritime", icon: Ship },
   { type: "aerien", label: "Aérien", icon: Plane },
 ];
-
-const getTransportIcon = (type: TransportType) => {
-  return transportConfig[type]?.icon || Package;
-};
 
 const getTransportLabel = (type: TransportType) => {
   return transportConfig[type]?.label || type;
@@ -75,28 +65,19 @@ const getTransportConfig = (type: TransportType) => {
   return transportConfig[type] || transportConfig.routier;
 };
 
-function OffresContent() {
-  const [searchParams] = useSearchParams();
+export default function Offres() {
   const { toast } = useToast();
-  const typeFromUrl = searchParams.get("type") || "all";
-  const [activeFilter, setActiveFilter] = useState(typeFromUrl);
+  const [activeFilter, setActiveFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchOrigin, setSearchOrigin] = useState<string | undefined>();
+  const [searchDestination, setSearchDestination] = useState<string | undefined>();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
   const ITEMS_PER_PAGE = 20;
-  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFiltersState>(DEFAULT_FILTERS);
-  const [vehicleFilters, setVehicleFilters] = useState<VehicleCapacityFiltersState>(DEFAULT_VEHICLE_FILTERS);
-  const [showQuoteCalculator, setShowQuoteCalculator] = useState(false);
   const { isAuthenticated, isFavorite, toggleFavorite } = useFavorites();
-  const { saveSearch } = useOfferNotifications({
-    filters: advancedFilters,
-    activeTransportType: activeFilter,
-    searchQuery,
-    enabled: isAuthenticated,
-  });
 
   // Pull to refresh
   const handleRefresh = useCallback(async () => {
@@ -110,7 +91,7 @@ function OffresContent() {
   useEffect(() => {
     fetchOffers(true);
 
-    // Subscribe to realtime updates for gp_offers
+    // Subscribe to realtime updates
     const channel = supabase
       .channel('offers-realtime')
       .on(
@@ -120,10 +101,7 @@ function OffresContent() {
           schema: 'public',
           table: 'gp_offers'
         },
-        (payload) => {
-          console.log('Realtime update:', payload);
-          fetchOffers(true);
-        }
+        () => fetchOffers(true)
       )
       .subscribe();
 
@@ -223,31 +201,38 @@ function OffresContent() {
     }
   };
 
+  // Handle smart search
+  const handleSearch = (query: string, origin?: string, destination?: string) => {
+    setSearchQuery(query);
+    setSearchOrigin(origin);
+    setSearchDestination(destination);
+  };
+
   // Apply all filters
   const filteredOffers = useMemo(() => {
     return offers.filter((offer) => {
       // Transport type filter
       if (activeFilter !== "all" && offer.transport_type !== activeFilter) {
-        return false;
-      }
-
-      // Vehicle category filter
-      if (vehicleFilters.vehicleCategories.length > 0) {
-        if (!vehicleFilters.vehicleCategories.includes(offer.transport_type)) {
+        // Also include voyageur for bagages_international filter
+        if (!(activeFilter === "bagages_international" && offer.transport_type === "voyageur")) {
           return false;
         }
       }
 
-      // Capacity filter
-      if (vehicleFilters.minCapacity > 0 && offer.available_capacity < vehicleFilters.minCapacity) {
-        return false;
-      }
-      if (vehicleFilters.maxCapacity < 50000 && offer.available_capacity > vehicleFilters.maxCapacity) {
-        return false;
+      // Route-based search (origin)
+      if (searchOrigin) {
+        const originMatch = offer.origin_city.toLowerCase().includes(searchOrigin.toLowerCase());
+        if (!originMatch) return false;
       }
 
-      // Search query filter
-      if (searchQuery) {
+      // Route-based search (destination)
+      if (searchDestination) {
+        const destMatch = offer.destination_city.toLowerCase().includes(searchDestination.toLowerCase());
+        if (!destMatch) return false;
+      }
+
+      // General text search
+      if (searchQuery && !searchOrigin && !searchDestination) {
         const query = searchQuery.toLowerCase();
         const matchesSearch = 
           offer.origin_city.toLowerCase().includes(query) ||
@@ -256,34 +241,9 @@ function OffresContent() {
         if (!matchesSearch) return false;
       }
 
-      // Price range filter
-      if (advancedFilters.minPrice > 0 && offer.price_per_kg < advancedFilters.minPrice) {
-        return false;
-      }
-      if (advancedFilters.maxPrice < 50000 && offer.price_per_kg > advancedFilters.maxPrice) {
-        return false;
-      }
-
-      // Weight filter
-      if (advancedFilters.minWeight > 0 && offer.available_capacity < advancedFilters.minWeight) {
-        return false;
-      }
-
-      // Date filters
-      if (advancedFilters.dateFrom) {
-        const departureDate = new Date(offer.departure_date);
-        const fromDate = new Date(advancedFilters.dateFrom);
-        if (departureDate < fromDate) return false;
-      }
-      if (advancedFilters.dateTo) {
-        const departureDate = new Date(offer.departure_date);
-        const toDate = new Date(advancedFilters.dateTo);
-        if (departureDate > toDate) return false;
-      }
-
       return true;
     });
-  }, [offers, activeFilter, searchQuery, advancedFilters, vehicleFilters]);
+  }, [offers, activeFilter, searchQuery, searchOrigin, searchDestination]);
 
   const formatDate = (dateStr: string) => {
     try {
@@ -297,7 +257,6 @@ function OffresContent() {
     e.preventDefault();
     e.stopPropagation();
     
-    // Check if user is authenticated
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       toast({
@@ -315,42 +274,12 @@ function OffresContent() {
       <PullToRefreshIndicator isRefreshing={isRefreshing} progress={progress} pullDistance={pullDistance} />
       <AppHeader title="Offres" />
 
-      {/* Sticky Search & Filters */}
+      {/* Smart Search */}
       <div className="sticky top-14 z-40 bg-background/95 backdrop-blur-sm px-4 py-3 border-b border-border">
-        {/* Search Row */}
-        <div className="flex gap-2 mb-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Ville, destination, transporteur..."
-              className="pl-10 h-10 bg-muted/50"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <VehicleCapacityFilter
-            filters={vehicleFilters}
-            onFiltersChange={setVehicleFilters}
-          />
-          <AdvancedFilters
-            filters={advancedFilters}
-            onFiltersChange={setAdvancedFilters}
-            onSaveSearch={saveSearch}
-            isAuthenticated={isAuthenticated}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowQuoteCalculator(true)}
-            className="gap-2"
-          >
-            <Calculator className="w-4 h-4" />
-            Devis
-          </Button>
-        </div>
-
-        {/* Transport Filters - Scrollable */}
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide">
+        <SmartRouteSearch onSearch={handleSearch} />
+        
+        {/* Transport Type Quick Filters */}
+        <div className="flex gap-2 overflow-x-auto pb-1 mt-3 -mx-4 px-4 scrollbar-hide">
           {transportFilters.map((filter) => (
             <button
               key={filter.type}
@@ -399,11 +328,6 @@ function OffresContent() {
                 >
                   <Link to={`/offres/${offer.id}`}>
                     <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${config.gradient} border border-border/50 p-4 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10`}>
-                      {/* Animated background */}
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                        <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-primary/10 blur-2xl" />
-                      </div>
-
                       {/* Favorite Button */}
                       <motion.button
                         whileTap={{ scale: 0.9 }}
@@ -432,7 +356,7 @@ function OffresContent() {
                           </div>
                         </div>
 
-                        {/* Animated Route */}
+                        {/* Route */}
                         <div className="flex items-center gap-3 mb-4">
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 rounded-full bg-primary shadow-lg shadow-primary/30" />
@@ -446,67 +370,50 @@ function OffresContent() {
                               whileInView={{ width: "100%" }}
                               transition={{ duration: 0.8, delay: 0.2 }}
                             />
-                            <motion.div
-                              className="absolute top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-background border-2 border-primary flex items-center justify-center shadow-md"
-                              initial={{ left: "0%", opacity: 0 }}
-                              whileInView={{ left: "calc(50% - 12px)", opacity: 1 }}
-                              transition={{ duration: 0.6, delay: 0.3 }}
-                            >
-                              <TransportIcon className={`w-3 h-3 ${config.color}`} />
-                            </motion.div>
                           </div>
-
+                          
                           <div className="flex items-center gap-2">
                             <span className="font-semibold">{offer.destination_city}</span>
-                            <div className="w-3 h-3 rounded-full bg-accent shadow-lg shadow-accent/30" />
-                          </div>
-                        </div>
-
-                        {/* Capacity & Price Row */}
-                        <div className="flex items-center justify-between p-3 bg-background/60 backdrop-blur-sm rounded-xl">
-                          <div className="flex items-center gap-2">
-                            <Scale className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">{offer.available_capacity} kg dispo</span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-lg font-bold text-primary">{offer.price_per_kg.toLocaleString()}</span>
-                            <span className="text-xs text-muted-foreground ml-1">FCFA/kg</span>
+                            <div className="w-3 h-3 rounded-full bg-destructive shadow-lg shadow-destructive/30" />
                           </div>
                         </div>
 
                         {/* Footer */}
-                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/30">
-                          <Link 
-                            to={`/gp/${offer.gp_id}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                          >
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                              <span className="text-xs font-bold text-primary">
-                                {(offer.gp_profile?.business_name || "?").charAt(0).toUpperCase()}
-                              </span>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            {/* GP Name & Rating */}
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                                <span className="text-xs font-bold">
+                                  {(offer.gp_profile?.business_name || "GP").charAt(0)}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium line-clamp-1">
+                                  {offer.gp_profile?.business_name || "Transporteur"}
+                                </p>
+                                {offer.gp_profile?.rating && (
+                                  <div className="flex items-center gap-1">
+                                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                    <span className="text-xs text-muted-foreground">
+                                      {offer.gp_profile.rating.toFixed(1)}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-sm font-medium">{offer.gp_profile?.business_name || "Transporteur"}</p>
-                              {offer.gp_profile?.rating && offer.gp_profile.rating > 0 ? (
-                                <div className="flex items-center gap-1">
-                                  <Star className="w-3 h-3 text-warning fill-warning" />
-                                  <span className="text-xs text-muted-foreground">{offer.gp_profile.rating.toFixed(1)}</span>
-                                </div>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">Nouveau</span>
-                              )}
-                            </div>
-                          </Link>
-                          
-                          <motion.div
-                            initial={{ opacity: 0, x: 10 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            className="flex items-center gap-1 text-primary text-sm font-medium"
-                          >
-                            Voir détails
-                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                          </motion.div>
+                          </div>
+
+                          {/* Price & CTA */}
+                          <div className="text-right">
+                            <p className="text-lg font-bold text-primary">
+                              {offer.price_per_kg.toLocaleString()} F
+                              <span className="text-xs font-normal text-muted-foreground">/kg</span>
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {offer.available_capacity} kg dispo
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -515,75 +422,28 @@ function OffresContent() {
               );
             })}
             
-            {/* Infinite scroll loader */}
+            {/* Loading More Indicator */}
             {loadingMore && (
               <div className="flex justify-center py-4">
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
               </div>
             )}
-            
-            {!hasMore && offers.length > ITEMS_PER_PAGE && (
-              <p className="text-center text-sm text-muted-foreground py-4">
-                Toutes les offres ont été chargées
-              </p>
-            )}
           </div>
         ) : (
           <div className="text-center py-12">
-            <Package className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
-            <h3 className="font-semibold text-foreground mb-1">Aucune offre disponible</h3>
+            <Package className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">Aucune offre trouvée</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              {activeFilter !== "all" 
-                ? "Aucune offre pour ce type de transport. Essayez un autre filtre."
-                : "Les transporteurs n'ont pas encore publié d'offres."}
+              Essayez de modifier vos critères de recherche
             </p>
-            <Link to="/demande">
-              <Button variant="default" size="sm">
-                Créer une demande
-              </Button>
-            </Link>
+            <Button variant="outline" onClick={() => handleSearch("", undefined, undefined)}>
+              Réinitialiser la recherche
+            </Button>
           </div>
-        )}
-
-        {/* CTA */}
-        {filteredOffers.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="mt-6 p-4 rounded-xl bg-muted/50 border border-border text-center"
-          >
-            <p className="text-sm text-muted-foreground mb-3">
-              Vous ne trouvez pas votre trajet ?
-            </p>
-            <Link to="/demande">
-              <Button variant="default" size="sm" className="w-full">
-                Créer une demande personnalisée
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
-          </motion.div>
         )}
       </div>
 
-      {/* Moving Quote Calculator */}
-      <MovingQuoteCalculator
-        open={showQuoteCalculator}
-        onOpenChange={setShowQuoteCalculator}
-        onSubmitQuote={(quote) => {
-          console.log("Quote submitted:", quote);
-        }}
-      />
-
       <MobileNav />
     </div>
-  );
-}
-
-export default function OffresPage() {
-  return (
-    <CompareProvider>
-      <OffresContent />
-    </CompareProvider>
   );
 }
