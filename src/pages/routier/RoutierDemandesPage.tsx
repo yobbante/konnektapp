@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Package, MapPin, Scale, Clock, Check, X, Truck, 
-  ChevronDown, ArrowRight, AlertCircle, RefreshCw
+  Package, Scale, Clock, Check, X, Truck, 
+  ChevronDown, AlertCircle, RefreshCw, Zap
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { RoutierDashboardLayout } from "@/components/layout/RoutierDashboardLayout";
@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TransportPageLoader } from "@/components/ui/TransportLoader";
+import { RoutierQuickStats } from "@/components/routier/dashboard/RoutierQuickStats";
 import { useToast } from "@/hooks/use-toast";
 import { RefusalReasonDialog, RefusalReason } from "@/components/routier/RefusalReasonDialog";
 import { format } from "date-fns";
@@ -18,13 +19,12 @@ import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
 /**
- * RoutierDemandesPage - Dashboard transporteur V1.1 Interactif
+ * RoutierDemandesPage V2 - Dashboard transporteur routier optimisé
  * 
- * Améliorations:
- * - Cartes mission lisibles et interactives
- * - Expansion fluide avec détails
- * - Actions claires Accepter/Refuser
- * - Animations smooth
+ * Différences avec GP:
+ * - Pas de tarification (prix auto système)
+ * - Focus missions et flotte
+ * - Estimation distance/véhicule
  */
 
 interface FreightRequest {
@@ -83,6 +83,9 @@ export default function RoutierDemandesPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [gpProfile, setGpProfile] = useState<any>(null);
   const [requests, setRequests] = useState<FreightRequest[]>([]);
+  const [activeCount, setActiveCount] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
+  const [vehicleCount, setVehicleCount] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [refusalDialogOpen, setRefusalDialogOpen] = useState(false);
   const [refusingOrderId, setRefusingOrderId] = useState<string | null>(null);
@@ -115,6 +118,23 @@ export default function RoutierDemandesPage() {
 
       setGpProfile(gp);
 
+      // Load all orders for stats
+      const { data: allOrders } = await supabase
+        .from("orders")
+        .select("status")
+        .eq("gp_id", gp.id);
+
+      const pending = allOrders?.filter(o => o.status === "pending") || [];
+      const active = allOrders?.filter(o => ["accepted", "collected", "in_transit"].includes(o.status)) || [];
+      const completed = allOrders?.filter(o => o.status === "delivered") || [];
+
+      // Load vehicles count
+      const { count: vCount } = await supabase
+        .from("vehicles")
+        .select("*", { count: "exact", head: true })
+        .eq("gp_id", gp.id);
+
+      // Load pending orders with full details
       const { data: orders, error: ordersError } = await supabase
         .from("orders")
         .select("*")
@@ -125,6 +145,10 @@ export default function RoutierDemandesPage() {
       if (!ordersError && orders) {
         setRequests(orders);
       }
+      
+      setActiveCount(active.length);
+      setCompletedCount(completed.length);
+      setVehicleCount(vCount || 0);
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
@@ -169,7 +193,7 @@ export default function RoutierDemandesPage() {
 
       if (error) throw error;
 
-      console.log("[Routier V1.1] Refusal logged:", {
+      console.log("[Routier V2] Refusal logged:", {
         orderId: refusingOrderId,
         reason,
         notes,
@@ -200,41 +224,51 @@ export default function RoutierDemandesPage() {
     <RoutierDashboardLayout
       gpProfile={gpProfile}
       pendingCount={requests.length}
-      activeOrdersCount={0}
+      activeOrdersCount={activeCount}
     >
       <div className="p-4 space-y-4">
+        {/* Quick Stats */}
+        <RoutierQuickStats
+          missionsEnAttente={requests.length}
+          missionsEnCours={activeCount}
+          livraisonsTerminees={completedCount}
+          vehiculesActifs={vehicleCount}
+        />
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold">Missions disponibles</h2>
-            <p className="text-sm text-muted-foreground">
-              Missions compatibles avec vos véhicules
+            <p className="text-xs text-muted-foreground">
+              Premier arrivé, premier servi
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => loadData(true)}
-              disabled={refreshing}
-            >
-              <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
-            </Button>
-            <Badge variant="secondary" className="bg-primary/10 text-primary">
-              {requests.length} en attente
-            </Badge>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => loadData(true)}
+            disabled={refreshing}
+          >
+            <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
+          </Button>
         </div>
 
         {/* Mission Cards */}
         {requests.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="py-16 text-center">
-              <Truck className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
+              <Zap className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
               <h3 className="font-semibold mb-2">Aucune mission disponible</h3>
-              <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+              <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-4">
                 Les missions compatibles avec vos véhicules et zones apparaîtront ici automatiquement.
               </p>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate("/routier/vehicules")}
+              >
+                Gérer ma flotte
+              </Button>
             </CardContent>
           </Card>
         ) : (
@@ -257,7 +291,7 @@ export default function RoutierDemandesPage() {
                     <Card 
                       className={cn(
                         "overflow-hidden cursor-pointer transition-all",
-                        isExpanded && "ring-2 ring-primary shadow-lg"
+                        isExpanded && "ring-2 ring-blue-500 shadow-lg"
                       )}
                       onClick={() => setExpandedId(isExpanded ? null : request.id)}
                     >
@@ -271,11 +305,11 @@ export default function RoutierDemandesPage() {
                               <span className="font-semibold truncate">{request.origin_city}</span>
                             </div>
                             <div className="flex-1 flex items-center justify-center">
-                              <div className="h-0.5 w-full bg-gradient-to-r from-green-500 to-red-500 rounded-full" />
+                              <div className="h-0.5 w-full bg-gradient-to-r from-green-500 to-blue-500 rounded-full" />
                             </div>
                             <div className="flex items-center gap-2 flex-1 justify-end">
                               <span className="font-semibold truncate">{request.destination_city}</span>
-                              <div className="w-3 h-3 rounded-full bg-red-500 ring-2 ring-red-200" />
+                              <div className="w-3 h-3 rounded-full bg-blue-500 ring-2 ring-blue-200" />
                             </div>
                           </div>
 
@@ -291,7 +325,7 @@ export default function RoutierDemandesPage() {
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <span className="font-bold text-primary">
+                              <span className="font-bold text-blue-600">
                                 {request.total_price.toLocaleString()} {request.currency}
                               </span>
                               <ChevronDown 
@@ -329,15 +363,6 @@ export default function RoutierDemandesPage() {
                                       {format(new Date(request.created_at), "d MMM HH:mm", { locale: fr })}
                                     </span>
                                   </div>
-                                  {request.pickup_date && (
-                                    <div className="col-span-2 flex items-center gap-2 text-sm">
-                                      <MapPin className="w-4 h-4 text-muted-foreground" />
-                                      <span className="text-muted-foreground">Enlèvement:</span>
-                                      <span className="font-medium">
-                                        {format(new Date(request.pickup_date), "d MMMM yyyy", { locale: fr })}
-                                      </span>
-                                    </div>
-                                  )}
                                 </div>
 
                                 {/* Description */}
@@ -371,7 +396,7 @@ export default function RoutierDemandesPage() {
                                     Refuser
                                   </Button>
                                   <Button
-                                    className="flex-1 bg-green-600 hover:bg-green-700"
+                                    className="flex-1 bg-blue-600 hover:bg-blue-700"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleAccept(request.id);
