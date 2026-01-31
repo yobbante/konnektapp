@@ -136,6 +136,7 @@ const App = () => (
             
             {/* ============================================
                 ROUTIER ROUTES - Dashboard transport routier
+                Note: Tarification exclue (prix calculé par système)
             ============================================ */}
             <Route path="/routier/inscription" element={<RoutierRegistration />} />
             <Route path="/routier/dashboard" element={<Navigate to="/routier/demandes" replace />} />
@@ -143,10 +144,11 @@ const App = () => (
             <Route path="/routier/en-cours" element={<RoutierEnCoursPage />} />
             <Route path="/routier/historique" element={<RoutierHistoriquePage />} />
             <Route path="/routier/vehicules" element={<RoutierVehiculesPage />} />
-            <Route path="/routier/tarification" element={<RoutierTarificationPage />} />
             <Route path="/routier/profil-public" element={<RoutierProfilPublicPage />} />
             {/* Client-facing routier booking */}
             <Route path="/routier/demande" element={<RoutierDemandePage />} />
+            {/* Legacy redirect - tarification removed for routier */}
+            <Route path="/routier/tarification" element={<Navigate to="/routier/demandes" replace />} />
             
             {/* ============================================
                 ADMIN ROUTES - Dashboard admin
