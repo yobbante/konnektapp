@@ -8,6 +8,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { getCurrencySymbol, type CurrencyCode } from "@/components/ui/currency-selector";
+import { DualCurrencyCompact, CurrencyInfoBanner } from "@/components/booking/DualCurrencyDisplay";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { cn } from "@/lib/utils";
 
 interface InsuranceTier {
@@ -20,7 +22,7 @@ interface InsuranceTier {
 
 interface MandatoryInsuranceChoiceProps {
   selectedContentTypes: string[]; // alimentaire, vetements, telephone, etc.
-  currency?: CurrencyCode;
+  currency?: CurrencyCode; // V1.2: Imposed by GP - client cannot change
   onChoiceChange: (choice: InsuranceChoice) => void;
   disabled?: boolean;
 }
@@ -58,7 +60,7 @@ const CONTENT_TO_CATEGORY: Record<string, string> = {
  */
 export function MandatoryInsuranceChoice({
   selectedContentTypes,
-  currency = "XOF",
+  currency = "XOF", // V1.2: Default to XOF (FCFA)
   onChoiceChange,
   disabled = false,
 }: MandatoryInsuranceChoiceProps) {
@@ -66,6 +68,9 @@ export function MandatoryInsuranceChoice({
   const [loading, setLoading] = useState(true);
   const [selectedOption, setSelectedOption] = useState<"with" | "without" | null>(null);
   const [declaredValue, setDeclaredValue] = useState<string>("");
+  
+  // V1.2: Currency conversion hook for dual display
+  const { getFCFAEquivalent, isFCFA } = useCurrencyConversion({ gpCurrency: currency });
 
   useEffect(() => {
     loadInsuranceTiers();
@@ -206,9 +211,11 @@ export function MandatoryInsuranceChoice({
                   animate={{ opacity: 1, height: "auto" }}
                   className="mt-3 space-y-3"
                 >
-                  {/* Declared value input */}
+                  {/* Declared value input - V1.2: Input in GP currency */}
                   <div>
-                    <Label className="text-xs text-muted-foreground">Valeur déclarée (optionnel)</Label>
+                    <Label className="text-xs text-muted-foreground">
+                      Valeur déclarée en {currencySymbol} (optionnel)
+                    </Label>
                     <Input
                       type="number"
                       placeholder="Ex: 50000"
@@ -217,11 +224,19 @@ export function MandatoryInsuranceChoice({
                       className="mt-1"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Maximum couvert: {applicableTier.max_declared_value.toLocaleString()} {currencySymbol}
+                      Maximum couvert: {!isFCFA ? (
+                        <DualCurrencyCompact 
+                          amount={applicableTier.max_declared_value}
+                          currency={currency}
+                          fcfaEquivalent={getFCFAEquivalent(applicableTier.max_declared_value)}
+                        />
+                      ) : (
+                        <span>{applicableTier.max_declared_value.toLocaleString()} FCFA</span>
+                      )}
                     </p>
                   </div>
 
-                  {/* Insurance details */}
+                  {/* Insurance details with dual currency */}
                   <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg space-y-1">
                     <div className="flex items-center gap-2 text-sm">
                       <Check className="w-4 h-4 text-green-600" />
@@ -229,7 +244,17 @@ export function MandatoryInsuranceChoice({
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <Check className="w-4 h-4 text-green-600" />
-                      <span>Frais d'assurance: <strong className="text-primary">{applicableTier.insurance_fee.toLocaleString()} {currencySymbol}</strong></span>
+                      <span>Frais d'assurance: <strong className="text-primary">
+                        {!isFCFA ? (
+                          <DualCurrencyCompact 
+                            amount={applicableTier.insurance_fee}
+                            currency={currency}
+                            fcfaEquivalent={getFCFAEquivalent(applicableTier.insurance_fee)}
+                          />
+                        ) : (
+                          <span>{applicableTier.insurance_fee.toLocaleString()} FCFA</span>
+                        )}
+                      </strong></span>
                     </div>
                   </div>
                 </motion.div>
@@ -286,13 +311,16 @@ export function MandatoryInsuranceChoice({
           </div>
         )}
 
-        {/* Info footer */}
+        {/* Info footer - V1.2: Currency conversion info */}
         <div className="flex items-start gap-2 pt-2 border-t">
           <Info className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
           <p className="text-xs text-muted-foreground">
-            Prix d'assurance défini par l'administration Yobbanté et basé sur le type et la valeur des articles.
+            Prix d'assurance calculé en FCFA puis converti selon la devise du transporteur ({currencySymbol}).
           </p>
         </div>
+        
+        {/* Currency info banner */}
+        {!isFCFA && <CurrencyInfoBanner className="mt-2" />}
       </CardContent>
     </Card>
   );
