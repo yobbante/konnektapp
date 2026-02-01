@@ -22,7 +22,7 @@ import { ExchangeRatesManager } from "@/components/admin/ExchangeRatesManager";
 import { GPPriceHistoryChart } from "@/components/admin/GPPriceHistoryChart";
 import { AdminInsuranceTiers } from "@/components/admin/AdminInsuranceTiers";
 import { AdminMessageTemplates } from "@/components/admin/AdminMessageTemplates";
-import { AdminLogisticsOrders } from "@/components/admin/AdminLogisticsOrders";
+import { AdminLogisticsOrdersV2 } from "@/components/admin/AdminLogisticsOrdersV2";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { assertValidGpStatus, type GpStatus } from "@/lib/enumMappings";
 
@@ -434,9 +434,9 @@ export default function AdminDashboard() {
             </div>
           </TabsContent>
 
-          {/* Logistics - Internal Yobbanté Logistics */}
+          {/* Logistics - Internal Yobbanté Logistics V1.1 */}
           <TabsContent value="logistics">
-            <AdminLogisticsOrders />
+            <AdminLogisticsOrdersV2 />
           </TabsContent>
         </Tabs>
       </div>

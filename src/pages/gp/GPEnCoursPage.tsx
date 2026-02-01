@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Clock, MessageCircle, Eye, RefreshCw, ChevronRight } from "lucide-react";
+import { Clock, MessageCircle, Eye, RefreshCw, ChevronRight, Truck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
 import { PageLoader } from "@/components/ui/PageLoader";
-import { MissionStatusUpdater } from "@/components/gp/MissionStatusUpdater";
+import { MissionStatusUpdaterV2 } from "@/components/gp/MissionStatusUpdaterV2";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { getOrderStatusLabel, getOrderStatusColor } from "@/lib/transportTypes";
 import { format } from "date-fns";
@@ -27,6 +27,7 @@ interface Order {
   total_price: number;
   currency: string;
   pickup_date: string | null;
+  has_delivery_logistics?: boolean;
 }
 
 interface GPProfile {
@@ -49,6 +50,7 @@ export default function GPEnCoursPage() {
   const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
+  const [gpName, setGpName] = useState("");
 
   useEffect(() => {
     loadData();
@@ -74,6 +76,7 @@ export default function GPEnCoursPage() {
       }
 
       setGpProfile(profile);
+      setGpName(profile.business_name);
 
       // Load active orders (accepted, collected, in_transit)
       const { data: orders } = await supabase
@@ -83,7 +86,23 @@ export default function GPEnCoursPage() {
         .in("status", ["accepted", "collected", "in_transit"])
         .order("created_at", { ascending: false });
 
-      setActiveOrders(orders || []);
+      // Check logistics options for each order
+      const ordersWithLogistics = await Promise.all(
+        (orders || []).map(async (order) => {
+          const { data: logistics } = await supabase
+            .from("order_logistics_options")
+            .select("delivery_enabled")
+            .eq("order_id", order.id)
+            .maybeSingle();
+          
+          return {
+            ...order,
+            has_delivery_logistics: logistics?.delivery_enabled || false,
+          };
+        })
+      );
+
+      setActiveOrders(ordersWithLogistics);
 
       // Get pending count for badge
       const { count } = await supabase
@@ -169,12 +188,23 @@ export default function GPEnCoursPage() {
                     </div>
                   </div>
 
-                  {/* Status Updater */}
-                  <MissionStatusUpdater
+                  {/* Status Updater V2 with logistics sync */}
+                  <MissionStatusUpdaterV2
                     orderId={order.id}
-                    currentStatus={order.status as any}
+                    currentStatus={order.status}
+                    gpProfileId={gpProfile.id}
+                    gpName={gpName}
+                    orderNumber={order.order_number}
                     onStatusUpdated={loadData}
                   />
+
+                  {/* Logistics indicator */}
+                  {order.has_delivery_logistics && (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2">
+                      <Truck className="w-3 h-3" />
+                      <span>Livraison dernier km par Yobbanté</span>
+                    </div>
+                  )}
 
                   {/* View Details */}
                   <Button
