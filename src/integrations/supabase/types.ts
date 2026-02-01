@@ -1592,7 +1592,9 @@ export type Database = {
           delivery_scheduled_at: string | null
           delivery_status: string | null
           delivery_whatsapp: string | null
+          gp_arrived_at: string | null
           id: string
+          logistics_status: string | null
           order_id: string
           pickup_address: string | null
           pickup_city: string | null
@@ -1623,7 +1625,9 @@ export type Database = {
           delivery_scheduled_at?: string | null
           delivery_status?: string | null
           delivery_whatsapp?: string | null
+          gp_arrived_at?: string | null
           id?: string
+          logistics_status?: string | null
           order_id: string
           pickup_address?: string | null
           pickup_city?: string | null
@@ -1654,7 +1658,9 @@ export type Database = {
           delivery_scheduled_at?: string | null
           delivery_status?: string | null
           delivery_whatsapp?: string | null
+          gp_arrived_at?: string | null
           id?: string
+          logistics_status?: string | null
           order_id?: string
           pickup_address?: string | null
           pickup_city?: string | null

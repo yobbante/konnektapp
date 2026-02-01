@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Sheet,
   SheetContent,
@@ -24,6 +25,10 @@ import {
   type OrderStatus,
   isValidOrderStatus 
 } from "@/lib/enumMappings";
+import { 
+  hasPickupLogistics, 
+  notifyAdminPickupMission 
+} from "@/hooks/useLogisticsSync";
 
 interface OrderDetails {
   id: string;
@@ -52,6 +57,8 @@ interface GPMissionDetailsSheetProps {
   open: boolean;
   onClose: () => void;
   orderId: string;
+  gpProfileId?: string;
+  gpName?: string;
   onAccept?: () => void;
   onRefuse?: () => void;
   onContact?: (clientId: string) => void;
@@ -71,6 +78,8 @@ export function GPMissionDetailsSheet({
   open, 
   onClose, 
   orderId,
+  gpProfileId,
+  gpName,
   onAccept,
   onRefuse,
   onContact,
@@ -81,12 +90,19 @@ export function GPMissionDetailsSheet({
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [client, setClient] = useState<ClientProfile | null>(null);
   const [actionLoading, setActionLoading] = useState<"accept" | "refuse" | null>(null);
+  const [hasPickup, setHasPickup] = useState(false);
 
   useEffect(() => {
     if (open && orderId) {
       loadOrderDetails();
+      checkPickupLogistics();
     }
   }, [open, orderId]);
+
+  const checkPickupLogistics = async () => {
+    const hasPickupOption = await hasPickupLogistics(orderId);
+    setHasPickup(hasPickupOption);
+  };
 
   const loadOrderDetails = async () => {
     setLoading(true);
@@ -150,12 +166,21 @@ export function GPMissionDetailsSheet({
           related_type: "order",
           related_id: order.id,
         });
-      }
 
-      toast({
-        title: "✅ Commande acceptée",
-        description: "Le client a été notifié",
-      });
+        // V1.1: If pickup logistics is enabled, notify admin
+        if (hasPickup && gpName) {
+          await notifyAdminPickupMission(order.id, order.order_number, gpName);
+          toast({
+            title: "✅ Commande acceptée",
+            description: "Le client et l'équipe Yobbanté ont été notifiés pour l'enlèvement",
+          });
+        } else {
+          toast({
+            title: "✅ Commande acceptée",
+            description: "Le client a été notifié",
+          });
+        }
+      }
 
       onAccept?.();
       onClose();
