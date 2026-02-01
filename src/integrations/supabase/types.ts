@@ -1099,6 +1099,115 @@ export type Database = {
         }
         Relationships: []
       }
+      logistics_pricing_config: {
+        Row: {
+          base_price: number
+          created_at: string
+          currency: string
+          fragile_surcharge: number
+          id: string
+          is_active: boolean
+          service_type: string
+          updated_at: string
+          weight_surcharge_per_kg: number
+          weight_threshold_kg: number
+          zone: string
+        }
+        Insert: {
+          base_price?: number
+          created_at?: string
+          currency?: string
+          fragile_surcharge?: number
+          id?: string
+          is_active?: boolean
+          service_type: string
+          updated_at?: string
+          weight_surcharge_per_kg?: number
+          weight_threshold_kg?: number
+          zone?: string
+        }
+        Update: {
+          base_price?: number
+          created_at?: string
+          currency?: string
+          fragile_surcharge?: number
+          id?: string
+          is_active?: boolean
+          service_type?: string
+          updated_at?: string
+          weight_surcharge_per_kg?: number
+          weight_threshold_kg?: number
+          zone?: string
+        }
+        Relationships: []
+      }
+      logistics_status_history: {
+        Row: {
+          action: string
+          actor_id: string
+          actor_type: string
+          created_at: string
+          id: string
+          location: string | null
+          logistics_option_id: string | null
+          new_status: string | null
+          notes: string | null
+          old_status: string | null
+          order_id: string
+          scan_type: string | null
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          actor_type: string
+          created_at?: string
+          id?: string
+          location?: string | null
+          logistics_option_id?: string | null
+          new_status?: string | null
+          notes?: string | null
+          old_status?: string | null
+          order_id: string
+          scan_type?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          actor_type?: string
+          created_at?: string
+          id?: string
+          location?: string | null
+          logistics_option_id?: string | null
+          new_status?: string | null
+          notes?: string | null
+          old_status?: string | null
+          order_id?: string
+          scan_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logistics_status_history_logistics_option_id_fkey"
+            columns: ["logistics_option_id"]
+            isOneToOne: false
+            referencedRelation: "order_logistics_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_status_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "logistics_status_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loyalty_points_history: {
         Row: {
           created_at: string
@@ -1461,6 +1570,117 @@ export type Database = {
           },
           {
             foreignKeyName: "order_logistics_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_logistics_options: {
+        Row: {
+          created_at: string
+          currency: string
+          delivery_address: string | null
+          delivery_city: string | null
+          delivery_completed_at: string | null
+          delivery_contact_name: string | null
+          delivery_enabled: boolean
+          delivery_instructions: string | null
+          delivery_phone: string | null
+          delivery_price: number | null
+          delivery_scheduled_at: string | null
+          delivery_status: string | null
+          delivery_whatsapp: string | null
+          id: string
+          order_id: string
+          pickup_address: string | null
+          pickup_city: string | null
+          pickup_collected_at: string | null
+          pickup_contact_name: string | null
+          pickup_enabled: boolean
+          pickup_handed_at: string | null
+          pickup_phone: string | null
+          pickup_price: number | null
+          pickup_status: string | null
+          pickup_time_slot: string | null
+          pickup_whatsapp: string | null
+          terms_accepted_at: string | null
+          total_logistics_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          delivery_address?: string | null
+          delivery_city?: string | null
+          delivery_completed_at?: string | null
+          delivery_contact_name?: string | null
+          delivery_enabled?: boolean
+          delivery_instructions?: string | null
+          delivery_phone?: string | null
+          delivery_price?: number | null
+          delivery_scheduled_at?: string | null
+          delivery_status?: string | null
+          delivery_whatsapp?: string | null
+          id?: string
+          order_id: string
+          pickup_address?: string | null
+          pickup_city?: string | null
+          pickup_collected_at?: string | null
+          pickup_contact_name?: string | null
+          pickup_enabled?: boolean
+          pickup_handed_at?: string | null
+          pickup_phone?: string | null
+          pickup_price?: number | null
+          pickup_status?: string | null
+          pickup_time_slot?: string | null
+          pickup_whatsapp?: string | null
+          terms_accepted_at?: string | null
+          total_logistics_price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          delivery_address?: string | null
+          delivery_city?: string | null
+          delivery_completed_at?: string | null
+          delivery_contact_name?: string | null
+          delivery_enabled?: boolean
+          delivery_instructions?: string | null
+          delivery_phone?: string | null
+          delivery_price?: number | null
+          delivery_scheduled_at?: string | null
+          delivery_status?: string | null
+          delivery_whatsapp?: string | null
+          id?: string
+          order_id?: string
+          pickup_address?: string | null
+          pickup_city?: string | null
+          pickup_collected_at?: string | null
+          pickup_contact_name?: string | null
+          pickup_enabled?: boolean
+          pickup_handed_at?: string | null
+          pickup_phone?: string | null
+          pickup_price?: number | null
+          pickup_status?: string | null
+          pickup_time_slot?: string | null
+          pickup_whatsapp?: string | null
+          terms_accepted_at?: string | null
+          total_logistics_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_logistics_options_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_logistics_options_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: true
             referencedRelation: "orders"

@@ -39,6 +39,7 @@ export function AdminDropdownMenu({ onTabChange, activeTab }: AdminDropdownMenuP
     { id: "orders", label: "Commandes", icon: Package, isLink: true, href: "/admin/orders" },
     { id: "departures", label: "Départs", icon: Route, isLink: true, href: "/admin/departures" },
     { id: "messages", label: "Messages", icon: MessageSquare, isLink: true, href: "/admin/messages" },
+    { id: "logistics", label: "Logistique Interne", icon: Truck },
     { id: "support", label: "Support & Litiges", icon: AlertTriangle },
     { id: "reputation", label: "Réputation", icon: Award },
     { id: "permissions", label: "Rôles & Permissions", icon: Shield },

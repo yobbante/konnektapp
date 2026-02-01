@@ -5,7 +5,7 @@ import {
   ArrowLeft, Package, CheckCircle, AlertTriangle, Info,
   Smartphone, Laptop, Car, FileText, Gem, Tablet, Gamepad2, Wine,
   Scale, MapPin, Calendar, Plane, User, Star, Shield, Minus, Plus,
-  ChevronRight
+  ChevronRight, Truck
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileHeader } from "@/components/layout/MobileHeader";
@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { EscrowPaymentFlow } from "@/components/escrow/EscrowPaymentFlow";
 import { MandatoryInsuranceChoice, type InsuranceChoice } from "@/components/booking/MandatoryInsuranceChoice";
+import { LocalLogisticsOptions, type LogisticsOptions } from "@/components/booking/LocalLogisticsOptions";
 import { createAutoConversationAfterBooking } from "@/lib/autoChat";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -134,6 +135,28 @@ export default function SmartBookingPage() {
   // Form State - Step 4: Validation
   const [acceptedRestrictions, setAcceptedRestrictions] = useState(false);
 
+  // Form State - Logistics Options (Logistique Interne Yobbanté)
+  const [logisticsOptions, setLogisticsOptions] = useState<LogisticsOptions>({
+    pickupEnabled: false,
+    deliveryEnabled: false,
+    pickupAddress: "",
+    pickupCity: "Dakar",
+    pickupContactName: "",
+    pickupPhone: "",
+    pickupWhatsapp: "",
+    pickupTimeSlot: "",
+    deliveryAddress: "",
+    deliveryCity: "Dakar",
+    deliveryContactName: "",
+    deliveryPhone: "",
+    deliveryWhatsapp: "",
+    deliveryInstructions: "",
+    pickupPrice: 0,
+    deliveryPrice: 0,
+    totalLogisticsPrice: 0,
+    termsAccepted: true,
+  });
+
   // Load data
   useEffect(() => {
     loadData();
@@ -223,7 +246,7 @@ export default function SmartBookingPage() {
   };
 
   // Calculate totals - TARIFICATION LINÉAIRE V1 (pas de paliers)
-  // Formule: Prix = (Poids × Prix/kg) + Σ(Quantité × Prix forfaitaire) + Assurance
+  // Formule: Prix = (Poids × Prix/kg) + Σ(Quantité × Prix forfaitaire) + Assurance + Logistique
   const calculations = useMemo(() => {
     const pricePerKg = offer?.price_per_kg || 0;
     const weight = parseFloat(kiloWeight) || 0;
@@ -238,7 +261,11 @@ export default function SmartBookingPage() {
     
     // Add insurance if selected
     const insuranceTotal = insuranceChoice.hasInsurance ? insuranceChoice.insuranceAmount : 0;
-    const grandTotal = transportTotal + insuranceTotal;
+    
+    // Add logistics if enabled
+    const logisticsTotal = logisticsOptions.totalLogisticsPrice;
+    
+    const grandTotal = transportTotal + insuranceTotal + logisticsTotal;
 
     return {
       weight,
@@ -247,12 +274,14 @@ export default function SmartBookingPage() {
       flatRateCount,
       transportTotal,
       insuranceTotal,
+      logisticsTotal,
       grandTotal,
       hasKiloItems: weight > 0,
       hasFlatRateItems: flatRateCount > 0,
       hasAnyItems: weight > 0 || flatRateCount > 0,
+      hasLogistics: logisticsOptions.pickupEnabled || logisticsOptions.deliveryEnabled,
     };
-  }, [kiloWeight, flatRateItems, offer?.price_per_kg, insuranceChoice]);
+  }, [kiloWeight, flatRateItems, offer?.price_per_kg, insuranceChoice, logisticsOptions]);
 
   // Update flat-rate quantity
   const updateFlatRateQuantity = (id: string, delta: number) => {
@@ -393,13 +422,46 @@ export default function SmartBookingPage() {
           estimated_weight: calculations.weight || 0,
           is_fragile: false,
           is_urgent: false,
-          pickup_address: "À confirmer",
-          delivery_address: "À confirmer",
+          pickup_address: logisticsOptions.pickupEnabled ? logisticsOptions.pickupAddress : "À confirmer",
+          delivery_address: logisticsOptions.deliveryEnabled ? logisticsOptions.deliveryAddress : "À confirmer",
           pickup_date: offer.departure_date,
           validated_at: new Date().toISOString(),
         });
 
       if (logisticsError) throw logisticsError;
+
+      // Create logistics options if enabled (Logistique Interne Yobbanté)
+      if (logisticsOptions.pickupEnabled || logisticsOptions.deliveryEnabled) {
+        const { error: logOptError } = await supabase
+          .from("order_logistics_options")
+          .insert({
+            order_id: orderData.id,
+            pickup_enabled: logisticsOptions.pickupEnabled,
+            pickup_address: logisticsOptions.pickupAddress || null,
+            pickup_city: logisticsOptions.pickupCity,
+            pickup_contact_name: logisticsOptions.pickupContactName || null,
+            pickup_phone: logisticsOptions.pickupPhone || null,
+            pickup_whatsapp: logisticsOptions.pickupWhatsapp || null,
+            pickup_time_slot: logisticsOptions.pickupTimeSlot || null,
+            pickup_price: logisticsOptions.pickupPrice,
+            delivery_enabled: logisticsOptions.deliveryEnabled,
+            delivery_address: logisticsOptions.deliveryAddress || null,
+            delivery_city: logisticsOptions.deliveryCity,
+            delivery_contact_name: logisticsOptions.deliveryContactName || null,
+            delivery_phone: logisticsOptions.deliveryPhone || null,
+            delivery_whatsapp: logisticsOptions.deliveryWhatsapp || null,
+            delivery_instructions: logisticsOptions.deliveryInstructions || null,
+            delivery_price: logisticsOptions.deliveryPrice,
+            total_logistics_price: logisticsOptions.totalLogisticsPrice,
+            currency: offer.currency,
+            terms_accepted_at: new Date().toISOString(),
+          });
+
+        if (logOptError) {
+          console.error("Logistics options error:", logOptError);
+          // Don't fail the whole booking for this
+        }
+      }
 
       // For bagages_international, show escrow payment after order creation
       if (gpProfile.gp_type === "bagages_international") {
@@ -857,16 +919,26 @@ export default function SmartBookingPage() {
                     <p className="font-semibold">{calculations.transportTotal.toLocaleString()} {currencySymbol}</p>
                   </div>
 
-                  {/* Insurance (will be added in step 3) */}
+                  {/* Insurance & Logistics (will be added in next steps) */}
                   <div className="flex justify-between items-center py-2 border-b">
-                    <p className="text-sm text-muted-foreground">Assurance Yobbanté</p>
-                    <p className="text-sm italic text-muted-foreground">→ Étape suivante</p>
+                    <p className="text-sm text-muted-foreground">Assurance & Logistique</p>
+                    <p className="text-sm italic text-muted-foreground">→ Étapes suivantes</p>
                   </div>
                 </div>
 
+                {/* Logistics Options - Logistique Interne Yobbanté */}
+                <LocalLogisticsOptions
+                  weight={calculations.weight}
+                  isFragile={false}
+                  originCity={offer.origin_city}
+                  destinationCity={offer.destination_city}
+                  currency={currency}
+                  onChange={setLogisticsOptions}
+                />
+
                 <div className="p-3 bg-muted/50 rounded-xl">
                   <p className="text-xs text-muted-foreground text-center">
-                    Formule V1: <strong>(kg × prix/kg) + Σ(quantité × prix forfaitaire)</strong>
+                    Formule V1: <strong>(kg × prix/kg) + Σ(forfaits) + Assurance + Logistique</strong>
                   </p>
                 </div>
               </motion.div>
@@ -1058,6 +1130,24 @@ export default function SmartBookingPage() {
                     </div>
                   </div>
 
+                  {/* Logistics status */}
+                  {calculations.hasLogistics && (
+                    <div className="pb-3 border-b">
+                      <div className="flex items-center gap-2">
+                        <Truck className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-medium">Logistique Interne Yobbanté</span>
+                      </div>
+                      <div className="ml-6 text-xs text-muted-foreground space-y-1 mt-1">
+                        {logisticsOptions.pickupEnabled && (
+                          <p>• Enlèvement: {logisticsOptions.pickupAddress}</p>
+                        )}
+                        {logisticsOptions.deliveryEnabled && (
+                          <p>• Livraison: {logisticsOptions.deliveryAddress}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Price breakdown */}
                   <div className="space-y-2">
                     <div className="flex justify-between items-center text-sm">
@@ -1068,6 +1158,12 @@ export default function SmartBookingPage() {
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-muted-foreground">Assurance</span>
                         <span>{calculations.insuranceTotal.toLocaleString()} {currencySymbol}</span>
+                      </div>
+                    )}
+                    {calculations.hasLogistics && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Logistique locale</span>
+                        <span>{calculations.logisticsTotal.toLocaleString()} {currencySymbol}</span>
                       </div>
                     )}
                   </div>
