@@ -19,6 +19,8 @@ import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { EscrowPaymentFlow } from "@/components/escrow/EscrowPaymentFlow";
 import { MandatoryInsuranceChoice, type InsuranceChoice } from "@/components/booking/MandatoryInsuranceChoice";
 import { LocalLogisticsOptions, type LogisticsOptions } from "@/components/booking/LocalLogisticsOptions";
+import { DualCurrencyDisplay, DualCurrencyCompact, CurrencyInfoBanner } from "@/components/booking/DualCurrencyDisplay";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { createAutoConversationAfterBooking } from "@/lib/autoChat";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -560,8 +562,12 @@ export default function SmartBookingPage() {
     return "other";
   };
 
-  const currency = offer?.currency || gpProfile?.default_currency || "FCFA";
+  // V1.2: La devise est imposée par le GP - Le client ne peut pas la modifier
+  const currency = offer?.currency || gpProfile?.default_currency || "XOF";
   const currencySymbol = getCurrencySymbol(currency);
+  
+  // Hook for currency conversion with dual display
+  const { formatDual, getFCFAEquivalent, isFCFA } = useCurrencyConversion({ gpCurrency: currency });
 
   if (loading) {
     return (
@@ -718,7 +724,15 @@ export default function SmartBookingPage() {
                     <Scale className="w-5 h-5 text-primary" />
                     <h3 className="font-medium">Colis au kilo</h3>
                     <Badge variant="outline" className="ml-auto text-xs">
-                      {offer.price_per_kg.toLocaleString()} {currencySymbol}/kg
+                      {!isFCFA ? (
+                        <DualCurrencyCompact 
+                          amount={offer.price_per_kg} 
+                          currency={currency}
+                          fcfaEquivalent={getFCFAEquivalent(offer.price_per_kg)}
+                        />
+                      ) : (
+                        <span>{offer.price_per_kg.toLocaleString()} FCFA/kg</span>
+                      )}
                     </Badge>
                   </div>
 
@@ -797,7 +811,13 @@ export default function SmartBookingPage() {
                         <span className="text-muted-foreground">{calculations.weight} kg × {offer.price_per_kg.toLocaleString()} {currencySymbol}</span>
                         <p className="text-xs text-muted-foreground">{getKiloNatureLabels()}</p>
                       </div>
-                      <span className="font-semibold text-primary">{calculations.kiloTotal.toLocaleString()} {currencySymbol}</span>
+                      <DualCurrencyDisplay 
+                        amount={calculations.kiloTotal} 
+                        currency={currency}
+                        fcfaEquivalent={getFCFAEquivalent(calculations.kiloTotal)}
+                        size="md"
+                        variant="primary"
+                      />
                     </div>
                   )}
                 </div>
@@ -861,7 +881,13 @@ export default function SmartBookingPage() {
                     {calculations.hasFlatRateItems && (
                       <div className="flex justify-between items-center pt-2 border-t text-sm">
                         <span className="text-muted-foreground">{calculations.flatRateCount} article(s)</span>
-                        <span className="font-semibold text-primary">{calculations.flatRateTotal.toLocaleString()} {currencySymbol}</span>
+                        <DualCurrencyDisplay 
+                          amount={calculations.flatRateTotal} 
+                          currency={currency}
+                          fcfaEquivalent={getFCFAEquivalent(calculations.flatRateTotal)}
+                          size="md"
+                          variant="primary"
+                        />
                       </div>
                     )}
                   </div>
@@ -972,28 +998,43 @@ export default function SmartBookingPage() {
                   onChoiceChange={setInsuranceChoice}
                 />
 
-                {/* Updated total preview */}
+                {/* Updated total preview with dual currency */}
                 {insuranceChoice.choiceMade && (
                   <div className="p-4 bg-card border rounded-xl space-y-2">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Transport</span>
-                      <span>{calculations.transportTotal.toLocaleString()} {currencySymbol}</span>
+                      <DualCurrencyCompact
+                        amount={calculations.transportTotal}
+                        currency={currency}
+                        fcfaEquivalent={getFCFAEquivalent(calculations.transportTotal)}
+                      />
                     </div>
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Assurance</span>
                       <span className={insuranceChoice.hasInsurance ? "text-primary" : "text-muted-foreground"}>
                         {insuranceChoice.hasInsurance 
-                          ? `+${calculations.insuranceTotal.toLocaleString()} ${currencySymbol}`
+                          ? <DualCurrencyCompact
+                              amount={calculations.insuranceTotal}
+                              currency={currency}
+                              fcfaEquivalent={getFCFAEquivalent(calculations.insuranceTotal)}
+                            />
                           : "Non souscrite"
                         }
                       </span>
                     </div>
                     <div className="flex justify-between items-center pt-2 border-t">
                       <span className="font-semibold">Total</span>
-                      <span className="text-xl font-bold text-primary">
-                        {calculations.grandTotal.toLocaleString()} {currencySymbol}
-                      </span>
+                      <DualCurrencyDisplay
+                        amount={calculations.grandTotal}
+                        currency={currency}
+                        fcfaEquivalent={getFCFAEquivalent(calculations.grandTotal)}
+                        size="xl"
+                        variant="primary"
+                      />
                     </div>
+                    
+                    {/* Currency info microcopy */}
+                    <CurrencyInfoBanner className="mt-2" />
                   </div>
                 )}
               </motion.div>
@@ -1148,31 +1189,52 @@ export default function SmartBookingPage() {
                     </div>
                   )}
 
-                  {/* Price breakdown */}
+                  {/* Price breakdown with dual currency */}
                   <div className="space-y-2">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-muted-foreground">Transport</span>
-                      <span>{calculations.transportTotal.toLocaleString()} {currencySymbol}</span>
+                      <DualCurrencyCompact
+                        amount={calculations.transportTotal}
+                        currency={currency}
+                        fcfaEquivalent={getFCFAEquivalent(calculations.transportTotal)}
+                      />
                     </div>
                     {insuranceChoice.hasInsurance && (
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-muted-foreground">Assurance</span>
-                        <span>{calculations.insuranceTotal.toLocaleString()} {currencySymbol}</span>
+                        <DualCurrencyCompact
+                          amount={calculations.insuranceTotal}
+                          currency={currency}
+                          fcfaEquivalent={getFCFAEquivalent(calculations.insuranceTotal)}
+                        />
                       </div>
                     )}
                     {calculations.hasLogistics && (
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-muted-foreground">Logistique locale</span>
-                        <span>{calculations.logisticsTotal.toLocaleString()} {currencySymbol}</span>
+                        <DualCurrencyCompact
+                          amount={calculations.logisticsTotal}
+                          currency={currency}
+                          fcfaEquivalent={getFCFAEquivalent(calculations.logisticsTotal)}
+                        />
                       </div>
                     )}
                   </div>
 
-                  {/* Total */}
+                  {/* Total with dual currency */}
                   <div className="flex justify-between items-center pt-2 border-t">
                     <p className="font-semibold">Total à payer</p>
-                    <p className="text-2xl font-bold text-primary">{calculations.grandTotal.toLocaleString()} {currencySymbol}</p>
+                    <DualCurrencyDisplay
+                      amount={calculations.grandTotal}
+                      currency={currency}
+                      fcfaEquivalent={getFCFAEquivalent(calculations.grandTotal)}
+                      size="xl"
+                      variant="primary"
+                    />
                   </div>
+                  
+                  {/* Currency info */}
+                  <CurrencyInfoBanner className="mt-3" />
 
                   {/* Conditions accepted */}
                   <div className="flex items-center gap-2 text-sm text-green-600">
