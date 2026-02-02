@@ -215,7 +215,7 @@ export function ClientAppHome({
         </Link>
 
         {/* Déménagement */}
-        <Link to="/routier/demande" className="block">
+        <Link to="/demenagement" className="block">
           <motion.div whileTap={{
           scale: 0.97
         }} className="h-full bg-card border-2 border-border rounded-2xl p-4 flex flex-col justify-between hover:border-primary/30 transition-colors relative" style={{

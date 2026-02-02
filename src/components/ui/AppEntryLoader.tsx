@@ -214,72 +214,8 @@ export function AppEntryLoader({ onComplete, minDuration = 1800 }: AppEntryLoade
               </div>
             </motion.div>
 
-            {/* Animated Trajectory Line: A → B */}
-            <div className="mb-6 flex items-center gap-3">
-              {/* Point A - Origin */}
-              <motion.div
-                className="relative"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 0.8, repeat: Infinity }}
-              >
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                <motion.div
-                  className="absolute inset-0 rounded-full bg-emerald-500"
-                  animate={{ scale: [1, 2], opacity: [0.5, 0] }}
-                  transition={{ duration: 1, repeat: Infinity }}
-                />
-              </motion.div>
-              
-              {/* Animated dotted line */}
-              <div className="relative w-28 h-0.5 flex items-center gap-1">
-                {[...Array(7)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="w-3 h-0.5 rounded-full bg-emerald-500/40"
-                    animate={{ 
-                      opacity: [0.3, 1, 0.3],
-                      scaleX: [1, 1.2, 1],
-                    }}
-                    transition={{ 
-                      duration: 0.8, 
-                      repeat: Infinity, 
-                      delay: i * 0.1,
-                    }}
-                  />
-                ))}
-                {/* Moving package indicator */}
-                <motion.div
-                  className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center"
-                  animate={{ 
-                    x: ["-10%", "600%"],
-                  }}
-                  transition={{ 
-                    duration: 1.5, 
-                    repeat: Infinity, 
-                    ease: "easeInOut" 
-                  }}
-                >
-                  <Package className="w-2.5 h-2.5 text-emerald-400" />
-                </motion.div>
-              </div>
-              
-              {/* Point B - Destination */}
-              <motion.div
-                className="relative"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 0.8, repeat: Infinity, delay: 0.4 }}
-              >
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                <motion.div
-                  className="absolute inset-0 rounded-full bg-emerald-500"
-                  animate={{ scale: [1, 2], opacity: [0.5, 0] }}
-                  transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
-                />
-              </motion.div>
-            </div>
-
             {/* Cycling Word with Icon */}
-            <div className="h-8 flex items-center justify-center overflow-hidden mb-5">
+            <div className="h-8 flex items-center justify-center overflow-hidden mb-6">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={wordIndex}
@@ -296,39 +232,112 @@ export function AppEntryLoader({ onComplete, minDuration = 1800 }: AppEntryLoade
                 </motion.div>
               </AnimatePresence>
             </div>
+          </motion.div>
 
-            {/* Premium Progress Bar */}
-            <div className="w-24 h-1 rounded-full overflow-hidden bg-emerald-900/30">
+          {/* Animated Trajectory at Bottom - Moved here for better visibility */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="absolute left-1/2 -translate-x-1/2"
+            style={{ 
+              bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
+            }}
+          >
+            <div className="flex items-center gap-3">
+              {/* Point A - Origin */}
               <motion.div
-                className="h-full rounded-full"
-                style={{ 
-                  width: `${progress}%`,
-                  background: 'linear-gradient(90deg, rgba(34, 197, 94, 0.6) 0%, rgba(16, 185, 129, 0.8) 100%)',
-                  boxShadow: '0 0 10px rgba(34, 197, 94, 0.5)',
-                }}
-              />
+                className="relative"
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 0.8, repeat: Infinity }}
+              >
+                <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                <motion.div
+                  className="absolute inset-0 rounded-full bg-emerald-500"
+                  animate={{ scale: [1, 2.5], opacity: [0.5, 0] }}
+                  transition={{ duration: 1.2, repeat: Infinity }}
+                />
+              </motion.div>
+              
+              {/* Animated trajectory line */}
+              <div className="relative w-36 h-1 flex items-center">
+                {/* Base line */}
+                <div className="absolute inset-0 bg-emerald-500/20 rounded-full" />
+                
+                {/* Animated dots */}
+                {[...Array(9)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute w-2 h-2 rounded-full bg-emerald-500/60"
+                    style={{ left: `${i * 12}%` }}
+                    animate={{ 
+                      opacity: [0.2, 1, 0.2],
+                      scale: [0.8, 1.2, 0.8],
+                    }}
+                    transition={{ 
+                      duration: 1, 
+                      repeat: Infinity, 
+                      delay: i * 0.1,
+                    }}
+                  />
+                ))}
+                
+                {/* Moving package indicator - larger and more visible */}
+                <motion.div
+                  className="absolute top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-emerald-500/30 flex items-center justify-center shadow-lg"
+                  style={{
+                    boxShadow: '0 0 15px rgba(34, 197, 94, 0.4)',
+                  }}
+                  animate={{ 
+                    x: ["-20%", "500%"],
+                  }}
+                  transition={{ 
+                    duration: 1.8, 
+                    repeat: Infinity, 
+                    ease: "easeInOut" 
+                  }}
+                >
+                  <Package className="w-3 h-3 text-emerald-300" />
+                </motion.div>
+              </div>
+              
+              {/* Point B - Destination */}
+              <motion.div
+                className="relative"
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 0.8, repeat: Infinity, delay: 0.4 }}
+              >
+                <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                <motion.div
+                  className="absolute inset-0 rounded-full bg-emerald-500"
+                  animate={{ scale: [1, 2.5], opacity: [0.5, 0] }}
+                  transition={{ duration: 1.2, repeat: Infinity, delay: 0.4 }}
+                />
+              </motion.div>
             </div>
           </motion.div>
 
-          {/* Bottom Branding - Glass */}
+          {/* Bottom Branding - Glass with proper safe area */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
-            className="absolute bottom-8 text-center"
+            className="absolute text-center"
             style={{ 
-              paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+              bottom: 'calc(24px + env(safe-area-inset-bottom, 0px))',
+              left: '50%',
+              transform: 'translateX(-50%)',
             }}
           >
             <div 
-              className="px-4 py-2 rounded-full"
+              className="px-5 py-2.5 rounded-full"
               style={{
-                background: 'rgba(34, 197, 94, 0.05)',
-                border: '1px solid rgba(34, 197, 94, 0.1)',
+                background: 'rgba(34, 197, 94, 0.08)',
+                border: '1px solid rgba(34, 197, 94, 0.15)',
                 backdropFilter: 'blur(10px)',
               }}
             >
-              <p className="text-[11px] text-emerald-400/60 font-medium tracking-[0.2em] uppercase">
+              <p className="text-xs text-emerald-400/70 font-semibold tracking-[0.15em] uppercase">
                 Yobbanté Connect
               </p>
             </div>

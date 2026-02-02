@@ -30,7 +30,7 @@ import GPScanPage from "./pages/gp/GPScanPage";
 import GPCustomRequests from "./pages/GPCustomRequests";
 import GPOrderDetail from "./pages/GPOrderDetail";
 import ClientDashboard from "./pages/ClientDashboard";
-import ClientProfile from "./pages/ClientProfile";
+// ClientProfile removed - using UnifiedProfile at /profil
 import ClientTransporterProfile from "./pages/ClientTransporterProfile";
 import Auth from "./pages/Auth";
 import Tracking from "./pages/Tracking";
@@ -71,6 +71,7 @@ import OrderHistory from "./pages/OrderHistory";
 import TransporteurRegistration from "./pages/TransporteurRegistration";
 import LegalDocuments from "./pages/LegalDocuments";
 import UnifiedProfile from "./pages/UnifiedProfile";
+import MovingRequest from "./pages/MovingRequest";
 
 const queryClient = new QueryClient();
 
@@ -107,11 +108,11 @@ const App = () => (
             <Route path="/envoyer" element={<ShipmentTypeSelector />} />
             <Route path="/demande" element={<DemandeEnvoi />} />
             <Route path="/demande-personnalisee" element={<CustomRequest />} />
+            <Route path="/demenagement" element={<MovingRequest />} />
             <Route path="/quote-confirmation" element={<QuoteConfirmation />} />
             <Route path="/reservation/gp/:gpId" element={<SmartBookingPage />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/client/dashboard" element={<ClientDashboard />} />
-            <Route path="/client/profile" element={<ClientProfile />} />
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/favorites/transporters" element={<FavoriteTransporters />} />
             <Route path="/saved-searches" element={<SavedSearches />} />
@@ -179,6 +180,7 @@ const App = () => (
             <Route path="/client/profile" element={<Navigate to="/profil" replace />} />
             <Route path="/client/profil" element={<Navigate to="/profil" replace />} />
             <Route path="/demande/personnalisee" element={<Navigate to="/demande-personnalisee" replace />} />
+            <Route path="/routier/demande" element={<Navigate to="/demenagement" replace />} />
             
             {/* 404 - Catch-all */}
             <Route path="*" element={<NotFound />} />

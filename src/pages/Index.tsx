@@ -92,17 +92,11 @@ function IndexContent() {
     );
   }
 
-  // Show loading state to prevent flash of wrong content
+  // Don't show intermediate loader - go straight to content after entry loader
+  // The AppEntryLoader handles the initial loading, so we just skip any "flash" of loading state
   if (roleLoading || (isAuthenticated && dataLoading)) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="relative w-10 h-10">
-            <div className="absolute inset-0 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-          </div>
-        </div>
-      </div>
-    );
+    // Return null to avoid showing a generic loader - AppEntryLoader handles this
+    return null;
   }
 
   return (
