@@ -7,17 +7,26 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
 import { 
   ArrowLeft, Settings as SettingsIcon, Bell, Mail, MessageSquare, 
   Package, TrendingUp, Megaphone, Palette, User, Shield, LogOut,
-  ChevronRight, Smartphone, CheckCircle, XCircle, HelpCircle
+  ChevronRight, Smartphone, CheckCircle, XCircle, HelpCircle,
+  Key, Lock, FileText, Eye, EyeOff
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ThemeToggle } from "@/components/settings/ThemeToggle";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { MiniLoader } from "@/components/ui/MiniLoader";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface NotificationPreferences {
   email_notifications: boolean;
@@ -40,11 +49,26 @@ const defaultPreferences: NotificationPreferences = {
 export default function Settings() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences);
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>("");
   const { isSupported, permission, requestPermission } = usePushNotifications();
+  
+  // Password change state
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  
+  // Forgot password state
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   useEffect(() => {
     checkAuthAndLoadPreferences();
@@ -93,7 +117,6 @@ export default function Settings() {
     const newValue = !preferences[key];
     setPreferences(prev => ({ ...prev, [key]: newValue }));
     
-    // Auto-save
     if (userId) {
       try {
         await supabase
@@ -106,6 +129,75 @@ export default function Settings() {
       } catch (error) {
         console.error("Error saving preference:", error);
       }
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast({
+        title: "Erreur",
+        description: "Les mots de passe ne correspondent pas",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      toast({
+        title: "Erreur",
+        description: "Le mot de passe doit contenir au moins 6 caractères",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordForm.newPassword,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Mot de passe modifié",
+        description: "Votre nouveau mot de passe est actif",
+      });
+      setShowPasswordDialog(false);
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible de modifier le mot de passe",
+        variant: "destructive",
+      });
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    setResetLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
+        redirectTo: `${window.location.origin}/settings`,
+      });
+
+      if (error) throw error;
+
+      setResetEmailSent(true);
+      toast({
+        title: "Email envoyé",
+        description: "Vérifiez votre boîte mail pour réinitialiser votre mot de passe",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible d'envoyer l'email",
+        variant: "destructive",
+      });
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -159,7 +251,7 @@ export default function Settings() {
             </h2>
             <div className="bg-card rounded-2xl border border-border overflow-hidden">
               <button 
-                onClick={() => navigate("/profile")}
+                onClick={() => navigate("/profil")}
                 className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
               >
                 <div className="flex items-center gap-3">
@@ -255,62 +347,17 @@ export default function Settings() {
 
               <Separator />
 
-              {/* Email Notifications */}
-              <div className="flex items-center justify-between p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Mail className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <Label className="font-medium text-sm">Email</Label>
-                    <p className="text-xs text-muted-foreground">Alertes par email</p>
-                  </div>
-                </div>
-                <Switch
-                  checked={preferences.email_notifications}
-                  onCheckedChange={() => handleToggle("email_notifications")}
-                />
-              </div>
-
-              <Separator />
-
-              {/* Push Notifications */}
-              <div className="flex items-center justify-between p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Bell className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <Label className="font-medium text-sm">Push</Label>
-                    <p className="text-xs text-muted-foreground">Notifications temps réel</p>
-                  </div>
-                </div>
-                <Switch
-                  checked={preferences.push_notifications}
-                  onCheckedChange={() => handleToggle("push_notifications")}
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* Alert Types */}
-          <section className="mb-6">
-            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-1">
-              Types d'alertes
-            </h2>
-            <div className="bg-card rounded-2xl border border-border overflow-hidden">
+              {/* Email/Push toggles */}
               {[
-                { key: "new_message_alerts", icon: MessageSquare, color: "blue", label: "Messages", desc: "Nouveaux messages" },
-                { key: "new_offer_alerts", icon: TrendingUp, color: "green", label: "Offres", desc: "Nouvelles offres" },
-                { key: "order_status_alerts", icon: Package, color: "orange", label: "Commandes", desc: "Statut des envois" },
-                { key: "marketing_emails", icon: Megaphone, color: "purple", label: "Marketing", desc: "Offres et actualités" },
+                { key: "email_notifications", icon: Mail, label: "Email", desc: "Alertes par email" },
+                { key: "push_notifications", icon: Bell, label: "Push", desc: "Temps réel" },
               ].map((item, index) => (
                 <div key={item.key}>
                   {index > 0 && <Separator />}
                   <div className="flex items-center justify-between p-4">
                     <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-full bg-${item.color}-500/10 flex items-center justify-center`}>
-                        <item.icon className={`w-4 h-4 text-${item.color}-500`} />
+                      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+                        <item.icon className="w-4 h-4 text-primary" />
                       </div>
                       <div>
                         <Label className="font-medium text-sm">{item.label}</Label>
@@ -327,22 +374,93 @@ export default function Settings() {
             </div>
           </section>
 
-          {/* Security & Logout */}
+          {/* Alert Types */}
+          <section className="mb-6">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-1">
+              Types d'alertes
+            </h2>
+            <div className="bg-card rounded-2xl border border-border overflow-hidden">
+              {[
+                { key: "new_message_alerts", icon: MessageSquare, color: "text-blue-500", bgColor: "bg-blue-500/10", label: "Messages", desc: "Nouveaux messages" },
+                { key: "new_offer_alerts", icon: TrendingUp, color: "text-green-500", bgColor: "bg-green-500/10", label: "Offres", desc: "Nouvelles offres" },
+                { key: "order_status_alerts", icon: Package, color: "text-orange-500", bgColor: "bg-orange-500/10", label: "Commandes", desc: "Statut des envois" },
+                { key: "marketing_emails", icon: Megaphone, color: "text-purple-500", bgColor: "bg-purple-500/10", label: "Marketing", desc: "Offres et actualités" },
+              ].map((item, index) => (
+                <div key={item.key}>
+                  {index > 0 && <Separator />}
+                  <div className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-full ${item.bgColor} flex items-center justify-center`}>
+                        <item.icon className={`w-4 h-4 ${item.color}`} />
+                      </div>
+                      <div>
+                        <Label className="font-medium text-sm">{item.label}</Label>
+                        <p className="text-xs text-muted-foreground">{item.desc}</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={preferences[item.key as keyof NotificationPreferences]}
+                      onCheckedChange={() => handleToggle(item.key as keyof NotificationPreferences)}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Security Section */}
           <section className="mb-6">
             <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-1">
               Sécurité
             </h2>
             <div className="bg-card rounded-2xl border border-border overflow-hidden">
               <button 
+                onClick={() => setShowPasswordDialog(true)}
+                className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
+                    <Key className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium">Changer le mot de passe</p>
+                    <p className="text-xs text-muted-foreground">Mettre à jour votre mot de passe</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              </button>
+
+              <Separator />
+
+              <button 
+                onClick={() => setShowForgotPassword(true)}
+                className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                    <Lock className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium">Mot de passe oublié</p>
+                    <p className="text-xs text-muted-foreground">Réinitialiser par email</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              </button>
+
+              <Separator />
+              
+              <button 
+                onClick={() => navigate("/documents-legaux")}
                 className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
-                    <Shield className="w-5 h-5 text-success" />
+                    <FileText className="w-5 h-5 text-success" />
                   </div>
                   <div className="text-left">
-                    <p className="font-medium">Confidentialité</p>
-                    <p className="text-xs text-muted-foreground">Données et sécurité</p>
+                    <p className="font-medium">Documents légaux</p>
+                    <p className="text-xs text-muted-foreground">CGU, CGV, Confidentialité</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
@@ -368,6 +486,107 @@ export default function Settings() {
           </p>
         </motion.div>
       </main>
+
+      {/* Change Password Dialog */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="w-5 h-5" />
+              Changer le mot de passe
+            </DialogTitle>
+            <DialogDescription>
+              Entrez votre nouveau mot de passe
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Nouveau mot de passe</Label>
+              <div className="relative">
+                <Input
+                  type={showNewPassword ? "text" : "password"}
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                >
+                  {showNewPassword ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Confirmer le mot de passe</Label>
+              <Input
+                type="password"
+                value={passwordForm.confirmPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                placeholder="••••••••"
+              />
+            </div>
+            <Button 
+              className="w-full" 
+              onClick={handleChangePassword}
+              disabled={passwordLoading || !passwordForm.newPassword || !passwordForm.confirmPassword}
+            >
+              {passwordLoading ? <MiniLoader size="sm" /> : "Modifier le mot de passe"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Forgot Password Dialog */}
+      <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5" />
+              Réinitialiser le mot de passe
+            </DialogTitle>
+            <DialogDescription>
+              {resetEmailSent 
+                ? "Un email de réinitialisation a été envoyé" 
+                : "Nous vous enverrons un lien de réinitialisation par email"
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {resetEmailSent ? (
+              <div className="text-center py-4">
+                <CheckCircle className="w-12 h-12 text-success mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  Vérifiez votre boîte mail : <strong>{userEmail}</strong>
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => { setShowForgotPassword(false); setResetEmailSent(false); }}
+                >
+                  Fermer
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="bg-muted/50 rounded-lg p-3 text-sm">
+                  <p className="text-muted-foreground">
+                    Email de réception : <strong className="text-foreground">{userEmail}</strong>
+                  </p>
+                </div>
+                <Button 
+                  className="w-full" 
+                  onClick={handleForgotPassword}
+                  disabled={resetLoading}
+                >
+                  {resetLoading ? <MiniLoader size="sm" /> : "Envoyer le lien de réinitialisation"}
+                </Button>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <MobileNav />
     </div>

@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePushNotifications } from "./usePushNotifications";
 
@@ -7,6 +7,9 @@ interface UseAutoPushNotificationsProps {
   userType: "client" | "gp" | null;
   enabled?: boolean;
 }
+
+// Track which notifications have been shown to prevent duplicates
+const shownNotifications = new Set<string>();
 
 /**
  * Automatic push notifications for:
@@ -22,14 +25,38 @@ export function useAutoPushNotifications({
   enabled = true,
 }: UseAutoPushNotificationsProps) {
   const { permission, showNotification, isSupported } = usePushNotifications();
+  const channelsRef = useRef<any[]>([]);
 
   const canNotify = isSupported && permission === "granted" && enabled && userId;
+
+  // Deduplicated notification helper
+  const showDedupedNotification = useCallback((id: string, title: string, options: any) => {
+    if (shownNotifications.has(id)) {
+      console.log(`Skipping duplicate notification: ${id}`);
+      return;
+    }
+    shownNotifications.add(id);
+    // Remove from set after 30 seconds to allow re-notification
+    setTimeout(() => shownNotifications.delete(id), 30000);
+    showNotification(title, options);
+  }, [showNotification]);
+
+  // Cleanup all channels on unmount
+  useEffect(() => {
+    return () => {
+      channelsRef.current.forEach(channel => {
+        supabase.removeChannel(channel);
+      });
+      channelsRef.current = [];
+    };
+  }, []);
 
   // Subscribe to new bookings/orders (for GPs)
   useEffect(() => {
     if (!canNotify || userType !== "gp") return;
 
-    // Get GP profile ID first
+    let channel: any = null;
+
     const subscribeToOrders = async () => {
       const { data: gpProfile } = await supabase
         .from("gp_profiles")
@@ -39,7 +66,16 @@ export function useAutoPushNotifications({
 
       if (!gpProfile) return;
 
-      const channel = supabase
+      // Remove existing channel with same name if exists
+      const existingChannelIndex = channelsRef.current.findIndex(
+        c => c.topic === `gp-orders-push-${gpProfile.id}`
+      );
+      if (existingChannelIndex >= 0) {
+        supabase.removeChannel(channelsRef.current[existingChannelIndex]);
+        channelsRef.current.splice(existingChannelIndex, 1);
+      }
+
+      channel = supabase
         .channel(`gp-orders-push-${gpProfile.id}`)
         .on(
           "postgres_changes",
@@ -51,26 +87,42 @@ export function useAutoPushNotifications({
           },
           (payload) => {
             const order = payload.new as any;
-            showNotification("🎉 Nouvelle réservation !", {
+            const notifId = `new-order-${order.id}`;
+            showDedupedNotification(notifId, "🎉 Nouvelle réservation !", {
               body: `${order.origin_city} → ${order.destination_city} • ${order.weight}kg`,
-              tag: `new-order-${order.id}`,
+              tag: notifId,
               data: { type: "order", id: order.id, action: "new_booking" },
             });
           }
         )
         .subscribe();
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
+      channelsRef.current.push(channel);
     };
 
     subscribeToOrders();
-  }, [canNotify, userType, userId, showNotification]);
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+        const idx = channelsRef.current.indexOf(channel);
+        if (idx >= 0) channelsRef.current.splice(idx, 1);
+      }
+    };
+  }, [canNotify, userType, userId, showDedupedNotification]);
 
   // Subscribe to order status changes (for clients)
   useEffect(() => {
     if (!canNotify || userType !== "client") return;
+
+    // Remove existing channel with same name if exists
+    const existingChannelIndex = channelsRef.current.findIndex(
+      c => c.topic === `client-orders-push-${userId}`
+    );
+    if (existingChannelIndex >= 0) {
+      supabase.removeChannel(channelsRef.current[existingChannelIndex]);
+      channelsRef.current.splice(existingChannelIndex, 1);
+    }
 
     const channel = supabase
       .channel(`client-orders-push-${userId}`)
@@ -107,10 +159,11 @@ export function useAutoPushNotifications({
 
             const label = statusLabels[order.status] || order.status;
             const emoji = statusEmoji[order.status] || "📦";
+            const notifId = `order-status-${order.id}-${order.status}`;
 
-            showNotification(`${emoji} Colis ${label}`, {
+            showDedupedNotification(notifId, `${emoji} Colis ${label}`, {
               body: `Commande ${order.order_number}: ${order.origin_city} → ${order.destination_city}`,
-              tag: `order-status-${order.id}`,
+              tag: notifId,
               data: { 
                 type: "order_status", 
                 id: order.id, 
@@ -123,10 +176,14 @@ export function useAutoPushNotifications({
       )
       .subscribe();
 
+    channelsRef.current.push(channel);
+
     return () => {
       supabase.removeChannel(channel);
+      const idx = channelsRef.current.indexOf(channel);
+      if (idx >= 0) channelsRef.current.splice(idx, 1);
     };
-  }, [canNotify, userType, userId, showNotification]);
+  }, [canNotify, userType, userId, showDedupedNotification]);
 
   // Subscribe to GP profile status changes (for GPs)
   useEffect(() => {

@@ -75,24 +75,7 @@ export function AppLikeHome() {
         minHeight: '400px',
       }}
     >
-      {/* Login button for non-authenticated */}
-      {!isAuthenticated && (
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="px-6 pt-3"
-        >
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="w-full gap-2"
-            onClick={() => navigate("/auth")}
-          >
-            <LogIn className="w-4 h-4" />
-            Se connecter / S'inscrire
-          </Button>
-        </motion.div>
-      )}
+      {/* Login button moved to header - see AppHeader */}
 
       {/* Main Content - Centered vertically */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-4">
