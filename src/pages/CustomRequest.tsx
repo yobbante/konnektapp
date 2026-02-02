@@ -19,18 +19,17 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 const shipmentTypes = [
-  { value: "colis", label: "Colis / Petit paquet", icon: Package, description: "Documents, vêtements, petits objets" },
-  { value: "marchandise", label: "Marchandise", icon: Box, description: "Produits commerciaux, stocks" },
-  { value: "demenagement", label: "Déménagement", icon: Home, description: "Meubles, électroménager" },
-  { value: "vehicule", label: "Véhicule", icon: Car, description: "Voiture, moto, engins" },
-  { value: "autre", label: "Autre", icon: Sparkles, description: "Autres types d'envoi" },
+  { value: "colis", label: "Colis / Petit paquet", icon: Package, description: "Documents, vêtements, petits objets", allowedTransports: ["voyageur", "routier", "maritime", "aerien"] },
+  { value: "marchandise", label: "Marchandise", icon: Box, description: "Produits commerciaux, stocks", allowedTransports: ["routier", "maritime", "aerien"] },
+  { value: "vehicule", label: "Véhicule", icon: Car, description: "Voiture, moto, engins", allowedTransports: ["routier", "maritime"] },
+  { value: "autre", label: "Autre", icon: Sparkles, description: "Autres types d'envoi", allowedTransports: ["voyageur", "routier", "maritime", "aerien"] },
 ];
 
 const transportOptions = [
-  { type: "voyageur", icon: Briefcase, title: "GP / Voyageur", description: "Via bagages" },
-  { type: "routier", icon: Truck, title: "Routier", description: "Camion, fourgon" },
-  { type: "maritime", icon: Ship, title: "Maritime", description: "Conteneur, fret" },
-  { type: "aerien", icon: Plane, title: "Aérien", description: "Cargo aérien" },
+  { type: "voyageur", icon: Briefcase, title: "GP / Voyageur", description: "Via bagages", maxWeight: 50 },
+  { type: "routier", icon: Truck, title: "Routier", description: "Camion, fourgon", maxWeight: null },
+  { type: "maritime", icon: Ship, title: "Maritime", description: "Conteneur, fret", maxWeight: null },
+  { type: "aerien", icon: Plane, title: "Aérien", description: "Cargo aérien", maxWeight: 500 },
 ];
 
 const additionalServices = [
@@ -262,11 +261,7 @@ export default function CustomRequest() {
                 <button
                   key={type.value}
                   onClick={() => {
-                    if (type.value === "demenagement") {
-                      setShowMovingCalculator(true);
-                    } else {
-                      setFormData({ ...formData, shipmentType: type.value });
-                    }
+                    setFormData({ ...formData, shipmentType: type.value, transportType: null });
                   }}
                   className={`w-full mobile-card flex items-center gap-4 p-4 text-left transition-all ${
                     formData.shipmentType === type.value
@@ -289,37 +284,76 @@ export default function CustomRequest() {
               ))}
             </div>
 
-            {/* Moving Calculator Dialog */}
-            <MovingQuoteCalculator
-              open={showMovingCalculator}
-              onOpenChange={setShowMovingCalculator}
-              onSubmitQuote={handleMovingQuote}
-            />
+            {/* Link to dedicated moving page */}
+            <div className="mb-6 p-3 bg-amber-500/10 rounded-xl border border-amber-200/50">
+              <p className="text-sm text-amber-700 dark:text-amber-400 mb-2">
+                🚚 Besoin d'un déménagement complet ?
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate("/demenagement")}
+                className="w-full"
+              >
+                Faire une demande de déménagement
+              </Button>
+            </div>
 
-            {/* Transport préféré (optionnel) */}
+            {/* Transport préféré - with smart filtering */}
             <div className="mb-6">
               <Label className="mb-3 block">Mode de transport préféré (optionnel)</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {transportOptions.map((option) => (
-                  <button
-                    key={option.type}
-                    onClick={() => setFormData({ 
-                      ...formData, 
-                      transportType: formData.transportType === option.type ? null : option.type 
+              {(() => {
+                const selectedType = shipmentTypes.find(t => t.value === formData.shipmentType);
+                const allowedTransports = selectedType?.allowedTransports || transportOptions.map(t => t.type);
+                
+                return (
+                  <div className="grid grid-cols-2 gap-2">
+                    {transportOptions.map((option) => {
+                      const isAllowed = allowedTransports.includes(option.type);
+                      
+                      return (
+                        <button
+                          key={option.type}
+                          onClick={() => {
+                            if (!isAllowed) {
+                              toast({
+                                title: "Transport non compatible",
+                                description: `Le transport ${option.title} n'est pas adapté pour ce type d'envoi`,
+                                variant: "destructive"
+                              });
+                              return;
+                            }
+                            setFormData({ 
+                              ...formData, 
+                              transportType: formData.transportType === option.type ? null : option.type 
+                            });
+                          }}
+                          disabled={!isAllowed}
+                          className={`mobile-card flex flex-col items-center text-center p-3 transition-all ${
+                            !isAllowed 
+                              ? "opacity-40 cursor-not-allowed bg-muted/50"
+                              : formData.transportType === option.type
+                                ? "ring-2 ring-secondary bg-secondary/5"
+                                : ""
+                          }`}
+                        >
+                          <option.icon className={`w-6 h-6 mb-1 ${
+                            !isAllowed 
+                              ? "text-muted-foreground"
+                              : formData.transportType === option.type 
+                                ? "text-secondary" 
+                                : "text-muted-foreground"
+                          }`} />
+                          <span className="text-sm font-medium">{option.title}</span>
+                          {!isAllowed && (
+                            <span className="text-[10px] text-muted-foreground">Non disponible</span>
+                          )}
+                        </button>
+                      );
                     })}
-                    className={`mobile-card flex flex-col items-center text-center p-3 transition-all ${
-                      formData.transportType === option.type
-                        ? "ring-2 ring-secondary bg-secondary/5"
-                        : ""
-                    }`}
-                  >
-                    <option.icon className={`w-6 h-6 mb-1 ${
-                      formData.transportType === option.type ? "text-secondary" : "text-muted-foreground"
-                    }`} />
-                    <span className="text-sm font-medium">{option.title}</span>
-                  </button>
-                ))}
-              </div>
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="flex gap-3">

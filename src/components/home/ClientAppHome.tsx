@@ -89,7 +89,7 @@ export function ClientAppHome({
       y: 0
     }} className="px-4 pt-3 pb-2">
         <h1 className="text-lg font-bold text-foreground">
-          {greeting}, <span className="text-primary">{firstName}</span> 👋
+          {greeting}{userName ? `, ${firstName}` : ''} <span className="text-primary">👋</span>
         </h1>
       </motion.div>
 

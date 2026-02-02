@@ -18,6 +18,7 @@ function IndexContent() {
   const [activeOrdersCount, setActiveOrdersCount] = useState(0);
   const [showEntryLoader, setShowEntryLoader] = useState(true);
   const [dataLoading, setDataLoading] = useState(true);
+  const [userName, setUserName] = useState<string>("");
 
   // Pull to refresh
   const handleRefresh = useCallback(async () => {
@@ -46,10 +47,21 @@ function IndexContent() {
       return;
     }
     try {
+      // Load user profile for name
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", userId)
+        .single();
+      
+      if (profile?.full_name) {
+        setUserName(profile.full_name);
+      }
+
       // Load recent orders
       const { data: orders } = await supabase
         .from("orders")
-        .select("id, origin_city, destination_city, weight, status")
+        .select("id, origin_city, destination_city, weight, status, order_number, total_price, currency, pickup_date, destination_country, origin_country")
         .eq("client_id", userId)
         .order("created_at", { ascending: false })
         .limit(5);
@@ -116,6 +128,7 @@ function IndexContent() {
       {/* Logged-in Client Home - NO SCROLL, app-like */}
       {isAuthenticated && !isGP && (
         <ClientAppHome
+          userName={userName}
           recentOrders={recentOrders}
           unreadMessages={unreadMessages}
           activeOrdersCount={activeOrdersCount}

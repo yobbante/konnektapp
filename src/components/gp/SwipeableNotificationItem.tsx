@@ -43,12 +43,20 @@ export function SwipeableNotificationItem({
   const background = useTransform(
     x,
     [-100, 0, 100],
-    ["rgba(34, 197, 94, 0.2)", "transparent", "rgba(239, 68, 68, 0.2)"]
+    ["rgba(239, 68, 68, 0.2)", "transparent", "rgba(34, 197, 94, 0.2)"]
   );
+
+  // Y axis for swipe up to dismiss
+  const y = useMotionValue(0);
 
   const Icon = typeIcons[notification.type] || Bell;
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    // Swipe up to dismiss
+    if (info.offset.y < -60 && onDismiss) {
+      onDismiss(notification.id);
+      return;
+    }
     if (info.offset.x > 80) {
       // Swipe right - mark as read
       onMarkAsRead(notification.id);
