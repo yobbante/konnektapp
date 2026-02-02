@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, Menu, Bell, ChevronLeft, X } from "lucide-react";
+import { Package, Menu, ChevronLeft, LogIn, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -101,6 +101,24 @@ export function AppHeader({
 
         {/* Right Side */}
         <div className="flex items-center gap-1.5">
+          {/* Login Button for non-authenticated users - Subtle */}
+          {!isAuthenticated && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+            >
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate("/auth")}
+                className="rounded-full h-8 px-3 gap-1.5 text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span className="hidden xs:inline">Connexion</span>
+              </Button>
+            </motion.div>
+          )}
+          
           {/* Role Switch - Subtle in header */}
           <HeaderRoleSwitch />
           

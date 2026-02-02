@@ -67,6 +67,10 @@ import ShipmentTypeSelector from "./pages/ShipmentTypeSelector";
 // Tutorials and History pages
 import Tutorials from "./pages/Tutorials";
 import OrderHistory from "./pages/OrderHistory";
+// Additional pages
+import TransporteurRegistration from "./pages/TransporteurRegistration";
+import LegalDocuments from "./pages/LegalDocuments";
+import UnifiedProfile from "./pages/UnifiedProfile";
 
 const queryClient = new QueryClient();
 
@@ -116,6 +120,9 @@ const App = () => (
             <Route path="/loyalty" element={<LoyaltyTiersPage />} />
             <Route path="/tutoriels" element={<Tutorials />} />
             <Route path="/historique" element={<OrderHistory />} />
+            <Route path="/documents-legaux" element={<LegalDocuments />} />
+            <Route path="/profil" element={<UnifiedProfile />} />
+            <Route path="/transporteur/inscription" element={<TransporteurRegistration />} />
             <Route path="/order/:orderId/complete" element={<PostBookingForm />} />
             <Route path="/booking/confirmation/:orderId" element={<BookingConfirmation />} />
             
@@ -168,8 +175,9 @@ const App = () => (
             {/* ============================================
                 LEGACY REDIRECTS - Routes obsolètes vers nouvelles
             ============================================ */}
-            <Route path="/profil" element={<Navigate to="/client/dashboard" replace />} />
-            <Route path="/profile" element={<Navigate to="/client/dashboard" replace />} />
+            <Route path="/profile" element={<Navigate to="/profil" replace />} />
+            <Route path="/client/profile" element={<Navigate to="/profil" replace />} />
+            <Route path="/client/profil" element={<Navigate to="/profil" replace />} />
             <Route path="/demande/personnalisee" element={<Navigate to="/demande-personnalisee" replace />} />
             
             {/* 404 - Catch-all */}

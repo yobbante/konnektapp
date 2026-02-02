@@ -197,41 +197,36 @@ export function ClientAppHome({
           </motion.div>
         </Link>
 
-        {/* Voir les offres */}
-        <Link to="/offres" className="block">
+        {/* Demande personnalisée */}
+        <Link to="/demande-personnalisee" className="block">
           <motion.div whileTap={{
           scale: 0.97
         }} className="h-full bg-card border-2 border-border rounded-2xl p-4 flex flex-col justify-between hover:border-primary/30 transition-colors" style={{
           minHeight: '120px'
         }}>
             <div className="w-11 h-11 rounded-xl bg-secondary/10 flex items-center justify-center">
-              <MapPin className="w-6 h-6 text-secondary" />
+              <Package className="w-6 h-6 text-secondary" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground text-sm">Offres</h3>
-              <p className="text-muted-foreground text-xs">Transporteurs</p>
+              <h3 className="font-semibold text-foreground text-sm">Demande</h3>
+              <p className="text-muted-foreground text-xs">Personnalisée</p>
             </div>
           </motion.div>
         </Link>
 
-        {/* Messages */}
-        <Link to="/messages" className="block">
+        {/* Déménagement */}
+        <Link to="/routier/demande" className="block">
           <motion.div whileTap={{
           scale: 0.97
         }} className="h-full bg-card border-2 border-border rounded-2xl p-4 flex flex-col justify-between hover:border-primary/30 transition-colors relative" style={{
           minHeight: '120px'
         }}>
-            {unreadMessages > 0 && <Badge className="absolute top-2 right-2 h-5 min-w-[20px] bg-red-500 text-white border-0 text-[10px]">
-                {unreadMessages > 9 ? '9+' : unreadMessages}
-              </Badge>}
-            <div className="w-11 h-11 rounded-xl bg-green-500/10 flex items-center justify-center">
-              <MessageCircle className="w-6 h-6 text-green-600" />
+            <div className="w-11 h-11 rounded-xl bg-amber-500/10 flex items-center justify-center">
+              <Truck className="w-6 h-6 text-amber-600" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground text-sm">Messages</h3>
-              <p className="text-muted-foreground text-xs">
-                {unreadMessages > 0 ? `${unreadMessages} non lu${unreadMessages > 1 ? 's' : ''}` : 'Discussions'}
-              </p>
+              <h3 className="font-semibold text-foreground text-sm">Déménagement</h3>
+              <p className="text-muted-foreground text-xs">Transport routier</p>
             </div>
           </motion.div>
         </Link>
