@@ -64,6 +64,9 @@ import RoutierProfilPublicPage from "./pages/routier/RoutierProfilPublicPage";
 import RoutierDemandePage from "./pages/routier/RoutierDemandePage";
 // Universal shipment entry
 import ShipmentTypeSelector from "./pages/ShipmentTypeSelector";
+// Tutorials and History pages
+import Tutorials from "./pages/Tutorials";
+import OrderHistory from "./pages/OrderHistory";
 
 const queryClient = new QueryClient();
 
@@ -111,6 +114,8 @@ const App = () => (
             <Route path="/settings" element={<Settings />} />
             <Route path="/alerts" element={<Alerts />} />
             <Route path="/loyalty" element={<LoyaltyTiersPage />} />
+            <Route path="/tutoriels" element={<Tutorials />} />
+            <Route path="/historique" element={<OrderHistory />} />
             <Route path="/order/:orderId/complete" element={<PostBookingForm />} />
             <Route path="/booking/confirmation/:orderId" element={<BookingConfirmation />} />
             

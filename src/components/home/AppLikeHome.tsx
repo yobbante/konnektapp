@@ -1,8 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Package, Truck, Shield, CreditCard, BadgeCheck } from "lucide-react";
+import { Package, Truck, Shield, CreditCard, BadgeCheck, LogIn } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 /**
  * AppLikeHome - Homepage V1 App-Like / Conversion First
@@ -11,40 +12,35 @@ import { useEffect, useState } from "react";
  * - 1 écran = 1 décision
  * - AUCUN scroll vertical
  * - 2 CTAs principaux grands formats
+ * - Bouton connexion visible pour non-connectés
  * - Micro-réassurance (3 icônes max)
- * - Optimisé mobile-first
  */
 export function AppLikeHome() {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isGP, setIsGP] = useState(false);
+
   useEffect(() => {
     const checkAuth = async () => {
-      const {
-        data: {
-          session
-        }
-      } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
       if (session?.user?.id) {
-        const {
-          data: gpProfile
-        } = await supabase.from("gp_profiles").select("id").eq("user_id", session.user.id).maybeSingle();
+        const { data: gpProfile } = await supabase
+          .from("gp_profiles")
+          .select("id")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
         setIsGP(!!gpProfile);
       }
     };
     checkAuth();
-    const {
-      data: {
-        subscription
-      }
-    } = supabase.auth.onAuthStateChange((_, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       setIsAuthenticated(!!session);
     });
     return () => subscription.unsubscribe();
   }, []);
+
   const handleSendClick = () => {
-    // Point d'entrée universel vers le sélecteur de type d'envoi
     if (!isAuthenticated) {
       sessionStorage.setItem("pending_booking_state", JSON.stringify({
         returnPath: "/envoyer",
@@ -55,6 +51,7 @@ export function AppLikeHome() {
       navigate("/envoyer");
     }
   };
+
   const handleTransportClick = () => {
     if (isGP) {
       navigate("/gp/dashboard");
@@ -68,20 +65,44 @@ export function AppLikeHome() {
       navigate("/gp/inscription");
     }
   };
-  return <div className="flex flex-col h-[calc(100vh-64px-env(safe-area-inset-bottom))] bg-background overflow-hidden">
+
+  return (
+    <div 
+      className="flex flex-col bg-background overflow-hidden"
+      style={{
+        height: 'calc(100vh - 60px - 64px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))',
+        minHeight: '400px',
+      }}
+    >
+      {/* Login button for non-authenticated */}
+      {!isAuthenticated && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="px-6 pt-3"
+        >
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="w-full gap-2"
+            onClick={() => navigate("/auth")}
+          >
+            <LogIn className="w-4 h-4" />
+            Se connecter / S'inscrire
+          </Button>
+        </motion.div>
+      )}
+
       {/* Main Content - Centered vertically */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-4">
         
         {/* Central Message */}
-        <motion.div initial={{
-        opacity: 0,
-        y: -10
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        duration: 0.4
-      }} className="text-center mb-8">
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.4 }} 
+          className="text-center mb-8"
+        >
           <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-tight mb-2">
             Envoyez ou transportez
             <br />
@@ -89,19 +110,18 @@ export function AppLikeHome() {
           </h1>
         </motion.div>
 
-        {/* Two Main CTAs - Conversion Priority */}
-        <motion.div initial={{
-        opacity: 0,
-        y: 10
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        duration: 0.4,
-        delay: 0.1
-      }} className="w-full max-w-sm space-y-4 mb-8">
+        {/* Two Main CTAs */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.4, delay: 0.1 }} 
+          className="w-full max-w-sm space-y-4 mb-8"
+        >
           {/* CTA 1: Envoyer un colis */}
-          <button onClick={handleSendClick} className="w-full flex items-center justify-between gap-4 p-5 rounded-2xl bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all active:scale-[0.98]">
+          <button 
+            onClick={handleSendClick} 
+            className="w-full flex items-center justify-between gap-4 p-5 rounded-2xl bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all active:scale-[0.98]"
+          >
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
                 <Package className="w-7 h-7" />
@@ -117,7 +137,10 @@ export function AppLikeHome() {
           </button>
 
           {/* CTA 2: Transporter un colis */}
-          <button onClick={handleTransportClick} className="w-full flex items-center justify-between gap-4 p-5 rounded-2xl bg-card border-2 border-border text-foreground shadow-md hover:shadow-lg hover:border-primary/50 transition-all active:scale-[0.98]">
+          <button 
+            onClick={handleTransportClick} 
+            className="w-full flex items-center justify-between gap-4 p-5 rounded-2xl bg-card border-2 border-border text-foreground shadow-md hover:shadow-lg hover:border-primary/50 transition-all active:scale-[0.98]"
+          >
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Truck className="w-7 h-7 text-primary" />
@@ -137,15 +160,13 @@ export function AppLikeHome() {
           </button>
         </motion.div>
 
-        {/* Micro-Reassurance - 3 icons max */}
-        <motion.div initial={{
-        opacity: 0
-      }} animate={{
-        opacity: 1
-      }} transition={{
-        duration: 0.4,
-        delay: 0.2
-      }} className="flex items-center justify-center gap-6">
+        {/* Micro-Reassurance */}
+        <motion.div 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          transition={{ duration: 0.4, delay: 0.2 }} 
+          className="flex items-center justify-center gap-6"
+        >
           <div className="flex flex-col items-center gap-1">
             <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
               <Shield className="w-5 h-5 text-success" />
@@ -169,18 +190,17 @@ export function AppLikeHome() {
         </motion.div>
       </div>
 
-      {/* Explore link - subtle */}
-      <motion.div initial={{
-      opacity: 0
-    }} animate={{
-      opacity: 1
-    }} transition={{
-      duration: 0.4,
-      delay: 0.3
-    }} className="pb-4 text-center">
+      {/* Explore link */}
+      <motion.div 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }} 
+        transition={{ duration: 0.4, delay: 0.3 }} 
+        className="pb-4 text-center"
+      >
         <Link to="/offres" className="text-sm text-muted-foreground hover:text-primary transition-colors">
           Explorer les offres disponibles →
         </Link>
       </motion.div>
-    </div>;
+    </div>
+  );
 }
