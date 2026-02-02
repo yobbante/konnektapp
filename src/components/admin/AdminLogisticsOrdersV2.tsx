@@ -86,7 +86,11 @@ const STATUS_LABELS: Record<string, { label: string; color: string; icon: any }>
  * - Full workflow: Admin pickup → Hand to GP → GP transit → GP arrived → Admin delivery
  * - Real-time notifications and status updates
  */
-export function AdminLogisticsOrdersV2() {
+interface AdminLogisticsOrdersV2Props {
+  compact?: boolean;
+}
+
+export function AdminLogisticsOrdersV2({ compact = false }: AdminLogisticsOrdersV2Props) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<LogisticsOrder[]>([]);
@@ -313,6 +317,24 @@ export function AdminLogisticsOrdersV2() {
              (o.pickup_handed_at && new Date(o.pickup_handed_at).toDateString() === today);
     }).length,
   };
+
+  // Compact mode - just show alert and stats
+  if (compact) {
+    if (stats.pendingPickups === 0 && stats.pendingDeliveries === 0) {
+      return null;
+    }
+    
+    return (
+      <Alert className="bg-amber-50 border-amber-300">
+        <Bell className="w-4 h-4 text-amber-600" />
+        <AlertTitle className="text-amber-800">Logistique Interne</AlertTitle>
+        <AlertDescription className="text-amber-700">
+          {stats.pendingPickups > 0 && `${stats.pendingPickups} enlèvement(s) à effectuer. `}
+          {stats.pendingDeliveries > 0 && `${stats.pendingDeliveries} livraison(s) dernier km à effectuer.`}
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <div className="space-y-4">

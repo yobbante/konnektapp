@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, RefreshCw, Search, Filter, Truck, Package } from "lucide-react";
+import { Shield, RefreshCw, Search, Filter, Truck, Package, Settings } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ import { GPPriceHistoryChart } from "@/components/admin/GPPriceHistoryChart";
 import { AdminInsuranceTiers } from "@/components/admin/AdminInsuranceTiers";
 import { AdminMessageTemplates } from "@/components/admin/AdminMessageTemplates";
 import { AdminLogisticsOrdersV2 } from "@/components/admin/AdminLogisticsOrdersV2";
+import { AdminConfigPanel } from "@/components/admin/AdminConfigPanel";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { assertValidGpStatus, type GpStatus } from "@/lib/enumMappings";
 
@@ -374,8 +375,11 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* Overview */}
+          {/* Overview - Now includes logistics preview */}
           <TabsContent value="overview" className="space-y-4">
+            {/* Logistics Alert Preview */}
+            <AdminLogisticsOrdersV2 compact />
+            
             <AdminPendingGPs 
               gps={gps}
               onVerify={(id) => updateGPStatus(id, "verified")}
@@ -426,9 +430,12 @@ export default function AdminDashboard() {
             <AdminPermissionsManager />
           </TabsContent>
 
-          {/* Configuration - Insurance & Templates */}
+          {/* Configuration - Full Panel with organized sections */}
           <TabsContent value="config" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <AdminConfigPanel />
+            
+            {/* Legacy components below for backward compatibility */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
               <AdminInsuranceTiers />
               <AdminMessageTemplates />
             </div>
