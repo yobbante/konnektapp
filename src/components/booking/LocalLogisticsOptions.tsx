@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 
 export interface LogisticsOptions {
   pickupEnabled: boolean;
@@ -45,9 +46,11 @@ interface LocalLogisticsOptionsProps {
   isFragile?: boolean;
   originCity: string;
   destinationCity: string;
-  currency: string;
+  currency: string; // GP currency - for conversion display only
   onChange: (options: LogisticsOptions) => void;
 }
+
+// V1.2: Prices are stored/calculated in FCFA (XOF), converted for display
 
 const TIME_SLOTS = [
   { value: "9h-12h", label: "Matin (9h - 12h)" },
@@ -61,7 +64,7 @@ const SUPPORTED_CITIES = ["Dakar"];
 
 /**
  * Logistique Interne Yobbanté - Local pickup/delivery options
- * V1: Dakar only, dynamic pricing based on weight
+ * V1.2: Prices always in FCFA, converted to GP currency for display
  */
 export function LocalLogisticsOptions({
   weight,
@@ -77,6 +80,9 @@ export function LocalLogisticsOptions({
     pickup: PricingConfig | null;
     delivery: PricingConfig | null;
   }>({ pickup: null, delivery: null });
+
+  // V1.2: Currency conversion hook for dual display
+  const { fromFCFA, isFCFA } = useCurrencyConversion({ gpCurrency: currency });
 
   // Form state
   const [pickupAddress, setPickupAddress] = useState("");
@@ -129,7 +135,7 @@ export function LocalLogisticsOptions({
     }
   };
 
-  // Calculate dynamic pricing
+  // Calculate dynamic pricing - V1.2: Always in FCFA
   const calculatePrice = (config: PricingConfig | null): number => {
     if (!config) return 0;
     
@@ -148,6 +154,7 @@ export function LocalLogisticsOptions({
     return Math.round(price);
   };
 
+  // V1.2: Prices in FCFA
   const pickupPrice = useMemo(() => 
     pickupEnabled ? calculatePrice(pricingConfig.pickup) : 0, 
     [pickupEnabled, weight, isFragile, pricingConfig.pickup]
@@ -159,6 +166,23 @@ export function LocalLogisticsOptions({
   );
 
   const totalLogisticsPrice = pickupPrice + deliveryPrice;
+
+  // Helper: Format price with dual currency (FCFA primary, GP currency secondary)
+  const formatDualPrice = (priceInFCFA: number) => {
+    if (isFCFA) {
+      return {
+        main: `${priceInFCFA.toLocaleString()} FCFA`,
+        equivalent: null,
+      };
+    }
+    
+    const gpAmount = Math.round(fromFCFA(priceInFCFA));
+    const gpSymbol = getCurrencySymbol(currency);
+    return {
+      main: `${priceInFCFA.toLocaleString()} FCFA`,
+      equivalent: `≈ ${gpAmount.toLocaleString()} ${gpSymbol}`,
+    };
+  };
 
   // Sync changes to parent
   useEffect(() => {
@@ -190,6 +214,7 @@ export function LocalLogisticsOptions({
   ]);
 
   const currencySymbol = getCurrencySymbol(currency);
+  const gpSymbol = getCurrencySymbol(currency);
 
   // If neither city is supported, don't show the option
   if (!originSupported && !destinationSupported) {
@@ -223,13 +248,20 @@ export function LocalLogisticsOptions({
                   className="mt-0.5"
                 />
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Package className="w-4 h-4 text-primary" />
                     <span className="font-medium text-sm">Enlèvement à domicile</span>
                     {pricingConfig.pickup && (
-                      <Badge className="ml-auto bg-primary/10 text-primary hover:bg-primary/20">
-                        {pickupPrice.toLocaleString()} {currencySymbol}
-                      </Badge>
+                      <div className="ml-auto flex flex-col items-end">
+                        <Badge className="bg-primary/10 text-primary hover:bg-primary/20">
+                          {pickupPrice.toLocaleString()} FCFA
+                        </Badge>
+                        {!isFCFA && (
+                          <span className="text-[10px] text-muted-foreground mt-0.5">
+                            ≈ {Math.round(fromFCFA(pickupPrice)).toLocaleString()} {gpSymbol}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -342,13 +374,20 @@ export function LocalLogisticsOptions({
                   className="mt-0.5"
                 />
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Truck className="w-4 h-4 text-success" />
                     <span className="font-medium text-sm">Livraison à domicile</span>
                     {pricingConfig.delivery && (
-                      <Badge className="ml-auto bg-success/10 text-success hover:bg-success/20">
-                        {deliveryPrice.toLocaleString()} {currencySymbol}
-                      </Badge>
+                      <div className="ml-auto flex flex-col items-end">
+                        <Badge className="bg-success/10 text-success hover:bg-success/20">
+                          {deliveryPrice.toLocaleString()} FCFA
+                        </Badge>
+                        {!isFCFA && (
+                          <span className="text-[10px] text-muted-foreground mt-0.5">
+                            ≈ {Math.round(fromFCFA(deliveryPrice)).toLocaleString()} {gpSymbol}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -451,9 +490,16 @@ export function LocalLogisticsOptions({
             >
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Total logistique Yobbanté</span>
-                <span className="font-bold text-primary">
-                  {totalLogisticsPrice.toLocaleString()} {currencySymbol}
-                </span>
+                <div className="text-right">
+                  <span className="font-bold text-primary block">
+                    {totalLogisticsPrice.toLocaleString()} FCFA
+                  </span>
+                  {!isFCFA && (
+                    <span className="text-xs text-muted-foreground">
+                      ≈ {Math.round(fromFCFA(totalLogisticsPrice)).toLocaleString()} {gpSymbol}
+                    </span>
+                  )}
+                </div>
               </div>
               
               {/* Terms Link */}
