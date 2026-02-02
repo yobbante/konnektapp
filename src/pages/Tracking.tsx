@@ -1,11 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { 
-  Search, Package, MapPin, Clock, CheckCircle, 
-  AlertCircle, Truck, MessageCircle, Phone, Map as MapIcon,
-  Calendar, Navigation, Box, RefreshCw
-} from "lucide-react";
+import { Search, Package, MapPin, Clock, CheckCircle, AlertCircle, Truck, MessageCircle, Phone, Map as MapIcon, Calendar, Navigation, Box, RefreshCw } from "lucide-react";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Button } from "@/components/ui/button";
@@ -16,7 +12,6 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { ReportProblemDialog } from "@/components/tracking/ReportProblemDialog";
 import { RealTimeTrackingMap } from "@/components/tracking/RealTimeTrackingMap";
-
 interface TrackingStep {
   status: string;
   date: string;
@@ -24,7 +19,6 @@ interface TrackingStep {
   completed: boolean;
   current?: boolean;
 }
-
 interface OrderDetails {
   id: string;
   order_number: string;
@@ -48,20 +42,36 @@ interface OrderDetails {
     created_at: string;
   }>;
 }
-
-const STATUS_STEPS = [
-  { status: "pending", label: "Commande créée", icon: Package, color: "bg-warning" },
-  { status: "accepted", label: "Acceptée par le transporteur", icon: CheckCircle, color: "bg-primary" },
-  { status: "collected", label: "Colis récupéré", icon: Box, color: "bg-secondary" },
-  { status: "in_transit", label: "En transit", icon: Truck, color: "bg-accent" },
-  { status: "delivered", label: "Livré", icon: CheckCircle, color: "bg-success" },
-];
-
+const STATUS_STEPS = [{
+  status: "pending",
+  label: "Commande créée",
+  icon: Package,
+  color: "bg-warning"
+}, {
+  status: "accepted",
+  label: "Acceptée par le transporteur",
+  icon: CheckCircle,
+  color: "bg-primary"
+}, {
+  status: "collected",
+  label: "Colis récupéré",
+  icon: Box,
+  color: "bg-secondary"
+}, {
+  status: "in_transit",
+  label: "En transit",
+  icon: Truck,
+  color: "bg-accent"
+}, {
+  status: "delivered",
+  label: "Livré",
+  icon: CheckCircle,
+  color: "bg-success"
+}];
 const getStatusIndex = (status: string) => {
   const index = STATUS_STEPS.findIndex(s => s.status === status);
   return index >= 0 ? index : 0;
 };
-
 export default function TrackingPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -71,7 +81,6 @@ export default function TrackingPage() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
   useEffect(() => {
     if (initialCode) {
       handleSearch();
@@ -81,41 +90,33 @@ export default function TrackingPage() {
   // Realtime subscription for order updates
   useEffect(() => {
     if (!order?.id) return;
-
-    const channel = supabase
-      .channel(`tracking-${order.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "orders",
-          filter: `id=eq.${order.id}`,
-        },
-        (payload) => {
-          const updatedOrder = payload.new as any;
-          setOrder((prev) => prev ? { ...prev, ...updatedOrder } : null);
-        }
-      )
-      .subscribe();
-
+    const channel = supabase.channel(`tracking-${order.id}`).on("postgres_changes", {
+      event: "UPDATE",
+      schema: "public",
+      table: "orders",
+      filter: `id=eq.${order.id}`
+    }, payload => {
+      const updatedOrder = payload.new as any;
+      setOrder(prev => prev ? {
+        ...prev,
+        ...updatedOrder
+      } : null);
+    }).subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, [order?.id]);
-
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!trackingCode.trim()) return;
-
     setLoading(true);
     setSearched(true);
-
     try {
       // Search by tracking_code or order_number
-      const { data, error } = await supabase
-        .from("orders")
-        .select(`
+      const {
+        data,
+        error
+      } = await supabase.from("orders").select(`
           id,
           order_number,
           tracking_code,
@@ -130,33 +131,27 @@ export default function TrackingPage() {
           weight,
           total_price,
           gp_id
-        `)
-        .or(`tracking_code.eq.${trackingCode},order_number.eq.${trackingCode}`)
-        .single();
-
+        `).or(`tracking_code.eq.${trackingCode},order_number.eq.${trackingCode}`).single();
       if (error || !data) {
         setOrder(null);
         return;
       }
 
       // Fetch GP profile
-      const { data: gpData } = await supabase
-        .from("public_gp_profiles")
-        .select("business_name")
-        .eq("id", data.gp_id)
-        .single();
+      const {
+        data: gpData
+      } = await supabase.from("public_gp_profiles").select("business_name").eq("id", data.gp_id).single();
 
       // Fetch status history
-      const { data: historyData } = await supabase
-        .from("order_status_history")
-        .select("status, created_at")
-        .eq("order_id", data.id)
-        .order("created_at", { ascending: true });
-
+      const {
+        data: historyData
+      } = await supabase.from("order_status_history").select("status, created_at").eq("order_id", data.id).order("created_at", {
+        ascending: true
+      });
       setOrder({
         ...data,
         gp_profile: gpData || undefined,
-        status_history: historyData || [],
+        status_history: historyData || []
       });
     } catch (error) {
       console.error("Error searching order:", error);
@@ -165,49 +160,44 @@ export default function TrackingPage() {
       setLoading(false);
     }
   };
-
   const handleRefresh = async () => {
     if (!order) return;
     setIsRefreshing(true);
     await handleSearch();
     setIsRefreshing(false);
   };
-
   const currentStatusIndex = order ? getStatusIndex(order.status) : 0;
-  const progress = order ? ((currentStatusIndex + 1) / STATUS_STEPS.length) * 100 : 0;
+  const progress = order ? (currentStatusIndex + 1) / STATUS_STEPS.length * 100 : 0;
 
   // Build tracking steps from order status history
   const trackingSteps: TrackingStep[] = STATUS_STEPS.map((step, index) => {
     const historyEntry = order?.status_history?.find(h => h.status === step.status);
-    
     return {
       status: step.label,
-      date: historyEntry 
-        ? format(new Date(historyEntry.created_at), "d MMM, HH:mm", { locale: fr })
-        : index <= currentStatusIndex && index === 0 && order?.pickup_date
-          ? format(new Date(order.pickup_date), "d MMM, HH:mm", { locale: fr })
-          : index === STATUS_STEPS.length - 1 && order?.actual_delivery_date
-            ? format(new Date(order.actual_delivery_date), "d MMM, HH:mm", { locale: fr })
-            : "—",
-      location: index === 0 ? order?.origin_city || "" 
-        : index === STATUS_STEPS.length - 1 ? order?.destination_city || ""
-        : "En route",
+      date: historyEntry ? format(new Date(historyEntry.created_at), "d MMM, HH:mm", {
+        locale: fr
+      }) : index <= currentStatusIndex && index === 0 && order?.pickup_date ? format(new Date(order.pickup_date), "d MMM, HH:mm", {
+        locale: fr
+      }) : index === STATUS_STEPS.length - 1 && order?.actual_delivery_date ? format(new Date(order.actual_delivery_date), "d MMM, HH:mm", {
+        locale: fr
+      }) : "—",
+      location: index === 0 ? order?.origin_city || "" : index === STATUS_STEPS.length - 1 ? order?.destination_city || "" : "En route",
       completed: index < currentStatusIndex,
-      current: index === currentStatusIndex,
+      current: index === currentStatusIndex
     };
   });
-
-  return (
-    <div className="min-h-screen bg-background pb-safe">
+  return <div className="min-h-screen bg-background pb-safe">
       <MobileHeader />
 
       <div className="px-4 py-6">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-6"
-        >
+        <motion.div initial={{
+        opacity: 0,
+        y: 10
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} className="text-center mb-6">
           <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
             <Navigation className="w-7 h-7 text-primary" />
           </div>
@@ -218,52 +208,41 @@ export default function TrackingPage() {
         </motion.div>
 
         {/* Search Form */}
-        <motion.form
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          onSubmit={handleSearch}
-          className="mb-6"
-        >
+        <motion.form initial={{
+        opacity: 0,
+        y: 10
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        delay: 0.1
+      }} onSubmit={handleSearch} className="mb-6">
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Ex: CMD-20241225-abc12345"
-                className="pl-10 h-11 bg-muted/50"
-                value={trackingCode}
-                onChange={(e) => setTrackingCode(e.target.value)}
-              />
+              <Input placeholder="Ex: CMD-20241225-abc12345" className="pl-10 h-11 bg-muted/50" value={trackingCode} onChange={e => setTrackingCode(e.target.value)} />
             </div>
             <Button type="submit" variant="default" className="h-11 px-5" disabled={loading}>
-              {loading ? (
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Search className="w-4 h-4" />
-              )}
+              {loading ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Search className="w-4 h-4" />}
             </Button>
           </div>
         </motion.form>
 
         {/* Results */}
-        {loading ? (
-          <div className="flex justify-center py-12">
+        {loading ? <div className="flex justify-center py-12">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : order ? (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-4"
-          >
+          </div> : order ? <motion.div initial={{
+        opacity: 0,
+        y: 10
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} className="space-y-4">
             {/* Summary Card */}
             <div className="mobile-card">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <Badge 
-                    variant={order.status === "delivered" ? "success" : order.status === "cancelled" ? "destructive" : "default"}
-                    className="mb-2"
-                  >
+                  <Badge variant={order.status === "delivered" ? "success" : order.status === "cancelled" ? "destructive" : "default"} className="mb-2">
                     {order.status === "pending" && "En attente"}
                     {order.status === "accepted" && "Acceptée"}
                     {order.status === "collected" && "Collecté"}
@@ -276,13 +255,7 @@ export default function TrackingPage() {
                     {order.tracking_code || order.order_number}
                   </h2>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={handleRefresh}
-                  disabled={isRefreshing}
-                  className="h-9 w-9"
-                >
+                <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={isRefreshing} className="h-9 w-9">
                   <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                 </Button>
               </div>
@@ -307,9 +280,9 @@ export default function TrackingPage() {
                 <div className="text-right">
                   <p className="text-xs text-muted-foreground">Livraison estimée</p>
                   <p className="font-semibold text-sm">
-                    {order.delivery_date 
-                      ? format(new Date(order.delivery_date), "d MMM yyyy", { locale: fr })
-                      : "À confirmer"}
+                    {order.delivery_date ? format(new Date(order.delivery_date), "d MMM yyyy", {
+                  locale: fr
+                }) : "À confirmer"}
                   </p>
                 </div>
               </div>
@@ -318,56 +291,41 @@ export default function TrackingPage() {
               <div className="relative mb-4">
                 <div className="flex justify-between items-center relative z-10">
                   {STATUS_STEPS.map((step, index) => {
-                    const isCompleted = index < currentStatusIndex;
-                    const isCurrent = index === currentStatusIndex;
-                    const StepIcon = step.icon;
-                    
-                    return (
-                      <div key={step.status} className="flex flex-col items-center">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                          isCurrent
-                            ? `${step.color} text-white shadow-lg scale-110 animate-pulse`
-                            : isCompleted
-                              ? "bg-success text-white"
-                              : "bg-muted text-muted-foreground"
-                        }`}>
+                const isCompleted = index < currentStatusIndex;
+                const isCurrent = index === currentStatusIndex;
+                const StepIcon = step.icon;
+                return <div key={step.status} className="flex flex-col items-center">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isCurrent ? `${step.color} text-white shadow-lg scale-110 animate-pulse` : isCompleted ? "bg-success text-white" : "bg-muted text-muted-foreground"}`}>
                           <StepIcon className="w-5 h-5" />
                         </div>
-                        <p className={`text-[10px] mt-1 text-center max-w-[50px] ${
-                          isCurrent ? "text-foreground font-medium" : "text-muted-foreground"
-                        }`}>
+                        <p className={`text-[10px] mt-1 text-center max-w-[50px] ${isCurrent ? "text-foreground font-medium" : "text-muted-foreground"}`}>
                           {step.status === "pending" && "Créée"}
                           {step.status === "accepted" && "Acceptée"}
                           {step.status === "collected" && "Collecté"}
                           {step.status === "in_transit" && "Transit"}
                           {step.status === "delivered" && "Livré"}
                         </p>
-                      </div>
-                    );
-                  })}
+                      </div>;
+              })}
                 </div>
                 {/* Progress Bar */}
                 <div className="absolute top-5 left-5 right-5 h-0.5 bg-muted -z-0">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progress}%` }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                    className="h-full bg-success rounded-full"
-                  />
+                  <motion.div initial={{
+                width: 0
+              }} animate={{
+                width: `${progress}%`
+              }} transition={{
+                duration: 0.5,
+                delay: 0.2
+              }} className="h-full bg-success rounded-full" />
                 </div>
               </div>
 
               {/* Order details */}
-              {(order.weight || order.total_price) && (
-                <div className="flex items-center justify-between text-sm pt-3 border-t border-border">
-                  {order.weight && (
-                    <span className="text-muted-foreground">Poids: {order.weight} kg</span>
-                  )}
-                  {order.total_price && (
-                    <span className="font-bold">{order.total_price.toLocaleString()} FCFA</span>
-                  )}
-                </div>
-              )}
+              {(order.weight || order.total_price) && <div className="flex items-center justify-between text-sm pt-3 border-t border-border">
+                  {order.weight && <span className="text-muted-foreground">Poids: {order.weight} kg</span>}
+                  {order.total_price && <span className="font-bold">{order.total_price.toLocaleString()} FCFA</span>}
+                </div>}
             </div>
 
             {/* Real-Time Interactive Map */}
@@ -379,13 +337,7 @@ export default function TrackingPage() {
                   Temps réel
                 </Badge>
               </div>
-              <RealTimeTrackingMap
-                originCity={order.origin_city}
-                destinationCity={order.destination_city}
-                currentStatus={order.status}
-                progress={progress}
-                transportType="bagages_international"
-              />
+              <RealTimeTrackingMap originCity={order.origin_city} destinationCity={order.destination_city} currentStatus={order.status} progress={progress} transportType="bagages_international" />
             </div>
 
             {/* GP Info */}
@@ -417,28 +369,14 @@ export default function TrackingPage() {
               
               <div className="space-y-0">
                 {trackingSteps.map((step, index) => {
-                  const StepIcon = STATUS_STEPS[index]?.icon || Package;
-                  const stepColor = STATUS_STEPS[index]?.color || "bg-muted";
-                  
-                  return (
-                    <div key={index} className="relative flex gap-3">
+              const StepIcon = STATUS_STEPS[index]?.icon || Package;
+              const stepColor = STATUS_STEPS[index]?.color || "bg-muted";
+              return <div key={index} className="relative flex gap-3">
                       {/* Line */}
-                      {index < trackingSteps.length - 1 && (
-                        <div 
-                          className={`absolute left-[11px] top-6 w-0.5 h-full ${
-                            step.completed || step.current ? "bg-success" : "bg-muted"
-                          }`}
-                        />
-                      )}
+                      {index < trackingSteps.length - 1 && <div className={`absolute left-[11px] top-6 w-0.5 h-full ${step.completed || step.current ? "bg-success" : "bg-muted"}`} />}
                       
                       {/* Icon */}
-                      <div className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        step.current
-                          ? `${stepColor} text-white animate-pulse`
-                          : step.completed
-                          ? "bg-success text-white"
-                          : "bg-muted text-muted-foreground"
-                      }`}>
+                      <div className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${step.current ? `${stepColor} text-white animate-pulse` : step.completed ? "bg-success text-white" : "bg-muted text-muted-foreground"}`}>
                         <StepIcon className="w-3 h-3" />
                       </div>
 
@@ -449,26 +387,20 @@ export default function TrackingPage() {
                         </p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <span>{step.date}</span>
-                          {step.location && (
-                            <>
+                          {step.location && <>
                               <span>•</span>
                               <span>{step.location}</span>
-                            </>
-                          )}
+                            </>}
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    </div>;
+            })}
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3">
-              <ReportProblemDialog 
-                orderId={order.id} 
-                orderNumber={order.tracking_code || order.order_number}
-              >
+            <div className="items-center justify-start gap-[8px] flex flex-col">
+              <ReportProblemDialog orderId={order.id} orderNumber={order.tracking_code || order.order_number}>
                 <Button variant="outline" className="flex-1 h-11">
                   <AlertCircle className="w-4 h-4 mr-2" />
                   Signaler un problème
@@ -479,13 +411,13 @@ export default function TrackingPage() {
                 Contacter
               </Button>
             </div>
-          </motion.div>
-        ) : searched ? (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mobile-card text-center py-8"
-          >
+          </motion.div> : searched ? <motion.div initial={{
+        opacity: 0,
+        y: 10
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} className="mobile-card text-center py-8">
             <Package className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
             <h3 className="font-semibold text-foreground mb-1">
               Aucune commande trouvée
@@ -493,18 +425,22 @@ export default function TrackingPage() {
             <p className="text-sm text-muted-foreground mb-4">
               Vérifiez le numéro de suivi et réessayez
             </p>
-            <Button variant="outline" onClick={() => { setSearched(false); setTrackingCode(""); }}>
+            <Button variant="outline" onClick={() => {
+          setSearched(false);
+          setTrackingCode("");
+        }}>
               Nouvelle recherche
             </Button>
-          </motion.div>
-        ) : (
-          /* Info Box */
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mobile-card text-center"
-          >
+          </motion.div> : (/* Info Box */
+      <motion.div initial={{
+        opacity: 0,
+        y: 10
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        delay: 0.2
+      }} className="mobile-card text-center">
             <Package className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" />
             <h3 className="font-semibold text-foreground mb-1">
               Où trouver mon numéro ?
@@ -512,11 +448,9 @@ export default function TrackingPage() {
             <p className="text-sm text-muted-foreground">
               Dans votre email de confirmation ou dans "Mes envois" sur votre tableau de bord
             </p>
-          </motion.div>
-        )}
+          </motion.div>)}
       </div>
 
       <MobileNav />
-    </div>
-  );
+    </div>;
 }
