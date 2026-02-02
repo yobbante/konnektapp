@@ -21,6 +21,20 @@ export function useSmartRedirect() {
   const navigate = useNavigate();
 
   /**
+   * Save current location for return after login
+   */
+  const saveCurrentLocation = useCallback(() => {
+    const currentPath = window.location.pathname + window.location.search;
+    // Don't save auth page itself
+    if (currentPath !== "/auth" && currentPath !== "/") {
+      sessionStorage.setItem("pending_booking_state", JSON.stringify({
+        returnPath: currentPath,
+        timestamp: Date.now()
+      }));
+    }
+  }, []);
+
+  /**
    * Check for pending booking state and return the path if valid
    */
   const getPendingReturnPath = useCallback((): string | null => {
@@ -141,6 +155,7 @@ export function useSmartRedirect() {
   return { 
     detectUserRoleAndRedirect, 
     redirectToGPRegistration,
-    getPendingReturnPath 
+    getPendingReturnPath,
+    saveCurrentLocation
   };
 }

@@ -29,7 +29,7 @@ import GPProfilPublicPage from "./pages/gp/GPProfilPublicPage";
 import GPScanPage from "./pages/gp/GPScanPage";
 import GPCustomRequests from "./pages/GPCustomRequests";
 import GPOrderDetail from "./pages/GPOrderDetail";
-import ClientDashboard from "./pages/ClientDashboard";
+// ClientDashboard removed - redirect to /profil
 // ClientProfile removed - using UnifiedProfile at /profil
 import ClientTransporterProfile from "./pages/ClientTransporterProfile";
 import Auth from "./pages/Auth";
@@ -71,6 +71,7 @@ import OrderHistory from "./pages/OrderHistory";
 import TransporteurRegistration from "./pages/TransporteurRegistration";
 import LegalDocuments from "./pages/LegalDocuments";
 import UnifiedProfile from "./pages/UnifiedProfile";
+import ClientProfileComplete from "./pages/ClientProfileComplete";
 import MovingRequest from "./pages/MovingRequest";
 
 const queryClient = new QueryClient();
@@ -112,7 +113,7 @@ const App = () => (
             <Route path="/quote-confirmation" element={<QuoteConfirmation />} />
             <Route path="/reservation/gp/:gpId" element={<SmartBookingPage />} />
             <Route path="/messages" element={<Messages />} />
-            <Route path="/client/dashboard" element={<ClientDashboard />} />
+            <Route path="/client/dashboard" element={<Navigate to="/profil" replace />} />
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/favorites/transporters" element={<FavoriteTransporters />} />
             <Route path="/saved-searches" element={<SavedSearches />} />
@@ -123,6 +124,7 @@ const App = () => (
             <Route path="/historique" element={<OrderHistory />} />
             <Route path="/documents-legaux" element={<LegalDocuments />} />
             <Route path="/profil" element={<UnifiedProfile />} />
+            <Route path="/profil/complet" element={<ClientProfileComplete />} />
             <Route path="/transporteur/inscription" element={<TransporteurRegistration />} />
             <Route path="/order/:orderId/complete" element={<PostBookingForm />} />
             <Route path="/booking/confirmation/:orderId" element={<BookingConfirmation />} />

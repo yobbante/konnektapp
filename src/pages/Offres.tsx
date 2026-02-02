@@ -358,20 +358,24 @@ export default function Offres() {
                           </div>
                         </div>
 
-                        {/* Route */}
+                        {/* Route with transport icon */}
                         <div className="flex items-center gap-3 mb-4">
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 rounded-full bg-primary shadow-lg shadow-primary/30" />
                             <span className="font-semibold">{offer.origin_city}</span>
                           </div>
                           
-                          <div className="flex-1 relative h-0.5 bg-border/50 mx-2">
+                          <div className="flex-1 relative h-0.5 bg-border/50 mx-2 flex items-center justify-center">
                             <motion.div 
                               className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-primary/50"
                               initial={{ width: "0%" }}
                               whileInView={{ width: "100%" }}
                               transition={{ duration: 0.8, delay: 0.2 }}
                             />
+                            {/* Transport Icon in center */}
+                            <div className="absolute left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-background border-2 border-primary/50 flex items-center justify-center z-10">
+                              <TransportIcon className="w-3 h-3 text-primary" />
+                            </div>
                           </div>
                           
                           <div className="flex items-center gap-2">

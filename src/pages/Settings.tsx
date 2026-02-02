@@ -251,7 +251,7 @@ export default function Settings() {
             </h2>
             <div className="bg-card rounded-2xl border border-border overflow-hidden">
               <button 
-                onClick={() => navigate("/profil")}
+                onClick={() => navigate("/profil/complet")}
                 className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
               >
                 <div className="flex items-center gap-3">
@@ -260,7 +260,7 @@ export default function Settings() {
                   </div>
                   <div className="text-left">
                     <p className="font-medium">Mon profil</p>
-                    <p className="text-xs text-muted-foreground">Informations personnelles</p>
+                    <p className="text-xs text-muted-foreground">Informations personnelles, sécurité, KYC</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
