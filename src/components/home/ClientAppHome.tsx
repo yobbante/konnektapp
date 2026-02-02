@@ -509,7 +509,7 @@ function FullScreenOrderDetails({
       </div>
 
       {/* Action Buttons - Fixed at bottom */}
-      <div className="p-4 border-t border-border bg-card space-y-2 px-px mx-0 my-[50px]" style={{
+      <div className="p-4 border-t border-border bg-card space-y-2 mx-0 my-0 px-[16px] ml-[5px] mr-[5px] mt-[5px] mb-[51px]" style={{
       paddingBottom: 'calc(16px + env(safe-area-inset-bottom))'
     }}>
         <div className="flex gap-2">
