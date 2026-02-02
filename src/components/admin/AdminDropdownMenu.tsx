@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   ChevronDown, Settings, Users, Truck, Package, 
-  MessageSquare, AlertTriangle, Shield, Award, LogOut, Home, Route, Cog
+  MessageSquare, AlertTriangle, Shield, Award, LogOut, Home, Route, Cog, Building
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -40,6 +40,7 @@ export function AdminDropdownMenu({ onTabChange, activeTab }: AdminDropdownMenuP
     { id: "departures", label: "Départs", icon: Route, isLink: true, href: "/admin/departures" },
     { id: "messages", label: "Messages", icon: MessageSquare, isLink: true, href: "/admin/messages" },
     { id: "logistics", label: "Logistique Interne", icon: Truck },
+    { id: "moving", label: "Déménagements", icon: Building },
     { id: "support", label: "Support & Litiges", icon: AlertTriangle },
     { id: "reputation", label: "Réputation", icon: Award },
     { id: "permissions", label: "Rôles & Permissions", icon: Shield },

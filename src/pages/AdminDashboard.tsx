@@ -24,6 +24,7 @@ import { AdminInsuranceTiers } from "@/components/admin/AdminInsuranceTiers";
 import { AdminMessageTemplates } from "@/components/admin/AdminMessageTemplates";
 import { AdminLogisticsOrdersV2 } from "@/components/admin/AdminLogisticsOrdersV2";
 import { AdminConfigPanel } from "@/components/admin/AdminConfigPanel";
+import { AdminMovingRequestsTab } from "@/components/admin/AdminMovingRequestsTab";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { assertValidGpStatus, type GpStatus } from "@/lib/enumMappings";
 
@@ -444,6 +445,11 @@ export default function AdminDashboard() {
           {/* Logistics - Internal Yobbanté Logistics V1.1 */}
           <TabsContent value="logistics">
             <AdminLogisticsOrdersV2 />
+          </TabsContent>
+
+          {/* Moving Requests - Internal Yobbanté Service */}
+          <TabsContent value="moving">
+            <AdminMovingRequestsTab />
           </TabsContent>
         </Tabs>
       </div>

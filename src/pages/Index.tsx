@@ -132,6 +132,7 @@ function IndexContent() {
           recentOrders={recentOrders}
           unreadMessages={unreadMessages}
           activeOrdersCount={activeOrdersCount}
+          userId={userId || undefined}
         />
       )}
 
