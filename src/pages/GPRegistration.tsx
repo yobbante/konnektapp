@@ -387,69 +387,96 @@ export default function GPRegistration() {
   if (isCheckingAuth) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-secondary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Chargement...</p>
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-12 h-12">
+            <motion.div
+              className="absolute inset-0 rounded-full border-2 border-primary/30"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+              style={{ borderTopColor: 'hsl(var(--primary))' }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Truck className="w-5 h-5 text-primary" />
+            </div>
+          </div>
+          <p className="text-muted-foreground text-sm">Chargement...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       <Header />
       
-      <main className="pt-24 pb-20">
-        <div className="container max-w-4xl">
-          {/* Header */}
+      <main className="pt-20 pb-24" style={{ paddingTop: 'calc(80px + env(safe-area-inset-top, 0px))' }}>
+        <div className="container max-w-3xl px-4">
+          {/* Header - Compact */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-10"
+            className="text-center mb-8"
           >
-            <Badge variant="gold" className="mb-4">Devenir Transporteur</Badge>
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-              Rejoignez le réseau Yobbanté Connect
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-4"
+            >
+              <Truck className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium text-primary">Devenir Transporteur</span>
+            </motion.div>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+              Rejoignez Yobbanté Connect
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
               Accédez à des demandes qualifiées et développez votre activité
             </p>
             {existingUser && (
-              <div className="mt-4 p-3 bg-success/10 border border-success/20 rounded-lg inline-block">
-                <p className="text-sm text-success">
-                  ✓ Connecté en tant que {existingUser.fullName || existingUser.email}
-                </p>
-              </div>
+              <motion.div 
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-success/10 border border-success/20 rounded-full"
+              >
+                <CheckCircle className="w-3.5 h-3.5 text-success" />
+                <span className="text-xs text-success font-medium">
+                  {existingUser.fullName || existingUser.email}
+                </span>
+              </motion.div>
             )}
           </motion.div>
 
-          {/* Progress Steps */}
-          <div className="mb-10 overflow-x-auto">
-            <div className="flex items-center justify-between min-w-[600px] md:min-w-0">
+          {/* Progress Steps - Mobile optimized */}
+          <div className="mb-8">
+            <div className="flex items-center justify-center gap-1">
               {steps.map((s, i) => (
                 <div key={s.num} className="flex items-center">
-                  <div className="flex flex-col items-center">
+                  <motion.div 
+                    className="flex flex-col items-center"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                  >
                     <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
                         step >= s.num
-                          ? "bg-secondary text-secondary-foreground shadow-md"
+                          ? "bg-primary text-primary-foreground shadow-md"
                           : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {step > s.num ? (
-                        <CheckCircle className="w-6 h-6" />
+                        <CheckCircle className="w-5 h-5" />
                       ) : (
-                        <s.icon className="w-5 h-5" />
+                        <s.icon className="w-4 h-4" />
                       )}
                     </div>
-                    <span className={`text-xs mt-2 ${step >= s.num ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+                    <span className={`text-[10px] mt-1.5 text-center w-12 ${step >= s.num ? "text-foreground font-medium" : "text-muted-foreground"}`}>
                       {s.label}
                     </span>
-                  </div>
+                  </motion.div>
                   {i < steps.length - 1 && (
                     <div
-                      className={`h-1 w-8 md:w-16 mx-2 rounded ${
-                        step > s.num ? "bg-secondary" : "bg-muted"
+                      className={`h-0.5 w-4 md:w-8 mx-0.5 rounded ${
+                        step > s.num ? "bg-primary" : "bg-muted"
                       }`}
                     />
                   )}

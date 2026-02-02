@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FeatureCard } from "@/components/FeatureCard";
 import { useUserRole } from "@/hooks/useUserRole";
+import { DynamicTagline } from "@/components/ui/DynamicTagline";
 
 const activityTypes = [
   { 
@@ -135,9 +136,12 @@ export default function GPLanding() {
               transition={{ duration: 0.6 }}
             >
               <Badge variant="gold" className="mb-6">Rejoignez le réseau Yobbanté</Badge>
-              <h1 className="text-4xl md:text-5xl font-bold text-secondary mb-6">
-                Développez votre activité de transport
-              </h1>
+              
+              {/* Dynamic Tagline for GP */}
+              <div className="mb-6">
+                <DynamicTagline variant="large" />
+              </div>
+              
               <p className="text-lg text-primary-foreground/80 mb-8">
                 Quel que soit votre métier – routier, maritime, aérien, coursier ou agence de voyage – 
                 rejoignez la première plateforme logistique d'Afrique de l'Ouest.

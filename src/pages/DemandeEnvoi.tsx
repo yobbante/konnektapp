@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { DynamicTagline } from "@/components/ui/DynamicTagline";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "demenagement";
 type FlowType = "offres" | "personnalisee" | null;
@@ -188,13 +189,12 @@ export default function DemandeEnvoi() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-8"
+            className="mb-8"
           >
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Package className="w-8 h-8 text-primary" />
-            </div>
-            <h1 className="text-2xl font-bold mb-2">Envoyer un colis</h1>
-            <p className="text-muted-foreground">Choisissez votre méthode d'envoi</p>
+            <DynamicTagline />
+            <p className="text-center text-sm text-muted-foreground mt-4">
+              Choisissez votre méthode d'envoi
+            </p>
           </motion.div>
 
           <div className="space-y-4">

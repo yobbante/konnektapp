@@ -1,5 +1,16 @@
-import { motion } from "framer-motion";
-import { Package } from "lucide-react";
+/**
+ * MiniLoader - Sophisticated Transport-themed Mini Loader
+ * 
+ * Features:
+ * - Multiple animated vehicle types
+ * - Smooth transitions between icons
+ * - Compact size for inline use
+ * - Same loading duration as before
+ */
+
+import { motion, AnimatePresence } from "framer-motion";
+import { Package, Plane, Truck, Ship } from "lucide-react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 interface MiniLoaderProps {
@@ -10,11 +21,13 @@ interface MiniLoaderProps {
 }
 
 const sizeClasses = {
-  xs: { container: "w-4 h-4", icon: "w-2 h-2", particle: "w-1 h-1" },
-  sm: { container: "w-6 h-6", icon: "w-3 h-3", particle: "w-1 h-1" },
-  md: { container: "w-8 h-8", icon: "w-4 h-4", particle: "w-1.5 h-1.5" },
-  lg: { container: "w-12 h-12", icon: "w-6 h-6", particle: "w-2 h-2" },
+  xs: { container: "w-4 h-4", icon: "w-2.5 h-2.5" },
+  sm: { container: "w-6 h-6", icon: "w-3.5 h-3.5" },
+  md: { container: "w-8 h-8", icon: "w-4 h-4" },
+  lg: { container: "w-12 h-12", icon: "w-6 h-6" },
 };
+
+const transportIcons = [Package, Plane, Truck, Ship];
 
 export function MiniLoader({ 
   size = "sm", 
@@ -23,82 +36,55 @@ export function MiniLoader({
   text = "Chargement..."
 }: MiniLoaderProps) {
   const sizes = sizeClasses[size];
+  const [iconIndex, setIconIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIconIndex((prev) => (prev + 1) % transportIcons.length);
+    }, 600);
+    return () => clearInterval(interval);
+  }, []);
+
+  const CurrentIcon = transportIcons[iconIndex];
   
   return (
     <div className={cn("inline-flex items-center gap-2", className)}>
-      <motion.div
-        className="relative"
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.2 }}
-      >
-        {/* 3D Box Animation */}
+      <div className="relative">
+        {/* Outer ring animation */}
         <motion.div
-          className={cn("relative", sizes.container)}
-          animate={{
-            rotateY: [0, 180, 360],
-          }}
+          className={cn(
+            "absolute inset-0 rounded-full border-2 border-primary/30",
+            sizes.container
+          )}
+          animate={{ rotate: 360 }}
           transition={{
             duration: 1.5,
             repeat: Infinity,
-            ease: "easeInOut",
+            ease: "linear",
           }}
-          style={{ transformStyle: "preserve-3d" }}
-        >
-          {/* Box Front Face */}
-          <motion.div
-            className={cn(
-              "absolute inset-0 bg-gradient-to-br from-primary to-primary/80 rounded-md flex items-center justify-center",
-              sizes.container
-            )}
-            animate={{
-              boxShadow: [
-                "0 2px 8px -2px hsl(var(--primary) / 0.3)",
-                "0 4px 12px -2px hsl(var(--primary) / 0.5)",
-                "0 2px 8px -2px hsl(var(--primary) / 0.3)",
-              ],
-            }}
-            transition={{
-              duration: 1,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          >
-            <Package className={cn("text-primary-foreground", sizes.icon)} />
-          </motion.div>
-        </motion.div>
-
-        {/* Floating Particles - only show for md and lg */}
-        {(size === "md" || size === "lg") && (
-          <>
+          style={{
+            borderTopColor: 'hsl(var(--primary))',
+          }}
+        />
+        
+        {/* Icon container */}
+        <div className={cn(
+          "relative flex items-center justify-center rounded-full bg-primary/10",
+          sizes.container
+        )}>
+          <AnimatePresence mode="wait">
             <motion.div
-              className={cn("absolute -top-0.5 -left-0.5 rounded-full bg-secondary", sizes.particle)}
-              animate={{
-                y: [-2, 2, -2],
-                opacity: [0.5, 1, 0.5],
-              }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-            <motion.div
-              className={cn("absolute -bottom-0.5 -right-0.5 rounded-full bg-primary", sizes.particle)}
-              animate={{
-                y: [2, -2, 2],
-                opacity: [0.5, 1, 0.5],
-              }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 0.3,
-              }}
-            />
-          </>
-        )}
-      </motion.div>
+              key={iconIndex}
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <CurrentIcon className={cn("text-primary", sizes.icon)} />
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
 
       {showText && (
         <motion.span
@@ -119,26 +105,55 @@ export function MiniLoader({
 
 // Inline loader for buttons
 export function ButtonLoader({ className }: { className?: string }) {
+  const [iconIndex, setIconIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIconIndex((prev) => (prev + 1) % transportIcons.length);
+    }, 400);
+    return () => clearInterval(interval);
+  }, []);
+
+  const CurrentIcon = transportIcons[iconIndex];
+
   return (
     <motion.div
       className={cn("inline-flex items-center justify-center", className)}
-      animate={{ rotate: 360 }}
+      animate={{ rotate: [0, 5, -5, 0] }}
       transition={{
-        duration: 1,
+        duration: 0.5,
         repeat: Infinity,
-        ease: "linear",
+        ease: "easeInOut",
       }}
     >
-      <Package className="w-4 h-4 text-current" />
+      <CurrentIcon className="w-4 h-4 text-current" />
     </motion.div>
   );
 }
 
-// Skeleton loader with package animation
+// Skeleton loader with transport animation
 export function PackageSkeleton({ className }: { className?: string }) {
   return (
     <div className={cn("flex items-center justify-center py-8", className)}>
       <MiniLoader size="md" showText text="Chargement des données..." />
+    </div>
+  );
+}
+
+// Full page loading state
+export function PageLoadingState({ message = "Chargement..." }: { message?: string }) {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <MiniLoader size="lg" />
+        <motion.p
+          className="text-sm text-muted-foreground"
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        >
+          {message}
+        </motion.p>
+      </div>
     </div>
   );
 }
