@@ -318,21 +318,79 @@ export function AdminLogisticsOrdersV2({ compact = false }: AdminLogisticsOrders
     }).length,
   };
 
-  // Compact mode - just show alert and stats
+  // Compact mode - Enhanced with mission preview
   if (compact) {
+    const pendingMissions = orders.filter(o => 
+      (o.pickup_enabled && o.pickup_status === "pending") ||
+      (o.delivery_enabled && (o.logistics_status === "awaiting_admin_delivery" || o.delivery_status === "pending"))
+    ).slice(0, 3);
+
     if (stats.pendingPickups === 0 && stats.pendingDeliveries === 0) {
       return null;
     }
     
     return (
-      <Alert className="bg-amber-50 border-amber-300">
-        <Bell className="w-4 h-4 text-amber-600" />
-        <AlertTitle className="text-amber-800">Logistique Interne</AlertTitle>
-        <AlertDescription className="text-amber-700">
-          {stats.pendingPickups > 0 && `${stats.pendingPickups} enlèvement(s) à effectuer. `}
-          {stats.pendingDeliveries > 0 && `${stats.pendingDeliveries} livraison(s) dernier km à effectuer.`}
-        </AlertDescription>
-      </Alert>
+      <Card className="border-amber-300 bg-amber-50/50">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-amber-800 text-sm">
+            <Bell className="w-4 h-4" />
+            Logistique Interne - Missions en attente
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0 space-y-2">
+          {/* Stats Row */}
+          <div className="flex gap-2">
+            {stats.pendingPickups > 0 && (
+              <Badge className="bg-amber-500">{stats.pendingPickups} enlèvement(s)</Badge>
+            )}
+            {stats.pendingDeliveries > 0 && (
+              <Badge className="bg-blue-500">{stats.pendingDeliveries} livraison(s)</Badge>
+            )}
+          </div>
+          
+          {/* Mission Preview */}
+          {pendingMissions.length > 0 && (
+            <div className="space-y-1.5">
+              {pendingMissions.map(mission => (
+                <div key={mission.id} className="flex items-center justify-between p-2 bg-background rounded-lg text-xs">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-mono font-bold truncate">{mission.order?.order_number}</p>
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                      {mission.pickup_enabled && mission.pickup_status === "pending" && (
+                        <>
+                          <MapPin className="w-3 h-3" />
+                          <span className="truncate">{mission.pickup_address || mission.pickup_city || "Adresse..."}</span>
+                        </>
+                      )}
+                      {mission.delivery_enabled && mission.logistics_status === "awaiting_admin_delivery" && (
+                        <>
+                          <Truck className="w-3 h-3" />
+                          <span className="truncate">{mission.delivery_address || mission.delivery_city || "Livraison..."}</span>
+                        </>
+                      )}
+                    </div>
+                    {(mission.pickup_contact_name || mission.delivery_contact_name) && (
+                      <div className="flex items-center gap-1 text-muted-foreground mt-0.5">
+                        <User className="w-3 h-3" />
+                        <span>{mission.pickup_contact_name || mission.delivery_contact_name}</span>
+                        {(mission.pickup_phone || mission.delivery_phone) && (
+                          <>
+                            <Phone className="w-3 h-3 ml-1" />
+                            <span>{mission.pickup_phone || mission.delivery_phone}</span>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <Badge variant="outline" className="text-[10px] ml-2">
+                    {mission.pickup_enabled && mission.pickup_status === "pending" ? "Enlèvement" : "Livraison"}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     );
   }
 

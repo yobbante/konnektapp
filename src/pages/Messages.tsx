@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useSearchParams } from "react-router-dom";
 import { MessageCircle, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileHeader } from "@/components/layout/MobileHeader";
@@ -9,8 +10,10 @@ import { ChatView } from "@/components/messaging/ChatView";
 import { Button } from "@/components/ui/button";
 import { AdminNewConversationDialog } from "@/components/admin/AdminNewConversationDialog";
 import { useUserRole } from "@/hooks/useUserRole";
+import { findConversationForOrder } from "@/lib/autoChat";
 
 export default function MessagesPage() {
+  const [searchParams] = useSearchParams();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [selectedContactName, setSelectedContactName] = useState<string>("Contact");
   const [currentUser, setCurrentUser] = useState<{ id: string; isGp: boolean } | null>(null);
@@ -21,6 +24,28 @@ export default function MessagesPage() {
   useEffect(() => {
     checkUser();
   }, []);
+
+  // Handle deep link to specific conversation or order
+  useEffect(() => {
+    const handleDeepLink = async () => {
+      const conversationId = searchParams.get("conversation");
+      const orderId = searchParams.get("order");
+      
+      if (conversationId) {
+        setSelectedConversation(conversationId);
+      } else if (orderId) {
+        // Find conversation for this order
+        const convId = await findConversationForOrder(orderId);
+        if (convId) {
+          setSelectedConversation(convId);
+        }
+      }
+    };
+    
+    if (currentUser) {
+      handleDeepLink();
+    }
+  }, [searchParams, currentUser]);
 
   const checkUser = async () => {
     try {

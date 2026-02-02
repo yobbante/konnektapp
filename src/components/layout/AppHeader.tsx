@@ -6,6 +6,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePageTheme } from "@/hooks/usePageTheme";
 import { CentralMenuSheet } from "@/components/layout/CentralMenuSheet";
+import { HeaderRoleSwitch } from "@/components/layout/HeaderRoleSwitch";
 import { useState } from "react";
 
 interface AppHeaderProps {
@@ -99,7 +100,10 @@ export function AppHeader({
         </div>
 
         {/* Right Side */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
+          {/* Role Switch - Subtle in header */}
+          <HeaderRoleSwitch />
+          
           {rightAction}
           
           {showNotifications && isAuthenticated && (

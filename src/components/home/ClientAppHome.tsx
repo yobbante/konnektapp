@@ -4,9 +4,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { 
   Package, MessageCircle, MapPin, History, 
   Bell, Heart, ArrowRight, Clock, ChevronDown, 
-  Phone, Navigation, User, ExternalLink
+  Phone, Navigation, User, ExternalLink, X,
+  AlertTriangle, Truck, Calendar
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface ClientAppHomeProps {
   userName?: string;
@@ -26,30 +28,26 @@ export function ClientAppHome({
   const currentHour = new Date().getHours();
   const greeting = currentHour < 12 ? 'Bonjour' : currentHour < 18 ? 'Bon après-midi' : 'Bonsoir';
   
-  // Track which orders are expanded
-  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+  // Track which order is in full-screen mode
+  const [fullScreenOrderId, setFullScreenOrderId] = useState<string | null>(null);
 
   // Get ALL active orders
   const activeOrders = recentOrders.filter(o => 
     ['pending', 'accepted', 'collected', 'in_transit'].includes(o.status)
   );
   
-  const toggleOrder = (orderId: string) => {
-    setExpandedOrders(prev => {
-      const next = new Set(prev);
-      if (next.has(orderId)) {
-        next.delete(orderId);
-      } else {
-        next.add(orderId);
-      }
-      return next;
-    });
+  const openFullScreen = (orderId: string) => {
+    setFullScreenOrderId(orderId);
+  };
+
+  const closeFullScreen = () => {
+    setFullScreenOrderId(null);
   };
   
   const getStatusInfo = (status: string) => {
     switch (status) {
       case 'in_transit':
-        return { label: 'En transit', color: 'bg-blue-500/20 text-blue-600', icon: MapPin };
+        return { label: 'En transit', color: 'bg-blue-500/20 text-blue-600', icon: Truck };
       case 'collected':
         return { label: 'Collecté', color: 'bg-amber-500/20 text-amber-600', icon: Package };
       case 'accepted':
@@ -59,14 +57,37 @@ export function ClientAppHome({
     }
   };
 
+  const selectedOrder = fullScreenOrderId 
+    ? activeOrders.find(o => o.id === fullScreenOrderId) 
+    : null;
+
   return (
     <div 
-      className="flex flex-col overflow-hidden"
+      className="flex flex-col overflow-hidden relative"
       style={{
         height: 'calc(100vh - 60px - 64px - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
         minHeight: '400px'
       }}
     >
+      {/* Full-Screen Order Details Overlay */}
+      <AnimatePresence>
+        {selectedOrder && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-background"
+            style={{ paddingTop: 'env(safe-area-inset-top)' }}
+          >
+            <FullScreenOrderDetails 
+              order={selectedOrder} 
+              onClose={closeFullScreen}
+              navigate={navigate}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Greeting Section - Compact */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -78,22 +99,17 @@ export function ClientAppHome({
         </h1>
       </motion.div>
 
-      {/* Active Orders List - Expandable */}
+      {/* Active Orders List - Clickable Cards */}
       {activeOrders.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="mx-4 mb-3 space-y-2 max-h-[40vh] overflow-y-auto"
+          className="mx-4 mb-3 space-y-2 max-h-[35vh] overflow-y-auto"
         >
           {activeOrders.map((order, index) => {
-            const isExpanded = expandedOrders.has(order.id);
             const statusInfo = getStatusInfo(order.status);
             const StatusIcon = statusInfo.icon;
-            
-            // Determine what info is released based on status
-            const isAccepted = ['accepted', 'collected', 'in_transit', 'delivered'].includes(order.status);
-            const isDelivered = order.status === 'delivered';
             
             return (
               <motion.div
@@ -101,19 +117,18 @@ export function ClientAppHome({
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="relative overflow-hidden bg-gradient-to-r from-primary/10 via-secondary/5 to-primary/10 border border-primary/20 rounded-2xl shadow-md"
+                onClick={() => openFullScreen(order.id)}
+                className="relative overflow-hidden bg-gradient-to-r from-primary/10 via-secondary/5 to-primary/10 border border-primary/20 rounded-2xl shadow-md cursor-pointer active:scale-[0.98] transition-transform"
               >
-                {/* Main Card - Clickable to expand */}
                 <motion.div 
-                  onClick={() => toggleOrder(order.id)}
                   whileTap={{ scale: 0.99 }}
-                  className="p-3 flex items-center gap-3 cursor-pointer"
+                  className="p-3 flex items-center gap-3"
                 >
                   {/* Status Icon */}
                   <div className="relative">
                     <motion.div 
                       className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-sm"
-                      animate={isExpanded ? {} : { 
+                      animate={{ 
                         boxShadow: [
                           "0 0 0 0 rgba(var(--primary), 0.3)",
                           "0 0 0 6px rgba(var(--primary), 0)",
@@ -156,121 +171,13 @@ export function ClientAppHome({
                     </div>
                   </div>
                   
-                  {/* Expand Arrow */}
+                  {/* Tap indicator */}
                   <motion.div
-                    animate={{ rotate: isExpanded ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
                     className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"
                   >
                     <ChevronDown className="w-4 h-4 text-primary" />
                   </motion.div>
                 </motion.div>
-                
-                {/* Expanded Content */}
-                <AnimatePresence>
-                  {isExpanded && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="px-3 pb-3 pt-1 border-t border-primary/10 space-y-2">
-                        {/* Contact Info - Only if accepted */}
-                        {isAccepted ? (
-                          <>
-                            <div className="grid grid-cols-2 gap-2">
-                              {/* Adresse de dépôt */}
-                              <motion.div 
-                                initial={{ opacity: 0, y: 5 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.05 }}
-                                className="bg-background/60 rounded-lg p-2"
-                              >
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Dépôt</p>
-                                <div className="flex items-center gap-1.5">
-                                  <Navigation className="w-3.5 h-3.5 text-primary" />
-                                  <p className="text-xs font-medium text-foreground truncate">Adresse disponible</p>
-                                </div>
-                              </motion.div>
-                              
-                              {/* WhatsApp */}
-                              <motion.div 
-                                initial={{ opacity: 0, y: 5 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.1 }}
-                                className="bg-background/60 rounded-lg p-2"
-                              >
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Contact</p>
-                                <div className="flex items-center gap-1.5">
-                                  <Phone className="w-3.5 h-3.5 text-green-600" />
-                                  <p className="text-xs font-medium text-foreground">WhatsApp GP</p>
-                                </div>
-                              </motion.div>
-                            </div>
-                            
-                            {/* Adresse réception - Only if delivered */}
-                            {isDelivered && (
-                              <motion.div 
-                                initial={{ opacity: 0, y: 5 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.15 }}
-                                className="bg-background/60 rounded-lg p-2"
-                              >
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Réception</p>
-                                <div className="flex items-center gap-1.5">
-                                  <MapPin className="w-3.5 h-3.5 text-secondary" />
-                                  <p className="text-xs font-medium text-foreground">Adresse de réception</p>
-                                </div>
-                              </motion.div>
-                            )}
-                          </>
-                        ) : (
-                          <motion.div 
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="bg-amber-500/10 rounded-lg p-2 text-center"
-                          >
-                            <p className="text-xs text-amber-700">
-                              Les coordonnées seront disponibles après acceptation
-                            </p>
-                          </motion.div>
-                        )}
-                        
-                        {/* Action Buttons */}
-                        <div className="flex gap-2 pt-1">
-                          <Link 
-                            to={`/tracking?order=${order.id}`}
-                            className="flex-1"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <motion.button
-                              whileTap={{ scale: 0.97 }}
-                              className="w-full py-2 px-3 bg-primary text-white rounded-lg text-xs font-medium flex items-center justify-center gap-1.5"
-                            >
-                              <MapPin className="w-3.5 h-3.5" />
-                              Suivi détaillé
-                            </motion.button>
-                          </Link>
-                          <Link 
-                            to={`/booking/confirmation/${order.id}`}
-                            className="flex-1"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <motion.button
-                              whileTap={{ scale: 0.97 }}
-                              className="w-full py-2 px-3 bg-secondary/20 text-secondary rounded-lg text-xs font-medium flex items-center justify-center gap-1.5"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                              Détails
-                            </motion.button>
-                          </Link>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </motion.div>
             );
           })}
@@ -402,4 +309,271 @@ export function ClientAppHome({
       </motion.div>
     </div>
   );
+}
+
+// Full-Screen Order Details Component
+interface FullScreenOrderDetailsProps {
+  order: any;
+  onClose: () => void;
+  navigate: (path: string) => void;
+}
+
+function FullScreenOrderDetails({ order, onClose, navigate }: FullScreenOrderDetailsProps) {
+  const statusInfo = getStatusInfoFull(order.status);
+  const StatusIcon = statusInfo.icon;
+  
+  // Determine what info is released based on status
+  const isAccepted = ['accepted', 'collected', 'in_transit', 'delivered'].includes(order.status);
+  const isCollected = ['collected', 'in_transit', 'delivered'].includes(order.status);
+  const isDelivered = order.status === 'delivered';
+
+  return (
+    <motion.div 
+      initial={{ y: "100%" }}
+      animate={{ y: 0 }}
+      exit={{ y: "100%" }}
+      transition={{ type: "spring", damping: 25, stiffness: 300 }}
+      className="h-full flex flex-col bg-background"
+    >
+      {/* Header with close button */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
+        <div className="flex items-center gap-3">
+          <motion.div 
+            className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center"
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <StatusIcon className="w-5 h-5 text-white" />
+          </motion.div>
+          <div>
+            <h2 className="font-bold text-foreground">Commande #{order.order_number?.slice(-6) || 'N/A'}</h2>
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusInfo.color}`}>
+              {statusInfo.label}
+            </span>
+          </div>
+        </div>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onClose}
+          className="rounded-full"
+        >
+          <X className="w-5 h-5" />
+        </Button>
+      </div>
+
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4 space-y-4">
+          {/* Route Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-2xl p-4"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Départ</p>
+                <p className="font-bold text-lg text-foreground">{order.origin_city}</p>
+                <p className="text-xs text-muted-foreground">{order.origin_country}</p>
+              </div>
+              <div className="flex flex-col items-center">
+                <Truck className="w-5 h-5 text-primary mb-1" />
+                <ArrowRight className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <div className="flex-1 text-right">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Arrivée</p>
+                <p className="font-bold text-lg text-foreground">{order.destination_city}</p>
+                <p className="text-xs text-muted-foreground">{order.destination_country}</p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Order Details Grid */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="grid grid-cols-2 gap-3"
+          >
+            <div className="bg-card border border-border rounded-xl p-3">
+              <p className="text-xs text-muted-foreground mb-1">Poids</p>
+              <p className="font-bold text-lg">{order.weight || 0} kg</p>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-3">
+              <p className="text-xs text-muted-foreground mb-1">Prix total</p>
+              <p className="font-bold text-lg text-primary">{order.total_price?.toLocaleString() || 0} {order.currency}</p>
+            </div>
+            {order.pickup_date && (
+              <div className="bg-card border border-border rounded-xl p-3">
+                <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                  <Calendar className="w-3 h-3" />
+                  <p className="text-xs">Date de collecte</p>
+                </div>
+                <p className="font-medium text-sm">{new Date(order.pickup_date).toLocaleDateString('fr-FR')}</p>
+              </div>
+            )}
+            {order.insurance_amount && (
+              <div className="bg-card border border-border rounded-xl p-3">
+                <p className="text-xs text-muted-foreground mb-1">Assurance</p>
+                <p className="font-medium text-sm">{order.insurance_amount.toLocaleString()} FCFA</p>
+              </div>
+            )}
+          </motion.div>
+
+          {/* Contact Info - Progressive release */}
+          {isAccepted ? (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-card border border-border rounded-2xl overflow-hidden"
+            >
+              <div className="bg-green-50 dark:bg-green-900/20 px-4 py-2 border-b border-border">
+                <h3 className="font-semibold text-sm flex items-center gap-2 text-green-700 dark:text-green-400">
+                  <User className="w-4 h-4" />
+                  Contact Transporteur
+                </h3>
+              </div>
+              <div className="p-4 space-y-3">
+                {/* Dépôt Address */}
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Navigation className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Adresse de dépôt</p>
+                    <p className="font-medium text-sm text-foreground">
+                      {order.gp_deposit_address || "Adresse disponible après acceptation"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* WhatsApp */}
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                    <Phone className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">WhatsApp GP</p>
+                    <p className="font-medium text-sm text-foreground">
+                      {order.gp_whatsapp || "Contact disponible"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Reception Address - Only after delivery */}
+                {isDelivered && (
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center flex-shrink-0">
+                      <MapPin className="w-4 h-4 text-secondary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Adresse de réception</p>
+                      <p className="font-medium text-sm text-foreground">
+                        {order.gp_reception_address || "Adresse de destination"}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4"
+            >
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+                <div>
+                  <p className="font-medium text-amber-800 dark:text-amber-400 text-sm">En attente de confirmation</p>
+                  <p className="text-xs text-amber-700 dark:text-amber-500">
+                    Les coordonnées du transporteur seront disponibles après acceptation
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Content Nature if available */}
+          {order.content_nature && order.content_nature.length > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="bg-card border border-border rounded-2xl p-4"
+            >
+              <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                <Package className="w-4 h-4 text-muted-foreground" />
+                Nature du contenu
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {order.content_nature.map((item: string, i: number) => (
+                  <Badge key={i} variant="secondary" className="text-xs">
+                    {item}
+                  </Badge>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </div>
+      </div>
+
+      {/* Action Buttons - Fixed at bottom */}
+      <div className="p-4 border-t border-border bg-card space-y-2" style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom))' }}>
+        <div className="flex gap-2">
+          <Button 
+            className="flex-1 gap-2"
+            onClick={() => {
+              onClose();
+              navigate(`/tracking?order=${order.id}`);
+            }}
+          >
+            <MapPin className="w-4 h-4" />
+            Suivi détaillé
+          </Button>
+          <Button 
+            variant="outline"
+            className="flex-1 gap-2"
+            onClick={() => {
+              onClose();
+              navigate(`/messages`);
+            }}
+          >
+            <MessageCircle className="w-4 h-4" />
+            Contacter
+          </Button>
+        </div>
+        <Button 
+          variant="ghost" 
+          className="w-full"
+          onClick={() => {
+            onClose();
+            navigate(`/booking/confirmation/${order.id}`);
+          }}
+        >
+          <ExternalLink className="w-4 h-4 mr-2" />
+          Voir la confirmation complète
+        </Button>
+      </div>
+    </motion.div>
+  );
+}
+
+function getStatusInfoFull(status: string) {
+  switch (status) {
+    case 'in_transit':
+      return { label: 'En transit', color: 'bg-blue-500/20 text-blue-600', icon: Truck };
+    case 'collected':
+      return { label: 'Collecté', color: 'bg-amber-500/20 text-amber-600', icon: Package };
+    case 'accepted':
+      return { label: 'Accepté', color: 'bg-green-500/20 text-green-600', icon: User };
+    case 'delivered':
+      return { label: 'Livré', color: 'bg-green-500/20 text-green-700', icon: Package };
+    default:
+      return { label: 'En attente', color: 'bg-primary/20 text-primary', icon: Clock };
+  }
 }
