@@ -10,6 +10,7 @@ import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { TypingIndicator } from "./TypingIndicator";
 import { MessageTemplates } from "./MessageTemplates";
+import { ClientQuickResponses } from "./ClientQuickResponses";
 import { MiniLoader } from "@/components/ui/MiniLoader";
 
 interface Message {
@@ -256,13 +257,21 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Templates - Collapsible panel above input */}
-      <MessageTemplates
-        userType={userType}
-        onSelectTemplate={handleSelectTemplate}
-        isExpanded={templatesExpanded}
-        onToggleExpand={() => setTemplatesExpanded(!templatesExpanded)}
-      />
+      {/* Message Templates - Use ClientQuickResponses for clients */}
+      {userType === "client" ? (
+        <ClientQuickResponses
+          onSelectMessage={handleSelectTemplate}
+          isExpanded={templatesExpanded}
+          onToggleExpand={() => setTemplatesExpanded(!templatesExpanded)}
+        />
+      ) : (
+        <MessageTemplates
+          userType={userType}
+          onSelectTemplate={handleSelectTemplate}
+          isExpanded={templatesExpanded}
+          onToggleExpand={() => setTemplatesExpanded(!templatesExpanded)}
+        />
+      )}
 
       {/* Input - Mobile optimized with larger touch target */}
       <form 

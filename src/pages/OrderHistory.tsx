@@ -344,30 +344,45 @@ function OrderCard({
                   </div>}
 
                 {/* Actions */}
-                <div className="pt-2 flex-row gap-[8px] flex items-start justify-center">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={e => {
-                e.stopPropagation();
-                navigate(`/messages?order=${order.id}`);
-              }}>
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    Messages
-                  </Button>
+                <div className="pt-2 flex gap-2 flex-wrap">
+                  {!isDelivered && (
+                    <Button variant="outline" size="sm" className="flex-1" onClick={e => {
+                      e.stopPropagation();
+                      navigate(`/messages?order=${order.id}`);
+                    }}>
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Messages
+                    </Button>
+                  )}
+                  
+                  {isDelivered && (
+                    <Button variant="outline" size="sm" className="flex-1" onClick={e => {
+                      e.stopPropagation();
+                      // Navigate to support/contact
+                      navigate(`/messages?order=${order.id}&support=true`);
+                    }}>
+                      <AlertTriangle className="w-4 h-4 mr-2" />
+                      Support
+                    </Button>
+                  )}
                   
                   <Button variant="outline" size="sm" className="flex-1" onClick={e => {
-                e.stopPropagation();
-                navigate(`/tracking?code=${order.tracking_code || order.order_number}`);
-              }}>
+                    e.stopPropagation();
+                    navigate(`/tracking?code=${order.tracking_code || order.order_number}`);
+                  }}>
                     <MapPin className="w-4 h-4 mr-2" />
                     Suivi
                   </Button>
 
-                  {canRate && <Button size="sm" onClick={e => {
-                e.stopPropagation();
-                onRate();
-              }}>
+                  {canRate && (
+                    <Button size="sm" className="flex-1" onClick={e => {
+                      e.stopPropagation();
+                      onRate();
+                    }}>
                       <Star className="w-4 h-4 mr-2" />
                       Noter
-                    </Button>}
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </motion.div>}

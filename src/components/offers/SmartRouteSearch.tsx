@@ -81,8 +81,16 @@ export function SmartRouteSearch({ onSearch }: SmartRouteSearchProps) {
 
   const hasActiveSearch = query || origin || destination;
 
+  // Handle click outside to collapse
+  const handleBlur = (e: React.FocusEvent) => {
+    // Check if the new focus target is within our component
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setShowSuggestions(false);
+    }
+  };
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" onBlur={handleBlur}>
       {/* Main Search Input */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
@@ -147,7 +155,7 @@ export function SmartRouteSearch({ onSearch }: SmartRouteSearchProps) {
           className="space-y-4"
         >
           {/* Routier CTA */}
-          <Link to="/routier/demande">
+          <Link to="/routier/demande" tabIndex={0}>
             <motion.div 
               whileHover={{ scale: 1.01 }}
               className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-200/50 rounded-xl"
@@ -175,6 +183,7 @@ export function SmartRouteSearch({ onSearch }: SmartRouteSearchProps) {
               {popularCities.map((city) => (
                 <button
                   key={city}
+                  tabIndex={0}
                   onClick={() => handleCityClick(city)}
                   className={cn(
                     "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
