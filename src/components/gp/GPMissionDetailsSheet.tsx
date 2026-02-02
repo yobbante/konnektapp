@@ -3,12 +3,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Package, MapPin, Calendar, Clock, User, Phone, 
   MessageCircle, Weight, AlertTriangle, Zap, CheckCircle,
-  XCircle, Truck, ArrowRight, FileText, Check, X, QrCode
+  XCircle, Truck, ArrowRight, FileText, Check, X, QrCode,
+  Home, Navigation, Shield, Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
   SheetContent,
@@ -45,12 +47,26 @@ interface OrderDetails {
   pickup_date: string | null;
   client_id: string;
   description: string | null;
+  has_insurance: boolean | null;
+  declared_value: number | null;
+  content_nature: string[] | null;
 }
 
 interface ClientProfile {
   full_name: string | null;
   phone: string | null;
   email: string | null;
+}
+
+interface LogisticsOptions {
+  pickup_enabled: boolean;
+  pickup_address: string | null;
+  pickup_contact_name: string | null;
+  pickup_phone: string | null;
+  delivery_enabled: boolean;
+  delivery_address: string | null;
+  delivery_contact_name: string | null;
+  delivery_phone: string | null;
 }
 
 interface GPMissionDetailsSheetProps {
@@ -66,10 +82,12 @@ interface GPMissionDetailsSheetProps {
 }
 
 /**
- * GPMissionDetailsSheet - Interactive mission details with quick actions
+ * GPMissionDetailsSheet - Enhanced interactive mission details
  * 
  * Features:
- * - Full order details
+ * - Full order details with visual hierarchy
+ * - Logistics info (pickup/delivery addresses)
+ * - Insurance status
  * - Quick accept/refuse actions
  * - Contact client
  * - QR code access
@@ -89,6 +107,7 @@ export function GPMissionDetailsSheet({
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [client, setClient] = useState<ClientProfile | null>(null);
+  const [logistics, setLogistics] = useState<LogisticsOptions | null>(null);
   const [actionLoading, setActionLoading] = useState<"accept" | "refuse" | null>(null);
   const [hasPickup, setHasPickup] = useState(false);
 
@@ -107,6 +126,7 @@ export function GPMissionDetailsSheet({
   const loadOrderDetails = async () => {
     setLoading(true);
     try {
+      // Load order with all details
       const { data: orderData, error: orderError } = await supabase
         .from("orders")
         .select("*")
@@ -116,6 +136,7 @@ export function GPMissionDetailsSheet({
       if (orderError) throw orderError;
       setOrder(orderData);
 
+      // Load client profile
       if (orderData?.client_id) {
         const { data: clientData } = await supabase
           .from("profiles")
@@ -126,6 +147,17 @@ export function GPMissionDetailsSheet({
         if (clientData) {
           setClient(clientData);
         }
+      }
+
+      // Load logistics options (pickup/delivery addresses)
+      const { data: logisticsData } = await supabase
+        .from("order_logistics_options")
+        .select("pickup_enabled, pickup_address, pickup_contact_name, pickup_phone, delivery_enabled, delivery_address, delivery_contact_name, delivery_phone")
+        .eq("order_id", orderId)
+        .single();
+
+      if (logisticsData) {
+        setLogistics(logisticsData);
       }
     } catch (error) {
       console.error("Error loading order details:", error);
@@ -359,14 +391,79 @@ export function GPMissionDetailsSheet({
                     </p>
                   </div>
                 </div>
+                
+                {/* Content nature */}
+                {order.content_nature && order.content_nature.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {order.content_nature.map((nature: string) => (
+                      <Badge key={nature} variant="secondary" className="text-xs">
+                        {nature}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
                 {order.description && (
                   <div className="p-3 bg-muted/30 rounded-lg">
                     <p className="text-xs text-muted-foreground mb-1">Description</p>
                     <p className="text-sm">{order.description}</p>
                   </div>
                 )}
+
+                {/* Insurance status */}
+                {order.has_insurance && (
+                  <div className="flex items-center gap-2 p-2 bg-primary/5 rounded-lg">
+                    <Shield className="w-4 h-4 text-primary" />
+                    <span className="text-xs text-primary font-medium">
+                      Assuré — Valeur: {order.declared_value?.toLocaleString()} {getCurrencySymbol(order.currency)}
+                    </span>
+                  </div>
+                )}
               </CardContent>
             </Card>
+
+            {/* Logistics Info (Pickup/Delivery) */}
+            {logistics && (logistics.pickup_enabled || logistics.delivery_enabled) && (
+              <Card className="border-amber-200 bg-amber-50/30">
+                <CardContent className="p-4 space-y-3">
+                  <h3 className="font-semibold text-sm flex items-center gap-2 text-amber-800">
+                    <Truck className="w-4 h-4" />
+                    Logistique Yobbanté
+                  </h3>
+                  
+                  {logistics.pickup_enabled && (
+                    <div className="p-3 bg-white/80 rounded-lg space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Home className="w-3 h-3 text-amber-600" />
+                        <p className="text-xs font-medium text-amber-800">Enlèvement à domicile</p>
+                      </div>
+                      <p className="text-sm">{logistics.pickup_address}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Contact: {logistics.pickup_contact_name} — {logistics.pickup_phone}
+                      </p>
+                    </div>
+                  )}
+
+                  {logistics.delivery_enabled && (
+                    <div className="p-3 bg-white/80 rounded-lg space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Navigation className="w-3 h-3 text-blue-600" />
+                        <p className="text-xs font-medium text-blue-800">Livraison dernier km</p>
+                      </div>
+                      <p className="text-sm">{logistics.delivery_address}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Destinataire: {logistics.delivery_contact_name} — {logistics.delivery_phone}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Info className="w-3 h-3" />
+                    Yobbanté gère l'enlèvement/livraison
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* QR Code Access for Active Orders */}
             {isActive && (

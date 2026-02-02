@@ -249,11 +249,8 @@ export default function GPBagagesInternationalDashboard() {
     navigate(`/messages?client=${clientId}&order=${orderId}`);
   };
 
-  if (loading) {
-    return <PageLoader message="Chargement de votre espace GP..." />;
-  }
-
-  if (!gpProfile) return null;
+  // GP Bagages - No loader, direct content display
+  if (!gpProfile && !loading) return null;
 
   const pendingOrders = orders.filter(o => o.status === "pending");
   const activeOrders = orders.filter(o => ["accepted", "collected", "in_transit"].includes(o.status));

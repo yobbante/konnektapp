@@ -9,12 +9,15 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh";
 import { AppLikeHome } from "@/components/home/AppLikeHome";
+import { AppEntryLoader } from "@/components/ui/AppEntryLoader";
 
 function IndexContent() {
-  const { isGP, isAuthenticated, userId } = useUserRole();
+  const { isGP, isAuthenticated, userId, loading: roleLoading } = useUserRole();
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [activeOrdersCount, setActiveOrdersCount] = useState(0);
+  const [showEntryLoader, setShowEntryLoader] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
 
   // Pull to refresh
   const handleRefresh = useCallback(async () => {
@@ -28,13 +31,20 @@ function IndexContent() {
   });
 
   useEffect(() => {
-    if (isAuthenticated && userId) {
-      loadUserData();
+    if (!roleLoading) {
+      if (isAuthenticated && userId) {
+        loadUserData();
+      } else {
+        setDataLoading(false);
+      }
     }
-  }, [isAuthenticated, userId]);
+  }, [isAuthenticated, userId, roleLoading]);
 
   const loadUserData = async () => {
-    if (!userId) return;
+    if (!userId) {
+      setDataLoading(false);
+      return;
+    }
     try {
       // Load recent orders
       const { data: orders } = await supabase
@@ -61,8 +71,24 @@ function IndexContent() {
       if (count) setUnreadMessages(count);
     } catch (error) {
       console.error("Error loading user data:", error);
+    } finally {
+      setDataLoading(false);
     }
   };
+
+  // Show entry loader only on first load
+  if (showEntryLoader) {
+    return <AppEntryLoader onComplete={() => setShowEntryLoader(false)} minDuration={1800} />;
+  }
+
+  // Show loading state to prevent flash of wrong content
+  if (roleLoading || (isAuthenticated && dataLoading)) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-safe overflow-hidden">
