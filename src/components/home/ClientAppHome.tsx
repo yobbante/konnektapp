@@ -249,8 +249,8 @@ export function ClientAppHome({
           </motion.div>
         </Link>
 
-        {/* Mes envois */}
-        <Link to="/client/dashboard" className="block">
+        {/* Mes envois - Redirect to full history page */}
+        <Link to="/historique" className="block">
           <motion.div 
             whileTap={{ scale: 0.97 }}
             className="h-full bg-card border-2 border-border rounded-2xl p-4 flex flex-col justify-between hover:border-primary/30 transition-colors relative"

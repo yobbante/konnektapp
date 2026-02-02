@@ -1,9 +1,10 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  User, Truck, Settings, Heart, Bell, Search, FileText,
-  LogOut, HelpCircle, Shield, ChevronRight, Star, Home,
-  Package, Gift, History, UserPlus
+  User, Truck, Settings, Heart, Bell, Search, 
+  LogOut, HelpCircle, ChevronRight, Home,
+  Package, Gift, History, UserPlus, Moon, Sun,
+  BookOpen, Shield, MessageCircle, MapPin
 } from "lucide-react";
 import {
   Sheet,
@@ -13,10 +14,10 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useThemeManager } from "@/hooks/useThemeManager";
 import { useState, useEffect } from "react";
 
 interface CentralMenuSheetProps {
@@ -26,13 +27,14 @@ interface CentralMenuSheetProps {
 }
 
 /**
- * Menu Central (Hub) - Le cerveau de la navigation secondaire
- * Contenu dynamique selon: connecté/non connecté, client/GP/admin
+ * Menu Central Unifié - Navigation Hub
+ * Remplace tous les anciens menus (MobileHeader sheet, etc.)
  */
 export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSheetProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, isGP, isAdmin, isModerator, loading, userId } = useUserRole();
+  const { isDark, setMode } = useThemeManager();
   const [gpBusinessName, setGPBusinessName] = useState<string>("");
 
   useEffect(() => {
@@ -61,46 +63,78 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
     navigate(path);
   };
 
-  // Determine current context
+  const toggleDarkMode = () => {
+    setMode(isDark ? "light" : "dark");
+  };
+
   const isInGPMode = location.pathname.startsWith("/gp") || location.pathname.startsWith("/transporter");
   const isInAdminMode = location.pathname.startsWith("/admin");
 
-  // Menu items based on auth and role
   const getMenuSections = () => {
-    // Non-authenticated user
     if (!isAuthenticated) {
       return [
         {
-          title: "Découvrir",
+          title: "Navigation",
           items: [
+            { icon: Home, label: "Accueil", href: "/" },
             { icon: Search, label: "Voir les offres", href: "/offres" },
-            { icon: Package, label: "Suivre un colis", href: "/tracking" },
+            { icon: MapPin, label: "Suivre un colis", href: "/tracking" },
           ]
         },
         {
-          title: "Rejoindre",
+          title: "Commencer",
           items: [
-            { icon: UserPlus, label: "Créer un compte", href: "/auth" },
+            { icon: UserPlus, label: "Connexion / Inscription", href: "/auth", highlight: true },
             { icon: Truck, label: "Devenir transporteur", href: "/gp/inscription" },
+          ]
+        },
+        {
+          title: "Aide",
+          items: [
+            { icon: BookOpen, label: "Tutoriels", href: "/tutoriels" },
+            { icon: HelpCircle, label: "Aide & Support", href: "/settings" },
           ]
         }
       ];
     }
 
-    // Authenticated - build sections based on role
     const sections = [];
 
-    // Quick Access (always shown for authenticated users)
+    // Navigation principale
     sections.push({
-      title: "Accès rapide",
+      title: "Navigation",
       items: [
         { icon: Home, label: "Accueil", href: "/" },
         { icon: Search, label: "Offres disponibles", href: "/offres" },
         { icon: Package, label: "Envoyer un colis", href: "/envoyer" },
+        { icon: MessageCircle, label: "Messages", href: "/messages" },
       ]
     });
 
-    // Role-specific section
+    // Espace utilisateur
+    if (!isInGPMode && !isInAdminMode) {
+      sections.push({
+        title: "Mon espace",
+        items: [
+          { icon: User, label: "Mon profil", href: "/client/dashboard" },
+          { icon: History, label: "Historique complet", href: "/historique" },
+          { icon: Heart, label: "Mes favoris", href: "/favorites" },
+          { icon: Bell, label: "Mes alertes", href: "/saved-searches" },
+        ]
+      });
+    }
+
+    // Récompenses & Fidélité - Dans le menu uniquement
+    if (!isInGPMode && !isInAdminMode) {
+      sections.push({
+        title: "Récompenses",
+        items: [
+          { icon: Gift, label: "Programme fidélité", href: "/loyalty", highlight: true },
+        ]
+      });
+    }
+
+    // Accès Transporteur
     if (isGP && !isInGPMode) {
       sections.push({
         title: "Espace Transporteur",
@@ -110,6 +144,7 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
       });
     }
 
+    // Accès Admin
     if ((isAdmin || isModerator) && !isInAdminMode) {
       sections.push({
         title: "Administration",
@@ -119,30 +154,17 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
       });
     }
 
-    // Client features
-    if (!isInGPMode && !isInAdminMode) {
-      sections.push({
-        title: "Mon espace",
-        items: [
-          { icon: User, label: "Mon profil", href: "/client/dashboard" },
-          { icon: Heart, label: "Mes favoris", href: "/favorites" },
-          { icon: History, label: "Historique", href: "/client/dashboard" },
-          { icon: Gift, label: "Programme fidélité", href: "/loyalty" },
-        ]
-      });
-    }
-
-    // Settings & Help (always)
+    // Tutoriels & Aide
     sections.push({
-      title: "Paramètres",
+      title: "Aide & Tutoriels",
       items: [
-        { icon: Bell, label: "Notifications", href: "/settings" },
-        { icon: Settings, label: "Paramètres", href: "/settings" },
+        { icon: BookOpen, label: "Tutoriels", href: "/tutoriels" },
         { icon: HelpCircle, label: "Aide & Support", href: "/settings" },
+        { icon: Settings, label: "Paramètres", href: "/settings" },
       ]
     });
 
-    // Become GP (only for non-GP clients)
+    // Devenir transporteur (pour non-GP)
     if (!isGP && isAuthenticated) {
       sections.push({
         title: "Opportunités",
@@ -163,20 +185,23 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
       <SheetContent 
         side="bottom" 
         className="h-[85vh] rounded-t-3xl px-0"
+        style={{
+          paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))',
+        }}
       >
-        <SheetHeader className="px-4 pb-4">
-          <SheetTitle className="text-left">
-            {isAuthenticated ? "Menu" : "Bienvenue sur Yobbanté"}
+        <SheetHeader className="px-4 pb-3">
+          <SheetTitle className="text-left text-lg">
+            {isAuthenticated ? "Menu" : "Bienvenue"}
           </SheetTitle>
         </SheetHeader>
 
-        <div className="overflow-y-auto h-full pb-20 px-4 space-y-6">
+        <div className="overflow-y-auto h-full pb-24 px-4 space-y-5">
           {menuSections.map((section, idx) => (
             <div key={idx}>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                 {section.title}
               </p>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {section.items.map((item, itemIdx) => (
                   <motion.button
                     key={itemIdx}
@@ -188,15 +213,15 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
                         : "hover:bg-muted"
                     }`}
                   >
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
                       item.highlight
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted"
                     }`}>
-                      <item.icon className="w-5 h-5" />
+                      <item.icon className="w-4 h-4" />
                     </div>
-                    <span className="flex-1 text-left font-medium">{item.label}</span>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                    <span className="flex-1 text-left font-medium text-sm">{item.label}</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
                   </motion.button>
                 ))}
               </div>
@@ -204,16 +229,43 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
             </div>
           ))}
 
-          {/* Logout button for authenticated users */}
+          {/* Dark Mode Toggle */}
+          <div className="pt-2">
+            <Button
+              variant="ghost"
+              onClick={toggleDarkMode}
+              className="w-full justify-start gap-3"
+            >
+              {isDark ? (
+                <>
+                  <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
+                    <Sun className="w-4 h-4" />
+                  </div>
+                  <span className="font-medium text-sm">Mode clair</span>
+                </>
+              ) : (
+                <>
+                  <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
+                    <Moon className="w-4 h-4" />
+                  </div>
+                  <span className="font-medium text-sm">Mode sombre</span>
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Logout */}
           {isAuthenticated && (
-            <div className="pt-4">
+            <div className="pt-2">
               <Button
                 variant="ghost"
                 onClick={handleSignOut}
                 className="w-full justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/10"
               >
-                <LogOut className="w-5 h-5" />
-                Se déconnecter
+                <div className="w-9 h-9 rounded-xl bg-destructive/10 flex items-center justify-center">
+                  <LogOut className="w-4 h-4" />
+                </div>
+                <span className="font-medium text-sm">Se déconnecter</span>
               </Button>
             </div>
           )}

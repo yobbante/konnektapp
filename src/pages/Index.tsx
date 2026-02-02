@@ -76,9 +76,20 @@ function IndexContent() {
     }
   };
 
-  // Show entry loader only on first load
-  if (showEntryLoader) {
-    return <AppEntryLoader onComplete={() => setShowEntryLoader(false)} minDuration={1800} />;
+  // Check if this is first visit in session
+  const isFirstVisit = !sessionStorage.getItem('app_loaded');
+  
+  // Show entry loader only on first visit
+  if (showEntryLoader && isFirstVisit) {
+    return (
+      <AppEntryLoader 
+        onComplete={() => {
+          setShowEntryLoader(false);
+          sessionStorage.setItem('app_loaded', 'true');
+        }} 
+        minDuration={1800} 
+      />
+    );
   }
 
   // Show loading state to prevent flash of wrong content

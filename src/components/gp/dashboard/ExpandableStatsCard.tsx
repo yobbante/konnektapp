@@ -5,10 +5,10 @@
  * - Smooth expand/collapse animation
  * - Touch-optimized tap targets
  * - Quick actions revealed on expand
- * - Haptic feedback ready
+ * - Fixed: No overlap with bottom navigation
  */
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -43,11 +43,28 @@ export function ExpandableStatsCard({
   subtitle,
 }: ExpandableStatsCardProps) {
   const [expanded, setExpanded] = useState(false);
-
+  const cardRef = useRef<HTMLDivElement>(null);
   const hasActions = actions.length > 0;
+
+  // Auto-scroll to keep expanded card visible above bottom nav
+  useEffect(() => {
+    if (expanded && cardRef.current) {
+      const rect = cardRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const bottomNavHeight = 80 + 20; // Nav height + safe area buffer
+      
+      if (rect.bottom > viewportHeight - bottomNavHeight) {
+        cardRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }
+    }
+  }, [expanded]);
 
   return (
     <motion.div
+      ref={cardRef}
       layout
       className={cn(
         "rounded-2xl overflow-hidden transition-all shadow-sm",
@@ -96,7 +113,7 @@ export function ExpandableStatsCard({
         </div>
       </div>
 
-      {/* Expandable Actions Panel */}
+      {/* Expandable Actions Panel - With proper spacing for bottom nav */}
       <AnimatePresence>
         {expanded && hasActions && (
           <motion.div
@@ -106,7 +123,13 @@ export function ExpandableStatsCard({
             transition={{ duration: 0.25, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="border-t border-border/30 bg-background/50 p-2 space-y-1.5">
+            <div 
+              className="border-t border-border/30 bg-background/50 p-2 space-y-1.5"
+              style={{
+                // Ensure there's enough padding at the bottom
+                paddingBottom: '12px',
+              }}
+            >
               {actions.map((action, index) => (
                 <motion.div
                   key={index}
@@ -118,15 +141,16 @@ export function ExpandableStatsCard({
                     variant={action.variant || "ghost"}
                     size="sm"
                     className={cn(
-                      "w-full h-9 text-xs justify-start gap-2 rounded-lg",
+                      "w-full h-10 text-xs justify-start gap-2 rounded-lg",
                       "hover:bg-primary/10 active:scale-[0.98]"
                     )}
                     onClick={(e) => {
                       e.stopPropagation();
                       action.onClick();
+                      setExpanded(false); // Close after action
                     }}
                   >
-                    {action.icon && <action.icon className="w-3.5 h-3.5" />}
+                    {action.icon && <action.icon className="w-4 h-4" />}
                     {action.label}
                   </Button>
                 </motion.div>
@@ -153,7 +177,13 @@ export function ExpandableStatsGrid({ children, columns = 4 }: ExpandableStatsGr
   };
 
   return (
-    <div className={cn("grid gap-2 sm:gap-3", gridCols[columns])}>
+    <div 
+      className={cn("grid gap-2 sm:gap-3", gridCols[columns])}
+      style={{
+        // Add extra margin at the bottom to account for expansion
+        marginBottom: '12px',
+      }}
+    >
       {children}
     </div>
   );

@@ -23,13 +23,10 @@ import { CancelOrderButton } from "@/components/client/CancelOrderButton";
 import { DisputeButton } from "@/components/support/DisputeButton";
 import { RateOrderDialog } from "@/components/RateOrderDialog";
 import { PageLoader } from "@/components/ui/PageLoader";
-import { OnboardingDialog } from "@/components/onboarding/OnboardingDialog";
-import { useOnboarding } from "@/hooks/useOnboarding";
 import { ORDER_STATUS_LABELS, isValidOrderStatus } from "@/lib/enumMappings";
 import { useFavorites } from "@/hooks/useFavorites";
 import { getTransportIcon, getTransportLabel } from "@/lib/transportTypes";
 import { TrustLevelBadge, calculateTrustLevel } from "@/components/ui/trust-level-badge";
-import { LoyaltyCard, useLoyaltyNotifications } from "@/components/loyalty/LoyaltySystem";
 import { useLoyaltyPushNotifications } from "@/hooks/useLoyaltyPushNotifications";
 
 interface Order {
@@ -95,7 +92,6 @@ export default function ClientDashboard() {
     address: "",
   });
   
-  const { showOnboarding, completeOnboarding, skipOnboarding } = useOnboarding("client");
   const { favorites } = useFavorites();
   
   // Enable loyalty push notifications
@@ -305,16 +301,15 @@ export default function ClientDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 pb-safe">
+    <div 
+      className="min-h-screen bg-muted/30"
+      style={{
+        paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
+      }}
+    >
       <MobileHeader title="Mon Espace" showNotifications />
 
-      <OnboardingDialog
-        open={showOnboarding}
-        onComplete={completeOnboarding}
-        onSkip={skipOnboarding}
-        role="client"
-        userName={profile?.full_name || undefined}
-      />
+      {/* Removed OnboardingDialog - replaced with /tutoriels page */}
 
       <div className="px-4 py-4 space-y-4">
         {/* Profile Card */}
@@ -400,10 +395,7 @@ export default function ClientDashboard() {
           </motion.div>
         </div>
 
-        {/* Loyalty Card */}
-        <Link to="/loyalty" className="block">
-          <LoyaltyCard className="mb-2 hover:shadow-md transition-shadow cursor-pointer" />
-        </Link>
+        {/* Quick Actions - LoyaltyCard moved to menu */}
 
         {/* Quick Actions */}
         <div className="grid grid-cols-4 gap-2">
