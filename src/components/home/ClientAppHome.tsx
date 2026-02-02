@@ -1,20 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Package, MessageCircle, MapPin, History, Bell, Heart, ArrowRight, Clock, ChevronDown, Phone, Navigation, User, ExternalLink, X, AlertTriangle, Truck, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { WeightCorrectionAlert } from "@/components/client/WeightCorrectionAlert";
+import { supabase } from "@/integrations/supabase/client";
+
 interface ClientAppHomeProps {
   userName?: string;
   recentOrders?: any[];
   unreadMessages?: number;
   activeOrdersCount?: number;
+  userId?: string;
 }
 export function ClientAppHome({
   userName,
   recentOrders = [],
   unreadMessages = 0,
-  activeOrdersCount = 0
+  activeOrdersCount = 0,
+  userId
 }: ClientAppHomeProps) {
   const navigate = useNavigate();
   const firstName = userName?.split(' ')[0] || 'Bienvenue';
@@ -92,6 +97,13 @@ export function ClientAppHome({
           {greeting}{userName ? `, ${firstName}` : ''} <span className="text-primary">👋</span>
         </h1>
       </motion.div>
+
+      {/* Weight Correction Alerts */}
+      {userId && (
+        <div className="px-4">
+          <WeightCorrectionAlert userId={userId} />
+        </div>
+      )}
 
       {/* Active Orders List - Clickable Cards */}
       {activeOrders.length > 0 && <motion.div initial={{

@@ -162,8 +162,7 @@ const App = () => (
             <Route path="/routier/historique" element={<RoutierHistoriquePage />} />
             <Route path="/routier/vehicules" element={<RoutierVehiculesPage />} />
             <Route path="/routier/profil-public" element={<RoutierProfilPublicPage />} />
-            {/* Client-facing routier booking */}
-            <Route path="/routier/demande" element={<RoutierDemandePage />} />
+            {/* Client-facing routier booking - redirects to moving */}
             {/* Legacy redirect - tarification removed for routier */}
             <Route path="/routier/tarification" element={<Navigate to="/routier/demandes" replace />} />
             
@@ -184,7 +183,7 @@ const App = () => (
             <Route path="/client/profile" element={<Navigate to="/profil" replace />} />
             <Route path="/client/profil" element={<Navigate to="/profil" replace />} />
             <Route path="/demande/personnalisee" element={<Navigate to="/demande-personnalisee" replace />} />
-            <Route path="/routier/demande" element={<Navigate to="/demenagement" replace />} />
+            <Route path="/gp/inscription" element={<Navigate to="/transporteur/inscription" replace />} />
             
             {/* 404 - Catch-all */}
             <Route path="*" element={<NotFound />} />
