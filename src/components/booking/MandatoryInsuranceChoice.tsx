@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Shield, AlertTriangle, Check, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +8,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { getCurrencySymbol, type CurrencyCode } from "@/components/ui/currency-selector";
-import { DualCurrencyCompact, CurrencyInfoBanner } from "@/components/booking/DualCurrencyDisplay";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { cn } from "@/lib/utils";
 
@@ -16,8 +15,8 @@ interface InsuranceTier {
   id: string;
   category: string;
   label: string;
-  max_declared_value: number;
-  insurance_fee: number;
+  max_declared_value: number; // Stored in FCFA
+  insurance_fee: number; // Stored in FCFA
 }
 
 interface MandatoryInsuranceChoiceProps {
@@ -29,9 +28,9 @@ interface MandatoryInsuranceChoiceProps {
 
 export interface InsuranceChoice {
   hasInsurance: boolean;
-  insuranceAmount: number;
+  insuranceAmount: number; // In FCFA
   tierId: string | null;
-  declaredValue: number;
+  declaredValue: number; // In GP currency (for display) - converted to FCFA internally
   choiceMade: boolean; // Must be true to proceed
 }
 
@@ -51,12 +50,12 @@ const CONTENT_TO_CATEGORY: Record<string, string> = {
 
 /**
  * RÈGLE INS-01 — Choix explicite obligatoire
+ * V1.2: Calcul assurance en FCFA, affichage double devise
  * 
- * Avant le paiement, le client doit obligatoirement cocher:
- * ☐ Ajouter l'assurance Yobbanté (recommandée)
- * ☐ Continuer sans assurance
- * 
- * Aucun choix par défaut.
+ * Formule:
+ * valeur_colis_fcfa = valeur_colis_devise_gp × taux_conversion_majoré
+ * assurance_fcfa = fee from insurance_tier (based on category)
+ * assurance_affichée_devise_gp = assurance_fcfa ÷ taux_conversion
  */
 export function MandatoryInsuranceChoice({
   selectedContentTypes,
@@ -70,7 +69,8 @@ export function MandatoryInsuranceChoice({
   const [declaredValue, setDeclaredValue] = useState<string>("");
   
   // V1.2: Currency conversion hook for dual display
-  const { getFCFAEquivalent, isFCFA } = useCurrencyConversion({ gpCurrency: currency });
+  const { fromFCFA, toFCFA, isFCFA, rates } = useCurrencyConversion({ gpCurrency: currency });
+  const gpSymbol = getCurrencySymbol(currency);
 
   useEffect(() => {
     loadInsuranceTiers();
@@ -96,9 +96,11 @@ export function MandatoryInsuranceChoice({
       });
     } else if (selectedOption === "with") {
       const tier = findApplicableTier();
+      // V1.2: Insurance fee is stored in FCFA
+      const insuranceFCFA = tier?.insurance_fee || 0;
       onChoiceChange({
         hasInsurance: true,
-        insuranceAmount: tier?.insurance_fee || 0,
+        insuranceAmount: insuranceFCFA, // Store in FCFA
         tierId: tier?.id || null,
         declaredValue: parseFloat(declaredValue) || 0,
         choiceMade: true,
@@ -142,7 +144,21 @@ export function MandatoryInsuranceChoice({
   };
 
   const applicableTier = findApplicableTier();
-  const currencySymbol = getCurrencySymbol(currency);
+  
+  // V1.2: Helper to format dual currency (FCFA primary, GP secondary)
+  const formatDualFCFA = (amountFCFA: number) => {
+    if (isFCFA) {
+      return {
+        main: `${amountFCFA.toLocaleString()} FCFA`,
+        equivalent: null,
+      };
+    }
+    const gpAmount = Math.round(fromFCFA(amountFCFA));
+    return {
+      main: `${amountFCFA.toLocaleString()} FCFA`,
+      equivalent: `≈ ${gpAmount.toLocaleString()} ${gpSymbol}`,
+    };
+  };
 
   if (loading) {
     return (
@@ -214,7 +230,7 @@ export function MandatoryInsuranceChoice({
                   {/* Declared value input - V1.2: Input in GP currency */}
                   <div>
                     <Label className="text-xs text-muted-foreground">
-                      Valeur déclarée en {currencySymbol} (optionnel)
+                      Valeur déclarée en {gpSymbol} (optionnel)
                     </Label>
                     <Input
                       type="number"
@@ -224,37 +240,35 @@ export function MandatoryInsuranceChoice({
                       className="mt-1"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Maximum couvert: {!isFCFA ? (
-                        <DualCurrencyCompact 
-                          amount={applicableTier.max_declared_value}
-                          currency={currency}
-                          fcfaEquivalent={getFCFAEquivalent(applicableTier.max_declared_value)}
-                        />
-                      ) : (
-                        <span>{applicableTier.max_declared_value.toLocaleString()} FCFA</span>
+                      Maximum couvert:{" "}
+                      <span className="font-medium">
+                        {formatDualFCFA(applicableTier.max_declared_value).main}
+                      </span>
+                      {formatDualFCFA(applicableTier.max_declared_value).equivalent && (
+                        <span className="ml-1">
+                          ({formatDualFCFA(applicableTier.max_declared_value).equivalent})
+                        </span>
                       )}
                     </p>
                   </div>
 
-                  {/* Insurance details with dual currency */}
+                  {/* Insurance details with dual currency - V1.2: FCFA primary */}
                   <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg space-y-1">
                     <div className="flex items-center gap-2 text-sm">
                       <Check className="w-4 h-4 text-green-600" />
                       <span>Catégorie: <strong>{applicableTier.label}</strong></span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Check className="w-4 h-4 text-green-600" />
-                      <span>Frais d'assurance: <strong className="text-primary">
-                        {!isFCFA ? (
-                          <DualCurrencyCompact 
-                            amount={applicableTier.insurance_fee}
-                            currency={currency}
-                            fcfaEquivalent={getFCFAEquivalent(applicableTier.insurance_fee)}
-                          />
-                        ) : (
-                          <span>{applicableTier.insurance_fee.toLocaleString()} FCFA</span>
-                        )}
-                      </strong></span>
+                    <div className="flex items-center gap-2 text-sm flex-wrap">
+                      <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
+                      <span>Frais d'assurance:</span>
+                      <strong className="text-primary">
+                        {formatDualFCFA(applicableTier.insurance_fee).main}
+                      </strong>
+                      {formatDualFCFA(applicableTier.insurance_fee).equivalent && (
+                        <span className="text-muted-foreground text-xs">
+                          ({formatDualFCFA(applicableTier.insurance_fee).equivalent})
+                        </span>
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -315,12 +329,16 @@ export function MandatoryInsuranceChoice({
         <div className="flex items-start gap-2 pt-2 border-t">
           <Info className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
           <p className="text-xs text-muted-foreground">
-            Prix d'assurance calculé en FCFA puis converti selon la devise du transporteur ({currencySymbol}).
+            Prix d'assurance calculé en FCFA puis converti selon la devise du transporteur ({gpSymbol}).
           </p>
         </div>
         
         {/* Currency info banner */}
-        {!isFCFA && <CurrencyInfoBanner className="mt-2" />}
+        {!isFCFA && (
+          <div className="text-xs text-muted-foreground bg-muted/30 px-3 py-2 rounded-lg mt-2">
+            Tous les montants sont calculés en FCFA (XOF) puis convertis automatiquement.
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { 
   Package, ArrowRight, Star, Loader2, Heart, Calendar,
-  Zap, Truck, Ship, Plane, Briefcase, Luggage, Building2
+  Zap, Truck, Ship, Plane, Briefcase, Luggage, Building2, ChevronRight
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -17,6 +17,8 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { useToast } from "@/hooks/use-toast";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh";
+import { getCurrencySymbol } from "@/components/ui/currency-selector";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence" | "bagages_international";
 
@@ -29,12 +31,14 @@ interface Offer {
   destination_country: string;
   departure_date: string;
   price_per_kg: number;
+  currency: string;
   transport_type: TransportType;
   available_capacity: number;
   status: string;
   gp_profile: {
     business_name: string;
     rating: number | null;
+    default_currency: string | null;
   } | null;
 }
 
@@ -61,6 +65,7 @@ const getTransportConfig = (type: TransportType) => {
 
 export default function Offres() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   // activeFilter removed - only GP offers for now
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOrigin, setSearchOrigin] = useState<string | undefined>();
@@ -72,6 +77,7 @@ export default function Offres() {
   const [page, setPage] = useState(0);
   const ITEMS_PER_PAGE = 20;
   const { isAuthenticated, isFavorite, toggleFavorite } = useFavorites();
+  const { rates, toFCFA } = useCurrencyConversion({ gpCurrency: "XOF" });
 
   // Pull to refresh
   const handleRefresh = useCallback(async () => {
@@ -142,6 +148,7 @@ export default function Offres() {
           destination_country,
           departure_date,
           price_per_kg,
+          currency,
           transport_type,
           available_capacity,
           status,
@@ -158,7 +165,7 @@ export default function Offres() {
         const gpIds = [...new Set(data.map(o => o.gp_id))];
         const { data: profiles } = await supabase
           .from("public_gp_profiles")
-          .select("id, business_name, rating")
+          .select("id, business_name, rating, default_currency")
           .in("id", gpIds);
 
         const profilesMap = new Map(profiles?.map(p => [p.id, p]) || []);
@@ -253,6 +260,33 @@ export default function Offres() {
     }
     
     await toggleFavorite(offerId);
+  };
+
+  // Handle book now button
+  const handleBookNow = (e: React.MouseEvent, offer: Offer) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/reservation/gp/${offer.gp_id}?offer=${offer.id}`);
+  };
+
+  // Helper to format price with GP currency
+  const formatPriceWithCurrency = (price: number, currency: string) => {
+    const symbol = getCurrencySymbol(currency);
+    const isFCFA = currency === "XOF" || currency === "FCFA";
+    
+    if (isFCFA) {
+      return {
+        main: `${price.toLocaleString()} F`,
+        equivalent: null,
+      };
+    }
+    
+    // Convert to FCFA for display
+    const fcfaAmount = Math.round(price * (currency === "EUR" ? 655.957 : currency === "USD" ? 600 : 1));
+    return {
+      main: `${price.toLocaleString()} ${symbol}`,
+      equivalent: `≈ ${fcfaAmount.toLocaleString()} F`,
+    };
   };
 
   return (
@@ -372,17 +406,47 @@ export default function Offres() {
                             </div>
                           </div>
 
-                          {/* Price & CTA */}
+                          {/* Price with GP currency + FCFA equivalent */}
                           <div className="text-right">
-                            <p className="text-lg font-bold text-primary">
-                              {offer.price_per_kg.toLocaleString()} F
-                              <span className="text-xs font-normal text-muted-foreground">/kg</span>
-                            </p>
+                            {(() => {
+                              const priceInfo = formatPriceWithCurrency(offer.price_per_kg, offer.currency || "XOF");
+                              return (
+                                <>
+                                  <p className="text-lg font-bold text-primary">
+                                    {priceInfo.main}
+                                    <span className="text-xs font-normal text-muted-foreground">/kg</span>
+                                  </p>
+                                  {priceInfo.equivalent && (
+                                    <p className="text-[10px] text-muted-foreground">
+                                      {priceInfo.equivalent}/kg
+                                    </p>
+                                  )}
+                                </>
+                              );
+                            })()}
                             <p className="text-xs text-muted-foreground">
                               {offer.available_capacity} kg dispo
                             </p>
                           </div>
                         </div>
+
+                        {/* Book Now Button - Subtle */}
+                        <motion.div 
+                          className="mt-3 pt-3 border-t border-border/30"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.2 }}
+                        >
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary group/btn"
+                            onClick={(e) => handleBookNow(e, offer)}
+                          >
+                            Réserver
+                            <ChevronRight className="w-4 h-4 ml-1 group-hover/btn:translate-x-0.5 transition-transform" />
+                          </Button>
+                        </motion.div>
                       </div>
                     </div>
                   </Link>
