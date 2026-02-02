@@ -96,7 +96,11 @@ function IndexContent() {
   if (roleLoading || (isAuthenticated && dataLoading)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="flex flex-col items-center gap-3">
+          <div className="relative w-10 h-10">
+            <div className="absolute inset-0 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+          </div>
+        </div>
       </div>
     );
   }

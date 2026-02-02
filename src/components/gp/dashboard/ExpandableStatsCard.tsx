@@ -1,11 +1,10 @@
 /**
  * ExpandableStatsCard - Mobile-optimized interactive stats card
  * 
- * Features:
- * - Smooth expand/collapse animation
- * - Touch-optimized tap targets
- * - Quick actions revealed on expand
- * - Fixed: No overlap with bottom navigation
+ * FIXED: Ensures expanded content is always visible above bottom navigation
+ * - Uses dynamic bottom padding
+ * - Auto-scrolls when needed
+ * - Actions are always accessible
  */
 
 import { useState, useRef, useEffect } from "react";
@@ -44,21 +43,31 @@ export function ExpandableStatsCard({
 }: ExpandableStatsCardProps) {
   const [expanded, setExpanded] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const hasActions = actions.length > 0;
 
-  // Auto-scroll to keep expanded card visible above bottom nav
+  // Auto-scroll to ensure expanded content is visible above bottom nav
   useEffect(() => {
     if (expanded && cardRef.current) {
-      const rect = cardRef.current.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const bottomNavHeight = 80 + 20; // Nav height + safe area buffer
+      // Wait for animation to start
+      const timer = setTimeout(() => {
+        if (cardRef.current) {
+          const rect = cardRef.current.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          // Account for bottom nav (64px) + safe area + extra buffer
+          const bottomNavHeight = 64 + 40 + 20;
+          
+          // If the bottom of the card is below the visible area
+          if (rect.bottom > viewportHeight - bottomNavHeight) {
+            cardRef.current.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'nearest' 
+            });
+          }
+        }
+      }, 50);
       
-      if (rect.bottom > viewportHeight - bottomNavHeight) {
-        cardRef.current.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center' 
-        });
-      }
+      return () => clearTimeout(timer);
     }
   }, [expanded]);
 
@@ -113,10 +122,11 @@ export function ExpandableStatsCard({
         </div>
       </div>
 
-      {/* Expandable Actions Panel - With proper spacing for bottom nav */}
+      {/* Expandable Actions Panel - With guaranteed visibility */}
       <AnimatePresence>
         {expanded && hasActions && (
           <motion.div
+            ref={contentRef}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -124,10 +134,10 @@ export function ExpandableStatsCard({
             className="overflow-hidden"
           >
             <div 
-              className="border-t border-border/30 bg-background/50 p-2 space-y-1.5"
+              className="border-t border-border/30 bg-background/50 p-2 space-y-2"
               style={{
-                // Ensure there's enough padding at the bottom
-                paddingBottom: '12px',
+                // Add substantial bottom padding to clear bottom nav
+                paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))',
               }}
             >
               {actions.map((action, index) => (
@@ -141,13 +151,13 @@ export function ExpandableStatsCard({
                     variant={action.variant || "ghost"}
                     size="sm"
                     className={cn(
-                      "w-full h-10 text-xs justify-start gap-2 rounded-lg",
-                      "hover:bg-primary/10 active:scale-[0.98]"
+                      "w-full h-11 text-xs justify-start gap-2 rounded-lg font-medium",
+                      "hover:bg-primary/10 active:scale-[0.98] transition-all"
                     )}
                     onClick={(e) => {
                       e.stopPropagation();
                       action.onClick();
-                      setExpanded(false); // Close after action
+                      setExpanded(false);
                     }}
                   >
                     {action.icon && <action.icon className="w-4 h-4" />}
@@ -163,7 +173,7 @@ export function ExpandableStatsCard({
   );
 }
 
-// Grid container for expandable cards - Responsive
+// Grid container for expandable cards - Responsive with bottom margin
 interface ExpandableStatsGridProps {
   children: React.ReactNode;
   columns?: 2 | 3 | 4;
@@ -180,8 +190,8 @@ export function ExpandableStatsGrid({ children, columns = 4 }: ExpandableStatsGr
     <div 
       className={cn("grid gap-2 sm:gap-3", gridCols[columns])}
       style={{
-        // Add extra margin at the bottom to account for expansion
-        marginBottom: '12px',
+        // Extra bottom margin to account for potential expansion + bottom nav
+        marginBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))',
       }}
     >
       {children}

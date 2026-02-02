@@ -4,6 +4,7 @@ import { Package, Truck, Shield, CreditCard, BadgeCheck, LogIn } from "lucide-re
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { DynamicTagline } from "@/components/ui/DynamicTagline";
 
 /**
  * AppLikeHome - Homepage V1 App-Like / Conversion First
@@ -96,18 +97,14 @@ export function AppLikeHome() {
       {/* Main Content - Centered vertically */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-4">
         
-        {/* Central Message */}
+        {/* Central Message - Dynamic Tagline */}
         <motion.div 
           initial={{ opacity: 0, y: -10 }} 
           animate={{ opacity: 1, y: 0 }} 
           transition={{ duration: 0.4 }} 
-          className="text-center mb-8"
+          className="mb-8"
         >
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-tight mb-2">
-            Envoyez ou transportez
-            <br />
-            <span className="text-primary">un colis, simplement.</span>
-          </h1>
+          <DynamicTagline />
         </motion.div>
 
         {/* Two Main CTAs */}

@@ -1,24 +1,23 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
-import { Loader2, Bell, Mail, MessageSquare, Package, TrendingUp, Megaphone, ArrowLeft, Settings as SettingsIcon, Smartphone, CheckCircle, XCircle, Palette, HelpCircle } from "lucide-react";
+import { 
+  ArrowLeft, Settings as SettingsIcon, Bell, Mail, MessageSquare, 
+  Package, TrendingUp, Megaphone, Palette, User, Shield, LogOut,
+  ChevronRight, Smartphone, CheckCircle, XCircle, HelpCircle
+} from "lucide-react";
 import { motion } from "framer-motion";
-import { SendTestNotification } from "@/components/settings/SendTestNotification";
-import { PushNotificationStatus } from "@/components/settings/PushNotificationStatus";
-import { NotificationTestPanel } from "@/components/settings/NotificationTestPanel";
 import { ThemeToggle } from "@/components/settings/ThemeToggle";
-import { ResetAllOnboardingButton } from "@/components/onboarding/OnboardingMenuItem";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { MiniLoader } from "@/components/ui/MiniLoader";
+import { Badge } from "@/components/ui/badge";
 
 interface NotificationPreferences {
   email_notifications: boolean;
@@ -44,6 +43,7 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences);
   const [userId, setUserId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string>("");
   const { isSupported, permission, requestPermission } = usePushNotifications();
 
   useEffect(() => {
@@ -60,8 +60,8 @@ export default function Settings() {
       }
 
       setUserId(user.id);
+      setUserEmail(user.email || "");
 
-      // Fetch existing preferences
       const { data, error } = await supabase
         .from("notification_preferences")
         .select("*")
@@ -89,316 +89,286 @@ export default function Settings() {
     }
   };
 
-  const handleToggle = (key: keyof NotificationPreferences) => {
-    setPreferences(prev => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
+  const handleToggle = async (key: keyof NotificationPreferences) => {
+    const newValue = !preferences[key];
+    setPreferences(prev => ({ ...prev, [key]: newValue }));
+    
+    // Auto-save
+    if (userId) {
+      try {
+        await supabase
+          .from("notification_preferences")
+          .upsert({
+            user_id: userId,
+            [key]: newValue,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: "user_id" });
+      } catch (error) {
+        console.error("Error saving preference:", error);
+      }
+    }
   };
 
-  const savePreferences = async () => {
-    if (!userId) return;
-
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from("notification_preferences")
-        .upsert({
-          user_id: userId,
-          ...preferences,
-          updated_at: new Date().toISOString(),
-        }, {
-          onConflict: "user_id",
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Préférences enregistrées",
-        description: "Vos paramètres de notification ont été mis à jour.",
-      });
-    } catch (error) {
-      console.error("Error saving preferences:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de sauvegarder les préférences.",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <MiniLoader size="lg" />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background pb-safe">
-      <Header />
+      <MobileHeader />
       
-      <main className="container mx-auto px-4 py-8 pb-24 md:pb-8">
+      <main 
+        className="px-4 pb-24"
+        style={{ paddingTop: 'calc(70px + env(safe-area-inset-top, 0px))' }}
+      >
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-2xl mx-auto"
+          className="max-w-lg mx-auto"
         >
           {/* Header */}
-          <div className="flex items-center gap-4 mb-6">
-            <Button
-              variant="ghost"
-              size="icon"
+          <div className="flex items-center gap-3 mb-6">
+            <button
               onClick={() => navigate(-1)}
+              className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
             >
               <ArrowLeft className="w-5 h-5" />
-            </Button>
+            </button>
             <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <SettingsIcon className="w-6 h-6" />
+              <h1 className="text-xl font-bold flex items-center gap-2">
+                <SettingsIcon className="w-5 h-5" />
                 Paramètres
               </h1>
-              <p className="text-muted-foreground">
-                Gérez vos préférences de notification
-              </p>
+              <p className="text-sm text-muted-foreground">{userEmail}</p>
             </div>
           </div>
 
-          {/* Theme Settings */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Palette className="w-5 h-5" />
-                Apparence
-              </CardTitle>
-              <CardDescription>
-                Personnalisez l'apparence de l'application
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+          {/* Account Section */}
+          <section className="mb-6">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-1">
+              Compte
+            </h2>
+            <div className="bg-card rounded-2xl border border-border overflow-hidden">
+              <button 
+                onClick={() => navigate("/profile")}
+                className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium">Mon profil</p>
+                    <p className="text-xs text-muted-foreground">Informations personnelles</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              </button>
+              
+              <Separator />
+              
+              <button 
+                onClick={() => navigate("/tutoriels")}
+                className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                    <HelpCircle className="w-5 h-5 text-accent" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium">Tutoriels</p>
+                    <p className="text-xs text-muted-foreground">Guides d'utilisation</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+          </section>
+
+          {/* Appearance Section */}
+          <section className="mb-6">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-1">
+              Apparence
+            </h2>
+            <div className="bg-card rounded-2xl border border-border p-4">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
+                  <Palette className="w-5 h-5 text-purple-500" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium">Thème</p>
+                  <p className="text-xs text-muted-foreground">Clair, sombre ou système</p>
+                </div>
+              </div>
               <ThemeToggle />
-            </CardContent>
-          </Card>
+            </div>
+          </section>
 
-          {/* Notification Preferences */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="w-5 h-5" />
-                Notifications
-              </CardTitle>
-              <CardDescription>
-                Choisissez comment vous souhaitez être notifié
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* General Toggles */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Mail className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <Label htmlFor="email" className="font-medium">Notifications par email</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Recevoir les alertes par email
-                      </p>
+          {/* Notifications Section */}
+          <section className="mb-6">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-1">
+              Notifications
+            </h2>
+            <div className="bg-card rounded-2xl border border-border overflow-hidden">
+              {/* Browser Push Status */}
+              <div className="flex items-center justify-between p-4 bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                    <Smartphone className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">Notifications navigateur</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      {!isSupported ? (
+                        <Badge variant="outline" className="text-[10px] h-5">Non supporté</Badge>
+                      ) : permission === "granted" ? (
+                        <Badge variant="success" className="text-[10px] h-5 gap-1">
+                          <CheckCircle className="w-3 h-3" />
+                          Activées
+                        </Badge>
+                      ) : permission === "denied" ? (
+                        <Badge variant="destructive" className="text-[10px] h-5 gap-1">
+                          <XCircle className="w-3 h-3" />
+                          Bloquées
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-[10px] h-5">Non activées</Badge>
+                      )}
                     </div>
                   </div>
-                  <Switch
-                    id="email"
-                    checked={preferences.email_notifications}
-                    onCheckedChange={() => handleToggle("email_notifications")}
-                  />
                 </div>
+                {isSupported && permission !== "granted" && permission !== "denied" && (
+                  <Button variant="outline" size="sm" onClick={requestPermission}>
+                    Activer
+                  </Button>
+                )}
+              </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Bell className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <Label htmlFor="push" className="font-medium">Notifications push</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Recevoir les notifications en temps réel
-                      </p>
-                    </div>
+              <Separator />
+
+              {/* Email Notifications */}
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Mail className="w-4 h-4 text-primary" />
                   </div>
-                  <Switch
-                    id="push"
-                    checked={preferences.push_notifications}
-                    onCheckedChange={() => handleToggle("push_notifications")}
-                  />
+                  <div>
+                    <Label className="font-medium text-sm">Email</Label>
+                    <p className="text-xs text-muted-foreground">Alertes par email</p>
+                  </div>
                 </div>
+                <Switch
+                  checked={preferences.email_notifications}
+                  onCheckedChange={() => handleToggle("email_notifications")}
+                />
+              </div>
 
-                {/* Browser Push Permission */}
-                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
-                      <Smartphone className="w-5 h-5 text-accent" />
-                    </div>
-                    <div>
-                      <Label className="font-medium">Notifications navigateur</Label>
-                      <div className="flex items-center gap-2 mt-1">
-                        {!isSupported ? (
-                          <Badge variant="outline" className="text-muted-foreground">
-                            Non supporté
-                          </Badge>
-                        ) : permission === "granted" ? (
-                          <Badge variant="success" className="gap-1">
-                            <CheckCircle className="w-3 h-3" />
-                            Activées
-                          </Badge>
-                        ) : permission === "denied" ? (
-                          <Badge variant="destructive" className="gap-1">
-                            <XCircle className="w-3 h-3" />
-                            Bloquées
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">
-                            Non activées
-                          </Badge>
-                        )}
+              <Separator />
+
+              {/* Push Notifications */}
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Bell className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <Label className="font-medium text-sm">Push</Label>
+                    <p className="text-xs text-muted-foreground">Notifications temps réel</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={preferences.push_notifications}
+                  onCheckedChange={() => handleToggle("push_notifications")}
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Alert Types */}
+          <section className="mb-6">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-1">
+              Types d'alertes
+            </h2>
+            <div className="bg-card rounded-2xl border border-border overflow-hidden">
+              {[
+                { key: "new_message_alerts", icon: MessageSquare, color: "blue", label: "Messages", desc: "Nouveaux messages" },
+                { key: "new_offer_alerts", icon: TrendingUp, color: "green", label: "Offres", desc: "Nouvelles offres" },
+                { key: "order_status_alerts", icon: Package, color: "orange", label: "Commandes", desc: "Statut des envois" },
+                { key: "marketing_emails", icon: Megaphone, color: "purple", label: "Marketing", desc: "Offres et actualités" },
+              ].map((item, index) => (
+                <div key={item.key}>
+                  {index > 0 && <Separator />}
+                  <div className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-full bg-${item.color}-500/10 flex items-center justify-center`}>
+                        <item.icon className={`w-4 h-4 text-${item.color}-500`} />
+                      </div>
+                      <div>
+                        <Label className="font-medium text-sm">{item.label}</Label>
+                        <p className="text-xs text-muted-foreground">{item.desc}</p>
                       </div>
                     </div>
+                    <Switch
+                      checked={preferences[item.key as keyof NotificationPreferences]}
+                      onCheckedChange={() => handleToggle(item.key as keyof NotificationPreferences)}
+                    />
                   </div>
-                  {isSupported && permission !== "granted" && permission !== "denied" && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={requestPermission}
-                    >
-                      Activer
-                    </Button>
-                  )}
-                  {permission === "denied" && (
-                    <p className="text-xs text-muted-foreground max-w-[120px] text-right">
-                      Modifiez dans les paramètres du navigateur
-                    </p>
-                  )}
                 </div>
-              </div>
+              ))}
+            </div>
+          </section>
 
-              <Separator />
-
-              {/* Specific Alerts */}
-              <div className="space-y-4">
-                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                  Types d'alertes
-                </h4>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-                      <MessageSquare className="w-5 h-5 text-blue-500" />
-                    </div>
-                    <div>
-                      <Label htmlFor="messages" className="font-medium">Nouveaux messages</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Alertes pour les nouveaux messages
-                      </p>
-                    </div>
-                  </div>
-                  <Switch
-                    id="messages"
-                    checked={preferences.new_message_alerts}
-                    onCheckedChange={() => handleToggle("new_message_alerts")}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                      <TrendingUp className="w-5 h-5 text-green-500" />
-                    </div>
-                    <div>
-                      <Label htmlFor="offers" className="font-medium">Nouvelles offres</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Alertes pour les offres correspondant à vos recherches
-                      </p>
-                    </div>
-                  </div>
-                  <Switch
-                    id="offers"
-                    checked={preferences.new_offer_alerts}
-                    onCheckedChange={() => handleToggle("new_offer_alerts")}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center">
-                      <Package className="w-5 h-5 text-orange-500" />
-                    </div>
-                    <div>
-                      <Label htmlFor="orders" className="font-medium">Statut des commandes</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Alertes sur l'avancement de vos envois
-                      </p>
-                    </div>
-                  </div>
-                  <Switch
-                    id="orders"
-                    checked={preferences.order_status_alerts}
-                    onCheckedChange={() => handleToggle("order_status_alerts")}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
-                      <Megaphone className="w-5 h-5 text-purple-500" />
-                    </div>
-                    <div>
-                      <Label htmlFor="marketing" className="font-medium">Emails marketing</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Recevoir nos offres et actualités
-                      </p>
-                    </div>
-                  </div>
-                  <Switch
-                    id="marketing"
-                    checked={preferences.marketing_emails}
-                    onCheckedChange={() => handleToggle("marketing_emails")}
-                  />
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Push Notification Status Card */}
-              <PushNotificationStatus />
-
-              <Separator />
-
-              {/* Save Button */}
-              <Button 
-                onClick={savePreferences} 
-                disabled={saving}
-                className="w-full"
+          {/* Security & Logout */}
+          <section className="mb-6">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 px-1">
+              Sécurité
+            </h2>
+            <div className="bg-card rounded-2xl border border-border overflow-hidden">
+              <button 
+                className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
               >
-                {saving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Enregistrement...
-                  </>
-                ) : (
-                  "Enregistrer les préférences"
-                )}
-              </Button>
-            </CardContent>
-          </Card>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
+                    <Shield className="w-5 h-5 text-success" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium">Confidentialité</p>
+                    <p className="text-xs text-muted-foreground">Données et sécurité</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              </button>
 
-          {/* Notification Test Panel - Full Section */}
-          <NotificationTestPanel userId={userId} />
+              <Separator />
+
+              <button 
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 p-4 hover:bg-destructive/5 transition-colors text-destructive"
+              >
+                <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
+                  <LogOut className="w-5 h-5" />
+                </div>
+                <p className="font-medium">Se déconnecter</p>
+              </button>
+            </div>
+          </section>
+
+          {/* App Version */}
+          <p className="text-center text-xs text-muted-foreground mt-8">
+            Yobbanté Connect v1.0.0
+          </p>
         </motion.div>
       </main>
 
-      <Footer />
       <MobileNav />
     </div>
   );
