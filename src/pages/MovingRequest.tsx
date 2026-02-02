@@ -220,18 +220,19 @@ export default function MovingRequest() {
 
     setSubmitting(true);
     try {
-      // Create custom request for moving
+      // Create custom request for moving - handled by Yobbante internal team
       const requestData = {
         client_id: userId,
         shipment_type: "demenagement",
-        transport_type: "routier",
+        transport_type: "interne", // Yobbante internal logistics
         origin_city: formData.originCity,
         origin_country: "Sénégal",
         destination_city: formData.destinationCity,
         destination_country: "Sénégal",
-        description: `Déménagement ${housingTypes.find(h => h.id === formData.housingType)?.label} - ${formData.rooms} pièces. 
+        description: `[DÉMÉNAGEMENT YOBBANTÉ] ${housingTypes.find(h => h.id === formData.housingType)?.label} - ${formData.rooms} pièces. 
 Adresse départ: ${formData.originAddress} (étage ${formData.originFloor}, ${formData.originElevator ? 'avec' : 'sans'} ascenseur)
 Adresse arrivée: ${formData.destinationAddress} (étage ${formData.destinationFloor}, ${formData.destinationElevator ? 'avec' : 'sans'} ascenseur)
+Inventaire: ${formData.items.filter(i => i.quantity > 0).map(i => `${i.name}: ${i.quantity}`).join(', ')}
 ${formData.additionalNotes ? `Notes: ${formData.additionalNotes}` : ''}`,
         pickup_date_from: formData.movingDate,
         pickup_date_to: formData.movingDate,
@@ -248,18 +249,16 @@ ${formData.additionalNotes ? `Notes: ${formData.additionalNotes}` : ''}`,
         status: "open",
       };
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("custom_requests")
-        .insert(requestData);
+        .insert(requestData)
+        .select()
+        .single();
 
       if (error) throw error;
 
-      toast({
-        title: "Demande envoyée ! 🎉",
-        description: "Les transporteurs vous contacteront sous peu",
-      });
-
-      navigate("/client/dashboard");
+      // Redirect to confirmation page
+      navigate(`/demenagement/confirmation?id=${data.id}&price=${calculateEstimate()}`);
     } catch (error) {
       console.error("Error submitting:", error);
       toast({

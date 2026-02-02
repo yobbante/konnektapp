@@ -55,7 +55,7 @@ export function GuestLandingHero() {
               <ArrowRight className="w-4 h-4" />
             </Button>
           </Link>
-          <Link to="/gp/inscription">
+          <Link to="/transporteur/inscription">
             <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2 text-base px-8">
               <Truck className="w-5 h-5" />
               Devenir transporteur

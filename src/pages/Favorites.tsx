@@ -3,13 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   Heart, ArrowRight, MapPin, Calendar, Truck, Star, 
-  Trash2, Package, ArrowLeft, Loader2
+  Trash2, Package, ArrowLeft, Users
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileHeader } from "@/components/layout/MobileHeader";
+import { MobileNav } from "@/components/layout/MobileNav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useFavorites } from "@/hooks/useFavorites";
+import { MiniLoader } from "@/components/ui/MiniLoader";
 import { getTransportIcon, getTransportLabel } from "@/lib/transportTypes";
 
 interface FavoriteOffer {
@@ -86,23 +88,32 @@ export default function Favorites() {
 
   return (
     <div className="min-h-screen bg-muted/30 pb-safe">
-      <MobileHeader title="Mes Favoris" showNotifications />
+      <MobileHeader />
 
-      <div className="px-4 py-4">
-        {/* Back Button */}
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => navigate(-1)} 
-          className="-ml-2 mb-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          Retour
-        </Button>
+      <main 
+        className="px-4 pb-24"
+        style={{ paddingTop: 'calc(70px + env(safe-area-inset-top, 0px))' }}
+      >
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-xl font-bold flex items-center gap-2">
+              <Heart className="w-5 h-5 text-red-500" />
+              Mes Favoris
+            </h1>
+            <p className="text-sm text-muted-foreground">Offres et transporteurs sauvegardés</p>
+          </div>
+        </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <MiniLoader size="lg" />
           </div>
         ) : offers.length === 0 ? (
           <motion.div
@@ -234,7 +245,9 @@ export default function Favorites() {
             })}
           </div>
         )}
-      </div>
+      </main>
+
+      <MobileNav />
     </div>
   );
 }

@@ -106,21 +106,21 @@ export function useSmartRedirect() {
         };
       }
 
-      // 4. Client standard → Dashboard client (PAS accueil générique)
-      navigate("/client/dashboard");
+      // 4. Client standard → Accueil (car pas de pending action = login depuis header)
+      navigate("/");
       return { 
         success: true, 
-        destination: "/client/dashboard", 
+        destination: "/", 
         role: "client" 
       };
 
     } catch (error) {
       console.error("Error detecting user role:", error);
-      // Fallback vers le dashboard client en cas d'erreur
-      navigate("/client/dashboard");
+      // Fallback vers accueil en cas d'erreur
+      navigate("/");
       return { 
         success: false, 
-        destination: "/client/dashboard", 
+        destination: "/", 
         role: null 
       };
     }

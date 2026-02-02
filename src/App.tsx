@@ -73,6 +73,7 @@ import LegalDocuments from "./pages/LegalDocuments";
 import UnifiedProfile from "./pages/UnifiedProfile";
 import ClientProfileComplete from "./pages/ClientProfileComplete";
 import MovingRequest from "./pages/MovingRequest";
+import MovingConfirmation from "./pages/MovingConfirmation";
 
 const queryClient = new QueryClient();
 
@@ -110,6 +111,7 @@ const App = () => (
             <Route path="/demande" element={<DemandeEnvoi />} />
             <Route path="/demande-personnalisee" element={<CustomRequest />} />
             <Route path="/demenagement" element={<MovingRequest />} />
+            <Route path="/demenagement/confirmation" element={<MovingConfirmation />} />
             <Route path="/quote-confirmation" element={<QuoteConfirmation />} />
             <Route path="/reservation/gp/:gpId" element={<SmartBookingPage />} />
             <Route path="/messages" element={<Messages />} />
