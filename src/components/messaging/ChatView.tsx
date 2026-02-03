@@ -10,7 +10,7 @@ import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { TypingIndicator } from "./TypingIndicator";
 import { MessageTemplates } from "./MessageTemplates";
-import { ClientQuickResponses } from "./ClientQuickResponses";
+import { SmartClientResponses } from "./SmartClientResponses";
 import { MiniLoader } from "@/components/ui/MiniLoader";
 
 interface Message {
@@ -257,9 +257,11 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Templates - Use ClientQuickResponses for clients */}
+      {/* Message Templates - Use SmartClientResponses for clients */}
       {userType === "client" ? (
-        <ClientQuickResponses
+        <SmartClientResponses
+          conversationId={conversationId}
+          currentUserId={currentUserId}
           onSelectMessage={handleSelectTemplate}
           isExpanded={templatesExpanded}
           onToggleExpand={() => setTemplatesExpanded(!templatesExpanded)}

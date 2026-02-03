@@ -14,6 +14,8 @@ import { AppEntryLoader } from "@/components/ui/AppEntryLoader";
 function IndexContent() {
   const { isGP, isAuthenticated, userId, loading: roleLoading } = useUserRole();
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [customRequests, setCustomRequests] = useState<any[]>([]);
+  const [movingRequests, setMovingRequests] = useState<any[]>([]);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [activeOrdersCount, setActiveOrdersCount] = useState(0);
   const [showEntryLoader, setShowEntryLoader] = useState(true);
@@ -74,6 +76,34 @@ function IndexContent() {
         setActiveOrdersCount(active);
       }
 
+      // Load custom requests (non-moving)
+      const { data: customReqs } = await supabase
+        .from("custom_requests")
+        .select("id, request_number, origin_city, destination_city, status, shipment_type, created_at, transport_type")
+        .eq("client_id", userId)
+        .neq("transport_type", "interne")
+        .in("status", ["pending", "open", "responded"])
+        .order("created_at", { ascending: false })
+        .limit(5);
+      
+      if (customReqs) {
+        setCustomRequests(customReqs);
+      }
+
+      // Load moving requests (internal)
+      const { data: movingReqs } = await supabase
+        .from("custom_requests")
+        .select("id, request_number, origin_city, destination_city, status, created_at, volume_estimate")
+        .eq("client_id", userId)
+        .eq("transport_type", "interne")
+        .in("status", ["pending", "reviewing", "quoted", "negotiating", "accepted", "scheduled", "in_progress"])
+        .order("created_at", { ascending: false })
+        .limit(3);
+      
+      if (movingReqs) {
+        setMovingRequests(movingReqs);
+      }
+
       // Load unread messages count
       const { count } = await supabase
         .from("messages")
@@ -130,6 +160,8 @@ function IndexContent() {
         <ClientAppHome
           userName={userName}
           recentOrders={recentOrders}
+          customRequests={customRequests}
+          movingRequests={movingRequests}
           unreadMessages={unreadMessages}
           activeOrdersCount={activeOrdersCount}
           userId={userId || undefined}

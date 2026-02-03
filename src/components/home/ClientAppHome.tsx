@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { Package, MessageCircle, MapPin, History, Bell, Heart, ArrowRight, Clock, ChevronDown, Phone, Navigation, User, ExternalLink, X, AlertTriangle, Truck, Calendar } from "lucide-react";
+import { Package, MessageCircle, MapPin, History, Bell, Heart, ArrowRight, Clock, ChevronDown, Phone, Navigation, User, ExternalLink, X, AlertTriangle, Truck, Calendar, FileText, Home as HomeIcon, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { WeightCorrectionAlert } from "@/components/client/WeightCorrectionAlert";
@@ -10,13 +10,34 @@ import { supabase } from "@/integrations/supabase/client";
 interface ClientAppHomeProps {
   userName?: string;
   recentOrders?: any[];
+  customRequests?: any[];
+  movingRequests?: any[];
   unreadMessages?: number;
   activeOrdersCount?: number;
   userId?: string;
 }
+
+// Status config for all types
+const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  pending: { label: "En attente", color: "bg-amber-500/20 text-amber-600" },
+  accepted: { label: "Accepté", color: "bg-green-500/20 text-green-600" },
+  collected: { label: "Collecté", color: "bg-blue-500/20 text-blue-600" },
+  in_transit: { label: "En transit", color: "bg-blue-500/20 text-blue-600" },
+  delivered: { label: "Livré", color: "bg-green-500/20 text-green-700" },
+  open: { label: "Ouverte", color: "bg-amber-500/20 text-amber-600" },
+  responded: { label: "Réponses reçues", color: "bg-purple-500/20 text-purple-600" },
+  reviewing: { label: "En étude", color: "bg-blue-500/20 text-blue-600" },
+  quoted: { label: "Devis reçu", color: "bg-purple-500/20 text-purple-600" },
+  negotiating: { label: "Négociation", color: "bg-orange-500/20 text-orange-600" },
+  scheduled: { label: "Planifié", color: "bg-indigo-500/20 text-indigo-600" },
+  in_progress: { label: "En cours", color: "bg-blue-500/20 text-blue-600" },
+};
+
 export function ClientAppHome({
   userName,
   recentOrders = [],
+  customRequests = [],
+  movingRequests = [],
   unreadMessages = 0,
   activeOrdersCount = 0,
   userId
@@ -31,39 +52,31 @@ export function ClientAppHome({
 
   // Get ALL active orders
   const activeOrders = recentOrders.filter(o => ['pending', 'accepted', 'collected', 'in_transit'].includes(o.status));
+  
+  // Combine all active items for display
+  const allActiveItems = [
+    ...activeOrders.map(o => ({ ...o, type: 'order' as const })),
+    ...customRequests.map(r => ({ ...r, type: 'custom' as const })),
+    ...movingRequests.map(m => ({ ...m, type: 'moving' as const })),
+  ];
+
   const openFullScreen = (orderId: string) => {
     setFullScreenOrderId(orderId);
   };
   const closeFullScreen = () => {
     setFullScreenOrderId(null);
   };
-  const getStatusInfo = (status: string) => {
-    switch (status) {
-      case 'in_transit':
-        return {
-          label: 'En transit',
-          color: 'bg-blue-500/20 text-blue-600',
-          icon: Truck
-        };
-      case 'collected':
-        return {
-          label: 'Collecté',
-          color: 'bg-amber-500/20 text-amber-600',
-          icon: Package
-        };
-      case 'accepted':
-        return {
-          label: 'Accepté',
-          color: 'bg-green-500/20 text-green-600',
-          icon: User
-        };
-      default:
-        return {
-          label: 'En attente',
-          color: 'bg-primary/20 text-primary',
-          icon: Clock
-        };
-    }
+  const getStatusInfo = (status: string, type: 'order' | 'custom' | 'moving') => {
+    const config = STATUS_CONFIG[status] || { label: status, color: "bg-muted text-muted-foreground" };
+    
+    let icon = Clock;
+    if (status === 'in_transit') icon = Truck;
+    else if (status === 'collected') icon = Package;
+    else if (status === 'accepted') icon = User;
+    else if (type === 'custom') icon = FileText;
+    else if (type === 'moving') icon = HomeIcon;
+    
+    return { ...config, icon };
   };
   const selectedOrder = fullScreenOrderId ? activeOrders.find(o => o.id === fullScreenOrderId) : null;
   return <div className="flex flex-col overflow-hidden relative" style={{
@@ -105,8 +118,8 @@ export function ClientAppHome({
         </div>
       )}
 
-      {/* Active Orders List - Clickable Cards */}
-      {activeOrders.length > 0 && <motion.div initial={{
+      {/* Active Items List - Orders, Custom Requests, Moving Requests */}
+      {allActiveItems.length > 0 && <motion.div initial={{
       opacity: 0,
       y: -10
     }} animate={{
@@ -115,10 +128,33 @@ export function ClientAppHome({
     }} transition={{
       delay: 0.1
     }} className="mx-4 mb-3 space-y-2 max-h-[35vh] overflow-y-auto">
-          {activeOrders.map((order, index) => {
-        const statusInfo = getStatusInfo(order.status);
+          {allActiveItems.map((item, index) => {
+        const statusInfo = getStatusInfo(item.status, item.type);
         const StatusIcon = statusInfo.icon;
-        return <motion.div key={order.id} initial={{
+        
+        // Determine display info based on type
+        const displayInfo = {
+          order: {
+            gradient: "from-primary/10 via-secondary/5 to-primary/10",
+            borderColor: "border-primary/20",
+            badgeType: null,
+            onClick: () => openFullScreen(item.id),
+          },
+          custom: {
+            gradient: "from-purple-500/10 via-purple-500/5 to-purple-500/10",
+            borderColor: "border-purple-500/20",
+            badgeType: "Demande",
+            onClick: () => navigate("/demande-personnalisee"),
+          },
+          moving: {
+            gradient: "from-amber-500/10 via-amber-500/5 to-amber-500/10",
+            borderColor: "border-amber-500/20",
+            badgeType: "Déménagement",
+            onClick: () => navigate("/historique"),
+          },
+        }[item.type];
+        
+        return <motion.div key={`${item.type}-${item.id}`} initial={{
           opacity: 0,
           x: -20
         }} animate={{
@@ -126,13 +162,17 @@ export function ClientAppHome({
           x: 0
         }} transition={{
           delay: index * 0.05
-        }} onClick={() => openFullScreen(order.id)} className="relative overflow-hidden bg-gradient-to-r from-primary/10 via-secondary/5 to-primary/10 border border-primary/20 rounded-2xl shadow-md cursor-pointer active:scale-[0.98] transition-transform">
+        }} onClick={displayInfo.onClick} className={`relative overflow-hidden bg-gradient-to-r ${displayInfo.gradient} border ${displayInfo.borderColor} rounded-2xl shadow-md cursor-pointer active:scale-[0.98] transition-transform`}>
                 <motion.div whileTap={{
             scale: 0.99
           }} className="p-3 flex items-center gap-3">
                   {/* Status Icon */}
                   <div className="relative">
-                    <motion.div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-sm" animate={{
+                    <motion.div className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-sm ${
+                      item.type === 'moving' ? 'bg-gradient-to-br from-amber-500 to-amber-600' :
+                      item.type === 'custom' ? 'bg-gradient-to-br from-purple-500 to-purple-600' :
+                      'bg-gradient-to-br from-primary to-primary/70'
+                    }`} animate={{
                 boxShadow: ["0 0 0 0 rgba(var(--primary), 0.3)", "0 0 0 6px rgba(var(--primary), 0)"]
               }} transition={{
                 duration: 1.5,
@@ -148,15 +188,20 @@ export function ClientAppHome({
               }} />
                   </div>
                   
-                  {/* Order Info */}
+                  {/* Item Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 mb-0.5">
+                      {displayInfo.badgeType && (
+                        <Badge variant="secondary" className="text-[10px] py-0 px-1.5 mr-1">
+                          {displayInfo.badgeType}
+                        </Badge>
+                      )}
                       <p className="text-sm font-bold text-foreground truncate">
-                        {order.origin_city}
+                        {item.origin_city}
                       </p>
                       <ArrowRight className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                       <p className="text-sm font-bold text-foreground truncate">
-                        {order.destination_city}
+                        {item.destination_city}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -169,7 +214,8 @@ export function ClientAppHome({
                   }} />
                         {statusInfo.label}
                       </span>
-                      {order.weight && <span className="text-xs text-muted-foreground">{order.weight} kg</span>}
+                      {item.weight && <span className="text-xs text-muted-foreground">{item.weight} kg</span>}
+                      {item.volume_estimate && <span className="text-xs text-muted-foreground">{item.volume_estimate}</span>}
                     </div>
                   </div>
                   

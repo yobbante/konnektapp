@@ -136,7 +136,7 @@ const App = () => (
                 /gp/dashboard redirige vers /gp/demandes (page principale)
             ============================================ */}
             <Route path="/gp" element={<GPLanding />} />
-            <Route path="/gp/inscription" element={<GPRegistration />} />
+            {/* /gp/inscription supprimé - utiliser /transporteur/inscription */}
             <Route path="/gp/bagages/inscription" element={<GPBagagesRegistration />} />
             {/* Redirection: /gp/dashboard → /gp/demandes */}
             <Route path="/gp/dashboard" element={<Navigate to="/gp/demandes" replace />} />
@@ -183,7 +183,7 @@ const App = () => (
             <Route path="/client/profile" element={<Navigate to="/profil" replace />} />
             <Route path="/client/profil" element={<Navigate to="/profil" replace />} />
             <Route path="/demande/personnalisee" element={<Navigate to="/demande-personnalisee" replace />} />
-            <Route path="/gp/inscription" element={<Navigate to="/transporteur/inscription" replace />} />
+            {/* Legacy redirects for old GP inscription route */}
             
             {/* 404 - Catch-all */}
             <Route path="*" element={<NotFound />} />
