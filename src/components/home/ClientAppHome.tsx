@@ -320,7 +320,7 @@ export function ClientAppHome({
     }} transition={{
       delay: 0.25
     }} className="flex gap-2 px-4 py-3 mt-auto">
-        <Link to="/favorites" className="flex-1">
+        <Link to="/favoris" className="flex-1">
           <motion.div whileTap={{
           scale: 0.97
         }} className="bg-muted/50 rounded-xl p-3 flex items-center justify-center gap-2">

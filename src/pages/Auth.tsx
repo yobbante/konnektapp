@@ -136,7 +136,7 @@ export default function AuthPage() {
   };
 
   const handleTransporterSelect = () => {
-    navigate("/gp/inscription");
+    navigate("/transporteur/inscription");
   };
 
   if (checkingSession) {

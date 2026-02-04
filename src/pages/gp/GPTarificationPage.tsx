@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   DollarSign, Weight, Package, Plus, Edit, Save, 
-  ShieldX, ChevronDown, ChevronUp, Trash2, Check 
+  ShieldX, ChevronDown, ChevronUp, Trash2, Check,
+  Smartphone, Laptop, FileText, Gem, Tablet, Gamepad2, Wine, Car
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -11,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
 import { PageLoader } from "@/components/ui/PageLoader";
@@ -47,13 +47,36 @@ interface GPProfile {
   explicit_restrictions?: string[] | null;
 }
 
+interface WeightTier {
+  id?: string;
+  min_weight: number;
+  max_weight: number;
+  price_per_kg: number;
+}
+
+// Standard flat rate items - synchronized with database
+const STANDARD_FLAT_RATE_ITEMS = [
+  { name: "bijoux", label: "Bijoux", icon: Gem },
+  { name: "console", label: "Console de jeux", icon: Gamepad2 },
+  { name: "document", label: "Document administratif", icon: FileText },
+  { name: "ordinateur", label: "Ordinateur", icon: Laptop },
+  { name: "parfum", label: "Parfum", icon: Wine },
+  { name: "piece_auto", label: "Pièce automobile", icon: Car },
+  { name: "tablette", label: "Tablette", icon: Tablet },
+  { name: "telephone", label: "Téléphone", icon: Smartphone },
+];
+
+// Default weight tiers
+const DEFAULT_WEIGHT_TIERS: WeightTier[] = [
+  { min_weight: 0, max_weight: 1, price_per_kg: 0 },
+  { min_weight: 1, max_weight: 5, price_per_kg: 0 },
+  { min_weight: 5, max_weight: 10, price_per_kg: 0 },
+  { min_weight: 10, max_weight: 20, price_per_kg: 0 },
+  { min_weight: 20, max_weight: 30, price_per_kg: 0 },
+];
+
 /**
- * GPTarificationPage V2 - Interface intuitive et réorganisée
- * 
- * Structure:
- * 1. Prix au kilo (principal)
- * 2. Articles forfaitaires (activation/désactivation)
- * 3. Restrictions (collapsible)
+ * GPTarificationPage V3 - Full pricing interface
  */
 export default function GPTarificationPage() {
   const navigate = useNavigate();
@@ -67,6 +90,8 @@ export default function GPTarificationPage() {
   const [allObjectTypes, setAllObjectTypes] = useState<FlatRateObjectType[]>([]);
   const [restrictions, setRestrictions] = useState<string[]>([]);
   const [restrictionsOpen, setRestrictionsOpen] = useState(false);
+  const [weightTiersOpen, setWeightTiersOpen] = useState(false);
+  const [weightTiers, setWeightTiers] = useState<WeightTier[]>(DEFAULT_WEIGHT_TIERS);
   const [editingPrice, setEditingPrice] = useState<string | null>(null);
   const [editingPriceValue, setEditingPriceValue] = useState<string>("");
 
@@ -89,7 +114,7 @@ export default function GPTarificationPage() {
         .maybeSingle();
 
       if (!profile) {
-        navigate("/gp/inscription");
+        navigate("/transporteur/inscription");
         return;
       }
 
@@ -107,6 +132,17 @@ export default function GPTarificationPage() {
 
       if (latestOffer) {
         setPricePerKg(latestOffer.price_per_kg);
+      }
+
+      // Load weight tiers
+      const { data: tiersData } = await supabase
+        .from("gp_weight_tiers")
+        .select("*")
+        .eq("gp_id", profile.id)
+        .order("min_weight");
+
+      if (tiersData && tiersData.length > 0) {
+        setWeightTiers(tiersData);
       }
 
       // Load all available flat rate object types
@@ -157,7 +193,6 @@ export default function GPTarificationPage() {
     if (!gpProfile) return;
     setSaving(true);
     try {
-      // Update all active offers with new price
       await supabase
         .from("gp_offers")
         .update({ price_per_kg: pricePerKg })
@@ -172,6 +207,47 @@ export default function GPTarificationPage() {
     }
   };
 
+  const handleSaveWeightTiers = async () => {
+    if (!gpProfile) return;
+    setSaving(true);
+    try {
+      for (const tier of weightTiers) {
+        if (tier.id) {
+          await supabase
+            .from("gp_weight_tiers")
+            .update({
+              price_per_kg: tier.price_per_kg,
+              currency: gpProfile.default_currency || "XOF",
+            })
+            .eq("id", tier.id);
+        } else {
+          await supabase
+            .from("gp_weight_tiers")
+            .insert({
+              gp_id: gpProfile.id,
+              min_weight: tier.min_weight,
+              max_weight: tier.max_weight,
+              price_per_kg: tier.price_per_kg,
+              currency: gpProfile.default_currency || "XOF",
+              is_active: true,
+            });
+        }
+      }
+      toast({ title: "✅ Paliers de poids mis à jour" });
+      loadData();
+    } catch (error) {
+      toast({ title: "Erreur", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateWeightTierPrice = (index: number, value: number) => {
+    setWeightTiers(prev => prev.map((tier, i) => 
+      i === index ? { ...tier, price_per_kg: value } : tier
+    ));
+  };
+
   const toggleFlatRateItem = async (objectType: FlatRateObjectType) => {
     if (!gpProfile) return;
 
@@ -179,7 +255,6 @@ export default function GPTarificationPage() {
     
     try {
       if (existing) {
-        // Toggle is_active
         const { error } = await supabase
           .from("gp_flat_rate_pricing")
           .update({ is_active: !existing.is_active })
@@ -187,7 +262,6 @@ export default function GPTarificationPage() {
 
         if (error) throw error;
       } else {
-        // Create new entry
         const { error } = await supabase
           .from("gp_flat_rate_pricing")
           .insert({
@@ -253,14 +327,16 @@ export default function GPTarificationPage() {
   const currency = gpProfile.default_currency || "XOF";
   const currencySymbol = getCurrencySymbol(currency);
 
-  // Merge flat rates with all object types for display
-  const flatRateItems = allObjectTypes.map(ot => {
-    const existing = flatRates.find(fr => fr.object_type_id === ot.id);
+  // Merge flat rates with standard items for display
+  const flatRateItems = STANDARD_FLAT_RATE_ITEMS.map(standardItem => {
+    const objectType = allObjectTypes.find(ot => ot.name === standardItem.name);
+    const existing = objectType ? flatRates.find(fr => fr.object_type_id === objectType.id) : null;
     return {
-      objectType: ot,
+      standardItem,
+      objectType,
       pricing: existing,
       isActive: existing?.is_active || false,
-      price: existing?.price || ot.default_price || 5000,
+      price: existing?.price || objectType?.default_price || 5000,
     };
   });
 
@@ -302,7 +378,7 @@ export default function GPTarificationPage() {
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              Ce tarif s'applique aux envois standard (vêtements, alimentaires, tissus, etc.)
+              Ce tarif s'applique aux envois standard
             </p>
             <Button 
               onClick={handleSavePricePerKg}
@@ -315,14 +391,81 @@ export default function GPTarificationPage() {
               ) : (
                 <>
                   <Save className="w-4 h-4 mr-2" />
-                  Enregistrer le prix/kg
+                  Enregistrer
                 </>
               )}
             </Button>
           </CardContent>
         </Card>
 
-        {/* Section 2: Articles forfaitaires */}
+        {/* Section 2: Tarifs par palier de poids */}
+        <Collapsible open={weightTiersOpen} onOpenChange={setWeightTiersOpen}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-3 cursor-pointer hover:bg-muted/30 transition-colors">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center">
+                      <DollarSign className="w-4 h-4 text-secondary" />
+                    </div>
+                    Tarifs par palier de poids
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">Optionnel</Badge>
+                    {weightTiersOpen ? (
+                      <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground text-left">
+                  Définissez des prix différents selon le poids
+                </p>
+              </CardHeader>
+            </CollapsibleTrigger>
+
+            <CollapsibleContent>
+              <CardContent className="pt-0 space-y-3">
+                {weightTiers.map((tier, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border"
+                  >
+                    <Badge variant={tier.min_weight === 0 ? "default" : "outline"} className="font-mono whitespace-nowrap min-w-[80px] justify-center">
+                      {tier.min_weight === 0 ? `≤ ${tier.max_weight}` : `${tier.min_weight}-${tier.max_weight}`} kg
+                    </Badge>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="100"
+                      value={tier.price_per_kg || ""}
+                      onChange={(e) => updateWeightTierPrice(index, Number(e.target.value))}
+                      placeholder="0"
+                      className="w-24 text-right font-mono"
+                    />
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">
+                      {currencySymbol}/kg
+                    </span>
+                  </motion.div>
+                ))}
+
+                <Button 
+                  onClick={handleSaveWeightTiers}
+                  disabled={saving}
+                  className="w-full"
+                  size="sm"
+                >
+                  {saving ? "Enregistrement..." : "Enregistrer les paliers"}
+                </Button>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Section 3: Articles forfaitaires */}
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
@@ -330,7 +473,7 @@ export default function GPTarificationPage() {
                 <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
                   <Package className="w-4 h-4 text-accent" />
                 </div>
-                Articles forfaitaires
+                Forfaits par objet
               </CardTitle>
               <Badge variant="secondary" className="text-xs">
                 {flatRateItems.filter(i => i.isActive).length} actifs
@@ -342,76 +485,84 @@ export default function GPTarificationPage() {
           </CardHeader>
           <CardContent className="space-y-2">
             <AnimatePresence>
-              {flatRateItems.map((item) => (
-                <motion.div
-                  key={item.objectType.id}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`
-                    flex items-center justify-between p-3 rounded-lg border transition-all
-                    ${item.isActive 
-                      ? 'bg-accent/5 border-accent/30' 
-                      : 'bg-muted/30 border-border opacity-60'
-                    }
-                  `}
-                >
-                  <div className="flex items-center gap-3 flex-1">
-                    <Switch
-                      checked={item.isActive}
-                      onCheckedChange={() => toggleFlatRateItem(item.objectType)}
-                    />
-                    <div>
-                      <p className={`font-medium text-sm ${!item.isActive ? 'text-muted-foreground' : ''}`}>
-                        {item.objectType.label}
-                      </p>
+              {flatRateItems.map((item) => {
+                const Icon = item.standardItem.icon;
+                
+                return (
+                  <motion.div
+                    key={item.standardItem.name}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`
+                      flex items-center justify-between p-3 rounded-lg border transition-all
+                      ${item.isActive 
+                        ? 'bg-accent/5 border-accent/30' 
+                        : 'bg-muted/30 border-border opacity-60'
+                      }
+                    `}
+                  >
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${item.isActive ? 'bg-accent/10' : 'bg-muted'}`}>
+                        <Icon className={`w-4 h-4 ${item.isActive ? 'text-accent' : 'text-muted-foreground'}`} />
+                      </div>
+                      <Switch
+                        checked={item.isActive}
+                        onCheckedChange={() => item.objectType && toggleFlatRateItem(item.objectType)}
+                        disabled={!item.objectType}
+                      />
+                      <div>
+                        <p className={`font-medium text-sm ${!item.isActive ? 'text-muted-foreground' : ''}`}>
+                          {item.standardItem.label}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  {item.isActive && (
-                    <div className="flex items-center gap-2">
-                      {editingPrice === item.objectType.id ? (
-                        <>
-                          <Input
-                            type="number"
-                            value={editingPriceValue}
-                            onChange={(e) => setEditingPriceValue(e.target.value)}
-                            className="w-20 h-8 text-right"
-                            autoFocus
-                          />
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8"
+                    {item.isActive && item.pricing && (
+                      <div className="flex items-center gap-2">
+                        {editingPrice === item.standardItem.name ? (
+                          <>
+                            <Input
+                              type="number"
+                              value={editingPriceValue}
+                              onChange={(e) => setEditingPriceValue(e.target.value)}
+                              className="w-20 h-8 text-right"
+                              autoFocus
+                            />
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                if (item.pricing) {
+                                  updateFlatRatePrice(item.pricing.id, Number(editingPriceValue));
+                                }
+                              }}
+                            >
+                              <Check className="w-4 h-4 text-green-600" />
+                            </Button>
+                          </>
+                        ) : (
+                          <button
                             onClick={() => {
-                              if (item.pricing) {
-                                updateFlatRatePrice(item.pricing.id, Number(editingPriceValue));
-                              }
+                              setEditingPrice(item.standardItem.name);
+                              setEditingPriceValue(String(item.price));
                             }}
+                            className="text-sm font-semibold text-primary hover:underline flex items-center gap-1"
                           >
-                            <Check className="w-4 h-4 text-green-600" />
-                          </Button>
-                        </>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setEditingPrice(item.objectType.id);
-                            setEditingPriceValue(String(item.price));
-                          }}
-                          className="text-sm font-semibold text-primary hover:underline flex items-center gap-1"
-                        >
-                          {item.price.toLocaleString()} {currencySymbol}
-                          <Edit className="w-3 h-3" />
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </motion.div>
-              ))}
+                            {item.price.toLocaleString()} {currencySymbol}
+                            <Edit className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
           </CardContent>
         </Card>
 
-        {/* Section 3: Restrictions (Collapsible) */}
+        {/* Section 4: Restrictions */}
         <Collapsible open={restrictionsOpen} onOpenChange={setRestrictionsOpen}>
           <Card>
             <CollapsibleTrigger asChild>
@@ -484,7 +635,6 @@ export default function GPTarificationPage() {
           </Card>
         </Collapsible>
 
-        {/* Bottom padding for safe area */}
         <div className="h-4" />
       </div>
     </GPDashboardLayout>

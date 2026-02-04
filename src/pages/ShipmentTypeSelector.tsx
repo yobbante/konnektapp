@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Briefcase, Truck, Plane, Ship, ArrowRight, Package } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
+import { MobileNav } from "@/components/layout/MobileNav";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 
@@ -98,15 +99,15 @@ export default function ShipmentTypeSelector() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col pb-20">
       <AppHeader />
 
       {/* Main Content - Full height, no scroll, centered */}
       <div 
         className="flex-1 flex flex-col px-4 overflow-hidden"
         style={{
-          height: 'calc(100vh - 60px - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
-          maxHeight: 'calc(100vh - 60px - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
+          height: 'calc(100vh - 60px - 80px - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
+          maxHeight: 'calc(100vh - 60px - 80px - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
         }}
       >
         {/* Header */}
@@ -197,6 +198,9 @@ export default function ShipmentTypeSelector() {
           </p>
         </motion.div>
       </div>
+
+      {/* Always show bottom nav */}
+      <MobileNav />
     </div>
   );
 }
