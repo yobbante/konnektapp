@@ -116,7 +116,8 @@ const App = () => (
             <Route path="/reservation/gp/:gpId" element={<SmartBookingPage />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/client/dashboard" element={<Navigate to="/profil" replace />} />
-            <Route path="/favorites" element={<Favorites />} />
+            <Route path="/favorites" element={<Navigate to="/favoris" replace />} />
+            <Route path="/favoris" element={<Favorites />} />
             <Route path="/favorites/transporters" element={<FavoriteTransporters />} />
             <Route path="/saved-searches" element={<SavedSearches />} />
             <Route path="/settings" element={<Settings />} />

@@ -46,7 +46,11 @@ export function useSmartRedirect() {
       // Only use if less than 30 minutes old
       if (Date.now() - state.timestamp < 30 * 60 * 1000 && state.returnPath) {
         sessionStorage.removeItem("pending_booking_state");
-        return state.returnPath;
+        // Only return path for /envoyer or /offres routes - otherwise redirect to home
+        if (state.returnPath.startsWith("/envoyer") || state.returnPath.startsWith("/offres")) {
+          return state.returnPath;
+        }
+        return null; // Redirect to home for all other paths
       }
     } catch {
       // Invalid state
@@ -90,18 +94,21 @@ export function useSmartRedirect() {
         };
       }
 
-      // 3. Vérifier si l'utilisateur est un GP (transporteur)
+      // 3. Vérifier si l'utilisateur est un GP (transporteur) - check gp_type
       const { data: gpProfile } = await supabase
         .from("gp_profiles")
-        .select("id, status")
+        .select("id, status, gp_type")
         .eq("user_id", userId)
         .maybeSingle();
 
       if (gpProfile) {
-        navigate("/gp/demandes");
+        // Route based on gp_type
+        const isRoutier = gpProfile.gp_type === "routier";
+        const destination = isRoutier ? "/routier/demandes" : "/gp/demandes";
+        navigate(destination);
         return { 
           success: true, 
-          destination: "/gp/demandes", 
+          destination, 
           role: "transporteur" 
         };
       }

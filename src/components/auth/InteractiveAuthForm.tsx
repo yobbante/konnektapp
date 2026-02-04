@@ -132,7 +132,7 @@ export function InteractiveAuthForm({
                 <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
                   <Users className="w-7 h-7 text-primary" />
                 </div>
-                <div className="text-left">
+              <div className="text-left flex-1">
                   <h3 className="font-semibold text-lg">Client</h3>
                   <p className="text-sm text-muted-foreground">
                     Je veux envoyer des colis
@@ -152,7 +152,7 @@ export function InteractiveAuthForm({
                 <div className="w-14 h-14 rounded-xl bg-secondary/10 flex items-center justify-center">
                   <Truck className="w-7 h-7 text-secondary" />
                 </div>
-                <div className="text-left">
+              <div className="text-left flex-1">
                   <h3 className="font-semibold text-lg">Transporteur</h3>
                   <p className="text-sm text-muted-foreground">
                     Je propose mes services
@@ -359,7 +359,30 @@ export function InteractiveAuthForm({
 
               {mode === "login" && (
                 <div className="text-right">
-                  <button type="button" className="text-sm text-primary hover:underline">
+                  <button 
+                    type="button" 
+                    className="text-sm text-primary hover:underline"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      // Show password reset dialog
+                      const email = formData.email;
+                      if (!email || !isValidEmail) {
+                        alert("Veuillez entrer votre email d'abord");
+                        return;
+                      }
+                      import("@/integrations/supabase/client").then(({ supabase }) => {
+                        supabase.auth.resetPasswordForEmail(email, {
+                          redirectTo: `${window.location.origin}/auth`,
+                        }).then(({ error }) => {
+                          if (error) {
+                            alert("Erreur: " + error.message);
+                          } else {
+                            alert("Un email de réinitialisation a été envoyé à " + email);
+                          }
+                        });
+                      });
+                    }}
+                  >
                     Mot de passe oublié ?
                   </button>
                 </div>
