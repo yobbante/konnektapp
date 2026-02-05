@@ -22,6 +22,7 @@ import { ExchangeRatesManager } from "@/components/admin/ExchangeRatesManager";
 import { GPPriceHistoryChart } from "@/components/admin/GPPriceHistoryChart";
 import { AdminInsuranceTiers } from "@/components/admin/AdminInsuranceTiers";
 import { AdminMessageTemplates } from "@/components/admin/AdminMessageTemplates";
+import { AdminAutoMessageTemplates } from "@/components/admin/AdminAutoMessageTemplates";
 import { AdminLogisticsOrdersV2 } from "@/components/admin/AdminLogisticsOrdersV2";
 import { AdminConfigPanel } from "@/components/admin/AdminConfigPanel";
 import { AdminMovingRequestsTab } from "@/components/admin/AdminMovingRequestsTab";

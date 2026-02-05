@@ -25,7 +25,7 @@ N'hésitez pas à poser vos questions ici. Bonne communication ! 🚀`;
 
 /**
  * Message automatique envoyé quand le GP accepte une commande
- * Inclut les informations essentielles pour le dépôt
+ * Format interactif avec boutons et structure claire
  */
 export function generateAcceptanceMessage(
   gpName: string,
@@ -39,45 +39,67 @@ export function generateAcceptanceMessage(
     receptionAddress?: string | null;
   }
 ): string {
-  let message = `✅ **Bonne nouvelle !**
+  const address = gpContactInfo?.depositAddress || gpContactInfo?.receptionAddress;
+  const phone = gpContactInfo?.phone;
+  const whatsapp = gpContactInfo?.whatsapp;
+  
+  // Build structured message
+  let message = `✅ **RÉSERVATION CONFIRMÉE**
 
-${gpName} a accepté votre réservation **${orderNumber}** !
+━━━━━━━━━━━━━━━━━━━━
 
-📦 **Trajet confirmé :** ${originCity} → ${destinationCity}
+🎉 Bonne nouvelle ! ${gpName} a accepté votre demande.
 
----
+📦 **Commande :** ${orderNumber}
+✈️ **Trajet :** ${originCity} → ${destinationCity}
 
-📍 **INFORMATIONS POUR LE DÉPÔT**
+━━━━━━━━━━━━━━━━━━━━
 
+📍 **POINT DE DÉPÔT**
 `;
 
-  // Adresse de dépôt
-  const address = gpContactInfo?.depositAddress || gpContactInfo?.receptionAddress;
   if (address) {
-    message += `🏠 **Adresse de dépôt :**\n${address}\n\n`;
+    // Format address with Waze link
+    const wazeLink = `https://waze.com/ul?q=${encodeURIComponent(address)}`;
+    const googleMapsLink = `https://maps.google.com/?q=${encodeURIComponent(address)}`;
+    
+    message += `
+🏠 ${address}
+
+🗺️ **Ouvrir dans :**
+→ [📍 Waze](${wazeLink})
+→ [🗺️ Google Maps](${googleMapsLink})
+`;
   } else {
-    message += `🏠 **Adresse :** À confirmer avec le transporteur\n\n`;
+    message += `\n🏠 Adresse à confirmer avec le transporteur\n`;
   }
 
-  // Téléphone
-  if (gpContactInfo?.phone) {
-    message += `📞 **Téléphone :** ${gpContactInfo.phone}\n`;
+  message += `\n━━━━━━━━━━━━━━━━━━━━\n\n📞 **CONTACT TRANSPORTEUR**\n`;
+
+  if (phone) {
+    message += `\n📱 Téléphone : ${phone}`;
   }
 
-  // WhatsApp
-  if (gpContactInfo?.whatsapp) {
-    message += `💬 **WhatsApp :** ${gpContactInfo.whatsapp}\n`;
+  if (whatsapp) {
+    const waNumber = whatsapp.replace(/\D/g, '');
+    message += `\n💬 WhatsApp : [Ouvrir WhatsApp](https://wa.me/${waNumber})`;
+  }
+
+  if (!phone && !whatsapp) {
+    message += `\nContactez via cette messagerie`;
   }
 
   message += `
----
 
-⚠️ **Important :**
-• Un QR code sera requis lors de la remise du colis
-• Vous pouvez envoyer une personne de confiance à votre place
-• Conservez bien votre numéro de commande
+━━━━━━━━━━━━━━━━━━━━
 
-💬 N'hésitez pas à discuter ici pour organiser les détails du dépôt avec ${gpName}.`;
+📋 **À RETENIR :**
+
+✓ Un QR code sera requis lors du dépôt
+✓ Vous pouvez envoyer une personne de confiance
+✓ Conservez votre numéro de commande
+
+💡 Discutez ici pour organiser les détails avec ${gpName}.`;
 
   return message;
 }
@@ -166,7 +188,7 @@ export async function createAutoConversationAfterBooking(
 
 /**
  * Envoie un message automatique quand le GP accepte une commande
- * et crée la conversation si elle n'existe pas
+ * Le message est envoyé PAR le GP (sender_type: 'gp') pour être visible par le client
  */
 export async function sendAcceptanceNotification(
   clientId: string,
@@ -184,6 +206,12 @@ export async function sendAcceptanceNotification(
   }
 ): Promise<{ conversationId: string | null; error: string | null }> {
   try {
+    console.log("=== sendAcceptanceNotification START ===");
+    console.log("clientId:", clientId);
+    console.log("gpId:", gpId);
+    console.log("orderId:", orderId);
+    console.log("orderDetails:", orderDetails);
+
     // 1. Chercher ou créer la conversation
     let conversationId: string;
     
@@ -197,6 +225,7 @@ export async function sendAcceptanceNotification(
 
     if (existingConv) {
       conversationId = existingConv.id;
+      console.log("Existing conversation found:", conversationId);
     } else {
       const { data: newConv, error: convError } = await supabase
         .from("conversations")
@@ -209,12 +238,27 @@ export async function sendAcceptanceNotification(
         .single();
 
       if (convError || !newConv) {
+        console.error("Error creating conversation:", convError);
         return { conversationId: null, error: convError?.message || "Erreur création conversation" };
       }
       conversationId = newConv.id;
+      console.log("New conversation created:", conversationId);
     }
 
-    // 2. Générer et envoyer le message d'acceptation
+    // 2. Get GP user_id for proper message insertion
+    const { data: gpProfile, error: gpError } = await supabase
+      .from("gp_profiles")
+      .select("user_id")
+      .eq("id", gpId)
+      .single();
+
+    if (gpError) {
+      console.error("Error fetching GP profile:", gpError);
+    }
+    
+    console.log("GP Profile user_id:", gpProfile?.user_id);
+
+    // 3. Générer et envoyer le message d'acceptation
     const acceptanceMessage = generateAcceptanceMessage(
       orderDetails.gpName,
       orderDetails.orderNumber,
@@ -228,38 +272,33 @@ export async function sendAcceptanceNotification(
       }
     );
 
-    // Get GP user_id for proper message insertion
-    const { data: gpProfile, error: gpError } = await supabase
-      .from("gp_profiles")
-      .select("user_id")
-      .eq("id", gpId)
-      .single();
+    console.log("Acceptance message generated, length:", acceptanceMessage.length);
 
-    if (gpError) {
-      console.error("Error fetching GP profile for acceptance message:", gpError);
-    }
-
+    // IMPORTANT: Le message est envoyé par le GP (sender_type: 'gp')
+    // Cela permet au client de voir le message dans la conversation
     const { error: messageError } = await supabase
       .from("messages")
       .insert({
         conversation_id: conversationId,
         sender_id: gpProfile?.user_id || gpId,
-        sender_type: "gp",
+        sender_type: "gp", // CRITICAL: Must be 'gp' for client to see
         content: acceptanceMessage,
       });
 
     if (messageError) {
       console.error("Error inserting acceptance message:", messageError);
+    } else {
+      console.log("Acceptance message inserted successfully");
     }
 
-    // 3. Mettre à jour last_message_at
+    // 4. Mettre à jour last_message_at
     await supabase
       .from("conversations")
       .update({ last_message_at: new Date().toISOString() })
       .eq("id", conversationId);
 
-    // 4. Créer une notification pour le client
-    await supabase.from("notifications").insert({
+    // 5. Créer une notification pour le client
+    const { error: notifError } = await supabase.from("notifications").insert({
       user_id: clientId,
       type: "order_accepted",
       title: "✅ Commande acceptée !",
@@ -268,6 +307,11 @@ export async function sendAcceptanceNotification(
       related_id: orderId,
     });
 
+    if (notifError) {
+      console.error("Error creating notification:", notifError);
+    }
+
+    console.log("=== sendAcceptanceNotification SUCCESS ===");
     return { conversationId, error: null };
   } catch (error: any) {
     console.error("Acceptance notification error:", error);
