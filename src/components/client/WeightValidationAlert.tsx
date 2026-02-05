@@ -78,7 +78,8 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
   const loadPendingValidations = async () => {
     try {
       // Get orders with weight modifications pending validation
-      // weight_tier_applied is set when GP modifies weight
+      // weight_tier_applied is set when GP modifies weight (stored as string number)
+      // We check for any status that is NOT collected/delivered yet AND has weight_tier_applied set
       const { data: orders, error } = await supabase
         .from("orders")
         .select(`
@@ -90,18 +91,28 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
           gp_id,
           weight_tier_applied,
           insurance_amount,
+          status,
           gp_profiles:gp_id(id, business_name)
         `)
         .eq("client_id", userId)
-        .in("status", ["pending", "accepted"])
         .not("weight_tier_applied", "is", null);
 
       if (error) throw error;
 
+      // Filter to only pending/accepted orders with numeric weight_tier_applied
+      const pendingOrders = (orders || []).filter(order => {
+        // Must be in a status that can receive weight validation
+        if (!["pending", "accepted"].includes(order.status)) return false;
+        // weight_tier_applied must be a valid number string (not just any value)
+        const tierValue = parseFloat(order.weight_tier_applied);
+        return !isNaN(tierValue) && tierValue > 0;
+      });
+
       // Get order IDs to check for already-confirmed validations
-      const orderIds = (orders || []).map(o => o.id);
+      const orderIds = pendingOrders.map(o => o.id);
       if (orderIds.length === 0) {
         setValidations([]);
+        setLoading(false);
         return;
       }
 
@@ -125,7 +136,7 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
       // Build pending validations
       const pendingValidations: WeightValidation[] = [];
       
-      for (const order of orders || []) {
+      for (const order of pendingOrders) {
         if (confirmedOrderIds.has(order.id)) continue;
 
         const declaredWeight = order.weight;

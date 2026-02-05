@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   QrCode, Camera, X, CheckCircle, AlertTriangle,
-  Package, Scale, Truck
+  Package, Scale, Truck, ScanLine
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { QRCameraScanner } from "./QRCameraScanner";
 
 interface ScannedOrder {
   id: string;
@@ -48,6 +49,7 @@ export function QRCodeScanner({ gpId, scanType, onComplete }: QRCodeScannerProps
   const { toast } = useToast();
   const [manualCode, setManualCode] = useState("");
   const [scanning, setScanning] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [scannedOrder, setScannedOrder] = useState<ScannedOrder | null>(null);
   const [showConfirmSheet, setShowConfirmSheet] = useState(false);
@@ -56,6 +58,12 @@ export function QRCodeScanner({ gpId, scanType, onComplete }: QRCodeScannerProps
   const [actualWeight, setActualWeight] = useState<string>("");
   const [weightDifference, setWeightDifference] = useState<number>(0);
   const [adjustmentAmount, setAdjustmentAmount] = useState<number>(0);
+
+  // Handle QR camera scan result
+  const handleCameraScan = (code: string) => {
+    setCameraOpen(false);
+    lookupOrder(code.toUpperCase());
+  };
 
   // Handle manual code entry
   const handleManualSubmit = async () => {
@@ -320,15 +328,26 @@ export function QRCodeScanner({ gpId, scanType, onComplete }: QRCodeScannerProps
             }
           </p>
 
-          {/* Camera scan placeholder - would integrate real QR scanner */}
-          <div className="aspect-square max-w-[200px] mx-auto bg-muted rounded-xl flex items-center justify-center border-2 border-dashed border-muted-foreground/30">
-            <div className="text-center p-4">
-              <Camera className="w-10 h-10 mx-auto text-muted-foreground/50 mb-2" />
-              <p className="text-xs text-muted-foreground">
-                Caméra QR<br/>(Bientôt disponible)
-              </p>
+          {/* Camera scan button - Opens real QR scanner */}
+          <Button
+            variant="outline"
+            className="w-full h-24 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-primary/50 bg-primary/5 hover:bg-primary/10"
+            onClick={() => setCameraOpen(true)}
+          >
+            <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
+              <ScanLine className="w-6 h-6 text-primary" />
             </div>
-          </div>
+            <span className="text-sm font-medium text-primary">
+              Ouvrir la caméra QR
+            </span>
+          </Button>
+
+          {/* QR Camera Scanner Modal */}
+          <QRCameraScanner
+            isOpen={cameraOpen}
+            onScan={handleCameraScan}
+            onClose={() => setCameraOpen(false)}
+          />
 
           {/* Manual entry */}
           <div className="space-y-2">
