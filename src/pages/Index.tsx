@@ -60,17 +60,30 @@ function IndexContent() {
         setUserName(profile.full_name);
       }
 
-      // Load recent orders
+      // Load recent orders with logistics options
       const { data: orders } = await supabase
         .from("orders")
-        .select("id, origin_city, destination_city, weight, status, order_number, total_price, currency, pickup_date, destination_country, origin_country")
+        .select(`
+          id, origin_city, destination_city, weight, status, order_number, 
+          total_price, currency, pickup_date, destination_country, origin_country,
+          order_logistics_options (
+            pickup_enabled, delivery_enabled, pickup_address, delivery_address,
+            pickup_contact_name, delivery_contact_name
+          )
+        `)
         .eq("client_id", userId)
         .order("created_at", { ascending: false })
         .limit(5);
       if (orders) {
-        setRecentOrders(orders);
+        // Flatten logistics_options for easier access
+        const ordersWithLogistics = orders.map(o => ({
+          ...o,
+          logistics_options: o.order_logistics_options || null,
+          has_internal_logistics: !!(o.order_logistics_options?.pickup_enabled || o.order_logistics_options?.delivery_enabled)
+        }));
+        setRecentOrders(ordersWithLogistics);
         // Count active orders
-        const active = orders.filter(o => 
+        const active = ordersWithLogistics.filter(o => 
           ['pending', 'accepted', 'collected', 'in_transit'].includes(o.status)
         ).length;
         setActiveOrdersCount(active);
