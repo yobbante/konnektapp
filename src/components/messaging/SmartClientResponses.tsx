@@ -22,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { formatInsuranceDual, loadExchangeRates, type ExchangeRate } from "@/lib/currencyUtils";
+import { formatInsuranceDual, loadExchangeRates, getInsuranceInGpCurrency, type ExchangeRate } from "@/lib/currencyUtils";
 
 interface OrderContext {
   id: string;
@@ -336,28 +336,67 @@ export function SmartClientResponses({
     setSelectedId(response.id);
     setLoading(true);
     
-    // Send the client message
-    onSelectMessage(response.message);
+    // Send the client message first
+    const clientMessage = response.message;
+    onSelectMessage(clientMessage);
     
-    // Generate smart response based on context
-    if (onAutoResponse && orderContext) {
+    // Wait a moment then insert client message and generate auto-response
+    setTimeout(async () => {
       try {
-        const autoResponse = await response.getResponse(orderContext);
-        setTimeout(() => {
-          onAutoResponse(autoResponse);
-          setLoading(false);
-        }, 800);
+        // Insert client message
+        await supabase.from("messages").insert({
+          conversation_id: conversationId,
+          sender_id: currentUserId,
+          sender_type: "client",
+          content: clientMessage,
+        });
+        
+        // Generate and insert auto-response
+        if (orderContext) {
+          const autoResponse = await response.getResponse(orderContext);
+          
+          // Insert as system response
+          await supabase.from("messages").insert({
+            conversation_id: conversationId,
+            sender_id: "00000000-0000-0000-0000-000000000000", // System ID
+            sender_type: "system",
+            content: `🤖 **Réponse automatique**\n\n${autoResponse}`,
+          });
+          
+          // Update conversation last_message_at
+          await supabase.from("conversations")
+            .update({ last_message_at: new Date().toISOString() })
+            .eq("id", conversationId);
+          
+          if (onAutoResponse) {
+            onAutoResponse(autoResponse);
+          }
+        } else {
+          // No order context
+          const fallbackResponse = "📋 Nous n'avons pas trouvé de commande associée à cette conversation. Veuillez préciser votre demande ou contacter le support.";
+          
+          await supabase.from("messages").insert({
+            conversation_id: conversationId,
+            sender_id: "00000000-0000-0000-0000-000000000000",
+            sender_type: "system",
+            content: `🤖 ${fallbackResponse}`,
+          });
+          
+          if (onAutoResponse) {
+            onAutoResponse(fallbackResponse);
+          }
+        }
+        
+        setLoading(false);
       } catch (error) {
-        console.error("Error generating response:", error);
+        console.error("Error sending auto-response:", error);
+        // Fallback - just notify via callback
+        if (onAutoResponse) {
+          onAutoResponse("Une erreur est survenue. Veuillez réessayer.");
+        }
         setLoading(false);
       }
-    } else if (onAutoResponse) {
-      // No order context - fallback response
-      setTimeout(() => {
-        onAutoResponse("📋 Nous n'avons pas trouvé de commande associée à cette conversation. Veuillez préciser votre demande ou contacter le support.");
-        setLoading(false);
-      }, 500);
-    }
+    }, 500);
     
     setTimeout(() => setSelectedId(null), 2500);
   };

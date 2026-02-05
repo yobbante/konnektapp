@@ -145,7 +145,10 @@ export function InteractiveAuthForm({
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={onTransporterSelect}
+              onClick={() => {
+                // Navigate directly to registration without requiring login
+                window.location.href = "/transporteur/inscription";
+              }}
               className="w-full p-5 rounded-2xl border-2 border-border bg-card hover:border-secondary hover:bg-secondary/5 transition-all"
             >
               <div className="flex items-center gap-4">
