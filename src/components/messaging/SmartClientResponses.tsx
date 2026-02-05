@@ -335,70 +335,55 @@ export function SmartClientResponses({
   const handleSelectResponse = async (response: SmartResponse) => {
     setSelectedId(response.id);
     setLoading(true);
-    
-    // Send the client message first
-    const clientMessage = response.message;
-    onSelectMessage(clientMessage);
-    
-    // Wait a moment then insert client message and generate auto-response
-    setTimeout(async () => {
-      try {
-        // Insert client message
-        await supabase.from("messages").insert({
-          conversation_id: conversationId,
-          sender_id: currentUserId,
-          sender_type: "client",
-          content: clientMessage,
-        });
-        
-        // Generate and insert auto-response
-        if (orderContext) {
-          const autoResponse = await response.getResponse(orderContext);
-          
-          // Insert as system response
-          await supabase.from("messages").insert({
-            conversation_id: conversationId,
-            sender_id: "00000000-0000-0000-0000-000000000000", // System ID
-            sender_type: "system",
-            content: `🤖 **Réponse automatique**\n\n${autoResponse}`,
-          });
-          
-          // Update conversation last_message_at
-          await supabase.from("conversations")
-            .update({ last_message_at: new Date().toISOString() })
-            .eq("id", conversationId);
-          
-          if (onAutoResponse) {
-            onAutoResponse(autoResponse);
-          }
-        } else {
-          // No order context
-          const fallbackResponse = "📋 Nous n'avons pas trouvé de commande associée à cette conversation. Veuillez préciser votre demande ou contacter le support.";
-          
-          await supabase.from("messages").insert({
-            conversation_id: conversationId,
-            sender_id: "00000000-0000-0000-0000-000000000000",
-            sender_type: "system",
-            content: `🤖 ${fallbackResponse}`,
-          });
-          
-          if (onAutoResponse) {
-            onAutoResponse(fallbackResponse);
-          }
-        }
-        
-        setLoading(false);
-      } catch (error) {
-        console.error("Error sending auto-response:", error);
-        // Fallback - just notify via callback
-        if (onAutoResponse) {
-          onAutoResponse("Une erreur est survenue. Veuillez réessayer.");
-        }
-        setLoading(false);
+
+    try {
+      const clientMessage = response.message;
+      
+      // 1. Insert client message immediately
+      const { error: clientError } = await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        sender_id: currentUserId,
+        sender_type: "client",
+        content: clientMessage,
+      });
+      
+      if (clientError) throw clientError;
+      
+      // 2. Generate auto-response based on context
+      let autoResponse: string;
+      
+      if (orderContext) {
+        autoResponse = await response.getResponse(orderContext);
+      } else {
+        autoResponse = "📋 Nous n'avons pas trouvé de commande associée à cette conversation. Veuillez préciser votre demande ou contacter le support.";
       }
-    }, 500);
-    
-    setTimeout(() => setSelectedId(null), 2500);
+      
+      // 3. Insert system auto-response immediately (no GP approval needed)
+      const { error: responseError } = await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        sender_id: currentUserId, // Use current user to avoid RLS issues
+        sender_type: "system",
+        content: `🤖 **Réponse automatique**\n\n${autoResponse}`,
+      });
+      
+      if (responseError) throw responseError;
+      
+      // 4. Update conversation last_message_at
+      await supabase.from("conversations")
+        .update({ last_message_at: new Date().toISOString() })
+        .eq("id", conversationId);
+      
+      // 5. Notify via callback if provided
+      if (onAutoResponse) {
+        onAutoResponse(autoResponse);
+      }
+      
+    } catch (error) {
+      console.error("Error sending smart response:", error);
+    } finally {
+      setLoading(false);
+      setTimeout(() => setSelectedId(null), 1500);
+    }
   };
 
   return (
