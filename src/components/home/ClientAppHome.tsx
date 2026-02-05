@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { WeightCorrectionAlert } from "@/components/client/WeightCorrectionAlert";
+import { WeightValidationAlert } from "@/components/client/WeightValidationAlert";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ClientAppHomeProps {
@@ -123,10 +123,10 @@ export function ClientAppHome({
         </h1>
       </motion.div>
 
-      {/* Weight Correction Alerts */}
+      {/* Weight Validation Alerts - PRV Compliant, Non-dismissible */}
       {userId && (
         <div className="px-4">
-          <WeightCorrectionAlert userId={userId} />
+          <WeightValidationAlert userId={userId} />
         </div>
       )}
 

@@ -145,62 +145,93 @@ export function QRCodeScanner({ gpId, scanType, onComplete }: QRCodeScannerProps
   }, [actualWeight, scannedOrder]);
 
   // Confirm deposit
+  // PRV RULE: If weight is modified, freeze order until client validates
   const confirmDeposit = async () => {
     if (!scannedOrder) return;
     
     setLoading(true);
     try {
       const actual = parseFloat(actualWeight) || scannedOrder.weight;
-      const newTotal = scannedOrder.total_price + adjustmentAmount;
-
-      // Update order
-      const { error: updateError } = await supabase
-        .from("orders")
-        .update({
-          status: "collected",
-          weight: actual,
-          total_price: newTotal > 0 ? newTotal : scannedOrder.total_price,
-        })
-        .eq("id", scannedOrder.id);
-
-      if (updateError) throw updateError;
-
-      // Add status history
+      const hasWeightChange = Math.abs(weightDifference) > 0.01;
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from("order_status_history").insert({
-          order_id: scannedOrder.id,
-          status: "collected",
-          changed_by: user.id,
-          changed_by_type: "gp",
-          notes: weightDifference !== 0 
-            ? `Poids ajusté: ${scannedOrder.weight}kg → ${actual}kg (${weightDifference > 0 ? '+' : ''}${weightDifference}kg)`
-            : "Colis reçu confirmé par scan QR",
+
+      if (hasWeightChange) {
+        // PRV: FREEZE ORDER - Don't change status to collected yet
+        // Set weight_tier_applied as flag for pending validation (as string to match column type)
+        const { error: updateError } = await supabase
+          .from("orders")
+          .update({
+            weight_tier_applied: actual.toString(), // Store actual weight for validation
+            // Keep status as-is (accepted/pending) - DON'T set to collected
+          })
+          .eq("id", scannedOrder.id);
+
+        if (updateError) throw updateError;
+
+        // Log the weight modification requiring validation
+        if (user) {
+          await supabase.from("order_status_history").insert({
+            order_id: scannedOrder.id,
+            status: scannedOrder.status as any, // Keep current status
+            changed_by: user.id,
+            changed_by_type: "gp",
+            notes: `⚠️ POIDS MODIFIÉ - EN ATTENTE VALIDATION CLIENT: ${scannedOrder.weight} kg → ${actual} kg. Différence prix poids: ${adjustmentAmount > 0 ? '+' : ''}${adjustmentAmount} ${scannedOrder.currency}`,
+          });
+        }
+
+        // Create CRITICAL notification for client
+        await supabase.from("notifications").insert({
+          user_id: scannedOrder.client_id,
+          type: "weight_validation_required",
+          title: "⚠️ Validation requise - Modification de poids",
+          message: `Le transporteur a mesuré un poids différent pour ${scannedOrder.order_number}. Veuillez valider ou refuser depuis votre espace.`,
+          related_type: "order",
+          related_id: scannedOrder.id,
+        });
+
+        toast({
+          title: "⚠️ Poids modifié",
+          description: "En attente de validation client. Le colis ne peut pas encore être pris en charge.",
+          variant: "default",
+        });
+      } else {
+        // No weight change - proceed normally to collected
+        const { error: updateError } = await supabase
+          .from("orders")
+          .update({
+            status: "collected",
+            weight: actual,
+          })
+          .eq("id", scannedOrder.id);
+
+        if (updateError) throw updateError;
+
+        // Add status history
+        if (user) {
+          await supabase.from("order_status_history").insert({
+            order_id: scannedOrder.id,
+            status: "collected",
+            changed_by: user.id,
+            changed_by_type: "gp",
+            notes: "Colis reçu confirmé par scan QR - Poids vérifié conforme",
+          });
+        }
+
+        // Create notification for client
+        await supabase.from("notifications").insert({
+          user_id: scannedOrder.client_id,
+          type: "order_update",
+          title: "📦 Colis reçu",
+          message: `Votre colis ${scannedOrder.order_number} a été reçu par le transporteur`,
+          related_type: "order",
+          related_id: scannedOrder.id,
+        });
+
+        toast({
+          title: "✅ Colis confirmé",
+          description: "Statut mis à jour: Colis reçu",
         });
       }
-
-      // TODO: Handle wallet adjustment for weight difference
-      if (adjustmentAmount !== 0) {
-        console.log("Wallet adjustment needed:", adjustmentAmount);
-        // This would credit/debit the client's wallet
-      }
-
-      // Create notification for client
-      await supabase.from("notifications").insert({
-        user_id: scannedOrder.client_id,
-        type: "order_update",
-        title: "📦 Colis reçu",
-        message: `Votre colis ${scannedOrder.order_number} a été reçu par le transporteur`,
-        related_type: "order",
-        related_id: scannedOrder.id,
-      });
-
-      toast({
-        title: "✅ Colis confirmé",
-        description: weightDifference !== 0 
-          ? `Poids ajusté: ${actual}kg (${adjustmentAmount > 0 ? '+' : ''}${adjustmentAmount} ${getCurrencySymbol(scannedOrder.currency)})`
-          : "Statut mis à jour: Colis reçu",
-      });
 
       setShowConfirmSheet(false);
       setScannedOrder(null);
