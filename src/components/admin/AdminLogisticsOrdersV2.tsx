@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import { 
   Truck, Package, MapPin, Phone, Clock, CheckCircle, 
   XCircle, RefreshCw, Search, Filter, User, QrCode,
-  ArrowRight, Calendar, Bell, AlertTriangle
+  ArrowRight, Calendar, Bell, AlertTriangle, MessageSquare,
+  Navigation, ExternalLink, Copy, PhoneCall, Send
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
@@ -77,6 +81,21 @@ const STATUS_LABELS: Record<string, { label: string; color: string; icon: any }>
   failed: { label: "Échec", color: "bg-destructive/10 text-destructive", icon: XCircle },
 };
 
+// Workflow progress mapping
+const PICKUP_PROGRESS: Record<string, number> = {
+  pending: 0,
+  scheduled: 33,
+  collected: 66,
+  handed_to_gp: 100,
+};
+
+const DELIVERY_PROGRESS: Record<string, number> = {
+  pending: 0,
+  picked_from_gp: 33,
+  in_transit: 66,
+  delivered: 100,
+};
+
 /**
  * AdminLogisticsOrdersV2 - V1.1 Enhanced Admin Logistics Management
  * 
@@ -97,6 +116,8 @@ export function AdminLogisticsOrdersV2({ compact = false }: AdminLogisticsOrders
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<MissionTab>("all");
   const [selectedOrder, setSelectedOrder] = useState<LogisticsOrder | null>(null);
+  const [adminNote, setAdminNote] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -261,7 +282,82 @@ export function AdminLogisticsOrdersV2({ compact = false }: AdminLogisticsOrders
         related_type: "order",
         related_id: order.order_id,
       });
+
+      // Also notify GP if relevant
+      if (order.order?.gp_id && (status === "collected" || status === "picked_from_gp")) {
+        const { data: gpData } = await supabase
+          .from("gp_profiles")
+          .select("user_id")
+          .eq("id", order.order.gp_id)
+          .single();
+        
+        if (gpData?.user_id) {
+          await supabase.from("notifications").insert({
+            user_id: gpData.user_id,
+            type: "logistics_update",
+            title: notification.title,
+            message: `Commande ${order.order?.order_number}: ${notification.message}`,
+            related_type: "order",
+            related_id: order.order_id,
+          });
+        }
+      }
     }
+  };
+
+  // Send message to client via conversation
+  const sendClientMessage = async (order: LogisticsOrder, message: string) => {
+    if (!message.trim()) return;
+    
+    setSendingMessage(true);
+    try {
+      // Find or create conversation
+      const { data: conv } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("order_id", order.order_id)
+        .single();
+      
+      if (conv) {
+        // Send message as GP (system message style)
+        await supabase.from("messages").insert({
+          conversation_id: conv.id,
+          sender_id: order.order?.gp_id || "",
+          sender_type: "gp",
+          content: `📦 LOGISTIQUE YOBBANTÉ:\n${message}`,
+        });
+        
+        toast({ title: "✅ Message envoyé au client" });
+        setAdminNote("");
+      } else {
+        toast({ title: "Conversation non trouvée", variant: "destructive" });
+      }
+    } catch (err) {
+      console.error("Error sending message:", err);
+      toast({ title: "Erreur d'envoi", variant: "destructive" });
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
+  // Copy to clipboard helper
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: `${label} copié !` });
+  };
+
+  // Open WhatsApp
+  const openWhatsApp = (phone: string, message?: string) => {
+    const cleanPhone = phone.replace(/\D/g, "");
+    const url = message 
+      ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`
+      : `https://wa.me/${cleanPhone}`;
+    window.open(url, "_blank");
+  };
+
+  // Open Maps
+  const openMaps = (address: string) => {
+    window.open(`https://maps.google.com/?q=${encodeURIComponent(address)}`, "_blank");
   };
 
   // Filter orders by tab
@@ -658,6 +754,11 @@ export function AdminLogisticsOrdersV2({ compact = false }: AdminLogisticsOrders
                                     <CardTitle className="text-sm flex items-center gap-2">
                                       <Package className="w-4 h-4 text-primary" />
                                       Enlèvement (Origine)
+                                      <div className="flex-1" />
+                                      <Progress 
+                                        value={PICKUP_PROGRESS[order.pickup_status || "pending"]} 
+                                        className="w-20 h-2"
+                                      />
                                     </CardTitle>
                                   </CardHeader>
                                   <CardContent className="space-y-3">
@@ -668,14 +769,48 @@ export function AdminLogisticsOrdersV2({ compact = false }: AdminLogisticsOrders
                                       </div>
                                       <div>
                                         <p className="text-xs text-muted-foreground">Téléphone</p>
-                                        <a href={`tel:${order.pickup_phone}`} className="font-medium text-primary">
-                                          {order.pickup_phone}
-                                        </a>
+                                        <div className="flex items-center gap-1">
+                                          <a href={`tel:${order.pickup_phone}`} className="font-medium text-primary">
+                                            {order.pickup_phone}
+                                          </a>
+                                          {order.pickup_whatsapp && (
+                                            <Button
+                                              size="icon"
+                                              variant="ghost"
+                                              className="h-6 w-6"
+                                              onClick={() => openWhatsApp(order.pickup_whatsapp!, `Bonjour, je suis l'agent Yobbanté pour l'enlèvement de votre colis ${order.order?.order_number}`)}
+                                            >
+                                              <MessageSquare className="w-3 h-3 text-green-600" />
+                                            </Button>
+                                          )}
+                                        </div>
                                       </div>
                                     </div>
                                     <div>
                                       <p className="text-xs text-muted-foreground">Adresse</p>
-                                      <p className="text-sm">{order.pickup_address}</p>
+                                      <div className="flex items-center gap-2">
+                                        <p className="text-sm flex-1">{order.pickup_address}</p>
+                                        {order.pickup_address && (
+                                          <div className="flex gap-1">
+                                            <Button
+                                              size="icon"
+                                              variant="ghost"
+                                              className="h-6 w-6"
+                                              onClick={() => copyToClipboard(order.pickup_address!, "Adresse")}
+                                            >
+                                              <Copy className="w-3 h-3" />
+                                            </Button>
+                                            <Button
+                                              size="icon"
+                                              variant="ghost"
+                                              className="h-6 w-6"
+                                              onClick={() => openMaps(order.pickup_address!)}
+                                            >
+                                              <Navigation className="w-3 h-3 text-blue-500" />
+                                            </Button>
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
                                     <div>
                                       <p className="text-xs text-muted-foreground">Créneau</p>
@@ -683,14 +818,28 @@ export function AdminLogisticsOrdersV2({ compact = false }: AdminLogisticsOrders
                                     </div>
                                     
                                     {/* Status Actions */}
-                                    <div className="flex gap-2 pt-2">
+                                    <Separator className="my-2" />
+                                    <div className="flex flex-wrap gap-2 pt-1">
                                       {order.pickup_status === "pending" && (
-                                        <Button 
-                                          size="sm" 
-                                          onClick={() => updateStatus(order.id, "pickup", "scheduled")}
-                                        >
-                                          Programmer
-                                        </Button>
+                                        <>
+                                          <Button 
+                                            size="sm" 
+                                            onClick={() => updateStatus(order.id, "pickup", "scheduled")}
+                                          >
+                                            <Calendar className="w-3 h-3 mr-1" />
+                                            Programmer
+                                          </Button>
+                                          {order.pickup_phone && (
+                                            <Button 
+                                              size="sm" 
+                                              variant="outline"
+                                              onClick={() => window.open(`tel:${order.pickup_phone}`, "_self")}
+                                            >
+                                              <PhoneCall className="w-3 h-3 mr-1" />
+                                              Appeler
+                                            </Button>
+                                          )}
+                                        </>
                                       )}
                                       {order.pickup_status === "scheduled" && (
                                         <Button 
@@ -723,6 +872,11 @@ export function AdminLogisticsOrdersV2({ compact = false }: AdminLogisticsOrders
                                     <CardTitle className="text-sm flex items-center gap-2">
                                       <Truck className="w-4 h-4 text-success" />
                                       Livraison Dernier Km
+                                      <div className="flex-1" />
+                                      <Progress 
+                                        value={DELIVERY_PROGRESS[order.delivery_status || "pending"]} 
+                                        className="w-20 h-2"
+                                      />
                                     </CardTitle>
                                   </CardHeader>
                                   <CardContent className="space-y-3">
@@ -733,14 +887,48 @@ export function AdminLogisticsOrdersV2({ compact = false }: AdminLogisticsOrders
                                       </div>
                                       <div>
                                         <p className="text-xs text-muted-foreground">Téléphone</p>
-                                        <a href={`tel:${order.delivery_phone}`} className="font-medium text-primary">
-                                          {order.delivery_phone}
-                                        </a>
+                                        <div className="flex items-center gap-1">
+                                          <a href={`tel:${order.delivery_phone}`} className="font-medium text-primary">
+                                            {order.delivery_phone}
+                                          </a>
+                                          {order.delivery_whatsapp && (
+                                            <Button
+                                              size="icon"
+                                              variant="ghost"
+                                              className="h-6 w-6"
+                                              onClick={() => openWhatsApp(order.delivery_whatsapp!, `Bonjour, je suis l'agent Yobbanté pour la livraison de votre colis ${order.order?.order_number}`)}
+                                            >
+                                              <MessageSquare className="w-3 h-3 text-green-600" />
+                                            </Button>
+                                          )}
+                                        </div>
                                       </div>
                                     </div>
                                     <div>
                                       <p className="text-xs text-muted-foreground">Adresse de livraison</p>
-                                      <p className="text-sm">{order.delivery_address}</p>
+                                      <div className="flex items-center gap-2">
+                                        <p className="text-sm flex-1">{order.delivery_address}</p>
+                                        {order.delivery_address && (
+                                          <div className="flex gap-1">
+                                            <Button
+                                              size="icon"
+                                              variant="ghost"
+                                              className="h-6 w-6"
+                                              onClick={() => copyToClipboard(order.delivery_address!, "Adresse")}
+                                            >
+                                              <Copy className="w-3 h-3" />
+                                            </Button>
+                                            <Button
+                                              size="icon"
+                                              variant="ghost"
+                                              className="h-6 w-6"
+                                              onClick={() => openMaps(order.delivery_address!)}
+                                            >
+                                              <Navigation className="w-3 h-3 text-blue-500" />
+                                            </Button>
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
                                     {order.delivery_instructions && (
                                       <div>
@@ -751,21 +939,42 @@ export function AdminLogisticsOrdersV2({ compact = false }: AdminLogisticsOrders
 
                                     {/* GP Location for pickup */}
                                     {isAwaitingAdminDelivery && order.order?.gp_profiles && (
-                                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                                        <p className="text-xs font-medium text-blue-800 mb-1">📍 Récupérer chez GP</p>
-                                        <p className="text-sm text-blue-700">{order.order.gp_profiles.business_name}</p>
+                                      <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <p className="text-xs font-medium text-primary">📍 Récupérer chez GP</p>
+                                          {order.order.gp_profiles.reception_address && (
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              className="h-6 px-2"
+                                              onClick={() => openMaps(order.order!.gp_profiles!.reception_address!)}
+                                            >
+                                              <Navigation className="w-3 h-3 mr-1" />
+                                              Itinéraire
+                                            </Button>
+                                          )}
+                                        </div>
+                                        <p className="text-sm font-medium">{order.order.gp_profiles.business_name}</p>
                                         {order.order.gp_profiles.reception_address && (
-                                          <p className="text-xs text-blue-600">{order.order.gp_profiles.reception_address}</p>
+                                          <p className="text-xs text-muted-foreground">{order.order.gp_profiles.reception_address}</p>
                                         )}
                                         {order.order.gp_profiles.phone && (
-                                          <a href={`tel:${order.order.gp_profiles.phone}`} className="text-xs text-blue-600 underline">
-                                            {order.order.gp_profiles.phone}
-                                          </a>
+                                          <div className="flex items-center gap-2 mt-2">
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => window.open(`tel:${order.order?.gp_profiles?.phone}`, "_self")}
+                                            >
+                                              <PhoneCall className="w-3 h-3 mr-1" />
+                                              Appeler GP
+                                            </Button>
+                                          </div>
                                         )}
                                       </div>
                                     )}
                                     
                                     {/* Status Actions */}
+                                    <Separator className="my-2" />
                                     <div className="flex flex-col gap-2 pt-2">
                                       {(isAwaitingAdminDelivery || order.delivery_status === "pending") && (
                                         <Button 
@@ -797,6 +1006,32 @@ export function AdminLogisticsOrdersV2({ compact = false }: AdminLogisticsOrders
                                           Livré au destinataire
                                         </Button>
                                       )}
+                                    </div>
+
+                                    {/* Quick Message to Client */}
+                                    <div className="pt-3 border-t mt-3">
+                                      <p className="text-xs font-medium mb-2 flex items-center gap-1">
+                                        <MessageSquare className="w-3 h-3" />
+                                        Message rapide au client
+                                      </p>
+                                      <div className="flex gap-2">
+                                        <Textarea
+                                          placeholder="Ex: En route pour la livraison..."
+                                          value={adminNote}
+                                          onChange={(e) => setAdminNote(e.target.value)}
+                                          className="text-sm min-h-[60px]"
+                                        />
+                                      </div>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="w-full mt-2"
+                                        disabled={sendingMessage || !adminNote.trim()}
+                                        onClick={() => sendClientMessage(order, adminNote)}
+                                      >
+                                        <Send className="w-3 h-3 mr-1" />
+                                        {sendingMessage ? "Envoi..." : "Envoyer"}
+                                      </Button>
                                     </div>
                                   </CardContent>
                                 </Card>

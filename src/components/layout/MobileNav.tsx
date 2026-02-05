@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, Search, Send, MessageCircle, User, BarChart3, Package } from "lucide-react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useRef, useCallback, useEffect, useState } from "react";
@@ -93,9 +94,13 @@ export function MobileNav() {
                 onClick={(e) => handleNavClick(e, item)}
                 className="flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors relative"
               >
-                <div className="w-12 h-12 -mt-4 rounded-full bg-primary shadow-lg flex items-center justify-center">
+                <motion.div 
+                  className="w-12 h-12 -mt-4 rounded-full bg-primary shadow-lg flex items-center justify-center"
+                  whileTap={{ scale: 0.9 }}
+                  whileHover={{ scale: 1.05 }}
+                >
                   <item.icon className="w-6 h-6 text-primary-foreground" />
-                </div>
+                </motion.div>
                 <span className="text-[10px] font-medium text-primary">{item.label}</span>
               </Link>
             );
@@ -112,15 +117,41 @@ export function MobileNav() {
                 isActive && "text-primary"
               )}
             >
-              <div className="relative">
-                <item.icon className={cn("w-5 h-5", isActive && "text-primary")} />
+              <motion.div 
+                className="relative"
+                whileTap={{ scale: 0.85 }}
+                animate={isActive ? { y: -2 } : { y: 0 }}
+              >
+                <motion.div
+                  animate={isActive ? { scale: 1.1 } : { scale: 1 }}
+                  transition={{ type: "spring", stiffness: 500 }}
+                >
+                  <item.icon className={cn("w-5 h-5", isActive && "text-primary")} />
+                </motion.div>
                 {item.showBadge && unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                  <motion.span 
+                    className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 500 }}
+                  >
                     {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
+                  </motion.span>
                 )}
-              </div>
-              <span className={cn("text-[10px] font-medium", isActive && "text-primary")}>{item.label}</span>
+              </motion.div>
+              <motion.span 
+                className={cn("text-[10px] font-medium", isActive && "text-primary")}
+                animate={isActive ? { fontWeight: 600 } : { fontWeight: 500 }}
+              >
+                {item.label}
+              </motion.span>
+              {isActive && (
+                <motion.div
+                  layoutId="nav-indicator"
+                  className="absolute bottom-1 w-1 h-1 rounded-full bg-primary"
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                />
+              )}
             </Link>
           );
         })}
@@ -160,17 +191,32 @@ export function GPMobileNav({ activeTab, onTabChange }: GPMobileNavProps) {
         {gpNavItems.map((item) => {
           const isActive = activeTab === item.tab;
           return (
-            <button
+            <motion.button
               key={item.tab}
               onClick={() => handleTabClick(item)}
+              whileTap={{ scale: 0.9 }}
               className={cn(
                 "flex flex-col items-center justify-center flex-1 h-full gap-1 text-muted-foreground transition-colors",
                 isActive && "text-primary"
               )}
             >
-              <item.icon className={cn("w-5 h-5", isActive && "text-primary")} />
-              <span className={cn("text-[10px] font-medium", isActive && "text-primary")}>{item.label}</span>
-            </button>
+              <motion.div
+                animate={isActive ? { scale: 1.1, y: -2 } : { scale: 1, y: 0 }}
+                transition={{ type: "spring", stiffness: 500 }}
+              >
+                <item.icon className={cn("w-5 h-5", isActive && "text-primary")} />
+              </motion.div>
+              <span className={cn("text-[10px] font-medium", isActive && "text-primary")}>
+                {item.label}
+              </span>
+              {isActive && (
+                <motion.div
+                  layoutId="gp-nav-indicator"
+                  className="absolute bottom-1 w-1 h-1 rounded-full bg-primary"
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                />
+              )}
+            </motion.button>
           );
         })}
       </div>

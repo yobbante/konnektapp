@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Package, CheckCircle, AlertTriangle, Info,
@@ -113,6 +113,7 @@ export default function SmartBookingPage() {
   const [showEscrow, setShowEscrow] = useState(false);
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
 
   // Data
   const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
@@ -163,23 +164,60 @@ export default function SmartBookingPage() {
   // Load data
   useEffect(() => {
     loadData();
+    restoreBookingState();
   }, [gpId, offerId]);
+
+  // V2: Restore booking state after auth redirect
+  const restoreBookingState = () => {
+    const saved = sessionStorage.getItem("pending_booking_complete");
+    if (!saved) return;
+    
+    try {
+      const state = JSON.parse(saved);
+      // Check if it's for this GP
+      if (state.gpId === gpId && Date.now() - state.timestamp < 30 * 60 * 1000) {
+        // Restore form state
+        if (state.kiloWeight) setKiloWeight(state.kiloWeight);
+        if (state.kiloNatures) setKiloNatures(state.kiloNatures);
+        if (state.autresNature) setAutresNature(state.autresNature);
+        if (state.insuranceChoice) setInsuranceChoice(state.insuranceChoice);
+        if (state.logisticsOptions) setLogisticsOptions(state.logisticsOptions);
+        if (state.acceptedRestrictions) setAcceptedRestrictions(state.acceptedRestrictions);
+        
+        // Restore flat rate quantities
+        if (state.flatRateItems && state.flatRateItems.length > 0) {
+          setFlatRateItems(prev => prev.map(item => {
+            const savedItem = state.flatRateItems.find((s: any) => s.id === item.id);
+            return savedItem ? { ...item, quantity: savedItem.quantity } : item;
+          }));
+        }
+        
+        // Jump to final step
+        setStep(5);
+        
+        // Clean up
+        sessionStorage.removeItem("pending_booking_complete");
+        
+        toast({
+          title: "Réservation restaurée",
+          description: "Finalisez votre paiement pour confirmer",
+        });
+      }
+    } catch {
+      sessionStorage.removeItem("pending_booking_complete");
+    }
+  };
 
   const loadData = async () => {
     try {
       // Check auth
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        sessionStorage.setItem("pending_booking_state", JSON.stringify({
-          gpId,
-          offerId,
-          returnPath: `/reservation/gp/${gpId}${offerId ? `?offer=${offerId}` : ""}`,
-          timestamp: Date.now(),
-        }));
-        navigate("/auth");
-        return;
+      if (user) {
+        setUserId(user.id);
+      } else {
+        // V2: Allow guest browsing - auth required only at final step
+        setIsGuest(true);
       }
-      setUserId(user.id);
 
       if (!gpId) {
         navigate("/offres");
@@ -366,6 +404,30 @@ export default function SmartBookingPage() {
   const handleSubmit = async () => {
     if (!canProceed(4)) {
       toast({ title: "Veuillez accepter les conditions", variant: "destructive" });
+      return;
+    }
+
+    // V2: If guest, require auth now (at the very end)
+    if (isGuest || !userId) {
+      // Save complete booking state for post-auth resume
+      sessionStorage.setItem("pending_booking_complete", JSON.stringify({
+        gpId,
+        offerId,
+        kiloWeight,
+        kiloNatures,
+        autresNature,
+        flatRateItems: flatRateItems.filter(i => i.quantity > 0),
+        insuranceChoice,
+        logisticsOptions,
+        acceptedRestrictions,
+        returnPath: `/reservation/gp/${gpId}${offerId ? `?offer=${offerId}` : ""}`,
+        timestamp: Date.now(),
+      }));
+      toast({
+        title: "Connexion requise",
+        description: "Créez un compte ou connectez-vous pour finaliser votre réservation",
+      });
+      navigate("/auth?returnBooking=true");
       return;
     }
 
