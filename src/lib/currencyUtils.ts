@@ -310,6 +310,21 @@ export interface CurrencyInfo {
   fromFCFA: (amount: number) => number;
 }
 
+/**
+ * Get insurance amount in GP currency for payment/display
+ * V1.3: FCFA is storage only, GP currency is for calculations
+ */
+export function getInsuranceInGpCurrency(
+  insuranceFCFA: number,
+  gpCurrency: string,
+  rates: ExchangeRate[]
+): number {
+  if (!insuranceFCFA || gpCurrency === "XOF" || gpCurrency === "FCFA") {
+    return insuranceFCFA;
+  }
+  return Math.round(convertFromFCFA(insuranceFCFA, gpCurrency, rates) * 100) / 100;
+}
+
 export function createCurrencyInfo(
   gpCurrency: string,
   rates: ExchangeRate[]

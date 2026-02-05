@@ -10,11 +10,8 @@ import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useFavorites } from "@/hooks/useFavorites";
 import { MiniLoader } from "@/components/ui/MiniLoader";
 import { getTransportIcon, getTransportLabel } from "@/lib/transportTypes";
-import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
-import { DualCurrencyCompact } from "@/components/booking/DualCurrencyDisplay";
 
 interface FavoriteOffer {
   id: string;
@@ -39,45 +36,87 @@ export default function Favorites() {
   const navigate = useNavigate();
   const [offers, setOffers] = useState<FavoriteOffer[]>([]);
   const [loading, setLoading] = useState(true);
-  const { favorites, toggleFavorite, isAuthenticated } = useFavorites();
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate("/auth");
-      return;
-    }
-    fetchFavoriteOffers();
-  }, [favorites, isAuthenticated]);
-
-  const fetchFavoriteOffers = async () => {
-    if (favorites.size === 0) {
-      setOffers([]);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
+    const checkAuthAndFetch = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        setLoading(false);
+        navigate("/auth");
+        return;
+      }
+      
+      setUserId(user.id);
+      setIsAuthenticated(true);
+      
+      // Fetch favorites directly
+      const { data: favData, error: favError } = await supabase
+        .from("offer_favorites")
+        .select("offer_id")
+        .eq("user_id", user.id);
+      
+      if (favError) {
+        console.error("Error fetching favorites:", favError);
+        setLoading(false);
+        return;
+      }
+      
+      const favIds = new Set(favData?.map(f => f.offer_id) || []);
+      setFavorites(favIds);
+      
+      if (favIds.size === 0) {
+        setOffers([]);
+        setLoading(false);
+        return;
+      }
+      
+      // Fetch offers
+      const { data: offersData, error: offersError } = await supabase
         .from("gp_offers")
         .select(`
           id, origin_city, origin_country, destination_city, destination_country,
           departure_date, price_per_kg, currency, transport_type, available_capacity, status,
           gp_profiles:gp_id (business_name, rating, verified_at)
         `)
-        .in("id", Array.from(favorites))
+        .in("id", Array.from(favIds))
         .order("departure_date", { ascending: true });
-
-      if (error) throw error;
-      setOffers(data || []);
-    } catch (error) {
-      console.error("Error fetching favorites:", error);
-    } finally {
+      
+      if (offersError) {
+        console.error("Error fetching offers:", offersError);
+      } else {
+        setOffers(offersData || []);
+      }
+      
       setLoading(false);
-    }
-  };
+    };
+    
+    checkAuthAndFetch();
+  }, [navigate]);
 
   const handleRemoveFavorite = async (offerId: string) => {
-    await toggleFavorite(offerId);
+    if (!userId) return;
+    
+    // Optimistic update
+    setFavorites(prev => {
+      const next = new Set(prev);
+      next.delete(offerId);
+      return next;
+    });
+    setOffers(prev => prev.filter(o => o.id !== offerId));
+    
+    const { error } = await supabase
+      .from("offer_favorites")
+      .delete()
+      .eq("user_id", userId)
+      .eq("offer_id", offerId);
+    
+    if (error) {
+      console.error("Error removing favorite:", error);
+    }
   };
 
   const formatDate = (dateStr: string) => {
