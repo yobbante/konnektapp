@@ -30,9 +30,25 @@ export default function MessagesPage() {
     const handleDeepLink = async () => {
       const conversationId = searchParams.get("conversation");
       const orderId = searchParams.get("order");
+      const contactName = searchParams.get("contact");
       
       if (conversationId) {
         setSelectedConversation(conversationId);
+        // Use provided contact name or try to fetch it
+        if (contactName) {
+          setSelectedContactName(decodeURIComponent(contactName));
+        } else {
+          // Fetch contact name from conversation
+          const { data: conv } = await supabase
+            .from("conversations")
+            .select("gp_id, gp_profiles!inner(business_name)")
+            .eq("id", conversationId)
+            .single();
+          
+          if (conv?.gp_profiles) {
+            setSelectedContactName((conv.gp_profiles as any).business_name || "Contact");
+          }
+        }
       } else if (orderId) {
         // Find conversation for this order
         const convId = await findConversationForOrder(orderId);

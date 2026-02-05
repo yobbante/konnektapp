@@ -278,11 +278,20 @@ function ClientTransporterProfileContent() {
     }
   };
 
-  const handleContact = () => {
+  const handleContact = async () => {
     if (!isAuthenticated) {
       navigate("/auth", { state: { returnTo: location.pathname } });
-    } else {
-      navigate("/messages");
+      return;
+    }
+    
+    // Open direct conversation with GP
+    if (gpId) {
+      const { openDirectConversation } = await import("@/lib/directConversation");
+      const result = await openDirectConversation(gpId, navigate);
+      if (!result.success && result.error !== "not_authenticated") {
+        console.error("Failed to open conversation:", result.error);
+        navigate("/messages");
+      }
     }
   };
 
