@@ -52,13 +52,17 @@ export function EscrowPaymentFlow({
       if (!user) throw new Error("Non authentifié");
 
       // Create escrow transaction
+      // IMPORTANT: escrow_transactions.amount is an INTEGER → always store in the smallest currency unit
+      const minorUnitMultiplier = ["XOF", "XAF", "JPY", "KRW"].includes(currency.toUpperCase()) ? 1 : 100;
+      const amountForDb = Math.round(amount * minorUnitMultiplier);
+
       const { data: escrow, error: escrowError } = await supabase
         .from("escrow_transactions")
         .insert({
           order_id: orderId,
           client_id: user.id,
           gp_id: gpId,
-          amount: amount,
+          amount: amountForDb,
           currency: currency,
           status: "held",
           payment_method: selectedMethod,

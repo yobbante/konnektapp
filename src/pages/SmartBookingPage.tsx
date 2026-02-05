@@ -719,7 +719,12 @@ export default function SmartBookingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background" style={{ paddingBottom: 'calc(100px + var(--safe-bottom, 0px))' }}>
+    <div
+      className="min-h-screen bg-background"
+      style={{
+        paddingBottom: `calc(${step === 5 ? 100 : 220}px + var(--safe-bottom, 0px))`,
+      }}
+    >
       <MobileHeader />
 
       <div className="px-4 py-4">
