@@ -23,6 +23,7 @@ import { DualCurrencyDisplay, DualCurrencyCompact, CurrencyInfoBanner } from "@/
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { convertFromFCFA, loadExchangeRates, type ExchangeRate } from "@/lib/currencyUtils";
 import { createAutoConversationAfterBooking } from "@/lib/autoChat";
+import { normalizeDecimalInput, parseDecimalInput, roundTo2Decimals, formatDecimalDisplay, roundForDatabase } from "@/lib/decimalUtils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -302,8 +303,10 @@ export default function SmartBookingPage() {
 
   // Calculate totals - TARIFICATION V2 avec paliers de poids
   // Formule: Prix = getWeightPrice(Poids) + Σ(Quantité × Prix forfaitaire) + Assurance + Logistique
+  // V3: Support des décimales à 2 chiffres
   const calculations = useMemo(() => {
-    const weight = parseFloat(kiloWeight) || 0;
+    // V3: Parse avec support virgule/point
+    const weight = parseDecimalInput(kiloWeight);
     
     // V2: Tarification par paliers
     // Trouve le palier correspondant au poids, sinon utilise le prix de l'offre
@@ -319,12 +322,13 @@ export default function SmartBookingPage() {
       }
     }
     
-    const kiloTotal = Math.round(weight * pricePerKg);
+    // V3: Calcul avec 2 décimales, arrondi seulement à la fin
+    const kiloTotal = roundTo2Decimals(weight * pricePerKg);
 
     const flatRateTotal = flatRateItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const flatRateCount = flatRateItems.reduce((sum, item) => sum + item.quantity, 0);
 
-    const transportTotal = kiloTotal + flatRateTotal;
+    const transportTotal = roundTo2Decimals(kiloTotal + flatRateTotal);
     
     // Add insurance if selected
     const insuranceTotal = insuranceChoice.hasInsurance ? insuranceChoice.insuranceAmount : 0;
@@ -332,7 +336,8 @@ export default function SmartBookingPage() {
     // Add logistics if enabled
     const logisticsTotal = logisticsOptions.totalLogisticsPrice;
     
-    const grandTotal = transportTotal + insuranceTotal + logisticsTotal;
+    // V3: grandTotal garde les décimales
+    const grandTotal = roundTo2Decimals(transportTotal + insuranceTotal + logisticsTotal);
 
     return {
       weight,
@@ -482,8 +487,9 @@ export default function SmartBookingPage() {
           destination_city: offer.destination_city,
           destination_country: offer.destination_country,
           price_per_kg: offer.price_per_kg,
-          weight: calculations.weight || 0,
-         total_price: Math.round(displayGrandTotal),
+          weight: roundTo2Decimals(calculations.weight) || 0,
+          // V3: Arrondi à l'entier uniquement pour la DB
+          total_price: roundForDatabase(displayGrandTotal),
           currency: offer.currency,
           status: "pending" as const,
           logistics_status: "submitted",
@@ -491,7 +497,7 @@ export default function SmartBookingPage() {
           description: buildOrderDescription(),
           // Insurance fields
           has_insurance: insuranceChoice.hasInsurance,
-          insurance_amount: Math.round(displayInsuranceAmount || 0), // Integer - arrondi obligatoire
+          insurance_amount: roundForDatabase(displayInsuranceAmount || 0),
           insurance_tier_id: insuranceChoice.tierId,
           declared_value: insuranceChoice.declaredValue || null,
           content_nature: kiloNatures,
@@ -663,11 +669,11 @@ export default function SmartBookingPage() {
   /**
    * V1.3 FIX: L'assurance et la logistique sont stockées en FCFA
    * Cette fonction convertit un montant FCFA vers la devise GP pour affichage
+   * V3: Garde les décimales pour l'affichage
    */
   const convertFCFAtoGP = (amountFCFA: number): number => {
-    if (isFCFA || !amountFCFA) return Math.round(amountFCFA);
-    // Always round to nearest integer for database compatibility
-    return Math.round(fromFCFA(amountFCFA));
+    if (isFCFA || !amountFCFA) return roundTo2Decimals(amountFCFA);
+    return roundTo2Decimals(fromFCFA(amountFCFA));
   };
 
   /**
@@ -675,6 +681,7 @@ export default function SmartBookingPage() {
    * - insuranceTotal est en FCFA (stocké)
    * - logisticsTotal est en FCFA (stocké)
    * On les convertit en devise GP pour l'affichage
+   * V3: Garde les décimales pour l'affichage
    */
   const displayInsuranceAmount = convertFCFAtoGP(calculations.insuranceTotal);
   const displayLogisticsAmount = convertFCFAtoGP(calculations.logisticsTotal);
@@ -683,9 +690,9 @@ export default function SmartBookingPage() {
    * V1.3 FIX: Le total doit être recalculé avec les montants convertis
    * Transport est DÉJÀ en devise GP
    * Assurance + Logistique doivent être convertis de FCFA vers GP
-   * Always round to integer for database safety
+   * V3: Garde les décimales pour l'affichage, arrondi uniquement pour la DB
    */
-  const displayGrandTotal = Math.round(calculations.transportTotal + displayInsuranceAmount + displayLogisticsAmount);
+  const displayGrandTotal = roundTo2Decimals(calculations.transportTotal + displayInsuranceAmount + displayLogisticsAmount);
 
   if (loading) {
     return (
@@ -857,14 +864,16 @@ export default function SmartBookingPage() {
                   <div>
                     <Label className="text-sm">Poids total estimé (kg)</Label>
                     <Input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      placeholder="Ex: 5.5"
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="Ex: 5,5 ou 5.5"
                       value={kiloWeight}
-                      onChange={(e) => setKiloWeight(e.target.value)}
+                      onChange={(e) => setKiloWeight(normalizeDecimalInput(e.target.value))}
                       className="mt-1"
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Accepte virgule (5,5) ou point (5.5) comme séparateur décimal
+                    </p>
                   </div>
 
                   {/* Nature selection - Only show when weight is entered */}

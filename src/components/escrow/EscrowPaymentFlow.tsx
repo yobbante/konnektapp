@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
+import { PaymentLoader } from "@/components/ui/PaymentLoader";
 
 interface EscrowPaymentFlowProps {
   orderId: string;
@@ -232,17 +233,12 @@ export function EscrowPaymentFlow({
           </motion.div>
         )}
 
-        {/* Step: Processing */}
+        {/* Step: Processing - Using PaymentLoader */}
         {step === "processing" && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="py-8 text-center"
-          >
-            <div className="w-16 h-16 rounded-full border-4 border-primary border-t-transparent animate-spin mx-auto mb-4" />
-            <p className="font-medium">Traitement en cours...</p>
-            <p className="text-sm text-muted-foreground">Veuillez patienter</p>
-          </motion.div>
+          <PaymentLoader 
+            message="Traitement du paiement..."
+            subMessage="Veuillez ne pas fermer cette page"
+          />
         )}
 
         {/* Step: Success */}

@@ -2,7 +2,7 @@ import { ReactNode, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
   Truck, Bell, Package, Clock, Calendar, 
-  DollarSign, User, History, Menu, QrCode, Plus, Plane
+  DollarSign, User, History, Menu, QrCode, Plus, Plane, ScanLine
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -148,6 +148,17 @@ export function GPDashboardLayout({
                 title="Ajouter un départ"
               >
                 <Plus className="w-5 h-5" />
+              </Button>
+
+              {/* Quick Scan Button - Subtle in header */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative bg-gradient-to-br from-amber-400/20 to-orange-500/20 hover:from-amber-400/30 hover:to-orange-500/30 text-inherit border border-white/20"
+                onClick={() => navigate("/gp/scan")}
+                title="Scanner QR Code"
+              >
+                <ScanLine className="w-5 h-5" />
               </Button>
 
               <Button
