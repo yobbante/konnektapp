@@ -665,8 +665,9 @@ export default function SmartBookingPage() {
    * Cette fonction convertit un montant FCFA vers la devise GP pour affichage
    */
   const convertFCFAtoGP = (amountFCFA: number): number => {
-    if (isFCFA || !amountFCFA) return amountFCFA;
-    return Math.round(fromFCFA(amountFCFA) * 100) / 100;
+    if (isFCFA || !amountFCFA) return Math.round(amountFCFA);
+    // Always round to nearest integer for database compatibility
+    return Math.round(fromFCFA(amountFCFA));
   };
 
   /**
@@ -682,8 +683,9 @@ export default function SmartBookingPage() {
    * V1.3 FIX: Le total doit être recalculé avec les montants convertis
    * Transport est DÉJÀ en devise GP
    * Assurance + Logistique doivent être convertis de FCFA vers GP
+   * Always round to integer for database safety
    */
-  const displayGrandTotal = calculations.transportTotal + displayInsuranceAmount + displayLogisticsAmount;
+  const displayGrandTotal = Math.round(calculations.transportTotal + displayInsuranceAmount + displayLogisticsAmount);
 
   if (loading) {
     return (

@@ -229,13 +229,17 @@ export async function sendAcceptanceNotification(
     );
 
     // Get GP user_id for proper message insertion
-    const { data: gpProfile } = await supabase
+    const { data: gpProfile, error: gpError } = await supabase
       .from("gp_profiles")
       .select("user_id")
       .eq("id", gpId)
       .single();
 
-    await supabase
+    if (gpError) {
+      console.error("Error fetching GP profile for acceptance message:", gpError);
+    }
+
+    const { error: messageError } = await supabase
       .from("messages")
       .insert({
         conversation_id: conversationId,
@@ -243,6 +247,10 @@ export async function sendAcceptanceNotification(
         sender_type: "gp",
         content: acceptanceMessage,
       });
+
+    if (messageError) {
+      console.error("Error inserting acceptance message:", messageError);
+    }
 
     // 3. Mettre à jour last_message_at
     await supabase
