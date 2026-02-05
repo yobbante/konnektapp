@@ -85,7 +85,7 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
           title: "Commencer",
           items: [
             { icon: UserPlus, label: "Connexion / Inscription", href: "/auth", highlight: true },
-            { icon: Truck, label: "Devenir transporteur", href: "/gp/inscription" },
+            { icon: Truck, label: "Devenir transporteur", href: "/transporteur/inscription" },
           ]
         },
         {
@@ -169,7 +169,7 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
       sections.push({
         title: "Opportunités",
         items: [
-          { icon: Truck, label: "Devenir transporteur", href: "/gp/inscription", highlight: true },
+          { icon: Truck, label: "Devenir transporteur", href: "/transporteur/inscription", highlight: true },
         ]
       });
     }
