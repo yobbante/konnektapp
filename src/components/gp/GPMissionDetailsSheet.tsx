@@ -32,6 +32,7 @@ import {
   hasPickupLogistics, 
   notifyAdminPickupMission 
 } from "@/hooks/useLogisticsSync";
+import { sendAcceptanceNotification } from "@/lib/autoChat";
 
 interface OrderDetails {
   id: string;
@@ -179,8 +180,15 @@ export function GPMissionDetailsSheet({
 
       if (error) throw error;
 
-      // Add status history
+      // Get GP profile for contact info
       const { data: { user } } = await supabase.auth.getUser();
+      const { data: gpProfile } = await supabase
+        .from("gp_profiles")
+        .select("id, business_name, deposit_address, reception_address, phone, whatsapp_phone")
+        .eq("user_id", user?.id)
+        .single();
+
+      // Add status history
       if (user) {
         await supabase.from("order_status_history").insert({
           order_id: order.id,
@@ -190,15 +198,24 @@ export function GPMissionDetailsSheet({
           notes: "Commande acceptée par le transporteur",
         });
 
-        // Notify client
-        await supabase.from("notifications").insert({
-          user_id: order.client_id,
-          type: "order_update",
-          title: "✅ Commande acceptée",
-          message: `Votre commande ${order.order_number} a été acceptée !`,
-          related_type: "order",
-          related_id: order.id,
-        });
+        // Send automated acceptance message with GP contact info
+        if (gpProfile) {
+          await sendAcceptanceNotification(
+            order.client_id,
+            gpProfile.id,
+            order.id,
+            {
+              orderNumber: order.order_number,
+              originCity: order.origin_city,
+              destinationCity: order.destination_city,
+              gpName: gpProfile.business_name,
+              depositAddress: gpProfile.deposit_address,
+              phone: gpProfile.phone,
+              whatsapp: gpProfile.whatsapp_phone,
+              receptionAddress: gpProfile.reception_address,
+            }
+          );
+        }
 
         // V1.1: If pickup logistics is enabled, notify admin
         if (hasPickup && gpName) {

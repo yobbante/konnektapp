@@ -17,6 +17,7 @@ import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { sendAcceptanceNotification } from "@/lib/autoChat";
 
 interface Order {
   id: string;
@@ -128,7 +129,7 @@ export default function GPDemandesPage() {
     }
   };
 
-  const handleAccept = async (orderId: string) => {
+  const handleAccept = async (orderId: string, order?: Order) => {
     try {
       const { error } = await supabase
         .from("orders")
@@ -136,6 +137,34 @@ export default function GPDemandesPage() {
         .eq("id", orderId);
 
       if (error) throw error;
+
+      // Send automated message with GP contact info
+      if (gpProfile && order) {
+        // Get full GP profile with contact details
+        const { data: fullGpProfile } = await supabase
+          .from("gp_profiles")
+          .select("id, business_name, deposit_address, reception_address, phone, whatsapp_phone")
+          .eq("id", gpProfile.id)
+          .single();
+
+        if (fullGpProfile) {
+          await sendAcceptanceNotification(
+            order.client_id,
+            fullGpProfile.id,
+            orderId,
+            {
+              orderNumber: order.order_number,
+              originCity: order.origin_city,
+              destinationCity: order.destination_city,
+              gpName: fullGpProfile.business_name,
+              depositAddress: fullGpProfile.deposit_address,
+              phone: fullGpProfile.phone,
+              whatsapp: fullGpProfile.whatsapp_phone,
+              receptionAddress: fullGpProfile.reception_address,
+            }
+          );
+        }
+      }
 
       toast({
         title: "✅ Demande acceptée",
