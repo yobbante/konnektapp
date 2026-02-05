@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { Package, MessageCircle, MapPin, History, Bell, Heart, ArrowRight, Clock, ChevronDown, Phone, Navigation, User, ExternalLink, X, AlertTriangle, Truck, Calendar, FileText, Home as HomeIcon, Sparkles, Info, Eye } from "lucide-react";
+import { Package, MessageCircle, MapPin, History, Bell, Heart, ArrowRight, Clock, ChevronDown, Phone, Navigation, User, ExternalLink, X, AlertTriangle, Truck, Calendar, FileText, Home as HomeIcon, Sparkles, Info, Eye, TruckIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -532,6 +532,9 @@ function FullScreenOrderDetails({
   const isAccepted = ['accepted', 'collected', 'in_transit', 'delivered'].includes(order.status);
   const isCollected = ['collected', 'in_transit', 'delivered'].includes(order.status);
   const isDelivered = order.status === 'delivered';
+  const hasInternalLogistics = order.has_internal_logistics || false;
+  const hasPickup = order.logistics_options?.pickup_enabled || false;
+  const hasDelivery = order.logistics_options?.delivery_enabled || false;
   return <motion.div initial={{
     y: "100%"
   }} animate={{
@@ -645,18 +648,35 @@ function FullScreenOrderDetails({
                 </h3>
               </div>
               <div className="p-4 space-y-3">
-                {/* Dépôt Address */}
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Navigation className="w-4 h-4 text-primary" />
+                {/* Dépôt Address - Show internal logistics message if enabled */}
+                {hasPickup ? (
+                  <div className="flex items-start gap-3 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-200 dark:border-blue-800">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                      <TruckIcon className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-blue-600 dark:text-blue-400 uppercase tracking-wide font-medium">Enlèvement Yobbanté</p>
+                      <p className="font-medium text-sm text-blue-800 dark:text-blue-200">
+                        Un livreur Yobbanté viendra récupérer votre colis à l'adresse indiquée
+                      </p>
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                        📍 {order.logistics_options?.pickup_address || "Adresse de collecte configurée"}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Adresse de dépôt</p>
-                    <p className="font-medium text-sm text-foreground">
-                      {order.gp_deposit_address || "Adresse disponible après acceptation"}
-                    </p>
+                ) : (
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Navigation className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Adresse de dépôt</p>
+                      <p className="font-medium text-sm text-foreground">
+                        {order.gp_deposit_address || "Adresse disponible après acceptation"}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* WhatsApp */}
                 <div className="flex items-start gap-3">
@@ -671,18 +691,61 @@ function FullScreenOrderDetails({
                   </div>
                 </div>
 
-                {/* Reception Address - Only after delivery */}
-                {isDelivered && <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center flex-shrink-0">
-                      <MapPin className="w-4 h-4 text-secondary" />
+                {/* Reception Address / Internal Delivery - Progressive release */}
+                {hasDelivery ? (
+                  <div className="flex items-start gap-3 bg-purple-50 dark:bg-purple-900/20 p-3 rounded-xl border border-purple-200 dark:border-purple-800">
+                    <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                      <TruckIcon className="w-4 h-4 text-purple-600" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Adresse de réception</p>
-                      <p className="font-medium text-sm text-foreground">
-                        {order.gp_reception_address || "Adresse de destination"}
+                      <p className="text-xs text-purple-600 dark:text-purple-400 uppercase tracking-wide font-medium">Livraison Yobbanté</p>
+                      <p className="font-medium text-sm text-purple-800 dark:text-purple-200">
+                        Un livreur Yobbanté livrera votre colis à destination
                       </p>
+                      {isDelivered && (
+                        <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                          📍 {order.logistics_options?.delivery_address || "Adresse de livraison configurée"}
+                        </p>
+                      )}
+                      {!isDelivered && (
+                        <p className="text-xs text-purple-500 dark:text-purple-400 mt-1 italic">
+                          Adresse visible après confirmation de livraison
+                        </p>
+                      )}
                     </div>
-                  </div>}
+                  </div>
+                ) : (
+                  <>
+                    {/* Standard Reception Address - Only after delivery */}
+                    {isDelivered && (
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center flex-shrink-0">
+                          <MapPin className="w-4 h-4 text-secondary" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs text-muted-foreground uppercase tracking-wide">Adresse de réception</p>
+                          <p className="font-medium text-sm text-foreground">
+                            {order.gp_reception_address || "Adresse de destination"}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {/* Teaser for reception address before delivery */}
+                    {!isDelivered && (
+                      <div className="flex items-start gap-3 opacity-60">
+                        <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0">
+                          <MapPin className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs text-muted-foreground uppercase tracking-wide">Adresse de réception</p>
+                          <p className="text-xs text-muted-foreground italic">
+                            Disponible après confirmation de livraison
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </motion.div> : <motion.div initial={{
           opacity: 0,
