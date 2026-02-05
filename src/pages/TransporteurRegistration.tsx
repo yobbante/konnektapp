@@ -84,32 +84,27 @@ export default function TransporteurRegistration() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      if (!user) {
-        sessionStorage.setItem("pending_booking_state", JSON.stringify({
-          returnPath: "/transporteur/inscription",
-          timestamp: Date.now()
-        }));
-        navigate("/auth");
-        return;
-      }
+      // Allow unauthenticated users to browse transport types
+      // They will be redirected to auth only when selecting a specific type
+      if (user) {
+        setIsAuthenticated(true);
 
-      setIsAuthenticated(true);
+        // Check if user already has a GP profile
+        const { data: gpProfile } = await supabase
+          .from("gp_profiles")
+          .select("id, gp_type")
+          .eq("user_id", user.id)
+          .maybeSingle();
 
-      // Check if user already has a GP profile
-      const { data: gpProfile } = await supabase
-        .from("gp_profiles")
-        .select("id, gp_type")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (gpProfile) {
-        setExistingGP(true);
-        toast({
-          title: "Profil existant",
-          description: "Vous avez déjà un profil transporteur.",
-        });
-        navigate("/gp/demandes");
-        return;
+        if (gpProfile) {
+          setExistingGP(true);
+          toast({
+            title: "Profil existant",
+            description: "Vous avez déjà un profil transporteur.",
+          });
+          navigate("/gp/demandes");
+          return;
+        }
       }
     } catch (error) {
       console.error("Error checking auth:", error);
