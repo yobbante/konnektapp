@@ -358,22 +358,31 @@ export function SmartClientResponses({
         autoResponse = "📋 Nous n'avons pas trouvé de commande associée à cette conversation. Veuillez préciser votre demande ou contacter le support.";
       }
       
-      // 3. Insert system auto-response immediately (no GP approval needed)
+      // 3. Get GP ID for the conversation to send as GP (auto-response)
+      const { data: conversation } = await supabase
+        .from("conversations")
+        .select("gp_id, gp_profiles:gp_id(user_id)")
+        .eq("id", conversationId)
+        .single();
+      
+      const gpUserId = (conversation?.gp_profiles as any)?.user_id;
+      
+      // 4. Insert auto-response as GP message (automated response on behalf of GP)
       const { error: responseError } = await supabase.from("messages").insert({
         conversation_id: conversationId,
-        sender_id: currentUserId, // Use current user to avoid RLS issues
-        sender_type: "system",
+        sender_id: gpUserId || conversation?.gp_id || currentUserId,
+        sender_type: "gp", // Use "gp" as sender_type (auto-response on behalf of GP)
         content: `🤖 **Réponse automatique**\n\n${autoResponse}`,
       });
       
       if (responseError) throw responseError;
       
-      // 4. Update conversation last_message_at
+      // 5. Update conversation last_message_at
       await supabase.from("conversations")
         .update({ last_message_at: new Date().toISOString() })
         .eq("id", conversationId);
       
-      // 5. Notify via callback if provided
+      // 6. Notify via callback if provided
       if (onAutoResponse) {
         onAutoResponse(autoResponse);
       }
