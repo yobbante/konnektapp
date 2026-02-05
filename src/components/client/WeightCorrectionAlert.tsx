@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertTriangle, Scale, Check, X, Info } from "lucide-react";
+import { AlertTriangle, Scale, Check, X, Info, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -15,15 +15,21 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { recalculateWeightPrice } from "@/lib/currencyUtils";
 
 interface WeightCorrection {
   order_id: string;
   order_number: string;
   declared_weight: number;
   actual_weight: number;
-  original_price: number;
-  new_price: number;
-  price_difference: number;
+  original_weight_price: number;
+  new_weight_price: number;
+  weight_price_difference: number;
+  fixed_insurance: number;
+  fixed_logistics: number;
+  fixed_flat_rate: number;
+  new_total: number;
+  price_per_kg: number;
   currency: string;
   gp_name: string;
 }
@@ -100,19 +106,39 @@ export function WeightCorrectionAlert({ userId, onConfirm }: WeightCorrectionAle
         const declaredWeight = parseFloat(match[1]);
         const actualWeight = parseFloat(match[2]);
         
-        // Calculate price difference (assuming price per kg consistency)
+        // Get order pricing details
         const pricePerKg = order.total_price / order.weight;
-        const originalPrice = declaredWeight * pricePerKg;
-        const newPrice = actualWeight * pricePerKg;
+        
+        // V1.3: Fetch fixed prices (insurance + logistics) that don't change
+        const { data: logistics } = await supabase
+          .from("order_logistics_options")
+          .select("total_logistics_price")
+          .eq("order_id", order.id)
+          .maybeSingle();
+        
+        const fixedInsurance = (order as any).insurance_amount || 0;
+        const fixedLogistics = logistics?.total_logistics_price || 0;
+        const fixedFlatRate = 0; // Already included in total
+        
+        // V1.3 RULE: Only weight price changes, insurance/logistics stay FIXED
+        const originalWeightPrice = Math.round(declaredWeight * pricePerKg);
+        const newWeightPrice = Math.round(actualWeight * pricePerKg);
+        const basePrice = order.total_price - originalWeightPrice - fixedInsurance - fixedLogistics;
+        const newTotal = newWeightPrice + fixedInsurance + fixedLogistics + Math.max(0, basePrice);
 
         pendingCorrections.push({
           order_id: order.id,
           order_number: order.order_number,
           declared_weight: declaredWeight,
           actual_weight: actualWeight,
-          original_price: Math.round(originalPrice),
-          new_price: Math.round(newPrice),
-          price_difference: Math.round(newPrice - originalPrice),
+          original_weight_price: originalWeightPrice,
+          new_weight_price: newWeightPrice,
+          weight_price_difference: newWeightPrice - originalWeightPrice,
+          fixed_insurance: fixedInsurance,
+          fixed_logistics: fixedLogistics,
+          fixed_flat_rate: Math.max(0, basePrice),
+          new_total: Math.round(newTotal),
+          price_per_kg: pricePerKg,
           currency: order.currency,
           gp_name: (order.gp_profiles as any)?.business_name || "Transporteur",
         });
@@ -131,12 +157,14 @@ export function WeightCorrectionAlert({ userId, onConfirm }: WeightCorrectionAle
 
     setConfirming(true);
     try {
-      // Update order with new weight/price
+      // V1.3: Update order with new weight and recalculated total
+      // Only weight price changes, insurance/logistics stay fixed
       const { error: orderError } = await supabase
         .from("orders")
         .update({
           weight: selectedCorrection.actual_weight,
-          total_price: selectedCorrection.new_price,
+          total_price: selectedCorrection.new_total,
+          weight_tier_applied: null, // Clear pending flag
         })
         .eq("id", selectedCorrection.order_id);
 
@@ -149,12 +177,12 @@ export function WeightCorrectionAlert({ userId, onConfirm }: WeightCorrectionAle
         status: "collected",
         changed_by: user?.id || "",
         changed_by_type: "client",
-        notes: `CLIENT CONFIRME le nouveau poids: ${selectedCorrection.actual_weight} kg. Différence: ${selectedCorrection.price_difference > 0 ? "+" : ""}${selectedCorrection.price_difference} ${selectedCorrection.currency}`,
+        notes: `CLIENT CONFIRME le nouveau poids: ${selectedCorrection.actual_weight} kg. Prix poids: ${selectedCorrection.weight_price_difference > 0 ? "+" : ""}${selectedCorrection.weight_price_difference} ${selectedCorrection.currency}. Nouveau total: ${selectedCorrection.new_total} ${selectedCorrection.currency}. (Assurance/logistique inchangés)`,
       });
 
       toast({
         title: "✅ Poids confirmé",
-        description: `La commande a été mise à jour avec le nouveau poids`,
+        description: `Nouveau total: ${selectedCorrection.new_total.toLocaleString()} ${selectedCorrection.currency}`,
       });
 
       setSelectedCorrection(null);
@@ -227,18 +255,30 @@ export function WeightCorrectionAlert({ userId, onConfirm }: WeightCorrectionAle
                     {/* Price Difference */}
                     <div className="p-2 bg-white rounded-lg mb-3">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Différence:</span>
-                        <span className={`font-bold ${correction.price_difference > 0 ? "text-red-600" : "text-green-600"}`}>
-                          {correction.price_difference > 0 ? "+" : ""}
-                          {correction.price_difference.toLocaleString()} {correction.currency}
+                        <span className="text-muted-foreground">Diff. poids:</span>
+                        <span className={`font-bold ${correction.weight_price_difference > 0 ? "text-red-600" : "text-green-600"}`}>
+                          {correction.weight_price_difference > 0 ? "+" : ""}
+                          {correction.weight_price_difference.toLocaleString()} {correction.currency}
+                        </span>
+                      </div>
+                      {correction.fixed_insurance > 0 && (
+                        <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                          <span>Assurance (fixé):</span>
+                          <span>{correction.fixed_insurance.toLocaleString()} {correction.currency}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between text-sm font-bold mt-2 pt-2 border-t">
+                        <span>Nouveau total:</span>
+                        <span className="text-primary">
+                          {correction.new_total.toLocaleString()} {correction.currency}
                         </span>
                       </div>
                     </div>
 
                     {/* Info */}
-                    <p className="text-xs text-amber-600 mb-3 flex items-start gap-1">
+                    <p className="text-[10px] text-amber-600 mb-3 flex items-start gap-1">
                       <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                      Vérifié par {correction.gp_name} lors du dépôt. Veuillez confirmer pour débloquer votre commande.
+                      Seul le prix du poids est ajusté. L'assurance et la logistique restent inchangées.
                     </p>
 
                     {/* Actions */}
@@ -281,25 +321,30 @@ export function WeightCorrectionAlert({ userId, onConfirm }: WeightCorrectionAle
                       <span>Poids réel:</span>
                       <span className="font-bold text-primary">{selectedCorrection.actual_weight} kg</span>
                     </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Diff. prix poids:</span>
+                      <span className={selectedCorrection.weight_price_difference > 0 ? "text-red-600" : "text-green-600"}>
+                        {selectedCorrection.weight_price_difference > 0 ? "+" : ""}
+                        {selectedCorrection.weight_price_difference.toLocaleString()} {selectedCorrection.currency}
+                      </span>
+                    </div>
+                    {selectedCorrection.fixed_insurance > 0 && (
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Assurance (inchangée):</span>
+                        <span>{selectedCorrection.fixed_insurance.toLocaleString()} {selectedCorrection.currency}</span>
+                      </div>
+                    )}
                     <div className="border-t pt-2 flex justify-between">
                       <span>Nouveau prix:</span>
                       <span className="font-bold text-lg">
-                        {selectedCorrection.new_price.toLocaleString()} {selectedCorrection.currency}
+                        {selectedCorrection.new_total.toLocaleString()} {selectedCorrection.currency}
                       </span>
                     </div>
-                    {selectedCorrection.price_difference !== 0 && (
-                      <p className={`text-sm ${selectedCorrection.price_difference > 0 ? "text-red-600" : "text-green-600"}`}>
-                        {selectedCorrection.price_difference > 0 
-                          ? `Supplément de ${selectedCorrection.price_difference.toLocaleString()} ${selectedCorrection.currency}`
-                          : `Remboursement de ${Math.abs(selectedCorrection.price_difference).toLocaleString()} ${selectedCorrection.currency}`
-                        }
-                      </p>
-                    )}
                   </div>
                 )}
 
                 <p className="text-sm text-muted-foreground">
-                  En confirmant, vous acceptez le poids vérifié et le prix ajusté. Votre commande sera débloquée.
+                  En confirmant, vous acceptez le poids vérifié. L'assurance et la logistique restent inchangées. Seul le prix du poids est recalculé.
                 </p>
               </div>
             </AlertDialogDescription>

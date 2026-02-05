@@ -3,9 +3,15 @@
  * 
  * RÈGLE MÉTIER:
  * - FCFA (XOF) = monnaie de référence universelle
- * - Calcul / stockage / arbitrage → FCFA uniquement
- * - Conversion → affichage + paiement uniquement
+ * - Calcul / stockage / arbitrage (assurance, logistique) → FCFA uniquement
+ * - Affichage → devise GP + (≈ FCFA) 
+ * - Paiement → devise GP UNIQUEMENT (jamais FCFA)
  * - La devise du GP est imposée au client (pas de choix)
+ * 
+ * V1.3 RULES:
+ * - Assurance: calculée/stockée en FCFA, affichée en devise GP
+ * - Modification de poids: seul le prix poids change, assurance/logistique figés
+ * - Panier/paiement: devise GP exclusivement
  */
 
 import { supabase } from "@/integrations/supabase/client";
@@ -211,6 +217,83 @@ export function calculateInsuranceInFCFA(
     insuranceFCFA: Math.ceil(insuranceFCFA),
     insuranceInCurrency: Math.ceil(insuranceInCurrency)
   };
+}
+
+/**
+ * V1.3: Weight modification utilities
+ * When weight changes, ONLY the weight price changes.
+ * Insurance and delivery prices remain FIXED.
+ */
+export interface PriceBreakdown {
+  weightPrice: number;      // Prix du poids (seul élément variable)
+  insurancePrice: number;   // Assurance (FIXÉ, en devise GP, stocké en FCFA)
+  logisticsPrice: number;   // Logistique (FIXÉ)
+  flatRateTotal: number;    // Articles forfaitaires (FIXÉ)
+  totalPrice: number;       // Total en devise GP
+  currency: string;
+}
+
+/**
+ * Recalculate price after weight modification
+ * RULE: Only weight price changes, everything else is fixed
+ */
+export function recalculateWeightPrice(
+  newWeight: number,
+  pricePerKg: number,
+  fixedInsurance: number,    // Already in GP currency
+  fixedLogistics: number,
+  fixedFlatRate: number,
+  currency: string
+): PriceBreakdown {
+  const weightPrice = Math.round(newWeight * pricePerKg);
+  
+  return {
+    weightPrice,
+    insurancePrice: fixedInsurance,
+    logisticsPrice: fixedLogistics,
+    flatRateTotal: fixedFlatRate,
+    totalPrice: weightPrice + fixedInsurance + fixedLogistics + fixedFlatRate,
+    currency,
+  };
+}
+
+/**
+ * Convert insurance from FCFA (storage) to GP currency (display)
+ * RULE: Insurance is ALWAYS stored in FCFA, displayed in GP currency
+ */
+export function insuranceFCFAtoDisplay(
+  insuranceFCFA: number,
+  gpCurrency: string,
+  rates: ExchangeRate[]
+): { displayAmount: number; fcfaAmount: number } {
+  if (gpCurrency === "XOF" || gpCurrency === "FCFA") {
+    return { displayAmount: insuranceFCFA, fcfaAmount: insuranceFCFA };
+  }
+  
+  const displayAmount = convertFromFCFA(insuranceFCFA, gpCurrency, rates);
+  return {
+    displayAmount: Math.round(displayAmount * 100) / 100,
+    fcfaAmount: insuranceFCFA,
+  };
+}
+
+/**
+ * Format insurance with dual display following V1.3 rules
+ * Format: "7.5 USD (≈ 4 500 FCFA)"
+ */
+export function formatInsuranceDual(
+  insuranceFCFA: number,
+  gpCurrency: string,
+  rates: ExchangeRate[]
+): string {
+  const { displayAmount, fcfaAmount } = insuranceFCFAtoDisplay(insuranceFCFA, gpCurrency, rates);
+  const symbol = getCurrencySymbol(gpCurrency);
+  
+  if (gpCurrency === "XOF" || gpCurrency === "FCFA") {
+    return `${fcfaAmount.toLocaleString('fr-FR')} FCFA`;
+  }
+  
+  return `${displayAmount.toLocaleString('fr-FR')} ${symbol} (≈ ${fcfaAmount.toLocaleString('fr-FR')} FCFA)`;
 }
 
 /**

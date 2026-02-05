@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -165,4 +165,36 @@ export function useSmartRedirect() {
     getPendingReturnPath,
     saveCurrentLocation
   };
+}
+
+/**
+ * Hook to enforce role-based dashboard access
+ * Routier NEVER sees GP dashboard
+ */
+export function useEnforceDashboardRole(expectedType: "gp" | "routier") {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: gpProfile } = await supabase
+        .from("gp_profiles")
+        .select("gp_type")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!gpProfile) return;
+
+      // Enforce strict routing
+      if (expectedType === "gp" && gpProfile.gp_type === "routier") {
+        navigate("/routier/demandes", { replace: true });
+      } else if (expectedType === "routier" && gpProfile.gp_type !== "routier") {
+        navigate("/gp/demandes", { replace: true });
+      }
+    };
+
+    checkRole();
+  }, [expectedType, navigate]);
 }

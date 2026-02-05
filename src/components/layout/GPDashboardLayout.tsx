@@ -10,6 +10,7 @@ import { useDashboardTheme } from "@/hooks/useDashboardTheme";
 import { GPNotificationsDropdown } from "@/components/gp/dashboard/GPNotificationsDropdown";
 import { GPDashboardHubSheet } from "@/components/layout/GPDashboardHubSheet";
 import { cn } from "@/lib/utils";
+import { useEnforceDashboardRole } from "@/hooks/useSmartRedirect";
 
 interface GPDashboardLayoutProps {
   children: ReactNode;
@@ -80,6 +81,9 @@ export function GPDashboardLayout({
   };
 
   const currentActiveTab = getActiveFromPath();
+
+  // Enforce role: Routier should never see GP dashboard
+  useEnforceDashboardRole("gp");
 
   const handleTabClick = (tab: NavTab) => {
     if (onTabChange) {

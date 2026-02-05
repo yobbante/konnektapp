@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
-  Heart, ArrowRight, MapPin, Calendar, Truck, Star, 
+  Heart, ArrowRight, MapPin, Calendar, Star, 
   Trash2, Package, ArrowLeft, Users
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { useFavorites } from "@/hooks/useFavorites";
 import { MiniLoader } from "@/components/ui/MiniLoader";
 import { getTransportIcon, getTransportLabel } from "@/lib/transportTypes";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
+import { DualCurrencyCompact } from "@/components/booking/DualCurrencyDisplay";
 
 interface FavoriteOffer {
   id: string;
@@ -98,13 +100,13 @@ export default function Favorites() {
         <div className="flex items-center gap-3 mb-6">
           <button
             onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
+            className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
             <h1 className="text-xl font-bold flex items-center gap-2">
-              <Heart className="w-5 h-5 text-red-500" />
+              <Heart className="w-5 h-5 text-destructive fill-destructive" />
               Mes Favoris
             </h1>
             <p className="text-sm text-muted-foreground">Offres et transporteurs sauvegardés</p>
@@ -121,14 +123,14 @@ export default function Favorites() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center py-16"
           >
-            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-              <Heart className="w-10 h-10 text-muted-foreground" />
+            <div className="w-20 h-20 rounded-full bg-card border border-border flex items-center justify-center mx-auto mb-4">
+              <Heart className="w-10 h-10 text-muted-foreground/50" />
             </div>
             <h2 className="text-xl font-bold text-foreground mb-2">Aucun favori</h2>
             <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
               Sauvegardez des offres en cliquant sur le cœur pour les retrouver ici
             </p>
-            <Button variant="default" onClick={() => navigate("/offres")}>
+            <Button onClick={() => navigate("/offres")}>
               <Package className="w-4 h-4 mr-2" />
               Parcourir les offres
             </Button>
@@ -155,7 +157,7 @@ export default function Favorites() {
                 >
                   {/* Header */}
                   <div className="flex items-start justify-between mb-3">
-                    <Badge variant={offer.transport_type as any} className="text-xs">
+                    <Badge variant="secondary" className="text-xs">
                       <TransportIcon className="w-3 h-3 mr-1" />
                       {getTransportLabel(offer.transport_type)}
                     </Badge>
@@ -186,7 +188,7 @@ export default function Favorites() {
                     <ArrowRight className="w-4 h-4 text-muted-foreground" />
                     <div className="flex items-center gap-1">
                       <span className="font-medium text-sm">{offer.destination_city}</span>
-                      <MapPin className="w-4 h-4 text-secondary" />
+                      <MapPin className="w-4 h-4 text-primary" />
                     </div>
                   </div>
 
@@ -205,14 +207,14 @@ export default function Favorites() {
                   {/* GP Info & Price */}
                   <div className="flex items-center justify-between pt-3 border-t border-border">
                     <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-semibold">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
                         {offer.gp_profiles?.business_name?.charAt(0) || 'G'}
                       </div>
                       <div>
                         <p className="text-xs font-medium">{offer.gp_profiles?.business_name || 'GP'}</p>
                         {offer.gp_profiles?.rating && (
                           <div className="flex items-center gap-1">
-                            <Star className="w-3 h-3 text-secondary fill-secondary" />
+                            <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
                             <span className="text-[10px] text-muted-foreground">
                               {offer.gp_profiles.rating.toFixed(1)}
                             </span>
@@ -233,7 +235,6 @@ export default function Favorites() {
                   {/* Action Button */}
                   {!isExpired && (
                     <Button 
-                      variant="default" 
                       className="w-full mt-3"
                       onClick={() => navigate(`/offres/${offer.id}`)}
                     >
