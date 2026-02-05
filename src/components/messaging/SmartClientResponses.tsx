@@ -1,20 +1,28 @@
 /**
  * SmartClientResponses - Messages intelligents contextuels pour les clients
  * 
- * V2: Analyse le contexte réel de la commande et génère des réponses
+ * V3: Messages intelligents pour GP Via Bagages
+ * Analyse le contexte réel de la commande et génère des réponses
  * basées sur les données actuelles (statut, poids, retard, etc.)
+ * 
+ * RÈGLES:
+ * - Réponses dynamiques basées sur la commande
+ * - Aucun message générique vide
+ * - Zéro mensonge, zéro promesse irréaliste
  */
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   MessageSquare, ChevronUp, ChevronDown, Send, Loader2,
-  Package, MapPin, Clock, HelpCircle, CheckCircle, AlertTriangle
+  Package, MapPin, Clock, HelpCircle, CheckCircle, AlertTriangle,
+  Shield, Scale, Truck, Calendar, DollarSign, User
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { formatInsuranceDual, loadExchangeRates, type ExchangeRate } from "@/lib/currencyUtils";
 
 interface OrderContext {
   id: string;
@@ -30,6 +38,11 @@ interface OrderContext {
   weight_tier_applied: string | null;
   logistics_status: string;
   has_logistics: boolean;
+  has_insurance: boolean;
+  insurance_amount: number;
+  currency: string;
+  gp_deposit_address: string | null;
+  gp_name: string;
 }
 
 interface SmartResponse {
@@ -94,7 +107,8 @@ export function SmartClientResponses({
         .select(`
           id, order_number, status, weight, origin_city, destination_city,
           created_at, pickup_date, delivery_date, actual_delivery_date,
-          weight_tier_applied, logistics_status
+          weight_tier_applied, logistics_status, has_insurance, insurance_amount, currency,
+          gp_profiles:gp_id(business_name, deposit_address)
         `)
         .eq("id", conversation.order_id)
         .maybeSingle();
@@ -110,6 +124,11 @@ export function SmartClientResponses({
         setOrderContext({
           ...order,
           has_logistics: !!logistics,
+          has_insurance: order.has_insurance || false,
+          insurance_amount: order.insurance_amount || 0,
+          currency: order.currency || "XOF",
+          gp_deposit_address: (order.gp_profiles as any)?.deposit_address || null,
+          gp_name: (order.gp_profiles as any)?.business_name || "Transporteur",
         });
       }
     } catch (error) {
@@ -117,142 +136,163 @@ export function SmartClientResponses({
     }
   };
 
-  // Smart responses with context-aware logic
+  // V3: Smart responses for GP Via Bagages
   const smartResponses: SmartResponse[] = [
+    // 1️⃣ « Où en est mon colis ? »
     {
       id: "status",
       icon: Package,
-      message: "Bonjour ! Pouvez-vous me donner le statut de mon colis ?",
+      message: "Où en est mon colis ?",
       color: "bg-blue-500/10 text-blue-600",
       getResponse: async (ctx) => {
-        const statusLabel = STATUS_LABELS[ctx.status] || ctx.status;
-        const route = `${ctx.origin_city} → ${ctx.destination_city}`;
-        
-        let response = `📦 **Statut de votre commande #${ctx.order_number.slice(-6)}**\n\n`;
-        response += `🚚 Trajet: ${route}\n`;
-        response += `📍 Statut actuel: **${statusLabel}**\n`;
-        response += `⚖️ Poids: ${ctx.weight} kg\n`;
-        
-        if (ctx.pickup_date) {
-          response += `📅 Date de collecte: ${format(new Date(ctx.pickup_date), "d MMMM yyyy", { locale: fr })}\n`;
+        switch (ctx.status) {
+          case "pending":
+            return `⏳ **En attente de confirmation**\n\nVotre GP est en cours de traitement de votre demande.\nVous serez notifié dès acceptation.`;
+          case "accepted":
+            return `✅ **Votre GP a accepté la commande.**\n\nLa remise du colis est en cours d'organisation.\n📍 Lieu de dépôt: ${ctx.gp_deposit_address || "À confirmer"}`;
+          case "collected":
+            return `📦 **Colis collecté avec succès.**\n\nIl est désormais sous la responsabilité du GP.\nPoids vérifié: ${ctx.weight} kg`;
+          case "in_transit":
+            return `✈️ **Votre colis est actuellement en transit.**\n\nTrajet: ${ctx.origin_city} → ${ctx.destination_city}\nVous serez notifié à l'arrivée.`;
+          case "arrived":
+            return `🛬 **Le GP est arrivé à ${ctx.destination_city}.**\n\nLa livraison finale est en cours d'organisation.`;
+          case "delivered":
+            return `🎉 **Colis livré avec succès !**\n\nMerci d'avoir utilisé Yobbanté.\nN'hésitez pas à laisser un avis.`;
+          default:
+            return `📦 Statut: ${STATUS_LABELS[ctx.status] || ctx.status}\nConsultez l'onglet "Suivi" pour plus de détails.`;
         }
-        
-        // Check for weight correction pending
-        if (ctx.weight_tier_applied?.startsWith("pending:")) {
-          const newWeight = ctx.weight_tier_applied.split(":")[1];
-          response += `\n⚠️ **Action requise**: Le poids a été ajusté à ${newWeight} kg lors du dépôt. Veuillez confirmer sur votre page d'accueil.`;
-        }
-        
-        return response;
       },
     },
+    // 2️⃣ « Quand dois-je déposer mon colis ? »
+    {
+      id: "deposit_date",
+      icon: Calendar,
+      message: "Quand dois-je déposer mon colis ?",
+      color: "bg-amber-500/10 text-amber-600",
+      getResponse: async (ctx) => {
+        if (ctx.status === "pending") {
+          return `⏳ La date de dépôt vous sera communiquée dès validation par le GP.\nUn QR code sera requis lors de la remise.`;
+        }
+        if (ctx.pickup_date) {
+          return `📅 **Date de dépôt prévue:**\n${format(new Date(ctx.pickup_date), "EEEE d MMMM yyyy", { locale: fr })}\n\n📍 Lieu: ${ctx.gp_deposit_address || "À confirmer"}\n⚠️ Un QR code sera requis lors de la remise.`;
+        }
+        return `📍 La date et le lieu de dépôt vous seront communiqués dès validation complète par le GP.\nUn QR code sera requis lors de la remise.`;
+      },
+    },
+    // 3️⃣ « Où dois-je déposer mon colis ? »
     {
       id: "location",
       icon: MapPin,
-      message: "Où en est la livraison de mon colis ?",
+      message: "Où dois-je déposer mon colis ?",
       color: "bg-green-500/10 text-green-600",
       getResponse: async (ctx) => {
-        let response = "";
-        
-        switch (ctx.status) {
-          case "pending":
-            response = `⏳ Votre colis est en attente de confirmation par le transporteur. Vous serez notifié dès qu'il sera pris en charge.`;
-            break;
-          case "accepted":
-            response = `✅ Le transporteur a accepté votre envoi ! Le colis sera collecté prochainement.`;
-            if (ctx.pickup_date) {
-              response += `\n📅 Date de collecte prévue: ${format(new Date(ctx.pickup_date), "d MMMM", { locale: fr })}`;
-            }
-            break;
-          case "collected":
-            response = `📦 Votre colis a été collecté et est en préparation pour le transport vers ${ctx.destination_city}.`;
-            break;
-          case "in_transit":
-            response = `🚚 Votre colis est actuellement en transit vers ${ctx.destination_city}. La livraison est en cours.`;
-            if (ctx.delivery_date) {
-              response += `\n📅 Arrivée estimée: ${format(new Date(ctx.delivery_date), "d MMMM", { locale: fr })}`;
-            }
-            break;
-          case "arrived":
-            response = `✅ Votre colis est arrivé à ${ctx.destination_city} ! La livraison finale sera effectuée sous peu.`;
-            break;
-          case "delivered":
-            response = `🎉 Votre colis a été livré avec succès ! Merci d'utiliser Yobbanté.`;
-            break;
-          default:
-            response = `📍 Statut: ${STATUS_LABELS[ctx.status] || ctx.status}. Consultez l'onglet "Suivi" pour plus de détails.`;
+        if (ctx.status === "pending") {
+          return `⏳ Le lieu de dépôt sera communiqué après acceptation par le GP.`;
         }
-        
-        return response;
+        if (ctx.gp_deposit_address) {
+          return `📍 **Adresse de dépôt:**\n${ctx.gp_deposit_address}\n\n⚠️ Cette information est partagée uniquement après acceptation du GP.`;
+        }
+        return `📍 L'adresse exacte sera partagée par le GP ${ctx.gp_name}.\nContactez-le directement dans cette conversation.`;
       },
     },
+    // 4️⃣ « Quand vais-je recevoir mon colis ? »
     {
-      id: "delay",
+      id: "delivery_date",
       icon: Clock,
-      message: "Y a-t-il du retard sur ma livraison ?",
+      message: "Quand vais-je recevoir mon colis ?",
+      color: "bg-purple-500/10 text-purple-600",
+      getResponse: async (ctx) => {
+        if (ctx.status === "arrived") {
+          return `🛬 **Le GP est arrivé à ${ctx.destination_city} !**\n\nLa livraison finale est en cours d'organisation.\nVous serez contacté très prochainement.`;
+        }
+        if (ctx.status === "delivered") {
+          return `🎉 Votre colis a déjà été livré le ${ctx.actual_delivery_date ? format(new Date(ctx.actual_delivery_date), "d MMMM", { locale: fr }) : "récemment"}.`;
+        }
+        if (ctx.delivery_date) {
+          return `⏳ **Livraison estimée:**\n${format(new Date(ctx.delivery_date), "EEEE d MMMM yyyy", { locale: fr })}\n\nLa date dépend du trajet du GP. Vous serez notifié dès son arrivée à destination.`;
+        }
+        return `⏳ La date de réception dépend du trajet du GP.\nVous serez notifié dès son arrivée à destination.`;
+      },
+    },
+    // 5️⃣ « Le GP est-il arrivé ? »
+    {
+      id: "gp_arrived",
+      icon: Truck,
+      message: "Le GP est-il arrivé ?",
+      color: "bg-indigo-500/10 text-indigo-600",
+      getResponse: async (ctx) => {
+        if (ctx.status === "arrived" || ctx.status === "delivered") {
+          return `🛬 **Oui, le GP est arrivé à ${ctx.destination_city} !**\n\nLa livraison finale ${ctx.status === "delivered" ? "a été effectuée" : "est en cours d'organisation"}.`;
+        }
+        if (ctx.status === "in_transit") {
+          return `✈️ Le GP est actuellement en transit.\nTrajet: ${ctx.origin_city} → ${ctx.destination_city}\n\nVous serez notifié dès son arrivée.`;
+        }
+        return `⏳ Le GP n'est pas encore parti.\nStatut actuel: ${STATUS_LABELS[ctx.status] || ctx.status}`;
+      },
+    },
+    // 6️⃣ « Puis-je envoyer quelqu'un à ma place ? »
+    {
+      id: "delegate",
+      icon: User,
+      message: "Puis-je envoyer quelqu'un à ma place ?",
+      color: "bg-cyan-500/10 text-cyan-600",
+      getResponse: async () => {
+        return `👤 **Oui, c'est possible !**\n\nVous devrez partager votre QR code de remise avec la personne autorisée.\n\n📲 Le QR code se trouve sur la page de suivi de votre commande.`;
+      },
+    },
+    // 7️⃣ « J'ai modifié le poids de mon colis » / Poids modifié
+    {
+      id: "weight_change",
+      icon: Scale,
+      message: "Le poids de mon colis a changé",
       color: "bg-orange-500/10 text-orange-600",
       getResponse: async (ctx) => {
-        const now = new Date();
-        
-        // Check if delivery date has passed
-        if (ctx.delivery_date) {
-          const deliveryDate = new Date(ctx.delivery_date);
-          if (now > deliveryDate && ctx.status !== "delivered") {
-            const daysDiff = Math.floor((now.getTime() - deliveryDate.getTime()) / (1000 * 60 * 60 * 24));
-            return `⚠️ **Retard détecté**\n\nLa livraison était prévue pour le ${format(deliveryDate, "d MMMM", { locale: fr })} (${daysDiff} jour(s) de retard).\n\nLe transporteur a été notifié. Si vous n'avez pas de nouvelles sous 24h, contactez notre support.`;
-          }
+        if (ctx.weight_tier_applied?.startsWith("pending:")) {
+          const newWeight = ctx.weight_tier_applied.split(":")[1];
+          return `⚠️ **Correction de poids détectée !**\n\n🔁 Ancien poids: ${ctx.weight} kg\n🔁 Nouveau poids: ${newWeight} kg\n\n👉 **Action requise:** Rendez-vous sur votre page d'accueil pour confirmer le nouveau poids.\n\n💡 Seul le prix du poids est ajusté. L'assurance et la logistique restent inchangées.`;
         }
-        
-        // Check pickup date
-        if (ctx.pickup_date && ctx.status === "pending") {
-          const pickupDate = new Date(ctx.pickup_date);
-          if (now > pickupDate) {
-            return `⚠️ La collecte était prévue pour le ${format(pickupDate, "d MMMM", { locale: fr })}. Le transporteur n'a pas encore confirmé le dépôt. Nous le contactons automatiquement.`;
-          }
-        }
-        
-        return `⏱️ **Aucun retard signalé**\n\nVotre livraison suit son cours normal. Vous recevrez une notification à chaque étape importante.`;
+        return `⚖️ Poids actuel: ${ctx.weight} kg\n\nSi le poids réel diffère, le GP effectuera la vérification lors du dépôt et vous devrez confirmer tout ajustement.`;
       },
     },
+    // 8️⃣ « Pourquoi le prix a changé ? »
     {
-      id: "confirm",
-      icon: CheckCircle,
-      message: "Je confirme être disponible pour recevoir le colis.",
+      id: "price_change",
+      icon: DollarSign,
+      message: "Pourquoi le prix a changé ?",
+      color: "bg-rose-500/10 text-rose-600",
+      getResponse: async () => {
+        return `💡 **Le prix peut changer pour une raison:**\n\nLe poids réel du colis a été vérifié lors du dépôt et diffère du poids déclaré.\n\n👉 **Important:**\n• Seul le prix du poids est recalculé\n• L'assurance reste inchangée\n• La logistique reste inchangée\n\nVous devez confirmer tout ajustement avant que la commande continue.`;
+      },
+    },
+    // 9️⃣ « Ai-je une assurance sur mon colis ? »
+    {
+      id: "insurance",
+      icon: Shield,
+      message: "Ai-je une assurance sur mon colis ?",
       color: "bg-emerald-500/10 text-emerald-600",
       getResponse: async (ctx) => {
-        // Log availability confirmation
-        try {
-          await supabase.from("order_status_history").insert({
-            order_id: ctx.id,
-            status: "client_available",
-            changed_by: currentUserId,
-            changed_by_type: "client",
-            notes: "Client confirme disponibilité pour réception",
-          });
-        } catch (e) {
-          console.error("Error logging availability:", e);
+        if (ctx.has_insurance && ctx.insurance_amount > 0) {
+          const rates = await loadExchangeRates();
+          const insuranceDisplay = formatInsuranceDual(ctx.insurance_amount, ctx.currency, rates);
+          return `🛡️ **Oui, votre colis est assuré !**\n\nMontant: ${insuranceDisplay}\n\nL'assurance couvre les dommages et pertes pendant le transport.`;
         }
-        
-        return `✅ **Disponibilité enregistrée**\n\nMerci ! Le transporteur a été informé que vous êtes disponible pour recevoir votre colis.\n\nVous serez contacté avant la livraison finale.`;
+        return `⚠️ **Vous avez choisi de ne pas assurer ce colis.**\n\nSans assurance, Yobbanté ne peut pas garantir le remboursement en cas de perte ou dommage.`;
       },
     },
+    // 🔟 « J'ai besoin d'aide concernant ma commande »
     {
       id: "help",
       icon: HelpCircle,
-      message: "J'ai besoin d'aide concernant ma commande.",
-      color: "bg-purple-500/10 text-purple-600",
+      message: "J'ai besoin d'aide concernant ma commande",
+      color: "bg-slate-500/10 text-slate-600",
       getResponse: async (ctx) => {
-        let response = `👋 **Analyse de votre commande en cours...**\n\n`;
-        
         // Diagnostic automatique
         const issues: string[] = [];
         
-        // Check weight correction pending
         if (ctx.weight_tier_applied?.startsWith("pending:")) {
           issues.push("⚖️ Ajustement de poids en attente de confirmation");
         }
         
-        // Check delayed pickup
         if (ctx.pickup_date && ctx.status === "pending") {
           const pickupDate = new Date(ctx.pickup_date);
           if (new Date() > pickupDate) {
@@ -260,7 +300,6 @@ export function SmartClientResponses({
           }
         }
         
-        // Check delayed delivery
         if (ctx.delivery_date && !["delivered", "cancelled"].includes(ctx.status)) {
           const deliveryDate = new Date(ctx.delivery_date);
           if (new Date() > deliveryDate) {
@@ -268,27 +307,24 @@ export function SmartClientResponses({
           }
         }
         
+        let response = `👋 **Nous avons bien reçu votre demande.**\n\n📌 Commande: #${ctx.order_number.slice(-6)}\n📦 Statut: ${STATUS_LABELS[ctx.status] || ctx.status}\n`;
+        
         if (issues.length > 0) {
-          response += `**Problèmes détectés:**\n${issues.map(i => `• ${i}`).join("\n")}\n\n`;
-          response += `Notre équipe support va examiner ces points et vous recontacter rapidement.`;
+          response += `\n⚠️ **Points détectés:**\n${issues.map(i => `• ${i}`).join("\n")}\n\nUn agent Yobbanté vous contactera si nécessaire.`;
           
-          // Create support ticket
+          // Log support request
           try {
             await supabase.from("notifications").insert({
               user_id: currentUserId,
               type: "support_request",
-              title: "Demande d'aide reçue",
-              message: `Votre demande concernant la commande #${ctx.order_number.slice(-6)} a été transmise au support.`,
+              title: "Demande d'aide",
+              message: `Aide demandée pour commande #${ctx.order_number.slice(-6)}`,
               related_type: "order",
               related_id: ctx.id,
             });
-          } catch (e) {
-            console.error("Error creating support notification:", e);
-          }
+          } catch (e) {}
         } else {
-          response += `✅ Aucun problème détecté sur votre commande.\n\n`;
-          response += `Statut: ${STATUS_LABELS[ctx.status] || ctx.status}\n\n`;
-          response += `Pour toute question spécifique, n'hésitez pas à écrire directement au transporteur dans cette conversation.`;
+          response += `\n✅ Aucun problème détecté.\nPour toute question, écrivez directement au GP dans cette conversation.`;
         }
         
         return response;
@@ -361,9 +397,17 @@ export function SmartClientResponses({
             <div className="p-3 space-y-2 max-h-64 overflow-y-auto">
               {/* Order context indicator */}
               {orderContext && (
-                <div className="flex items-center gap-2 p-2 bg-green-500/10 rounded-lg text-xs text-green-700 mb-2">
+                <div className="flex items-center gap-2 p-2 bg-primary/10 rounded-lg text-xs text-primary mb-2">
                   <CheckCircle className="w-3 h-3" />
                   <span>Commande #{orderContext.order_number.slice(-6)} - {orderContext.origin_city} → {orderContext.destination_city}</span>
+                </div>
+              )}
+              
+              {/* Weight correction warning */}
+              {orderContext?.weight_tier_applied?.startsWith("pending:") && (
+                <div className="flex items-center gap-2 p-2 bg-amber-500/10 rounded-lg text-xs text-amber-700 mb-2 border border-amber-300">
+                  <AlertTriangle className="w-3 h-3" />
+                  <span>⚠️ Correction de poids en attente de confirmation</span>
                 </div>
               )}
               
