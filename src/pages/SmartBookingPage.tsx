@@ -737,56 +737,6 @@ export default function SmartBookingPage() {
           </div>
         </div>
 
-        {/* Route Summary Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl border border-primary/20 mb-6"
-        >
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="w-5 h-5 text-primary" />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold">{gpProfile.business_name}</span>
-                {gpProfile.verified_at && <Shield className="w-4 h-4 text-primary" />}
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Star className="w-3 h-3 text-warning fill-warning" />
-                <span>{gpProfile.rating || 0}</span>
-                <span>•</span>
-                <span>{gpProfile.total_deliveries || 0} livraisons</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3 text-sm">
-            <div className="flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 text-primary" />
-              <span className="font-medium">{offer.origin_city}</span>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-            <div className="flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 text-accent" />
-              <span className="font-medium">{offer.destination_city}</span>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-4 mt-3 pt-3 border-t border-primary/10 text-sm">
-            <div className="flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
-              <span>Départ: {format(new Date(offer.departure_date), "d MMMM", { locale: fr })}</span>
-            </div>
-            {offer.arrival_date && (
-              <div className="flex items-center gap-1.5">
-                <Plane className="w-4 h-4 text-muted-foreground" />
-                <span>Arrivée: {format(new Date(offer.arrival_date), "d MMM", { locale: fr })}</span>
-              </div>
-            )}
-          </div>
-        </motion.div>
-
         {/* Progress - 5 steps */}
         <div className="flex items-center justify-center gap-1 mb-6">
           {[1, 2, 3, 4, 5].map((s) => (
@@ -1021,6 +971,56 @@ export default function SmartBookingPage() {
                     )}
                   </div>
                 )}
+
+                {/* Route Summary Card - Moved here, after articles forfaitaires */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl border border-primary/20"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <User className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">{gpProfile.business_name}</span>
+                        {gpProfile.verified_at && <Shield className="w-4 h-4 text-primary" />}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Star className="w-3 h-3 text-warning fill-warning" />
+                        <span>{gpProfile.rating || 0}</span>
+                        <span>•</span>
+                        <span>{gpProfile.total_deliveries || 0} livraisons</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="w-4 h-4 text-primary" />
+                      <span className="font-medium">{offer.origin_city}</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="w-4 h-4 text-accent" />
+                      <span className="font-medium">{offer.destination_city}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-4 mt-3 pt-3 border-t border-primary/10 text-sm">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="w-4 h-4 text-muted-foreground" />
+                      <span>Départ: {format(new Date(offer.departure_date), "d MMMM", { locale: fr })}</span>
+                    </div>
+                    {offer.arrival_date && (
+                      <div className="flex items-center gap-1.5">
+                        <Plane className="w-4 h-4 text-muted-foreground" />
+                        <span>Arrivée: {format(new Date(offer.arrival_date), "d MMM", { locale: fr })}</span>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
 
                 {!calculations.hasAnyItems && (
                   <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-2">
