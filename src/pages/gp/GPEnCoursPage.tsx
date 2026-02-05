@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { MissionStatusUpdaterV2 } from "@/components/gp/MissionStatusUpdaterV2";
+import { WeightRefusalAlert } from "@/components/gp/WeightRefusalAlert";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { getOrderStatusLabel, getOrderStatusColor } from "@/lib/transportTypes";
 import { format } from "date-fns";
@@ -137,6 +138,9 @@ export default function GPEnCoursPage() {
       activeTab="en-cours"
     >
       <div className="px-4 py-4 space-y-4">
+        {/* Weight Refusal Alerts - Critical */}
+        <WeightRefusalAlert gpId={gpProfile.id} />
+        
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">
             Missions en cours

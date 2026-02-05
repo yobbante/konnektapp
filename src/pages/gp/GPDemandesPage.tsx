@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { GPQuickStats } from "@/components/gp/dashboard/GPQuickStats";
+import { WeightRefusalAlert } from "@/components/gp/WeightRefusalAlert";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -219,6 +220,9 @@ export default function GPDemandesPage() {
       activeTab="demandes"
     >
       <div className="px-4 py-4 space-y-4">
+        {/* Weight Refusal Alerts - Critical, shown first */}
+        <WeightRefusalAlert gpId={gpProfile.id} />
+        
         {/* Quick Stats */}
         <GPQuickStats 
           pendingCount={pendingOrders.length}
