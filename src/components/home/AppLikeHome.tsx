@@ -58,12 +58,12 @@ export function AppLikeHome() {
       navigate("/gp/dashboard");
     } else if (!isAuthenticated) {
       sessionStorage.setItem("pending_booking_state", JSON.stringify({
-        returnPath: "/gp/inscription",
+        returnPath: "/transporteur/inscription",
         timestamp: Date.now()
       }));
       navigate("/auth");
     } else {
-      navigate("/gp/inscription");
+      navigate("/transporteur/inscription");
     }
   };
 
