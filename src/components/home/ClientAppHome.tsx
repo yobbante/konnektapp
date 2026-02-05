@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { Package, MessageCircle, MapPin, History, Bell, Heart, ArrowRight, Clock, ChevronDown, Phone, Navigation, User, ExternalLink, X, AlertTriangle, Truck, Calendar, FileText, Home as HomeIcon, Sparkles, Info, Eye, TruckIcon } from "lucide-react";
+import { Package, MessageCircle, MapPin, History, Bell, Heart, ArrowRight, Clock, ChevronDown, Phone, Navigation, User, ExternalLink, X, AlertTriangle, Truck, Calendar, FileText, Home as HomeIcon, Sparkles, Info, Eye, TruckIcon, QrCode } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { WeightValidationAlert } from "@/components/client/WeightValidationAlert";
 import { supabase } from "@/integrations/supabase/client";
+import QRCode from "react-qr-code";
 
 interface ClientAppHomeProps {
   userName?: string;
@@ -546,7 +547,7 @@ function FullScreenOrderDetails({
     damping: 25,
     stiffness: 300
   }} className="h-full flex flex-col bg-background">
-      {/* Header with close button */}
+      {/* Header with close button and Mini QR Code */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
         <div className="flex items-center gap-3">
           <motion.div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center" animate={{
@@ -564,9 +565,30 @@ function FullScreenOrderDetails({
             </span>
           </div>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
-          <X className="w-5 h-5" />
-        </Button>
+        
+        {/* Mini QR Code - Only show when order is accepted+ */}
+        <div className="flex items-center gap-2">
+          {isAccepted && (
+            <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="cursor-pointer"
+              onClick={() => navigate(`/order/${order.id}/qrcode`)}
+            >
+              <div className="w-12 h-12 bg-white rounded-lg p-1 shadow-sm border border-border">
+                <QRCode
+                  value={order.order_number || order.id}
+                  size={40}
+                  level="L"
+                  style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                />
+              </div>
+            </motion.div>
+          )}
+          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
+            <X className="w-5 h-5" />
+          </Button>
+        </div>
       </div>
 
       {/* Scrollable Content */}
