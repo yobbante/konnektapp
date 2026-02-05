@@ -328,18 +328,6 @@ export default function TrackingPage() {
                 </div>}
             </div>
 
-            {/* Real-Time Interactive Map */}
-            <div className="mobile-card">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-sm">Suivi en direct</h3>
-                <Badge variant="secondary" className="gap-1">
-                  <MapIcon className="w-3 h-3" />
-                  Temps réel
-                </Badge>
-              </div>
-              <RealTimeTrackingMap originCity={order.origin_city} destinationCity={order.destination_city} currentStatus={order.status} progress={progress} transportType="bagages_international" />
-            </div>
-
             {/* GP Info */}
             <div className="mobile-card">
               <div className="flex items-center justify-between">
@@ -396,6 +384,18 @@ export default function TrackingPage() {
                     </div>;
             })}
               </div>
+            </div>
+
+            {/* Real-Time Interactive Map - Moved to bottom */}
+            <div className="mobile-card">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-sm">Localisation</h3>
+                <Badge variant="secondary" className="gap-1">
+                  <MapIcon className="w-3 h-3" />
+                  Temps réel
+                </Badge>
+              </div>
+              <RealTimeTrackingMap originCity={order.origin_city} destinationCity={order.destination_city} currentStatus={order.status} progress={progress} transportType="bagages_international" />
             </div>
 
             {/* Actions */}

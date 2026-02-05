@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Plane, Truck, Package, CheckCircle2 } from "lucide-react";
+import { Plane, Truck, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface RealTimeTrackingMapProps {
@@ -41,253 +41,162 @@ export function RealTimeTrackingMap({
     return colors[status] || "bg-muted";
   };
 
-  // Checkpoints along the route
-  const checkpoints = [
-    { x: 10, y: 80, label: "Départ", completed: progress >= 0 },
-    { x: 35, y: 55, label: "Collecté", completed: progress >= 33 },
-    { x: 65, y: 35, label: "En transit", completed: progress >= 66 },
-    { x: 90, y: 20, label: "Arrivée", completed: progress >= 100 },
-  ];
-
   return (
-    <div className="relative w-full h-48 rounded-2xl overflow-hidden border border-border/50 shadow-lg">
-      {/* Gradient Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5" />
-      
-      {/* Animated Background Pattern */}
-      <motion.div 
-        className="absolute inset-0 opacity-30"
+    <div className="relative w-full h-44 rounded-2xl overflow-hidden border border-border/50 shadow-lg">
+      {/* Map Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: `radial-gradient(circle at 20% 80%, hsl(var(--primary) / 0.15) 0%, transparent 50%),
-                           radial-gradient(circle at 80% 20%, hsl(var(--secondary) / 0.15) 0%, transparent 50%)`
-        }}
-        animate={{
-          opacity: [0.2, 0.4, 0.2],
-        }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: "easeInOut",
+          backgroundImage: `url('https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&q=80')`,
         }}
       />
+      
+      {/* Dark overlay for better contrast */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/20" />
+      
+      {/* Animated scan line effect */}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-transparent"
+        animate={{
+          y: ['-100%', '200%'],
+        }}
+        transition={{
+          duration: 3,
+          repeat: Infinity,
+          ease: "linear",
+        }}
+        style={{ height: '50%' }}
+      />
 
-      {/* SVG Map */}
+      {/* Route line overlay */}
       <svg
-        className="absolute inset-0 w-full h-full"
+        className="absolute inset-0 w-full h-full pointer-events-none"
         viewBox="0 0 100 100"
         preserveAspectRatio="none"
       >
-        {/* Decorative grid */}
         <defs>
-          <pattern id="tracking-grid" width="10" height="10" patternUnits="userSpaceOnUse">
-            <path
-              d="M 10 0 L 0 0 0 10"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="0.2"
-              className="text-muted-foreground/10"
-            />
-          </pattern>
-          <linearGradient id="route-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="hsl(var(--secondary))" stopOpacity="0.3" />
-          </linearGradient>
-          <linearGradient id="progress-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
+          <linearGradient id="route-line-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="hsl(var(--primary))" />
             <stop offset="100%" stopColor="hsl(var(--secondary))" />
           </linearGradient>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-            <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
         </defs>
         
-        <rect width="100%" height="100%" fill="url(#tracking-grid)" />
-
-        {/* Route Shadow */}
+        {/* Dotted route path */}
         <path
-          d="M 10 80 Q 30 60 50 50 Q 70 40 90 20"
+          d="M 15 75 Q 35 55 50 50 Q 65 45 85 25"
           fill="none"
-          stroke="hsl(var(--muted-foreground))"
-          strokeWidth="6"
-          strokeLinecap="round"
-          opacity="0.1"
+          stroke="white"
+          strokeWidth="1.5"
+          strokeDasharray="4 3"
+          opacity="0.4"
         />
-
-        {/* Route Path (Background) */}
-        <path
-          d="M 10 80 Q 30 60 50 50 Q 70 40 90 20"
-          fill="none"
-          stroke="url(#route-gradient)"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeDasharray="6 4"
-        />
-
-        {/* Progress Path (Animated) */}
+        
+        {/* Animated progress line */}
         <motion.path
-          d="M 10 80 Q 30 60 50 50 Q 70 40 90 20"
+          d="M 15 75 Q 35 55 50 50 Q 65 45 85 25"
           fill="none"
-          stroke="url(#progress-gradient)"
-          strokeWidth="3"
+          stroke="url(#route-line-gradient)"
+          strokeWidth="2.5"
           strokeLinecap="round"
-          filter="url(#glow)"
           initial={{ pathLength: 0 }}
           animate={{ pathLength: progress / 100 }}
           transition={{ duration: 1.5, ease: "easeOut" }}
         />
-
-        {/* Checkpoint Markers */}
-        {checkpoints.map((cp, index) => (
-          <g key={index}>
-            {/* Outer ring */}
-            <motion.circle
-              cx={cp.x}
-              cy={cp.y}
-              r="4"
-              fill="none"
-              stroke={cp.completed ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))"}
-              strokeWidth="1"
-              opacity={cp.completed ? 0.5 : 0.2}
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: index * 0.15, type: "spring" }}
-            />
-            {/* Inner dot */}
-            <motion.circle
-              cx={cp.x}
-              cy={cp.y}
-              r="2"
-              fill={cp.completed ? "hsl(var(--primary))" : "hsl(var(--muted))"}
-              stroke="white"
-              strokeWidth="0.5"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: index * 0.15 + 0.1, type: "spring" }}
-            />
-          </g>
-        ))}
       </svg>
 
-      {/* Origin Label */}
+      {/* Origin marker */}
       <motion.div 
-        className="absolute left-3 bottom-4 flex items-center gap-1.5"
-        initial={{ opacity: 0, x: -10 }}
-        animate={{ opacity: 1, x: 0 }}
+        className="absolute left-[12%] bottom-[20%] flex items-center gap-2"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.2 }}
       >
-        <div className="w-2.5 h-2.5 bg-primary rounded-full ring-2 ring-primary/30 ring-offset-1 ring-offset-background" />
-        <span className="text-[11px] font-medium bg-background/90 backdrop-blur-sm px-1.5 py-0.5 rounded-md shadow-sm border border-border/50">
+        <div className="relative">
+          <div className="w-4 h-4 bg-primary rounded-full ring-4 ring-primary/30 shadow-lg" />
+          <motion.div
+            className="absolute inset-0 rounded-full bg-primary"
+            animate={{ scale: [1, 1.8, 1], opacity: [0.6, 0, 0.6] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+        </div>
+        <span className="text-xs font-semibold text-white bg-black/60 backdrop-blur-sm px-2 py-1 rounded-md shadow">
           {originCity}
         </span>
       </motion.div>
 
-      {/* Destination Label */}
+      {/* Destination marker */}
       <motion.div 
-        className="absolute right-3 top-4 flex items-center gap-1.5"
-        initial={{ opacity: 0, x: 10 }}
-        animate={{ opacity: 1, x: 0 }}
+        className="absolute right-[12%] top-[18%] flex items-center gap-2"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.3 }}
       >
-        <span className="text-[11px] font-medium bg-background/90 backdrop-blur-sm px-1.5 py-0.5 rounded-md shadow-sm border border-border/50">
+        <span className="text-xs font-semibold text-white bg-black/60 backdrop-blur-sm px-2 py-1 rounded-md shadow">
           {destinationCity}
         </span>
-        <div className="w-2.5 h-2.5 bg-secondary rounded-full ring-2 ring-secondary/30 ring-offset-1 ring-offset-background" />
+        <div className="relative">
+          <div className="w-4 h-4 bg-secondary rounded-full ring-4 ring-secondary/30 shadow-lg" />
+          <motion.div
+            className="absolute inset-0 rounded-full bg-secondary"
+            animate={{ scale: [1, 1.8, 1], opacity: [0.6, 0, 0.6] }}
+            transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+          />
+        </div>
       </motion.div>
 
-      {/* Moving Vehicle */}
+      {/* Moving vehicle */}
       <motion.div
-        className="absolute"
+        className="absolute z-10"
         style={{
-          left: `${10 + progress * 0.8}%`,
-          top: `${80 - progress * 0.6}%`,
+          left: `${15 + progress * 0.7}%`,
+          top: `${75 - progress * 0.5}%`,
           transform: "translate(-50%, -50%)",
         }}
-        initial={{ scale: 0, rotate: -45 }}
-        animate={{ scale: 1, rotate: 0 }}
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
         transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
       >
         <div className="relative">
-          {/* Glow effect */}
+          {/* Glow */}
           <motion.div
-            className="absolute inset-0 rounded-full bg-gradient-to-r from-primary to-secondary blur-md"
-            animate={{
-              scale: [1, 1.4, 1],
-              opacity: [0.4, 0.2, 0.4],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
+            className="absolute inset-0 rounded-full bg-white blur-md"
+            animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0.2, 0.5] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
           />
-          {/* Icon container */}
-          <div className="relative w-9 h-9 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center shadow-lg border-2 border-white/50">
-            <TransportIcon className="w-4 h-4 text-primary-foreground" />
+          {/* Icon */}
+          <div className="relative w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center shadow-xl border-2 border-white/80">
+            <TransportIcon className="w-5 h-5 text-white" />
           </div>
-          {/* Trail effect */}
-          <motion.div
-            className="absolute -left-6 top-1/2 -translate-y-1/2 w-6 h-1 bg-gradient-to-l from-primary/60 to-transparent rounded-full"
-            animate={{
-              opacity: [0.8, 0.3, 0.8],
-              scaleX: [1, 0.6, 1],
-            }}
-            transition={{
-              duration: 1,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
         </div>
       </motion.div>
 
-      {/* Status Badge */}
-      <motion.div 
-        className="absolute bottom-3 right-3"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-      >
-        <Badge 
-          variant="secondary" 
-          className={`text-[10px] font-semibold shadow-md border-0 text-white ${getStatusColor(currentStatus)}`}
-        >
-          {currentStatus === "delivered" && <CheckCircle2 className="w-3 h-3 mr-1" />}
-          {getStatusLabel(currentStatus)}
-        </Badge>
-      </motion.div>
-
-      {/* Progress Bar */}
-      <motion.div 
-        className="absolute bottom-0 left-0 right-0 h-1 bg-muted/50"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-      >
-        <motion.div
-          className="h-full bg-gradient-to-r from-primary to-secondary"
-          initial={{ width: 0 }}
-          animate={{ width: `${progress}%` }}
-          transition={{ duration: 1, ease: "easeOut" }}
-        />
-      </motion.div>
-
-      {/* Progress Percentage */}
-      <motion.div 
-        className="absolute bottom-3 left-1/2 -translate-x-1/2"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-      >
-        <div className="bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm border border-border/50">
-          <span className="text-[10px] font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            {progress}%
-          </span>
+      {/* Bottom info bar */}
+      <div className="absolute bottom-0 left-0 right-0 px-3 py-2.5 bg-gradient-to-t from-black/80 to-transparent">
+        <div className="flex items-center justify-between">
+          {/* Status */}
+          <Badge 
+            className={`text-[11px] font-semibold border-0 text-white shadow ${getStatusColor(currentStatus)}`}
+          >
+            {currentStatus === "delivered" && <CheckCircle2 className="w-3 h-3 mr-1" />}
+            {getStatusLabel(currentStatus)}
+          </Badge>
+          
+          {/* Progress */}
+          <div className="flex items-center gap-2">
+            <div className="h-1.5 w-20 bg-white/20 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-to-r from-primary to-secondary rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
+              />
+            </div>
+            <span className="text-xs font-bold text-white">
+              {Math.round(progress)}%
+            </span>
+          </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
