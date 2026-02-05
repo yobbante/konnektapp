@@ -487,8 +487,8 @@ export default function SmartBookingPage() {
           destination_city: offer.destination_city,
           destination_country: offer.destination_country,
           price_per_kg: offer.price_per_kg,
-          weight: roundTo2Decimals(calculations.weight) || 0,
-          // V3: Arrondi à l'entier uniquement pour la DB
+          // V3 FIX: Le poids ET le prix doivent être des entiers pour la DB
+          weight: roundForDatabase(calculations.weight) || 0,
           total_price: roundForDatabase(displayGrandTotal),
           currency: offer.currency,
           status: "pending" as const,
@@ -518,7 +518,7 @@ export default function SmartBookingPage() {
           order_id: orderData.id,
           merchandise_type: getMerchandiseType(),
           merchandise_description: buildOrderDescription(),
-          estimated_weight: calculations.weight || 0,
+          estimated_weight: roundForDatabase(calculations.weight) || 0,
           is_fragile: false,
           is_urgent: false,
           pickup_address: logisticsOptions.pickupEnabled ? logisticsOptions.pickupAddress : "À confirmer",

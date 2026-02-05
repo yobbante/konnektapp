@@ -12,6 +12,8 @@ import { GlobalNotificationProvider } from "@/components/notifications/GlobalNot
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { RoleSwitchPopup } from "@/components/profile/RoleSwitchPopup";
 import { ThemeInitializer } from "@/components/ThemeInitializer";
+import { EnhancedToastContainer } from "@/components/ui/EnhancedToast";
+import { SmartScrollTop } from "@/hooks/useSmartScrollTop";
 import Index from "./pages/Index";
 import Offres from "./pages/Offres";
 import OfferDetail from "./pages/OfferDetail";
@@ -87,7 +89,9 @@ const App = () => (
         <BrowserRouter>
           <ThemeInitializer />
           <ScrollToTop />
+          <SmartScrollTop />
           <ScrollToTopButton />
+          <EnhancedToastContainer />
           <RoleSwitchPopup />
           <AuthGuard>
           <Routes>

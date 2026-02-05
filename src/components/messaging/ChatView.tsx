@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, ArrowLeft, Phone, MoreVertical, Check, CheckCheck } from "lucide-react";
+import { Send, Check, CheckCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { TypingIndicator } from "./TypingIndicator";
 import { MessageTemplates } from "./MessageTemplates";
 import { SmartClientResponses } from "./SmartClientResponses";
+import { ChatHeader } from "./ChatHeader";
 import { MiniLoader } from "@/components/ui/MiniLoader";
 
 interface Message {
@@ -37,6 +38,8 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [templatesExpanded, setTemplatesExpanded] = useState(false);
+  const [isGpVerified, setIsGpVerified] = useState(false);
+  const [gpId, setGpId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { notify } = useNotificationSound();
   
@@ -47,6 +50,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   );
 
   useEffect(() => {
+    loadConversationData();
     fetchMessages();
     markMessagesAsRead();
     
@@ -77,6 +81,32 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
       supabase.removeChannel(channel);
     };
   }, [conversationId]);
+
+  const loadConversationData = async () => {
+    try {
+      // Get conversation to find GP
+      const { data: conv } = await supabase
+        .from("conversations")
+        .select("gp_id")
+        .eq("id", conversationId)
+        .single();
+
+      if (conv?.gp_id) {
+        setGpId(conv.gp_id);
+        
+        // Check if GP is verified
+        const { data: gpProfile } = await supabase
+          .from("gp_profiles")
+          .select("verified_at")
+          .eq("id", conv.gp_id)
+          .single();
+
+        setIsGpVerified(!!gpProfile?.verified_at);
+      }
+    } catch (error) {
+      console.error("Error loading conversation data:", error);
+    }
+  };
 
   const markMessagesAsRead = async () => {
     try {
@@ -164,27 +194,14 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
 
   return (
     <div className="flex flex-col h-full" style={{ height: '100dvh' }}>
-      {/* Header - Compact for mobile */}
-      <div className="flex items-center gap-3 px-3 py-2.5 border-b border-border bg-background flex-shrink-0 sticky top-0 z-10" style={{ paddingTop: 'calc(8px + var(--safe-top, 0px))' }}>
-        <Button variant="ghost" size="icon" onClick={onBack} className="h-9 w-9">
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-          <span className="font-semibold text-primary text-sm">
-            {contactName?.charAt(0) || "?"}
-          </span>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm truncate">{contactName || "Contact"}</p>
-          <p className="text-xs text-muted-foreground">En ligne</p>
-        </div>
-        <Button variant="ghost" size="icon" className="h-9 w-9">
-          <Phone className="w-4 h-4" />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-9 w-9">
-          <MoreVertical className="w-4 h-4" />
-        </Button>
-      </div>
+      {/* Enhanced Header with verified badge and order info */}
+      <ChatHeader
+        conversationId={conversationId}
+        contactName={contactName || "Contact"}
+        contactId={gpId || ""}
+        isGpVerified={isGpVerified}
+        onBack={onBack}
+      />
 
       {/* Messages - Maximized view area for mobile */}
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2" style={{ minHeight: 0 }}>
