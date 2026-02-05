@@ -1,28 +1,21 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertTriangle, Scale, Check, X, Info, ShieldAlert, Ban } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Scale, Ban } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-interface WeightValidation {
-  order_id: string;
-  order_number: string;
-  declared_weight: number;
-  actual_weight: number;
-  original_weight_price: number;
-  new_weight_price: number;
-  weight_price_difference: number;
-  fixed_insurance: number;
-  fixed_logistics: number;
-  new_total: number;
-  original_total: number;
-  currency: string;
-  gp_name: string;
-  gp_id: string;
-}
+import { WeightValidationCard, type WeightValidation } from "@/components/client/WeightValidationCard";
+import { DualCurrencyDisplay } from "@/components/booking/DualCurrencyDisplay";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 interface WeightValidationAlertProps {
   userId: string;
   onAction?: () => void;
@@ -63,18 +56,21 @@ export function WeightValidationAlert({
       supabase.removeChannel(channel);
     };
   }, [userId]);
+  const selectedCurrency = selectedValidation?.currency || "XOF";
+  const { getFCFAEquivalent } = useCurrencyConversion({ gpCurrency: selectedCurrency });
+
   const loadPendingValidations = async () => {
     try {
       // Get orders with weight modifications pending validation
       // weight_tier_applied is set when GP modifies weight (stored as string number)
-      // We check for any status that is NOT collected/delivered yet AND has weight_tier_applied set
-      const {
-        data: orders,
-        error
-      } = await supabase.from("orders").select(`
+      const { data: orders, error } = await supabase
+        .from("orders")
+        .select(
+          `
           id,
           order_number,
           weight,
+          price_per_kg,
           total_price,
           currency,
           gp_id,
@@ -82,20 +78,21 @@ export function WeightValidationAlert({
           insurance_amount,
           status,
           gp_profiles:gp_id(id, business_name)
-        `).eq("client_id", userId).not("weight_tier_applied", "is", null);
+        `
+        )
+        .eq("client_id", userId)
+        .not("weight_tier_applied", "is", null);
+
       if (error) throw error;
 
       // Filter to only pending/accepted orders with numeric weight_tier_applied
-      const pendingOrders = (orders || []).filter(order => {
-        // Must be in a status that can receive weight validation
-        if (!["pending", "accepted"].includes(order.status)) return false;
-        // weight_tier_applied must be a valid number string (not just any value)
+      const pendingOrders = (orders || []).filter((order: any) => {
+        if (!order?.status || !["pending", "accepted"].includes(order.status)) return false;
         const tierValue = parseFloat(order.weight_tier_applied);
         return !isNaN(tierValue) && tierValue > 0;
       });
 
-      // Get order IDs to check for already-confirmed validations
-      const orderIds = pendingOrders.map(o => o.id);
+      const orderIds = pendingOrders.map((o: any) => o.id);
       if (orderIds.length === 0) {
         setValidations([]);
         setLoading(false);
@@ -103,33 +100,46 @@ export function WeightValidationAlert({
       }
 
       // Check for confirmations in history
-      const {
-        data: history
-      } = await supabase.from("order_status_history").select("order_id").in("order_id", orderIds).or("notes.ilike.%CLIENT CONFIRME%,notes.ilike.%CLIENT REFUSE%");
-      const confirmedOrderIds = new Set((history || []).map(h => h.order_id));
+      const { data: history } = await supabase
+        .from("order_status_history")
+        .select("order_id")
+        .in("order_id", orderIds)
+        .or("notes.ilike.%CLIENT CONFIRME%,notes.ilike.%CLIENT REFUSE%");
 
-      // Get logistics options for fixed prices
-      const {
-        data: logistics
-      } = await supabase.from("order_logistics_options").select("order_id, total_logistics_price").in("order_id", orderIds);
-      const logisticsMap = new Map((logistics || []).map(l => [l.order_id, l.total_logistics_price]));
+      const confirmedOrderIds = new Set((history || []).map((h: any) => h.order_id));
 
-      // Build pending validations
+      // Get logistics options for fixed prices (FCFA)
+      const { data: logistics } = await supabase
+        .from("order_logistics_options")
+        .select("order_id, total_logistics_price")
+        .in("order_id", orderIds);
+
+      const logisticsMap = new Map((logistics || []).map((l: any) => [l.order_id, l.total_logistics_price]));
+
       const pendingValidations: WeightValidation[] = [];
+
       for (const order of pendingOrders) {
         if (confirmedOrderIds.has(order.id)) continue;
-        const declaredWeight = order.weight;
-        const actualWeight = Number(order.weight_tier_applied) || 0;
-        const originalTotal = order.total_price;
-        const fixedInsurance = order.insurance_amount || 0;
-        const fixedLogistics = logisticsMap.get(order.id) || 0;
 
-        // Calculate weight price difference only
-        const pricePerKg = (originalTotal - fixedInsurance - fixedLogistics) / declaredWeight;
+        const declaredWeight = Number(order.weight) || 0;
+        const actualWeight = parseFloat(order.weight_tier_applied) || 0;
+
+        if (!declaredWeight || !actualWeight) continue;
+
+        const originalTotal = Number(order.total_price) || 0;
+        const fixedInsurance = Number(order.insurance_amount) || 0; // In GP currency
+        const fixedLogistics = Number(logisticsMap.get(order.id)) || 0; // FCFA
+
+        // ✅ Definitive fix: compute impact ONLY from stored price_per_kg (same currency as order.total_price)
+        // This prevents mixing FCFA logistics (2000) with USD totals (156).
+        const pricePerKg = Number(order.price_per_kg) || 0;
+        if (!pricePerKg) continue;
+
         const originalWeightPrice = Math.round(declaredWeight * pricePerKg);
         const newWeightPrice = Math.round(actualWeight * pricePerKg);
         const weightPriceDiff = newWeightPrice - originalWeightPrice;
         const newTotal = originalTotal + weightPriceDiff;
+
         pendingValidations.push({
           order_id: order.id,
           order_number: order.order_number,
@@ -144,9 +154,10 @@ export function WeightValidationAlert({
           original_total: originalTotal,
           currency: order.currency,
           gp_name: (order.gp_profiles as any)?.business_name || "Transporteur",
-          gp_id: order.gp_id
+          gp_id: order.gp_id,
         });
       }
+
       setValidations(pendingValidations);
     } catch (error) {
       console.error("Error loading weight validations:", error);
@@ -286,123 +297,37 @@ export function WeightValidationAlert({
   if (loading || validations.length === 0) {
     return null;
   }
-  return <>
+
+  return (
+    <>
       <AnimatePresence>
-        {validations.map(validation => <motion.div key={validation.order_id} initial={{
-        opacity: 0,
-        y: -20,
-        scale: 0.95
-      }} animate={{
-        opacity: 1,
-        y: 0,
-        scale: 1
-      }} exit={{
-        opacity: 0,
-        y: -20,
-        scale: 0.95
-      }}>
-            {/* CRITICAL BANNER - Non-dismissible */}
-            <Alert variant="destructive" className="mb-2 border-destructive bg-destructive/10">
-              <ShieldAlert className="h-4 w-4" />
-              <AlertTitle className="font-bold">⚠️ Validation requise — Modification de poids</AlertTitle>
-              <AlertDescription className="text-xs">
-                Le transporteur a mesuré un poids différent lors du dépôt. Votre réservation est bloquée.
-              </AlertDescription>
-            </Alert>
-
-            <Card className="border-destructive/50 bg-destructive/5 shadow-lg mb-4">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  {/* Pulsing Warning Icon */}
-                  <motion.div animate={{
-                scale: [1, 1.1, 1]
-              }} transition={{
-                duration: 1,
-                repeat: Infinity
-              }} className="w-12 h-12 rounded-full bg-destructive flex items-center justify-center flex-shrink-0">
-                    <AlertTriangle className="w-6 h-6 text-white" />
-                  </motion.div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Commande <span className="font-mono font-bold text-foreground">{validation.order_number}</span> • {validation.gp_name}
-                    </p>
-
-                    {/* Weight Comparison - Visual */}
-                    <div className="flex items-center gap-3 p-3 bg-background rounded-lg mb-3 border border-destructive/20">
-                      <div className="text-center flex-1">
-                        <p className="text-xs text-muted-foreground">Poids déclaré</p>
-                        <p className="font-bold text-lg line-through text-red-500">
-                          {validation.declared_weight} kg
-                        </p>
-                      </div>
-                      <Scale className="w-6 h-6 text-destructive" />
-                      <div className="text-center flex-1">
-                        <p className="text-xs text-muted-foreground">Poids réel mesuré</p>
-                        <p className="font-bold text-lg text-foreground">
-                          {validation.actual_weight} kg
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Price Impact */}
-                    <div className="p-3 bg-background rounded-lg mb-3 border border-border space-y-1.5">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Impact sur le prix transport:</span>
-                        <span className={`font-bold ${validation.weight_price_difference > 0 ? "text-red-600" : "text-green-600"}`}>
-                          {validation.weight_price_difference > 0 ? "+" : ""}
-                          {validation.weight_price_difference.toLocaleString()} {validation.currency}
-                        </span>
-                      </div>
-                      {validation.fixed_insurance > 0 && <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>🛡️ Assurance (inchangée):</span>
-                          <span>{validation.fixed_insurance.toLocaleString()} {validation.currency}</span>
-                        </div>}
-                      {validation.fixed_logistics > 0 && <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>🚚 Logistique (inchangée):</span>
-                          <span>{validation.fixed_logistics.toLocaleString()} {validation.currency}</span>
-                        </div>}
-                      <div className="flex items-center justify-between text-sm font-bold pt-2 border-t">
-                        <span>Nouveau total:</span>
-                        <span className="text-primary text-base">
-                          {validation.new_total.toLocaleString()} {validation.currency}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Info disclaimer */}
-                    <p className="text-[10px] text-muted-foreground mb-4 flex items-start gap-1">
-                      <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                      L'assurance et la livraison restent inchangées. Seul le prix du transport est ajusté.
-                    </p>
-
-                    {/* PRV: ONLY 2 ACTIONS - Accept or Refuse */}
-                    <div className="gap-[4px] flex items-start justify-center">
-                      <Button variant="outline" className="flex-1 gap-2 border-destructive text-destructive hover:bg-destructive/10" onClick={() => {
-                    setSelectedValidation(validation);
-                    setDialogType("refuse");
-                  }}>
-                        <X className="w-4 h-4" />
-                        Refuser et annuler
-                      </Button>
-                      <Button className="flex-1 gap-2" onClick={() => {
-                    setSelectedValidation(validation);
-                    setDialogType("accept");
-                  }}>
-                        <Check className="w-4 h-4" />
-                        Accepter et continuer
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>)}
+        {validations.map((validation) => (
+          <motion.div
+            key={validation.order_id}
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+          >
+            <WeightValidationCard
+              validation={validation}
+              onRefuse={() => {
+                setSelectedValidation(validation);
+                setDialogType("refuse");
+              }}
+              onAccept={() => {
+                setSelectedValidation(validation);
+                setDialogType("accept");
+              }}
+            />
+          </motion.div>
+        ))}
       </AnimatePresence>
 
       {/* Accept Confirmation Dialog */}
-      <AlertDialog open={dialogType === "accept"} onOpenChange={open => !open && setDialogType(null)}>
+      <AlertDialog
+        open={dialogType === "accept"}
+        onOpenChange={(open) => !open && setDialogType(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
@@ -414,23 +339,34 @@ export function WeightValidationAlert({
                 <p>
                   Vous acceptez le poids mesuré par le transporteur et le nouveau tarif associé.
                 </p>
-                
-                {selectedValidation && <div className="p-4 bg-muted rounded-lg space-y-2">
-                    <div className="flex justify-between">
+
+                {selectedValidation && (
+                  <div className="p-4 bg-muted rounded-lg space-y-2">
+                    <div className="flex justify-between gap-3">
                       <span>Poids déclaré:</span>
-                      <span className="font-bold line-through text-muted-foreground">{selectedValidation.declared_weight} kg</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Poids réel:</span>
-                      <span className="font-bold text-primary">{selectedValidation.actual_weight} kg</span>
-                    </div>
-                    <div className="border-t pt-2 flex justify-between">
-                      <span>Nouveau total:</span>
-                      <span className="font-bold text-lg">
-                        {selectedValidation.new_total.toLocaleString()} {selectedValidation.currency}
+                      <span className="font-bold line-through text-muted-foreground">
+                        {selectedValidation.declared_weight} kg
                       </span>
                     </div>
-                  </div>}
+                    <div className="flex justify-between gap-3">
+                      <span>Poids réel:</span>
+                      <span className="font-bold text-primary">
+                        {selectedValidation.actual_weight} kg
+                      </span>
+                    </div>
+                    <div className="border-t pt-2 flex justify-between gap-3">
+                      <span>Nouveau total:</span>
+                      <DualCurrencyDisplay
+                        inline
+                        size="lg"
+                        amount={selectedValidation.new_total}
+                        currency={selectedValidation.currency}
+                        fcfaEquivalent={getFCFAEquivalent(selectedValidation.new_total)}
+                        className="font-bold"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <p className="text-sm text-muted-foreground">
                   Votre colis sera pris en charge par le transporteur.
@@ -448,7 +384,10 @@ export function WeightValidationAlert({
       </AlertDialog>
 
       {/* Refuse Confirmation Dialog - CRITICAL */}
-      <AlertDialog open={dialogType === "refuse"} onOpenChange={open => !open && setDialogType(null)}>
+      <AlertDialog
+        open={dialogType === "refuse"}
+        onOpenChange={(open) => !open && setDialogType(null)}
+      >
         <AlertDialogContent className="border-destructive">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-destructive">
@@ -461,29 +400,39 @@ export function WeightValidationAlert({
                   ⚠️ Cette action est irréversible.
                 </p>
                 <p>
-                  En refusant la modification de poids, votre envoi sera <strong>immédiatement annulé</strong>.
+                  En refusant la modification de poids, votre envoi sera{" "}
+                  <strong>immédiatement annulé</strong>.
                 </p>
                 <p>
-                  Le transporteur sera notifié que le colis ne doit <strong>pas être pris en charge</strong> et devra vous le restituer.
+                  Le transporteur sera notifié que le colis ne doit{" "}
+                  <strong>pas être pris en charge</strong> et devra vous le restituer.
                 </p>
-                {selectedValidation && <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/30">
+                {selectedValidation && (
+                  <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/30">
                     <p className="text-sm">
                       <strong>Commande:</strong> {selectedValidation.order_number}
                     </p>
                     <p className="text-sm">
-                      <strong>Poids refusé:</strong> {selectedValidation.actual_weight} kg (déclaré: {selectedValidation.declared_weight} kg)
+                      <strong>Poids refusé:</strong> {selectedValidation.actual_weight} kg
+                      (déclaré: {selectedValidation.declared_weight} kg)
                     </p>
-                  </div>}
+                  </div>
+                )}
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={processing}>Revenir</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRefuse} disabled={processing} className="bg-destructive hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleRefuse}
+              disabled={processing}
+              className="bg-destructive hover:bg-destructive/90"
+            >
               {processing ? "Annulation..." : "❌ Refuser et annuler l'envoi"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>;
+    </>
+  );
 }
