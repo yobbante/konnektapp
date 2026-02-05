@@ -35,6 +35,7 @@ interface GPProfile {
   verified_at: string | null;
   gp_type: string;
   default_currency: string;
+  explicit_restrictions: string[] | null;
 }
 
 interface GPOffer {
@@ -227,7 +228,7 @@ export default function SmartBookingPage() {
       // Fetch GP profile
       const { data: gpData, error: gpError } = await supabase
         .from("gp_profiles")
-        .select("id, business_name, rating, total_deliveries, verified_at, gp_type, default_currency")
+       .select("id, business_name, rating, total_deliveries, verified_at, gp_type, default_currency, explicit_restrictions")
         .eq("id", gpId)
         .single();
 
@@ -455,7 +456,7 @@ export default function SmartBookingPage() {
           destination_country: offer.destination_country,
           price_per_kg: offer.price_per_kg,
           weight: calculations.weight || 0,
-          total_price: displayGrandTotal,
+         total_price: Math.round(displayGrandTotal * 100) / 100,
           currency: offer.currency,
           status: "pending" as const,
           logistics_status: "submitted",
@@ -463,7 +464,7 @@ export default function SmartBookingPage() {
           description: buildOrderDescription(),
           // Insurance fields
           has_insurance: insuranceChoice.hasInsurance,
-          insurance_amount: displayInsuranceAmount, // Stored in GP currency for consistency
+         insurance_amount: Math.round(displayInsuranceAmount), // Integer - arrondi obligatoire
           insurance_tier_id: insuranceChoice.tierId,
           declared_value: insuranceChoice.declaredValue || null,
           content_nature: kiloNatures,
@@ -1143,14 +1144,26 @@ export default function SmartBookingPage() {
                 </div>
 
                 {/* Restrictions list */}
-                {(offer.explicit_restrictions?.length || offer.baggage_restrictions) ? (
+               {(gpProfile.explicit_restrictions?.length || offer.explicit_restrictions?.length || offer.baggage_restrictions) ? (
                   <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-xl space-y-3">
                     <p className="font-medium text-destructive flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4" />
                       Articles interdits par ce transporteur
                     </p>
                     
-                    {offer.explicit_restrictions && (
+                   {/* Restrictions from GP profile */}
+                   {gpProfile.explicit_restrictions && gpProfile.explicit_restrictions.length > 0 && (
+                     <div className="flex flex-wrap gap-2">
+                       {gpProfile.explicit_restrictions.map((r) => (
+                         <Badge key={r} variant="destructive" className="text-xs">
+                           {RESTRICTION_LABELS[r] || r}
+                         </Badge>
+                       ))}
+                     </div>
+                   )}
+                   
+                   {/* Restrictions from offer */}
+                   {offer.explicit_restrictions && offer.explicit_restrictions.length > 0 && (
                       <div className="flex flex-wrap gap-2">
                         {offer.explicit_restrictions.map((r) => (
                           <Badge key={r} variant="destructive" className="text-xs">

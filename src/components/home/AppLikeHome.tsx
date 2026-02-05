@@ -56,13 +56,8 @@ export function AppLikeHome() {
   const handleTransportClick = () => {
     if (isGP) {
       navigate("/gp/dashboard");
-    } else if (!isAuthenticated) {
-      sessionStorage.setItem("pending_booking_state", JSON.stringify({
-        returnPath: "/transporteur/inscription",
-        timestamp: Date.now()
-      }));
-      navigate("/auth");
     } else {
+     // V2: Navigation directe sans forcer la connexion
       navigate("/transporteur/inscription");
     }
   };
@@ -71,7 +66,8 @@ export function AppLikeHome() {
     <div 
       className="flex flex-col bg-background overflow-hidden"
       style={{
-        height: 'calc(100vh - 60px - 64px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))',
+       height: '100%',
+       maxHeight: 'calc(100vh - 60px - 64px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))',
         minHeight: '400px',
       }}
     >
