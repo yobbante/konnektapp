@@ -76,6 +76,7 @@ import UnifiedProfile from "./pages/UnifiedProfile";
 import ClientProfileComplete from "./pages/ClientProfileComplete";
 import MovingRequest from "./pages/MovingRequest";
 import MovingConfirmation from "./pages/MovingConfirmation";
+import OrderQRCode from "./pages/OrderQRCode";
 
 const queryClient = new QueryClient();
 
@@ -134,6 +135,7 @@ const App = () => (
             <Route path="/profil/complet" element={<ClientProfileComplete />} />
             <Route path="/transporteur/inscription" element={<TransporteurRegistration />} />
             <Route path="/order/:orderId/complete" element={<PostBookingForm />} />
+            <Route path="/order/:orderId/qrcode" element={<OrderQRCode />} />
             <Route path="/booking/confirmation/:orderId" element={<BookingConfirmation />} />
             
             {/* ============================================

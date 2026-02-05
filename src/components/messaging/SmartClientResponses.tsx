@@ -147,17 +147,17 @@ export function SmartClientResponses({
       getResponse: async (ctx) => {
         switch (ctx.status) {
           case "pending":
-            return `⏳ **En attente de confirmation**\n\nVotre GP est en cours de traitement de votre demande.\nVous serez notifié dès acceptation.`;
+            return `⏳ En attente de confirmation\n\nVotre GP est en cours de traitement de votre demande.\nVous serez notifié dès acceptation.`;
           case "accepted":
-            return `✅ **Votre GP a accepté la commande.**\n\nLa remise du colis est en cours d'organisation.\n📍 Lieu de dépôt: ${ctx.gp_deposit_address || "À confirmer"}`;
+            return `✅ Votre GP a accepté la commande.\n\nLa remise du colis est en cours d'organisation.\n📍 Lieu de dépôt: ${ctx.gp_deposit_address || "À confirmer"}`;
           case "collected":
-            return `📦 **Colis collecté avec succès.**\n\nIl est désormais sous la responsabilité du GP.\nPoids vérifié: ${ctx.weight} kg`;
+            return `📦 Colis collecté avec succès.\n\nIl est désormais sous la responsabilité du GP.\nPoids vérifié: ${ctx.weight} kg`;
           case "in_transit":
-            return `✈️ **Votre colis est actuellement en transit.**\n\nTrajet: ${ctx.origin_city} → ${ctx.destination_city}\nVous serez notifié à l'arrivée.`;
+            return `✈️ Votre colis est actuellement en transit.\n\nTrajet: ${ctx.origin_city} → ${ctx.destination_city}\nVous serez notifié à l'arrivée.`;
           case "arrived":
-            return `🛬 **Le GP est arrivé à ${ctx.destination_city}.**\n\nLa livraison finale est en cours d'organisation.`;
+            return `🛬 Le GP est arrivé à ${ctx.destination_city}.\n\nLa livraison finale est en cours d'organisation.`;
           case "delivered":
-            return `🎉 **Colis livré avec succès !**\n\nMerci d'avoir utilisé Yobbanté.\nN'hésitez pas à laisser un avis.`;
+            return `🎉 Colis livré avec succès !\n\nMerci d'avoir utilisé Yobbanté.\nN'hésitez pas à laisser un avis.`;
           default:
             return `📦 Statut: ${STATUS_LABELS[ctx.status] || ctx.status}\nConsultez l'onglet "Suivi" pour plus de détails.`;
         }
@@ -174,7 +174,7 @@ export function SmartClientResponses({
           return `⏳ La date de dépôt vous sera communiquée dès validation par le GP.\nUn QR code sera requis lors de la remise.`;
         }
         if (ctx.pickup_date) {
-          return `📅 **Date de dépôt prévue:**\n${format(new Date(ctx.pickup_date), "EEEE d MMMM yyyy", { locale: fr })}\n\n📍 Lieu: ${ctx.gp_deposit_address || "À confirmer"}\n⚠️ Un QR code sera requis lors de la remise.`;
+          return `📅 Date de dépôt prévue:\n${format(new Date(ctx.pickup_date), "EEEE d MMMM yyyy", { locale: fr })}\n\n📍 Lieu: ${ctx.gp_deposit_address || "À confirmer"}\n⚠️ Un QR code sera requis lors de la remise.`;
         }
         return `📍 La date et le lieu de dépôt vous seront communiqués dès validation complète par le GP.\nUn QR code sera requis lors de la remise.`;
       },
@@ -190,7 +190,7 @@ export function SmartClientResponses({
           return `⏳ Le lieu de dépôt sera communiqué après acceptation par le GP.`;
         }
         if (ctx.gp_deposit_address) {
-          return `📍 **Adresse de dépôt:**\n${ctx.gp_deposit_address}\n\n⚠️ Cette information est partagée uniquement après acceptation du GP.`;
+          return `📍 Adresse de dépôt:\n${ctx.gp_deposit_address}\n\n⚠️ Cette information est partagée uniquement après acceptation du GP.`;
         }
         return `📍 L'adresse exacte sera partagée par le GP ${ctx.gp_name}.\nContactez-le directement dans cette conversation.`;
       },
@@ -203,13 +203,13 @@ export function SmartClientResponses({
       color: "bg-purple-500/10 text-purple-600",
       getResponse: async (ctx) => {
         if (ctx.status === "arrived") {
-          return `🛬 **Le GP est arrivé à ${ctx.destination_city} !**\n\nLa livraison finale est en cours d'organisation.\nVous serez contacté très prochainement.`;
+          return `🛬 Le GP est arrivé à ${ctx.destination_city} !\n\nLa livraison finale est en cours d'organisation.\nVous serez contacté très prochainement.`;
         }
         if (ctx.status === "delivered") {
           return `🎉 Votre colis a déjà été livré le ${ctx.actual_delivery_date ? format(new Date(ctx.actual_delivery_date), "d MMMM", { locale: fr }) : "récemment"}.`;
         }
         if (ctx.delivery_date) {
-          return `⏳ **Livraison estimée:**\n${format(new Date(ctx.delivery_date), "EEEE d MMMM yyyy", { locale: fr })}\n\nLa date dépend du trajet du GP. Vous serez notifié dès son arrivée à destination.`;
+          return `⏳ Livraison estimée:\n${format(new Date(ctx.delivery_date), "EEEE d MMMM yyyy", { locale: fr })}\n\nLa date dépend du trajet du GP. Vous serez notifié dès son arrivée à destination.`;
         }
         return `⏳ La date de réception dépend du trajet du GP.\nVous serez notifié dès son arrivée à destination.`;
       },
@@ -222,7 +222,7 @@ export function SmartClientResponses({
       color: "bg-indigo-500/10 text-indigo-600",
       getResponse: async (ctx) => {
         if (ctx.status === "arrived" || ctx.status === "delivered") {
-          return `🛬 **Oui, le GP est arrivé à ${ctx.destination_city} !**\n\nLa livraison finale ${ctx.status === "delivered" ? "a été effectuée" : "est en cours d'organisation"}.`;
+          return `🛬 Oui, le GP est arrivé à ${ctx.destination_city} !\n\nLa livraison finale ${ctx.status === "delivered" ? "a été effectuée" : "est en cours d'organisation"}.`;
         }
         if (ctx.status === "in_transit") {
           return `✈️ Le GP est actuellement en transit.\nTrajet: ${ctx.origin_city} → ${ctx.destination_city}\n\nVous serez notifié dès son arrivée.`;
@@ -237,7 +237,7 @@ export function SmartClientResponses({
       message: "Puis-je envoyer quelqu'un à ma place ?",
       color: "bg-cyan-500/10 text-cyan-600",
       getResponse: async () => {
-        return `👤 **Oui, c'est possible !**\n\nVous devrez partager votre QR code de remise avec la personne autorisée.\n\n📲 Le QR code se trouve sur la page de suivi de votre commande.`;
+        return `👤 Oui, c'est possible !\n\nVous devrez partager votre QR code de remise avec la personne autorisée.\n\n📲 Le QR code se trouve sur la page de suivi de votre commande.`;
       },
     },
     // 7️⃣ « J'ai modifié le poids de mon colis » / Poids modifié
@@ -249,7 +249,7 @@ export function SmartClientResponses({
       getResponse: async (ctx) => {
         if (ctx.weight_tier_applied?.startsWith("pending:")) {
           const newWeight = ctx.weight_tier_applied.split(":")[1];
-          return `⚠️ **Correction de poids détectée !**\n\n🔁 Ancien poids: ${ctx.weight} kg\n🔁 Nouveau poids: ${newWeight} kg\n\n👉 **Action requise:** Rendez-vous sur votre page d'accueil pour confirmer le nouveau poids.\n\n💡 Seul le prix du poids est ajusté. L'assurance et la logistique restent inchangées.`;
+          return `⚠️ Correction de poids détectée !\n\n🔁 Ancien poids: ${ctx.weight} kg\n🔁 Nouveau poids: ${newWeight} kg\n\n👉 Action requise: Rendez-vous sur votre page d'accueil pour confirmer le nouveau poids.\n\n💡 Seul le prix du poids est ajusté. L'assurance et la logistique restent inchangées.`;
         }
         return `⚖️ Poids actuel: ${ctx.weight} kg\n\nSi le poids réel diffère, le GP effectuera la vérification lors du dépôt et vous devrez confirmer tout ajustement.`;
       },
@@ -261,7 +261,7 @@ export function SmartClientResponses({
       message: "Pourquoi le prix a changé ?",
       color: "bg-rose-500/10 text-rose-600",
       getResponse: async () => {
-        return `💡 **Le prix peut changer pour une raison:**\n\nLe poids réel du colis a été vérifié lors du dépôt et diffère du poids déclaré.\n\n👉 **Important:**\n• Seul le prix du poids est recalculé\n• L'assurance reste inchangée\n• La logistique reste inchangée\n\nVous devez confirmer tout ajustement avant que la commande continue.`;
+        return `💡 Le prix peut changer pour une raison:\n\nLe poids réel du colis a été vérifié lors du dépôt et diffère du poids déclaré.\n\n👉 Important:\n• Seul le prix du poids est recalculé\n• L'assurance reste inchangée\n• La logistique reste inchangée\n\nVous devez confirmer tout ajustement avant que la commande continue.`;
       },
     },
     // 9️⃣ « Ai-je une assurance sur mon colis ? »
@@ -274,9 +274,9 @@ export function SmartClientResponses({
         if (ctx.has_insurance && ctx.insurance_amount > 0) {
           const rates = await loadExchangeRates();
           const insuranceDisplay = formatInsuranceDual(ctx.insurance_amount, ctx.currency, rates);
-          return `🛡️ **Oui, votre colis est assuré !**\n\nMontant: ${insuranceDisplay}\n\nL'assurance couvre les dommages et pertes pendant le transport.`;
+          return `🛡️ Oui, votre colis est assuré !\n\nMontant: ${insuranceDisplay}\n\nL'assurance couvre les dommages et pertes pendant le transport.`;
         }
-        return `⚠️ **Vous avez choisi de ne pas assurer ce colis.**\n\nSans assurance, Yobbanté ne peut pas garantir le remboursement en cas de perte ou dommage.`;
+        return `⚠️ Vous avez choisi de ne pas assurer ce colis.\n\nSans assurance, Yobbanté ne peut pas garantir le remboursement en cas de perte ou dommage.`;
       },
     },
     // 🔟 « J'ai besoin d'aide concernant ma commande »
@@ -372,7 +372,7 @@ export function SmartClientResponses({
         conversation_id: conversationId,
         sender_id: gpUserId || conversation?.gp_id || currentUserId,
         sender_type: "gp", // Use "gp" as sender_type (auto-response on behalf of GP)
-        content: `🤖 **Réponse automatique**\n\n${autoResponse}`,
+        content: `🤖 Réponse automatique\n\n${autoResponse}`,
       });
       
       if (responseError) throw responseError;
