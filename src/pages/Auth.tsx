@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -12,11 +12,20 @@ import { TransportPageLoader } from "@/components/ui/TransportLoader";
 
 export default function AuthPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { detectUserRoleAndRedirect } = useSmartRedirect();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
+
+  // Set mode from URL param
+  useEffect(() => {
+    const modeParam = searchParams.get("mode");
+    if (modeParam === "login" || modeParam === "signup") {
+      setMode(modeParam === "signup" ? "register" : "login");
+    }
+  }, [searchParams]);
 
   // Vérifier si l'utilisateur est déjà connecté
   useEffect(() => {
@@ -32,6 +41,26 @@ export default function AuthPage() {
 
   // Check for pending booking state and redirect accordingly
   const handlePostAuthRedirect = async (userId: string) => {
+    // V2: Check for complete booking state first (smart auth flow)
+    const completeBooking = sessionStorage.getItem("pending_booking_complete");
+    if (completeBooking) {
+      try {
+        const state = JSON.parse(completeBooking);
+        // Only use if less than 30 minutes old
+        if (Date.now() - state.timestamp < 30 * 60 * 1000 && state.returnPath) {
+          // Keep the state - it will be used when returning to booking page
+          toast({
+            title: "Connexion réussie",
+            description: "Finalisation de votre réservation...",
+          });
+          navigate(state.returnPath);
+          return;
+        }
+      } catch {
+        sessionStorage.removeItem("pending_booking_complete");
+      }
+    }
+
     const stored = sessionStorage.getItem("pending_booking_state");
     if (stored) {
       try {

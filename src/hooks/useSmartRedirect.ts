@@ -38,6 +38,20 @@ export function useSmartRedirect() {
    * Check for pending booking state and return the path if valid
    */
   const getPendingReturnPath = useCallback((): string | null => {
+    // V2: Check complete booking state first (smart auth at end of flow)
+    const completeBooking = sessionStorage.getItem("pending_booking_complete");
+    if (completeBooking) {
+      try {
+        const state = JSON.parse(completeBooking);
+        if (Date.now() - state.timestamp < 30 * 60 * 1000 && state.returnPath) {
+          // Don't remove - SmartBookingPage will use it to restore state
+          return state.returnPath;
+        }
+      } catch {
+        sessionStorage.removeItem("pending_booking_complete");
+      }
+    }
+
     const stored = sessionStorage.getItem("pending_booking_state");
     if (!stored) return null;
 
