@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertTriangle, Scale, Check, X, Info, DollarSign } from "lucide-react";
+import { AlertTriangle, Scale, Check, X, Info, DollarSign, ShieldAlert, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -214,36 +215,45 @@ export function WeightCorrectionAlert({ userId, onConfirm }: WeightCorrectionAle
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
           >
-            <Card className="border-amber-400 bg-amber-50 shadow-lg mb-4">
+            {/* DANGER BANNER - Full-width alert strip */}
+            <Alert variant="destructive" className="mb-2 border-destructive bg-destructive/10">
+              <ShieldAlert className="h-4 w-4" />
+              <AlertTitle className="font-bold">⚠️ Action requise</AlertTitle>
+              <AlertDescription className="text-xs">
+                Le poids de votre colis a été modifié par le transporteur. Votre réservation est bloquée jusqu'à confirmation.
+              </AlertDescription>
+            </Alert>
+
+            <Card className="border-destructive/50 bg-destructive/5 shadow-lg mb-4">
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
                   {/* Warning Icon */}
                   <motion.div
                     animate={{ scale: [1, 1.1, 1] }}
                     transition={{ duration: 1, repeat: Infinity }}
-                    className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center flex-shrink-0"
+                    className="w-10 h-10 rounded-full bg-destructive flex items-center justify-center flex-shrink-0"
                   >
                     <AlertTriangle className="w-5 h-5 text-white" />
                   </motion.div>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-amber-800 mb-1">
-                      ⚠️ Correction de poids requise
+                    <h3 className="font-bold text-destructive mb-1">
+                      🚨 Modification de poids détectée
                     </h3>
-                    <p className="text-sm text-amber-700 mb-2">
-                      Commande <span className="font-mono font-bold">{correction.order_number}</span>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Commande <span className="font-mono font-bold text-foreground">{correction.order_number}</span> par <span className="font-medium">{correction.gp_name}</span>
                     </p>
 
                     {/* Weight Comparison */}
-                    <div className="flex items-center gap-3 p-3 bg-white rounded-lg mb-3">
+                    <div className="flex items-center gap-3 p-3 bg-background rounded-lg mb-3 border border-destructive/20">
                       <div className="text-center flex-1">
                         <p className="text-xs text-muted-foreground">Déclaré</p>
                         <p className="font-bold text-lg line-through text-red-500">
                           {correction.declared_weight} kg
                         </p>
                       </div>
-                      <Scale className="w-5 h-5 text-amber-600" />
+                      <Scale className="w-5 h-5 text-destructive" />
                       <div className="text-center flex-1">
                         <p className="text-xs text-muted-foreground">Réel</p>
                         <p className="font-bold text-lg text-green-600">
@@ -253,9 +263,9 @@ export function WeightCorrectionAlert({ userId, onConfirm }: WeightCorrectionAle
                     </div>
 
                     {/* Price Difference */}
-                    <div className="p-2 bg-white rounded-lg mb-3">
+                    <div className="p-2 bg-background rounded-lg mb-3 border border-border">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Diff. poids:</span>
+                        <span className="text-muted-foreground">Impact prix poids:</span>
                         <span className={`font-bold ${correction.weight_price_difference > 0 ? "text-red-600" : "text-green-600"}`}>
                           {correction.weight_price_difference > 0 ? "+" : ""}
                           {correction.weight_price_difference.toLocaleString()} {correction.currency}
@@ -263,8 +273,14 @@ export function WeightCorrectionAlert({ userId, onConfirm }: WeightCorrectionAle
                       </div>
                       {correction.fixed_insurance > 0 && (
                         <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
-                          <span>Assurance (fixé):</span>
+                          <span>🛡️ Assurance (inchangée):</span>
                           <span>{correction.fixed_insurance.toLocaleString()} {correction.currency}</span>
+                        </div>
+                      )}
+                      {correction.fixed_logistics > 0 && (
+                        <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                          <span>🚚 Logistique (inchangée):</span>
+                          <span>{correction.fixed_logistics.toLocaleString()} {correction.currency}</span>
                         </div>
                       )}
                       <div className="flex items-center justify-between text-sm font-bold mt-2 pt-2 border-t">
@@ -276,19 +292,35 @@ export function WeightCorrectionAlert({ userId, onConfirm }: WeightCorrectionAle
                     </div>
 
                     {/* Info */}
-                    <p className="text-[10px] text-amber-600 mb-3 flex items-start gap-1">
+                    <p className="text-[10px] text-muted-foreground mb-3 flex items-start gap-1">
                       <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
                       Seul le prix du poids est ajusté. L'assurance et la logistique restent inchangées.
                     </p>
 
                     {/* Actions */}
-                    <Button
-                      className="w-full gap-2"
-                      onClick={() => setSelectedCorrection(correction)}
-                    >
-                      <Check className="w-4 h-4" />
-                      Confirmer le nouveau poids
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        className="flex-1 gap-2 border-destructive text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          // Could open a dispute or contact support
+                          toast({
+                            title: "Contestation",
+                            description: "Contactez le support pour contester cette modification.",
+                          });
+                        }}
+                      >
+                        <Ban className="w-4 h-4" />
+                        Contester
+                      </Button>
+                      <Button
+                        className="flex-1 gap-2"
+                        onClick={() => setSelectedCorrection(correction)}
+                      >
+                        <Check className="w-4 h-4" />
+                        Accepter
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>

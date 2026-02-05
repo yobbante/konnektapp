@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, Clock, MapPin, ArrowRight, Truck, User, CheckCircle, AlertTriangle, X, Calendar, Scale, Phone, MessageCircle, ChevronDown, ExternalLink, Star } from "lucide-react";
+import { Package, Clock, MapPin, ArrowRight, Truck, User, CheckCircle, AlertTriangle, X, Calendar, Scale, Phone, MessageCircle, ChevronDown, ExternalLink, Star, Home as HomeIcon, FileText, Box } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AppHeader } from "@/components/layout/AppHeader";
@@ -13,6 +13,33 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { ORDER_STATUS_LABELS, isValidOrderStatus } from "@/lib/enumMappings";
 import { RateOrderDialog } from "@/components/RateOrderDialog";
+
+interface CustomRequest {
+  id: string;
+  request_number: string;
+  origin_city: string;
+  origin_country: string;
+  destination_city: string;
+  destination_country: string;
+  status: string;
+  created_at: string;
+  shipment_type: string;
+  weight_estimate: number | null;
+  transport_type: string | null;
+}
+
+interface MovingRequest {
+  id: string;
+  request_number: string;
+  origin_city: string;
+  origin_country: string;
+  destination_city: string;
+  destination_country: string;
+  status: string;
+  created_at: string;
+  volume_estimate: string | null;
+}
+
 interface Order {
   id: string;
   order_number: string;
@@ -42,8 +69,11 @@ export default function OrderHistory() {
   } = useToast();
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [customRequests, setCustomRequests] = useState<CustomRequest[]>([]);
+  const [movingRequests, setMovingRequests] = useState<MovingRequest[]>([]);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [ratingOrder, setRatingOrder] = useState<Order | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("active");
   useEffect(() => {
     loadOrders();
   }, []);
@@ -84,6 +114,30 @@ export default function OrderHistory() {
           has_review: reviewedOrderIds.has(order.id)
         }));
         setOrders(ordersWithDetails);
+      }
+
+      // Load custom requests (non-moving)
+      const { data: customReqs } = await supabase
+        .from("custom_requests")
+        .select("id, request_number, origin_city, origin_country, destination_city, destination_country, status, created_at, shipment_type, weight_estimate, transport_type")
+        .eq("client_id", user.id)
+        .neq("transport_type", "interne")
+        .order("created_at", { ascending: false });
+      
+      if (customReqs) {
+        setCustomRequests(customReqs as CustomRequest[]);
+      }
+
+      // Load moving requests (internal transport)
+      const { data: movingReqs } = await supabase
+        .from("custom_requests")
+        .select("id, request_number, origin_city, origin_country, destination_city, destination_country, status, created_at, volume_estimate")
+        .eq("client_id", user.id)
+        .eq("transport_type", "interne")
+        .order("created_at", { ascending: false });
+      
+      if (movingReqs) {
+        setMovingRequests(movingReqs as MovingRequest[]);
       }
     } catch (error) {
       console.error("Error loading orders:", error);
@@ -153,6 +207,14 @@ export default function OrderHistory() {
   }
   const activeOrders = orders.filter(o => ["pending", "accepted", "collected", "in_transit"].includes(o.status));
   const completedOrders = orders.filter(o => ["delivered", "cancelled", "disputed"].includes(o.status));
+  const activeCustomRequests = customRequests.filter(r => ["pending", "open", "responded", "has_responses"].includes(r.status));
+  const completedCustomRequests = customRequests.filter(r => ["accepted", "expired", "cancelled", "completed"].includes(r.status));
+  const activeMovingRequests = movingRequests.filter(m => ["pending", "reviewing", "quoted", "negotiating", "accepted", "scheduled", "in_progress"].includes(m.status));
+  const completedMovingRequests = movingRequests.filter(m => ["completed", "cancelled"].includes(m.status));
+  
+  const totalActive = activeOrders.length + activeCustomRequests.length + activeMovingRequests.length;
+  const totalCompleted = completedOrders.length + completedCustomRequests.length + completedMovingRequests.length;
+
   return <div className="min-h-screen bg-muted/30" style={{
     paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))'
   }}>
@@ -163,29 +225,101 @@ export default function OrderHistory() {
           <TabsList className="w-full grid grid-cols-2 mb-4">
             <TabsTrigger value="active" className="gap-2">
               <Truck className="w-4 h-4" />
-              En cours ({activeOrders.length})
+              En cours ({totalActive})
             </TabsTrigger>
             <TabsTrigger value="history" className="gap-2">
               <CheckCircle className="w-4 h-4" />
-              Terminés ({completedOrders.length})
+              Terminés ({totalCompleted})
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="active" className="space-y-3 mt-0">
-            {activeOrders.length === 0 ? <Card className="text-center py-8">
+            {totalActive === 0 ? <Card className="text-center py-8">
                 <Package className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
                 <p className="text-muted-foreground mb-4">Aucun envoi en cours</p>
                 <Button onClick={() => navigate("/envoyer")}>
                   Envoyer un colis
                 </Button>
-              </Card> : activeOrders.map(order => <OrderCard key={order.id} order={order} expanded={expandedOrderId === order.id} onToggle={() => toggleExpand(order.id)} onRate={() => setRatingOrder(order)} navigate={navigate} />)}
+              </Card> : (
+                <>
+                  {/* Active Moving Requests */}
+                  {activeMovingRequests.map(req => (
+                    <RequestCard 
+                      key={req.id} 
+                      request={req} 
+                      type="moving" 
+                      expanded={expandedOrderId === req.id}
+                      onToggle={() => toggleExpand(req.id)}
+                    />
+                  ))}
+                  
+                  {/* Active Custom Requests */}
+                  {activeCustomRequests.map(req => (
+                    <RequestCard 
+                      key={req.id} 
+                      request={req} 
+                      type="custom" 
+                      expanded={expandedOrderId === req.id}
+                      onToggle={() => toggleExpand(req.id)}
+                    />
+                  ))}
+                  
+                  {/* Active Orders */}
+                  {activeOrders.map(order => (
+                    <OrderCard 
+                      key={order.id} 
+                      order={order} 
+                      expanded={expandedOrderId === order.id} 
+                      onToggle={() => toggleExpand(order.id)} 
+                      onRate={() => setRatingOrder(order)} 
+                      navigate={navigate} 
+                    />
+                  ))}
+                </>
+              )}
           </TabsContent>
 
           <TabsContent value="history" className="space-y-3 mt-0">
-            {completedOrders.length === 0 ? <Card className="text-center py-8">
+            {totalCompleted === 0 ? <Card className="text-center py-8">
                 <CheckCircle className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
                 <p className="text-muted-foreground">Aucun envoi terminé</p>
-              </Card> : completedOrders.map(order => <OrderCard key={order.id} order={order} expanded={expandedOrderId === order.id} onToggle={() => toggleExpand(order.id)} onRate={() => setRatingOrder(order)} navigate={navigate} />)}
+              </Card> : (
+                <>
+                  {/* Completed Moving Requests */}
+                  {completedMovingRequests.map(req => (
+                    <RequestCard 
+                      key={req.id} 
+                      request={req} 
+                      type="moving" 
+                      expanded={expandedOrderId === req.id}
+                      onToggle={() => toggleExpand(req.id)}
+                    />
+                  ))}
+                  
+                  {/* Completed Custom Requests */}
+                  {completedCustomRequests.map(req => (
+                    <RequestCard 
+                      key={req.id} 
+                      request={req} 
+                      type="custom" 
+                      expanded={expandedOrderId === req.id}
+                      onToggle={() => toggleExpand(req.id)}
+                    />
+                  ))}
+                  
+                  {/* Completed Orders */}
+                  {completedOrders.map(order => (
+                    <OrderCard 
+                      key={order.id} 
+                      order={order} 
+                      expanded={expandedOrderId === order.id} 
+                      onToggle={() => toggleExpand(order.id)} 
+                      onRate={() => setRatingOrder(order)} 
+                      navigate={navigate} 
+                    />
+                  ))}
+                </>
+              )}
           </TabsContent>
         </Tabs>
       </div>
@@ -198,6 +332,147 @@ export default function OrderHistory() {
       <MobileNav />
     </div>;
 }
+
+// Request Card Component for Custom/Moving Requests
+interface RequestCardProps {
+  request: CustomRequest | MovingRequest;
+  type: 'custom' | 'moving';
+  expanded: boolean;
+  onToggle: () => void;
+}
+
+function RequestCard({ request, type, expanded, onToggle }: RequestCardProps) {
+  const isMoving = type === 'moving';
+  
+  const STATUS_LABELS: Record<string, string> = {
+    pending: "En attente",
+    open: "Ouverte",
+    responded: "Réponses reçues",
+    has_responses: "Réponses reçues",
+    reviewing: "En étude",
+    quoted: "Devis reçu",
+    negotiating: "Négociation",
+    accepted: "Acceptée",
+    scheduled: "Planifiée",
+    in_progress: "En cours",
+    completed: "Terminée",
+    cancelled: "Annulée",
+    expired: "Expirée",
+  };
+  
+  const statusLabel = STATUS_LABELS[request.status] || request.status;
+  const statusColor = isMoving 
+    ? "text-amber-600 bg-amber-500/10" 
+    : "text-purple-600 bg-purple-500/10";
+  
+  const Icon = isMoving ? HomeIcon : FileText;
+  
+  return (
+    <motion.div layout className="overflow-hidden">
+      <Card className={`overflow-hidden transition-all ${expanded ? 'ring-2 ring-primary/20' : ''}`}>
+        <motion.div whileTap={{ scale: 0.99 }} onClick={onToggle} className="p-4 cursor-pointer">
+          <div className="flex items-start gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isMoving ? 'bg-amber-500/10' : 'bg-purple-500/10'}`}>
+              <Icon className={`w-5 h-5 ${isMoving ? 'text-amber-600' : 'text-purple-600'}`} />
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Badge variant="secondary" className="text-[10px] py-0 px-1.5">
+                  {isMoving ? 'Déménagement' : 'Demande'}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-semibold text-sm truncate">{request.origin_city}</span>
+                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                <span className="font-semibold text-sm truncate">{request.destination_city}</span>
+              </div>
+              
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="outline" className={`text-xs ${statusColor} border-current`}>
+                  {statusLabel}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  {request.request_number}
+                </span>
+              </div>
+              
+              <p className="text-xs text-muted-foreground mt-1">
+                {new Date(request.created_at).toLocaleDateString('fr-FR', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric'
+                })}
+              </p>
+            </div>
+
+            <motion.div 
+              animate={{ rotate: expanded ? 180 : 0 }} 
+              className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0"
+            >
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            </motion.div>
+          </div>
+        </motion.div>
+
+        <AnimatePresence>
+          {expanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <CardContent className="pt-0 pb-4 space-y-3 border-t border-border">
+                <div className="pt-4 grid grid-cols-2 gap-3">
+                  {isMoving && (request as MovingRequest).volume_estimate && (
+                    <div className="p-3 bg-muted/50 rounded-xl">
+                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                        <Box className="w-3.5 h-3.5" />
+                        <span className="text-xs">Volume</span>
+                      </div>
+                      <p className="font-semibold">{(request as MovingRequest).volume_estimate}</p>
+                    </div>
+                  )}
+                  
+                  {!isMoving && (request as CustomRequest).weight_estimate && (
+                    <div className="p-3 bg-muted/50 rounded-xl">
+                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                        <Scale className="w-3.5 h-3.5" />
+                        <span className="text-xs">Poids estimé</span>
+                      </div>
+                      <p className="font-semibold">{(request as CustomRequest).weight_estimate} kg</p>
+                    </div>
+                  )}
+                  
+                  {!isMoving && (request as CustomRequest).shipment_type && (
+                    <div className="p-3 bg-muted/50 rounded-xl">
+                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                        <Package className="w-3.5 h-3.5" />
+                        <span className="text-xs">Type</span>
+                      </div>
+                      <p className="font-semibold capitalize">{(request as CustomRequest).shipment_type}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Info banner */}
+                <div className={`p-3 rounded-xl ${isMoving ? 'bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30' : 'bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/30'}`}>
+                  <p className={`text-sm ${isMoving ? 'text-amber-800 dark:text-amber-200' : 'text-purple-800 dark:text-purple-200'}`}>
+                    {isMoving 
+                      ? "🚚 Service de déménagement géré par l'équipe Yobbanté."
+                      : "📦 Demande visible par les transporteurs de la plateforme."}
+                  </p>
+                </div>
+              </CardContent>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </Card>
+    </motion.div>
+  );
+}
+
 interface OrderCardProps {
   order: Order;
   expanded: boolean;

@@ -4,13 +4,14 @@ import {
   Package, MapPin, Calendar, Clock, User, Phone, 
   MessageCircle, Weight, AlertTriangle, Zap, CheckCircle,
   XCircle, Truck, ArrowRight, FileText, Check, X, QrCode,
-  Home, Navigation, Shield, Info
+  Home, Navigation, Shield, Info, Copy, ExternalLink, Wallet, Scale
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Sheet,
   SheetContent,
@@ -304,7 +305,20 @@ export function GPMissionDetailsSheet({
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs text-muted-foreground">Commande</p>
-                    <p className="font-mono font-bold text-lg">{order.order_number}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-mono font-bold text-lg">{order.order_number}</p>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => {
+                          navigator.clipboard.writeText(order.order_number);
+                          toast({ title: "Copié !" });
+                        }}
+                      >
+                        <Copy className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-muted-foreground">Reçue le</p>
@@ -375,50 +389,90 @@ export function GPMissionDetailsSheet({
             {/* Shipment Details */}
             <Card>
               <CardContent className="p-4 space-y-3">
-                <h3 className="font-semibold text-sm flex items-center gap-2">
-                  <Package className="w-4 h-4" />
-                  Colis
-                </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <p className="text-xs text-muted-foreground">Poids</p>
-                    <p className="font-bold text-lg">{order.weight} kg</p>
-                  </div>
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <p className="text-xs text-muted-foreground">Montant</p>
-                    <p className="font-bold text-lg text-primary">
-                      {order.total_price.toLocaleString()} {getCurrencySymbol(order.currency)}
-                    </p>
-                  </div>
-                </div>
+                <Tabs defaultValue="colis" className="w-full">
+                  <TabsList className="w-full grid grid-cols-2 h-8">
+                    <TabsTrigger value="colis" className="text-xs gap-1">
+                      <Package className="w-3 h-3" />
+                      Colis
+                    </TabsTrigger>
+                    <TabsTrigger value="paiement" className="text-xs gap-1">
+                      <Wallet className="w-3 h-3" />
+                      Paiement
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="colis" className="mt-3 space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <div className="flex items-center gap-1 mb-1">
+                          <Scale className="w-3 h-3 text-muted-foreground" />
+                          <p className="text-xs text-muted-foreground">Poids</p>
+                        </div>
+                        <p className="font-bold text-lg">{order.weight} kg</p>
+                      </div>
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <div className="flex items-center gap-1 mb-1">
+                          <Wallet className="w-3 h-3 text-muted-foreground" />
+                          <p className="text-xs text-muted-foreground">Montant</p>
+                        </div>
+                        <p className="font-bold text-lg text-primary">
+                          {order.total_price.toLocaleString()} {getCurrencySymbol(order.currency)}
+                        </p>
+                      </div>
+                    </div>
                 
-                {/* Content nature */}
-                {order.content_nature && order.content_nature.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {order.content_nature.map((nature: string) => (
-                      <Badge key={nature} variant="secondary" className="text-xs">
-                        {nature}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
+                    {/* Content nature */}
+                    {order.content_nature && order.content_nature.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {order.content_nature.map((nature: string) => (
+                          <Badge key={nature} variant="secondary" className="text-xs">
+                            {nature}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
 
-                {order.description && (
-                  <div className="p-3 bg-muted/30 rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">Description</p>
-                    <p className="text-sm">{order.description}</p>
-                  </div>
-                )}
+                    {order.description && (
+                      <div className="p-3 bg-muted/30 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Description</p>
+                        <p className="text-sm">{order.description}</p>
+                      </div>
+                    )}
+                  </TabsContent>
 
-                {/* Insurance status */}
-                {order.has_insurance && (
-                  <div className="flex items-center gap-2 p-2 bg-primary/5 rounded-lg">
-                    <Shield className="w-4 h-4 text-primary" />
-                    <span className="text-xs text-primary font-medium">
-                      Assuré — Valeur: {order.declared_value?.toLocaleString()} {getCurrencySymbol(order.currency)}
-                    </span>
-                  </div>
-                )}
+                  <TabsContent value="paiement" className="mt-3 space-y-3">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Prix total</span>
+                        <span className="font-bold text-primary">
+                          {order.total_price.toLocaleString()} {getCurrencySymbol(order.currency)}
+                        </span>
+                      </div>
+                      
+                      {/* Insurance status */}
+                      {order.has_insurance && (
+                        <div className="flex items-center justify-between p-2 bg-primary/5 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Shield className="w-4 h-4 text-primary" />
+                            <span className="text-xs">Assurance incluse</span>
+                          </div>
+                          <span className="text-xs font-medium text-primary">
+                            {order.declared_value?.toLocaleString()} {getCurrencySymbol(order.currency)}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="p-3 bg-success/10 rounded-lg border border-success/30">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-success" />
+                          <span className="text-sm font-medium text-success">
+                            Paiement confirmé
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
 
