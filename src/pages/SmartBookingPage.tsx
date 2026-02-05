@@ -20,6 +20,7 @@ import { EscrowPaymentFlow } from "@/components/escrow/EscrowPaymentFlow";
 import { MandatoryInsuranceChoice, type InsuranceChoice } from "@/components/booking/MandatoryInsuranceChoice";
 import { LocalLogisticsOptions, type LogisticsOptions } from "@/components/booking/LocalLogisticsOptions";
 import { DualCurrencyDisplay, DualCurrencyCompact, CurrencyInfoBanner } from "@/components/booking/DualCurrencyDisplay";
+import { FloatingRecap } from "@/components/booking/FloatingRecap";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { convertFromFCFA, loadExchangeRates, type ExchangeRate } from "@/lib/currencyUtils";
 import { createAutoConversationAfterBooking } from "@/lib/autoChat";
@@ -487,9 +488,10 @@ export default function SmartBookingPage() {
           destination_city: offer.destination_city,
           destination_country: offer.destination_country,
           price_per_kg: offer.price_per_kg,
-          // V3 FIX: Le poids ET le prix doivent être des entiers pour la DB
-          weight: roundForDatabase(calculations.weight) || 0,
-          total_price: roundForDatabase(displayGrandTotal),
+          // V3 FIX DÉFINITIF: PostgreSQL integer columns require integer values
+          // weight is NUMERIC (accepts decimals), but total_price/insurance_amount are INTEGER
+          weight: calculations.weight, // NUMERIC column - keep decimal precision
+          total_price: Math.round(displayGrandTotal), // INTEGER column - must be whole number
           currency: offer.currency,
           status: "pending" as const,
           logistics_status: "submitted",
@@ -497,9 +499,9 @@ export default function SmartBookingPage() {
           description: buildOrderDescription(),
           // Insurance fields
           has_insurance: insuranceChoice.hasInsurance,
-          insurance_amount: roundForDatabase(displayInsuranceAmount || 0),
+          insurance_amount: Math.round(displayInsuranceAmount || 0), // INTEGER column
           insurance_tier_id: insuranceChoice.tierId,
-          declared_value: insuranceChoice.declaredValue || null,
+          declared_value: insuranceChoice.declaredValue ? Math.round(insuranceChoice.declaredValue) : null, // INTEGER column
           content_nature: kiloNatures,
           content_nature_other: kiloNatures.includes("autres") ? autresNature : null,
         })
@@ -518,7 +520,7 @@ export default function SmartBookingPage() {
           order_id: orderData.id,
           merchandise_type: getMerchandiseType(),
           merchandise_description: buildOrderDescription(),
-          estimated_weight: roundForDatabase(calculations.weight) || 0,
+          estimated_weight: calculations.weight, // NUMERIC column - keep decimal
           is_fragile: false,
           is_urgent: false,
           pickup_address: logisticsOptions.pickupEnabled ? logisticsOptions.pickupAddress : "À confirmer",
@@ -1387,10 +1389,27 @@ export default function SmartBookingPage() {
         )}
       </div>
 
+      {/* Floating Recap - Always visible except step 5 */}
+      {!showEscrow && (
+        <FloatingRecap
+          weight={calculations.weight}
+          flatRateCount={calculations.flatRateCount}
+          transportTotal={calculations.transportTotal}
+          insuranceTotal={displayInsuranceAmount}
+          logisticsTotal={displayLogisticsAmount}
+          grandTotal={displayGrandTotal}
+          currency={currency}
+          getFCFAEquivalent={getFCFAEquivalent}
+          hasInsurance={insuranceChoice.hasInsurance}
+          hasLogistics={calculations.hasLogistics}
+          currentStep={step}
+        />
+      )}
+
       {/* Bottom Navigation */}
       {!showEscrow && (
         <div 
-          className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4"
+          className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 z-50"
           style={{ paddingBottom: 'calc(16px + var(--safe-bottom, 0px))' }}
         >
           <div className="flex gap-3 max-w-lg mx-auto">
