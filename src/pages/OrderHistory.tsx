@@ -129,11 +129,12 @@ export default function OrderHistory() {
       }
 
       // Load moving requests (internal transport)
+      // V1.4 FIX: Use shipment_type = 'demenagement' to correctly identify moving requests
       const { data: movingReqs } = await supabase
         .from("custom_requests")
         .select("id, request_number, origin_city, origin_country, destination_city, destination_country, status, created_at, volume_estimate")
         .eq("client_id", user.id)
-        .eq("transport_type", "interne")
+        .eq("shipment_type", "demenagement")
         .order("created_at", { ascending: false });
       
       if (movingReqs) {
