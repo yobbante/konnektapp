@@ -120,6 +120,7 @@ export default function SmartBookingPage() {
   const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
   const [offer, setOffer] = useState<GPOffer | null>(null);
   const [flatRateItems, setFlatRateItems] = useState<FlatRateItem[]>([]);
+  const [weightTiers, setWeightTiers] = useState<{ min_weight: number; max_weight: number; price_per_kg: number }[]>([]);
 
   // Form State - Section A: Colis au kilo
   const [kiloWeight, setKiloWeight] = useState<string>("");
@@ -279,6 +280,18 @@ export default function SmartBookingPage() {
           quantity: 0,
         })));
       }
+
+      // Fetch GP's weight tiers for tiered pricing
+      const { data: tiersData } = await supabase
+        .from("gp_weight_tiers")
+        .select("min_weight, max_weight, price_per_kg")
+        .eq("gp_id", gpId)
+        .eq("is_active", true)
+        .order("min_weight", { ascending: true });
+
+      if (tiersData && tiersData.length > 0) {
+        setWeightTiers(tiersData);
+      }
     } catch (error) {
       console.error("Error loading data:", error);
       toast({ title: "Erreur de chargement", variant: "destructive" });
@@ -287,14 +300,26 @@ export default function SmartBookingPage() {
     }
   };
 
-  // Calculate totals - TARIFICATION LINÉAIRE V1 (pas de paliers)
-  // Formule: Prix = (Poids × Prix/kg) + Σ(Quantité × Prix forfaitaire) + Assurance + Logistique
+  // Calculate totals - TARIFICATION V2 avec paliers de poids
+  // Formule: Prix = getWeightPrice(Poids) + Σ(Quantité × Prix forfaitaire) + Assurance + Logistique
   const calculations = useMemo(() => {
-    const pricePerKg = offer?.price_per_kg || 0;
     const weight = parseFloat(kiloWeight) || 0;
     
-    // V1: Prix linéaire = kg × prix/kg (pas de paliers)
-    const kiloTotal = weight * pricePerKg;
+    // V2: Tarification par paliers
+    // Trouve le palier correspondant au poids, sinon utilise le prix de l'offre
+    let pricePerKg = offer?.price_per_kg || 0;
+    let appliedTier = null;
+    
+    if (weightTiers.length > 0 && weight > 0) {
+      // Find the tier that matches the weight
+      const tier = weightTiers.find(t => weight >= t.min_weight && weight <= t.max_weight);
+      if (tier && tier.price_per_kg > 0) {
+        pricePerKg = tier.price_per_kg;
+        appliedTier = tier;
+      }
+    }
+    
+    const kiloTotal = Math.round(weight * pricePerKg);
 
     const flatRateTotal = flatRateItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const flatRateCount = flatRateItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -322,8 +347,10 @@ export default function SmartBookingPage() {
       hasFlatRateItems: flatRateCount > 0,
       hasAnyItems: weight > 0 || flatRateCount > 0,
       hasLogistics: logisticsOptions.pickupEnabled || logisticsOptions.deliveryEnabled,
+      pricePerKg,
+      appliedTier,
     };
-  }, [kiloWeight, flatRateItems, offer?.price_per_kg, insuranceChoice, logisticsOptions]);
+  }, [kiloWeight, flatRateItems, offer?.price_per_kg, insuranceChoice, logisticsOptions, weightTiers]);
 
   // Update flat-rate quantity
   const updateFlatRateQuantity = (id: string, delta: number) => {
@@ -456,7 +483,7 @@ export default function SmartBookingPage() {
           destination_country: offer.destination_country,
           price_per_kg: offer.price_per_kg,
           weight: calculations.weight || 0,
-         total_price: Math.round(displayGrandTotal * 100) / 100,
+         total_price: Math.round(displayGrandTotal),
           currency: offer.currency,
           status: "pending" as const,
           logistics_status: "submitted",
@@ -464,7 +491,7 @@ export default function SmartBookingPage() {
           description: buildOrderDescription(),
           // Insurance fields
           has_insurance: insuranceChoice.hasInsurance,
-         insurance_amount: Math.round(displayInsuranceAmount), // Integer - arrondi obligatoire
+          insurance_amount: Math.round(displayInsuranceAmount || 0), // Integer - arrondi obligatoire
           insurance_tier_id: insuranceChoice.tierId,
           declared_value: insuranceChoice.declaredValue || null,
           content_nature: kiloNatures,

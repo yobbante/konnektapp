@@ -25,6 +25,8 @@ interface WeightCorrectionDialogProps {
   currency: string;
   clientId: string;
   onCorrected: () => void;
+  currentInsurance?: number;
+  currentLogistics?: number;
 }
 
 export function WeightCorrectionDialog({
@@ -37,14 +39,20 @@ export function WeightCorrectionDialog({
   currency,
   clientId,
   onCorrected,
+  currentInsurance = 0,
+  currentLogistics = 0,
 }: WeightCorrectionDialogProps) {
   const { toast } = useToast();
   const [newWeight, setNewWeight] = useState(currentWeight.toString());
   const [submitting, setSubmitting] = useState(false);
 
   const weightDiff = parseFloat(newWeight) - currentWeight;
-  const priceDiff = Math.round(weightDiff * pricePerKg);
-  const newTotalPrice = Math.round(parseFloat(newWeight) * pricePerKg);
+  // V2: Seul le prix poids change, assurance et logistique restent FIXES
+  const currentWeightPrice = Math.round(currentWeight * pricePerKg);
+  const newWeightPrice = Math.round(parseFloat(newWeight) * pricePerKg);
+  const priceDiff = newWeightPrice - currentWeightPrice;
+  // Total = nouveau prix poids + assurance fixe + logistique fixe
+  const newTotalPrice = newWeightPrice + currentInsurance + currentLogistics;
 
   const handleSubmit = async () => {
     const actualWeight = parseFloat(newWeight);
@@ -79,7 +87,7 @@ export function WeightCorrectionDialog({
         status: "collected",
         changed_by: user.id,
         changed_by_type: "gp",
-        notes: `POIDS MODIFIÉ: ${currentWeight} kg → ${actualWeight} kg. En attente de confirmation client.`,
+        notes: `POIDS MODIFIÉ: ${currentWeight} kg → ${actualWeight} kg. Prix poids: ${currentWeightPrice} → ${newWeightPrice} ${currency}. Assurance et logistique inchangés.`,
       });
 
       // Notify client
@@ -155,11 +163,16 @@ export function WeightCorrectionDialog({
                     Différence: {weightDiff > 0 ? "+" : ""}{weightDiff.toFixed(1)} kg
                   </p>
                   <p className="text-sm">
-                    Nouveau prix: <span className="font-bold">{newTotalPrice.toLocaleString()} {currency}</span>
+                    Nouveau prix poids: <span className="font-bold">{newWeightPrice.toLocaleString()} {currency}</span>
                   </p>
                   <p className="text-sm">
-                    ({priceDiff > 0 ? "+" : ""}{priceDiff.toLocaleString()} {currency})
+                    Différence: ({priceDiff > 0 ? "+" : ""}{priceDiff.toLocaleString()} {currency})
                   </p>
+                  {(currentInsurance > 0 || currentLogistics > 0) && (
+                    <p className="text-xs mt-1 text-muted-foreground">
+                      Assurance ({currentInsurance.toLocaleString()}) et logistique ({currentLogistics.toLocaleString()}) inchangés
+                    </p>
+                  )}
                 </div>
               </AlertDescription>
             </Alert>
