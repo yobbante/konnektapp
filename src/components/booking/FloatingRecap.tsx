@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Package, Shield, Truck, ChevronUp, ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DualCurrencyCompact } from "@/components/booking/DualCurrencyDisplay";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { cn } from "@/lib/utils";
@@ -35,10 +35,27 @@ export function FloatingRecap({
   className,
 }: FloatingRecapProps) {
   const [expanded, setExpanded] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const currencySymbol = getCurrencySymbol(currency);
-  
+
   const hasItems = weight > 0 || flatRateCount > 0;
-  
+
+  useEffect(() => {
+    if (!expanded) return;
+
+    const onPointerDown = (e: PointerEvent) => {
+      const el = containerRef.current;
+      if (!el) return;
+      if (!el.contains(e.target as Node)) {
+        setExpanded(false);
+      }
+    };
+
+    // Capture phase so a click anywhere outside reliably closes it
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [expanded]);
+
   // Don't show on step 5 (full recap) or if no items
   if (currentStep === 5 || !hasItems) return null;
 
@@ -55,7 +72,7 @@ export function FloatingRecap({
       style={{ paddingBottom: 'var(--safe-bottom, 0px)' }}
     >
       <div className="max-w-lg mx-auto px-4">
-        <div className="bg-card/95 backdrop-blur-md border border-border rounded-2xl shadow-lg overflow-hidden">
+        <div ref={containerRef} className="bg-card/95 backdrop-blur-md border border-border rounded-2xl shadow-lg overflow-hidden">
           {/* Collapsed header - always visible */}
           <button
             onClick={() => setExpanded(!expanded)}

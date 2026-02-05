@@ -221,7 +221,7 @@ export default function PostBookingForm() {
         .update({ 
           logistics_status: "submitted",
           weight: parseFloat(formData.estimatedWeight),
-          total_price: parseFloat(formData.estimatedWeight) * (order?.price_per_kg || 0),
+          total_price: Math.round(parseFloat(formData.estimatedWeight) * (order?.price_per_kg || 0)),
         })
         .eq("id", orderId);
 

@@ -195,7 +195,7 @@ export default function GPTarificationPage() {
     try {
       await supabase
         .from("gp_offers")
-        .update({ price_per_kg: pricePerKg })
+        .update({ price_per_kg: Math.round(pricePerKg) })
         .eq("gp_id", gpProfile.id)
         .eq("status", "active");
 
@@ -216,7 +216,7 @@ export default function GPTarificationPage() {
           await supabase
             .from("gp_weight_tiers")
             .update({
-              price_per_kg: tier.price_per_kg,
+              price_per_kg: Math.round(tier.price_per_kg),
               currency: gpProfile.default_currency || "XOF",
             })
             .eq("id", tier.id);
@@ -227,7 +227,7 @@ export default function GPTarificationPage() {
               gp_id: gpProfile.id,
               min_weight: tier.min_weight,
               max_weight: tier.max_weight,
-              price_per_kg: tier.price_per_kg,
+              price_per_kg: Math.round(tier.price_per_kg),
               currency: gpProfile.default_currency || "XOF",
               is_active: true,
             });
@@ -286,7 +286,7 @@ export default function GPTarificationPage() {
     try {
       const { error } = await supabase
         .from("gp_flat_rate_pricing")
-        .update({ price: newPrice })
+        .update({ price: Math.round(newPrice) })
         .eq("id", itemId);
 
       if (error) throw error;
