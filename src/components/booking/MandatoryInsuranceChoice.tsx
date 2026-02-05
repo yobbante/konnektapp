@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Shield, AlertTriangle, Check, Info } from "lucide-react";
+import { Shield, AlertTriangle, Check, Info, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -144,6 +144,12 @@ export function MandatoryInsuranceChoice({
   };
 
   const applicableTier = findApplicableTier();
+
+  // V2: Check if declared value exceeds maximum coverage
+  const declaredValueNum = parseFloat(declaredValue) || 0;
+  const declaredValueFCFA = toFCFA(declaredValueNum);
+  const maxCoverage = applicableTier?.max_declared_value || 0;
+  const exceedsMaxCoverage = selectedOption === "with" && applicableTier && declaredValueNum > 0 && declaredValueFCFA > maxCoverage;
   
   // V1.2: Helper to format dual currency (FCFA primary, GP secondary)
   const formatDualFCFA = (amountFCFA: number) => {
@@ -237,7 +243,10 @@ export function MandatoryInsuranceChoice({
                       placeholder="Ex: 50000"
                       value={declaredValue}
                       onChange={(e) => setDeclaredValue(e.target.value)}
-                      className="mt-1"
+                     className={cn(
+                       "mt-1",
+                       exceedsMaxCoverage && "border-destructive focus-visible:ring-destructive"
+                     )}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
                       Maximum couvert:{" "}
@@ -251,6 +260,25 @@ export function MandatoryInsuranceChoice({
                       )}
                     </p>
                   </div>
+
+                 {/* V2: Warning when declared value exceeds max coverage */}
+                 {exceedsMaxCoverage && (
+                   <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
+                     <div className="flex items-start gap-2">
+                       <XCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                       <div>
+                         <p className="text-sm font-medium text-destructive">
+                           Valeur non couverte
+                         </p>
+                         <p className="text-xs text-destructive/80 mt-1">
+                           La valeur déclarée ({declaredValueNum.toLocaleString()} {gpSymbol} ≈ {Math.round(declaredValueFCFA).toLocaleString()} FCFA) 
+                           dépasse le maximum couvert ({maxCoverage.toLocaleString()} FCFA). 
+                           En cas de sinistre, l'indemnisation sera plafonnée au maximum couvert.
+                         </p>
+                       </div>
+                     </div>
+                   </div>
+                 )}
 
                   {/* Insurance details with dual currency - V1.2: FCFA primary */}
                   <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg space-y-1">
