@@ -25,23 +25,61 @@ N'hésitez pas à poser vos questions ici. Bonne communication ! 🚀`;
 
 /**
  * Message automatique envoyé quand le GP accepte une commande
+ * Inclut les informations essentielles pour le dépôt
  */
 export function generateAcceptanceMessage(
   gpName: string,
   orderNumber: string,
   originCity: string,
-  destinationCity: string
+  destinationCity: string,
+  gpContactInfo?: {
+    depositAddress?: string | null;
+    phone?: string | null;
+    whatsapp?: string | null;
+    receptionAddress?: string | null;
+  }
 ): string {
-  return `✅ Bonne nouvelle !
+  let message = `✅ **Bonne nouvelle !**
 
-${gpName} a accepté votre réservation ${orderNumber} !
+${gpName} a accepté votre réservation **${orderNumber}** !
 
-📦 Trajet confirmé : ${originCity} → ${destinationCity}
+📦 **Trajet confirmé :** ${originCity} → ${destinationCity}
 
-Vous pouvez maintenant coordonner les détails du dépôt avec ${gpName}. 
-L'adresse de dépôt et le numéro WhatsApp sont désormais disponibles dans les détails de votre commande.
+---
 
-💬 N'hésitez pas à discuter ici pour organiser le dépôt de votre colis.`;
+📍 **INFORMATIONS POUR LE DÉPÔT**
+
+`;
+
+  // Adresse de dépôt
+  const address = gpContactInfo?.depositAddress || gpContactInfo?.receptionAddress;
+  if (address) {
+    message += `🏠 **Adresse de dépôt :**\n${address}\n\n`;
+  } else {
+    message += `🏠 **Adresse :** À confirmer avec le transporteur\n\n`;
+  }
+
+  // Téléphone
+  if (gpContactInfo?.phone) {
+    message += `📞 **Téléphone :** ${gpContactInfo.phone}\n`;
+  }
+
+  // WhatsApp
+  if (gpContactInfo?.whatsapp) {
+    message += `💬 **WhatsApp :** ${gpContactInfo.whatsapp}\n`;
+  }
+
+  message += `
+---
+
+⚠️ **Important :**
+• Un QR code sera requis lors de la remise du colis
+• Vous pouvez envoyer une personne de confiance à votre place
+• Conservez bien votre numéro de commande
+
+💬 N'hésitez pas à discuter ici pour organiser les détails du dépôt avec ${gpName}.`;
+
+  return message;
 }
 
 /**
@@ -139,6 +177,10 @@ export async function sendAcceptanceNotification(
     originCity: string;
     destinationCity: string;
     gpName: string;
+    depositAddress?: string | null;
+    phone?: string | null;
+    whatsapp?: string | null;
+    receptionAddress?: string | null;
   }
 ): Promise<{ conversationId: string | null; error: string | null }> {
   try {
@@ -177,15 +219,28 @@ export async function sendAcceptanceNotification(
       orderDetails.gpName,
       orderDetails.orderNumber,
       orderDetails.originCity,
-      orderDetails.destinationCity
+      orderDetails.destinationCity,
+      {
+        depositAddress: orderDetails.depositAddress,
+        phone: orderDetails.phone,
+        whatsapp: orderDetails.whatsapp,
+        receptionAddress: orderDetails.receptionAddress,
+      }
     );
+
+    // Get GP user_id for proper message insertion
+    const { data: gpProfile } = await supabase
+      .from("gp_profiles")
+      .select("user_id")
+      .eq("id", gpId)
+      .single();
 
     await supabase
       .from("messages")
       .insert({
         conversation_id: conversationId,
-        sender_id: gpId,
-        sender_type: "system",
+        sender_id: gpProfile?.user_id || gpId,
+        sender_type: "gp",
         content: acceptanceMessage,
       });
 

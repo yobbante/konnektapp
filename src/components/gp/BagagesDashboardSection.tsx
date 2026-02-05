@@ -22,6 +22,7 @@ import { CustomRequestsTab } from "@/components/gp/dashboard/CustomRequestsTab";
 import { getCurrencySymbol, formatPricePerKg } from "@/components/ui/currency-selector";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { sendAcceptanceNotification } from "@/lib/autoChat";
 
 interface VoyageOffer {
   id: string;
@@ -97,7 +98,7 @@ export function BagagesDashboardSection({
   // Get last voyage for smart pre-fill
   const lastVoyage = voyages.length > 0 ? voyages[0] : null;
 
-  const handleAcceptOrder = async (orderId: string) => {
+  const handleAcceptOrder = async (orderId: string, order?: any) => {
     try {
       const { error } = await supabase
         .from("orders")
@@ -105,6 +106,34 @@ export function BagagesDashboardSection({
         .eq("id", orderId);
 
       if (error) throw error;
+
+      // Send automated message with GP contact info
+      if (order) {
+        // Fetch full GP profile with contact details
+        const { data: fullGpProfile } = await supabase
+          .from("gp_profiles")
+          .select("id, business_name, deposit_address, reception_address, phone, whatsapp_phone")
+          .eq("id", gpProfile.id)
+          .single();
+
+        if (fullGpProfile) {
+          await sendAcceptanceNotification(
+            order.client_id,
+            fullGpProfile.id,
+            orderId,
+            {
+              orderNumber: order.order_number,
+              originCity: order.origin_city,
+              destinationCity: order.destination_city,
+              gpName: fullGpProfile.business_name,
+              depositAddress: fullGpProfile.deposit_address,
+              phone: fullGpProfile.phone,
+              whatsapp: fullGpProfile.whatsapp_phone,
+              receptionAddress: fullGpProfile.reception_address,
+            }
+          );
+        }
+      }
 
       toast({
         title: "✅ Bagage accepté",
