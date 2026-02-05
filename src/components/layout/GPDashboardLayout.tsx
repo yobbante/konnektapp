@@ -2,13 +2,14 @@ import { ReactNode, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
   Truck, Bell, Package, Clock, Calendar, 
-  DollarSign, User, History, Menu, QrCode 
+  DollarSign, User, History, Menu, QrCode, Plus, Plane
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useDashboardTheme } from "@/hooks/useDashboardTheme";
 import { GPNotificationsDropdown } from "@/components/gp/dashboard/GPNotificationsDropdown";
 import { GPDashboardHubSheet } from "@/components/layout/GPDashboardHubSheet";
+import { GPCreateOfferDialog } from "@/components/gp/GPCreateOfferDialog";
 import { cn } from "@/lib/utils";
 import { useEnforceDashboardRole } from "@/hooks/useSmartRedirect";
 
@@ -57,6 +58,7 @@ export function GPDashboardLayout({
   const theme = useDashboardTheme("partner");
   const [showNotifications, setShowNotifications] = useState(false);
   const [showHubMenu, setShowHubMenu] = useState(false);
+  const [showAddDeparture, setShowAddDeparture] = useState(false);
 
   // Navigation tabs for GP Dashboard
   const navTabs: NavTab[] = [
@@ -137,6 +139,17 @@ export function GPDashboardLayout({
 
             {/* Right Actions */}
             <div className="flex items-center gap-2">
+              {/* Quick Add Departure Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative bg-white/10 hover:bg-white/20 text-inherit"
+                onClick={() => setShowAddDeparture(true)}
+                title="Ajouter un départ"
+              >
+                <Plus className="w-5 h-5" />
+              </Button>
+
               <Button
                 variant="ghost"
                 size="icon"
@@ -217,6 +230,17 @@ export function GPDashboardLayout({
         isOpen={showNotifications}
         onClose={() => setShowNotifications(false)}
         onViewOrderDetail={(orderId) => navigate(`/gp/order/${orderId}`)}
+      />
+
+      {/* Quick Add Departure Dialog */}
+      <GPCreateOfferDialog
+        open={showAddDeparture}
+        onClose={() => setShowAddDeparture(false)}
+        gpProfile={gpProfile}
+        onSuccess={() => {
+          setShowAddDeparture(false);
+          navigate("/gp/calendrier");
+        }}
       />
     </div>
   );

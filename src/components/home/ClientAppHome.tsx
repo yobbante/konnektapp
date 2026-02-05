@@ -1,9 +1,16 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { Package, MessageCircle, MapPin, History, Bell, Heart, ArrowRight, Clock, ChevronDown, Phone, Navigation, User, ExternalLink, X, AlertTriangle, Truck, Calendar, FileText, Home as HomeIcon, Sparkles } from "lucide-react";
+import { Package, MessageCircle, MapPin, History, Bell, Heart, ArrowRight, Clock, ChevronDown, Phone, Navigation, User, ExternalLink, X, AlertTriangle, Truck, Calendar, FileText, Home as HomeIcon, Sparkles, Info, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { WeightCorrectionAlert } from "@/components/client/WeightCorrectionAlert";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -49,6 +56,11 @@ export function ClientAppHome({
 
   // Track which order is in full-screen mode
   const [fullScreenOrderId, setFullScreenOrderId] = useState<string | null>(null);
+  // Track popup for custom/moving request details
+  const [requestPopup, setRequestPopup] = useState<{
+    type: 'custom' | 'moving';
+    item: any;
+  } | null>(null);
 
   // Get ALL active orders
   const activeOrders = recentOrders.filter(o => ['pending', 'accepted', 'collected', 'in_transit'].includes(o.status));
@@ -144,13 +156,13 @@ export function ClientAppHome({
             gradient: "from-purple-500/10 via-purple-500/5 to-purple-500/10",
             borderColor: "border-purple-500/20",
             badgeType: "Demande",
-            onClick: () => navigate("/demande-personnalisee"),
+            onClick: () => setRequestPopup({ type: 'custom', item }),
           },
           moving: {
             gradient: "from-amber-500/10 via-amber-500/5 to-amber-500/10",
             borderColor: "border-amber-500/20",
             badgeType: "Déménagement",
-            onClick: () => navigate("/historique"),
+            onClick: () => setRequestPopup({ type: 'moving', item }),
           },
         }[item.type];
         
@@ -227,6 +239,15 @@ export function ClientAppHome({
               </motion.div>;
       })}
         </motion.div>}
+
+      {/* Request Details Popup */}
+      <RequestDetailsPopup
+        open={!!requestPopup}
+        onClose={() => setRequestPopup(null)}
+        type={requestPopup?.type || 'custom'}
+        item={requestPopup?.item}
+        navigate={navigate}
+      />
 
       {/* Primary Actions - 2x2 Grid */}
       <motion.div initial={{
@@ -346,6 +367,151 @@ export function ClientAppHome({
         </Link>
       </motion.div>
     </div>;
+}
+
+// Request Details Popup Component
+interface RequestDetailsPopupProps {
+  open: boolean;
+  onClose: () => void;
+  type: 'custom' | 'moving';
+  item: any;
+  navigate: (path: string) => void;
+}
+
+function RequestDetailsPopup({ open, onClose, type, item, navigate }: RequestDetailsPopupProps) {
+  if (!item) return null;
+
+  const isMoving = type === 'moving';
+  const statusConfig = STATUS_CONFIG[item.status] || { label: item.status, color: "bg-muted text-muted-foreground" };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md mx-4">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            {isMoving ? (
+              <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                <HomeIcon className="w-4 h-4 text-amber-600" />
+              </div>
+            ) : (
+              <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                <FileText className="w-4 h-4 text-purple-600" />
+              </div>
+            )}
+            {isMoving ? "Demande de déménagement" : "Demande personnalisée"}
+          </DialogTitle>
+          <DialogDescription>
+            {item.request_number || `#${item.id?.slice(0, 8)}`}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          {/* Route */}
+          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-xl">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-green-500" />
+              <span className="font-medium">{item.origin_city}</span>
+            </div>
+            <ArrowRight className="w-4 h-4 text-muted-foreground" />
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{item.destination_city}</span>
+              <MapPin className="w-4 h-4 text-red-500" />
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Statut</span>
+            <Badge className={statusConfig.color}>
+              {statusConfig.label}
+            </Badge>
+          </div>
+
+          {/* Details based on type */}
+          {isMoving ? (
+            <>
+              {item.volume_estimate && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Volume estimé</span>
+                  <span className="font-medium">{item.volume_estimate}</span>
+                </div>
+              )}
+              <div className="p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-xl">
+                <div className="flex items-start gap-2">
+                  <Info className="w-4 h-4 text-amber-600 mt-0.5" />
+                  <div className="text-sm text-amber-800 dark:text-amber-200">
+                    <p className="font-medium">Service géré par Yobbanté</p>
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                      Notre équipe vous contactera pour un devis personnalisé.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {item.weight_estimate && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Poids estimé</span>
+                  <span className="font-medium">{item.weight_estimate} kg</span>
+                </div>
+              )}
+              {item.shipment_type && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Type</span>
+                  <span className="font-medium capitalize">{item.shipment_type}</span>
+                </div>
+              )}
+              <div className="p-3 bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/30 rounded-xl">
+                <div className="flex items-start gap-2">
+                  <Info className="w-4 h-4 text-purple-600 mt-0.5" />
+                  <div className="text-sm text-purple-800 dark:text-purple-200">
+                    <p className="font-medium">En attente d'offres</p>
+                    <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                      Les transporteurs peuvent proposer leurs offres.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Date */}
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Créée le</span>
+            <span>
+              {item.created_at && new Date(item.created_at).toLocaleDateString('fr-FR', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+              })}
+            </span>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2 pt-2">
+          <Button 
+            variant="outline" 
+            className="flex-1"
+            onClick={onClose}
+          >
+            Fermer
+          </Button>
+          <Button 
+            className="flex-1"
+            onClick={() => {
+              onClose();
+              navigate("/historique");
+            }}
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            Voir l'historique
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 // Full-Screen Order Details Component
