@@ -21,6 +21,7 @@ import { MandatoryInsuranceChoice, type InsuranceChoice } from "@/components/boo
 import { LocalLogisticsOptions, type LogisticsOptions } from "@/components/booking/LocalLogisticsOptions";
 import { DualCurrencyDisplay, DualCurrencyCompact, CurrencyInfoBanner } from "@/components/booking/DualCurrencyDisplay";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
+import { convertFromFCFA, loadExchangeRates, type ExchangeRate } from "@/lib/currencyUtils";
 import { createAutoConversationAfterBooking } from "@/lib/autoChat";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -392,7 +393,7 @@ export default function SmartBookingPage() {
           destination_country: offer.destination_country,
           price_per_kg: offer.price_per_kg,
           weight: calculations.weight || 0,
-          total_price: calculations.grandTotal,
+          total_price: displayGrandTotal,
           currency: offer.currency,
           status: "pending" as const,
           logistics_status: "submitted",
@@ -400,7 +401,7 @@ export default function SmartBookingPage() {
           description: buildOrderDescription(),
           // Insurance fields
           has_insurance: insuranceChoice.hasInsurance,
-          insurance_amount: insuranceChoice.insuranceAmount,
+          insurance_amount: displayInsuranceAmount, // Stored in GP currency for consistency
           insurance_tier_id: insuranceChoice.tierId,
           declared_value: insuranceChoice.declaredValue || null,
           content_nature: kiloNatures,
@@ -567,7 +568,32 @@ export default function SmartBookingPage() {
   const currencySymbol = getCurrencySymbol(currency);
   
   // Hook for currency conversion with dual display
-  const { formatDual, getFCFAEquivalent, isFCFA } = useCurrencyConversion({ gpCurrency: currency });
+  const { formatDual, getFCFAEquivalent, fromFCFA, isFCFA, rates } = useCurrencyConversion({ gpCurrency: currency });
+
+  /**
+   * V1.3 FIX: L'assurance et la logistique sont stockées en FCFA
+   * Cette fonction convertit un montant FCFA vers la devise GP pour affichage
+   */
+  const convertFCFAtoGP = (amountFCFA: number): number => {
+    if (isFCFA || !amountFCFA) return amountFCFA;
+    return Math.round(fromFCFA(amountFCFA) * 100) / 100;
+  };
+
+  /**
+   * V1.3: Montants d'assurance et logistique convertis pour l'affichage
+   * - insuranceTotal est en FCFA (stocké)
+   * - logisticsTotal est en FCFA (stocké)
+   * On les convertit en devise GP pour l'affichage
+   */
+  const displayInsuranceAmount = convertFCFAtoGP(calculations.insuranceTotal);
+  const displayLogisticsAmount = convertFCFAtoGP(calculations.logisticsTotal);
+
+  /**
+   * V1.3 FIX: Le total doit être recalculé avec les montants convertis
+   * Transport est DÉJÀ en devise GP
+   * Assurance + Logistique doivent être convertis de FCFA vers GP
+   */
+  const displayGrandTotal = calculations.transportTotal + displayInsuranceAmount + displayLogisticsAmount;
 
   if (loading) {
     return (
@@ -684,7 +710,7 @@ export default function SmartBookingPage() {
         {showEscrow && offer && createdOrderId && (
           <EscrowPaymentFlow
             orderId={createdOrderId}
-            amount={calculations.grandTotal}
+            amount={displayGrandTotal}
             currency={currency}
             gpId={gpProfile.id}
             onPaymentComplete={handleEscrowComplete}
@@ -1014,9 +1040,9 @@ export default function SmartBookingPage() {
                       <span className={insuranceChoice.hasInsurance ? "text-primary" : "text-muted-foreground"}>
                         {insuranceChoice.hasInsurance 
                           ? <DualCurrencyCompact
-                              amount={calculations.insuranceTotal}
+                              amount={displayInsuranceAmount}
                               currency={currency}
-                              fcfaEquivalent={getFCFAEquivalent(calculations.insuranceTotal)}
+                              fcfaEquivalent={calculations.insuranceTotal}
                             />
                           : "Non souscrite"
                         }
@@ -1025,9 +1051,9 @@ export default function SmartBookingPage() {
                     <div className="flex justify-between items-center pt-2 border-t">
                       <span className="font-semibold">Total</span>
                       <DualCurrencyDisplay
-                        amount={calculations.grandTotal}
+                        amount={displayGrandTotal}
                         currency={currency}
-                        fcfaEquivalent={getFCFAEquivalent(calculations.grandTotal)}
+                        fcfaEquivalent={calculations.transportTotal > 0 ? getFCFAEquivalent(calculations.transportTotal) + calculations.insuranceTotal + calculations.logisticsTotal : 0}
                         size="xl"
                         variant="primary"
                       />
@@ -1164,7 +1190,7 @@ export default function SmartBookingPage() {
                       <Shield className={`w-4 h-4 ${insuranceChoice.hasInsurance ? 'text-primary' : 'text-muted-foreground'}`} />
                       <span className="text-sm">
                         {insuranceChoice.hasInsurance 
-                          ? `Assurance Yobbanté: ${calculations.insuranceTotal.toLocaleString()} ${currencySymbol}`
+                          ? `Assurance Yobbanté: ${displayInsuranceAmount.toLocaleString()} ${currencySymbol} (≈ ${calculations.insuranceTotal.toLocaleString()} FCFA)`
                           : "Sans assurance"
                         }
                       </span>
@@ -1203,9 +1229,9 @@ export default function SmartBookingPage() {
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-muted-foreground">Assurance</span>
                         <DualCurrencyCompact
-                          amount={calculations.insuranceTotal}
+                          amount={displayInsuranceAmount}
                           currency={currency}
-                          fcfaEquivalent={getFCFAEquivalent(calculations.insuranceTotal)}
+                          fcfaEquivalent={calculations.insuranceTotal}
                         />
                       </div>
                     )}
@@ -1213,9 +1239,9 @@ export default function SmartBookingPage() {
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-muted-foreground">Logistique locale</span>
                         <DualCurrencyCompact
-                          amount={calculations.logisticsTotal}
+                          amount={displayLogisticsAmount}
                           currency={currency}
-                          fcfaEquivalent={getFCFAEquivalent(calculations.logisticsTotal)}
+                          fcfaEquivalent={calculations.logisticsTotal}
                         />
                       </div>
                     )}
@@ -1225,9 +1251,9 @@ export default function SmartBookingPage() {
                   <div className="flex justify-between items-center pt-2 border-t">
                     <p className="font-semibold">Total à payer</p>
                     <DualCurrencyDisplay
-                      amount={calculations.grandTotal}
+                      amount={displayGrandTotal}
                       currency={currency}
-                      fcfaEquivalent={getFCFAEquivalent(calculations.grandTotal)}
+                      fcfaEquivalent={calculations.transportTotal > 0 ? getFCFAEquivalent(calculations.transportTotal) + calculations.insuranceTotal + calculations.logisticsTotal : 0}
                       size="xl"
                       variant="primary"
                     />
