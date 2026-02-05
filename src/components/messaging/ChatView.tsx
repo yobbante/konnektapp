@@ -12,6 +12,7 @@ import { TypingIndicator } from "./TypingIndicator";
 import { MessageTemplates } from "./MessageTemplates";
 import { SmartClientResponses } from "./SmartClientResponses";
 import { ChatHeader } from "./ChatHeader";
+import { MessageContent } from "./MessageContent";
 import { MiniLoader } from "@/components/ui/MiniLoader";
 
 interface Message {
@@ -30,6 +31,7 @@ interface ChatViewProps {
   userType: "client" | "gp";
   onBack: () => void;
   contactName?: string;
+  orderId?: string;
 }
 
 export function ChatView({ conversationId, currentUserId, userType, onBack, contactName }: ChatViewProps) {
@@ -40,7 +42,9 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   const [templatesExpanded, setTemplatesExpanded] = useState(false);
   const [isGpVerified, setIsGpVerified] = useState(false);
   const [gpId, setGpId] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const { notify } = useNotificationSound();
   
   const { isOtherTyping, handleTypingStart, stopTyping } = useTypingIndicator(
@@ -84,10 +88,10 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
 
   const loadConversationData = async () => {
     try {
-      // Get conversation to find GP
+      // Get conversation to find GP and order
       const { data: conv } = await supabase
         .from("conversations")
-        .select("gp_id")
+        .select("gp_id, order_id")
         .eq("id", conversationId)
         .single();
 
@@ -102,6 +106,10 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
           .single();
 
         setIsGpVerified(!!gpProfile?.verified_at);
+      }
+      
+      if (conv?.order_id) {
+        setOrderId(conv.order_id);
       }
     } catch (error) {
       console.error("Error loading conversation data:", error);
@@ -192,19 +200,33 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
     }
   };
 
+  // Close templates when clicking outside
+  const handleContainerClick = (e: React.MouseEvent) => {
+    if (templatesExpanded && e.target === messagesContainerRef.current) {
+      setTemplatesExpanded(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full" style={{ height: '100dvh' }}>
-      {/* Enhanced Header with verified badge and order info */}
-      <ChatHeader
-        conversationId={conversationId}
-        contactName={contactName || "Contact"}
-        contactId={gpId || ""}
-        isGpVerified={isGpVerified}
-        onBack={onBack}
-      />
+      {/* Enhanced Header with verified badge and order info - FIXED */}
+      <div className="flex-shrink-0">
+        <ChatHeader
+          conversationId={conversationId}
+          contactName={contactName || "Contact"}
+          contactId={gpId || ""}
+          isGpVerified={isGpVerified}
+          onBack={onBack}
+        />
+      </div>
 
-      {/* Messages - Maximized view area for mobile */}
-      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2" style={{ minHeight: 0 }}>
+      {/* Messages - Fixed container with scrollable content */}
+      <div 
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto px-3 py-2 space-y-2" 
+        style={{ minHeight: 0 }}
+        onClick={handleContainerClick}
+      >
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <MiniLoader size="md" showText text="Chargement..." />
@@ -240,13 +262,17 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
                   className={`flex ${isOwn ? "justify-end" : ""}`}
                 >
                   <div
-                    className={`max-w-[80%] px-3 py-2 rounded-2xl ${
+                    className={`max-w-[85%] px-3 py-2 rounded-2xl ${
                       isOwn
                         ? "bg-primary text-primary-foreground rounded-br-md"
                         : "bg-muted text-foreground rounded-bl-md"
                     }`}
                   >
-                    <p className="text-sm leading-relaxed">{msg.content}</p>
+                    <MessageContent 
+                      content={msg.content} 
+                      orderId={orderId || undefined}
+                      isOwn={isOwn}
+                    />
                     {/* Read indicator for own messages */}
                     {isOwn && (
                       <div className="flex justify-end mt-0.5">

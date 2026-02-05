@@ -26,12 +26,14 @@ N'hésitez pas à poser vos questions ici. Bonne communication ! 🚀`;
 /**
  * Message automatique envoyé quand le GP accepte une commande
  * Format interactif avec boutons et structure claire
+ * NOTE: Les ** markdown sont volontairement omis car le composant MessageContent les supprime
  */
 export function generateAcceptanceMessage(
   gpName: string,
   orderNumber: string,
   originCity: string,
   destinationCity: string,
+  orderId: string,
   gpContactInfo?: {
     depositAddress?: string | null;
     phone?: string | null;
@@ -43,19 +45,19 @@ export function generateAcceptanceMessage(
   const phone = gpContactInfo?.phone;
   const whatsapp = gpContactInfo?.whatsapp;
   
-  // Build structured message
-  let message = `✅ **RÉSERVATION CONFIRMÉE**
+  // Build structured message WITHOUT markdown ** syntax
+  let message = `✅ RÉSERVATION CONFIRMÉE
 
 ━━━━━━━━━━━━━━━━━━━━
 
 🎉 Bonne nouvelle ! ${gpName} a accepté votre demande.
 
-📦 **Commande :** ${orderNumber}
-✈️ **Trajet :** ${originCity} → ${destinationCity}
+📦 Commande : ${orderNumber}
+✈️ Trajet : ${originCity} → ${destinationCity}
 
 ━━━━━━━━━━━━━━━━━━━━
 
-📍 **POINT DE DÉPÔT**
+📍 POINT DE DÉPÔT
 `;
 
   if (address) {
@@ -66,7 +68,7 @@ export function generateAcceptanceMessage(
     message += `
 🏠 ${address}
 
-🗺️ **Ouvrir dans :**
+🗺️ Ouvrir dans :
 → [📍 Waze](${wazeLink})
 → [🗺️ Google Maps](${googleMapsLink})
 `;
@@ -74,7 +76,7 @@ export function generateAcceptanceMessage(
     message += `\n🏠 Adresse à confirmer avec le transporteur\n`;
   }
 
-  message += `\n━━━━━━━━━━━━━━━━━━━━\n\n📞 **CONTACT TRANSPORTEUR**\n`;
+  message += `\n━━━━━━━━━━━━━━━━━━━━\n\n📞 CONTACT TRANSPORTEUR\n`;
 
   if (phone) {
     message += `\n📱 Téléphone : ${phone}`;
@@ -93,11 +95,13 @@ export function generateAcceptanceMessage(
 
 ━━━━━━━━━━━━━━━━━━━━
 
-📋 **À RETENIR :**
+📋 À RETENIR :
 
 ✓ Un QR code sera requis lors du dépôt
 ✓ Vous pouvez envoyer une personne de confiance
 ✓ Conservez votre numéro de commande
+
+📲 Accédez à votre QR code ici pour le dépôt
 
 💡 Discutez ici pour organiser les détails avec ${gpName}.`;
 
@@ -264,6 +268,7 @@ export async function sendAcceptanceNotification(
       orderDetails.orderNumber,
       orderDetails.originCity,
       orderDetails.destinationCity,
+      orderId,
       {
         depositAddress: orderDetails.depositAddress,
         phone: orderDetails.phone,
