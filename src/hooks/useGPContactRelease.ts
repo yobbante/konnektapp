@@ -67,11 +67,12 @@ export function useGPContactRelease(
   // Calculate release permissions based on order context
   const hasOrderContext = !!orderContext;
   const isPaid = orderContext?.paymentStatus === "paid";
+  // Include 'confirmed' for backwards compatibility
   const isAcceptedOrBeyond = orderContext?.status && 
-    ["accepted", "collected", "in_transit", "delivered"].includes(orderContext.status);
+    ["accepted", "confirmed", "collected", "in_transit", "arrived", "delivered"].includes(orderContext.status);
   const isDelivered = orderContext?.status === "delivered";
 
-  // Release conditions
+  // Release conditions - show contact info as soon as GP accepts (or payment confirmed)
   const canSeeDepositAddress = hasOrderContext && (isPaid || isAcceptedOrBeyond);
   const canSeeWhatsApp = hasOrderContext && (isPaid || isAcceptedOrBeyond);
   const canSeeReceptionAddress = hasOrderContext && isDelivered;

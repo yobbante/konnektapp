@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Search, Send, MessageCircle, User, BarChart3, Package } from "lucide-react";
+import { Home, Search, Send, MessageCircle, User, BarChart3, Package, LayoutGrid } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
@@ -17,31 +17,65 @@ export function MobileNav() {
   const { unreadCount } = useUnreadMessages();
   const lastHomeClickRef = useRef<number>(0);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState<'client' | 'transporter' | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
+      
+      if (session?.user?.id) {
+        // Check if user is a transporter (has gp_profile)
+        const { data: gpProfile } = await supabase
+          .from("gp_profiles")
+          .select("id, gp_type")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+        
+        setUserRole(gpProfile ? 'transporter' : 'client');
+      } else {
+        setUserRole(null);
+      }
     };
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       setIsAuthenticated(!!session);
+      if (!session) {
+        setUserRole(null);
+      } else if (session?.user?.id) {
+        // Re-check role on auth change
+        supabase
+          .from("gp_profiles")
+          .select("id")
+          .eq("user_id", session.user.id)
+          .maybeSingle()
+          .then(({ data }) => {
+            setUserRole(data ? 'transporter' : 'client');
+          });
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // Nav items - V2: Profil remplace Menu
+  // Determine "Espace" destination based on user role
+  const getEspaceHref = () => {
+    if (!isAuthenticated) return "/auth";
+    if (userRole === 'transporter') return "/gp/demandes"; // Dashboard transporteur
+    return "/profil"; // Dashboard client (profil)
+  };
+
+  // Nav items - V3: "Espace" intelligent remplace Compte/Profil
   const navItems = [
     { href: "/", icon: Home, label: "Accueil", isHome: true },
     { href: "/offres", icon: Search, label: "Offres" },
     { href: "/envoyer", icon: Send, label: "Envoyer", isCTA: true, requiresAuth: true },
     { href: "/messages", icon: MessageCircle, label: "Messages", showBadge: true, requiresAuth: true },
-    { href: isAuthenticated ? "/profil" : "/auth", icon: User, label: isAuthenticated ? "Profil" : "Compte" },
+    { href: getEspaceHref(), icon: LayoutGrid, label: "Espace", isEspace: true },
   ];
 
-  const handleNavClick = useCallback((e: React.MouseEvent, item: typeof navItems[0]) => {
+  const handleNavClick = useCallback((e: React.MouseEvent, item: typeof navItems[0] & { isEspace?: boolean }) => {
     // If requires auth and not authenticated, redirect to auth with return path
     if (item.requiresAuth && !isAuthenticated) {
       e.preventDefault();
@@ -81,17 +115,19 @@ export function MobileNav() {
         style={{ paddingLeft: 'var(--safe-left, 0px)', paddingRight: 'var(--safe-right, 0px)' }}
       >
         {navItems.map((item) => {
+          const isEspaceActive = 'isEspace' in item && item.isEspace && 
+            ["/profil", "/settings", "/client/dashboard", "/gp/demandes", "/gp/tarification", "/gp/historique"].includes(location.pathname);
           const isActive = location.pathname === item.href || 
             (item.href === "/" && location.pathname === "/") ||
-            (item.href === "/profil" && ["/profil", "/settings", "/client/dashboard"].includes(location.pathname));
+            isEspaceActive;
 
           // CTA button (Envoyer) - special styling
-          if (item.isCTA) {
+          if ('isCTA' in item && item.isCTA) {
             return (
               <Link
                 key={item.href}
                 to={item.href}
-                onClick={(e) => handleNavClick(e, item)}
+                onClick={(e) => handleNavClick(e, item as any)}
                 className="flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors relative"
               >
                 <motion.div 
@@ -106,12 +142,55 @@ export function MobileNav() {
             );
           }
 
-          // Standard nav items (including Profil)
+          // "Espace" button - special colored styling
+          if ('isEspace' in item && item.isEspace) {
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                onClick={(e) => handleNavClick(e, item as any)}
+                className={cn(
+                  "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors relative",
+                  isActive ? "text-primary" : "text-muted-foreground"
+                )}
+              >
+                <motion.div 
+                  className="relative"
+                  whileTap={{ scale: 0.85 }}
+                  animate={isActive ? { y: -2 } : { y: 0 }}
+                >
+                  <motion.div
+                    className={cn(
+                      "w-9 h-9 rounded-xl flex items-center justify-center transition-all",
+                      isActive 
+                        ? "bg-primary text-primary-foreground shadow-md" 
+                        : "bg-gradient-to-br from-primary/20 to-accent/20 text-primary"
+                    )}
+                    animate={isActive ? { scale: 1.05 } : { scale: 1 }}
+                    transition={{ type: "spring", stiffness: 500 }}
+                  >
+                    <item.icon className="w-5 h-5" />
+                  </motion.div>
+                </motion.div>
+                <motion.span 
+                  className={cn(
+                    "text-[10px] font-semibold",
+                    isActive ? "text-primary" : "text-muted-foreground"
+                  )}
+                  animate={isActive ? { fontWeight: 700 } : { fontWeight: 600 }}
+                >
+                  {item.label}
+                </motion.span>
+              </Link>
+            );
+          }
+
+          // Standard nav items
           return (
             <Link
               key={item.href}
               to={item.href}
-              onClick={(e) => handleNavClick(e, item)}
+              onClick={(e) => handleNavClick(e, item as any)}
               className={cn(
                 "flex flex-col items-center justify-center flex-1 h-full gap-1 text-muted-foreground transition-colors relative",
                 isActive && "text-primary"
@@ -128,7 +207,7 @@ export function MobileNav() {
                 >
                   <item.icon className={cn("w-5 h-5", isActive && "text-primary")} />
                 </motion.div>
-                {item.showBadge && unreadCount > 0 && (
+                {'showBadge' in item && item.showBadge && unreadCount > 0 && (
                   <motion.span 
                     className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center"
                     initial={{ scale: 0 }}

@@ -387,7 +387,7 @@ export default function GPDemandesPage() {
                                     className="flex-1 bg-green-600 hover:bg-green-700"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleAccept(order.id);
+                                      handleAccept(order.id, order);
                                     }}
                                   >
                                     <CheckCircle className="w-4 h-4 mr-2" />
