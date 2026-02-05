@@ -77,12 +77,13 @@ function IndexContent() {
       }
 
       // Load custom requests (non-moving)
+      // V1.3 FIX: Exclude demenagement shipment_type to avoid duplicates with movingRequests
       const { data: customReqs } = await supabase
         .from("custom_requests")
         .select("id, request_number, origin_city, destination_city, status, shipment_type, created_at, transport_type")
         .eq("client_id", userId)
-        .neq("transport_type", "interne")
-        .in("status", ["pending", "open", "responded"])
+        .neq("shipment_type", "demenagement")
+        .in("status", ["open", "pending", "responded", "has_responses"])
         .order("created_at", { ascending: false })
         .limit(5);
       
@@ -91,12 +92,14 @@ function IndexContent() {
       }
 
       // Load moving requests (internal)
+      // V1.3 FIX: Use shipment_type = 'demenagement' instead of transport_type = 'interne'
+      // because some moving requests may have different transport_type values
       const { data: movingReqs } = await supabase
         .from("custom_requests")
         .select("id, request_number, origin_city, destination_city, status, created_at, volume_estimate")
         .eq("client_id", userId)
-        .eq("transport_type", "interne")
-        .in("status", ["pending", "reviewing", "quoted", "negotiating", "accepted", "scheduled", "in_progress"])
+        .eq("shipment_type", "demenagement")
+        .in("status", ["open", "pending", "reviewing", "quoted", "negotiating", "accepted", "scheduled", "in_progress"])
         .order("created_at", { ascending: false })
         .limit(3);
       
