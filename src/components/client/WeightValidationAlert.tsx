@@ -4,19 +4,9 @@ import { AlertTriangle, Scale, Check, X, Info, ShieldAlert, Ban } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
 interface WeightValidation {
   order_id: string;
   order_number: string;
@@ -33,7 +23,6 @@ interface WeightValidation {
   gp_name: string;
   gp_id: string;
 }
-
 interface WeightValidationAlertProps {
   userId: string;
   onAction?: () => void;
@@ -48,41 +37,41 @@ interface WeightValidationAlertProps {
  * - Refuse = Order cancelled + GP notified
  * - Accept = Order proceeds to collected
  */
-export function WeightValidationAlert({ userId, onAction }: WeightValidationAlertProps) {
-  const { toast } = useToast();
+export function WeightValidationAlert({
+  userId,
+  onAction
+}: WeightValidationAlertProps) {
+  const {
+    toast
+  } = useToast();
   const [validations, setValidations] = useState<WeightValidation[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedValidation, setSelectedValidation] = useState<WeightValidation | null>(null);
   const [dialogType, setDialogType] = useState<"accept" | "refuse" | null>(null);
   const [processing, setProcessing] = useState(false);
-
   useEffect(() => {
     loadPendingValidations();
-    
-    // Subscribe to realtime updates
-    const channel = supabase
-      .channel("weight-validations")
-      .on("postgres_changes", {
-        event: "*",
-        schema: "public",
-        table: "orders",
-        filter: `client_id=eq.${userId}`,
-      }, () => loadPendingValidations())
-      .subscribe();
 
+    // Subscribe to realtime updates
+    const channel = supabase.channel("weight-validations").on("postgres_changes", {
+      event: "*",
+      schema: "public",
+      table: "orders",
+      filter: `client_id=eq.${userId}`
+    }, () => loadPendingValidations()).subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, [userId]);
-
   const loadPendingValidations = async () => {
     try {
       // Get orders with weight modifications pending validation
       // weight_tier_applied is set when GP modifies weight (stored as string number)
       // We check for any status that is NOT collected/delivered yet AND has weight_tier_applied set
-      const { data: orders, error } = await supabase
-        .from("orders")
-        .select(`
+      const {
+        data: orders,
+        error
+      } = await supabase.from("orders").select(`
           id,
           order_number,
           weight,
@@ -93,10 +82,7 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
           insurance_amount,
           status,
           gp_profiles:gp_id(id, business_name)
-        `)
-        .eq("client_id", userId)
-        .not("weight_tier_applied", "is", null);
-
+        `).eq("client_id", userId).not("weight_tier_applied", "is", null);
       if (error) throw error;
 
       // Filter to only pending/accepted orders with numeric weight_tier_applied
@@ -117,41 +103,33 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
       }
 
       // Check for confirmations in history
-      const { data: history } = await supabase
-        .from("order_status_history")
-        .select("order_id")
-        .in("order_id", orderIds)
-        .or("notes.ilike.%CLIENT CONFIRME%,notes.ilike.%CLIENT REFUSE%");
-
+      const {
+        data: history
+      } = await supabase.from("order_status_history").select("order_id").in("order_id", orderIds).or("notes.ilike.%CLIENT CONFIRME%,notes.ilike.%CLIENT REFUSE%");
       const confirmedOrderIds = new Set((history || []).map(h => h.order_id));
 
       // Get logistics options for fixed prices
-      const { data: logistics } = await supabase
-        .from("order_logistics_options")
-        .select("order_id, total_logistics_price")
-        .in("order_id", orderIds);
-
+      const {
+        data: logistics
+      } = await supabase.from("order_logistics_options").select("order_id, total_logistics_price").in("order_id", orderIds);
       const logisticsMap = new Map((logistics || []).map(l => [l.order_id, l.total_logistics_price]));
 
       // Build pending validations
       const pendingValidations: WeightValidation[] = [];
-      
       for (const order of pendingOrders) {
         if (confirmedOrderIds.has(order.id)) continue;
-
         const declaredWeight = order.weight;
         const actualWeight = Number(order.weight_tier_applied) || 0;
         const originalTotal = order.total_price;
         const fixedInsurance = order.insurance_amount || 0;
         const fixedLogistics = logisticsMap.get(order.id) || 0;
-        
+
         // Calculate weight price difference only
         const pricePerKg = (originalTotal - fixedInsurance - fixedLogistics) / declaredWeight;
         const originalWeightPrice = Math.round(declaredWeight * pricePerKg);
         const newWeightPrice = Math.round(actualWeight * pricePerKg);
         const weightPriceDiff = newWeightPrice - originalWeightPrice;
         const newTotal = originalTotal + weightPriceDiff;
-
         pendingValidations.push({
           order_id: order.id,
           order_number: order.order_number,
@@ -166,10 +144,9 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
           original_total: originalTotal,
           currency: order.currency,
           gp_name: (order.gp_profiles as any)?.business_name || "Transporteur",
-          gp_id: order.gp_id,
+          gp_id: order.gp_id
         });
       }
-
       setValidations(pendingValidations);
     } catch (error) {
       console.error("Error loading weight validations:", error);
@@ -177,25 +154,25 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
       setLoading(false);
     }
   };
-
   const handleAccept = async () => {
     if (!selectedValidation) return;
-
     setProcessing(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
 
       // Update order with new weight and total, set status to collected
-      const { error: orderError } = await supabase
-        .from("orders")
-        .update({
-          status: "collected",
-          weight: selectedValidation.actual_weight,
-          total_price: selectedValidation.new_total,
-          weight_tier_applied: null, // Clear the pending flag
-        })
-        .eq("id", selectedValidation.order_id);
-
+      const {
+        error: orderError
+      } = await supabase.from("orders").update({
+        status: "collected",
+        weight: selectedValidation.actual_weight,
+        total_price: selectedValidation.new_total,
+        weight_tier_applied: null // Clear the pending flag
+      }).eq("id", selectedValidation.order_id);
       if (orderError) throw orderError;
 
       // Log confirmation
@@ -204,16 +181,13 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
         status: "collected",
         changed_by: user?.id || "",
         changed_by_type: "client",
-        notes: `✅ CLIENT CONFIRME le nouveau poids: ${selectedValidation.actual_weight} kg. Différence: ${selectedValidation.weight_price_difference > 0 ? "+" : ""}${selectedValidation.weight_price_difference} ${selectedValidation.currency}. Nouveau total: ${selectedValidation.new_total} ${selectedValidation.currency}. Assurance/logistique inchangés.`,
+        notes: `✅ CLIENT CONFIRME le nouveau poids: ${selectedValidation.actual_weight} kg. Différence: ${selectedValidation.weight_price_difference > 0 ? "+" : ""}${selectedValidation.weight_price_difference} ${selectedValidation.currency}. Nouveau total: ${selectedValidation.new_total} ${selectedValidation.currency}. Assurance/logistique inchangés.`
       });
 
       // Notify GP
-      const { data: gpProfile } = await supabase
-        .from("gp_profiles")
-        .select("user_id")
-        .eq("id", selectedValidation.gp_id)
-        .single();
-
+      const {
+        data: gpProfile
+      } = await supabase.from("gp_profiles").select("user_id").eq("id", selectedValidation.gp_id).single();
       if (gpProfile?.user_id) {
         await supabase.from("notifications").insert({
           user_id: gpProfile.user_id,
@@ -221,15 +195,13 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
           title: "✅ Poids validé par le client",
           message: `Le client a accepté le nouveau poids pour ${selectedValidation.order_number}. Le colis peut maintenant être pris en charge.`,
           related_type: "order",
-          related_id: selectedValidation.order_id,
+          related_id: selectedValidation.order_id
         });
       }
-
       toast({
         title: "✅ Modification validée",
-        description: `Votre colis est désormais pris en charge. Nouveau total: ${selectedValidation.new_total.toLocaleString()} ${selectedValidation.currency}`,
+        description: `Votre colis est désormais pris en charge. Nouveau total: ${selectedValidation.new_total.toLocaleString()} ${selectedValidation.currency}`
       });
-
       setSelectedValidation(null);
       setDialogType(null);
       loadPendingValidations();
@@ -239,29 +211,29 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
       toast({
         title: "Erreur",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setProcessing(false);
     }
   };
-
   const handleRefuse = async () => {
     if (!selectedValidation) return;
-
     setProcessing(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
 
       // PRV: Cancel order immediately
-      const { error: orderError } = await supabase
-        .from("orders")
-        .update({
-          status: "cancelled",
-          weight_tier_applied: null,
-        })
-        .eq("id", selectedValidation.order_id);
-
+      const {
+        error: orderError
+      } = await supabase.from("orders").update({
+        status: "cancelled",
+        weight_tier_applied: null
+      }).eq("id", selectedValidation.order_id);
       if (orderError) throw orderError;
 
       // Log refusal
@@ -270,16 +242,13 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
         status: "cancelled",
         changed_by: user?.id || "",
         changed_by_type: "client",
-        notes: `❌ CLIENT REFUSE la modification de poids. Commande annulée. Poids déclaré: ${selectedValidation.declared_weight} kg, Poids mesuré: ${selectedValidation.actual_weight} kg. Le colis ne doit PAS être pris en charge.`,
+        notes: `❌ CLIENT REFUSE la modification de poids. Commande annulée. Poids déclaré: ${selectedValidation.declared_weight} kg, Poids mesuré: ${selectedValidation.actual_weight} kg. Le colis ne doit PAS être pris en charge.`
       });
 
       // CRITICAL: Notify GP with blocking message
-      const { data: gpProfile } = await supabase
-        .from("gp_profiles")
-        .select("user_id")
-        .eq("id", selectedValidation.gp_id)
-        .single();
-
+      const {
+        data: gpProfile
+      } = await supabase.from("gp_profiles").select("user_id").eq("id", selectedValidation.gp_id).single();
       if (gpProfile?.user_id) {
         await supabase.from("notifications").insert({
           user_id: gpProfile.user_id,
@@ -287,7 +256,7 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
           title: "❌ ENVOI ANNULÉ - Client a refusé",
           message: `Le client a refusé la modification de poids pour ${selectedValidation.order_number}. ⛔ NE PAS PRENDRE EN CHARGE CE COLIS. Restituez-le immédiatement.`,
           related_type: "order",
-          related_id: selectedValidation.order_id,
+          related_id: selectedValidation.order_id
         });
       }
 
@@ -297,9 +266,8 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
       toast({
         title: "❌ Envoi annulé",
         description: "Vous avez refusé la modification de poids. Le colis n'a pas été pris en charge.",
-        variant: "destructive",
+        variant: "destructive"
       });
-
       setSelectedValidation(null);
       setDialogType(null);
       loadPendingValidations();
@@ -309,27 +277,30 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
       toast({
         title: "Erreur",
         description: error.message,
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setProcessing(false);
     }
   };
-
   if (loading || validations.length === 0) {
     return null;
   }
-
-  return (
-    <>
+  return <>
       <AnimatePresence>
-        {validations.map((validation) => (
-          <motion.div
-            key={validation.order_id}
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.95 }}
-          >
+        {validations.map(validation => <motion.div key={validation.order_id} initial={{
+        opacity: 0,
+        y: -20,
+        scale: 0.95
+      }} animate={{
+        opacity: 1,
+        y: 0,
+        scale: 1
+      }} exit={{
+        opacity: 0,
+        y: -20,
+        scale: 0.95
+      }}>
             {/* CRITICAL BANNER - Non-dismissible */}
             <Alert variant="destructive" className="mb-2 border-destructive bg-destructive/10">
               <ShieldAlert className="h-4 w-4" />
@@ -343,11 +314,12 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
                   {/* Pulsing Warning Icon */}
-                  <motion.div
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 1, repeat: Infinity }}
-                    className="w-12 h-12 rounded-full bg-destructive flex items-center justify-center flex-shrink-0"
-                  >
+                  <motion.div animate={{
+                scale: [1, 1.1, 1]
+              }} transition={{
+                duration: 1,
+                repeat: Infinity
+              }} className="w-12 h-12 rounded-full bg-destructive flex items-center justify-center flex-shrink-0">
                     <AlertTriangle className="w-6 h-6 text-white" />
                   </motion.div>
 
@@ -383,18 +355,14 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
                           {validation.weight_price_difference.toLocaleString()} {validation.currency}
                         </span>
                       </div>
-                      {validation.fixed_insurance > 0 && (
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      {validation.fixed_insurance > 0 && <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>🛡️ Assurance (inchangée):</span>
                           <span>{validation.fixed_insurance.toLocaleString()} {validation.currency}</span>
-                        </div>
-                      )}
-                      {validation.fixed_logistics > 0 && (
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        </div>}
+                      {validation.fixed_logistics > 0 && <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>🚚 Logistique (inchangée):</span>
                           <span>{validation.fixed_logistics.toLocaleString()} {validation.currency}</span>
-                        </div>
-                      )}
+                        </div>}
                       <div className="flex items-center justify-between text-sm font-bold pt-2 border-t">
                         <span>Nouveau total:</span>
                         <span className="text-primary text-base">
@@ -410,25 +378,18 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
                     </p>
 
                     {/* PRV: ONLY 2 ACTIONS - Accept or Refuse */}
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        className="flex-1 gap-2 border-destructive text-destructive hover:bg-destructive/10"
-                        onClick={() => {
-                          setSelectedValidation(validation);
-                          setDialogType("refuse");
-                        }}
-                      >
+                    <div className="gap-[4px] flex items-start justify-center">
+                      <Button variant="outline" className="flex-1 gap-2 border-destructive text-destructive hover:bg-destructive/10" onClick={() => {
+                    setSelectedValidation(validation);
+                    setDialogType("refuse");
+                  }}>
                         <X className="w-4 h-4" />
                         Refuser et annuler
                       </Button>
-                      <Button
-                        className="flex-1 gap-2"
-                        onClick={() => {
-                          setSelectedValidation(validation);
-                          setDialogType("accept");
-                        }}
-                      >
+                      <Button className="flex-1 gap-2" onClick={() => {
+                    setSelectedValidation(validation);
+                    setDialogType("accept");
+                  }}>
                         <Check className="w-4 h-4" />
                         Accepter et continuer
                       </Button>
@@ -437,12 +398,11 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
-        ))}
+          </motion.div>)}
       </AnimatePresence>
 
       {/* Accept Confirmation Dialog */}
-      <AlertDialog open={dialogType === "accept"} onOpenChange={(open) => !open && setDialogType(null)}>
+      <AlertDialog open={dialogType === "accept"} onOpenChange={open => !open && setDialogType(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
@@ -455,8 +415,7 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
                   Vous acceptez le poids mesuré par le transporteur et le nouveau tarif associé.
                 </p>
                 
-                {selectedValidation && (
-                  <div className="p-4 bg-muted rounded-lg space-y-2">
+                {selectedValidation && <div className="p-4 bg-muted rounded-lg space-y-2">
                     <div className="flex justify-between">
                       <span>Poids déclaré:</span>
                       <span className="font-bold line-through text-muted-foreground">{selectedValidation.declared_weight} kg</span>
@@ -471,8 +430,7 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
                         {selectedValidation.new_total.toLocaleString()} {selectedValidation.currency}
                       </span>
                     </div>
-                  </div>
-                )}
+                  </div>}
 
                 <p className="text-sm text-muted-foreground">
                   Votre colis sera pris en charge par le transporteur.
@@ -490,7 +448,7 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
       </AlertDialog>
 
       {/* Refuse Confirmation Dialog - CRITICAL */}
-      <AlertDialog open={dialogType === "refuse"} onOpenChange={(open) => !open && setDialogType(null)}>
+      <AlertDialog open={dialogType === "refuse"} onOpenChange={open => !open && setDialogType(null)}>
         <AlertDialogContent className="border-destructive">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-destructive">
@@ -508,31 +466,24 @@ export function WeightValidationAlert({ userId, onAction }: WeightValidationAler
                 <p>
                   Le transporteur sera notifié que le colis ne doit <strong>pas être pris en charge</strong> et devra vous le restituer.
                 </p>
-                {selectedValidation && (
-                  <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/30">
+                {selectedValidation && <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/30">
                     <p className="text-sm">
                       <strong>Commande:</strong> {selectedValidation.order_number}
                     </p>
                     <p className="text-sm">
                       <strong>Poids refusé:</strong> {selectedValidation.actual_weight} kg (déclaré: {selectedValidation.declared_weight} kg)
                     </p>
-                  </div>
-                )}
+                  </div>}
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={processing}>Revenir</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleRefuse} 
-              disabled={processing}
-              className="bg-destructive hover:bg-destructive/90"
-            >
+            <AlertDialogAction onClick={handleRefuse} disabled={processing} className="bg-destructive hover:bg-destructive/90">
               {processing ? "Annulation..." : "❌ Refuser et annuler l'envoi"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
-  );
+    </>;
 }
