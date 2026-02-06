@@ -2205,6 +2205,45 @@ export type Database = {
         }
         Relationships: []
       }
+      scan_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          new_status: string | null
+          order_id: string
+          previous_status: string | null
+          scan_type: string
+          user_id: string
+          user_role: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          new_status?: string | null
+          order_id: string
+          previous_status?: string | null
+          scan_type?: string
+          user_id: string
+          user_role: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          new_status?: string | null
+          order_id?: string
+          previous_status?: string | null
+          scan_type?: string
+          user_id?: string
+          user_role?: string
+        }
+        Relationships: []
+      }
       scheduled_routes: {
         Row: {
           available_capacity_kg: number | null
@@ -2947,7 +2986,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "agent_logistique"
       dispute_category:
         | "delay_unjustified"
         | "partial_loss"
@@ -3133,7 +3172,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "agent_logistique"],
       dispute_category: [
         "delay_unjustified",
         "partial_loss",
