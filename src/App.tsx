@@ -77,6 +77,8 @@ import ClientProfileComplete from "./pages/ClientProfileComplete";
 import MovingRequest from "./pages/MovingRequest";
 import MovingConfirmation from "./pages/MovingConfirmation";
 import OrderQRCode from "./pages/OrderQRCode";
+import PublicTracking from "./pages/PublicTracking";
+import AgentDashboard from "./pages/AgentDashboard";
 
 const queryClient = new QueryClient();
 
@@ -107,6 +109,7 @@ const App = () => (
             <Route path="/client/transporteurs/:gpId" element={<ClientTransporterProfile />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/install" element={<Install />} />
+            <Route path="/track/:orderId" element={<PublicTracking />} />
             
             {/* ============================================
                 CLIENT ROUTES - Dashboard client unifié
@@ -182,6 +185,11 @@ const App = () => (
             <Route path="/admin/gp/:gpId" element={<AdminGPProfile />} />
             <Route path="/admin/order/:orderId" element={<AdminOrderDetail />} />
             <Route path="/admin/messages" element={<AdminMessages />} />
+            
+            {/* ============================================
+                AGENT LOGISTIQUE - Dashboard livreur Yobbanté
+            ============================================ */}
+            <Route path="/agent" element={<AgentDashboard />} />
             
             {/* ============================================
                 LEGACY REDIRECTS - Routes obsolètes vers nouvelles
