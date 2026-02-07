@@ -3,6 +3,7 @@
  * 
  * Actions: confirm deposit, modify weight (triggers PRV), confirm delivery
  * Weight modification freezes order until client validates.
+ * Includes duplicate scan prevention (ScanTrust™).
  */
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -19,6 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
+import { useDuplicateScanCheck } from "@/hooks/useDuplicateScanCheck";
 
 interface ScanResultGPProps {
   order: {
@@ -43,12 +45,12 @@ interface ScanResultGPProps {
 
 export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPProps) {
   const { toast } = useToast();
+  const { canPerformAction } = useDuplicateScanCheck();
   const [loading, setLoading] = useState(false);
   const [actualWeight, setActualWeight] = useState(order.weight.toString());
   const [weightDiff, setWeightDiff] = useState(0);
   const [priceDiff, setPriceDiff] = useState(0);
 
-  // Determine scan mode based on order status
   const isDepositMode = ["accepted", "pending"].includes(order.status);
   const isDeliveryMode = order.status === "in_transit";
   const alreadyProcessed = ["collected", "delivered", "cancelled"].includes(order.status);
@@ -61,6 +63,11 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
   }, [actualWeight, order.weight, order.price_per_kg]);
 
   const confirmDeposit = async () => {
+    // ScanTrust™: Prevent duplicate deposit
+    const actionType = Math.abs(weightDiff) > 0.01 ? "weight_modify" : "deposit_confirm";
+    const allowed = await canPerformAction(order.id, actionType, "gp");
+    if (!allowed) return;
+
     setLoading(true);
     try {
       const actual = parseFloat(actualWeight) || order.weight;
@@ -98,10 +105,7 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
           price_diff: priceDiff,
         });
 
-        toast({
-          title: "⚠️ Poids modifié",
-          description: "En attente validation client.",
-        });
+        toast({ title: "⚠️ Poids modifié", description: "En attente validation client." });
       } else {
         await supabase.from("orders").update({
           status: "collected",
@@ -128,7 +132,6 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
         });
 
         await logScan(order.id, "deposit_confirm", "qr", order.status, "collected");
-
         toast({ title: "✅ Dépôt confirmé" });
       }
 
@@ -142,6 +145,10 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
   };
 
   const confirmDelivery = async () => {
+    // ScanTrust™: Prevent duplicate delivery
+    const allowed = await canPerformAction(order.id, "delivery_confirm", "gp");
+    if (!allowed) return;
+
     setLoading(true);
     try {
       await supabase.from("orders").update({
@@ -215,7 +222,7 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
         </CardContent>
       </Card>
 
-      {/* Status */}
+      {/* Already processed warning */}
       {alreadyProcessed && (
         <Card className="border-amber-300 bg-amber-50">
           <CardContent className="p-4 flex items-center gap-3">
@@ -283,11 +290,7 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
               </motion.div>
             )}
 
-            <Button
-              className="w-full"
-              onClick={confirmDeposit}
-              disabled={loading}
-            >
+            <Button className="w-full" onClick={confirmDeposit} disabled={loading}>
               {loading ? (
                 <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
@@ -314,11 +317,7 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
             <p className="text-sm text-muted-foreground">
               Scannez le QR à la remise au destinataire pour confirmer la livraison.
             </p>
-            <Button
-              className="w-full bg-green-600 hover:bg-green-700"
-              onClick={confirmDelivery}
-              disabled={loading}
-            >
+            <Button className="w-full bg-green-600 hover:bg-green-700" onClick={confirmDelivery} disabled={loading}>
               {loading ? (
                 <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
