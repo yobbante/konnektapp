@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { getCurrencySymbol, type CurrencyCode } from "@/components/ui/currency-selector";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { cn } from "@/lib/utils";
-
 interface InsuranceTier {
   id: string;
   category: string;
@@ -18,14 +17,12 @@ interface InsuranceTier {
   max_declared_value: number; // Stored in FCFA
   insurance_fee: number; // Stored in FCFA
 }
-
 interface MandatoryInsuranceChoiceProps {
   selectedContentTypes: string[]; // alimentaire, vetements, telephone, etc.
   currency?: CurrencyCode; // V1.2: Imposed by GP - client cannot change
   onChoiceChange: (choice: InsuranceChoice) => void;
   disabled?: boolean;
 }
-
 export interface InsuranceChoice {
   hasInsurance: boolean;
   insuranceAmount: number; // In FCFA
@@ -45,7 +42,7 @@ const CONTENT_TO_CATEGORY: Record<string, string> = {
   document: "document",
   bijoux: "bijoux",
   piece_auto: "piece_auto",
-  autres: "autres",
+  autres: "autres"
 };
 
 /**
@@ -59,23 +56,29 @@ const CONTENT_TO_CATEGORY: Record<string, string> = {
  */
 export function MandatoryInsuranceChoice({
   selectedContentTypes,
-  currency = "XOF", // V1.2: Default to XOF (FCFA)
+  currency = "XOF",
+  // V1.2: Default to XOF (FCFA)
   onChoiceChange,
-  disabled = false,
+  disabled = false
 }: MandatoryInsuranceChoiceProps) {
   const [tiers, setTiers] = useState<InsuranceTier[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOption, setSelectedOption] = useState<"with" | "without" | null>(null);
   const [declaredValue, setDeclaredValue] = useState<string>("");
-  
-  // V1.2: Currency conversion hook for dual display
-  const { fromFCFA, toFCFA, isFCFA, rates } = useCurrencyConversion({ gpCurrency: currency });
-  const gpSymbol = getCurrencySymbol(currency);
 
+  // V1.2: Currency conversion hook for dual display
+  const {
+    fromFCFA,
+    toFCFA,
+    isFCFA,
+    rates
+  } = useCurrencyConversion({
+    gpCurrency: currency
+  });
+  const gpSymbol = getCurrencySymbol(currency);
   useEffect(() => {
     loadInsuranceTiers();
   }, []);
-
   useEffect(() => {
     // Emit choice change
     if (selectedOption === null) {
@@ -84,7 +87,7 @@ export function MandatoryInsuranceChoice({
         insuranceAmount: 0,
         tierId: null,
         declaredValue: 0,
-        choiceMade: false,
+        choiceMade: false
       });
     } else if (selectedOption === "without") {
       onChoiceChange({
@@ -92,7 +95,7 @@ export function MandatoryInsuranceChoice({
         insuranceAmount: 0,
         tierId: null,
         declaredValue: 0,
-        choiceMade: true,
+        choiceMade: true
       });
     } else if (selectedOption === "with") {
       const tier = findApplicableTier();
@@ -100,22 +103,22 @@ export function MandatoryInsuranceChoice({
       const insuranceFCFA = tier?.insurance_fee || 0;
       onChoiceChange({
         hasInsurance: true,
-        insuranceAmount: insuranceFCFA, // Store in FCFA
+        insuranceAmount: insuranceFCFA,
+        // Store in FCFA
         tierId: tier?.id || null,
         declaredValue: parseFloat(declaredValue) || 0,
-        choiceMade: true,
+        choiceMade: true
       });
     }
   }, [selectedOption, declaredValue, tiers]);
-
   const loadInsuranceTiers = async () => {
     try {
-      const { data, error } = await supabase
-        .from("insurance_tiers")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
-
+      const {
+        data,
+        error
+      } = await supabase.from("insurance_tiers").select("*").eq("is_active", true).order("sort_order", {
+        ascending: true
+      });
       if (error) throw error;
       setTiers(data || []);
     } catch (error) {
@@ -124,13 +127,12 @@ export function MandatoryInsuranceChoice({
       setLoading(false);
     }
   };
-
   const findApplicableTier = (): InsuranceTier | null => {
     if (selectedContentTypes.length === 0 || tiers.length === 0) return null;
 
     // Map content types to categories and find the highest value tier
     const categories = selectedContentTypes.map(t => CONTENT_TO_CATEGORY[t] || "autres");
-    
+
     // Find the tier with highest fee among applicable categories (covers highest risk)
     let highestTier: InsuranceTier | null = null;
     for (const category of categories) {
@@ -139,10 +141,8 @@ export function MandatoryInsuranceChoice({
         highestTier = tier;
       }
     }
-
     return highestTier || tiers.find(t => t.category === "autres") || tiers[0] || null;
   };
-
   const applicableTier = findApplicableTier();
 
   // V2: Check if declared value exceeds maximum coverage
@@ -150,37 +150,29 @@ export function MandatoryInsuranceChoice({
   const declaredValueFCFA = toFCFA(declaredValueNum);
   const maxCoverage = applicableTier?.max_declared_value || 0;
   const exceedsMaxCoverage = selectedOption === "with" && applicableTier && declaredValueNum > 0 && declaredValueFCFA > maxCoverage;
-  
+
   // V1.2: Helper to format dual currency (FCFA primary, GP secondary)
   const formatDualFCFA = (amountFCFA: number) => {
     if (isFCFA) {
       return {
         main: `${amountFCFA.toLocaleString()} FCFA`,
-        equivalent: null,
+        equivalent: null
       };
     }
     const gpAmount = Math.round(fromFCFA(amountFCFA));
     return {
       main: `${amountFCFA.toLocaleString()} FCFA`,
-      equivalent: `≈ ${gpAmount.toLocaleString()} ${gpSymbol}`,
+      equivalent: `≈ ${gpAmount.toLocaleString()} ${gpSymbol}`
     };
   };
-
   if (loading) {
-    return (
-      <Card className="border-dashed">
+    return <Card className="border-dashed">
         <CardContent className="p-4">
           <div className="animate-pulse h-24 bg-muted rounded" />
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-
-  return (
-    <Card className={cn(
-      "transition-all duration-300 border-2",
-      selectedOption === null ? "border-destructive/50" : "border-primary/30"
-    )}>
+  return <Card className={cn("transition-all duration-300 border-2", selectedOption === null ? "border-destructive/50" : "border-primary/30")}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -197,23 +189,15 @@ export function MandatoryInsuranceChoice({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <RadioGroup
-          value={selectedOption || ""}
-          onValueChange={(v) => setSelectedOption(v as "with" | "without")}
-          disabled={disabled}
-        >
+        <RadioGroup value={selectedOption || ""} onValueChange={v => setSelectedOption(v as "with" | "without")} disabled={disabled}>
           {/* Option 1: With insurance */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={cn(
-              "flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all",
-              selectedOption === "with" 
-                ? "border-primary bg-primary/5" 
-                : "border-border hover:border-primary/50"
-            )}
-            onClick={() => !disabled && setSelectedOption("with")}
-          >
+          <motion.div initial={{
+          opacity: 0,
+          y: 10
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} className={cn("flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all", selectedOption === "with" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50")} onClick={() => !disabled && setSelectedOption("with")}>
             <RadioGroupItem value="with" id="insurance-with" className="mt-1" />
             <div className="flex-1 space-y-2">
               <Label htmlFor="insurance-with" className="flex items-center gap-2 cursor-pointer">
@@ -227,43 +211,32 @@ export function MandatoryInsuranceChoice({
                 L'assurance couvre les pertes ou dommages selon les conditions Konnekt.
               </p>
               
-              {selectedOption === "with" && applicableTier && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  className="mt-3 space-y-3"
-                >
+              {selectedOption === "with" && applicableTier && <motion.div initial={{
+              opacity: 0,
+              height: 0
+            }} animate={{
+              opacity: 1,
+              height: "auto"
+            }} className="mt-3 space-y-3">
                   {/* Declared value input - V1.2: Input in GP currency */}
                   <div>
                     <Label className="text-xs text-muted-foreground">
                       Valeur déclarée en {gpSymbol} (optionnel)
                     </Label>
-                    <Input
-                      type="number"
-                      placeholder="Ex: 50000"
-                      value={declaredValue}
-                      onChange={(e) => setDeclaredValue(e.target.value)}
-                     className={cn(
-                       "mt-1",
-                       exceedsMaxCoverage && "border-destructive focus-visible:ring-destructive"
-                     )}
-                    />
+                    <Input type="number" placeholder="Ex: 50000" value={declaredValue} onChange={e => setDeclaredValue(e.target.value)} className={cn("mt-1", exceedsMaxCoverage && "border-destructive focus-visible:ring-destructive")} />
                     <p className="text-xs text-muted-foreground mt-1">
                       Maximum couvert:{" "}
                       <span className="font-medium">
                         {formatDualFCFA(applicableTier.max_declared_value).main}
                       </span>
-                      {formatDualFCFA(applicableTier.max_declared_value).equivalent && (
-                        <span className="ml-1">
+                      {formatDualFCFA(applicableTier.max_declared_value).equivalent && <span className="ml-1">
                           ({formatDualFCFA(applicableTier.max_declared_value).equivalent})
-                        </span>
-                      )}
+                        </span>}
                     </p>
                   </div>
 
                  {/* V2: Warning when declared value exceeds max coverage */}
-                 {exceedsMaxCoverage && (
-                   <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
+                 {exceedsMaxCoverage && <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
                      <div className="flex items-start gap-2">
                        <XCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
                        <div>
@@ -277,8 +250,7 @@ export function MandatoryInsuranceChoice({
                          </p>
                        </div>
                      </div>
-                   </div>
-                 )}
+                   </div>}
 
                   {/* Insurance details with dual currency - V1.2: FCFA primary */}
                   <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg space-y-1">
@@ -292,31 +264,25 @@ export function MandatoryInsuranceChoice({
                       <strong className="text-primary">
                         {formatDualFCFA(applicableTier.insurance_fee).main}
                       </strong>
-                      {formatDualFCFA(applicableTier.insurance_fee).equivalent && (
-                        <span className="text-muted-foreground text-xs">
+                      {formatDualFCFA(applicableTier.insurance_fee).equivalent && <span className="text-muted-foreground text-xs">
                           ({formatDualFCFA(applicableTier.insurance_fee).equivalent})
-                        </span>
-                      )}
+                        </span>}
                     </div>
                   </div>
-                </motion.div>
-              )}
+                </motion.div>}
             </div>
           </motion.div>
 
           {/* Option 2: Without insurance */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className={cn(
-              "flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all",
-              selectedOption === "without" 
-                ? "border-orange-500 bg-orange-500/5" 
-                : "border-border hover:border-orange-500/50"
-            )}
-            onClick={() => !disabled && setSelectedOption("without")}
-          >
+          <motion.div initial={{
+          opacity: 0,
+          y: 10
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          delay: 0.1
+        }} className={cn("flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all", selectedOption === "without" ? "border-orange-500 bg-orange-500/5" : "border-border hover:border-orange-500/50")} onClick={() => !disabled && setSelectedOption("without")}>
             <RadioGroupItem value="without" id="insurance-without" className="mt-1" />
             <div className="flex-1">
               <Label htmlFor="insurance-without" className="flex items-center gap-2 cursor-pointer">
@@ -327,31 +293,29 @@ export function MandatoryInsuranceChoice({
                 En cas de perte ou dommage, Konnekt ne pourra pas vous indemniser.
               </p>
               
-              {selectedOption === "without" && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  className="mt-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg"
-                >
+              {selectedOption === "without" && <motion.div initial={{
+              opacity: 0,
+              height: 0
+            }} animate={{
+              opacity: 1,
+              height: "auto"
+            }} className="mt-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
                   <p className="text-xs text-orange-700 dark:text-orange-400 flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4" />
                     Vous assumez l'entière responsabilité de votre envoi
                   </p>
-                </motion.div>
-              )}
+                </motion.div>}
             </div>
           </motion.div>
         </RadioGroup>
 
         {/* Warning if no choice made */}
-        {selectedOption === null && (
-          <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+        {selectedOption === null && <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
             <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
             <p className="text-sm text-destructive">
               Vous devez faire un choix pour continuer
             </p>
-          </div>
-        )}
+          </div>}
 
         {/* Info footer - V1.2: Currency conversion info */}
         <div className="flex items-start gap-2 pt-2 border-t">
@@ -362,12 +326,7 @@ export function MandatoryInsuranceChoice({
         </div>
         
         {/* Currency info banner */}
-        {!isFCFA && (
-          <div className="text-xs text-muted-foreground bg-muted/30 px-3 py-2 rounded-lg mt-2">
-            Tous les montants sont calculés en FCFA (XOF) puis convertis automatiquement.
-          </div>
-        )}
+        {!isFCFA}
       </CardContent>
-    </Card>
-  );
+    </Card>;
 }
