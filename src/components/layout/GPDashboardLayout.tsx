@@ -10,6 +10,7 @@ import { useDashboardTheme } from "@/hooks/useDashboardTheme";
 import { GPNotificationsDropdown } from "@/components/gp/dashboard/GPNotificationsDropdown";
 import { GPDashboardHubSheet } from "@/components/layout/GPDashboardHubSheet";
 import { GPCreateOfferDialog } from "@/components/gp/GPCreateOfferDialog";
+import { HeaderQRBadge } from "@/components/ui/HeaderQRBadge";
 import { cn } from "@/lib/utils";
 import { useEnforceDashboardRole } from "@/hooks/useSmartRedirect";
 
@@ -138,36 +139,45 @@ export function GPDashboardLayout({
             </div>
 
             {/* Right Actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              {/* QR Badge — GP Identity */}
+              <HeaderQRBadge
+                qrValue={`${window.location.origin}/gp/${gpProfile.id}`}
+                label={gpProfile.business_name}
+                subLabel={gpProfile.gp_type === "bagages_international" ? "Konnekt GP" : "Transporteur Konnekt"}
+                variant="transporter"
+                className="bg-white/10 hover:bg-white/20 text-inherit"
+              />
+
               {/* Quick Add Departure Button */}
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative bg-white/10 hover:bg-white/20 text-inherit"
+                className="relative bg-white/10 hover:bg-white/20 text-inherit w-8 h-8"
                 onClick={() => setShowAddDeparture(true)}
                 title="Ajouter un départ"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4" />
               </Button>
 
-              {/* Quick Scan Button - Subtle in header */}
+              {/* Quick Scan Button */}
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative bg-gradient-to-br from-amber-400/20 to-orange-500/20 hover:from-amber-400/30 hover:to-orange-500/30 text-inherit border border-white/20"
+                className="relative bg-gradient-to-br from-amber-400/20 to-orange-500/20 hover:from-amber-400/30 hover:to-orange-500/30 text-inherit border border-white/20 w-8 h-8"
                 onClick={() => navigate("/gp/scan")}
                 title="Scanner QR Code"
               >
-                <ScanLine className="w-5 h-5" />
+                <ScanLine className="w-4 h-4" />
               </Button>
 
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative bg-white/10 hover:bg-white/20 text-inherit"
+                className="relative bg-white/10 hover:bg-white/20 text-inherit w-8 h-8"
                 onClick={() => setShowNotifications(true)}
               >
-                <Bell className="w-5 h-5" />
+                <Bell className="w-4 h-4" />
                 {pendingCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] rounded-full flex items-center justify-center">
                     {pendingCount}
@@ -186,9 +196,9 @@ export function GPDashboardLayout({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="bg-white/10 hover:bg-white/20 text-inherit"
+                  className="bg-white/10 hover:bg-white/20 text-inherit w-8 h-8"
                 >
-                  <Menu className="w-5 h-5" />
+                  <Menu className="w-4 h-4" />
                 </Button>
               </GPDashboardHubSheet>
             </div>

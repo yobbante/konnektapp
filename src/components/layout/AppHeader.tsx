@@ -7,7 +7,9 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { usePageTheme } from "@/hooks/usePageTheme";
 import { CentralMenuSheet } from "@/components/layout/CentralMenuSheet";
 import { HeaderRoleSwitch } from "@/components/layout/HeaderRoleSwitch";
-import { useState } from "react";
+import { HeaderQRBadge } from "@/components/ui/HeaderQRBadge";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AppHeaderProps {
   title?: string;
@@ -29,7 +31,24 @@ export function AppHeader({
   const { isAuthenticated } = useUserRole();
   const { logoBackground, logoColor } = usePageTheme();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>("Mon profil");
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUserId(session.user.id);
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+        if (profile?.full_name) setUserName(profile.full_name);
+      }
+    };
+    fetchUser();
+  }, []);
   const isHome = location.pathname === "/";
 
   const headerStyles = {
@@ -101,6 +120,16 @@ export function AppHeader({
 
         {/* Right Side */}
         <div className="flex items-center gap-1.5">
+          {/* Interactive QR Badge — Client identity */}
+          {isAuthenticated && userId && (
+            <HeaderQRBadge
+              qrValue={`${window.location.origin}/track/user/${userId}`}
+              label={userName}
+              subLabel="Client Konnekt"
+              variant="client"
+            />
+          )}
+
           {/* Desktop Scan Button — Sticky top-right CTA */}
           {isAuthenticated && (
             <motion.div
