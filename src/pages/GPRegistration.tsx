@@ -426,7 +426,7 @@ export default function GPRegistration() {
               <span className="text-sm font-medium text-primary">Devenir Transporteur</span>
             </motion.div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-              Rejoignez Yobbanté Connect
+              Rejoignez Konnekt
             </h1>
             <p className="text-sm text-muted-foreground max-w-md mx-auto">
               Accédez à des demandes qualifiées et développez votre activité
@@ -711,7 +711,7 @@ export default function GPRegistration() {
                   </Label>
                   <Input
                     id="businessName"
-                    placeholder={activityType === "agence" ? "Ex: Agence Yobbanté Voyages" : "Ex: Transport Diallo Express"}
+                    placeholder={activityType === "agence" ? "Ex: Agence Konnekt Voyages" : "Ex: Transport Diallo Express"}
                     value={businessData.businessName}
                     onChange={(e) => setBusinessData({ ...businessData, businessName: e.target.value })}
                   />

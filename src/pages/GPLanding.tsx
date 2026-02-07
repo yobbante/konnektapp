@@ -52,7 +52,7 @@ const benefits = [
   { icon: Wallet, title: "Paiements sécurisés", description: "Recevez vos paiements de manière sécurisée via notre système de séquestre." },
   { icon: BarChart3, title: "Dashboard complet", description: "Gérez vos offres, suivez vos statistiques et optimisez votre activité." },
   { icon: TrendingUp, title: "Visibilité accrue", description: "Passez en Premium pour apparaître en priorité sur les recherches." },
-  { icon: Shield, title: "Plateforme de confiance", description: "Bénéficiez de la crédibilité de Yobbanté auprès des clients." },
+  { icon: Shield, title: "Plateforme de confiance", description: "Bénéficiez de la crédibilité de Konnekt auprès des clients." },
   { icon: Clock, title: "Support 24/7", description: "Notre équipe vous accompagne à chaque étape de votre activité." },
 ];
 
@@ -106,7 +106,7 @@ const stats = [
 ];
 
 const testimonials = [
-  { name: "Mamadou D.", role: "Transporteur routier", quote: "Grâce à Yobbanté, j'ai triplé mon activité en 6 mois.", rating: 5 },
+  { name: "Mamadou D.", role: "Transporteur routier", quote: "Grâce à Konnekt, j'ai triplé mon activité en 6 mois.", rating: 5 },
   { name: "Fatou S.", role: "Coursière Express", quote: "Interface simple et paiements toujours à temps.", rating: 5 },
   { name: "Ibrahima N.", role: "Agence de voyage", quote: "Parfait pour compléter nos revenus avec le fret accompagné.", rating: 5 },
 ];

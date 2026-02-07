@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
-const THEME_STORAGE_KEY = "yobbante-theme-mode";
+const THEME_STORAGE_KEY = "konnekt-theme-mode";
 
 /**
  * Component that initializes and maintains the theme based on user preference and current route

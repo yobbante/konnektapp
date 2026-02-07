@@ -63,7 +63,7 @@ interface UniversalScannerProps {
 const ROLE_CONFIG: Record<string, { label: string; color: string; icon: typeof Eye; description: string }> = {
   client: { label: "Client", color: "bg-primary/10 text-primary border-primary/30", icon: Eye, description: "Voir le statut de votre colis" },
   gp: { label: "Transporteur", color: "bg-secondary/10 text-secondary border-secondary/30", icon: Truck, description: "Confirmer dépôt ou livraison" },
-  agent_logistique: { label: "Agent Yobbanté", color: "bg-warning/10 text-warning border-warning/30", icon: Package, description: "Enlèvement ou livraison" },
+  agent_logistique: { label: "Agent Konnekt", color: "bg-warning/10 text-warning border-warning/30", icon: Package, description: "Enlèvement ou livraison" },
   admin: { label: "Admin", color: "bg-accent/10 text-accent border-accent/30", icon: ShieldCheck, description: "Gestion complète" },
 };
 

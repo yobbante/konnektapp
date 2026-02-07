@@ -48,8 +48,8 @@ export function Header() {
             </div>
             <div className="flex items-center gap-2">
               <div className="flex flex-col">
-                <span className="font-bold text-lg text-foreground leading-tight">Yobbanté</span>
-                <span className="text-xs font-semibold text-secondary -mt-1">GP</span>
+                <span className="font-bold text-lg text-foreground leading-tight tracking-tight">Konnekt</span>
+                <span className="text-xs font-semibold text-secondary -mt-1">Transport</span>
               </div>
               {isAuthenticated && (
                 <TrustLevelBadge 

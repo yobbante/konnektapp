@@ -49,8 +49,8 @@ export function Footer() {
                 <Package className="w-6 h-6 text-primary" />
               </div>
               <div className="flex flex-col">
-                <span className="font-bold text-xl text-secondary leading-tight">Yobbanté</span>
-                <span className="text-sm font-semibold text-secondary/70 -mt-1">GP</span>
+                <span className="font-bold text-xl text-secondary leading-tight tracking-tight">Konnekt</span>
+                <span className="text-sm font-semibold text-secondary/70 -mt-1">Transport</span>
               </div>
             </Link>
             <p className="text-primary-foreground/70 mb-6 max-w-sm">
@@ -68,7 +68,7 @@ export function Footer() {
               </div>
               <div className="flex items-center gap-3 text-primary-foreground/70">
                 <Mail className="w-5 h-5 text-secondary" />
-                <span>contact@yobbante-gp.com</span>
+                <span>contact@konnekt.app</span>
               </div>
             </div>
           </div>
@@ -152,7 +152,7 @@ export function Footer() {
               ))}
             </div>
             <p className="text-sm text-primary-foreground/60">
-              © {new Date().getFullYear()} Yobbanté Group. Tous droits réservés.
+              © {new Date().getFullYear()} Konnekt. Tous droits réservés.
             </p>
           </div>
         </div>
