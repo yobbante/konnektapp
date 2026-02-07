@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { QrCode, AlertTriangle, ListChecks, ScanLine } from "lucide-react";
+import { QrCode, AlertTriangle, ListChecks, ScanLine, Globe } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,8 @@ import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { UniversalScanner } from "@/components/scan/UniversalScanner";
 import { BulkScanner } from "@/components/scan/BulkScanner";
+import { GeolocationConsentCard } from "@/components/scan/GeolocationConsentCard";
+import { useGPGeolocation } from "@/hooks/useGPGeolocation";
 
 interface GPProfile {
   id: string;
@@ -18,13 +20,12 @@ interface GPProfile {
 }
 
 /**
- * GPScanPage - KONNEKT SCAN CORE integration for GP
+ * GPScanPage - KONNEKT SCAN CORE + GeoTrack™ integration for GP
  * 
- * Uses UniversalScanner which auto-detects GP role and provides:
- * - Deposit confirmation with weight verification (PRV)
- * - Delivery confirmation
- * - Duplicate scan prevention
- * - Full audit trail via scan_logs
+ * Features:
+ * - ScanFlow™: Unitary and batch scanning
+ * - GeoTrack™: Passive geolocation for auto-status updates
+ * - ScanTrust™: Duplicate scan prevention
  */
 export default function GPScanPage() {
   const navigate = useNavigate();
@@ -33,6 +34,9 @@ export default function GPScanPage() {
   const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
   const [activeOrdersCount, setActiveOrdersCount] = useState(0);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  const geo = useGPGeolocation(gpProfile?.id || null, userId);
 
   useEffect(() => {
     loadData();
@@ -42,6 +46,7 @@ export default function GPScanPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/auth"); return; }
+      setUserId(user.id);
 
       const { data: profile } = await supabase
         .from("gp_profiles")
@@ -85,14 +90,37 @@ export default function GPScanPage() {
   return (
     <GPDashboardLayout gpProfile={gpProfile} pendingCount={pendingCount} activeOrdersCount={activeOrdersCount} activeTab="scan">
       <div className="px-4 py-4 space-y-4">
+        {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">KONNEKT SCAN</h2>
-          <Badge variant="secondary" className="gap-1">
-            <QrCode className="w-3 h-3" />
-            ScanFlow™
-          </Badge>
+          <div className="flex items-center gap-1.5">
+            {geo.trackingActive && (
+              <Badge variant="outline" className="gap-1 text-[10px] border-green-300 text-green-700">
+                <Globe className="w-2.5 h-2.5" />
+                GeoTrack
+              </Badge>
+            )}
+            <Badge variant="secondary" className="gap-1 text-xs">
+              <QrCode className="w-3 h-3" />
+              ScanFlow™
+            </Badge>
+          </div>
         </div>
+
+        {/* GeoTrack™ Card */}
+        <GeolocationConsentCard
+          consentGiven={geo.consentGiven}
+          trackingActive={geo.trackingActive}
+          lastCountry={geo.lastCountry}
+          lastCity={geo.lastCity}
+          lastCheckAt={geo.lastCheckAt}
+          loading={geo.loading}
+          onGiveConsent={geo.giveConsent}
+          onToggleTracking={geo.toggleTracking}
+          onRevokeConsent={geo.revokeConsent}
+        />
         
+        {/* Scan Tabs */}
         <Tabs defaultValue="single">
           <TabsList className="grid grid-cols-2 w-full">
             <TabsTrigger value="single" className="gap-1.5">
