@@ -244,9 +244,9 @@ export default function PostBookingForm() {
 
       toast({ 
         title: "🎉 Réservation confirmée !", 
-        description: "Le transporteur a été notifié. Consultez vos messages." 
+        description: "Téléchargez votre feuille logistique." 
       });
-      navigate("/messages");
+      navigate(`/order/${orderId}/qrcode`);
     } catch (error) {
       console.error("Submit error:", error);
       toast({ title: "Erreur lors de l'envoi", variant: "destructive" });

@@ -14,7 +14,7 @@ import { motion } from "framer-motion";
 import { 
   Package, Truck, CheckCircle, AlertTriangle,
   User, Phone, MapPin, History, ShieldAlert,
-  Navigation, Copy, ArrowRight
+  Navigation, Copy, ArrowRight, Camera
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { useDuplicateScanCheck } from "@/hooks/useDuplicateScanCheck";
 import { ScanStatusBadge } from "./ScanStatusBadge";
+import { DeliveryProofCapture } from "./DeliveryProofCapture";
 
 interface ScanResultAgentProps {
   order: {
@@ -63,6 +64,8 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
   const { canPerformAction } = useDuplicateScanCheck();
   const [loading, setLoading] = useState(false);
   const [paymentBlocked, setPaymentBlocked] = useState(false);
+  const [deliveryProof, setDeliveryProof] = useState<string | null>(null);
+  const [showProofCapture, setShowProofCapture] = useState(false);
 
   useEffect(() => {
     checkPaymentStatus();
@@ -135,6 +138,19 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
     }
   };
 
+  const handleDeliveryClick = () => {
+    if (!deliveryProof) {
+      setShowProofCapture(true);
+      return;
+    }
+    confirmDelivery();
+  };
+
+  const handleProofCaptured = (imageDataUrl: string) => {
+    setDeliveryProof(imageDataUrl);
+    setShowProofCapture(false);
+  };
+
   const confirmDelivery = async () => {
     const allowed = await canPerformAction(order.id, "delivery_confirm", agentRole);
     if (!allowed) return;
@@ -166,7 +182,7 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
           status: "delivered",
           changed_by: user.id,
           changed_by_type: isAdmin ? "admin" : "agent",
-          notes: "🎉 Livré par agent Yobbanté — LIVRÉ CONFIRMÉ",
+          notes: `🎉 Livré par agent Yobbanté — LIVRÉ CONFIRMÉ${deliveryProof ? " (photo preuve jointe)" : ""}`,
         });
       }
 
@@ -349,14 +365,41 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
           </Button>
         )}
 
+        {/* Delivery Proof Capture */}
+        {showProofCapture && ["in_transit", "collected"].includes(order.status) && !paymentBlocked && (
+          <DeliveryProofCapture
+            onProofCaptured={handleProofCaptured}
+            onSkip={() => {
+              setShowProofCapture(false);
+              setDeliveryProof("skipped");
+            }}
+            required={false}
+          />
+        )}
+
+        {/* Delivery proof indicator */}
+        {deliveryProof && deliveryProof !== "skipped" && (
+          <Card className="border-success/30 bg-success/5">
+            <CardContent className="p-3 flex items-center gap-2">
+              <Camera className="w-4 h-4 text-success" />
+              <span className="text-xs font-medium text-success">Photo preuve capturée</span>
+            </CardContent>
+          </Card>
+        )}
+
         {["in_transit", "collected"].includes(order.status) && !paymentBlocked && (
           <Button 
             className="w-full h-12 bg-success hover:bg-success/90 text-success-foreground" 
-            onClick={confirmDelivery} 
+            onClick={handleDeliveryClick} 
             disabled={loading}
           >
             {loading ? (
               <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            ) : !deliveryProof ? (
+              <>
+                <Camera className="w-4 h-4 mr-2" />
+                Photo preuve + Livrer
+              </>
             ) : (
               <>
                 <CheckCircle className="w-4 h-4 mr-2" />

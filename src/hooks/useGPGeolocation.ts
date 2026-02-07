@@ -286,18 +286,26 @@ export function useGPGeolocation(gpId: string | null, userId: string | null) {
 
       if (ordersToArrived.length > 0) {
         for (const orderId of ordersToArrived) {
-          // Use "delivered" as closest valid status for "arrived at destination country"
-          // The GP still needs to physically deliver, so we keep "in_transit" but log the arrival
-          await supabase.from("orders").update({ status: "in_transit" }).eq("id", orderId);
+          // Update logistics options to trigger admin delivery workflow
+          await supabase
+            .from("order_logistics_options")
+            .update({
+              logistics_status: "awaiting_admin_delivery",
+              gp_arrived_at: new Date().toISOString(),
+            })
+            .eq("order_id", orderId);
+
+          // Log the arrival in order history
           if (user) {
             await supabase.from("order_status_history").insert({
               order_id: orderId,
               status: "in_transit" as any,
               changed_by: user.id,
               changed_by_type: "system",
-              notes: `🌍 Auto-détection géolocalisation: GP arrivé au pays de destination (${detectedCountry})`,
+              notes: `🌍 GeoTrack™: GP arrivé au pays de destination (${detectedCountry}) — Mission dernier km créée`,
             });
           }
+
           // Notify client
           const order = activeOrders.find(o => o.id === orderId);
           if (order) {
@@ -311,7 +319,7 @@ export function useGPGeolocation(gpId: string | null, userId: string | null) {
                 user_id: orderData.client_id,
                 type: "order_status",
                 title: "🎉 Colis arrivé à destination !",
-                message: `Votre transporteur est arrivé au ${detectedCountry}. Commande ${order.order_number}`,
+                message: `Votre transporteur est arrivé au ${detectedCountry}. La livraison dernier km est en préparation. Commande ${order.order_number}`,
                 related_type: "order",
                 related_id: orderId,
               });
