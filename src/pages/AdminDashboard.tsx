@@ -246,17 +246,22 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen pb-safe bg-background">
-      {/* Fixed Admin Header with Dropdown Menu */}
+      {/* Fixed Admin Header — Konnekt Admin */}
       <div className={`sticky top-0 z-50 ${theme.headerBgClass} ${theme.headerTextClass} shadow-md`}>
         <div className="py-3 px-4" style={{ paddingTop: 'calc(12px + var(--safe-top, 0px))' }}>
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
                 <Shield className="w-5 h-5" />
               </div>
               <div>
-                <h1 className="text-xl font-bold">Admin Dashboard</h1>
-                <p className="text-sm opacity-80">Gestion de la plateforme</p>
+                <h1 className="text-lg font-bold tracking-tight">Konnekt Admin</h1>
+                <p className="text-[11px] opacity-70 font-medium">
+                  {stats.pendingOrders > 0 
+                    ? `${stats.pendingOrders} commande${stats.pendingOrders > 1 ? 's' : ''} en cours · ${stats.pendingGps} GP en attente`
+                    : "Gestion de la plateforme"
+                  }
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -265,7 +270,7 @@ export default function AdminDashboard() {
                 size="icon"
                 onClick={refreshData}
                 disabled={refreshing}
-                className="bg-white/10 border-white/20 hover:bg-white/20"
+                className="bg-white/10 border-white/20 hover:bg-white/20 rounded-xl"
               >
                 <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
               </Button>
@@ -282,8 +287,8 @@ export default function AdminDashboard() {
           <div className="relative max-w-7xl mx-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
             <Input
-              placeholder="Recherche globale (transporteurs, commandes, tickets...)"
-              className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:bg-white/20"
+              placeholder="Rechercher transporteurs, commandes, tickets..."
+              className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:bg-white/20 rounded-xl h-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -291,10 +296,10 @@ export default function AdminDashboard() {
           
           {/* Global Search Results Dropdown */}
           {globalSearchResults && (globalSearchResults.gps.length > 0 || globalSearchResults.orders.length > 0) && (
-            <div className="absolute left-4 right-4 mt-1 max-w-7xl mx-auto bg-card border border-border rounded-lg shadow-xl z-50 max-h-80 overflow-y-auto">
+            <div className="absolute left-4 right-4 mt-1 max-w-7xl mx-auto bg-card border border-border rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto">
               {globalSearchResults.gps.length > 0 && (
                 <div className="p-2">
-                  <p className="text-xs font-medium text-muted-foreground px-2 py-1">Transporteurs</p>
+                  <p className="text-[10px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">Transporteurs</p>
                   {globalSearchResults.gps.slice(0, 5).map(gp => (
                     <button
                       key={gp.id}
@@ -302,18 +307,22 @@ export default function AdminDashboard() {
                         handleViewDetails(gp.id);
                         setSearchQuery("");
                       }}
-                      className="w-full text-left px-3 py-2 hover:bg-muted rounded-md flex items-center gap-2"
+                      className="w-full text-left px-3 py-2.5 hover:bg-muted rounded-lg flex items-center gap-2 transition-colors"
                     >
-                      <Truck className="w-4 h-4 text-primary" />
-                      <span className="font-medium">{gp.business_name}</span>
-                      <span className="text-xs text-muted-foreground">• {gp.city}</span>
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Truck className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="font-medium text-sm">{gp.business_name}</span>
+                        <span className="text-xs text-muted-foreground ml-2">{gp.city}</span>
+                      </div>
                     </button>
                   ))}
                 </div>
               )}
               {globalSearchResults.orders.length > 0 && (
                 <div className="p-2 border-t border-border">
-                  <p className="text-xs font-medium text-muted-foreground px-2 py-1">Commandes</p>
+                  <p className="text-[10px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">Commandes</p>
                   {globalSearchResults.orders.slice(0, 5).map(order => (
                     <button
                       key={order.id}
@@ -321,11 +330,15 @@ export default function AdminDashboard() {
                         setActiveTab("orders");
                         setSearchQuery(order.order_number);
                       }}
-                      className="w-full text-left px-3 py-2 hover:bg-muted rounded-md flex items-center gap-2"
+                      className="w-full text-left px-3 py-2.5 hover:bg-muted rounded-lg flex items-center gap-2 transition-colors"
                     >
-                      <Package className="w-4 h-4 text-primary" />
-                      <span className="font-mono text-sm">{order.order_number}</span>
-                      <span className="text-xs text-muted-foreground">• {order.origin_city} → {order.destination_city}</span>
+                      <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center">
+                        <Package className="w-4 h-4 text-secondary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="font-mono text-sm font-medium">{order.order_number}</span>
+                        <span className="text-xs text-muted-foreground ml-2">{order.origin_city} → {order.destination_city}</span>
+                      </div>
                     </button>
                   ))}
                 </div>

@@ -10,7 +10,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   Package, Truck, Scale, CheckCircle, AlertTriangle,
-  User, History, ArrowRight
+  User, History, ArrowRight, ShieldAlert
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { useDuplicateScanCheck } from "@/hooks/useDuplicateScanCheck";
 import { ScanStatusBadge } from "./ScanStatusBadge";
+import { validateScanAction, isTerminalStatus, type ScanAction } from "@/lib/scanValidation";
 
 interface ScanResultGPProps {
   order: {
@@ -72,7 +73,17 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
   }, [actualWeight, order.weight, order.price_per_kg]);
 
   const confirmDeposit = async () => {
-    const actionType = Math.abs(weightDiff) > 0.01 ? "weight_modify" : "deposit_confirm";
+    const actionType: ScanAction = Math.abs(weightDiff) > 0.01 ? "weight_modify" : "deposit_confirm";
+    
+    // ── VALIDATION LAYER ──
+    const validation = validateScanAction("gp", actionType, order.status, {
+      newStatus: Math.abs(weightDiff) > 0.01 ? undefined : "collected",
+    });
+    if (!validation.allowed) {
+      toast({ title: "⚠️ Action non autorisée", description: validation.reason, variant: "destructive" });
+      return;
+    }
+
     const allowed = await canPerformAction(order.id, actionType, "gp");
     if (!allowed) return;
 
@@ -152,6 +163,15 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
   };
 
   const confirmDelivery = async () => {
+    // ── VALIDATION LAYER ──
+    const validation = validateScanAction("gp", "delivery_confirm", order.status, {
+      newStatus: "delivered",
+    });
+    if (!validation.allowed) {
+      toast({ title: "⚠️ Action non autorisée", description: validation.reason, variant: "destructive" });
+      return;
+    }
+
     const allowed = await canPerformAction(order.id, "delivery_confirm", "gp");
     if (!allowed) return;
 

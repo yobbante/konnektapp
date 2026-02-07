@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Package, Truck, MapPin, CheckCircle, ChevronDown, AlertTriangle, Clock, Sparkles
+  Package, Truck, MapPin, CheckCircle, ChevronDown, AlertTriangle, Clock, Sparkles, ShieldAlert
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,7 @@ import {
   canGPMarkDelivered,
   isOrderAwaitingAdminDelivery,
 } from "@/hooks/useLogisticsSync";
+import { validateStatusTransition, validateScanAction } from "@/lib/scanValidation";
 import { cn } from "@/lib/utils";
 
 // Status config with colors for gamification
@@ -127,8 +128,18 @@ export function MissionStatusUpdaterV2({
   const handleStatusUpdate = async (newStatus: string) => {
     console.log("=== MissionStatusUpdaterV2 handleStatusUpdate ===");
     console.log("Order ID:", orderId);
-    console.log("New Status:", newStatus);
-    console.log("Has Delivery Logistics:", hasDeliveryLogistics);
+    console.log("Current:", currentStatus, "→ New:", newStatus);
+
+    // ── STRICT VALIDATION LAYER ──
+    const transitionCheck = validateStatusTransition(currentStatus, newStatus);
+    if (!transitionCheck.allowed && newStatus !== "arrived") {
+      toast({
+        title: "⚠️ Transition non autorisée",
+        description: transitionCheck.reason,
+        variant: "destructive",
+      });
+      return;
+    }
 
     setLoading(true);
     try {

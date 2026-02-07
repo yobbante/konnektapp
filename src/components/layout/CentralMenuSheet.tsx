@@ -69,6 +69,7 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
 
   const isInGPMode = location.pathname.startsWith("/gp") || location.pathname.startsWith("/transporter");
   const isInAdminMode = location.pathname.startsWith("/admin");
+  const isInRoutierMode = location.pathname.startsWith("/routier");
 
   const getMenuSections = () => {
     if (!isAuthenticated) {
@@ -100,32 +101,51 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
 
     const sections = [];
 
-    // Navigation principale
-    sections.push({
-      title: "Navigation",
-      items: [
-        { icon: Home, label: "Accueil", href: "/" },
-        { icon: Search, label: "Offres disponibles", href: "/offres" },
-        { icon: Package, label: "Envoyer un colis", href: "/envoyer" },
-        { icon: MessageCircle, label: "Messages", href: "/messages" },
-      ]
-    });
-
-    // Espace utilisateur
-    if (!isInGPMode && !isInAdminMode) {
+    // Context-aware title section
+    if (isInGPMode) {
       sections.push({
-        title: "Mon espace",
+        title: "Konnekt GP",
         items: [
-          { icon: User, label: "Mon profil", href: "/client/dashboard" },
-          { icon: History, label: "Historique complet", href: "/historique" },
-          { icon: Heart, label: "Mes favoris", href: "/favorites" },
-          { icon: Bell, label: "Mes alertes", href: "/saved-searches" },
+          { icon: Home, label: "Accueil Konnekt", href: "/" },
+          { icon: Package, label: "Mes missions", href: "/gp/demandes" },
+          { icon: History, label: "Historique", href: "/gp/historique" },
+          { icon: MessageCircle, label: "Messages", href: "/messages" },
+        ]
+      });
+    } else if (isInRoutierMode) {
+      sections.push({
+        title: "Konnekt Routier",
+        items: [
+          { icon: Home, label: "Accueil Konnekt", href: "/" },
+          { icon: Truck, label: "Mes missions", href: "/routier/demandes" },
+          { icon: History, label: "Historique", href: "/routier/historique" },
+          { icon: MessageCircle, label: "Messages", href: "/messages" },
+        ]
+      });
+    } else {
+      sections.push({
+        title: "Navigation",
+        items: [
+          { icon: Home, label: "Accueil", href: "/" },
+          { icon: Search, label: "Offres disponibles", href: "/offres" },
+          { icon: Package, label: "Envoyer un colis", href: "/envoyer" },
+          { icon: MessageCircle, label: "Messages", href: "/messages" },
         ]
       });
     }
 
-    // Récompenses & Fidélité - Dans le menu uniquement
-    if (!isInGPMode && !isInAdminMode) {
+    // Espace utilisateur — only in client mode
+    if (!isInGPMode && !isInAdminMode && !isInRoutierMode) {
+      sections.push({
+        title: "Mon espace",
+        items: [
+          { icon: User, label: "Mon profil", href: "/profil" },
+          { icon: History, label: "Historique complet", href: "/historique" },
+          { icon: Heart, label: "Mes favoris", href: "/favoris" },
+          { icon: Bell, label: "Mes alertes", href: "/saved-searches" },
+        ]
+      });
+
       sections.push({
         title: "Récompenses",
         items: [
@@ -134,7 +154,7 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
       });
     }
 
-    // Accès Transporteur
+    // Cross-role access buttons
     if (isGP && !isInGPMode) {
       sections.push({
         title: "Espace Transporteur",
@@ -144,27 +164,23 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
       });
     }
 
-    // Accès Admin
     if ((isAdmin || isModerator) && !isInAdminMode) {
       sections.push({
         title: "Administration",
         items: [
-          { icon: Shield, label: "Dashboard Admin", href: "/admin", highlight: true },
+          { icon: Shield, label: "Konnekt Admin", href: "/admin", highlight: true },
         ]
       });
     }
 
-    // Tutoriels & Aide
     sections.push({
-      title: "Aide & Tutoriels",
+      title: "Aide",
       items: [
         { icon: BookOpen, label: "Tutoriels", href: "/tutoriels" },
-        { icon: HelpCircle, label: "Aide & Support", href: "/settings" },
         { icon: Settings, label: "Paramètres", href: "/settings" },
       ]
     });
 
-    // Devenir transporteur (pour non-GP)
     if (!isGP && isAuthenticated) {
       sections.push({
         title: "Opportunités",
@@ -189,9 +205,12 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
           paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))',
         }}
       >
-        <SheetHeader className="px-4 pb-3">
-          <SheetTitle className="text-left text-lg">
-            {isAuthenticated ? "Menu" : "Bienvenue"}
+        <SheetHeader className="px-4 pb-3 border-b border-border/50">
+          <SheetTitle className="text-left text-lg flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Package className="w-4 h-4 text-primary" />
+            </div>
+            {isAuthenticated ? "Menu Konnekt" : "Bienvenue sur Konnekt"}
           </SheetTitle>
         </SheetHeader>
 

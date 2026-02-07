@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, Menu, ChevronLeft, LogIn, User } from "lucide-react";
+import { Package, Menu, ChevronLeft, LogIn, ScanLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -101,7 +101,26 @@ export function AppHeader({
 
         {/* Right Side */}
         <div className="flex items-center gap-1.5">
-          {/* Login Button for non-authenticated users - Subtle */}
+          {/* Desktop Scan Button — Sticky top-right CTA */}
+          {isAuthenticated && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="hidden md:block"
+            >
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => navigate(location.pathname.startsWith("/gp") ? "/gp/scan" : "/tracking")}
+                className="rounded-full h-8 px-3 gap-1.5 text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20"
+              >
+                <ScanLine className="w-3.5 h-3.5" />
+                <span>Scan</span>
+              </Button>
+            </motion.div>
+          )}
+          
+          {/* Login Button for non-authenticated users */}
           {!isAuthenticated && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -119,7 +138,7 @@ export function AppHeader({
             </motion.div>
           )}
           
-          {/* Role Switch - Subtle in header */}
+          {/* Role Switch */}
           <HeaderRoleSwitch />
           
           {rightAction}
