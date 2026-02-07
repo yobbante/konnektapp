@@ -1213,6 +1213,144 @@ export type Database = {
         }
         Relationships: []
       }
+      ktp_history: {
+        Row: {
+          created_at: string
+          gp_id: string
+          id: string
+          new_level: string
+          new_trust_score: number
+          old_level: string
+          old_trust_score: number
+          reason: string
+          triggered_by: string
+        }
+        Insert: {
+          created_at?: string
+          gp_id: string
+          id?: string
+          new_level: string
+          new_trust_score?: number
+          old_level: string
+          old_trust_score?: number
+          reason: string
+          triggered_by?: string
+        }
+        Update: {
+          created_at?: string
+          gp_id?: string
+          id?: string
+          new_level?: string
+          new_trust_score?: number
+          old_level?: string
+          old_trust_score?: number
+          reason?: string
+          triggered_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ktp_history_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ktp_history_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ktp_status: {
+        Row: {
+          client_satisfaction_score: number
+          commission_rate: number
+          created_at: string
+          delivery_history_score: number
+          delivery_punctuality_score: number
+          gp_id: string
+          id: string
+          insurance_coefficient: number
+          ktp_level: string
+          last_evaluated_at: string
+          payment_release_rule: string
+          platform_discipline_score: number
+          scan_compliance_score: number
+          suspended_at: string | null
+          suspension_reason: string | null
+          total_deliveries_evaluated: number
+          total_expected_scans: number
+          total_on_time_deliveries: number
+          total_scans: number
+          trust_score: number
+          updated_at: string
+        }
+        Insert: {
+          client_satisfaction_score?: number
+          commission_rate?: number
+          created_at?: string
+          delivery_history_score?: number
+          delivery_punctuality_score?: number
+          gp_id: string
+          id?: string
+          insurance_coefficient?: number
+          ktp_level?: string
+          last_evaluated_at?: string
+          payment_release_rule?: string
+          platform_discipline_score?: number
+          scan_compliance_score?: number
+          suspended_at?: string | null
+          suspension_reason?: string | null
+          total_deliveries_evaluated?: number
+          total_expected_scans?: number
+          total_on_time_deliveries?: number
+          total_scans?: number
+          trust_score?: number
+          updated_at?: string
+        }
+        Update: {
+          client_satisfaction_score?: number
+          commission_rate?: number
+          created_at?: string
+          delivery_history_score?: number
+          delivery_punctuality_score?: number
+          gp_id?: string
+          id?: string
+          insurance_coefficient?: number
+          ktp_level?: string
+          last_evaluated_at?: string
+          payment_release_rule?: string
+          platform_discipline_score?: number
+          scan_compliance_score?: number
+          suspended_at?: string | null
+          suspension_reason?: string | null
+          total_deliveries_evaluated?: number
+          total_expected_scans?: number
+          total_on_time_deliveries?: number
+          total_scans?: number
+          trust_score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ktp_status_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: true
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ktp_status_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: true
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       logistics_pricing_config: {
         Row: {
           base_price: number
@@ -3079,6 +3217,16 @@ export type Database = {
         }
         Returns: string
       }
+      evaluate_ktp_level: { Args: { p_trust_score: number }; Returns: string }
+      get_ktp_commission_rate: {
+        Args: { p_trust_score: number }
+        Returns: number
+      }
+      get_ktp_insurance_coefficient: {
+        Args: { p_trust_score: number }
+        Returns: number
+      }
+      get_ktp_payment_rule: { Args: { p_trust_score: number }; Returns: string }
       get_public_tracking: {
         Args: { p_order_identifier: string }
         Returns: Json

@@ -21,6 +21,8 @@ import { MandatoryInsuranceChoice, type InsuranceChoice } from "@/components/boo
 import { LocalLogisticsOptions, type LogisticsOptions } from "@/components/booking/LocalLogisticsOptions";
 import { DualCurrencyDisplay, DualCurrencyCompact, CurrencyInfoBanner } from "@/components/booking/DualCurrencyDisplay";
 import { FloatingRecap } from "@/components/booking/FloatingRecap";
+import { KTPBadge } from "@/components/ktp/KTPBadge";
+import { useKTPPublic, type KTPLevel } from "@/hooks/useKTPStatus";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { convertFromFCFA, loadExchangeRates, type ExchangeRate } from "@/lib/currencyUtils";
 import { createAutoConversationAfterBooking } from "@/lib/autoChat";
@@ -331,8 +333,9 @@ export default function SmartBookingPage() {
 
     const transportTotal = roundTo2Decimals(kiloTotal + flatRateTotal);
     
-    // Add insurance if selected
-    const insuranceTotal = insuranceChoice.hasInsurance ? insuranceChoice.insuranceAmount : 0;
+    // Add insurance if selected — apply KTP coefficient if available
+    const rawInsurance = insuranceChoice.hasInsurance ? insuranceChoice.insuranceAmount : 0;
+    const insuranceTotal = rawInsurance; // KTP coefficient applied server-side during evaluation
     
     // Add logistics if enabled
     const logisticsTotal = logisticsOptions.totalLogisticsPrice;

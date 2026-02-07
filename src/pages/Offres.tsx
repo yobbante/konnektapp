@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   Package, ArrowRight, Star, Loader2, Heart, Calendar,
-  Zap, Truck, Ship, Plane, Briefcase, Luggage, Building2, ChevronRight
+  Zap, Truck, Ship, Plane, Briefcase, Luggage, Building2, ChevronRight, Shield
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -19,6 +19,8 @@ import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
+import { KTPBadge } from "@/components/ktp/KTPBadge";
+import { useKTPPublic, type KTPLevel } from "@/hooks/useKTPStatus";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence" | "bagages_international";
 
@@ -39,6 +41,10 @@ interface Offer {
     business_name: string;
     rating: number | null;
     default_currency: string | null;
+  } | null;
+  ktp: {
+    ktp_level: string;
+    trust_score: number;
   } | null;
 }
 
@@ -163,16 +169,26 @@ export default function Offres() {
 
       if (data && data.length > 0) {
         const gpIds = [...new Set(data.map(o => o.gp_id))];
-        const { data: profiles } = await supabase
-          .from("public_gp_profiles")
-          .select("id, business_name, rating, default_currency")
-          .in("id", gpIds);
+        
+        // Fetch GP profiles and KTP data in parallel
+        const [profilesResult, ktpResult] = await Promise.all([
+          supabase
+            .from("public_gp_profiles")
+            .select("id, business_name, rating, default_currency")
+            .in("id", gpIds),
+          supabase
+            .from("ktp_status")
+            .select("gp_id, ktp_level, trust_score")
+            .in("gp_id", gpIds),
+        ]);
 
-        const profilesMap = new Map(profiles?.map(p => [p.id, p]) || []);
+        const profilesMap = new Map(profilesResult.data?.map(p => [p.id, p]) || []);
+        const ktpMap = new Map(ktpResult.data?.map(k => [k.gp_id, k]) || []);
         
         const offersWithProfiles = data.map(offer => ({
           ...offer,
-          gp_profile: profilesMap.get(offer.gp_id) || null
+          gp_profile: profilesMap.get(offer.gp_id) || null,
+          ktp: ktpMap.get(offer.gp_id) || null,
         }));
 
         if (reset) {
@@ -209,9 +225,9 @@ export default function Offres() {
     setSearchDestination(destination);
   };
 
-  // Apply search filters only (no transport type filter for now)
+  // Apply search filters + KTP-based sorting (Pro > Verified > Basic)
   const filteredOffers = useMemo(() => {
-    return offers.filter((offer) => {
+    const filtered = offers.filter((offer) => {
       // Route-based search (origin)
       if (searchOrigin) {
         const originMatch = offer.origin_city.toLowerCase().includes(searchOrigin.toLowerCase());
@@ -235,6 +251,16 @@ export default function Offres() {
       }
 
       return true;
+    });
+
+    // Sort by KTP level priority: pro > verified > basic > inactive/null
+    const ktpPriority: Record<string, number> = { pro: 3, verified: 2, basic: 1, inactive: 0 };
+    return filtered.sort((a, b) => {
+      const aScore = ktpPriority[a.ktp?.ktp_level || "inactive"] || 0;
+      const bScore = ktpPriority[b.ktp?.ktp_level || "inactive"] || 0;
+      if (bScore !== aScore) return bScore - aScore;
+      // Secondary sort by trust score
+      return (b.ktp?.trust_score || 0) - (a.ktp?.trust_score || 0);
     });
   }, [offers, searchQuery, searchOrigin, searchDestination]);
 
@@ -387,7 +413,7 @@ export default function Offres() {
                         {/* Footer */}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            {/* GP Name & Rating */}
+                            {/* GP Name & Rating + KTP Badge */}
                             <div className="flex items-center gap-2">
                               <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                                 <span className="text-xs font-bold">
@@ -395,17 +421,35 @@ export default function Offres() {
                                 </span>
                               </div>
                               <div>
-                                <p className="text-sm font-medium line-clamp-1">
-                                  {offer.gp_profile?.business_name || "Transporteur"}
-                                </p>
-                                {offer.gp_profile?.rating && (
-                                  <div className="flex items-center gap-1">
-                                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                                    <span className="text-xs text-muted-foreground">
-                                      {offer.gp_profile.rating.toFixed(1)}
+                                <div className="flex items-center gap-1.5">
+                                  <p className="text-sm font-medium line-clamp-1">
+                                    {offer.gp_profile?.business_name || "Transporteur"}
+                                  </p>
+                                  {offer.ktp && offer.ktp.ktp_level !== "inactive" && offer.ktp.ktp_level !== "basic" && (
+                                    <KTPBadge
+                                      level={offer.ktp.ktp_level as KTPLevel}
+                                      trustScore={offer.ktp.trust_score}
+                                      size="sm"
+                                      showScore={false}
+                                    />
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  {offer.gp_profile?.rating && (
+                                    <div className="flex items-center gap-0.5">
+                                      <Star className="w-3 h-3 fill-warning text-warning" />
+                                      <span className="text-xs text-muted-foreground">
+                                        {offer.gp_profile.rating.toFixed(1)}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {offer.ktp && offer.ktp.trust_score > 0 && (
+                                    <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                                      <Shield className="w-2.5 h-2.5" />
+                                      {offer.ktp.trust_score}
                                     </span>
-                                  </div>
-                                )}
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
