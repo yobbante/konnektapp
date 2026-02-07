@@ -26,6 +26,7 @@ import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { useDuplicateScanCheck } from "@/hooks/useDuplicateScanCheck";
 import { ScanStatusBadge } from "./ScanStatusBadge";
 import { DeliveryProofCapture } from "./DeliveryProofCapture";
+import { validateScanAction, isTerminalStatus, type ScanAction, type ScanUserRole } from "@/lib/scanValidation";
 
 interface ScanResultAgentProps {
   order: {
@@ -87,9 +88,16 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
     }
   };
 
-  const agentRole = isAdmin ? "admin" : "agent_logistique";
+  const agentRole: ScanUserRole = isAdmin ? "admin" : "agent_logistique";
 
   const confirmPickup = async () => {
+    // ── VALIDATION LAYER ──
+    const validation = validateScanAction(agentRole, "pickup_confirm", order.status);
+    if (!validation.allowed) {
+      toast({ title: "⚠️ Action non autorisée", description: validation.reason, variant: "destructive" });
+      return;
+    }
+
     const allowed = await canPerformAction(order.id, "pickup_confirm", agentRole);
     if (!allowed) return;
 
@@ -152,6 +160,15 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
   };
 
   const confirmDelivery = async () => {
+    // ── VALIDATION LAYER ──
+    const validation = validateScanAction(agentRole, "delivery_confirm", order.status, {
+      newStatus: "delivered",
+    });
+    if (!validation.allowed) {
+      toast({ title: "⚠️ Action non autorisée", description: validation.reason, variant: "destructive" });
+      return;
+    }
+
     const allowed = await canPerformAction(order.id, "delivery_confirm", agentRole);
     if (!allowed) return;
 
@@ -210,6 +227,13 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
   };
 
   const confirmStockReception = async () => {
+    // ── VALIDATION LAYER ──
+    const validation = validateScanAction(agentRole, "stock_confirm", order.status);
+    if (!validation.allowed) {
+      toast({ title: "⚠️ Action non autorisée", description: validation.reason, variant: "destructive" });
+      return;
+    }
+
     const allowed = await canPerformAction(order.id, "stock_confirm", agentRole);
     if (!allowed) return;
 
