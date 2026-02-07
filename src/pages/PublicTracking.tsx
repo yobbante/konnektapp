@@ -1,7 +1,8 @@
 /**
- * PublicTracking - Page publique de suivi simplifié
+ * PublicTracking - Page publique de suivi simplifié (ScanTrack™)
  * 
  * Accessible quand un QR est scanné hors-app (appareil photo natif).
+ * Utilise la fonction get_public_tracking pour accès anon sécurisé.
  * Affiche des infos limitées + bloc marketing Konnekt.
  * Aucune donnée sensible (pas de nom client, GP, poids, paiement).
  */
@@ -9,7 +10,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
-  Package, Truck, CheckCircle, Clock, MapPin, 
+  Package, Truck, CheckCircle, Clock, 
   Shield, QrCode, Globe, ArrowRight, Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ const STATUS_MAP: Record<string, { label: string; icon: any; color: string }> = 
   accepted: { label: "Accepté", icon: CheckCircle, color: "text-blue-500" },
   collected: { label: "Collecté", icon: Package, color: "text-indigo-500" },
   in_transit: { label: "En transit", icon: Truck, color: "text-purple-500" },
+  arrived: { label: "Arrivé", icon: Package, color: "text-orange-500" },
   delivered: { label: "Livré", icon: CheckCircle, color: "text-green-500" },
   cancelled: { label: "Annulé", icon: Clock, color: "text-destructive" },
 };
@@ -52,28 +54,17 @@ export default function PublicTracking() {
 
   const loadOrder = async (id: string) => {
     try {
-      // Try by UUID first, then by order_number
-      let query = supabase
-        .from("orders")
-        .select("order_number, status, origin_country, destination_country, origin_city, destination_city, delivery_date, created_at");
-
-      // Detect if it's a UUID or order number
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-      
-      if (isUUID) {
-        query = query.eq("id", id);
-      } else {
-        query = query.eq("order_number", id);
-      }
-
-      const { data, error } = await query.single();
+      // Use secure RPC function for anon-safe access
+      const { data, error } = await supabase.rpc("get_public_tracking", {
+        p_order_identifier: id,
+      });
 
       if (error || !data) {
         setNotFound(true);
         return;
       }
 
-      setOrder(data);
+      setOrder(data as unknown as PublicOrder);
     } catch {
       setNotFound(true);
     } finally {
@@ -127,7 +118,7 @@ export default function PublicTracking() {
             <CardContent className="p-6">
               <div className="text-center mb-6">
                 <motion.div 
-                  className={`w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center bg-white/10`}
+                  className="w-16 h-16 rounded-2xl mx-auto mb-3 flex items-center justify-center bg-white/10"
                   animate={{ scale: [1, 1.05, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
@@ -168,10 +159,10 @@ export default function PublicTracking() {
                 )}
               </div>
 
-              {/* Progress */}
+              {/* Progress Steps */}
               <div className="flex justify-between mt-6 px-2">
-                {["pending", "collected", "in_transit", "delivered"].map((step, i) => {
-                  const steps = ["pending", "accepted", "collected", "in_transit", "delivered"];
+                {["pending", "collected", "in_transit", "delivered"].map((step) => {
+                  const steps = ["pending", "accepted", "collected", "in_transit", "arrived", "delivered"];
                   const currentIdx = steps.indexOf(order.status);
                   const stepIdx = steps.indexOf(step);
                   const isActive = stepIdx <= currentIdx;
@@ -189,7 +180,7 @@ export default function PublicTracking() {
           </Card>
         </motion.div>
 
-        {/* Suivi complet CTA */}
+        {/* CTA suivi complet */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

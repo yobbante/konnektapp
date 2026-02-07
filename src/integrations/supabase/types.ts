@@ -2938,6 +2938,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      can_perform_scan_action: {
+        Args: { p_action: string; p_order_id: string; p_user_role: string }
+        Returns: boolean
+      }
       check_loyalty_tier_progress: {
         Args: { p_user_id: string }
         Returns: {
@@ -2960,6 +2964,10 @@ export type Database = {
           p_wallet_id: string
         }
         Returns: string
+      }
+      get_public_tracking: {
+        Args: { p_order_identifier: string }
+        Returns: Json
       }
       has_admin_access: { Args: { _user_id: string }; Returns: boolean }
       has_permission: {

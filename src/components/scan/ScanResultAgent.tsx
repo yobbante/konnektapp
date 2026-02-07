@@ -1,15 +1,15 @@
 /**
- * ScanResultAgent - Agent Logistique / Admin scan result
+ * ScanResultAgent - Agent Logistique / Admin scan result (ScanFlow™)
  * 
  * Actions:
  * - Pickup: "Colis enlevé" → status PRIS EN CHARGE
- * - Delivery: "Livré" → status LIVRÉ  
+ * - Delivery: "Livré" → status LIVRÉ CONFIRMÉ
  * - Stock: "Réception stock Yobbanté"
  * 
- * Shows: client info, GP info, delivery address, payment status
+ * Includes ScanTrust™ duplicate prevention.
  * Blocks delivery if payment is blocked.
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   Package, Truck, CheckCircle, AlertTriangle,
@@ -23,6 +23,7 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
+import { useDuplicateScanCheck } from "@/hooks/useDuplicateScanCheck";
 
 interface ScanResultAgentProps {
   order: {
@@ -49,17 +50,41 @@ interface ScanResultAgentProps {
 
 export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanResultAgentProps) {
   const { toast } = useToast();
+  const { canPerformAction } = useDuplicateScanCheck();
   const [loading, setLoading] = useState(false);
-
-  // Check escrow/payment status
   const [paymentBlocked, setPaymentBlocked] = useState(false);
 
+  // Check escrow status on mount
+  useEffect(() => {
+    checkPaymentStatus();
+  }, [order.id]);
+
+  const checkPaymentStatus = async () => {
+    try {
+      const { data } = await supabase
+        .from("escrow_transactions")
+        .select("status")
+        .eq("order_id", order.id)
+        .maybeSingle();
+      
+      if (data && data.status !== "held" && data.status !== "completed") {
+        setPaymentBlocked(true);
+      }
+    } catch {
+      // No escrow = no block
+    }
+  };
+
+  const agentRole = isAdmin ? "admin" : "agent_logistique";
+
   const confirmPickup = async () => {
+    const allowed = await canPerformAction(order.id, "pickup_confirm", agentRole);
+    if (!allowed) return;
+
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Update logistics option pickup status
       await supabase
         .from("order_logistics_options")
         .update({ 
@@ -88,7 +113,7 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
       });
 
       await logScan(order.id, "pickup_confirm", "qr", order.status, order.status, {
-        agent_type: isAdmin ? "admin" : "agent_logistique",
+        agent_type: agentRole,
       });
 
       toast({ title: "✅ Enlèvement confirmé" });
@@ -102,11 +127,13 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
   };
 
   const confirmDelivery = async () => {
+    const allowed = await canPerformAction(order.id, "delivery_confirm", agentRole);
+    if (!allowed) return;
+
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Update logistics delivery status
       await supabase
         .from("order_logistics_options")
         .update({
@@ -116,7 +143,6 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
         })
         .eq("order_id", order.id);
 
-      // Update main order status
       await supabase
         .from("orders")
         .update({
@@ -145,7 +171,7 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
       });
 
       await logScan(order.id, "delivery_confirm", "qr", order.status, "delivered", {
-        agent_type: isAdmin ? "admin" : "agent_logistique",
+        agent_type: agentRole,
       });
 
       toast({ title: "🎉 Livraison confirmée" });
@@ -159,6 +185,9 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
   };
 
   const confirmStockReception = async () => {
+    const allowed = await canPerformAction(order.id, "stock_confirm", agentRole);
+    if (!allowed) return;
+
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -282,8 +311,8 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
           <CardContent className="p-4 flex items-center gap-3">
             <ShieldAlert className="w-5 h-5 text-destructive" />
             <div>
-              <p className="font-medium text-destructive text-sm">Livraison bloquée</p>
-              <p className="text-xs text-muted-foreground">Paiement non validé</p>
+              <p className="font-medium text-destructive text-sm">Livraison bloquée – paiement non validé</p>
+              <p className="text-xs text-muted-foreground">Contactez l'admin pour débloquer</p>
             </div>
           </CardContent>
         </Card>
@@ -291,13 +320,8 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
 
       {/* Action Buttons */}
       <div className="space-y-2">
-        {/* Pickup */}
         {["accepted", "pending"].includes(order.status) && (
-          <Button 
-            className="w-full" 
-            onClick={confirmPickup}
-            disabled={loading}
-          >
+          <Button className="w-full" onClick={confirmPickup} disabled={loading}>
             {loading ? (
               <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             ) : (
@@ -309,26 +333,15 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
           </Button>
         )}
 
-        {/* Stock Reception */}
         {["collected", "in_transit"].includes(order.status) && (
-          <Button 
-            variant="outline"
-            className="w-full" 
-            onClick={confirmStockReception}
-            disabled={loading}
-          >
+          <Button variant="outline" className="w-full" onClick={confirmStockReception} disabled={loading}>
             <Package className="w-4 h-4 mr-2" />
             Stock Yobbanté — Dakar
           </Button>
         )}
 
-        {/* Delivery */}
         {["in_transit", "collected"].includes(order.status) && !paymentBlocked && (
-          <Button 
-            className="w-full bg-green-600 hover:bg-green-700" 
-            onClick={confirmDelivery}
-            disabled={loading}
-          >
+          <Button className="w-full bg-green-600 hover:bg-green-700" onClick={confirmDelivery} disabled={loading}>
             {loading ? (
               <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             ) : (
