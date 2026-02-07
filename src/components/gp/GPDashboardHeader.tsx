@@ -30,7 +30,7 @@ export function GPDashboardHeader({ gpProfile, onSignOut }: GPDashboardHeaderPro
               <Package className="w-5 h-5 text-primary" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-lg text-foreground leading-tight">Yobbanté</span>
+              <span className="font-bold text-lg text-foreground leading-tight">Konnekt</span>
               <span className="text-xs font-semibold text-secondary -mt-1">GP Dashboard</span>
             </div>
           </Link>

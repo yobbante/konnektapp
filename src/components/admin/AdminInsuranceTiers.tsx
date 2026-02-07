@@ -174,7 +174,7 @@ export function AdminInsuranceTiers() {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <Shield className="w-5 h-5 text-primary" />
-          Paliers d'assurance Yobbanté
+          Paliers d'assurance Konnekt
         </CardTitle>
         <Button size="sm" onClick={() => setShowAddDialog(true)}>
           <Plus className="w-4 h-4 mr-1" />

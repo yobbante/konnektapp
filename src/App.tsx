@@ -187,7 +187,7 @@ const App = () => (
             <Route path="/admin/messages" element={<AdminMessages />} />
             
             {/* ============================================
-                AGENT LOGISTIQUE - Dashboard livreur Yobbanté
+                AGENT LOGISTIQUE - Dashboard livreur Konnekt
             ============================================ */}
             <Route path="/agent" element={<AgentDashboard />} />
             

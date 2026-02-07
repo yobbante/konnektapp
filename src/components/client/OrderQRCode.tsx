@@ -40,8 +40,8 @@ export function OrderQRCode({ orderNumber, orderId, status }: OrderQRCodeProps) 
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `Code Yobbanté: ${orderNumber}`,
-          text: `Mon code de suivi Yobbanté: ${orderNumber}`,
+          title: `Code Konnekt: ${orderNumber}`,
+          text: `Mon code de suivi Konnekt: ${orderNumber}`,
           url: window.location.href,
         });
       } catch (err) {

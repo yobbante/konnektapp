@@ -121,7 +121,7 @@ export default function MovingConfirmation() {
               transition={{ delay: 0.6 }}
               className="text-muted-foreground"
             >
-              L'équipe Yobbanté va traiter votre demande
+              L'équipe Konnekt va traiter votre demande
             </motion.p>
           </div>
 
@@ -219,7 +219,7 @@ export default function MovingConfirmation() {
               </div>
               <div>
                 <h4 className="font-semibold text-amber-700 dark:text-amber-400 mb-1">
-                  Service Yobbanté Premium
+                  Service Konnekt Premium
                 </h4>
                 <p className="text-sm text-amber-600/80 dark:text-amber-300/80">
                   Notre équipe de déménagement professionnelle s'occupe de tout : 

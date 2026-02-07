@@ -324,7 +324,7 @@ export function MandatoryInsuranceChoice({
                 <span className="font-semibold">Continuer sans assurance</span>
               </Label>
               <p className="text-sm text-muted-foreground mt-1">
-                En cas de perte ou dommage, Yobbanté ne pourra pas vous indemniser.
+                En cas de perte ou dommage, Konnekt ne pourra pas vous indemniser.
               </p>
               
               {selectedOption === "without" && (

@@ -145,7 +145,7 @@ export default function SmartBookingPage() {
   // Form State - Step 4: Validation
   const [acceptedRestrictions, setAcceptedRestrictions] = useState(false);
 
-  // Form State - Logistics Options (Logistique Interne Yobbanté)
+  // Form State - Logistics Options (Konnekt Logistique)
   const [logisticsOptions, setLogisticsOptions] = useState<LogisticsOptions>({
     pickupEnabled: false,
     deliveryEnabled: false,
@@ -534,7 +534,7 @@ export default function SmartBookingPage() {
 
       if (logisticsError) throw logisticsError;
 
-      // Create logistics options if enabled (Logistique Interne Yobbanté)
+      // Create logistics options if enabled (Konnekt Logistique)
       if (logisticsOptions.pickupEnabled || logisticsOptions.deliveryEnabled) {
         const { error: logOptError } = await supabase
           .from("order_logistics_options")
@@ -1313,7 +1313,7 @@ export default function SmartBookingPage() {
                       <Shield className={`w-4 h-4 ${insuranceChoice.hasInsurance ? 'text-primary' : 'text-muted-foreground'}`} />
                       <span className="text-sm">
                         {insuranceChoice.hasInsurance 
-                          ? `Assurance Yobbanté: ${displayInsuranceAmount.toLocaleString()} ${currencySymbol} (≈ ${calculations.insuranceTotal.toLocaleString()} FCFA)`
+                          ? `Assurance Konnekt: ${displayInsuranceAmount.toLocaleString()} ${currencySymbol} (≈ ${calculations.insuranceTotal.toLocaleString()} FCFA)`
                           : "Sans assurance"
                         }
                       </span>
@@ -1325,7 +1325,7 @@ export default function SmartBookingPage() {
                     <div className="pb-3 border-b">
                       <div className="flex items-center gap-2">
                         <Truck className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-medium">Logistique Interne Yobbanté</span>
+                        <span className="text-sm font-medium">Konnekt Logistique</span>
                       </div>
                       <div className="ml-6 text-xs text-muted-foreground space-y-1 mt-1">
                         {logisticsOptions.pickupEnabled && (

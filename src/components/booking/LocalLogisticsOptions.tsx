@@ -63,7 +63,7 @@ const TIME_SLOTS = [
 const SUPPORTED_CITIES = ["Dakar"];
 
 /**
- * Logistique Interne Yobbanté - Local pickup/delivery options
+ * Konnekt Logistique — Local pickup/delivery options
  * V1.2: Prices always in FCFA, converted to GP currency for display
  */
 export function LocalLogisticsOptions({
@@ -229,13 +229,13 @@ export function LocalLogisticsOptions({
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <Truck className="w-4 h-4 text-primary" />
             </div>
-            Logistique Interne Yobbanté
+            Konnekt Logistique
             <Badge variant="outline" className="ml-auto text-xs">Optionnel</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Souhaitez-vous que Yobbanté s'occupe de la logistique locale ?
+            Souhaitez-vous que Konnekt s'occupe de la logistique locale ?
           </p>
 
           {/* Pickup Option */}
@@ -265,7 +265,7 @@ export function LocalLogisticsOptions({
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Un agent Yobbanté récupère votre colis à Dakar
+                    Un agent Konnekt récupère votre colis à Dakar
                   </p>
                 </div>
               </label>
@@ -391,7 +391,7 @@ export function LocalLogisticsOptions({
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Un agent Yobbanté livre le colis au destinataire à Dakar
+                    Un agent Konnekt livre le colis au destinataire à Dakar
                   </p>
                 </div>
               </label>
@@ -489,7 +489,7 @@ export function LocalLogisticsOptions({
               className="pt-3 border-t"
             >
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Total logistique Yobbanté</span>
+                <span className="text-muted-foreground">Total Konnekt Logistique</span>
                 <div className="text-right">
                   <span className="font-bold text-primary block">
                     {totalLogisticsPrice.toLocaleString()} FCFA

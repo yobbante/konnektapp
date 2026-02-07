@@ -147,7 +147,7 @@ export function MissionStatusUpdaterV2({
         
         toast({
           title: "📍 Colis marqué ARRIVÉ",
-          description: "L'équipe Yobbanté a été notifiée pour la livraison",
+          description: "L'équipe Konnekt a été notifiée pour la livraison",
         });
 
         onStatusUpdated();
@@ -160,7 +160,7 @@ export function MissionStatusUpdaterV2({
         if (!canDeliver) {
           toast({
             title: "Action non autorisée",
-            description: "La livraison est gérée par l'équipe Yobbanté",
+            description: "La livraison est gérée par l'équipe Konnekt",
             variant: "destructive",
           });
           return;
@@ -336,7 +336,7 @@ export function MissionStatusUpdaterV2({
         
         {hasDeliveryLogistics && currentStatus === "in_transit" && (
           <p className="text-xs text-muted-foreground text-center">
-            📍 Livraison dernier km par Yobbanté
+            📍 Livraison dernier km par Konnekt
           </p>
         )}
       </div>

@@ -134,7 +134,7 @@ export function BadgeSystem({
     {
       id: "premium",
       label: "Premium",
-      description: "Partenaire de confiance Yobbanté",
+      description: "Partenaire de confiance Konnekt",
       icon: Crown,
       color: "text-warning",
       bgColor: "bg-warning/10",

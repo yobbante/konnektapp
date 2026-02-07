@@ -4,7 +4,7 @@
  * Actions:
  * - Pickup: "Colis enlevé" → PRIS EN CHARGE
  * - Delivery: "Livré" → LIVRÉ CONFIRMÉ
- * - Stock: "Réception stock Yobbanté"
+ * - Stock: "Réception stock Konnekt"
  * 
  * Includes ScanTrust™ duplicate prevention + payment block check.
  * Uses ScanStatusBadge and semantic tokens.
@@ -119,7 +119,7 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
         user_id: order.client_id,
         type: "logistics_update",
         title: "📦 Colis enlevé",
-        message: `Votre colis ${order.order_number} a été enlevé par un agent Yobbanté`,
+        message: `Votre colis ${order.order_number} a été enlevé par un agent Konnekt`,
         related_type: "order",
         related_id: order.id,
       });
@@ -182,7 +182,7 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
           status: "delivered",
           changed_by: user.id,
           changed_by_type: isAdmin ? "admin" : "agent",
-          notes: `🎉 Livré par agent Yobbanté — LIVRÉ CONFIRMÉ${deliveryProof ? " (photo preuve jointe)" : ""}`,
+          notes: `🎉 Livré par agent Konnekt — LIVRÉ CONFIRMÉ${deliveryProof ? " (photo preuve jointe)" : ""}`,
         });
       }
 

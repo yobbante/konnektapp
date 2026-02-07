@@ -11,7 +11,7 @@ async function sendEmail(to: string, subject: string, html: string) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "Yobbanté Connect <onboarding@resend.dev>",
+      from: "Konnekt <onboarding@resend.dev>",
       to: [to],
       subject,
       html,
@@ -199,13 +199,13 @@ const handler = async (req: Request): Promise<Response> => {
               </div>
               
               <center>
-                <a href="https://yobbante-connect.lovable.app/tracking?order=${order.id}" class="cta-button">
+                <a href="https://v1yobbante.lovable.app/tracking?order=${order.id}" class="cta-button">
                   Suivre ma commande
                 </a>
               </center>
             </div>
             <div class="footer">
-              <p>Yobbanté Connect - Votre partenaire logistique</p>
+              <p>Konnekt — Votre partenaire logistique</p>
               <p>Cet email a été envoyé automatiquement. Merci de ne pas répondre.</p>
             </div>
           </div>

@@ -293,7 +293,7 @@ export function AdminConfigPanel() {
 
             {/* Info */}
             <div className="p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground">
-              <strong>💡 Règle Yobbanté :</strong> Les taux sont volontairement majorés par rapport au marché 
+              <strong>💡 Règle Konnekt :</strong> Les taux sont volontairement majorés par rapport au marché 
               pour couvrir la volatilité et éviter les pertes FX. Tous les calculs internes utilisent le FCFA.
             </div>
           </CardContent>
@@ -357,7 +357,7 @@ export function AdminConfigPanel() {
               Tarification Logistique Interne
             </CardTitle>
             <CardDescription>
-              Prix des enlèvements et livraisons Yobbanté à Dakar
+              Prix des enlèvements et livraisons Konnekt à Dakar
             </CardDescription>
           </CardHeader>
           <CardContent>

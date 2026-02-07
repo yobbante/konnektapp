@@ -482,7 +482,7 @@ export default function Settings() {
 
           {/* App Version */}
           <p className="text-center text-xs text-muted-foreground mt-8">
-            Yobbanté Connect v1.0.0
+            Konnekt v1.0.0
           </p>
         </motion.div>
       </main>

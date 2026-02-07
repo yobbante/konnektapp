@@ -391,7 +391,7 @@ export default function GPOrderDetail() {
                   <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-amber-800">Logistique dernier km active</p>
-                    <p className="text-xs text-amber-600">L'admin Yobbanté effectuera la livraison finale.</p>
+                    <p className="text-xs text-amber-600">L'admin Konnekt effectuera la livraison finale.</p>
                   </div>
                 </div>
               )}
@@ -496,7 +496,7 @@ export default function GPOrderDetail() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2 text-amber-700 dark:text-amber-400">
                   <Truck className="w-4 h-4" />
-                  Logistique Interne Yobbanté
+                  Konnekt Logistique
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -521,7 +521,7 @@ export default function GPOrderDetail() {
                     {logisticsOptions.logistics_status === "awaiting_admin_delivery" && <Badge className="bg-blue-500 text-[10px] mt-1">Admin prêt à récupérer</Badge>}
                   </div>
                 )}
-                <p className="text-[10px] text-amber-600 dark:text-amber-400">⚠️ Vous ne gérez pas la livraison finale - Yobbanté s'en charge.</p>
+                <p className="text-[10px] text-amber-600 dark:text-amber-400">⚠️ Vous ne gérez pas la livraison finale — Konnekt s'en charge.</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -591,7 +591,7 @@ export default function GPOrderDetail() {
                     )}
                     <Separator />
                     <div className="flex justify-between"><span className="text-muted-foreground">Total client</span><span className="font-medium">{order.total_price.toLocaleString()} {currencySymbol}</span></div>
-                    <div className="flex justify-between text-destructive"><span>Commission Yobbanté</span><span>-{order.commission_amount.toLocaleString()} {currencySymbol}</span></div>
+                    <div className="flex justify-between text-destructive"><span>Commission Konnekt</span><span>-{order.commission_amount.toLocaleString()} {currencySymbol}</span></div>
                     <Separator />
                     <div className="flex justify-between text-lg"><span className="font-bold">Vos gains</span><span className="font-bold text-success">{gpEarnings.toLocaleString()} {currencySymbol}</span></div>
                     

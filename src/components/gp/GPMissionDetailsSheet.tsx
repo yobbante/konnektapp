@@ -222,7 +222,7 @@ export function GPMissionDetailsSheet({
           await notifyAdminPickupMission(order.id, order.order_number, gpName);
           toast({
             title: "✅ Commande acceptée",
-            description: "Le client et l'équipe Yobbanté ont été notifiés pour l'enlèvement",
+            description: "Le client et l'équipe Konnekt ont été notifiés pour l'enlèvement",
           });
         } else {
           toast({
@@ -497,9 +497,9 @@ export function GPMissionDetailsSheet({
             {logistics && (logistics.pickup_enabled || logistics.delivery_enabled) && (
               <Card className="border-amber-200 bg-amber-50/30">
                 <CardContent className="p-4 space-y-3">
-                  <h3 className="font-semibold text-sm flex items-center gap-2 text-amber-800">
+                   <h3 className="font-semibold text-sm flex items-center gap-2 text-amber-800">
                     <Truck className="w-4 h-4" />
-                    Logistique Yobbanté
+                    Konnekt Logistique
                   </h3>
                   
                   {logistics.pickup_enabled && (
@@ -530,7 +530,7 @@ export function GPMissionDetailsSheet({
 
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Info className="w-3 h-3" />
-                    Yobbanté gère l'enlèvement/livraison
+                    Konnekt gère l'enlèvement/livraison
                   </div>
                 </CardContent>
               </Card>

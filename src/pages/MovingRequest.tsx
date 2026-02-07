@@ -257,17 +257,17 @@ export default function MovingRequest() {
     if (!userId) return;
     setSubmitting(true);
     try {
-      // Create custom request for moving - handled by Yobbante internal team
+      // Create custom request for moving - handled by Konnekt internal team
       const requestData = {
         client_id: userId,
         shipment_type: "demenagement",
         transport_type: "interne",
-        // Yobbante internal logistics
+        // Konnekt internal logistics
         origin_city: formData.originCity,
         origin_country: "Sénégal",
         destination_city: formData.destinationCity,
         destination_country: "Sénégal",
-        description: `[DÉMÉNAGEMENT YOBBANTÉ] ${housingTypes.find(h => h.id === formData.housingType)?.label} - ${formData.rooms} pièces. 
+        description: `[DÉMÉNAGEMENT KONNEKT] ${housingTypes.find(h => h.id === formData.housingType)?.label} - ${formData.rooms} pièces. 
 Adresse départ: ${formData.originAddress} (étage ${formData.originFloor}, ${formData.originElevator ? 'avec' : 'sans'} ascenseur)
 Adresse arrivée: ${formData.destinationAddress} (étage ${formData.destinationFloor}, ${formData.destinationElevator ? 'avec' : 'sans'} ascenseur)
 Inventaire: ${formData.items.filter(i => i.quantity > 0).map(i => `${i.name}: ${i.quantity}`).join(', ')}
