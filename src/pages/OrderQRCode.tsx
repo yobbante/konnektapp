@@ -17,6 +17,7 @@ import {
   Package, MapPin, Calendar, User, QrCode as QrCodeIcon
 } from "lucide-react";
 import QRCode from "react-qr-code";
+import JsBarcode from "jsbarcode";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MiniLoader } from "@/components/ui/MiniLoader";
+import { LogisticsLabelGenerator } from "@/components/logistics/LogisticsLabelGenerator";
 
 interface OrderInfo {
   id: string;
@@ -31,10 +33,14 @@ interface OrderInfo {
   qr_code: string;
   origin_city: string;
   destination_city: string;
+  origin_country: string;
+  destination_country: string;
   pickup_date: string | null;
   weight: number;
   status: string;
   gp_name: string;
+  client_name: string;
+  description: string | null;
 }
 
 export default function OrderQRCodePage() {
@@ -42,6 +48,7 @@ export default function OrderQRCodePage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const qrRef = useRef<HTMLDivElement>(null);
+  const barcodeRef = useRef<HTMLCanvasElement>(null);
   
   const [order, setOrder] = useState<OrderInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,14 +59,36 @@ export default function OrderQRCodePage() {
       loadOrder();
     }
   }, [orderId]);
+
+  // Generate barcode when order loads
+  useEffect(() => {
+    if (order && barcodeRef.current) {
+      try {
+        JsBarcode(barcodeRef.current, order.order_number, {
+          format: "CODE128",
+          width: 2,
+          height: 40,
+          displayValue: true,
+          fontSize: 12,
+          margin: 5,
+          background: "#ffffff",
+        });
+      } catch (err) {
+        console.error("Barcode error:", err);
+      }
+    }
+  }, [order]);
   
   const loadOrder = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase
         .from("orders")
         .select(`
           id, order_number, origin_city, destination_city,
-          pickup_date, weight, status,
+          origin_country, destination_country,
+          pickup_date, weight, status, description, client_id,
           gp_profiles:gp_id(business_name)
         `)
         .eq("id", orderId)
@@ -67,17 +96,32 @@ export default function OrderQRCodePage() {
       
       if (error) throw error;
       
+      // Get client name
+      let clientName = "Client";
+      if (data && user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("user_id", data.client_id)
+          .single();
+        clientName = profile?.full_name || "Client";
+      }
+      
       if (data) {
         setOrder({
           id: data.id,
           order_number: data.order_number,
-          qr_code: data.order_number, // Use order_number as QR code value
+          qr_code: data.order_number,
           origin_city: data.origin_city,
           destination_city: data.destination_city,
+          origin_country: data.origin_country || "",
+          destination_country: data.destination_country || "",
           pickup_date: data.pickup_date,
           weight: data.weight,
           status: data.status,
-          gp_name: (data.gp_profiles as any)?.business_name || "Transporteur"
+          gp_name: (data.gp_profiles as any)?.business_name || "Transporteur",
+          client_name: clientName,
+          description: data.description,
         });
       }
     } catch (error) {
@@ -235,6 +279,12 @@ export default function OrderQRCodePage() {
                 />
               </div>
               
+              {/* Barcode Backup */}
+              <div className="mt-4 p-3 bg-muted/30 rounded-lg">
+                <p className="text-[10px] text-muted-foreground text-center mb-1">Code-barres (backup scanner physique)</p>
+                <canvas ref={barcodeRef} className="mx-auto max-w-full" />
+              </div>
+              
               {/* Order Number */}
               <div className="mt-4 text-center">
                 <p className="font-mono text-lg font-bold text-foreground">
@@ -250,67 +300,59 @@ export default function OrderQRCodePage() {
         
         {/* Action Buttons */}
         <div className="grid grid-cols-3 gap-3">
-          <Button
-            variant="outline"
-            className="flex flex-col h-auto py-4 gap-2"
-            onClick={handleDownload}
-          >
+          <Button variant="outline" className="flex flex-col h-auto py-4 gap-2" onClick={handleDownload}>
             <Download className="w-5 h-5 text-primary" />
             <span className="text-xs">Télécharger</span>
           </Button>
-          
-          <Button
-            variant="outline"
-            className="flex flex-col h-auto py-4 gap-2"
-            onClick={handleShare}
-          >
+          <Button variant="outline" className="flex flex-col h-auto py-4 gap-2" onClick={handleShare}>
             <Share2 className="w-5 h-5 text-primary" />
             <span className="text-xs">Partager</span>
           </Button>
-          
-          <Button
-            variant="outline"
-            className="flex flex-col h-auto py-4 gap-2"
-            onClick={handleCopyLink}
-          >
-            {copied ? (
-              <CheckCircle className="w-5 h-5 text-green-500" />
-            ) : (
-              <Copy className="w-5 h-5 text-primary" />
-            )}
+          <Button variant="outline" className="flex flex-col h-auto py-4 gap-2" onClick={handleCopyLink}>
+            {copied ? <CheckCircle className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5 text-primary" />}
             <span className="text-xs">{copied ? "Copié" : "Copier lien"}</span>
           </Button>
         </div>
+
+        {/* Logistics Label Generator */}
+        <LogisticsLabelGenerator
+          order={{
+            orderNumber: order.order_number,
+            orderId: order.id,
+            clientName: order.client_name,
+            gpName: order.gp_name,
+            originCity: order.origin_city,
+            destinationCity: order.destination_city,
+            originCountry: order.origin_country,
+            destinationCountry: order.destination_country,
+            weight: order.weight,
+            description: order.description,
+            pickupDate: order.pickup_date,
+          }}
+          required
+        />
         
         {/* Order Summary */}
         <Card>
           <CardContent className="p-4 space-y-3">
-            <h3 className="font-medium text-sm text-muted-foreground">
-              Récapitulatif commande
-            </h3>
-            
+            <h3 className="font-medium text-sm text-muted-foreground">Récapitulatif commande</h3>
             <div className="space-y-2">
               <div className="flex items-center gap-3 text-sm">
                 <MapPin className="w-4 h-4 text-primary" />
                 <span>{order.origin_city} → {order.destination_city}</span>
               </div>
-              
               <div className="flex items-center gap-3 text-sm">
-                <Package className="w-4 h-4 text-amber-500" />
+                <Package className="w-4 h-4 text-primary" />
                 <span>{order.weight} kg</span>
               </div>
-              
               <div className="flex items-center gap-3 text-sm">
-                <User className="w-4 h-4 text-blue-500" />
+                <User className="w-4 h-4 text-primary" />
                 <span>{order.gp_name}</span>
               </div>
-              
               {order.pickup_date && (
                 <div className="flex items-center gap-3 text-sm">
-                  <Calendar className="w-4 h-4 text-green-500" />
-                  <span>
-                    {format(new Date(order.pickup_date), "d MMMM yyyy", { locale: fr })}
-                  </span>
+                  <Calendar className="w-4 h-4 text-primary" />
+                  <span>{format(new Date(order.pickup_date), "d MMMM yyyy", { locale: fr })}</span>
                 </div>
               )}
             </div>
