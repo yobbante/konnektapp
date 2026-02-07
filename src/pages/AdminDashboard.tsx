@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, RefreshCw, Search, Filter, Truck, Package, Settings } from "lucide-react";
+import { Shield, RefreshCw, Search, Filter, Truck, Package, Settings, UserCheck } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -283,7 +283,15 @@ export default function AdminDashboard() {
         </div>
         
         {/* Global Search Bar */}
-        <div className="px-4 pb-3">
+        <form 
+          className="px-4 pb-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (searchQuery.length >= 2) {
+              navigate(`/admin/search?q=${encodeURIComponent(searchQuery)}`);
+            }
+          }}
+        >
           <div className="relative max-w-7xl mx-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
             <Input
@@ -294,15 +302,16 @@ export default function AdminDashboard() {
             />
           </div>
           
-          {/* Global Search Results Dropdown */}
+          {/* Quick Preview Dropdown */}
           {globalSearchResults && (globalSearchResults.gps.length > 0 || globalSearchResults.orders.length > 0) && (
             <div className="absolute left-4 right-4 mt-1 max-w-7xl mx-auto bg-card border border-border rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto">
               {globalSearchResults.gps.length > 0 && (
                 <div className="p-2">
                   <p className="text-[10px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">Transporteurs</p>
-                  {globalSearchResults.gps.slice(0, 5).map(gp => (
+                  {globalSearchResults.gps.slice(0, 3).map(gp => (
                     <button
                       key={gp.id}
+                      type="button"
                       onClick={() => {
                         handleViewDetails(gp.id);
                         setSearchQuery("");
@@ -323,13 +332,11 @@ export default function AdminDashboard() {
               {globalSearchResults.orders.length > 0 && (
                 <div className="p-2 border-t border-border">
                   <p className="text-[10px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">Commandes</p>
-                  {globalSearchResults.orders.slice(0, 5).map(order => (
+                  {globalSearchResults.orders.slice(0, 3).map(order => (
                     <button
                       key={order.id}
-                      onClick={() => {
-                        setActiveTab("orders");
-                        setSearchQuery(order.order_number);
-                      }}
+                      type="button"
+                      onClick={() => navigate(`/admin/order/${order.id}`)}
                       className="w-full text-left px-3 py-2.5 hover:bg-muted rounded-lg flex items-center gap-2 transition-colors"
                     >
                       <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center">
@@ -343,9 +350,18 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               )}
+              {/* "See all results" link */}
+              <div className="p-2 border-t border-border">
+                <button
+                  type="submit"
+                  className="w-full text-center px-3 py-2 hover:bg-muted rounded-lg text-sm text-primary font-medium transition-colors"
+                >
+                  Voir tous les résultats →
+                </button>
+              </div>
             </div>
           )}
-        </div>
+        </form>
       </div>
 
       <div className="px-4 py-4 max-w-7xl mx-auto">
@@ -390,11 +406,19 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* Overview - Now includes logistics preview */}
+          {/* Overview - Now includes logistics preview + stats overview */}
           <TabsContent value="overview" className="space-y-4">
             {/* Logistics Alert Preview */}
             <AdminLogisticsOrdersV2 compact />
             
+            {/* Quick stat summary row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <QuickStatCard label="GP en attente" value={stats.pendingGps} accent={stats.pendingGps > 0} />
+              <QuickStatCard label="Commandes actives" value={stats.pendingOrders} />
+              <QuickStatCard label="Livrées" value={stats.deliveredOrders} />
+              <QuickStatCard label="Revenus" value={`${(stats.totalRevenue / 1000).toFixed(0)}k`} suffix="FCFA" />
+            </div>
+
             <AdminPendingGPs 
               gps={gps}
               onVerify={(id) => updateGPStatus(id, "verified")}
@@ -461,11 +485,146 @@ export default function AdminDashboard() {
             <AdminLogisticsOrdersV2 />
           </TabsContent>
 
+          {/* Agent Konnekt — Livreur missions tab */}
+          <TabsContent value="agents">
+            <AgentMissionsTab />
+          </TabsContent>
+
           {/* Moving Requests - Konnekt Internal Service */}
           <TabsContent value="moving">
             <AdminMovingRequestsTab />
           </TabsContent>
         </Tabs>
+      </div>
+    </div>
+  );
+}
+
+/** Quick stat card for overview */
+function QuickStatCard({ label, value, suffix, accent }: { label: string; value: string | number; suffix?: string; accent?: boolean }) {
+  return (
+    <div className={`p-3 rounded-xl border ${accent ? 'border-amber-300 bg-amber-50/50 dark:bg-amber-950/20' : 'border-border bg-card'}`}>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className={`text-xl font-bold ${accent ? 'text-amber-600' : ''}`}>
+        {value} {suffix && <span className="text-xs font-normal text-muted-foreground">{suffix}</span>}
+      </p>
+    </div>
+  );
+}
+
+/** Agent Konnekt missions tab — shows logistics agent missions */
+function AgentMissionsTab() {
+  const [missions, setMissions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    loadAgentMissions();
+  }, []);
+
+  const loadAgentMissions = async () => {
+    try {
+      const { data } = await supabase
+        .from("order_logistics_options")
+        .select(`
+          *,
+          order:orders(order_number, origin_city, destination_city, status, weight)
+        `)
+        .or("pickup_enabled.eq.true,delivery_enabled.eq.true")
+        .order("created_at", { ascending: false });
+      setMissions(data || []);
+    } catch (err) {
+      console.error("Error loading agent missions:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const pendingPickups = missions.filter(m => m.pickup_enabled && m.pickup_status === "pending");
+  const activePickups = missions.filter(m => m.pickup_enabled && ["scheduled", "collected"].includes(m.pickup_status));
+  const pendingDeliveries = missions.filter(m => m.delivery_enabled && (m.logistics_status === "awaiting_admin_delivery" || m.delivery_status === "pending"));
+  const activeDeliveries = missions.filter(m => m.delivery_enabled && ["picked_from_gp", "in_transit"].includes(m.delivery_status));
+  const completed = missions.filter(m => m.delivery_status === "delivered" || m.pickup_status === "handed_to_gp");
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold flex items-center gap-2">
+            <UserCheck className="w-5 h-5 text-primary" />
+            Missions Livreurs Konnekt
+          </h2>
+          <p className="text-sm text-muted-foreground">Suivi des agents logistiques terrain</p>
+        </div>
+      </div>
+
+      {/* Mission Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="p-3 rounded-xl border border-amber-300 bg-amber-50/50 dark:bg-amber-950/20">
+          <p className="text-xs text-muted-foreground">Enlèvements en attente</p>
+          <p className="text-2xl font-bold text-amber-600">{pendingPickups.length}</p>
+        </div>
+        <div className="p-3 rounded-xl border border-blue-300 bg-blue-50/50 dark:bg-blue-950/20">
+          <p className="text-xs text-muted-foreground">Enlèvements actifs</p>
+          <p className="text-2xl font-bold text-blue-600">{activePickups.length}</p>
+        </div>
+        <div className="p-3 rounded-xl border border-purple-300 bg-purple-50/50 dark:bg-purple-950/20">
+          <p className="text-xs text-muted-foreground">Livraisons en attente</p>
+          <p className="text-2xl font-bold text-purple-600">{pendingDeliveries.length}</p>
+        </div>
+        <div className="p-3 rounded-xl border border-green-300 bg-green-50/50 dark:bg-green-950/20">
+          <p className="text-xs text-muted-foreground">Terminées</p>
+          <p className="text-2xl font-bold text-green-600">{completed.length}</p>
+        </div>
+      </div>
+
+      {/* Active Missions List */}
+      <div className="space-y-2">
+        <h3 className="font-semibold text-sm text-muted-foreground">Missions actives</h3>
+        {[...pendingPickups, ...activePickups, ...pendingDeliveries, ...activeDeliveries].length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <UserCheck className="w-10 h-10 mx-auto mb-2 opacity-30" />
+            <p className="text-sm">Aucune mission active</p>
+          </div>
+        ) : (
+          [...pendingPickups, ...activePickups, ...pendingDeliveries, ...activeDeliveries].map(mission => (
+            <div
+              key={mission.id}
+              className="p-3 rounded-xl border bg-card hover:shadow-sm transition-shadow cursor-pointer"
+              onClick={() => navigate(`/admin/order/${mission.order_id}`)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-mono text-sm font-bold">{mission.order?.order_number || "—"}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                      mission.pickup_enabled && mission.pickup_status === "pending" ? "bg-amber-100 text-amber-800" :
+                      mission.delivery_enabled && mission.delivery_status === "pending" ? "bg-purple-100 text-purple-800" :
+                      "bg-blue-100 text-blue-800"
+                    }`}>
+                      {mission.pickup_enabled && ["pending", "scheduled", "collected"].includes(mission.pickup_status) 
+                        ? `Enlèvement: ${mission.pickup_status}` 
+                        : `Livraison: ${mission.delivery_status || "en attente"}`}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {mission.order?.origin_city} → {mission.order?.destination_city}
+                    {mission.pickup_contact_name && ` • ${mission.pickup_contact_name}`}
+                    {mission.delivery_contact_name && ` • ${mission.delivery_contact_name}`}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

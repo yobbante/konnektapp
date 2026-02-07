@@ -38,6 +38,7 @@ import Auth from "./pages/Auth";
 import Tracking from "./pages/Tracking";
 import Messages from "./pages/Messages";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminSearchResults from "./pages/AdminSearchResults";
 import AdminDepartures from "./pages/AdminDepartures";
 import AdminOrders from "./pages/AdminOrders";
 import AdminGPProfile from "./pages/AdminGPProfile";
@@ -180,6 +181,7 @@ const App = () => (
                 ADMIN ROUTES - Dashboard admin
             ============================================ */}
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/search" element={<AdminSearchResults />} />
             <Route path="/admin/departures" element={<AdminDepartures />} />
             <Route path="/admin/orders" element={<AdminOrders />} />
             <Route path="/admin/gp/:gpId" element={<AdminGPProfile />} />
