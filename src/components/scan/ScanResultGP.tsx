@@ -3,13 +3,14 @@
  * 
  * Actions: confirm deposit, modify weight (triggers PRV), confirm delivery
  * Weight modification freezes order until client validates.
- * Includes duplicate scan prevention (ScanTrust™).
+ * Includes ScanTrust™ duplicate scan prevention.
+ * Uses ScanStatusBadge for consistent theming.
  */
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   Package, Truck, Scale, CheckCircle, AlertTriangle,
-  User, History
+  User, History, ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { useDuplicateScanCheck } from "@/hooks/useDuplicateScanCheck";
+import { ScanStatusBadge } from "./ScanStatusBadge";
 
 interface ScanResultGPProps {
   order: {
@@ -43,6 +45,13 @@ interface ScanResultGPProps {
   onComplete: () => void;
 }
 
+const ACTION_LABELS: Record<string, string> = {
+  view: "Consulté",
+  deposit_confirm: "Dépôt confirmé",
+  delivery_confirm: "Livraison confirmée",
+  weight_modify: "Poids modifié",
+};
+
 export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPProps) {
   const { toast } = useToast();
   const { canPerformAction } = useDuplicateScanCheck();
@@ -63,7 +72,6 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
   }, [actualWeight, order.weight, order.price_per_kg]);
 
   const confirmDeposit = async () => {
-    // ScanTrust™: Prevent duplicate deposit
     const actionType = Math.abs(weightDiff) > 0.01 ? "weight_modify" : "deposit_confirm";
     const allowed = await canPerformAction(order.id, actionType, "gp");
     if (!allowed) return;
@@ -75,7 +83,6 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
       const { data: { user } } = await supabase.auth.getUser();
 
       if (hasWeightChange) {
-        // PRV: FREEZE ORDER
         await supabase.from("orders").update({
           weight_tier_applied: actual.toString(),
         }).eq("id", order.id);
@@ -86,14 +93,14 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
             status: order.status as any,
             changed_by: user.id,
             changed_by_type: "gp",
-            notes: `⚠️ POIDS MODIFIÉ - EN ATTENTE VALIDATION: ${order.weight} kg → ${actual} kg. Diff prix: ${priceDiff > 0 ? '+' : ''}${priceDiff} ${order.currency}`,
+            notes: `⚠️ POIDS MODIFIÉ — VALIDATION REQUISE: ${order.weight} kg → ${actual} kg. Diff prix: ${priceDiff > 0 ? '+' : ''}${priceDiff} ${order.currency}`,
           });
         }
 
         await supabase.from("notifications").insert({
           user_id: order.client_id,
           type: "weight_validation_required",
-          title: "⚠️ Validation requise - Modification de poids",
+          title: "⚠️ Validation requise — Poids modifié",
           message: `Poids modifié pour ${order.order_number}. Validez depuis votre espace.`,
           related_type: "order",
           related_id: order.id,
@@ -145,7 +152,6 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
   };
 
   const confirmDelivery = async () => {
-    // ScanTrust™: Prevent duplicate delivery
     const allowed = await canPerformAction(order.id, "delivery_confirm", "gp");
     if (!allowed) return;
 
@@ -194,43 +200,41 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
       className="py-4 space-y-4"
     >
       {/* Order Summary */}
-      <Card className="bg-muted/50">
-        <CardContent className="p-4 space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Commande</span>
-            <span className="font-mono font-bold">{order.order_number}</span>
+      <Card className="overflow-hidden">
+        <div className="h-1 bg-gradient-to-r from-primary via-secondary to-primary" />
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="font-mono font-bold text-sm">{order.order_number}</span>
+            <ScanStatusBadge status={order.status} />
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Trajet</span>
-            <span>{order.origin_city} → {order.destination_city}</span>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>{order.origin_city}</span>
+            <ArrowRight className="w-3 h-3" />
+            <span>{order.destination_city}</span>
           </div>
           {order.client_name && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Client</span>
-              <span className="flex items-center gap-1">
-                <User className="w-3 h-3" />
-                {order.client_name}
-              </span>
+            <div className="flex items-center gap-2 text-sm">
+              <User className="w-3.5 h-3.5 text-muted-foreground" />
+              <span>{order.client_name}</span>
             </div>
           )}
           {order.description && (
-            <div className="text-sm">
-              <span className="text-muted-foreground">Contenu: </span>
-              {order.description}
-            </div>
+            <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-lg">
+              📦 {order.description}
+            </p>
           )}
         </CardContent>
       </Card>
 
       {/* Already processed warning */}
       {alreadyProcessed && (
-        <Card className="border-amber-300 bg-amber-50">
+        <Card className="border-warning/50 bg-warning/5">
           <CardContent className="p-4 flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-600" />
+            <AlertTriangle className="w-5 h-5 text-warning" />
             <div>
-              <p className="font-medium text-amber-800 text-sm">Scan non autorisé</p>
-              <p className="text-xs text-amber-600">
-                Cette commande est déjà "{order.status}". Aucune action possible.
+              <p className="font-medium text-sm">Scan non autorisé</p>
+              <p className="text-xs text-muted-foreground">
+                Commande déjà « {order.status} ». Aucune action disponible.
               </p>
             </div>
           </CardContent>
@@ -239,27 +243,27 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
 
       {/* Deposit Mode */}
       {isDepositMode && (
-        <Card>
+        <Card className="border-primary/20">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Scale className="w-4 h-4" />
+              <Scale className="w-4 h-4 text-primary" />
               Vérification du poids — Dépôt
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-xs text-muted-foreground">Poids déclaré</Label>
-                <p className="text-lg font-bold">{order.weight} kg</p>
+              <div className="p-3 rounded-lg bg-muted/50">
+                <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Déclaré</Label>
+                <p className="text-xl font-bold mt-1">{order.weight} <span className="text-sm font-normal">kg</span></p>
               </div>
-              <div>
-                <Label className="text-xs">Poids réel</Label>
+              <div className="p-3 rounded-lg border-2 border-primary/20 bg-primary/5">
+                <Label className="text-[10px] text-primary uppercase tracking-wider">Réel</Label>
                 <Input
                   type="number"
                   step="0.1"
                   value={actualWeight}
                   onChange={(e) => setActualWeight(e.target.value)}
-                  className="font-bold"
+                  className="font-bold text-lg h-8 mt-1 border-0 bg-transparent p-0 focus-visible:ring-0"
                 />
               </div>
             </div>
@@ -268,29 +272,35 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
-                className={`p-3 rounded-lg ${
-                  weightDiff > 0 ? "bg-amber-50 border border-amber-200" : "bg-green-50 border border-green-200"
+                className={`p-3 rounded-lg border ${
+                  weightDiff > 0 
+                    ? "bg-warning/5 border-warning/30" 
+                    : "bg-success/5 border-success/30"
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <AlertTriangle className={`w-4 h-4 ${weightDiff > 0 ? "text-amber-600" : "text-green-600"}`} />
+                  <AlertTriangle className={`w-4 h-4 ${weightDiff > 0 ? "text-warning" : "text-success"}`} />
                   <span className="font-medium text-sm">
-                    {weightDiff > 0 ? "Excédent" : "Poids inférieur"}
+                    {weightDiff > 0 ? "Excédent détecté" : "Poids inférieur"}
                   </span>
                 </div>
-                <p className="text-sm">
-                  Différence: <strong>{weightDiff > 0 ? "+" : ""}{weightDiff.toFixed(1)} kg</strong>
-                </p>
-                <p className="text-sm">
-                  Impact prix: <strong>{priceDiff > 0 ? "+" : ""}{priceDiff.toLocaleString()} {getCurrencySymbol(order.currency)}</strong>
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  ⚠️ Le client devra valider cette modification
+                <div className="grid grid-cols-2 gap-2 text-sm mt-2">
+                  <div>
+                    <span className="text-muted-foreground text-xs">Différence</span>
+                    <p className="font-bold">{weightDiff > 0 ? "+" : ""}{weightDiff.toFixed(1)} kg</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground text-xs">Impact prix</span>
+                    <p className="font-bold">{priceDiff > 0 ? "+" : ""}{priceDiff.toLocaleString()} {getCurrencySymbol(order.currency)}</p>
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-2">
+                  ⚠️ Le client devra valider cette modification avant traitement
                 </p>
               </motion.div>
             )}
 
-            <Button className="w-full" onClick={confirmDeposit} disabled={loading}>
+            <Button className="w-full h-12" onClick={confirmDeposit} disabled={loading}>
               {loading ? (
                 <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
@@ -306,10 +316,10 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
 
       {/* Delivery Mode */}
       {isDeliveryMode && (
-        <Card>
+        <Card className="border-success/20">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Truck className="w-4 h-4 text-green-600" />
+              <Truck className="w-4 h-4 text-success" />
               Confirmer la livraison
             </CardTitle>
           </CardHeader>
@@ -317,7 +327,11 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
             <p className="text-sm text-muted-foreground">
               Scannez le QR à la remise au destinataire pour confirmer la livraison.
             </p>
-            <Button className="w-full bg-green-600 hover:bg-green-700" onClick={confirmDelivery} disabled={loading}>
+            <Button 
+              className="w-full h-12 bg-success hover:bg-success/90 text-success-foreground" 
+              onClick={confirmDelivery} 
+              disabled={loading}
+            >
               {loading ? (
                 <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
@@ -338,11 +352,15 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
             <div className="flex items-center gap-2 mb-3">
               <History className="w-4 h-4 text-muted-foreground" />
               <h4 className="text-sm font-semibold">Historique scans</h4>
+              <Badge variant="outline" className="text-[10px] ml-auto">{order.scan_history.length}</Badge>
             </div>
             <div className="space-y-1.5">
               {order.scan_history.slice(0, 5).map((scan, i) => (
-                <div key={i} className="flex items-center justify-between text-xs">
-                  <span>{scan.action} ({scan.user_role})</span>
+                <div key={i} className="flex items-center justify-between text-xs py-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary/60" />
+                    <span className="font-medium">{ACTION_LABELS[scan.action] || scan.action}</span>
+                  </div>
                   <span className="text-muted-foreground">
                     {new Date(scan.created_at).toLocaleString("fr-FR", { 
                       day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" 

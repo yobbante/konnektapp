@@ -12,9 +12,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
-  QrCode, Package, Truck, CheckCircle, Scale, 
-  Eye, MapPin, Clock, AlertTriangle, ScanLine,
-  ShieldCheck, User, Phone, History
+  QrCode, Package, Truck, Scale, 
+  Eye, ScanLine, ShieldCheck, Keyboard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,10 +21,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { useScanRole, ScanRole } from "@/hooks/useScanRole";
 import { QRCameraScanner } from "@/components/gp/QRCameraScanner";
 import { ScanResultClient } from "./ScanResultClient";
@@ -63,6 +60,13 @@ interface UniversalScannerProps {
   onComplete?: () => void;
 }
 
+const ROLE_CONFIG: Record<string, { label: string; color: string; icon: typeof Eye; description: string }> = {
+  client: { label: "Client", color: "bg-primary/10 text-primary border-primary/30", icon: Eye, description: "Voir le statut de votre colis" },
+  gp: { label: "Transporteur", color: "bg-secondary/10 text-secondary border-secondary/30", icon: Truck, description: "Confirmer dépôt ou livraison" },
+  agent_logistique: { label: "Agent Yobbanté", color: "bg-warning/10 text-warning border-warning/30", icon: Package, description: "Enlèvement ou livraison" },
+  admin: { label: "Admin", color: "bg-accent/10 text-accent border-accent/30", icon: ShieldCheck, description: "Gestion complète" },
+};
+
 export function UniversalScanner({ onComplete }: UniversalScannerProps) {
   const { toast } = useToast();
   const { scanRole, permissions, loading: roleLoading, userId, gpId, logScan } = useScanRole();
@@ -85,7 +89,6 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
   const lookupOrder = async (code: string) => {
     setLoading(true);
     try {
-      // Build query based on role
       let query = supabase
         .from("orders")
         .select(`
@@ -95,7 +98,6 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
         `)
         .or(`order_number.eq.${code},tracking_code.eq.${code}`);
 
-      // GP can only scan their own orders
       if (scanRole === "gp" && gpId) {
         query = query.eq("gp_id", gpId);
       }
@@ -113,7 +115,6 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
         return;
       }
 
-      // Fetch additional data based on permissions
       let clientName: string | null = null;
       let gpName: string | null = null;
       let clientPhone: string | null = null;
@@ -128,7 +129,6 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
         clientPhone = clientResult.data?.phone || null;
         gpName = gpResult.data?.business_name || null;
       } else if (scanRole === "client") {
-        // Client can see GP name
         const { data: gpData } = await supabase
           .from("public_gp_profiles")
           .select("business_name")
@@ -137,7 +137,6 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
         gpName = gpData?.business_name || null;
       }
 
-      // Get delivery address for agents
       if (permissions.canDeliver) {
         const { data: logistics } = await supabase
           .from("order_logistics_options")
@@ -147,7 +146,6 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
         deliveryAddress = logistics?.delivery_address || null;
       }
 
-      // Get scan history
       const { data: history } = await supabase
         .from("scan_logs")
         .select("action, user_role, created_at")
@@ -155,7 +153,6 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
         .order("created_at", { ascending: false })
         .limit(20);
 
-      // Log this scan
       await logScan(order.id, "view", "qr");
 
       setScannedOrder({
@@ -186,14 +183,7 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
     onComplete?.();
   };
 
-  const roleLabels: Record<string, { label: string; color: string; icon: any }> = {
-    client: { label: "Mode Client", color: "bg-blue-100 text-blue-800", icon: Eye },
-    gp: { label: "Mode Transporteur", color: "bg-primary/10 text-primary", icon: Truck },
-    agent_logistique: { label: "Mode Livreur", color: "bg-amber-100 text-amber-800", icon: Package },
-    admin: { label: "Mode Admin", color: "bg-purple-100 text-purple-800", icon: ShieldCheck },
-  };
-
-  const currentRole = roleLabels[scanRole || "client"];
+  const currentRole = ROLE_CONFIG[scanRole || "client"];
 
   if (roleLoading) {
     return (
@@ -207,45 +197,43 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
     <div className="space-y-4">
       {/* Role Badge */}
       <div className="flex items-center justify-between">
-        <Badge className={`gap-1.5 ${currentRole.color}`}>
+        <Badge variant="outline" className={`gap-1.5 ${currentRole.color}`}>
           <currentRole.icon className="w-3 h-3" />
           {currentRole.label}
         </Badge>
-        <Badge variant="outline" className="gap-1 text-xs">
+        <Badge variant="outline" className="gap-1 text-xs text-muted-foreground">
           <QrCode className="w-3 h-3" />
           KONNEKT SCAN
         </Badge>
       </div>
 
       {/* Scanner Card */}
-      <Card>
+      <Card className="overflow-hidden">
+        <div className="h-1 bg-gradient-to-r from-primary via-accent to-primary" />
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
-            <ScanLine className="w-4 h-4" />
+            <ScanLine className="w-4 h-4 text-primary" />
             Scanner un colis
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            {scanRole === "client" 
-              ? "Scannez le QR code pour voir le statut de votre colis"
-              : scanRole === "gp"
-              ? "Scannez pour confirmer dépôt ou livraison"
-              : scanRole === "agent_logistique"
-              ? "Scannez pour enlèvement ou livraison"
-              : "Scannez pour gérer le colis"
-            }
+            {currentRole.description}
           </p>
 
           {/* Camera Button */}
           <Button
             variant="outline"
-            className="w-full h-24 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-primary/50 bg-primary/5 hover:bg-primary/10"
+            className="w-full h-24 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 transition-all"
             onClick={() => setCameraOpen(true)}
           >
-            <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
-              <ScanLine className="w-6 h-6 text-primary" />
-            </div>
+            <motion.div 
+              className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center"
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <ScanLine className="w-7 h-7 text-primary" />
+            </motion.div>
             <span className="text-sm font-medium text-primary">
               Ouvrir la caméra
             </span>
@@ -259,13 +247,17 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
 
           {/* Manual Entry */}
           <div className="space-y-2">
-            <Label>Numéro de commande</Label>
+            <Label className="flex items-center gap-1.5 text-xs">
+              <Keyboard className="w-3 h-3" />
+              Saisie manuelle
+            </Label>
             <div className="flex gap-2">
               <Input
                 placeholder="CMD-XXXXXXXX"
                 value={manualCode}
                 onChange={(e) => setManualCode(e.target.value.toUpperCase())}
                 className="font-mono"
+                onKeyDown={(e) => e.key === "Enter" && handleManualSubmit()}
               />
               <Button
                 onClick={handleManualSubmit}
@@ -287,7 +279,7 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
         <SheetContent side="bottom" className="h-[90vh] rounded-t-2xl overflow-y-auto">
           <SheetHeader className="pb-2">
             <SheetTitle className="flex items-center gap-2 text-base">
-              <QrCode className="w-4 h-4" />
+              <QrCode className="w-4 h-4 text-primary" />
               Résultat du scan
             </SheetTitle>
           </SheetHeader>

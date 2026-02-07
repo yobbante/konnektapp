@@ -600,6 +600,120 @@ export type Database = {
           },
         ]
       }
+      gp_geolocation_consent: {
+        Row: {
+          consent_given: boolean
+          consent_given_at: string | null
+          created_at: string
+          gp_id: string
+          id: string
+          last_check_at: string | null
+          last_detected_city: string | null
+          last_detected_country: string | null
+          last_position_lat: number | null
+          last_position_lng: number | null
+          tracking_active: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          consent_given?: boolean
+          consent_given_at?: string | null
+          created_at?: string
+          gp_id: string
+          id?: string
+          last_check_at?: string | null
+          last_detected_city?: string | null
+          last_detected_country?: string | null
+          last_position_lat?: number | null
+          last_position_lng?: number | null
+          tracking_active?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          consent_given?: boolean
+          consent_given_at?: string | null
+          created_at?: string
+          gp_id?: string
+          id?: string
+          last_check_at?: string | null
+          last_detected_city?: string | null
+          last_detected_country?: string | null
+          last_position_lat?: number | null
+          last_position_lng?: number | null
+          tracking_active?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gp_geolocation_consent_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: true
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_geolocation_consent_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: true
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gp_geolocation_logs: {
+        Row: {
+          action_triggered: string | null
+          created_at: string
+          detected_city: string | null
+          detected_country: string
+          gp_id: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          orders_affected: string[] | null
+        }
+        Insert: {
+          action_triggered?: string | null
+          created_at?: string
+          detected_city?: string | null
+          detected_country: string
+          gp_id: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          orders_affected?: string[] | null
+        }
+        Update: {
+          action_triggered?: string | null
+          created_at?: string
+          detected_city?: string | null
+          detected_country?: string
+          gp_id?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          orders_affected?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gp_geolocation_logs_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_geolocation_logs_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gp_offers: {
         Row: {
           airline: string | null
