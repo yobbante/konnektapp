@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { QrCode, AlertTriangle } from "lucide-react";
+import { QrCode, AlertTriangle, ListChecks, ScanLine } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { UniversalScanner } from "@/components/scan/UniversalScanner";
+import { BulkScanner } from "@/components/scan/BulkScanner";
 
 interface GPProfile {
   id: string;
@@ -90,7 +92,25 @@ export default function GPScanPage() {
             ScanFlow™
           </Badge>
         </div>
-        <UniversalScanner onComplete={loadData} />
+        
+        <Tabs defaultValue="single">
+          <TabsList className="grid grid-cols-2 w-full">
+            <TabsTrigger value="single" className="gap-1.5">
+              <ScanLine className="w-3 h-3" />
+              Scan unitaire
+            </TabsTrigger>
+            <TabsTrigger value="batch" className="gap-1.5">
+              <ListChecks className="w-3 h-3" />
+              Scan en lot
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="single" className="mt-4">
+            <UniversalScanner onComplete={loadData} />
+          </TabsContent>
+          <TabsContent value="batch" className="mt-4">
+            <BulkScanner gpId={gpProfile.id} onComplete={loadData} />
+          </TabsContent>
+        </Tabs>
       </div>
     </GPDashboardLayout>
   );
