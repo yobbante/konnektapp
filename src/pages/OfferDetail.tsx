@@ -456,7 +456,7 @@ export default function OfferDetail() {
               <div className="flex items-start gap-3 p-3 bg-background/60 rounded-xl">
                 <Shield className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium text-sm">Protection Yobbanté</p>
+                  <p className="font-medium text-sm">Protection Konnekt</p>
                   <p className="text-xs text-muted-foreground">Vos envois sont protégés par notre assurance incluse jusqu'à 50 000 FCFA</p>
                 </div>
               </div>

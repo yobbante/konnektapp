@@ -138,7 +138,7 @@ export default function RoutierProfilPublicPage() {
               <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/30 rounded-lg">
                 <Shield className="w-4 h-4 text-green-600" />
                 <span className="text-sm text-green-800 dark:text-green-200">
-                  Profil vérifié par Yobbanté
+                  Profil vérifié par Konnekt
                 </span>
               </div>
             )}

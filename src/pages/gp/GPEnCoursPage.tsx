@@ -206,7 +206,7 @@ export default function GPEnCoursPage() {
                   {order.has_delivery_logistics && (
                     <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2">
                       <Truck className="w-3 h-3" />
-                      <span>Livraison dernier km par Yobbanté</span>
+                      <span>Livraison dernier km par Konnekt</span>
                     </div>
                   )}
 

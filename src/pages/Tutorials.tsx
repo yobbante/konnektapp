@@ -262,7 +262,7 @@ export default function Tutorials() {
           className="text-center"
         >
           <h1 className="text-xl font-bold text-foreground mb-1">
-            Apprenez à utiliser Yobbanté
+            Apprenez à utiliser Konnekt
           </h1>
           <p className="text-sm text-muted-foreground">
             Guides complets pour clients et transporteurs

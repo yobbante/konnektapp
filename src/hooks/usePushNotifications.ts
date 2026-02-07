@@ -104,7 +104,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
           icon: "/pwa-192x192.png",
           badge: "/pwa-192x192.png",
           requireInteraction: false,
-          tag: options?.tag || `yobbante-${Date.now()}`,
+          tag: options?.tag || `konnekt-${Date.now()}`,
           ...options,
         } as NotificationOptions);
       } else {

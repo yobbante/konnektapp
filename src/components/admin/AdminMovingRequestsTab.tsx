@@ -554,7 +554,7 @@ export function AdminMovingRequestsTab() {
                   </Card>
                   <Card>
                     <CardContent className="p-3">
-                      <p className="text-xs text-muted-foreground mb-1">Devis Yobbanté</p>
+                      <p className="text-xs text-muted-foreground mb-1">Devis Konnekt</p>
                       <p className="font-bold text-green-600">
                         {selectedRequest.budget_max && selectedRequest.budget_max > 0
                           ? `${selectedRequest.budget_max.toLocaleString()} FCFA`

@@ -130,7 +130,7 @@ export function InsuranceSelection({
               "w-5 h-5 transition-colors",
               hasInsurance ? "text-primary" : "text-muted-foreground"
             )} />
-            <CardTitle className="text-base">Assurance Yobbanté</CardTitle>
+            <CardTitle className="text-base">Assurance Konnekt</CardTitle>
           </div>
           <Badge variant={hasInsurance ? "default" : "secondary"}>
             Optionnelle
@@ -159,7 +159,7 @@ export function InsuranceSelection({
             htmlFor="insurance" 
             className="flex-1 cursor-pointer text-sm font-medium"
           >
-            Souscrire à l'assurance Yobbanté
+            Souscrire à l'assurance Konnekt
           </Label>
           {hasInsurance && selectedTier && (
             <Badge variant="outline" className="bg-background">
@@ -205,7 +205,7 @@ export function InsuranceSelection({
           <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
             <AlertTriangle className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
             <p className="text-xs text-muted-foreground">
-              Sans assurance, Yobbanté ne peut pas garantir le remboursement en cas de perte ou dommage.
+              Sans assurance, Konnekt ne peut pas garantir le remboursement en cas de perte ou dommage.
             </p>
           </div>
         )}

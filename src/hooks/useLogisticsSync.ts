@@ -11,7 +11,7 @@ interface LogisticsOptions {
 }
 
 /**
- * V1.1 Logistique Interne Yobbanté - Synchronization Hook
+ * V1.1 Konnekt Logistique — Synchronization Hook
  * 
  * Manages the relationship between GP status changes and admin logistics missions.
  * 
@@ -191,7 +191,7 @@ export function getAvailableGPActions(
           label: "Livré", 
           icon: "CheckCircle",
           blocked: true,
-          blockReason: "Livraison gérée par l'équipe Yobbanté"
+          blockReason: "Livraison gérée par l'équipe Konnekt"
         });
       } else {
         // No logistics - GP delivers directly

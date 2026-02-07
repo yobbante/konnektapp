@@ -720,9 +720,9 @@ function FullScreenOrderDetails({
                       <TruckIcon className="w-4 h-4 text-purple-600" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs text-purple-600 dark:text-purple-400 uppercase tracking-wide font-medium">Livraison Yobbanté</p>
+                      <p className="text-xs text-purple-600 dark:text-purple-400 uppercase tracking-wide font-medium">Livraison Konnekt</p>
                       <p className="font-medium text-sm text-purple-800 dark:text-purple-200">
-                        Un livreur Yobbanté livrera votre colis à destination
+                        Un livreur Konnekt livrera votre colis à destination
                       </p>
                       {isDelivered && (
                         <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">

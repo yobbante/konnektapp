@@ -34,8 +34,8 @@ interface OnboardingDialogProps {
 const clientSteps: OnboardingStep[] = [
   {
     icon: Sparkles,
-    title: "Bienvenue sur Yobbanté Connect !",
-    description: "Votre plateforme de transport de colis entre le Sénégal et l'Afrique. Découvrons ensemble comment envoyer votre premier colis.",
+    title: "Bienvenue sur Konnekt !",
+    description: "Votre plateforme de transport sécurisé par scan entre le Sénégal et l'Afrique. Découvrons ensemble comment envoyer votre premier colis.",
     tips: [
       "Comparez les offres de différents transporteurs",
       "Suivez vos colis en temps réel",

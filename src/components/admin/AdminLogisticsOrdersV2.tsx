@@ -324,7 +324,7 @@ export function AdminLogisticsOrdersV2({ compact = false }: AdminLogisticsOrders
           conversation_id: conv.id,
           sender_id: order.order?.gp_id || "",
           sender_type: "gp",
-          content: `📦 LOGISTIQUE YOBBANTÉ:\n${message}`,
+          content: `📦 KONNEKT LOGISTIQUE:\n${message}`,
         });
         
         toast({ title: "✅ Message envoyé au client" });
@@ -778,7 +778,7 @@ export function AdminLogisticsOrdersV2({ compact = false }: AdminLogisticsOrders
                                               size="icon"
                                               variant="ghost"
                                               className="h-6 w-6"
-                                              onClick={() => openWhatsApp(order.pickup_whatsapp!, `Bonjour, je suis l'agent Yobbanté pour l'enlèvement de votre colis ${order.order?.order_number}`)}
+                                              onClick={() => openWhatsApp(order.pickup_whatsapp!, `Bonjour, je suis l'agent Konnekt pour l'enlèvement de votre colis ${order.order?.order_number}`)}
                                             >
                                               <MessageSquare className="w-3 h-3 text-green-600" />
                                             </Button>
@@ -896,7 +896,7 @@ export function AdminLogisticsOrdersV2({ compact = false }: AdminLogisticsOrders
                                               size="icon"
                                               variant="ghost"
                                               className="h-6 w-6"
-                                              onClick={() => openWhatsApp(order.delivery_whatsapp!, `Bonjour, je suis l'agent Yobbanté pour la livraison de votre colis ${order.order?.order_number}`)}
+                                              onClick={() => openWhatsApp(order.delivery_whatsapp!, `Bonjour, je suis l'agent Konnekt pour la livraison de votre colis ${order.order?.order_number}`)}
                                             >
                                               <MessageSquare className="w-3 h-3 text-green-600" />
                                             </Button>

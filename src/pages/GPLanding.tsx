@@ -135,7 +135,7 @@ export default function GPLanding() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <Badge variant="gold" className="mb-6">Rejoignez le réseau Yobbanté</Badge>
+              <Badge variant="gold" className="mb-6">Rejoignez le réseau Konnekt</Badge>
               
               {/* Dynamic Tagline for GP */}
               <div className="mb-6">
@@ -210,7 +210,7 @@ export default function GPLanding() {
               Quelle est votre activité ?
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Yobbanté accueille tous les professionnels du transport et de la logistique
+              Konnekt accueille tous les professionnels du transport et de la logistique
             </p>
           </motion.div>
 
@@ -303,7 +303,7 @@ export default function GPLanding() {
           >
             <Badge variant="secondary" className="mb-4">Avantages</Badge>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Pourquoi rejoindre Yobbanté ?
+              Pourquoi rejoindre Konnekt ?
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Des outils puissants pour développer votre activité de transport
@@ -445,7 +445,7 @@ export default function GPLanding() {
               Prêt à développer votre activité ?
             </h2>
             <p className="text-lg text-muted-foreground mb-8">
-              Rejoignez les milliers de transporteurs qui font confiance à Yobbanté. 
+              Rejoignez les milliers de transporteurs qui font confiance à Konnekt. 
               L'inscription est gratuite et prend moins de 5 minutes.
             </p>
             <Link to="/gp/inscription">

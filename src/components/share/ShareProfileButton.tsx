@@ -26,7 +26,7 @@ export function ShareProfileButton({
   const { toast } = useToast();
 
   const profileUrl = `${window.location.origin}/client/transporteurs/${gpId}`;
-  const shareText = `Découvrez ${gpName} sur Yobbanté - Transporteur de confiance pour vos envois`;
+  const shareText = `Découvrez ${gpName} sur Konnekt - Transporteur de confiance pour vos envois`;
 
   const handleCopyLink = async () => {
     try {
@@ -50,7 +50,7 @@ export function ShareProfileButton({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${gpName} - Yobbanté`,
+          title: `${gpName} - Konnekt`,
           text: shareText,
           url: profileUrl,
         });

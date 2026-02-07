@@ -1,5 +1,5 @@
 /**
- * AgentDashboard - Dashboard for Agent Logistique Yobbanté
+ * AgentDashboard - Dashboard for Agent Logistique Konnekt
  * 
  * Scan-centric interface for delivery agents:
  * - Universal scanner with agent permissions
@@ -173,7 +173,7 @@ export default function AgentDashboard() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-bold">Agent Yobbanté</h1>
+            <h1 className="text-lg font-bold">Agent Konnekt</h1>
             <p className="text-xs text-muted-foreground">Scan & Livraison</p>
           </div>
           <Badge className="gap-1 bg-amber-100 text-amber-800">

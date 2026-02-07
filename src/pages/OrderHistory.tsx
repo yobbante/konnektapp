@@ -461,7 +461,7 @@ function RequestCard({ request, type, expanded, onToggle }: RequestCardProps) {
                 <div className={`p-3 rounded-xl ${isMoving ? 'bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30' : 'bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/30'}`}>
                   <p className={`text-sm ${isMoving ? 'text-amber-800 dark:text-amber-200' : 'text-purple-800 dark:text-purple-200'}`}>
                     {isMoving 
-                      ? "🚚 Service de déménagement géré par l'équipe Yobbanté."
+                      ? "🚚 Service de déménagement géré par l'équipe Konnekt."
                       : "📦 Demande visible par les transporteurs de la plateforme."}
                   </p>
                 </div>

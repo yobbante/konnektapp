@@ -443,12 +443,12 @@ export default function AdminDashboard() {
             </div>
           </TabsContent>
 
-          {/* Logistics - Internal Yobbanté Logistics V1.1 */}
+          {/* Logistics - Konnekt Logistique V1.1 */}
           <TabsContent value="logistics">
             <AdminLogisticsOrdersV2 />
           </TabsContent>
 
-          {/* Moving Requests - Internal Yobbanté Service */}
+          {/* Moving Requests - Konnekt Internal Service */}
           <TabsContent value="moving">
             <AdminMovingRequestsTab />
           </TabsContent>

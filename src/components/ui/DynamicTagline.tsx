@@ -17,11 +17,11 @@ interface DynamicTaglineProps {
 }
 
 const dynamicWords = [
-  "un colis",
-  "des bagages",
-  "des documents",
-  "des effets personnels",
-  "des marchandises",
+  "un colis,",
+  "des bagages,",
+  "des documents,",
+  "des effets personnels,",
+  "des marchandises,",
 ];
 
 export function DynamicTagline({ className, variant = "default" }: DynamicTaglineProps) {

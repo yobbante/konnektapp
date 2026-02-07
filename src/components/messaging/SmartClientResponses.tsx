@@ -157,7 +157,7 @@ export function SmartClientResponses({
           case "arrived":
             return `🛬 Le GP est arrivé à ${ctx.destination_city}.\n\nLa livraison finale est en cours d'organisation.`;
           case "delivered":
-            return `🎉 Colis livré avec succès !\n\nMerci d'avoir utilisé Yobbanté.\nN'hésitez pas à laisser un avis.`;
+            return `🎉 Colis livré avec succès !\n\nMerci d'avoir utilisé Konnekt.\nN'hésitez pas à laisser un avis.`;
           default:
             return `📦 Statut: ${STATUS_LABELS[ctx.status] || ctx.status}\nConsultez l'onglet "Suivi" pour plus de détails.`;
         }
@@ -276,7 +276,7 @@ export function SmartClientResponses({
           const insuranceDisplay = formatInsuranceDual(ctx.insurance_amount, ctx.currency, rates);
           return `🛡️ Oui, votre colis est assuré !\n\nMontant: ${insuranceDisplay}\n\nL'assurance couvre les dommages et pertes pendant le transport.`;
         }
-        return `⚠️ Vous avez choisi de ne pas assurer ce colis.\n\nSans assurance, Yobbanté ne peut pas garantir le remboursement en cas de perte ou dommage.`;
+        return `⚠️ Vous avez choisi de ne pas assurer ce colis.\n\nSans assurance, Konnekt ne peut pas garantir le remboursement en cas de perte ou dommage.`;
       },
     },
     // 🔟 « J'ai besoin d'aide concernant ma commande »
@@ -310,7 +310,7 @@ export function SmartClientResponses({
         let response = `👋 **Nous avons bien reçu votre demande.**\n\n📌 Commande: #${ctx.order_number.slice(-6)}\n📦 Statut: ${STATUS_LABELS[ctx.status] || ctx.status}\n`;
         
         if (issues.length > 0) {
-          response += `\n⚠️ **Points détectés:**\n${issues.map(i => `• ${i}`).join("\n")}\n\nUn agent Yobbanté vous contactera si nécessaire.`;
+          response += `\n⚠️ **Points détectés:**\n${issues.map(i => `• ${i}`).join("\n")}\n\nUn agent Konnekt vous contactera si nécessaire.`;
           
           // Log support request
           try {

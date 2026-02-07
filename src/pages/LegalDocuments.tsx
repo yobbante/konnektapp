@@ -40,13 +40,13 @@ const legalDocuments: LegalDocument[] = [
 
 ## Article 1 - Objet
 
-Les présentes Conditions Générales d'Utilisation (CGU) ont pour objet de définir les modalités et conditions d'utilisation de la plateforme Yobbanté Connect, accessible via l'application mobile et le site web.
+Les présentes Conditions Générales d'Utilisation (CGU) ont pour objet de définir les modalités et conditions d'utilisation de la plateforme Konnekt, accessible via l'application mobile et le site web.
 
-Yobbanté Connect est une plateforme de mise en relation entre expéditeurs de colis et transporteurs partenaires.
+Konnekt est une plateforme de mise en relation entre expéditeurs de colis et transporteurs partenaires.
 
 ## Article 2 - Définitions
 
-- **Plateforme** : désigne l'application mobile et le site web Yobbanté Connect
+- **Plateforme** : désigne l'application mobile et le site web Konnekt
 - **Utilisateur** : toute personne physique ou morale utilisant la Plateforme
 - **Client** : utilisateur souhaitant expédier un colis
 - **Transporteur** : partenaire proposant des services de transport
@@ -79,11 +79,11 @@ Yobbanté Connect est une plateforme de mise en relation entre expéditeurs de c
 
 ## Article 5 - Responsabilités
 
-5.1 Yobbanté Connect agit en qualité d'intermédiaire et n'est pas partie au contrat de transport conclu entre le Client et le Transporteur.
+5.1 Konnekt agit en qualité d'intermédiaire et n'est pas partie au contrat de transport conclu entre le Client et le Transporteur.
 
 5.2 Le Transporteur demeure seul responsable de l'exécution du contrat de transport.
 
-5.3 Yobbanté Connect s'engage à maintenir la Plateforme opérationnelle dans les meilleures conditions.
+5.3 Konnekt s'engage à maintenir la Plateforme opérationnelle dans les meilleures conditions.
 
 ## Article 6 - Paiements
 
@@ -107,7 +107,7 @@ Yobbanté Connect est une plateforme de mise en relation entre expéditeurs de c
 
 ## Article 9 - Modification des CGU
 
-9.1 Yobbanté Connect se réserve le droit de modifier les présentes CGU.
+9.1 Konnekt se réserve le droit de modifier les présentes CGU.
 
 9.2 Les Utilisateurs seront informés de toute modification substantielle.
 
@@ -133,7 +133,7 @@ Les présentes CGU sont soumises au droit sénégalais. Tout litige sera soumis 
 
 1.2 Le prix total inclut :
 - Le tarif de transport
-- Les frais de service Yobbanté Connect
+- Les frais de service Konnekt
 - L'assurance de base
 - Les taxes applicables
 
@@ -237,7 +237,7 @@ Vous disposez des droits suivants :
 - Droit à la portabilité
 - Droit d'opposition
 
-Pour exercer vos droits : privacy@yobbante.com
+Pour exercer vos droits : privacy@konnekt.app
 
 ## 6. Cookies
 
@@ -264,7 +264,7 @@ Les données sont conservées pendant la durée nécessaire aux finalités pour 
 
 ## Engagement qualité
 
-En tant que Transporteur partenaire Yobbanté Connect, vous vous engagez à :
+En tant que Transporteur partenaire Konnekt, vous vous engagez à :
 
 ### 1. Professionnalisme
 - Respecter les horaires de collecte et livraison
@@ -316,9 +316,9 @@ Le non-respect de cette charte peut entraîner :
 
 Le présent contrat est conclu entre :
 - Le **Client** (Expéditeur)
-- Le **Transporteur** (Partenaire Yobbanté Connect)
+- Le **Transporteur** (Partenaire Konnekt)
 
-Avec Yobbanté Connect agissant en qualité d'intermédiaire.
+Avec Konnekt agissant en qualité d'intermédiaire.
 
 ## Objet du contrat
 
@@ -355,7 +355,7 @@ Le Transporteur est responsable des dommages causés aux colis, dans la limite d
 
 ## Litige
 
-En cas de litige, les parties s'engagent à rechercher une solution amiable via la médiation de Yobbanté Connect.
+En cas de litige, les parties s'engagent à rechercher une solution amiable via la médiation de Konnekt.
 
 ---
 *Dernière mise à jour : 1er février 2026*
@@ -452,7 +452,7 @@ export default function LegalDocuments() {
                     <h3 className="font-semibold text-sm">Protection & Transparence</h3>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Yobbanté Connect s'engage à protéger vos données et à opérer en toute transparence. 
+                    Konnekt s'engage à protéger vos données et à opérer en toute transparence. 
                     Nous mettons à jour régulièrement nos documents légaux pour refléter les évolutions 
                     de nos services et de la réglementation.
                   </p>
