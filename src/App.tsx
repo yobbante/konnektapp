@@ -1,4 +1,4 @@
-import { Toaster } from "@/components/ui/toaster";
+import { AppleToaster } from "@/components/ui/AppleToaster";
 import GPBagagesRegistration from "./pages/GPBagagesRegistration";
 import RoutierRegistration from "./pages/RoutierRegistration";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -12,7 +12,7 @@ import { GlobalNotificationProvider } from "@/components/notifications/GlobalNot
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { RoleSwitchPopup } from "@/components/profile/RoleSwitchPopup";
 import { ThemeInitializer } from "@/components/ThemeInitializer";
-import { EnhancedToastContainer } from "@/components/ui/EnhancedToast";
+import { AppleNotificationContainer } from "@/components/ui/AppleNotification";
 import { SmartScrollTop } from "@/hooks/useSmartScrollTop";
 import Index from "./pages/Index";
 import Offres from "./pages/Offres";
@@ -87,14 +87,14 @@ const App = () => (
     <TooltipProvider>
       <GlobalNotificationProvider>
         <OfflineIndicator />
-        <Toaster />
+        <AppleToaster />
         <Sonner />
         <BrowserRouter>
           <ThemeInitializer />
           <ScrollToTop />
           <SmartScrollTop />
           <ScrollToTopButton />
-          <EnhancedToastContainer />
+          <AppleNotificationContainer />
           <RoleSwitchPopup />
           <AuthGuard>
           <Routes>
