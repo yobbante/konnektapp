@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Search, Send, MessageCircle, User, BarChart3, Package, LayoutGrid } from "lucide-react";
+import { Home, Search, MessageCircle, LayoutGrid, ScanLine } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
@@ -7,9 +7,9 @@ import { useRef, useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * MobileNav V2 - Navigation bottom bar simplifiée
- * 5 items max: Accueil, Offres, Envoyer (CTA), Messages, Profil
- * Profil remplace Menu pour un accès direct au compte
+ * MobileNav V3 — Konnekt
+ * 5 items: Accueil, Offres, SCAN (center), Messages, Espace
+ * Scan button = circle, center, subtle pulse
  */
 export function MobileNav() {
   const location = useLocation();
@@ -25,7 +25,6 @@ export function MobileNav() {
       setIsAuthenticated(!!session);
       
       if (session?.user?.id) {
-        // Check if user is a transporter (has gp_profile)
         const { data: gpProfile } = await supabase
           .from("gp_profiles")
           .select("id, gp_type")
@@ -44,7 +43,6 @@ export function MobileNav() {
       if (!session) {
         setUserRole(null);
       } else if (session?.user?.id) {
-        // Re-check role on auth change
         supabase
           .from("gp_profiles")
           .select("id")
@@ -62,24 +60,28 @@ export function MobileNav() {
   // Determine "Espace" destination based on user role
   const getEspaceHref = () => {
     if (!isAuthenticated) return "/auth";
-    if (userRole === 'transporter') return "/gp/demandes"; // Dashboard transporteur
-    return "/profil"; // Dashboard client (profil)
+    if (userRole === 'transporter') return "/gp/demandes";
+    return "/profil";
   };
 
-  // Nav items - V3: "Espace" intelligent remplace Compte/Profil
+  // Scan destination — context-aware
+  const getScanHref = () => {
+    if (!isAuthenticated) return "/tracking"; // Public tracking scan
+    if (userRole === 'transporter') return "/gp/scan";
+    return "/tracking"; // Client tracking
+  };
+
   const navItems = [
     { href: "/", icon: Home, label: "Accueil", isHome: true },
     { href: "/offres", icon: Search, label: "Offres" },
-    { href: "/envoyer", icon: Send, label: "Envoyer", isCTA: true, requiresAuth: true },
+    { href: getScanHref(), icon: ScanLine, label: "Scan", isScan: true },
     { href: "/messages", icon: MessageCircle, label: "Messages", showBadge: true, requiresAuth: true },
     { href: getEspaceHref(), icon: LayoutGrid, label: "Espace", isEspace: true },
   ];
 
   const handleNavClick = useCallback((e: React.MouseEvent, item: typeof navItems[0] & { isEspace?: boolean }) => {
-    // If requires auth and not authenticated, redirect to auth with return path
-    if (item.requiresAuth && !isAuthenticated) {
+    if ('requiresAuth' in item && item.requiresAuth && !isAuthenticated) {
       e.preventDefault();
-      // Save return path for post-auth redirect
       sessionStorage.setItem("pending_booking_state", JSON.stringify({
         returnPath: item.href,
         timestamp: Date.now(),
@@ -88,7 +90,6 @@ export function MobileNav() {
       return;
     }
 
-    // Handle Home double-tap refresh
     if (item.isHome) {
       const now = Date.now();
       const isDoubleTap = now - lastHomeClickRef.current < 500;
@@ -107,7 +108,7 @@ export function MobileNav() {
 
   return (
     <nav 
-      className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden" 
+      className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border/50 md:hidden" 
       style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px))' }}
     >
       <div 
@@ -117,32 +118,52 @@ export function MobileNav() {
         {navItems.map((item) => {
           const isEspaceActive = 'isEspace' in item && item.isEspace && 
             ["/profil", "/settings", "/client/dashboard", "/gp/demandes", "/gp/tarification", "/gp/historique"].includes(location.pathname);
+          const isScanActive = 'isScan' in item && item.isScan &&
+            ["/gp/scan", "/tracking"].includes(location.pathname);
           const isActive = location.pathname === item.href || 
             (item.href === "/" && location.pathname === "/") ||
-            isEspaceActive;
+            isEspaceActive || isScanActive;
 
-          // CTA button (Envoyer) - special styling
-          if ('isCTA' in item && item.isCTA) {
+          // ─── SCAN BUTTON (center, circle, pulse) ───
+          if ('isScan' in item && item.isScan) {
             return (
               <Link
-                key={item.href}
+                key="scan"
                 to={item.href}
                 onClick={(e) => handleNavClick(e, item as any)}
-                className="flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors relative"
+                className="flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors relative"
               >
                 <motion.div 
-                  className="w-12 h-12 -mt-4 rounded-full bg-primary shadow-lg flex items-center justify-center"
+                  className={cn(
+                    "w-12 h-12 -mt-5 rounded-full flex items-center justify-center shadow-lg relative",
+                    isActive
+                      ? "bg-primary"
+                      : "bg-gradient-to-br from-primary to-accent"
+                  )}
                   whileTap={{ scale: 0.9 }}
                   whileHover={{ scale: 1.05 }}
                 >
-                  <item.icon className="w-6 h-6 text-primary-foreground" />
+                  <ScanLine className="w-5 h-5 text-primary-foreground" />
+                  {/* Subtle pulse ring */}
+                  {!isActive && (
+                    <motion.div
+                      className="absolute inset-0 rounded-full border-2 border-primary/30"
+                      animate={{ scale: [1, 1.2, 1], opacity: [0.6, 0, 0.6] }}
+                      transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                  )}
                 </motion.div>
-                <span className="text-[10px] font-medium text-primary">{item.label}</span>
+                <span className={cn(
+                  "text-[10px] font-semibold",
+                  isActive ? "text-primary" : "text-muted-foreground"
+                )}>
+                  {item.label}
+                </span>
               </Link>
             );
           }
 
-          // "Espace" button - special colored styling
+          // ─── ESPACE BUTTON ───
           if ('isEspace' in item && item.isEspace) {
             return (
               <Link
@@ -177,7 +198,6 @@ export function MobileNav() {
                     "text-[10px] font-semibold",
                     isActive ? "text-primary" : "text-muted-foreground"
                   )}
-                  animate={isActive ? { fontWeight: 700 } : { fontWeight: 600 }}
                 >
                   {item.label}
                 </motion.span>
@@ -185,7 +205,7 @@ export function MobileNav() {
             );
           }
 
-          // Standard nav items
+          // ─── STANDARD NAV ITEMS ───
           return (
             <Link
               key={item.href}
@@ -239,7 +259,9 @@ export function MobileNav() {
   );
 }
 
-// Transporteur specific bottom nav - Profile opens TransporterProfile page directly
+// ─── GP Mobile Nav (unchanged) ───
+import { BarChart3, Package, User } from "lucide-react";
+
 const gpNavItems = [
   { icon: Home, label: "Accueil", tab: "overview" },
   { icon: Package, label: "Offres", tab: "offers" },

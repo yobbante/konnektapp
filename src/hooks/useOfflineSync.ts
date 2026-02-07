@@ -10,8 +10,8 @@ interface SyncQueueItem {
   timestamp: number;
 }
 
-const SYNC_QUEUE_KEY = "yobbante_offline_sync_queue";
-const OFFLINE_DATA_KEY = "yobbante_offline_data";
+const SYNC_QUEUE_KEY = "konnekt_offline_sync_queue";
+const OFFLINE_DATA_KEY = "konnekt_offline_data";
 
 export function useOfflineSync() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);

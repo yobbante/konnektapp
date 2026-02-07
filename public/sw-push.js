@@ -5,11 +5,11 @@ self.addEventListener('push', function(event) {
   console.log('[SW] Push received:', event);
   
   let data = {
-    title: 'Yobbanté GP',
+    title: 'Konnekt',
     body: 'Nouvelle notification',
     icon: '/pwa-192x192.png',
     badge: '/pwa-192x192.png',
-    tag: 'yobbante-notification',
+    tag: 'konnekt-notification',
     data: {}
   };
 

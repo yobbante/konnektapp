@@ -143,7 +143,7 @@ export function RoutierDashboardHubSheet({
               onClick={() => handleNavigate("/")}
             >
               <Home className="w-4 h-4 mr-2" />
-              Accueil Yobbanté
+              Accueil Konnekt
             </Button>
           </div>
 

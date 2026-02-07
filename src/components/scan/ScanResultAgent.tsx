@@ -111,7 +111,7 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
           status: order.status as any,
           changed_by: user.id,
           changed_by_type: isAdmin ? "admin" : "agent",
-          notes: "📦 Colis enlevé par agent Yobbanté",
+          notes: "📦 Colis enlevé par agent Konnekt",
         });
       }
 
@@ -223,12 +223,12 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
           status: order.status as any,
           changed_by: user.id,
           changed_by_type: isAdmin ? "admin" : "agent",
-          notes: "📋 Réception stock Yobbanté — Dakar",
+          notes: "📋 Réception stock Konnekt — Dakar",
         });
       }
 
       await logScan(order.id, "stock_confirm", "qr", order.status, order.status, {
-        location: "stock_yobbante_dakar",
+        location: "stock_konnekt_dakar",
       });
 
       toast({ title: "✅ Réception stock confirmée" });
@@ -361,7 +361,7 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
         {["collected", "in_transit"].includes(order.status) && (
           <Button variant="outline" className="w-full h-11" onClick={confirmStockReception} disabled={loading}>
             <Package className="w-4 h-4 mr-2" />
-            Stock Yobbanté — Dakar
+            Stock Konnekt — Dakar
           </Button>
         )}
 

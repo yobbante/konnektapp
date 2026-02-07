@@ -92,8 +92,8 @@ export function AppHeader({
                 animate={{ opacity: 1 }}
                 className="flex flex-col leading-none"
               >
-                <span className="font-bold text-foreground text-sm">Yobbanté</span>
-                <span className="text-[10px] font-semibold text-primary">Connect</span>
+                <span className="font-bold text-foreground text-sm tracking-tight">Konnekt</span>
+                <span className="text-[10px] font-semibold text-primary">Transport</span>
               </motion.div>
             )}
           </AnimatePresence>

@@ -11,7 +11,7 @@ interface ThemeManagerState {
   setMode: (mode: ThemeMode) => void;
 }
 
-const THEME_STORAGE_KEY = "yobbante-theme-mode";
+const THEME_STORAGE_KEY = "konnekt-theme-mode";
 
 export function useThemeManager(): ThemeManagerState {
   const location = useLocation();

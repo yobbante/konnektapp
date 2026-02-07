@@ -338,7 +338,7 @@ export function AppEntryLoader({ onComplete, minDuration = 1800 }: AppEntryLoade
               }}
             >
               <p className="text-xs text-emerald-400/70 font-semibold tracking-[0.15em] uppercase">
-                Yobbanté Connect
+                Konnekt
               </p>
             </div>
           </motion.div>

@@ -1,10 +1,10 @@
 /**
- * DynamicTagline - Animated word cycling component
+ * DynamicTagline V2 — Konnekt branded
  * 
- * Features:
- * - Smooth fade + vertical slide animation (4px max)
- * - 2-second cycle between words
- * - Mobile-first, stable height, app-native feel
+ * "Envoyez {un colis / des bagages / des documents / des marchandises}
+ *  en toute confiance."
+ * 
+ * Animated word cycling with smooth fade + vertical slide
  */
 
 import { useState, useEffect } from "react";
@@ -20,6 +20,7 @@ const dynamicWords = [
   "un colis",
   "des bagages",
   "des documents",
+  "des effets personnels",
   "des marchandises",
 ];
 
@@ -29,7 +30,7 @@ export function DynamicTagline({ className, variant = "default" }: DynamicTaglin
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % dynamicWords.length);
-    }, 2000);
+    }, 2200);
 
     return () => clearInterval(interval);
   }, []);
@@ -42,18 +43,18 @@ export function DynamicTagline({ className, variant = "default" }: DynamicTaglin
   return (
     <div className={cn("text-center", className)}>
       <h1 className={cn("font-bold text-foreground leading-tight", textSizes[variant])}>
-        Envoyez ou transportez
+        Envoyez
       </h1>
       <div className="relative h-10 md:h-12 flex items-center justify-center overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.span
             key={currentIndex}
-            initial={{ opacity: 0, y: 4 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
+            exit={{ opacity: 0, y: -6 }}
             transition={{
-              duration: 0.25,
-              ease: "easeOut",
+              duration: 0.3,
+              ease: [0.25, 0.1, 0.25, 1],
             }}
             className={cn("text-primary font-bold absolute", textSizes[variant])}
           >
@@ -62,7 +63,7 @@ export function DynamicTagline({ className, variant = "default" }: DynamicTaglin
         </AnimatePresence>
       </div>
       <p className={cn("font-bold text-foreground leading-tight -mt-1", textSizes[variant])}>
-        simplement.
+        en toute confiance.
       </p>
     </div>
   );

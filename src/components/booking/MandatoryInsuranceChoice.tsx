@@ -185,7 +185,7 @@ export function MandatoryInsuranceChoice({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield className="w-5 h-5 text-primary" />
-            <CardTitle className="text-base">Assurance Yobbanté</CardTitle>
+            <CardTitle className="text-base">Assurance Konnekt</CardTitle>
           </div>
           <Badge variant="destructive" className="text-xs">
             Obligatoire
@@ -218,13 +218,13 @@ export function MandatoryInsuranceChoice({
             <div className="flex-1 space-y-2">
               <Label htmlFor="insurance-with" className="flex items-center gap-2 cursor-pointer">
                 <Shield className="w-4 h-4 text-primary" />
-                <span className="font-semibold">Ajouter l'assurance Yobbanté</span>
+                <span className="font-semibold">Ajouter l'assurance Konnekt</span>
                 <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
                   Recommandée
                 </Badge>
               </Label>
               <p className="text-sm text-muted-foreground">
-                L'assurance couvre les pertes ou dommages selon les conditions Yobbanté.
+                L'assurance couvre les pertes ou dommages selon les conditions Konnekt.
               </p>
               
               {selectedOption === "with" && applicableTier && (
@@ -335,7 +335,7 @@ export function MandatoryInsuranceChoice({
                 >
                   <p className="text-xs text-orange-700 dark:text-orange-400 flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4" />
-                    Vous assumez tous les risques liés à votre envoi
+                    Vous assumez l'entière responsabilité de votre envoi
                   </p>
                 </motion.div>
               )}

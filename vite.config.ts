@@ -17,8 +17,8 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "robots.txt", "sw-push.js"],
       manifest: {
-        name: "Yobbanté GP - Transport & Livraison",
-        short_name: "Yobbanté GP",
+        name: "Konnekt — Transport sécurisé par scan",
+        short_name: "Konnekt",
         description: "Trouvez des transporteurs fiables pour vos envois en Afrique",
         theme_color: "#0EA5E9",
         background_color: "#0A0A0B",

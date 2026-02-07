@@ -441,7 +441,7 @@ function RequestDetailsPopup({ open, onClose, type, item, navigate }: RequestDet
                 <div className="flex items-start gap-2">
                   <Info className="w-4 h-4 text-amber-600 mt-0.5" />
                   <div className="text-sm text-amber-800 dark:text-amber-200">
-                    <p className="font-medium">Service géré par Yobbanté</p>
+                    <p className="font-medium">Service géré par Konnekt</p>
                     <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
                       Notre équipe vous contactera pour un devis personnalisé.
                     </p>
@@ -677,9 +677,9 @@ function FullScreenOrderDetails({
                       <TruckIcon className="w-4 h-4 text-blue-600" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs text-blue-600 dark:text-blue-400 uppercase tracking-wide font-medium">Enlèvement Yobbanté</p>
+                      <p className="text-xs text-blue-600 dark:text-blue-400 uppercase tracking-wide font-medium">Enlèvement Konnekt</p>
                       <p className="font-medium text-sm text-blue-800 dark:text-blue-200">
-                        Un livreur Yobbanté viendra récupérer votre colis à l'adresse indiquée
+                        Un livreur Konnekt viendra récupérer votre colis à l'adresse indiquée
                       </p>
                       <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
                         📍 {order.logistics_options?.pickup_address || "Adresse de collecte configurée"}

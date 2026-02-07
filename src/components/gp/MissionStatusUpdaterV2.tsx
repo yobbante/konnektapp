@@ -260,7 +260,7 @@ export function MissionStatusUpdaterV2({
         <AlertDescription className="text-amber-800 text-sm">
           <strong>En attente de livraison</strong>
           <br />
-          L'équipe Yobbanté effectue la livraison dernier km.
+          L'équipe Konnekt effectue la livraison dernier km.
         </AlertDescription>
       </Alert>
     );

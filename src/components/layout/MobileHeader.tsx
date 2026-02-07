@@ -50,8 +50,8 @@ export function MobileHeader({ title, showNotifications = true }: MobileHeaderPr
             </div>
           ) : (
             <div className="flex flex-col">
-              <span className="font-bold text-foreground leading-tight">Yobbanté</span>
-              <span className="text-xs font-semibold text-primary -mt-0.5">Connect</span>
+              <span className="font-bold text-foreground leading-tight tracking-tight">Konnekt</span>
+              <span className="text-xs font-semibold text-primary -mt-0.5">Transport</span>
             </div>
           )}
         </Link>

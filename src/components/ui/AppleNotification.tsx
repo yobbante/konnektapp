@@ -151,7 +151,7 @@ export function AppleNotification({
   type,
   title,
   description,
-  appName = "Yobbanté",
+  appName = "Konnekt",
   timestamp,
   link,
   action,
