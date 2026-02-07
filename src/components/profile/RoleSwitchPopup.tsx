@@ -108,22 +108,28 @@ export function RoleSwitchPopup() {
     if (isInTransporteurMode) return "bg-gradient-to-r from-orange-500 to-amber-500";
     return "bg-gradient-to-r from-primary to-teal-400";
   };
-  return <AnimatePresence>
-      <motion.div initial={{
-      opacity: 0,
-      y: 20,
-      scale: 0.9
-    }} animate={{
-      opacity: 1,
-      y: 0,
-      scale: 1
-    }} exit={{
-      opacity: 0,
-      y: 20,
-      scale: 0.9
-    }} className="fixed z-50 left-4" style={{
-      bottom: 'calc(100px + var(--safe-bottom, 0px))'
-    }}>
+  return (
+      <motion.div 
+        initial={{
+          opacity: 0,
+          y: 20,
+          scale: 0.9
+        }} 
+        animate={{
+          opacity: 1,
+          y: 0,
+          scale: 1
+        }} 
+        exit={{
+          opacity: 0,
+          y: 20,
+          scale: 0.9
+        }} 
+        className="fixed z-50 left-4" 
+        style={{
+          bottom: 'calc(100px + var(--safe-bottom, 0px))'
+        }}
+      >
         {/* Collapsed Pill Button - Modern glass design */}
         {!isExpanded}
 
@@ -224,5 +230,5 @@ export function RoleSwitchPopup() {
             </>}
         </AnimatePresence>
       </motion.div>
-    </AnimatePresence>;
+  );
 }
