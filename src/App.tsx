@@ -80,7 +80,8 @@ import MovingConfirmation from "./pages/MovingConfirmation";
 import OrderQRCode from "./pages/OrderQRCode";
 import PublicTracking from "./pages/PublicTracking";
 import AgentDashboard from "./pages/AgentDashboard";
-
+import GPApercuPage from "./pages/gp/GPApercuPage";
+import GPKTPGeoTrackPage from "./pages/gp/GPKTPGeoTrackPage";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -149,8 +150,9 @@ const App = () => (
             <Route path="/gp" element={<GPLanding />} />
             {/* /gp/inscription supprimé - utiliser /transporteur/inscription */}
             <Route path="/gp/bagages/inscription" element={<GPBagagesRegistration />} />
-            {/* Redirection: /gp/dashboard → /gp/demandes */}
-            <Route path="/gp/dashboard" element={<Navigate to="/gp/demandes" replace />} />
+            {/* Redirection: /gp/dashboard → /gp/apercu */}
+            <Route path="/gp/dashboard" element={<Navigate to="/gp/apercu" replace />} />
+            <Route path="/gp/apercu" element={<GPApercuPage />} />
             <Route path="/gp/demandes" element={<GPDemandesPage />} />
             <Route path="/gp/en-cours" element={<GPEnCoursPage />} />
             <Route path="/gp/historique" element={<GPHistoriquePage />} />
@@ -160,6 +162,7 @@ const App = () => (
             <Route path="/gp/profil-public" element={<GPProfilPublicPage />} />
             <Route path="/gp/requests" element={<GPCustomRequests />} />
             <Route path="/gp/order/:orderId" element={<GPOrderDetail />} />
+            <Route path="/gp/ktp-geotrack" element={<GPKTPGeoTrackPage />} />
             <Route path="/transporter/profile" element={<TransporterProfile />} />
             
             {/* ============================================

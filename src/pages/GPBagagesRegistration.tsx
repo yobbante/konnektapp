@@ -74,11 +74,14 @@ export default function GPBagagesRegistration() {
   // Step 4: Pricing with weight tiers
   const [pricePerKg, setPricePerKg] = useState("");
   const [defaultCurrency, setDefaultCurrency] = useState<CurrencyCode>("XOF");
+  // PRV: Mandatory 6 weight tiers
   const [weightTiers, setWeightTiers] = useState<WeightTier[]>([
-    { min_weight: 0, max_weight: 5, price_per_kg: 0, currency: "XOF", is_active: true },
+    { min_weight: 0, max_weight: 1, price_per_kg: 0, currency: "XOF", is_active: true },
+    { min_weight: 1, max_weight: 5, price_per_kg: 0, currency: "XOF", is_active: true },
     { min_weight: 5, max_weight: 10, price_per_kg: 0, currency: "XOF", is_active: true },
-    { min_weight: 10, max_weight: 20, price_per_kg: 0, currency: "XOF", is_active: true },
-    { min_weight: 20, max_weight: 30, price_per_kg: 0, currency: "XOF", is_active: true },
+    { min_weight: 10, max_weight: 15, price_per_kg: 0, currency: "XOF", is_active: true },
+    { min_weight: 15, max_weight: 23, price_per_kg: 0, currency: "XOF", is_active: true },
+    { min_weight: 23, max_weight: 23, price_per_kg: 0, currency: "XOF", is_active: true }, // Forfait valise 23kg
   ]);
   const [flatRatePricing, setFlatRatePricing] = useState<Map<string, { price: string; isActive: boolean }>>(
     new Map(DEFAULT_FLAT_RATE_OBJECTS.map(o => [o.id, { price: o.defaultPrice.toString(), isActive: false }]))
@@ -184,11 +187,20 @@ export default function GPBagagesRegistration() {
         return true;
 
       case 4:
-        const hasValidTiers = weightTiers.some(t => t.price_per_kg > 0);
-        if (!hasValidTiers && (!pricePerKg || parseFloat(pricePerKg) <= 0)) {
+        // PRV: price_per_kg is mandatory and at least one tier must have a price
+        if (!pricePerKg || parseFloat(pricePerKg) <= 0) {
           toast({ 
-            title: "Tarifs requis", 
-            description: "Définissez au moins un prix au kilo ou des paliers de poids", 
+            title: "Prix au kilo requis", 
+            description: "Le prix au kilo est obligatoire et ne pourra plus être modifié", 
+            variant: "destructive" 
+          });
+          return false;
+        }
+        const hasValidTiers = weightTiers.some(t => t.price_per_kg > 0);
+        if (!hasValidTiers) {
+          toast({ 
+            title: "Paliers requis", 
+            description: "Définissez au moins un palier de poids", 
             variant: "destructive" 
           });
           return false;
@@ -356,7 +368,8 @@ export default function GPBagagesRegistration() {
         ? profileData.originPhone 
         : profileData.destinationPhone;
 
-      // Create GP profile with route-linked contact fields
+      // Create GP profile with route-linked contact fields + locked navette & price
+      const basePricePerKg = parseFloat(pricePerKg) || 0;
       const { data: gpProfile, error: gpError } = await supabase
         .from("gp_profiles")
         .insert({
@@ -375,6 +388,14 @@ export default function GPBagagesRegistration() {
           default_currency: defaultCurrency,
           international_destinations: [`${profileData.destinationCity}, ${profileData.destinationCountry}`],
           zones_covered: [`${profileData.originCity}, ${profileData.originCountry}`],
+          // PRV: Lock base price and navette at registration
+          base_price_per_kg: basePricePerKg,
+          base_origin_city: profileData.originCity,
+          base_origin_country: profileData.originCountry,
+          base_destination_city: profileData.destinationCity,
+          base_destination_country: profileData.destinationCountry,
+          price_locked_at: new Date().toISOString(),
+          navette_locked_at: new Date().toISOString(),
         })
         .select()
         .single();
