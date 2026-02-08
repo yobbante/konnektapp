@@ -28,14 +28,8 @@ const DEFAULT_FLAT_RATE_OBJECTS = [
   { id: "bijoux", label: "Bijoux", defaultPrice: 20 },
 ];
 
-// Weight tier interface
-interface WeightTier {
-  min_weight: number;
-  max_weight: number;
-  price_per_kg: number;
-  currency: string;
-  is_active: boolean;
-}
+import { PricingInputForm } from "@/components/gp/PricingInputForm";
+import { configToDbTiers, validatePricingInputs, type GPPricingConfig } from "@/lib/gpPricingEngine";
 
 export default function GPBagagesRegistration() {
   const navigate = useNavigate();
@@ -71,18 +65,10 @@ export default function GPBagagesRegistration() {
   // Step 3: Voyages (calendrier)
   const [departures, setDepartures] = useState<any[]>([]);
 
-  // Step 4: Pricing with weight tiers
+  // Step 4: Pricing — Only 2 values needed
   const [pricePerKg, setPricePerKg] = useState("");
+  const [forfaitValise, setForfaitValise] = useState("");
   const [defaultCurrency, setDefaultCurrency] = useState<CurrencyCode>("XOF");
-  // PRV: Mandatory 6 weight tiers
-  const [weightTiers, setWeightTiers] = useState<WeightTier[]>([
-    { min_weight: 0, max_weight: 1, price_per_kg: 0, currency: "XOF", is_active: true },
-    { min_weight: 1, max_weight: 5, price_per_kg: 0, currency: "XOF", is_active: true },
-    { min_weight: 5, max_weight: 10, price_per_kg: 0, currency: "XOF", is_active: true },
-    { min_weight: 10, max_weight: 15, price_per_kg: 0, currency: "XOF", is_active: true },
-    { min_weight: 15, max_weight: 23, price_per_kg: 0, currency: "XOF", is_active: true },
-    { min_weight: 23, max_weight: 23, price_per_kg: 0, currency: "XOF", is_active: true }, // Forfait valise 23kg
-  ]);
   const [flatRatePricing, setFlatRatePricing] = useState<Map<string, { price: string; isActive: boolean }>>(
     new Map(DEFAULT_FLAT_RATE_OBJECTS.map(o => [o.id, { price: o.defaultPrice.toString(), isActive: false }]))
   );
@@ -196,11 +182,20 @@ export default function GPBagagesRegistration() {
           });
           return false;
         }
-        const hasValidTiers = weightTiers.some(t => t.price_per_kg > 0);
-        if (!hasValidTiers) {
+        const forfaitNum = parseFloat(forfaitValise) || 0;
+        if (!forfaitNum || forfaitNum <= 0) {
           toast({ 
-            title: "Paliers requis", 
-            description: "Définissez au moins un palier de poids", 
+            title: "Forfait valise requis", 
+            description: "Le forfait valise 23 kg est obligatoire", 
+            variant: "destructive" 
+          });
+          return false;
+        }
+        const pricingValidation = validatePricingInputs(parseFloat(pricePerKg), forfaitNum);
+        if (!pricingValidation.valid) {
+          toast({ 
+            title: "Tarifs invalides", 
+            description: pricingValidation.error, 
             variant: "destructive" 
           });
           return false;
@@ -336,13 +331,7 @@ export default function GPBagagesRegistration() {
     });
   };
 
-  const handleWeightTierChange = (index: number, field: keyof WeightTier, value: number | boolean) => {
-    setWeightTiers(prev => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
-      return updated;
-    });
-  };
+  // Removed: handleWeightTierChange — tiers are now auto-calculated
 
   const handleSubmit = async () => {
     if (!validateStep(4)) return;
@@ -402,17 +391,16 @@ export default function GPBagagesRegistration() {
 
       if (gpError) throw gpError;
 
-      // Save weight tiers
-      const tiersToInsert = weightTiers
-        .filter(t => t.price_per_kg > 0)
-        .map(t => ({
-          gp_id: gpProfile.id,
-          min_weight: t.min_weight,
-          max_weight: t.max_weight,
-          price_per_kg: t.price_per_kg,
-          currency: defaultCurrency,
-          is_active: true,
-        }));
+      // Save auto-calculated weight tiers from pricing engine
+      const pricingConfig: GPPricingConfig = {
+        basePricePerKg: parseFloat(pricePerKg) || 0,
+        forfaitValise23kg: parseFloat(forfaitValise) || 0,
+        currency: defaultCurrency,
+      };
+      const tiersToInsert = configToDbTiers(pricingConfig).map(t => ({
+        gp_id: gpProfile.id,
+        ...t,
+      }));
 
       if (tiersToInsert.length > 0) {
         await supabase.from("gp_weight_tiers").insert(tiersToInsert);
@@ -420,9 +408,7 @@ export default function GPBagagesRegistration() {
 
       // Create voyage offers
       for (const dep of departures) {
-        const avgPrice = weightTiers.length > 0 && tiersToInsert.length > 0
-          ? tiersToInsert.reduce((sum, t) => sum + t.price_per_kg, 0) / tiersToInsert.length
-          : (pricePerKg ? parseFloat(pricePerKg) : 8);
+        const offerPrice = parseFloat(pricePerKg) || 8;
 
         await supabase
           .from("gp_offers")
@@ -435,7 +421,7 @@ export default function GPBagagesRegistration() {
             departure_date: dep.date,
             total_capacity: dep.capacity,
             available_capacity: dep.capacity,
-            price_per_kg: avgPrice,
+            price_per_kg: offerPrice,
             currency: defaultCurrency,
             transport_type: "bagages_international",
             status: "active",
@@ -766,49 +752,22 @@ export default function GPBagagesRegistration() {
                       <Euro className="w-5 h-5 text-primary" />
                       <h2 className="text-lg font-semibold">Vos tarifs</h2>
                     </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Définissez vos 2 prix de référence. Les paliers sont calculés automatiquement.
+                    </p>
 
-                    {/* Currency selector */}
-                    <div className="p-4 rounded-lg border bg-muted/30">
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <p className="font-medium">Devise de facturation</p>
-                          <p className="text-xs text-muted-foreground">Tous vos prix seront affichés dans cette devise</p>
-                        </div>
-                        <Coins className="w-5 h-5 text-muted-foreground" />
-                      </div>
-                      <CurrencySelector
-                        value={defaultCurrency}
-                        onValueChange={(value) => setDefaultCurrency(value as CurrencyCode)}
-                        className="w-full"
-                      />
-                    </div>
-
-                    {/* Weight tiers */}
-                    <div className="space-y-3">
-                      <div>
-                        <p className="font-medium">Tarifs par palier de poids</p>
-                        <p className="text-xs text-muted-foreground">Définissez vos prix selon le poids</p>
-                      </div>
-
-                      {weightTiers.map((tier, index) => (
-                        <div key={index} className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            {tier.min_weight}-{tier.max_weight} kg
-                          </span>
-                          <Input
-                            type="number"
-                            placeholder="0"
-                            value={tier.price_per_kg || ""}
-                            onChange={(e) => handleWeightTierChange(index, "price_per_kg", parseFloat(e.target.value) || 0)}
-                            className="h-10 flex-1"
-                          />
-                          <span className="text-xs text-muted-foreground">{getCurrencySymbol(defaultCurrency)}/kg</span>
-                        </div>
-                      ))}
-                    </div>
+                    {/* New unified pricing form */}
+                    <PricingInputForm
+                      pricePerKg={pricePerKg}
+                      forfaitValise={forfaitValise}
+                      currency={defaultCurrency}
+                      onPriceChange={setPricePerKg}
+                      onForfaitChange={setForfaitValise}
+                      onCurrencyChange={(v) => setDefaultCurrency(v)}
+                    />
 
                     {/* Flat rate pricing */}
-                    <div className="space-y-3">
+                    <div className="space-y-3 mt-6">
                       <div>
                         <p className="font-medium">Forfaits par objet (optionnel)</p>
                         <p className="text-xs text-muted-foreground">Prix fixes pour certains objets</p>

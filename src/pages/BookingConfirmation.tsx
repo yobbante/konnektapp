@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CheckCircle, Package, MapPin, Calendar, User, MessageCircle, Home, ArrowRight, Plane, Clock, Shield, Copy, Phone, MapPinned, Lock, Eye, QrCode } from "lucide-react";
+import { CheckCircle, Package, MapPin, Calendar, User, MessageCircle, Home, ArrowRight, Plane, Clock, Shield, Copy, Phone, MapPinned, Lock, Eye, QrCode, Building2 } from "lucide-react";
+import { DepartureInfoCard } from "@/components/booking/DepartureInfoCard";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -34,6 +35,12 @@ interface OrderDetails {
 interface OfferDetails {
   departure_date: string;
   arrival_date: string | null;
+  airline: string | null;
+  flight_number: string | null;
+  origin_city: string;
+  origin_country: string;
+  destination_city: string;
+  destination_country: string;
 }
 export default function BookingConfirmation() {
   const {
@@ -94,7 +101,7 @@ export default function BookingConfirmation() {
       if (orderData.offer_id) {
         const {
           data: offerData
-        } = await supabase.from("gp_offers").select("departure_date, arrival_date").eq("id", orderData.offer_id).single();
+        } = await supabase.from("gp_offers").select("departure_date, arrival_date, airline, flight_number, origin_city, origin_country, destination_city, destination_country").eq("id", orderData.offer_id).single();
         if (offerData) setOffer(offerData);
       }
     } catch (error) {
@@ -228,30 +235,20 @@ export default function BookingConfirmation() {
                 </div>
               </div>
 
-              {offer && <div className="mt-4 pt-4 border-t border-border grid grid-cols-2 gap-3">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Départ</p>
-                      <p className="text-sm font-medium">
-                        {format(new Date(offer.departure_date), "d MMM yyyy", {
-                      locale: fr
-                    })}
-                      </p>
-                    </div>
-                  </div>
-                  {offer.arrival_date && <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Arrivée estimée</p>
-                        <p className="text-sm font-medium">
-                          {format(new Date(offer.arrival_date), "d MMM", {
-                      locale: fr
-                    })}
-                        </p>
-                      </div>
-                    </div>}
-                </div>}
+              {offer && (
+                <div className="mt-4 pt-4 border-t">
+                  <DepartureInfoCard
+                    departureDate={offer.departure_date}
+                    arrivalDate={offer.arrival_date}
+                    airline={offer.airline}
+                    flightNumber={offer.flight_number}
+                    originCity={offer.origin_city || order.origin_city}
+                    originCountry={offer.origin_country || order.origin_country}
+                    destinationCity={offer.destination_city || order.destination_city}
+                    destinationCountry={offer.destination_country || order.destination_country}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>

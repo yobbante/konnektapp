@@ -235,32 +235,21 @@ export function SmartDepartureDialog({
             </div>
           </div>
 
-          {/* Capacity & Price */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1">
-                <Weight className="w-3 h-3" />
-                Capacité (kg) *
-              </Label>
-              <Input
-                type="number"
-                placeholder="Ex: 30"
-                value={departure.capacity}
-                onChange={(e) => setDeparture(prev => ({ ...prev, capacity: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Prix/kg (FCFA)</Label>
-              <Input
-                type="number"
-                placeholder={String(defaultPricePerKg)}
-                value={departure.pricePerKg}
-                onChange={(e) => setDeparture(prev => ({ ...prev, pricePerKg: e.target.value }))}
-              />
-              <p className="text-xs text-muted-foreground">
-                Par défaut: {defaultPricePerKg} FCFA
-              </p>
-            </div>
+          {/* Capacity only — price is locked from registration */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1">
+              <Weight className="w-3 h-3" />
+              Capacité (kg) *
+            </Label>
+            <Input
+              type="number"
+              placeholder="Ex: 30"
+              value={departure.capacity}
+              onChange={(e) => setDeparture(prev => ({ ...prev, capacity: e.target.value }))}
+            />
+            <p className="text-xs text-muted-foreground">
+              Le prix/kg est verrouillé depuis votre inscription
+            </p>
           </div>
 
           {/* Submit */}

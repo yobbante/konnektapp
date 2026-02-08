@@ -1,0 +1,138 @@
+/**
+ * GP Pricing Engine — Single source of truth for all pricing logic
+ * 
+ * RULES (INVIOLABLE):
+ * - GP chooses 2 values at registration: price_per_kg + forfait_valise_23kg
+ * - These become the official pricing base, locked after admin validation
+ * - All weight tiers are AUTOMATICALLY calculated from these 2 values
+ * - Coefficients are system-level, fixed, not modifiable by GP
+ */
+
+// ── Regressive Coefficients (System-level, fixed) ──────────────────────
+export const WEIGHT_TIER_COEFFICIENTS = [
+  { min: 0, max: 1, coefficient: 1.00, label: "≤ 1 kg", description: "Prix plein" },
+  { min: 1, max: 5, coefficient: 0.95, label: "1 – 5 kg", description: "Légère réduction" },
+  { min: 5, max: 10, coefficient: 0.90, label: "5 – 10 kg", description: "Économie volume" },
+  { min: 10, max: 15, coefficient: 0.85, label: "10 – 15 kg", description: "Fret léger" },
+  { min: 15, max: 23, coefficient: 0.80, label: "15 – 23 kg", description: "Pré-forfait" },
+] as const;
+
+export interface CalculatedTier {
+  min_weight: number;
+  max_weight: number;
+  coefficient: number;
+  price_per_kg: number;
+  label: string;
+  description: string;
+  isForfait: boolean;
+}
+
+export interface GPPricingConfig {
+  basePricePerKg: number;
+  forfaitValise23kg: number;
+  currency: string;
+}
+
+/**
+ * Calculate all tiers from the 2 GP inputs
+ * Returns 6 tiers: 5 weight-based + 1 forfait valise
+ */
+export function calculateTiers(config: GPPricingConfig): CalculatedTier[] {
+  const { basePricePerKg, forfaitValise23kg } = config;
+
+  const tiers: CalculatedTier[] = WEIGHT_TIER_COEFFICIENTS.map(tier => ({
+    min_weight: tier.min,
+    max_weight: tier.max,
+    coefficient: tier.coefficient,
+    price_per_kg: Math.round(basePricePerKg * tier.coefficient),
+    label: tier.label,
+    description: tier.description,
+    isForfait: false,
+  }));
+
+  // Add forfait valise 23kg
+  tiers.push({
+    min_weight: 23,
+    max_weight: 23,
+    coefficient: 0, // Not applicable
+    price_per_kg: forfaitValise23kg,
+    label: "Forfait valise 23 kg",
+    description: "Prix fixe valise",
+    isForfait: true,
+  });
+
+  return tiers;
+}
+
+/**
+ * Calculate total price for a given weight
+ */
+export function calculatePrice(weight: number, config: GPPricingConfig): number {
+  // Forfait valise 23kg exact
+  if (weight === 23) {
+    return config.forfaitValise23kg;
+  }
+
+  // Find the right tier
+  const tier = WEIGHT_TIER_COEFFICIENTS.find(
+    t => weight > t.min && weight <= t.max
+  ) || WEIGHT_TIER_COEFFICIENTS[WEIGHT_TIER_COEFFICIENTS.length - 1];
+
+  const effectivePricePerKg = config.basePricePerKg * tier.coefficient;
+  return Math.round(weight * effectivePricePerKg);
+}
+
+/**
+ * Format price for display
+ */
+export function formatTierPrice(tier: CalculatedTier, currency: string, currencySymbol: string): string {
+  if (tier.isForfait) {
+    return `${tier.price_per_kg.toLocaleString()} ${currencySymbol}`;
+  }
+  return `${tier.price_per_kg.toLocaleString()} ${currencySymbol}/kg`;
+}
+
+/**
+ * Get tier for a given weight
+ */
+export function getTierForWeight(weight: number): typeof WEIGHT_TIER_COEFFICIENTS[number] | null {
+  return WEIGHT_TIER_COEFFICIENTS.find(
+    t => weight > t.min && weight <= t.max
+  ) || null;
+}
+
+/**
+ * Convert GP pricing config to database weight tiers format
+ */
+export function configToDbTiers(config: GPPricingConfig): Array<{
+  min_weight: number;
+  max_weight: number;
+  price_per_kg: number;
+  currency: string;
+  is_active: boolean;
+}> {
+  const tiers = calculateTiers(config);
+  return tiers.map(t => ({
+    min_weight: t.min_weight,
+    max_weight: t.max_weight,
+    price_per_kg: t.price_per_kg,
+    currency: config.currency,
+    is_active: true,
+  }));
+}
+
+/**
+ * Validate GP pricing inputs
+ */
+export function validatePricingInputs(basePricePerKg: number, forfaitValise23kg: number): { valid: boolean; error?: string } {
+  if (!basePricePerKg || basePricePerKg <= 0) {
+    return { valid: false, error: "Le prix au kilo doit être supérieur à 0" };
+  }
+  if (!forfaitValise23kg || forfaitValise23kg <= 0) {
+    return { valid: false, error: "Le forfait valise 23 kg doit être supérieur à 0" };
+  }
+  if (forfaitValise23kg < basePricePerKg) {
+    return { valid: false, error: "Le forfait valise devrait être supérieur au prix au kilo" };
+  }
+  return { valid: true };
+}
