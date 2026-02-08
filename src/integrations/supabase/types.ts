@@ -714,6 +714,81 @@ export type Database = {
           },
         ]
       }
+      gp_navette_change_requests: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          gp_id: string
+          id: string
+          justification: string | null
+          new_destination_city: string
+          new_destination_country: string
+          new_origin_city: string
+          new_origin_country: string
+          old_destination_city: string
+          old_destination_country: string
+          old_origin_city: string
+          old_origin_country: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          gp_id: string
+          id?: string
+          justification?: string | null
+          new_destination_city: string
+          new_destination_country?: string
+          new_origin_city: string
+          new_origin_country?: string
+          old_destination_city: string
+          old_destination_country?: string
+          old_origin_city: string
+          old_origin_country?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          gp_id?: string
+          id?: string
+          justification?: string | null
+          new_destination_city?: string
+          new_destination_country?: string
+          new_origin_city?: string
+          new_origin_country?: string
+          old_destination_city?: string
+          old_destination_country?: string
+          old_origin_city?: string
+          old_origin_country?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gp_navette_change_requests_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_navette_change_requests_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gp_offers: {
         Row: {
           airline: string | null
@@ -894,6 +969,11 @@ export type Database = {
         Row: {
           address: string | null
           auto_accept_enabled: boolean | null
+          base_destination_city: string | null
+          base_destination_country: string | null
+          base_origin_city: string | null
+          base_origin_country: string | null
+          base_price_per_kg: number | null
           business_name: string
           business_registration_url: string | null
           city: string
@@ -914,8 +994,10 @@ export type Database = {
           international_destinations: string[] | null
           last_warning_at: string | null
           max_response_delay_hours: number | null
+          navette_locked_at: string | null
           phone: string
           phone_secondary: string | null
+          price_locked_at: string | null
           rating: number | null
           reception_address: string | null
           status: Database["public"]["Enums"]["gp_status"]
@@ -934,6 +1016,11 @@ export type Database = {
         Insert: {
           address?: string | null
           auto_accept_enabled?: boolean | null
+          base_destination_city?: string | null
+          base_destination_country?: string | null
+          base_origin_city?: string | null
+          base_origin_country?: string | null
+          base_price_per_kg?: number | null
           business_name: string
           business_registration_url?: string | null
           city: string
@@ -954,8 +1041,10 @@ export type Database = {
           international_destinations?: string[] | null
           last_warning_at?: string | null
           max_response_delay_hours?: number | null
+          navette_locked_at?: string | null
           phone: string
           phone_secondary?: string | null
+          price_locked_at?: string | null
           rating?: number | null
           reception_address?: string | null
           status?: Database["public"]["Enums"]["gp_status"]
@@ -974,6 +1063,11 @@ export type Database = {
         Update: {
           address?: string | null
           auto_accept_enabled?: boolean | null
+          base_destination_city?: string | null
+          base_destination_country?: string | null
+          base_origin_city?: string | null
+          base_origin_country?: string | null
+          base_price_per_kg?: number | null
           business_name?: string
           business_registration_url?: string | null
           city?: string
@@ -994,8 +1088,10 @@ export type Database = {
           international_destinations?: string[] | null
           last_warning_at?: string | null
           max_response_delay_hours?: number | null
+          navette_locked_at?: string | null
           phone?: string
           phone_secondary?: string | null
+          price_locked_at?: string | null
           rating?: number | null
           reception_address?: string | null
           status?: Database["public"]["Enums"]["gp_status"]

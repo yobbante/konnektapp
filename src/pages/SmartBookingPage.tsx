@@ -22,6 +22,7 @@ import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { convertFromFCFA, loadExchangeRates, type ExchangeRate } from "@/lib/currencyUtils";
 import { createAutoConversationAfterBooking } from "@/lib/autoChat";
 import { normalizeDecimalInput, parseDecimalInput, roundTo2Decimals, formatDecimalDisplay, roundForDatabase } from "@/lib/decimalUtils";
+import { useSelfBookingGuard } from "@/hooks/useSelfBookingGuard";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -106,6 +107,9 @@ export default function SmartBookingPage() {
   const {
     toast
   } = useToast();
+
+  // PRV Rule 8: Block GP from booking their own departure
+  const { isSelfBooking, checking: checkingSelfBooking } = useSelfBookingGuard({ gpId });
 
   // State
   const [loading, setLoading] = useState(true);
@@ -459,6 +463,16 @@ export default function SmartBookingPage() {
 
   // Submit
   const handleSubmit = async () => {
+    // PRV Rule 8: Block self-booking
+    if (isSelfBooking) {
+      toast({
+        title: "Action impossible",
+        description: "Vous ne pouvez pas réserver votre propre départ",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!canProceed(4)) {
       toast({
         title: "Veuillez accepter les conditions",

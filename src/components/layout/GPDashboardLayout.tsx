@@ -61,8 +61,9 @@ export function GPDashboardLayout({
   const [showHubMenu, setShowHubMenu] = useState(false);
   const [showAddDeparture, setShowAddDeparture] = useState(false);
 
-  // Navigation tabs for GP Dashboard
+  // Navigation tabs for GP Dashboard — Aperçu first
   const navTabs: NavTab[] = [
+    { id: "apercu", label: "Aperçu", icon: Truck, path: "/gp/apercu" },
     { id: "demandes", label: "Demandes", icon: Package, path: "/gp/demandes", badge: pendingCount },
     { id: "en-cours", label: "En cours", icon: Clock, path: "/gp/en-cours", badge: activeOrdersCount },
     { id: "scan", label: "Scan", icon: QrCode, path: "/gp/scan" },
@@ -74,12 +75,14 @@ export function GPDashboardLayout({
   // Detect active tab from path
   const currentPath = location.pathname;
   const getActiveFromPath = () => {
+    if (currentPath === "/gp/apercu") return "apercu";
     if (currentPath === "/gp/dashboard" || currentPath === "/gp/demandes") return "demandes";
     if (currentPath.includes("en-cours")) return "en-cours";
     if (currentPath.includes("scan")) return "scan";
     if (currentPath.includes("historique")) return "historique";
     if (currentPath.includes("calendrier")) return "calendrier";
     if (currentPath.includes("tarification")) return "tarifs";
+    if (currentPath.includes("ktp-geotrack")) return "ktp-geotrack";
     return activeTab;
   };
 
