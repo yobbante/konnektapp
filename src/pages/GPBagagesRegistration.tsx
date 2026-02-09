@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { 
   ArrowRight, ArrowLeft, Luggage, 
   CheckCircle, Lock, Eye, EyeOff, Euro, AlertTriangle, Plane,
-  Mail, User
+  Mail, User, Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,14 +27,18 @@ const DEFAULT_FLAT_RATE_OBJECTS = [
   { id: "bijoux", label: "Bijoux", defaultPrice: 20 },
 ];
 
+type RegistrationPhase = "steps" | "pricing_gate";
+
 export default function GPBagagesRegistration() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
+  const [phase, setPhase] = useState<RegistrationPhase>("steps");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLogin, setIsLogin] = useState(false);
   const [existingUser, setExistingUser] = useState<{ id: string; email: string; fullName: string; phone: string } | null>(null);
+  const [pendingGpId, setPendingGpId] = useState<string | null>(null);
 
   const [authData, setAuthData] = useState({ email: "", password: "", confirmPassword: "" });
   const [profileData, setProfileData] = useState<RouteLinkedProfileData>({
@@ -73,11 +77,11 @@ export default function GPBagagesRegistration() {
     loadExistingProfile();
   }, [navigate, toast]);
 
+  // 3 steps only now
   const steps = [
     { num: 1, label: "Accès", icon: Lock },
     { num: 2, label: "Profil", icon: User },
     { num: 3, label: "Voyages", icon: Plane },
-    { num: 4, label: "Tarifs", icon: Euro },
   ];
 
   const validateStep = (currentStep: number): boolean => {
@@ -95,13 +99,6 @@ export default function GPBagagesRegistration() {
         return true;
       case 3:
         if (departures.length === 0) { toast({ title: "Conseil", description: "Ajoutez au moins un voyage" }); }
-        return true;
-      case 4:
-        if (!pricePerKg || parseFloat(pricePerKg) <= 0) { toast({ title: "Prix au kilo requis", variant: "destructive" }); return false; }
-        const forfaitNum = parseFloat(forfaitValise) || 0;
-        if (!forfaitNum) { toast({ title: "Forfait valise requis", variant: "destructive" }); return false; }
-        const pv = validatePricingInputs(parseFloat(pricePerKg), forfaitNum);
-        if (!pv.valid) { toast({ title: "Tarifs invalides", description: pv.error, variant: "destructive" }); return false; }
         return true;
       default: return true;
     }
@@ -142,12 +139,22 @@ export default function GPBagagesRegistration() {
   const handleNext = async () => {
     if (!validateStep(step)) return;
     if (step === 1 && !existingUser) { const ok = await handleAuthStep(); if (!ok) return; }
-    setStep(prev => Math.min(prev + 1, 4));
+    if (step === 3) {
+      // Last step → submit profile & voyages, then show pricing gate
+      await handleSubmitProfileAndVoyages();
+      return;
+    }
+    setStep(prev => Math.min(prev + 1, 3));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBack = () => {
-    if (step <= 2) navigate("/transporteur/inscription");
+    if (phase === "pricing_gate") {
+      // Can't go back from pricing gate - must complete
+      toast({ title: "Tarifs obligatoires", description: "Définissez vos tarifs pour continuer", variant: "destructive" });
+      return;
+    }
+    if (step === 1) navigate("/transporteur/inscription");
     else setStep(prev => prev - 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -174,13 +181,14 @@ export default function GPBagagesRegistration() {
     });
   };
 
-  const handleSubmit = async () => {
-    if (!validateStep(4) || !existingUser) return;
+  /** Step 1: Submit profile + voyages, creating the GP in "pending" state */
+  const handleSubmitProfileAndVoyages = async () => {
+    if (!existingUser) return;
     setLoading(true);
     try {
       await supabase.from("profiles").update({ phone: profileData.originPhone, full_name: profileData.fullName, is_gp: true }).eq("user_id", existingUser.id);
       const whatsappPhone = profileData.whatsappPhone === "origin" ? profileData.originPhone : profileData.destinationPhone;
-      const basePricePerKg = parseFloat(pricePerKg) || 0;
+      
       const { data: gpProfile, error: gpError } = await supabase.from("gp_profiles").insert({
         user_id: existingUser.id, business_name: profileData.fullName,
         gp_type: "bagages_international", phone: profileData.originPhone,
@@ -190,27 +198,62 @@ export default function GPBagagesRegistration() {
         status: "pending", default_currency: defaultCurrency,
         international_destinations: [`${profileData.destinationCity}, ${profileData.destinationCountry}`],
         zones_covered: [`${profileData.originCity}, ${profileData.originCountry}`],
-        base_price_per_kg: basePricePerKg,
         base_origin_city: profileData.originCity, base_origin_country: profileData.originCountry,
         base_destination_city: profileData.destinationCity, base_destination_country: profileData.destinationCountry,
-        price_locked_at: new Date().toISOString(), navette_locked_at: new Date().toISOString(),
+        navette_locked_at: new Date().toISOString(),
       }).select().single();
       if (gpError) throw gpError;
 
-      const pricingConfig: GPPricingConfig = { basePricePerKg, forfaitValise23kg: parseFloat(forfaitValise) || 0, currency: defaultCurrency };
-      const tiersToInsert = configToDbTiers(pricingConfig).map(t => ({ gp_id: gpProfile.id, ...t }));
-      if (tiersToInsert.length > 0) await supabase.from("gp_weight_tiers").insert(tiersToInsert);
-
+      // Insert voyages
       for (const dep of departures) {
         await supabase.from("gp_offers").insert({
           gp_id: gpProfile.id, origin_city: dep.originCity, origin_country: dep.originCountry,
           destination_city: dep.destinationCity, destination_country: dep.destinationCountry,
           departure_date: dep.date, total_capacity: dep.capacity, available_capacity: dep.capacity,
-          price_per_kg: parseFloat(pricePerKg) || 8, currency: defaultCurrency,
+          price_per_kg: 0, currency: defaultCurrency,
           transport_type: "bagages_international", status: "active",
         });
       }
 
+      setPendingGpId(gpProfile.id);
+      setPhase("pricing_gate");
+      toast({ title: "✅ Profil créé", description: "Définissez maintenant vos tarifs pour finaliser" });
+    } catch (error: any) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    } finally { setLoading(false); }
+  };
+
+  /** Step 2: Finalize pricing — MANDATORY */
+  const handleFinalizePricing = async () => {
+    if (!pendingGpId) return;
+    if (!pricePerKg || parseFloat(pricePerKg) <= 0) { toast({ title: "Prix au kilo requis", variant: "destructive" }); return; }
+    const forfaitNum = parseFloat(forfaitValise) || 0;
+    if (!forfaitNum) { toast({ title: "Forfait valise requis", variant: "destructive" }); return; }
+    const pv = validatePricingInputs(parseFloat(pricePerKg), forfaitNum);
+    if (!pv.valid) { toast({ title: "Tarifs invalides", description: pv.error, variant: "destructive" }); return; }
+
+    setLoading(true);
+    try {
+      const basePricePerKg = parseFloat(pricePerKg);
+      // Update GP profile with locked pricing
+      await supabase.from("gp_profiles").update({
+        base_price_per_kg: basePricePerKg,
+        price_locked_at: new Date().toISOString(),
+        default_currency: defaultCurrency,
+      }).eq("id", pendingGpId);
+
+      // Update existing offers with correct price
+      await supabase.from("gp_offers").update({
+        price_per_kg: basePricePerKg,
+        currency: defaultCurrency,
+      }).eq("gp_id", pendingGpId);
+
+      // Insert weight tiers
+      const pricingConfig: GPPricingConfig = { basePricePerKg, forfaitValise23kg: forfaitNum, currency: defaultCurrency };
+      const tiersToInsert = configToDbTiers(pricingConfig).map(t => ({ gp_id: pendingGpId, ...t }));
+      if (tiersToInsert.length > 0) await supabase.from("gp_weight_tiers").insert(tiersToInsert);
+
+      // Insert flat rate pricing
       const { data: objectTypes } = await supabase.from("flat_rate_object_types").select("id, name").eq("is_active", true);
       if (objectTypes) {
         const objectTypeMap = new Map(objectTypes.map(t => [t.name, t.id]));
@@ -219,7 +262,7 @@ export default function GPBagagesRegistration() {
             const objectTypeId = objectTypeMap.get(key);
             if (objectTypeId) {
               await supabase.from("gp_flat_rate_pricing").upsert({
-                gp_id: gpProfile.id, object_type_id: objectTypeId, price: parseFloat(value.price),
+                gp_id: pendingGpId, object_type_id: objectTypeId, price: parseFloat(value.price),
                 is_active: value.isActive, currency: defaultCurrency,
               }, { onConflict: 'gp_id,object_type_id' });
             }
@@ -227,16 +270,84 @@ export default function GPBagagesRegistration() {
         }
       }
 
-      toast({ title: "✈️ Inscription réussie !", description: "Bienvenue dans l'espace GP Via Bagages" });
+      toast({ title: "✈️ Inscription finalisée !", description: "Bienvenue dans l'espace GP Via Bagages" });
       navigate("/gp/dashboard");
     } catch (error: any) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } finally { setLoading(false); }
   };
 
+  // Pricing Gate Phase
+  if (phase === "pricing_gate") {
+    return (
+      <div className="min-h-screen bg-background pb-safe">
+        <header 
+          className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border"
+          style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+        >
+          <div className="flex items-center gap-3 px-4 h-14">
+            <div className="w-9" /> {/* spacer - no back on pricing gate */}
+            <div className="flex-1 min-w-0 text-center">
+              <p className="text-sm font-semibold">Définir vos tarifs</p>
+              <p className="text-[10px] text-muted-foreground">Étape obligatoire</p>
+            </div>
+            <Badge variant="destructive" className="text-[10px]">Requis</Badge>
+          </div>
+        </header>
+
+        <main className="px-4 py-6 max-w-lg mx-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            {/* Mandatory alert */}
+            <div className="p-4 mb-6 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-sm">Tarification obligatoire</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Votre profil est en attente de confirmation. Définissez vos tarifs pour finaliser votre inscription et activer vos voyages.
+                </p>
+              </div>
+            </div>
+
+            <Card>
+              <CardContent className="p-5 space-y-4">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Euro className="w-5 h-5 text-primary" /> Vos tarifs
+                </h2>
+                <p className="text-sm text-muted-foreground">2 prix de référence. Paliers calculés automatiquement.</p>
+                <PricingInputForm pricePerKg={pricePerKg} forfaitValise={forfaitValise} currency={defaultCurrency}
+                  onPriceChange={setPricePerKg} onForfaitChange={setForfaitValise} onCurrencyChange={setDefaultCurrency} />
+                
+                <div className="space-y-3 mt-4">
+                  <p className="font-medium text-sm">Forfaits par objet (optionnel)</p>
+                  {DEFAULT_FLAT_RATE_OBJECTS.map((obj) => {
+                    const pricing = flatRatePricing.get(obj.id) || { price: "", isActive: false };
+                    return (
+                      <div key={obj.id} className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
+                        <span className="text-sm flex-1">{obj.label}</span>
+                        <Input type="number" placeholder={obj.defaultPrice.toString()} value={pricing.price}
+                          onChange={(e) => handleFlatRateChange(obj.id, "price", e.target.value)} className="h-10 w-24" />
+                        <span className="text-xs text-muted-foreground">{getCurrencySymbol(defaultCurrency)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-4">
+                  <Button onClick={handleFinalizePricing} disabled={loading} className="w-full h-12 gap-2">
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Finaliser l'inscription <CheckCircle className="w-4 h-4" /></>}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background pb-safe">
-      {/* Minimal header with back */}
+      {/* Header with back */}
       <header 
         className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
@@ -247,7 +358,7 @@ export default function GPBagagesRegistration() {
           </Button>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold truncate">GP Via Bagages</p>
-            <p className="text-[10px] text-muted-foreground">Étape {step}/4</p>
+            <p className="text-[10px] text-muted-foreground">Étape {step}/3</p>
           </div>
           <Badge variant="secondary" className="text-xs">{steps[step - 1]?.label}</Badge>
         </div>
@@ -262,7 +373,7 @@ export default function GPBagagesRegistration() {
           <h1 className="text-xl font-bold">Devenir GP Via Bagages</h1>
         </motion.div>
 
-        {/* Progress */}
+        {/* Progress - 3 steps */}
         <div className="flex items-center justify-center gap-1 mb-6">
           {steps.map((s, i) => (
             <div key={s.num} className="flex items-center">
@@ -272,7 +383,7 @@ export default function GPBagagesRegistration() {
                 </div>
                 <span className={`text-[9px] mt-1 ${step >= s.num ? "text-foreground font-medium" : "text-muted-foreground"}`}>{s.label}</span>
               </div>
-              {i < steps.length - 1 && <div className={`w-6 h-0.5 mx-0.5 rounded ${step > s.num ? "bg-primary" : "bg-muted"}`} />}
+              {i < steps.length - 1 && <div className={`w-8 h-0.5 mx-1 rounded ${step > s.num ? "bg-primary" : "bg-muted"}`} />}
             </div>
           ))}
         </div>
@@ -323,7 +434,7 @@ export default function GPBagagesRegistration() {
                   )}
                   <div className="flex justify-end pt-2">
                     <Button onClick={handleNext} disabled={loading} className="gap-2">
-                      {loading ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <>Continuer <ArrowRight className="w-4 h-4" /></>}
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Continuer <ArrowRight className="w-4 h-4" /></>}
                     </Button>
                   </div>
                 </CardContent>
@@ -360,48 +471,16 @@ export default function GPBagagesRegistration() {
                     </div>
                   ) : (
                     <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-sm text-green-700 flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4" /> {departures.length} voyage(s)
+                      <CheckCircle className="w-4 h-4" /> {departures.length} voyage(s) programmé(s)
                     </div>
                   )}
-                  <div className="flex justify-end pt-2">
-                    <Button onClick={handleNext} className="gap-2">Continuer <ArrowRight className="w-4 h-4" /></Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-
-          {/* Step 4: Pricing */}
-          {step === 4 && (
-            <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <Card>
-                <CardContent className="p-5 space-y-4">
-                  <h2 className="text-lg font-semibold flex items-center gap-2">
-                    <Euro className="w-5 h-5 text-primary" /> Vos tarifs
-                  </h2>
-                  <p className="text-sm text-muted-foreground">2 prix de référence. Paliers calculés automatiquement.</p>
-                  <PricingInputForm pricePerKg={pricePerKg} forfaitValise={forfaitValise} currency={defaultCurrency}
-                    onPriceChange={setPricePerKg} onForfaitChange={setForfaitValise} onCurrencyChange={setDefaultCurrency} />
-                  
-                  <div className="space-y-3 mt-4">
-                    <p className="font-medium text-sm">Forfaits par objet (optionnel)</p>
-                    {DEFAULT_FLAT_RATE_OBJECTS.map((obj) => {
-                      const pricing = flatRatePricing.get(obj.id) || { price: "", isActive: false };
-                      return (
-                        <div key={obj.id} className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
-                          <span className="text-sm flex-1">{obj.label}</span>
-                          <Input type="number" placeholder={obj.defaultPrice.toString()} value={pricing.price}
-                            onChange={(e) => handleFlatRateChange(obj.id, "price", e.target.value)} className="h-10 w-24" />
-                          <span className="text-xs text-muted-foreground">{getCurrencySymbol(defaultCurrency)}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="flex justify-end pt-4">
-                    <Button onClick={handleSubmit} disabled={loading} className="gap-2">
-                      {loading ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <>Terminer <CheckCircle className="w-4 h-4" /></>}
+                  <div className="pt-2">
+                    <Button onClick={handleNext} disabled={loading} className="w-full h-12 gap-2">
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Valider et définir mes tarifs <ArrowRight className="w-4 h-4" /></>}
                     </Button>
+                    <p className="text-[11px] text-muted-foreground text-center mt-2">
+                      Vous devrez obligatoirement définir vos tarifs à l'étape suivante
+                    </p>
                   </div>
                 </CardContent>
               </Card>

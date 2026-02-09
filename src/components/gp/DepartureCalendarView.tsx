@@ -147,8 +147,9 @@ export function DepartureCalendarView({
   const handleDateClick = (date: Date) => {
     if (isBefore(date, startOfDay(new Date()))) return;
     setSelectedDate(date);
+    // Sync form with current smart route and pricing
     setNewDeparture({
-      capacity: "",
+      capacity: lastDeparture ? String(lastDeparture.capacity) : "",
       pricePerKg: String(lastDeparture?.pricePerKg || defaultPricePerKg),
       type: currentRoute.type,
       returnDate: "",
