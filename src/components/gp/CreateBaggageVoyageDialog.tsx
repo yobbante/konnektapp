@@ -1,5 +1,15 @@
+/**
+ * CreateBaggageVoyageDialog — Dashboard departure creation
+ * 
+ * RULES:
+ * - Fetches GP's locked route & pricing from DB
+ * - Route is NOT editable (navette fixe)
+ * - Price is NOT editable (locked at registration)
+ * - Only capacity, dates, flight info are editable
+ */
 import { useState, useEffect } from "react";
-import { Plane, ArrowRight, Calendar, Weight, DollarSign, Luggage, ToggleLeft } from "lucide-react";
+import { Plane, Weight, Calendar, Clock, CheckCircle, MapPin, Info } from "lucide-react";
+import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -13,8 +23,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { SearchableCountrySelect, CITIES_BY_COUNTRY, ALL_COUNTRIES } from "@/components/gp/SearchableCountrySelect";
-import { CurrencySelector, getCurrencySymbol } from "@/components/ui/currency-selector";
+import { getCurrencySymbol } from "@/components/ui/currency-selector";
+
+const FLAGS: Record<string, string> = {
+  FR: "🇫🇷", SN: "🇸🇳", CI: "🇨🇮", CM: "🇨🇲", ML: "🇲🇱", US: "🇺🇸", CA: "🇨🇦",
+  AE: "🇦🇪", GB: "🇬🇧", BE: "🇧🇪", MA: "🇲🇦", TN: "🇹🇳", GA: "🇬🇦", CG: "🇨🇬",
+  DE: "🇩🇪", ES: "🇪🇸", IT: "🇮🇹", CH: "🇨🇭", NL: "🇳🇱", GN: "🇬🇳",
+};
 
 interface CreateBaggageVoyageDialogProps {
   open: boolean;
@@ -40,344 +55,235 @@ export function CreateBaggageVoyageDialog({
 }: CreateBaggageVoyageDialogProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [isReturnTrip, setIsReturnTrip] = useState(false);
+  const [tripType, setTripType] = useState<"aller" | "retour">("aller");
   
+  // GP locked data (fetched from DB)
+  const [gpData, setGpData] = useState<{
+    baseOriginCity: string;
+    baseOriginCountry: string;
+    baseDestCity: string;
+    baseDestCountry: string;
+    basePricePerKg: number;
+    currency: string;
+  } | null>(null);
+
   const [formData, setFormData] = useState({
-    originCountry: "SN",
-    originCity: "",
-    destinationCountry: "FR",
-    destinationCity: "",
     departureDate: "",
     arrivalDate: "",
-    pricePerKg: "",
-    currency: "EUR",
     totalCapacity: "23",
     flightNumber: "",
     airline: "",
   });
 
-  // Smart pre-fill from last voyage
+  // Fetch GP's locked route & pricing
   useEffect(() => {
-    if (open && lastVoyage) {
-      // Inverse the route for return trip
-      setFormData({
-        originCountry: lastVoyage.destination_country,
-        originCity: lastVoyage.destination_city,
-        destinationCountry: lastVoyage.origin_country,
-        destinationCity: lastVoyage.origin_city,
-        departureDate: "",
-        arrivalDate: "",
-        pricePerKg: String(lastVoyage.price_per_kg),
-        currency: lastVoyage.currency || "EUR",
-        totalCapacity: "23",
-        flightNumber: "",
-        airline: "",
-      });
-      setIsReturnTrip(true);
-    } else if (open) {
-      // Reset to defaults
-      setFormData({
-        originCountry: "SN",
-        originCity: "",
-        destinationCountry: "FR",
-        destinationCity: "",
-        departureDate: "",
-        arrivalDate: "",
-        pricePerKg: "8",
-        currency: "EUR",
-        totalCapacity: "23",
-        flightNumber: "",
-        airline: "",
-      });
-      setIsReturnTrip(false);
+    if (open && gpId) {
+      loadGpData();
     }
-  }, [open, lastVoyage]);
+  }, [open, gpId]);
 
-  // Toggle trip type (aller/retour)
-  const handleToggleTripType = () => {
-    setFormData(prev => ({
-      ...prev,
-      originCountry: prev.destinationCountry,
-      originCity: prev.destinationCity,
-      destinationCountry: prev.originCountry,
-      destinationCity: prev.originCity,
-    }));
-    setIsReturnTrip(!isReturnTrip);
+  const loadGpData = async () => {
+    const { data } = await supabase
+      .from("gp_profiles")
+      .select("base_origin_city, base_origin_country, base_destination_city, base_destination_country, base_price_per_kg, default_currency")
+      .eq("id", gpId)
+      .single();
+
+    if (data) {
+      setGpData({
+        baseOriginCity: data.base_origin_city || "",
+        baseOriginCountry: data.base_origin_country || "",
+        baseDestCity: data.base_destination_city || "",
+        baseDestCountry: data.base_destination_country || "",
+        basePricePerKg: data.base_price_per_kg || 0,
+        currency: data.default_currency || "XOF",
+      });
+    }
   };
+
+  // Smart pre-fill trip type from last voyage
+  useEffect(() => {
+    if (open && lastVoyage && gpData) {
+      const lastWasAller = lastVoyage.origin_city === gpData.baseOriginCity;
+      setTripType(lastWasAller ? "retour" : "aller");
+    } else if (open) {
+      setTripType("aller");
+    }
+    setFormData({ departureDate: "", arrivalDate: "", totalCapacity: "23", flightNumber: "", airline: "" });
+  }, [open, lastVoyage, gpData]);
+
+  if (!gpData) return null;
+
+  const currentRoute = tripType === "aller"
+    ? { origin: { city: gpData.baseOriginCity, country: gpData.baseOriginCountry }, destination: { city: gpData.baseDestCity, country: gpData.baseDestCountry } }
+    : { origin: { city: gpData.baseDestCity, country: gpData.baseDestCountry }, destination: { city: gpData.baseOriginCity, country: gpData.baseOriginCountry } };
+
+  const currencySymbol = getCurrencySymbol(gpData.currency as any);
+  const getFlag = (code: string) => FLAGS[code] || "🌍";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.originCity || !formData.destinationCity || !formData.departureDate || !formData.pricePerKg) {
-      toast({
-        title: "Champs requis",
-        description: "Veuillez remplir tous les champs obligatoires",
-        variant: "destructive",
-      });
+    if (!formData.departureDate || !formData.totalCapacity) {
+      toast({ title: "Champs requis", description: "Date et capacité sont obligatoires", variant: "destructive" });
       return;
     }
 
-    const departureDate = new Date(formData.departureDate);
-    if (departureDate <= new Date()) {
-      toast({
-        title: "Date invalide",
-        description: "La date de départ doit être dans le futur",
-        variant: "destructive",
-      });
+    if (new Date(formData.departureDate) <= new Date()) {
+      toast({ title: "Date invalide", description: "La date doit être dans le futur", variant: "destructive" });
       return;
     }
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from("gp_offers")
-        .insert({
-          gp_id: gpId,
-          transport_type: "bagages_international",
-          origin_city: formData.originCity,
-          origin_country: formData.originCountry,
-          destination_city: formData.destinationCity,
-          destination_country: formData.destinationCountry,
-          departure_date: formData.departureDate,
-          arrival_date: formData.arrivalDate || null,
-          price_per_kg: parseInt(formData.pricePerKg),
-          currency: formData.currency,
-          total_capacity: parseFloat(formData.totalCapacity),
-          available_capacity: parseFloat(formData.totalCapacity),
-          flight_number: formData.flightNumber || null,
-          airline: formData.airline || null,
-          status: 'active',
-        });
+      const { error } = await supabase.from("gp_offers").insert({
+        gp_id: gpId,
+        transport_type: "bagages_international",
+        origin_city: currentRoute.origin.city,
+        origin_country: currentRoute.origin.country,
+        destination_city: currentRoute.destination.city,
+        destination_country: currentRoute.destination.country,
+        departure_date: formData.departureDate,
+        arrival_date: formData.arrivalDate || null,
+        price_per_kg: gpData.basePricePerKg,
+        currency: gpData.currency,
+        total_capacity: parseFloat(formData.totalCapacity),
+        available_capacity: parseFloat(formData.totalCapacity),
+        flight_number: formData.flightNumber || null,
+        airline: formData.airline || null,
+        status: "active",
+      });
 
       if (error) throw error;
 
       toast({
         title: "✈️ Voyage créé !",
-        description: `${formData.originCity} → ${formData.destinationCity}`,
+        description: `${currentRoute.origin.city} → ${currentRoute.destination.city}`,
       });
-
       onSuccess();
     } catch (error: any) {
-      console.error("Create voyage error:", error);
-      toast({
-        title: "Erreur",
-        description: error.message || "Impossible de créer le voyage",
-        variant: "destructive",
-      });
+      toast({ title: "Erreur", description: error.message || "Impossible de créer le voyage", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
-  const originCities = CITIES_BY_COUNTRY[formData.originCountry] || [];
-  const destinationCities = CITIES_BY_COUNTRY[formData.destinationCountry] || [];
-
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Plane className="w-5 h-5 text-primary" />
-            Nouveau voyage international
+      <DialogContent className="max-w-md p-0 overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-5">
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <Plane className="w-5 h-5" />
+            Nouveau voyage
           </DialogTitle>
-        </DialogHeader>
+          <p className="text-sm opacity-90 mt-1">
+            {currentRoute.origin.city} → {currentRoute.destination.city}
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Trip Type Toggle */}
-          <div className="flex justify-center">
-            <Button
-              type="button"
-              variant={isReturnTrip ? "secondary" : "outline"}
-              className="rounded-full px-6"
-              onClick={handleToggleTripType}
-            >
-              <ToggleLeft className="w-4 h-4 mr-2" />
-              {isReturnTrip ? "Retour" : "Aller"} - Inverser trajet
-            </Button>
-          </div>
-
-          {/* Route Card */}
-          <Card className="border-2 border-primary/20">
-            <CardContent className="pt-4 space-y-4">
-              {/* Origin */}
-              <div className="space-y-3">
-                <Label className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-green-500" />
-                  Départ
-                </Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <SearchableCountrySelect
-                    value={formData.originCountry}
-                    onValueChange={(value) => setFormData({ ...formData, originCountry: value, originCity: "" })}
-                    placeholder="Pays"
-                  />
-                  <select
-                    value={formData.originCity}
-                    onChange={(e) => setFormData({ ...formData, originCity: e.target.value })}
-                    className="h-10 px-3 rounded-md border border-input bg-background text-sm"
-                  >
-                    <option value="">Ville *</option>
-                    {originCities.map((city) => (
-                      <option key={city} value={city}>{city}</option>
-                    ))}
-                  </select>
+        <form onSubmit={handleSubmit} className="p-5 space-y-5">
+          {/* Locked route visual */}
+          <Card className="border-2 border-primary/20 bg-primary/5">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-center gap-4">
+                <div className="text-center">
+                  <span className="text-3xl">{getFlag(currentRoute.origin.country)}</span>
+                  <p className="text-sm font-bold mt-1">{currentRoute.origin.city}</p>
+                </div>
+                <motion.div animate={{ x: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
+                  <Plane className={`w-6 h-6 text-primary ${tripType === "retour" ? "rotate-180" : ""}`} />
+                </motion.div>
+                <div className="text-center">
+                  <span className="text-3xl">{getFlag(currentRoute.destination.country)}</span>
+                  <p className="text-sm font-bold mt-1">{currentRoute.destination.city}</p>
                 </div>
               </div>
-
-              {/* Arrow */}
-              <div className="flex justify-center">
-                <ArrowRight className="w-5 h-5 text-muted-foreground rotate-90" />
-              </div>
-
-              {/* Destination */}
-              <div className="space-y-3">
-                <Label className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-red-500" />
-                  Arrivée
-                </Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <SearchableCountrySelect
-                    value={formData.destinationCountry}
-                    onValueChange={(value) => setFormData({ ...formData, destinationCountry: value, destinationCity: "" })}
-                    placeholder="Pays"
-                  />
-                  <select
-                    value={formData.destinationCity}
-                    onChange={(e) => setFormData({ ...formData, destinationCity: e.target.value })}
-                    className="h-10 px-3 rounded-md border border-input bg-background text-sm"
-                  >
-                    <option value="">Ville *</option>
-                    {destinationCities.map((city) => (
-                      <option key={city} value={city}>{city}</option>
-                    ))}
-                  </select>
-                </div>
+              <div className="flex items-center justify-center mt-2">
+                <Badge variant="secondary" className="text-[10px] gap-1">
+                  <MapPin className="w-3 h-3" /> Navette verrouillée
+                </Badge>
               </div>
             </CardContent>
           </Card>
 
-          {/* Flight Details */}
+          {/* Trip type */}
+          <div className="grid grid-cols-2 gap-2">
+            <Button type="button" variant={tripType === "aller" ? "default" : "outline"} className="h-12" onClick={() => setTripType("aller")}>
+              <Plane className="w-4 h-4 mr-2" /> Aller
+            </Button>
+            <Button type="button" variant={tripType === "retour" ? "default" : "outline"} className="h-12" onClick={() => setTripType("retour")}>
+              <Plane className="w-4 h-4 mr-2 rotate-180" /> Retour
+            </Button>
+          </div>
+
+          {/* Dates */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1 text-sm">
-                <Calendar className="w-3 h-3" />
-                Date départ *
-              </Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs flex items-center gap-1"><Calendar className="w-3 h-3" /> Départ *</Label>
               <Input
                 type="datetime-local"
                 value={formData.departureDate}
                 min={new Date().toISOString().slice(0, 16)}
                 onChange={(e) => setFormData({ ...formData, departureDate: e.target.value })}
+                className="h-10"
               />
             </div>
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1 text-sm">
-                <Calendar className="w-3 h-3" />
-                Date arrivée
-              </Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs flex items-center gap-1"><Clock className="w-3 h-3" /> Arrivée</Label>
               <Input
                 type="datetime-local"
                 value={formData.arrivalDate}
                 min={formData.departureDate}
                 onChange={(e) => setFormData({ ...formData, arrivalDate: e.target.value })}
+                className="h-10"
               />
             </div>
           </div>
 
-          {/* Airline Info */}
+          {/* Flight info */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label className="text-sm">Compagnie aérienne</Label>
-              <Input
-                placeholder="Air Sénégal, Air France..."
-                value={formData.airline}
-                onChange={(e) => setFormData({ ...formData, airline: e.target.value })}
-              />
+            <div className="space-y-1.5">
+              <Label className="text-xs">Compagnie</Label>
+              <Input placeholder="Air Sénégal..." value={formData.airline} onChange={(e) => setFormData({ ...formData, airline: e.target.value })} className="h-10" />
             </div>
-            <div className="space-y-2">
-              <Label className="text-sm">N° Vol</Label>
-              <Input
-                placeholder="AF123"
-                value={formData.flightNumber}
-                onChange={(e) => setFormData({ ...formData, flightNumber: e.target.value })}
-              />
-            </div>
-          </div>
-
-          {/* Pricing with Currency */}
-          <div className="space-y-3">
-            <Label className="flex items-center gap-1 text-sm">
-              <DollarSign className="w-3 h-3" />
-              Tarification *
-            </Label>
-            <div className="grid grid-cols-3 gap-2">
-              <CurrencySelector
-                value={formData.currency}
-                onValueChange={(value) => setFormData({ ...formData, currency: value })}
-              />
-              <Input
-                type="number"
-                placeholder="8"
-                value={formData.pricePerKg}
-                onChange={(e) => setFormData({ ...formData, pricePerKg: e.target.value })}
-              />
-              <div className="flex items-center text-sm text-muted-foreground">
-                {getCurrencySymbol(formData.currency)}/kg
-              </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">N° Vol</Label>
+              <Input placeholder="AF123" value={formData.flightNumber} onChange={(e) => setFormData({ ...formData, flightNumber: e.target.value })} className="h-10" />
             </div>
           </div>
 
           {/* Capacity */}
           <div className="space-y-2">
-            <Label className="flex items-center gap-1 text-sm">
-              <Weight className="w-3 h-3" />
-              Capacité (kg) *
-            </Label>
+            <Label className="text-sm font-medium flex items-center gap-2"><Weight className="w-4 h-4" /> Capacité (kg) *</Label>
             <Input
               type="number"
-              placeholder="23"
+              inputMode="numeric"
+              placeholder="Ex: 30"
+              className="h-12 text-lg"
               value={formData.totalCapacity}
               onChange={(e) => setFormData({ ...formData, totalCapacity: e.target.value })}
             />
           </div>
 
-          {/* Summary */}
-          {formData.originCity && formData.destinationCity && (
-            <Card className="bg-muted/50">
-              <CardContent className="py-3">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <Luggage className="w-4 h-4 text-primary" />
-                    <span className="font-medium">
-                      {formData.originCity} → {formData.destinationCity}
-                    </span>
-                  </div>
-                  <Badge variant={isReturnTrip ? "secondary" : "default"}>
-                    {isReturnTrip ? "Retour" : "Aller"}
-                  </Badge>
-                </div>
-                {formData.pricePerKg && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {formData.pricePerKg} {getCurrencySymbol(formData.currency)}/kg • {formData.totalCapacity || 23}kg dispo
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          )}
+          {/* Locked price info */}
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
+            <span className="text-sm text-muted-foreground flex items-center gap-2">
+              <Info className="w-4 h-4" /> Prix verrouillé
+            </span>
+            <span className="font-bold text-sm">{gpData.basePricePerKg.toLocaleString()} {currencySymbol}/kg</span>
+          </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+          <div className="flex gap-3">
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-12">
               Annuler
             </Button>
-            <Button type="submit" className="flex-1" disabled={loading}>
+            <Button type="submit" className="flex-1 h-12" disabled={loading}>
               {loading ? (
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
-                <>
-                  <Plane className="w-4 h-4 mr-2" />
-                  Créer le voyage
-                </>
+                <><CheckCircle className="w-5 h-5 mr-2" /> Créer</>
               )}
             </Button>
           </div>
