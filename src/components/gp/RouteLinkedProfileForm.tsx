@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User, MapPin, Phone, MessageCircle, Check, AlertCircle, 
-  Plane, ArrowLeftRight, Sparkles, Info, Building
+  Plane, ArrowLeftRight, Building
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -220,59 +220,40 @@ export function RouteLinkedProfileForm({
         </CardContent>
       </Card>
 
-      {/* Route Card */}
-      <Card className="overflow-hidden">
-        <CardHeader className="pb-3 bg-gradient-to-r from-primary/5 to-secondary/5">
-          <div className="flex items-center gap-2">
-            <Plane className="w-5 h-5 text-primary" />
-            <CardTitle className="text-lg">Votre trajet de base</CardTitle>
-            <Badge variant="secondary" className="text-[10px]">Navette fixe</Badge>
-          </div>
-          <CardDescription className="flex items-center gap-1 text-xs">
-            <Info className="w-3 h-3" />
-            Ce trajet définit vos points de dépôt et réception
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-4 space-y-4">
-          {/* Visual route display */}
-          <motion.div 
-            className="flex items-center justify-center gap-3 py-4"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-          >
-            <div className="text-center">
-              <span className="text-4xl">{originFlag}</span>
-              <p className="text-sm font-semibold mt-1">{data.originCity}</p>
+      {/* Route Card - Simplified */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Plane className="w-5 h-5 text-primary" />
+              <CardTitle className="text-lg">Trajet navette</CardTitle>
             </div>
-            
             <Button 
               type="button"
-              variant="ghost" 
-              size="icon"
+              variant="outline" 
+              size="sm"
               onClick={handleSwapRoute}
-              className="h-12 w-12 rounded-full bg-background border-2 hover:bg-accent shadow-sm"
+              className="gap-1.5 h-8 text-xs"
             >
-              <ArrowLeftRight className="w-5 h-5" />
+              <ArrowLeftRight className="w-3.5 h-3.5" />
+              Inverser
             </Button>
-            
-            <div className="text-center">
-              <span className="text-4xl">{destFlag}</span>
-              <p className="text-sm font-semibold mt-1">{data.destinationCity}</p>
-            </div>
-          </motion.div>
-
-          {/* Route badge */}
-          <div className="flex justify-center">
-            <Badge className="px-4 py-2 text-sm font-medium bg-primary/10 text-primary border-primary/20">
-              <Plane className="w-4 h-4 mr-2" />
-              {data.originCity} → {data.destinationCity}
-            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Route summary */}
+          <div className="flex items-center justify-center gap-3 py-2 px-4 rounded-lg bg-muted/50">
+            <span className="text-2xl">{originFlag}</span>
+            <span className="font-semibold text-sm">{data.originCity}</span>
+            <ArrowLeftRight className="w-4 h-4 text-muted-foreground" />
+            <span className="font-semibold text-sm">{data.destinationCity}</span>
+            <span className="text-2xl">{destFlag}</span>
           </div>
 
-          {/* City selectors - Using SearchableCitySelect */}
+          {/* City selectors */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Ville de départ</Label>
+              <Label className="text-xs text-muted-foreground">Départ</Label>
               <SearchableCitySelect
                 value={data.originCity}
                 countryCode={data.originCountry}
@@ -282,7 +263,7 @@ export function RouteLinkedProfileForm({
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Ville d'arrivée</Label>
+              <Label className="text-xs text-muted-foreground">Arrivée</Label>
               <SearchableCitySelect
                 value={data.destinationCity}
                 countryCode={data.destinationCountry}
@@ -294,26 +275,20 @@ export function RouteLinkedProfileForm({
           </div>
 
           {/* Quick routes */}
-          <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground flex items-center gap-1">
-              <Sparkles className="w-3 h-3" />
-              Trajets populaires
-            </Label>
-            <div className="flex flex-wrap gap-2">
-              {POPULAR_ROUTES.map((route, i) => {
-                const isSelected = data.originCity === route.originCity && data.destinationCity === route.destCity;
-                return (
-                  <Badge
-                    key={i}
-                    variant={isSelected ? "default" : "outline"}
-                    className="cursor-pointer py-1.5 px-3 hover:bg-accent transition-all text-xs active:scale-95"
-                    onClick={() => handleQuickRoute(route)}
-                  >
-                    {route.originCity} → {route.destCity}
-                  </Badge>
-                );
-              })}
-            </div>
+          <div className="flex flex-wrap gap-1.5">
+            {POPULAR_ROUTES.map((route, i) => {
+              const isSelected = data.originCity === route.originCity && data.destinationCity === route.destCity;
+              return (
+                <Badge
+                  key={i}
+                  variant={isSelected ? "default" : "outline"}
+                  className="cursor-pointer py-1 px-2.5 text-[11px] active:scale-95"
+                  onClick={() => handleQuickRoute(route)}
+                >
+                  {route.originCity} → {route.destCity}
+                </Badge>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
