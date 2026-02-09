@@ -30,7 +30,11 @@ const ADMIN_ROUTES = [
   "/admin/gp",
   "/admin/order",
   "/admin/messages",
+  "/admin/search",
 ];
+
+// Routes réservées aux agents logistiques
+const AGENT_ROUTES = ["/agent"];
 
 // Routes réservées aux transporteurs
 const TRANSPORTER_ROUTES = [
@@ -111,6 +115,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
       const roles = rolesData?.map(r => r.role) || [];
       const hasAdminAccess = roles.includes("admin") || roles.includes("moderator");
+      const isAgent = roles.includes("agent_logistique");
 
       // Check if user is GP
       const { data: gpProfile } = await supabase
@@ -125,6 +130,20 @@ export function AuthGuard({ children }: AuthGuardProps) {
       if (isAdminRoute(pathname) && !hasAdminAccess) {
         console.warn("Access denied: Admin route requires admin/moderator role");
         navigate(isGP ? "/gp/dashboard" : "/client/dashboard", { replace: true });
+        return;
+      }
+
+      // Agent route enforcement — strict redirect
+      const isOnAgentRoute = AGENT_ROUTES.some(route => pathname.startsWith(route));
+      if (isOnAgentRoute && !isAgent && !hasAdminAccess) {
+        console.warn("Access denied: Agent route requires agent_logistique role");
+        navigate("/", { replace: true });
+        return;
+      }
+
+      // Agent strict isolation: if agent and NOT admin, force to /agent
+      if (isAgent && !hasAdminAccess && !isOnAgentRoute && !isPublicRoute(pathname)) {
+        navigate("/agent", { replace: true });
         return;
       }
 
