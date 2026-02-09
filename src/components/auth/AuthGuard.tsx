@@ -19,7 +19,7 @@ const PUBLIC_ROUTES = [
   "/offres",
   "/install",
   "/",
-  "/client/transporteurs", // Public transporter profiles for clients
+  "/client/transporteurs",
 ];
 
 // Routes réservées aux admins
@@ -33,10 +33,8 @@ const ADMIN_ROUTES = [
   "/admin/search",
 ];
 
-// Routes réservées aux agents logistiques
 const AGENT_ROUTES = ["/agent"];
 
-// Routes réservées aux transporteurs
 const TRANSPORTER_ROUTES = [
   "/gp/dashboard",
   "/gp/requests",
@@ -44,34 +42,33 @@ const TRANSPORTER_ROUTES = [
   "/transporter/profile",
 ];
 
-// Routes réservées aux clients
 const CLIENT_ROUTES = [
   "/client/dashboard",
   "/client/profile",
 ];
 
-// Vérifie si le chemin correspond à une route publique
+// Super admin email — only sees admin dashboards
+const SUPER_ADMIN_EMAIL = "workbasse@outlook.fr";
+// Agent email — always redirected to /agent
+const AGENT_EMAIL = "bass96@live.fr";
+
 const isPublicRoute = (pathname: string): boolean => {
   return PUBLIC_ROUTES.some(route => {
     if (route === pathname) return true;
-    // Gérer les routes avec paramètres (ex: /offres/:id, /client/transporteurs/:gpId)
     if (pathname.startsWith(route + "/")) return true;
     if (route.endsWith("/") && pathname.startsWith(route)) return true;
     return false;
   });
 };
 
-// Vérifie si le chemin correspond à une route admin
 const isAdminRoute = (pathname: string): boolean => {
   return ADMIN_ROUTES.some(route => pathname.startsWith(route));
 };
 
-// Vérifie si le chemin correspond à une route transporteur
 const isTransporterRoute = (pathname: string): boolean => {
   return TRANSPORTER_ROUTES.some(route => pathname.startsWith(route));
 };
 
-// Vérifie si le chemin correspond à une route client
 const isClientRoute = (pathname: string): boolean => {
   return CLIENT_ROUTES.some(route => pathname.startsWith(route));
 };
@@ -93,20 +90,29 @@ export function AuthGuard({ children }: AuthGuardProps) {
         }
       } else if (event === "SIGNED_IN" && session) {
         setAuthenticated(true);
-        checkRoleAccess(session.user.id);
+        checkRoleAccess(session.user.id, session.user.email || "");
       }
     });
 
     return () => subscription.unsubscribe();
   }, [location.pathname, navigate]);
 
-  const checkRoleAccess = async (userId: string) => {
+  const checkRoleAccess = async (userId: string, email: string) => {
     const pathname = location.pathname;
     
-    // Skip role checks for public routes
     if (isPublicRoute(pathname)) return;
 
     try {
+      // ── AGENT EMAIL: always redirect to /agent ──
+      if (email.toLowerCase() === AGENT_EMAIL) {
+        const isOnAgentRoute = AGENT_ROUTES.some(route => pathname.startsWith(route));
+        if (!isOnAgentRoute) {
+          navigate("/agent", { replace: true });
+          return;
+        }
+        return;
+      }
+
       // Check admin/moderator roles
       const { data: rolesData } = await supabase
         .from("user_roles")
@@ -116,6 +122,15 @@ export function AuthGuard({ children }: AuthGuardProps) {
       const roles = rolesData?.map(r => r.role) || [];
       const hasAdminAccess = roles.includes("admin") || roles.includes("moderator");
       const isAgent = roles.includes("agent_logistique");
+
+      // ── SUPER ADMIN: only admin dashboards ──
+      if (email.toLowerCase() === SUPER_ADMIN_EMAIL && hasAdminAccess) {
+        if (!isAdminRoute(pathname) && pathname !== "/settings") {
+          navigate("/admin", { replace: true });
+          return;
+        }
+        return;
+      }
 
       // Check if user is GP
       const { data: gpProfile } = await supabase
@@ -152,11 +167,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
         navigate("/client/dashboard", { replace: true });
         return;
       }
-
-      if (isClientRoute(pathname) && isGP && !hasAdminAccess) {
-        // GPs accessing client routes - allow it for multi-role switch
-        // But they should use switch button to navigate properly
-      }
     } catch (error) {
       console.error("Role check error:", error);
     }
@@ -174,7 +184,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
       } else {
         setAuthenticated(!!session || isPublic);
         if (session) {
-          await checkRoleAccess(session.user.id);
+          await checkRoleAccess(session.user.id, session.user.email || "");
         }
       }
     } catch (error) {

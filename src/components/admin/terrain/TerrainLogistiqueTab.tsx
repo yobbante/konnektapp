@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import type { TerrainOrder } from "@/pages/AdminTerrainDashboard";
+import { AddLivreurByEmail } from "@/components/admin/AddLivreurByEmail";
 
 interface Props {
   orders: TerrainOrder[];
@@ -148,7 +149,8 @@ export function TerrainLogistiqueTab({ orders, onRefresh }: Props) {
         )}
       </TabsContent>
 
-      <TabsContent value="agents" className="space-y-2">
+      <TabsContent value="agents" className="space-y-3">
+        <AddLivreurByEmail />
         {agents.length === 0 ? (
           <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">Aucun agent configuré</CardContent></Card>
         ) : (
