@@ -14,7 +14,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Shield, RefreshCw, ScanLine, Package, Truck, AlertTriangle,
-  Eye, MapPin, Users
+  Eye, MapPin, Users, BarChart3
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -178,6 +178,15 @@ export default function AdminTerrainDashboard() {
                 {stats.litiges} litige{stats.litiges > 1 ? "s" : ""}
               </Badge>
             )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/admin/bureau")}
+              className="bg-white/10 hover:bg-white/20 text-white w-8 h-8 rounded-xl"
+              title="Dashboard Bureau"
+            >
+              <BarChart3 className="w-4 h-4" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
