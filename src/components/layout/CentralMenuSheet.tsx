@@ -4,7 +4,9 @@ import {
   User, Truck, Settings, Heart, Bell, Search, 
   LogOut, HelpCircle, ChevronRight, Home,
   Package, Gift, History, UserPlus, Moon, Sun,
-  BookOpen, Shield, MessageCircle, MapPin
+  BookOpen, Shield, MessageCircle, MapPin,
+  LayoutDashboard, Users, ClipboardList, AlertTriangle,
+  ScanLine, BarChart3
 } from "lucide-react";
 import {
   Sheet,
@@ -26,10 +28,6 @@ interface CentralMenuSheetProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-/**
- * Menu Central Unifié - Navigation Hub
- * Remplace tous les anciens menus (MobileHeader sheet, etc.)
- */
 export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSheetProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -70,6 +68,7 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
   const isInGPMode = location.pathname.startsWith("/gp") || location.pathname.startsWith("/transporter");
   const isInAdminMode = location.pathname.startsWith("/admin");
   const isInRoutierMode = location.pathname.startsWith("/routier");
+  const hasAdminAccess = isAdmin || isModerator;
 
   const getMenuSections = () => {
     if (!isAuthenticated) {
@@ -101,15 +100,56 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
 
     const sections = [];
 
-    // Context-aware title section
+    // ─── ADMIN MODE: admin-specific menu ───
+    if (isInAdminMode && hasAdminAccess) {
+      sections.push({
+        title: "Admin — Terrain",
+        items: [
+          { icon: LayoutDashboard, label: "Dashboard Terrain", href: "/admin" },
+          { icon: ScanLine, label: "Scan & Actions", href: "/admin" },
+          { icon: Package, label: "Colis actifs", href: "/admin" },
+          { icon: Truck, label: "GP & Logistique", href: "/admin" },
+          { icon: AlertTriangle, label: "Alertes & Litiges", href: "/admin" },
+        ]
+      });
+      sections.push({
+        title: "Admin — Bureau",
+        items: [
+          { icon: BarChart3, label: "Dashboard Bureau", href: "/admin/bureau" },
+          { icon: ClipboardList, label: "Commandes", href: "/admin/orders" },
+          { icon: Users, label: "Transporteurs", href: "/admin/bureau" },
+          { icon: MessageCircle, label: "Messages", href: "/admin/messages" },
+          { icon: Shield, label: "Permissions", href: "/admin/bureau" },
+        ]
+      });
+      sections.push({
+        title: "Outils",
+        items: [
+          { icon: Settings, label: "Paramètres", href: "/settings" },
+        ]
+      });
+      return sections;
+    }
+
+    // ─── GP MODE ───
     if (isInGPMode) {
       sections.push({
-        title: "Konnekt GP",
+        title: "Menu GP",
         items: [
-          { icon: Home, label: "Accueil Konnekt", href: "/" },
-          { icon: Package, label: "Mes missions", href: "/gp/demandes" },
+          { icon: Home, label: "Aperçu", href: "/gp/apercu" },
+          { icon: Package, label: "Demandes", href: "/gp/demandes" },
+          { icon: History, label: "Départs", href: "/gp/calendrier" },
+          { icon: MessageCircle, label: "Messages", href: "/gp/messages" },
+        ]
+      });
+      sections.push({
+        title: "Gestion",
+        items: [
+          { icon: Search, label: "Tarifs", href: "/gp/tarification" },
           { icon: History, label: "Historique", href: "/gp/historique" },
-          { icon: MessageCircle, label: "Messages", href: "/messages" },
+          { icon: Shield, label: "KTP & Geo", href: "/gp/ktp-geotrack" },
+          { icon: MapPin, label: "Profil public", href: "/gp/profil-public" },
+          { icon: Settings, label: "Réglages", href: "/gp/parametres" },
         ]
       });
     } else if (isInRoutierMode) {
@@ -123,29 +163,26 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
         ]
       });
     } else {
+      // ─── CLIENT MODE: client-specific menu ───
       sections.push({
-        title: "Navigation",
+        title: "Envois",
         items: [
           { icon: Home, label: "Accueil", href: "/" },
-          { icon: Search, label: "Offres disponibles", href: "/offres" },
           { icon: Package, label: "Envoyer un colis", href: "/envoyer" },
-          { icon: MessageCircle, label: "Messages", href: "/messages" },
+          { icon: Search, label: "Offres disponibles", href: "/offres" },
+          { icon: MapPin, label: "Suivre un colis", href: "/tracking" },
         ]
       });
-    }
-
-    // Espace utilisateur — only in client mode
-    if (!isInGPMode && !isInAdminMode && !isInRoutierMode) {
       sections.push({
         title: "Mon espace",
         items: [
           { icon: User, label: "Mon profil", href: "/profil" },
-          { icon: History, label: "Historique complet", href: "/historique" },
+          { icon: MessageCircle, label: "Messages", href: "/messages" },
+          { icon: History, label: "Historique", href: "/historique" },
           { icon: Heart, label: "Mes favoris", href: "/favoris" },
-          { icon: Bell, label: "Mes alertes", href: "/saved-searches" },
+          { icon: Bell, label: "Alertes sauvegardées", href: "/saved-searches" },
         ]
       });
-
       sections.push({
         title: "Récompenses",
         items: [
@@ -154,23 +191,34 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
       });
     }
 
-    // Cross-role access buttons
-    if (isGP && !isInGPMode) {
-      sections.push({
-        title: "Espace Transporteur",
-        items: [
-          { icon: Truck, label: gpBusinessName || "Dashboard GP", href: "/gp/demandes", highlight: true },
-        ]
-      });
-    }
+    // Cross-role access buttons (only in client/GP mode, not admin)
+    if (!isInAdminMode) {
+      if (isGP && !isInGPMode) {
+        sections.push({
+          title: "Espace Transporteur",
+          items: [
+            { icon: Truck, label: gpBusinessName || "Dashboard GP", href: "/gp/apercu", highlight: true },
+          ]
+        });
+      }
 
-    if ((isAdmin || isModerator) && !isInAdminMode) {
-      sections.push({
-        title: "Administration",
-        items: [
-          { icon: Shield, label: "Konnekt Admin", href: "/admin", highlight: true },
-        ]
-      });
+      if (hasAdminAccess) {
+        sections.push({
+          title: "Administration",
+          items: [
+            { icon: Shield, label: "Konnekt Admin", href: "/admin", highlight: true },
+          ]
+        });
+      }
+
+      if (!isGP && isAuthenticated && !isInRoutierMode) {
+        sections.push({
+          title: "Opportunités",
+          items: [
+            { icon: Truck, label: "Devenir transporteur", href: "/transporteur/inscription", highlight: true },
+          ]
+        });
+      }
     }
 
     sections.push({
@@ -181,19 +229,26 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
       ]
     });
 
-    if (!isGP && isAuthenticated) {
-      sections.push({
-        title: "Opportunités",
-        items: [
-          { icon: Truck, label: "Devenir transporteur", href: "/transporteur/inscription", highlight: true },
-        ]
-      });
-    }
-
     return sections;
   };
 
   const menuSections = getMenuSections();
+
+  // Determine menu title based on context
+  const getMenuTitle = () => {
+    if (!isAuthenticated) return "Bienvenue sur Konnekt";
+    if (isInAdminMode) return "Menu Admin";
+    if (isInGPMode) return "Menu GP";
+    if (isInRoutierMode) return "Menu Routier";
+    return "Menu Client";
+  };
+
+  // Determine menu icon color based on context
+  const getMenuIconClass = () => {
+    if (isInAdminMode) return "bg-[hsl(240,75%,28%)]/10 text-[hsl(240,75%,28%)]";
+    if (isInGPMode) return "bg-primary/10 text-primary";
+    return "bg-[hsl(185,60%,45%)]/10 text-[hsl(185,60%,45%)]";
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -207,10 +262,10 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
       >
         <SheetHeader className="px-4 pb-3 border-b border-border/50">
           <SheetTitle className="text-left text-lg flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Package className="w-4 h-4 text-primary" />
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${getMenuIconClass()}`}>
+              {isInAdminMode ? <Shield className="w-4 h-4" /> : <Package className="w-4 h-4" />}
             </div>
-            {isAuthenticated ? "Menu Konnekt" : "Bienvenue sur Konnekt"}
+            {getMenuTitle()}
           </SheetTitle>
         </SheetHeader>
 
