@@ -268,6 +268,51 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_confirmations: {
+        Row: {
+          confirmed_at: string
+          confirmed_by_name: string | null
+          confirmed_by_phone: string
+          created_account: boolean | null
+          created_user_id: string | null
+          id: string
+          order_id: string
+        }
+        Insert: {
+          confirmed_at?: string
+          confirmed_by_name?: string | null
+          confirmed_by_phone: string
+          created_account?: boolean | null
+          created_user_id?: string | null
+          id?: string
+          order_id: string
+        }
+        Update: {
+          confirmed_at?: string
+          confirmed_by_name?: string | null
+          confirmed_by_phone?: string
+          created_account?: boolean | null
+          created_user_id?: string | null
+          id?: string
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_confirmations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "delivery_confirmations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dispute_history: {
         Row: {
           action: string
@@ -2098,6 +2143,9 @@ export type Database = {
           created_at: string
           currency: string
           declared_value: number | null
+          delivery_code: string | null
+          delivery_confirmed_at: string | null
+          delivery_confirmed_by_phone: string | null
           delivery_date: string | null
           description: string | null
           destination_city: string
@@ -2119,6 +2167,9 @@ export type Database = {
           payment_status: string | null
           pickup_date: string | null
           price_per_kg: number
+          recipient_name: string | null
+          recipient_phone: string | null
+          recipient_user_id: string | null
           status: Database["public"]["Enums"]["order_status"]
           total_price: number
           tracking_code: string | null
@@ -2136,6 +2187,9 @@ export type Database = {
           created_at?: string
           currency?: string
           declared_value?: number | null
+          delivery_code?: string | null
+          delivery_confirmed_at?: string | null
+          delivery_confirmed_by_phone?: string | null
           delivery_date?: string | null
           description?: string | null
           destination_city: string
@@ -2157,6 +2211,9 @@ export type Database = {
           payment_status?: string | null
           pickup_date?: string | null
           price_per_kg: number
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          recipient_user_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           total_price: number
           tracking_code?: string | null
@@ -2174,6 +2231,9 @@ export type Database = {
           created_at?: string
           currency?: string
           declared_value?: number | null
+          delivery_code?: string | null
+          delivery_confirmed_at?: string | null
+          delivery_confirmed_by_phone?: string | null
           delivery_date?: string | null
           description?: string | null
           destination_city?: string
@@ -2195,6 +2255,9 @@ export type Database = {
           payment_status?: string | null
           pickup_date?: string | null
           price_per_kg?: number
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          recipient_user_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           total_price?: number
           tracking_code?: string | null

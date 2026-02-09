@@ -10,7 +10,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   Package, Truck, Scale, CheckCircle, AlertTriangle,
-  User, History, ArrowRight, ShieldAlert
+  User, History, ArrowRight, ShieldAlert, Smartphone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,7 @@ import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { useDuplicateScanCheck } from "@/hooks/useDuplicateScanCheck";
 import { ScanStatusBadge } from "./ScanStatusBadge";
 import { validateScanAction, isTerminalStatus, type ScanAction } from "@/lib/scanValidation";
+import { ExternalHandoverCard } from "@/components/gp/ExternalHandoverCard";
 
 interface ScanResultGPProps {
   order: {
@@ -40,6 +41,10 @@ interface ScanResultGPProps {
     client_id: string;
     description: string | null;
     scan_history?: Array<{ action: string; user_role: string; created_at: string }>;
+    delivery_code?: string | null;
+    recipient_name?: string | null;
+    recipient_phone?: string | null;
+    recipient_user_id?: string | null;
   };
   gpId: string;
   logScan: (orderId: string, action: string, scanType?: string, prevStatus?: string, newStatus?: string, meta?: Record<string, any>) => Promise<void>;
@@ -336,33 +341,51 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
 
       {/* Delivery Mode */}
       {isDeliveryMode && (
-        <Card className="border-success/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Truck className="w-4 h-4 text-success" />
-              Confirmer la livraison
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Scannez le QR à la remise au destinataire pour confirmer la livraison.
-            </p>
-            <Button 
-              className="w-full h-12 bg-success hover:bg-success/90 text-success-foreground" 
-              onClick={confirmDelivery} 
-              disabled={loading}
-            >
-              {loading ? (
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Confirmer livraison
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
+        <>
+          {/* External handover — recipient has no app */}
+          {!order.recipient_user_id && order.delivery_code && (
+            <ExternalHandoverCard
+              orderId={order.id}
+              orderNumber={order.order_number}
+              deliveryCode={order.delivery_code}
+              recipientName={order.recipient_name}
+              recipientPhone={order.recipient_phone}
+              onConfirmManual={confirmDelivery}
+              loading={loading}
+            />
+          )}
+
+          {/* Standard delivery confirmation — recipient has app or no external flow */}
+          {(order.recipient_user_id || !order.delivery_code) && (
+            <Card className="border-success/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Truck className="w-4 h-4 text-success" />
+                  Confirmer la livraison
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Scannez le QR à la remise au destinataire pour confirmer la livraison.
+                </p>
+                <Button 
+                  className="w-full h-12 bg-success hover:bg-success/90 text-success-foreground" 
+                  onClick={confirmDelivery} 
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Confirmer livraison
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
       {/* Scan History */}
