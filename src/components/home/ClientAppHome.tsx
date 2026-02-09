@@ -12,6 +12,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { WeightValidationAlert } from "@/components/client/WeightValidationAlert";
+import { DepositAddressPopup } from "@/components/client/DepositAddressPopup";
 import { supabase } from "@/integrations/supabase/client";
 import QRCode from "react-qr-code";
 
@@ -697,6 +698,16 @@ function FullScreenOrderDetails({
                         {order.gp_deposit_address || "Adresse disponible après acceptation"}
                       </p>
                     </div>
+                    {/* PRV §9: Deposit Address Popup with interactive icons */}
+                    {order.gp_deposit_address && (
+                      <DepositAddressPopup
+                        depositAddress={order.gp_deposit_address}
+                        phone={order.gp_whatsapp}
+                        whatsapp={order.gp_whatsapp}
+                        gpName="Transporteur"
+                        isActive={order.status === "accepted"}
+                      />
+                    )}
                   </div>
                 )}
 
