@@ -37,6 +37,7 @@ import ClientTransporterProfile from "./pages/ClientTransporterProfile";
 import Auth from "./pages/Auth";
 import Tracking from "./pages/Tracking";
 import Messages from "./pages/Messages";
+import AdminTerrainDashboard from "./pages/AdminTerrainDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminSearchResults from "./pages/AdminSearchResults";
 import AdminDepartures from "./pages/AdminDepartures";
@@ -195,7 +196,8 @@ const App = () => (
             {/* ============================================
                 ADMIN ROUTES - Dashboard admin
             ============================================ */}
-            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin" element={<AdminTerrainDashboard />} />
+            <Route path="/admin/bureau" element={<AdminDashboard />} />
             <Route path="/admin/search" element={<AdminSearchResults />} />
             <Route path="/admin/departures" element={<AdminDepartures />} />
             <Route path="/admin/orders" element={<AdminOrders />} />
