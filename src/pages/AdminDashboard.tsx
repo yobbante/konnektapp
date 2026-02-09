@@ -26,6 +26,8 @@ import { AdminAutoMessageTemplates } from "@/components/admin/AdminAutoMessageTe
 import { AdminLogisticsOrdersV2 } from "@/components/admin/AdminLogisticsOrdersV2";
 import { AdminConfigPanel } from "@/components/admin/AdminConfigPanel";
 import { AdminMovingRequestsTab } from "@/components/admin/AdminMovingRequestsTab";
+import { AdminNavetteApprovals } from "@/components/admin/AdminNavetteApprovals";
+import { AdminGPApprovalPanel } from "@/components/admin/AdminGPApprovalPanel";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { assertValidGpStatus, type GpStatus } from "@/lib/enumMappings";
 
@@ -406,7 +408,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* Overview - Now includes logistics preview + stats overview */}
+          {/* Overview - Now includes logistics preview + GP approvals + stats */}
           <TabsContent value="overview" className="space-y-4">
             {/* Logistics Alert Preview */}
             <AdminLogisticsOrdersV2 compact />
@@ -419,12 +421,11 @@ export default function AdminDashboard() {
               <QuickStatCard label="Revenus" value={`${(stats.totalRevenue / 1000).toFixed(0)}k`} suffix="FCFA" />
             </div>
 
-            <AdminPendingGPs 
-              gps={gps}
-              onVerify={(id) => updateGPStatus(id, "verified")}
-              onReject={(id) => updateGPStatus(id, "rejected")}
-              onViewDetails={handleViewDetails}
-            />
+            {/* Enhanced GP Approval Panel — with pricing/route/currency verification */}
+            <AdminGPApprovalPanel />
+            
+            {/* Navette Change Requests */}
+            <AdminNavetteApprovals />
           </TabsContent>
 
           {/* Stats Charts */}
