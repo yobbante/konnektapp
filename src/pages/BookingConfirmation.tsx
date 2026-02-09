@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CheckCircle, Package, MapPin, Calendar, User, MessageCircle, Home, ArrowRight, Plane, Clock, Shield, Copy, Phone, MapPinned, Lock, Eye, QrCode, Building2 } from "lucide-react";
+import { CheckCircle, Package, MapPin, Calendar, User, MessageCircle, Home, ArrowRight, Plane, Clock, Shield, Copy, Phone, MapPinned, Lock, Eye, QrCode, Building2, Download, FileText } from "lucide-react";
 import { DepartureInfoCard } from "@/components/booking/DepartureInfoCard";
 import { PDFDownloadGate } from "@/components/booking/PDFDownloadGate";
 import { DepositAddressPopup } from "@/components/client/DepositAddressPopup";
@@ -15,8 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useGPContactRelease } from "@/hooks/useGPContactRelease";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { OrderQRCode } from "@/components/client/OrderQRCode";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { LogisticsLabelGenerator } from "@/components/logistics/LogisticsLabelGenerator";
+
 interface OrderDetails {
   id: string;
   order_number: string;
@@ -34,6 +34,7 @@ interface OrderDetails {
   gp_id: string;
   offer_id: string | null;
 }
+
 interface OfferDetails {
   departure_date: string;
   arrival_date: string | null;
@@ -44,19 +45,16 @@ interface OfferDetails {
   destination_city: string;
   destination_country: string;
 }
+
 export default function BookingConfirmation() {
-  const {
-    orderId
-  } = useParams();
+  const { orderId } = useParams();
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [offer, setOffer] = useState<OfferDetails | null>(null);
+  const [pdfGatePassed, setPdfGatePassed] = useState(false);
 
-  // Progressive release hook
   const {
     publicInfo,
     contactInfo,
@@ -69,41 +67,29 @@ export default function BookingConfirmation() {
     status: order.status,
     paymentStatus: order.payment_status
   } : undefined);
+
   useEffect(() => {
     loadOrderDetails();
   }, [orderId]);
+
   const loadOrderDetails = async () => {
-    if (!orderId) {
-      navigate("/");
-      return;
-    }
+    if (!orderId) { navigate("/"); return; }
     try {
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
-      if (!user) {
-        navigate("/auth");
-        return;
-      }
-      const {
-        data: orderData,
-        error: orderError
-      } = await supabase.from("orders").select("*").eq("id", orderId).eq("client_id", user.id).single();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { navigate("/auth"); return; }
+      const { data: orderData, error: orderError } = await supabase
+        .from("orders").select("*").eq("id", orderId).eq("client_id", user.id).single();
       if (orderError || !orderData) {
-        toast({
-          title: "Commande non trouvée",
-          variant: "destructive"
-        });
+        toast({ title: "Commande non trouvée", variant: "destructive" });
         navigate("/client/dashboard");
         return;
       }
       setOrder(orderData);
       if (orderData.offer_id) {
-        const {
-          data: offerData
-        } = await supabase.from("gp_offers").select("departure_date, arrival_date, airline, flight_number, origin_city, origin_country, destination_city, destination_country").eq("id", orderData.offer_id).single();
+        const { data: offerData } = await supabase
+          .from("gp_offers")
+          .select("departure_date, arrival_date, airline, flight_number, origin_city, origin_country, destination_city, destination_country")
+          .eq("id", orderData.offer_id).single();
         if (offerData) setOffer(offerData);
       }
     } catch (error) {
@@ -112,63 +98,76 @@ export default function BookingConfirmation() {
       setLoading(false);
     }
   };
+
   const copyOrderNumber = () => {
     if (order?.order_number) {
       navigator.clipboard.writeText(order.order_number);
-      toast({
-        title: "Numéro copié",
-        description: order.order_number
-      });
+      toast({ title: "Numéro copié", description: order.order_number });
     }
   };
-  const handleContactGP = () => {
-    navigate("/messages");
-  };
+
+  const handleContactGP = () => navigate("/messages");
+
+  const handlePdfUnlocked = useCallback(() => setPdfGatePassed(true), []);
+
+  // Loading state
   if (loading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
-      </div>;
+      </div>
+    );
   }
+
+  // Order not found
   if (!order) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground">Commande non trouvée</p>
           <Button onClick={() => navigate("/")} className="mt-4">Retour à l'accueil</Button>
         </div>
-      </div>;
+      </div>
+    );
   }
+
+  // ─── STEP 1: PDF GATE (full screen, blocks everything) ───
+  if (!pdfGatePassed) {
+    return (
+      <PDFDownloadGate
+        order={{
+          orderNumber: order.order_number,
+          orderId: order.id,
+          clientName: publicInfo?.business_name || "Client",
+          gpName: publicInfo?.business_name || "Transporteur",
+          originCity: order.origin_city,
+          destinationCity: order.destination_city,
+          originCountry: order.origin_country,
+          destinationCountry: order.destination_country,
+          weight: order.weight,
+          description: order.description,
+        }}
+        onUnlocked={handlePdfUnlocked}
+      />
+    );
+  }
+
+  // ─── STEP 2: FULL CONFIRMATION (after PDF downloaded) ───
   const currencySymbol = getCurrencySymbol(order.currency);
   const isPaid = order.payment_status === "paid" || ["accepted", "collected", "in_transit", "delivered"].includes(order.status);
   const isDelivered = order.status === "delivered";
-  return <div className="min-h-screen bg-background pb-safe">
+
+  return (
+    <div className="min-h-screen bg-background pb-safe">
       <MobileHeader />
 
-      <div className="px-4 py-6" style={{
-      paddingBottom: 'calc(100px + env(safe-area-inset-bottom, 0px))'
-    }}>
+      <div className="px-4 py-6" style={{ paddingBottom: 'calc(100px + env(safe-area-inset-bottom, 0px))' }}>
         {/* Success Animation */}
-        <motion.div initial={{
-        scale: 0
-      }} animate={{
-        scale: 1
-      }} transition={{
-        type: "spring",
-        stiffness: 200,
-        damping: 15
-      }} className="text-center mb-6">
-          <div className="w-20 h-20 mx-auto rounded-full bg-success/10 flex items-center justify-center mb-4">
-            <motion.div initial={{
-            scale: 0,
-            rotate: -180
-          }} animate={{
-            scale: 1,
-            rotate: 0
-          }} transition={{
-            delay: 0.2,
-            type: "spring"
-          }}>
-              <CheckCircle className="w-10 h-10 text-success" />
+        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 15 }} className="text-center mb-6">
+          <div className="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center mb-4">
+            <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.2, type: "spring" }}>
+              <CheckCircle className="w-10 h-10 text-primary" />
             </motion.div>
           </div>
           <h1 className="text-xl font-bold text-foreground mb-1">Réservation confirmée !</h1>
@@ -178,15 +177,7 @@ export default function BookingConfirmation() {
         </motion.div>
 
         {/* Order Number Card */}
-        <motion.div initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        delay: 0.1
-      }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <Card className="mb-4 border-primary/20 bg-primary/5">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -203,22 +194,13 @@ export default function BookingConfirmation() {
         </motion.div>
 
         {/* Route Summary */}
-        <motion.div initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        delay: 0.2
-      }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <Card className="mb-4">
             <CardContent className="p-4">
               <div className="flex items-center gap-3 mb-4">
                 <Plane className="w-5 h-5 text-primary" />
                 <h3 className="font-semibold">Trajet</h3>
               </div>
-              
               <div className="flex items-center gap-4">
                 <div className="flex-1">
                   <p className="font-bold text-lg">{order.origin_city}</p>
@@ -236,7 +218,6 @@ export default function BookingConfirmation() {
                   <p className="text-xs text-muted-foreground">{order.destination_country}</p>
                 </div>
               </div>
-
               {offer && (
                 <div className="mt-4 pt-4 border-t">
                   <DepartureInfoCard
@@ -256,31 +237,26 @@ export default function BookingConfirmation() {
         </motion.div>
 
         {/* Order Details */}
-        <motion.div initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        delay: 0.3
-      }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <Card className="mb-4">
             <CardContent className="p-4">
               <div className="flex items-center gap-3 mb-4">
                 <Package className="w-5 h-5 text-primary" />
                 <h3 className="font-semibold">Détails</h3>
               </div>
-              
               <div className="space-y-3">
-                {order.description && <div className="flex justify-between items-start">
+                {order.description && (
+                  <div className="flex justify-between items-start">
                     <span className="text-sm text-muted-foreground">Contenu</span>
                     <span className="text-sm font-medium text-right max-w-[60%]">{order.description}</span>
-                  </div>}
-                {order.weight > 0 && <div className="flex justify-between">
+                  </div>
+                )}
+                {order.weight > 0 && (
+                  <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Poids total</span>
                     <span className="text-sm font-medium">{order.weight} kg</span>
-                  </div>}
+                  </div>
+                )}
                 <div className="flex justify-between pt-2 border-t">
                   <span className="font-medium">Total à payer</span>
                   <span className="text-lg font-bold text-primary">
@@ -293,22 +269,14 @@ export default function BookingConfirmation() {
         </motion.div>
 
         {/* Transporter Info with Progressive Release */}
-        {publicInfo && <motion.div initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        delay: 0.4
-      }}>
+        {publicInfo && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
             <Card className="mb-4">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3 mb-4">
                   <User className="w-5 h-5 text-primary" />
                   <h3 className="font-semibold">Votre transporteur</h3>
                 </div>
-                
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                     <User className="w-6 h-6 text-primary" />
@@ -326,71 +294,74 @@ export default function BookingConfirmation() {
 
                 {/* Progressive Contact Info Release */}
                 <div className="space-y-3 pt-3 border-t">
-                  {/* Deposit Address - Visible after payment */}
                   <div className="flex items-start gap-3">
                     <MapPinned className={`w-5 h-5 mt-0.5 ${canSeeDepositAddress ? 'text-primary' : 'text-muted-foreground'}`} />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-medium">Adresse de dépôt</p>
-                        {!canSeeDepositAddress && <Badge variant="secondary" className="text-[10px] gap-1">
-                            <Lock className="w-3 h-3" />
-                            Après paiement
-                          </Badge>}
+                        {!canSeeDepositAddress && (
+                          <Badge variant="secondary" className="text-[10px] gap-1">
+                            <Lock className="w-3 h-3" /> Après paiement
+                          </Badge>
+                        )}
                       </div>
-                      {canSeeDepositAddress && contactInfo.deposit_address ? <p className="text-sm text-muted-foreground">{contactInfo.deposit_address}</p> : <p className="text-sm text-muted-foreground italic">
-                          {isPaid ? "Non renseignée" : "Visible après paiement"}
-                        </p>}
+                      {canSeeDepositAddress && contactInfo.deposit_address
+                        ? <p className="text-sm text-muted-foreground">{contactInfo.deposit_address}</p>
+                        : <p className="text-sm text-muted-foreground italic">{isPaid ? "Non renseignée" : "Visible après paiement"}</p>
+                      }
                     </div>
                   </div>
 
-                  {/* WhatsApp - Visible after payment */}
                   <div className="flex items-start gap-3">
                     <Phone className={`w-5 h-5 mt-0.5 ${canSeeWhatsApp ? 'text-primary' : 'text-muted-foreground'}`} />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-medium">WhatsApp</p>
-                        {!canSeeWhatsApp && <Badge variant="secondary" className="text-[10px] gap-1">
-                            <Lock className="w-3 h-3" />
-                            Après paiement
-                          </Badge>}
-                        {canSeeWhatsApp && <Badge variant="default" className="text-[10px] gap-1">
-                            <Eye className="w-3 h-3" />
-                            Visible
-                          </Badge>}
+                        {!canSeeWhatsApp && (
+                          <Badge variant="secondary" className="text-[10px] gap-1">
+                            <Lock className="w-3 h-3" /> Après paiement
+                          </Badge>
+                        )}
+                        {canSeeWhatsApp && (
+                          <Badge variant="default" className="text-[10px] gap-1">
+                            <Eye className="w-3 h-3" /> Visible
+                          </Badge>
+                        )}
                       </div>
-                      {canSeeWhatsApp && contactInfo.whatsapp_number ? <a href={`https://wa.me/${contactInfo.whatsapp_number.replace(/\D/g, '')}`} className="text-sm text-primary underline" target="_blank" rel="noopener noreferrer">
-                          {contactInfo.whatsapp_number}
-                        </a> : <p className="text-sm text-muted-foreground italic">
-                          {isPaid ? "Non renseigné" : "Visible après paiement"}
-                        </p>}
+                      {canSeeWhatsApp && contactInfo.whatsapp_number
+                        ? <a href={`https://wa.me/${contactInfo.whatsapp_number.replace(/\D/g, '')}`} className="text-sm text-primary underline" target="_blank" rel="noopener noreferrer">{contactInfo.whatsapp_number}</a>
+                        : <p className="text-sm text-muted-foreground italic">{isPaid ? "Non renseigné" : "Visible après paiement"}</p>
+                      }
                     </div>
                   </div>
 
-                  {/* Reception Address - Visible after delivery */}
                   <div className="flex items-start gap-3">
                     <MapPin className={`w-5 h-5 mt-0.5 ${canSeeReceptionAddress ? 'text-primary' : 'text-muted-foreground'}`} />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-medium">Adresse de réception</p>
-                        {!canSeeReceptionAddress && <Badge variant="secondary" className="text-[10px] gap-1">
-                            <Lock className="w-3 h-3" />
-                            Après livraison
-                          </Badge>}
+                        {!canSeeReceptionAddress && (
+                          <Badge variant="secondary" className="text-[10px] gap-1">
+                            <Lock className="w-3 h-3" /> Après livraison
+                          </Badge>
+                        )}
                       </div>
-                      {canSeeReceptionAddress && contactInfo.reception_address ? <p className="text-sm text-muted-foreground">{contactInfo.reception_address}</p> : <p className="text-sm text-muted-foreground italic">
-                          {isDelivered ? "Non renseignée" : "Visible après livraison"}
-                        </p>}
+                      {canSeeReceptionAddress && contactInfo.reception_address
+                        ? <p className="text-sm text-muted-foreground">{contactInfo.reception_address}</p>
+                        : <p className="text-sm text-muted-foreground italic">{isDelivered ? "Non renseignée" : "Visible après livraison"}</p>
+                      }
                     </div>
                   </div>
 
-                  {/* Secondary Phone - Visible after delivery */}
-                  {canSeeSecondaryPhone && contactInfo.phone_secondary && <div className="flex items-start gap-3">
+                  {canSeeSecondaryPhone && contactInfo.phone_secondary && (
+                    <div className="flex items-start gap-3">
                       <Phone className="w-5 h-5 mt-0.5 text-primary" />
                       <div className="flex-1">
                         <p className="text-sm font-medium">Téléphone secondaire</p>
                         <p className="text-sm text-muted-foreground">{contactInfo.phone_secondary}</p>
                       </div>
-                    </div>}
+                    </div>
+                  )}
                 </div>
 
                 <Button onClick={handleContactGP} className="w-full mt-4 gap-2" variant="outline">
@@ -399,36 +370,27 @@ export default function BookingConfirmation() {
                 </Button>
               </CardContent>
             </Card>
-          </motion.div>}
+          </motion.div>
+        )}
 
         {/* Next Steps */}
-        <motion.div initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        delay: 0.5
-      }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
           <Card className="mb-4 bg-muted/50">
             <CardContent className="p-4">
               <h3 className="font-semibold mb-3">Prochaines étapes</h3>
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${order.status !== 'pending' ? 'bg-success/20' : 'bg-primary/10'}`}>
-                    <span className={`text-xs font-bold ${order.status !== 'pending' ? 'text-success' : 'text-primary'}`}>1</span>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${order.status !== 'pending' ? 'bg-primary/20' : 'bg-primary/10'}`}>
+                    <span className={`text-xs font-bold ${order.status !== 'pending' ? 'text-primary' : 'text-primary'}`}>1</span>
                   </div>
                   <div>
                     <p className="text-sm font-medium">Confirmation du transporteur</p>
-                    <p className="text-xs text-muted-foreground">
-                      Le transporteur confirmera votre réservation sous 24h
-                    </p>
+                    <p className="text-xs text-muted-foreground">Le transporteur confirmera votre réservation sous 24h</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${isPaid ? 'bg-success/20' : 'bg-muted'}`}>
-                    <span className={`text-xs font-bold ${isPaid ? 'text-success' : 'text-muted-foreground'}`}>2</span>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${isPaid ? 'bg-primary/20' : 'bg-muted'}`}>
+                    <span className={`text-xs font-bold ${isPaid ? 'text-primary' : 'text-muted-foreground'}`}>2</span>
                   </div>
                   <div>
                     <p className="text-sm font-medium">Paiement & adresse de dépôt</p>
@@ -438,8 +400,8 @@ export default function BookingConfirmation() {
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${isDelivered ? 'bg-success/20' : 'bg-muted'}`}>
-                    <span className={`text-xs font-bold ${isDelivered ? 'text-success' : 'text-muted-foreground'}`}>3</span>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${isDelivered ? 'bg-primary/20' : 'bg-muted'}`}>
+                    <span className={`text-xs font-bold ${isDelivered ? 'text-primary' : 'text-muted-foreground'}`}>3</span>
                   </div>
                   <div>
                     <p className="text-sm font-medium">Livraison & adresse de réception</p>
@@ -453,9 +415,9 @@ export default function BookingConfirmation() {
           </Card>
         </motion.div>
 
-        {/* PRV §8: PDF Download Gate — Blocking until downloaded */}
+        {/* Simplified re-download label option */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}>
-          <PDFDownloadGate
+          <LogisticsLabelGenerator
             order={{
               orderNumber: order.order_number,
               orderId: order.id,
@@ -468,8 +430,6 @@ export default function BookingConfirmation() {
               weight: order.weight,
               description: order.description,
             }}
-            onContinue={() => navigate("/")}
-            continueLabel="Retour à l'accueil"
           />
         </motion.div>
 
@@ -478,7 +438,7 @@ export default function BookingConfirmation() {
           <OrderQRCode orderNumber={order.order_number} orderId={order.id} status={order.status} />
         </motion.div>
 
-        {/* PRV §9: Deposit Address Popup — Visible after acceptance */}
+        {/* PRV §9: Deposit Address Popup */}
         {canSeeDepositAddress && contactInfo.deposit_address && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }}>
             <Card className="border-primary/20">
@@ -486,9 +446,7 @@ export default function BookingConfirmation() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium mb-1">📍 Adresse de dépôt disponible</p>
-                    <p className="text-xs text-muted-foreground">
-                      Présentez votre QR au transporteur lors du dépôt
-                    </p>
+                    <p className="text-xs text-muted-foreground">Présentez votre QR au transporteur lors du dépôt</p>
                   </div>
                   <DepositAddressPopup
                     depositAddress={contactInfo.deposit_address}
@@ -502,8 +460,17 @@ export default function BookingConfirmation() {
             </Card>
           </motion.div>
         )}
+
+        {/* Return home */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
+          <Button onClick={() => navigate("/")} className="w-full mt-2 gap-2" variant="outline">
+            <Home className="w-4 h-4" />
+            Retour à l'accueil
+          </Button>
+        </motion.div>
       </div>
 
       <MobileNav />
-    </div>;
+    </div>
+  );
 }
