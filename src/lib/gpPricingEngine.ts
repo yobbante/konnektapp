@@ -73,6 +73,12 @@ export function calculatePrice(weight: number, config: GPPricingConfig): number 
     return config.forfaitValise23kg;
   }
 
+  // 23kg+ packages: coefficient x0.80 (same as 15-23kg tier)
+  if (weight > 23) {
+    const effectivePricePerKg = config.basePricePerKg * 0.80;
+    return Math.round(weight * effectivePricePerKg);
+  }
+
   // Find the right tier
   const tier = WEIGHT_TIER_COEFFICIENTS.find(
     t => weight > t.min && weight <= t.max
@@ -80,6 +86,38 @@ export function calculatePrice(weight: number, config: GPPricingConfig): number 
 
   const effectivePricePerKg = config.basePricePerKg * tier.coefficient;
   return Math.round(weight * effectivePricePerKg);
+}
+
+/**
+ * Get regressive discount info for a given weight
+ * Returns the coefficient and savings percentage
+ */
+export function getRegressiveInfo(weight: number, basePricePerKg: number): {
+  coefficient: number;
+  effectivePricePerKg: number;
+  savingsPercent: number;
+  tierLabel: string;
+} {
+  if (weight > 23) {
+    return {
+      coefficient: 0.80,
+      effectivePricePerKg: Math.round(basePricePerKg * 0.80),
+      savingsPercent: 20,
+      tierLabel: "+23 kg (gros volume)",
+    };
+  }
+  const tier = WEIGHT_TIER_COEFFICIENTS.find(
+    t => weight > t.min && weight <= t.max
+  );
+  if (!tier) {
+    return { coefficient: 1, effectivePricePerKg: basePricePerKg, savingsPercent: 0, tierLabel: "—" };
+  }
+  return {
+    coefficient: tier.coefficient,
+    effectivePricePerKg: Math.round(basePricePerKg * tier.coefficient),
+    savingsPercent: Math.round((1 - tier.coefficient) * 100),
+    tierLabel: tier.label,
+  };
 }
 
 /**

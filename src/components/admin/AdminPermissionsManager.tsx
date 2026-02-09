@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Shield, Search, UserCog, Check, X, Loader2 } from "lucide-react";
+import { Shield, Search, UserCog, Check, X, Loader2, Truck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -8,26 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -53,7 +40,8 @@ interface RolePermission {
 const ROLES = [
   { value: "admin", label: "Super Admin", color: "destructive" as const },
   { value: "moderator", label: "Modérateur", color: "secondary" as const },
-  { value: "user", label: "Client", color: "default" as const },
+  { value: "agent_logistique", label: "Livreur Konnekt", color: "default" as const, icon: Truck },
+  { value: "user", label: "Client", color: "outline" as const },
 ];
 
 export function AdminPermissionsManager() {
@@ -81,28 +69,13 @@ export function AdminPermissionsManager() {
   };
 
   const loadUsers = async () => {
-    // Get profiles with their roles
-    const { data: profiles, error: profilesError } = await supabase
+    const { data: profiles } = await supabase
       .from("profiles")
       .select("user_id, email, full_name")
       .order("created_at", { ascending: false });
 
-    if (profilesError) {
-      console.error("Error loading profiles:", profilesError);
-      return;
-    }
+    const { data: roles } = await supabase.from("user_roles").select("user_id, role");
 
-    // Get all user roles
-    const { data: roles, error: rolesError } = await supabase
-      .from("user_roles")
-      .select("user_id, role");
-
-    if (rolesError) {
-      console.error("Error loading roles:", rolesError);
-      return;
-    }
-
-    // Merge data
     const usersWithRoles = (profiles || []).map((profile) => ({
       id: profile.user_id,
       email: profile.email || "",
@@ -114,129 +87,94 @@ export function AdminPermissionsManager() {
   };
 
   const loadPermissions = async () => {
-    const { data, error } = await supabase
-      .from("permissions")
-      .select("*")
-      .order("category", { ascending: true });
-
-    if (error) {
-      console.error("Error loading permissions:", error);
-      return;
-    }
-
+    const { data } = await supabase.from("permissions").select("*").order("category", { ascending: true });
     setPermissions(data || []);
   };
 
   const loadRolePermissions = async () => {
-    const { data, error } = await supabase
-      .from("role_permissions")
-      .select("role, permission_id");
-
-    if (error) {
-      console.error("Error loading role permissions:", error);
-      return;
-    }
-
+    const { data } = await supabase.from("role_permissions").select("role, permission_id");
     setRolePermissions(data || []);
   };
 
-  const assignRole = async (userId: string, role: "admin" | "moderator" | "user") => {
+  const assignRole = async (userId: string, role: string) => {
     setSavingRole(true);
     try {
-      const { error } = await supabase.rpc("assign_user_role", {
-        _target_user_id: userId,
-        _role: role,
-      });
-
-      if (error) throw error;
+      // For agent_logistique, insert directly (not in app_role enum for RPC)
+      if (role === "agent_logistique") {
+        const { error } = await supabase.from("user_roles").insert({
+          user_id: userId,
+          role: "agent_logistique" as any,
+        });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.rpc("assign_user_role", {
+          _target_user_id: userId,
+          _role: role as "admin" | "moderator" | "user",
+        });
+        if (error) throw error;
+      }
 
       toast({ title: "Rôle assigné avec succès" });
       await loadUsers();
       
       if (selectedUser) {
-        setSelectedUser({
-          ...selectedUser,
-          roles: [...selectedUser.roles, role],
-        });
+        setSelectedUser({ ...selectedUser, roles: [...selectedUser.roles, role] });
       }
     } catch (error: any) {
       console.error("Error assigning role:", error);
-      toast({
-        title: "Erreur",
-        description: error.message || "Impossible d'assigner le rôle",
-        variant: "destructive",
-      });
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } finally {
       setSavingRole(false);
     }
   };
 
-  const removeRole = async (userId: string, role: "admin" | "moderator" | "user") => {
+  const removeRole = async (userId: string, role: string) => {
     setSavingRole(true);
     try {
-      const { error } = await supabase.rpc("remove_user_role", {
-        _target_user_id: userId,
-        _role: role,
-      });
-
-      if (error) throw error;
+      if (role === "agent_logistique") {
+        const { error } = await supabase.from("user_roles")
+          .delete()
+          .eq("user_id", userId)
+          .eq("role", role as any);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.rpc("remove_user_role", {
+          _target_user_id: userId,
+          _role: role as "admin" | "moderator" | "user",
+        });
+        if (error) throw error;
+      }
 
       toast({ title: "Rôle retiré avec succès" });
       await loadUsers();
       
       if (selectedUser) {
-        setSelectedUser({
-          ...selectedUser,
-          roles: selectedUser.roles.filter((r) => r !== role),
-        });
+        setSelectedUser({ ...selectedUser, roles: selectedUser.roles.filter((r) => r !== role) });
       }
     } catch (error: any) {
       console.error("Error removing role:", error);
-      toast({
-        title: "Erreur",
-        description: error.message || "Impossible de retirer le rôle",
-        variant: "destructive",
-      });
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } finally {
       setSavingRole(false);
     }
   };
 
-  const toggleRolePermission = async (role: "admin" | "moderator" | "user", permissionId: string, enabled: boolean) => {
+  const toggleRolePermission = async (role: string, permissionId: string, enabled: boolean) => {
     try {
       if (enabled) {
-        const { error } = await supabase
-          .from("role_permissions")
-          .insert([{ role, permission_id: permissionId }]);
-
-        if (error) throw error;
+        await supabase.from("role_permissions").insert([{ role: role as any, permission_id: permissionId }]);
       } else {
-        const { error } = await supabase
-          .from("role_permissions")
-          .delete()
-          .eq("role", role)
-          .eq("permission_id", permissionId);
-
-        if (error) throw error;
+        await supabase.from("role_permissions").delete().eq("role", role as any).eq("permission_id", permissionId);
       }
-
       toast({ title: enabled ? "Permission ajoutée" : "Permission retirée" });
       await loadRolePermissions();
     } catch (error: any) {
-      console.error("Error toggling permission:", error);
-      toast({
-        title: "Erreur",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
     }
   };
 
-  const hasRolePermission = (role: string, permissionId: string) => {
-    return rolePermissions.some(
-      (rp) => rp.role === role && rp.permission_id === permissionId
-    );
-  };
+  const hasRolePermission = (role: string, permissionId: string) =>
+    rolePermissions.some((rp) => rp.role === role && rp.permission_id === permissionId);
 
   const filteredUsers = users.filter(
     (user) =>
@@ -245,18 +183,18 @@ export function AdminPermissionsManager() {
   );
 
   const groupedPermissions = permissions.reduce((acc, perm) => {
-    if (!acc[perm.category]) {
-      acc[perm.category] = [];
-    }
+    if (!acc[perm.category]) acc[perm.category] = [];
     acc[perm.category].push(perm);
     return acc;
   }, {} as Record<string, Permission[]>);
 
   const getRoleBadge = (role: string) => {
     const roleConfig = ROLES.find((r) => r.value === role);
+    if (!roleConfig) return <Badge variant="outline" className="text-xs">{role}</Badge>;
     return (
-      <Badge variant={roleConfig?.color || "default"} className="text-xs">
-        {roleConfig?.label || role}
+      <Badge variant={roleConfig.color as any} className="text-xs gap-1">
+        {roleConfig.icon && <roleConfig.icon className="w-3 h-3" />}
+        {roleConfig.label}
       </Badge>
     );
   };
@@ -277,7 +215,6 @@ export function AdminPermissionsManager() {
           <TabsTrigger value="permissions">Permissions par rôle</TabsTrigger>
         </TabsList>
 
-        {/* Users & Roles Tab */}
         <TabsContent value="users" className="space-y-4">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
@@ -291,117 +228,88 @@ export function AdminPermissionsManager() {
             </div>
           </div>
 
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Utilisateur</TableHead>
-                    <TableHead>Rôles</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.slice(0, 50).map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{user.full_name || "Sans nom"}</p>
-                          <p className="text-sm text-muted-foreground">{user.email}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {user.roles.length > 0 ? (
-                            user.roles.map((role) => (
-                              <span key={role}>{getRoleBadge(role)}</span>
-                            ))
-                          ) : (
-                            <Badge variant="outline" className="text-xs">
-                              Client (par défaut)
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Dialog
-                          open={userDialogOpen && selectedUser?.id === user.id}
-                          onOpenChange={(open) => {
-                            setUserDialogOpen(open);
-                            if (open) setSelectedUser(user);
-                          }}
-                        >
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <UserCog className="w-4 h-4 mr-1" />
-                              Gérer
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Gérer les rôles</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                              <div>
-                                <p className="font-medium">{user.full_name || "Sans nom"}</p>
-                                <p className="text-sm text-muted-foreground">{user.email}</p>
-                              </div>
+          {/* Mobile-friendly card list */}
+          <div className="space-y-2">
+            {filteredUsers.slice(0, 50).map((user) => (
+              <Card key={user.id} className="overflow-hidden">
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{user.full_name || "Sans nom"}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {user.roles.length > 0 ? (
+                          user.roles.map((role) => (
+                            <span key={role}>{getRoleBadge(role)}</span>
+                          ))
+                        ) : (
+                          <Badge variant="outline" className="text-[10px]">Client</Badge>
+                        )}
+                      </div>
+                    </div>
+                    <Dialog
+                      open={userDialogOpen && selectedUser?.id === user.id}
+                      onOpenChange={(open) => {
+                        setUserDialogOpen(open);
+                        if (open) setSelectedUser(user);
+                      }}
+                    >
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="shrink-0">
+                          <UserCog className="w-4 h-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Gérer les rôles</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                          <div>
+                            <p className="font-medium">{user.full_name || "Sans nom"}</p>
+                            <p className="text-sm text-muted-foreground">{user.email}</p>
+                          </div>
 
-                              <div className="space-y-3">
-                                {ROLES.map((role) => {
-                                  const hasRole = user.roles.includes(role.value);
-                                  return (
-                                    <div
-                                      key={role.value}
-                                      className="flex items-center justify-between p-3 rounded-lg border"
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        {getRoleBadge(role.value)}
-                                        <span className="text-sm text-muted-foreground">
-                                          {role.label}
-                                        </span>
-                                      </div>
-                                      <Button
-                                        size="sm"
-                                        variant={hasRole ? "destructive" : "default"}
-                                        onClick={() =>
-                                          hasRole
-                                            ? removeRole(user.id, role.value as "admin" | "moderator" | "user")
-                                            : assignRole(user.id, role.value as "admin" | "moderator" | "user")
-                                        }
-                                        disabled={savingRole}
-                                      >
-                                        {savingRole ? (
-                                          <Loader2 className="w-4 h-4 animate-spin" />
-                                        ) : hasRole ? (
-                                          <>
-                                            <X className="w-4 h-4 mr-1" />
-                                            Retirer
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Check className="w-4 h-4 mr-1" />
-                                            Assigner
-                                          </>
-                                        )}
-                                      </Button>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                          <div className="space-y-3">
+                            {ROLES.map((role) => {
+                              const hasRole = user.roles.includes(role.value);
+                              return (
+                                <div
+                                  key={role.value}
+                                  className="flex items-center justify-between p-3 rounded-xl border"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    {getRoleBadge(role.value)}
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant={hasRole ? "destructive" : "default"}
+                                    onClick={() =>
+                                      hasRole ? removeRole(user.id, role.value) : assignRole(user.id, role.value)
+                                    }
+                                    disabled={savingRole}
+                                  >
+                                    {savingRole ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : hasRole ? (
+                                      <><X className="w-4 h-4 mr-1" />Retirer</>
+                                    ) : (
+                                      <><Check className="w-4 h-4 mr-1" />Assigner</>
+                                    )}
+                                  </Button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </TabsContent>
 
-        {/* Permissions Tab */}
         <TabsContent value="permissions" className="space-y-4">
           {Object.entries(groupedPermissions).map(([category, perms]) => (
             <Card key={category}>
@@ -411,13 +319,13 @@ export function AdminPermissionsManager() {
                   {category}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Permission</TableHead>
                       {ROLES.map((role) => (
-                        <TableHead key={role.value} className="text-center w-24">
+                        <TableHead key={role.value} className="text-center w-20">
                           {role.label}
                         </TableHead>
                       ))}
@@ -427,21 +335,17 @@ export function AdminPermissionsManager() {
                     {perms.map((perm) => (
                       <TableRow key={perm.id}>
                         <TableCell>
-                          <div>
-                            <p className="font-medium text-sm">{perm.name}</p>
-                            {perm.description && (
-                              <p className="text-xs text-muted-foreground">
-                                {perm.description}
-                              </p>
-                            )}
-                          </div>
+                          <p className="font-medium text-sm">{perm.name}</p>
+                          {perm.description && (
+                            <p className="text-xs text-muted-foreground">{perm.description}</p>
+                          )}
                         </TableCell>
                         {ROLES.map((role) => (
                           <TableCell key={role.value} className="text-center">
                             <Switch
                               checked={hasRolePermission(role.value, perm.id)}
                               onCheckedChange={(checked) =>
-                                toggleRolePermission(role.value as "admin" | "moderator" | "user", perm.id, checked)
+                                toggleRolePermission(role.value, perm.id, checked)
                               }
                             />
                           </TableCell>
