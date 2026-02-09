@@ -1,11 +1,9 @@
 /**
  * UniversalScanner - Role-based QR scanner component
  * 
- * Adapts behavior based on user role:
- * - Client: View order status + scan history (read-only)
- * - GP: Deposit confirm + weight modify + delivery confirm
- * - Agent Logistique: Pickup + delivery + stock confirm
- * - Admin: Full access to all actions
+ * Handles TWO types of QR codes:
+ * 1. USER QR: konnekt://user/{userId} or URL /track/user/{userId} → UnifiedScanRouter
+ * 2. ORDER QR: CMD-XXXXXXXX or tracking code → order lookup
  * 
  * Security: Each scan is logged to scan_logs. Same action can't trigger twice.
  */
@@ -28,6 +26,7 @@ import { QRCameraScanner } from "@/components/gp/QRCameraScanner";
 import { ScanResultClient } from "./ScanResultClient";
 import { ScanResultGP } from "./ScanResultGP";
 import { ScanResultAgent } from "./ScanResultAgent";
+import { UnifiedScanRouter } from "./UnifiedScanRouter";
 
 interface ScannedOrderData {
   id: string;
@@ -74,16 +73,51 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [scannedOrder, setScannedOrder] = useState<ScannedOrderData | null>(null);
+  const [scannedUserId, setScannedUserId] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
+
+  /**
+   * Parse QR content to detect type:
+   * - User QR: contains "/track/user/" or "konnekt://user/"
+   * - Order QR: CMD-XXXX or tracking code
+   */
+  const parseQRContent = (code: string): { type: "user" | "order"; value: string } => {
+    // URL format: .../track/user/{userId}
+    const userUrlMatch = code.match(/\/track\/user\/([a-f0-9-]{36})/i);
+    if (userUrlMatch) return { type: "user", value: userUrlMatch[1] };
+    
+    // Protocol format: konnekt://user/{userId}
+    const protocolMatch = code.match(/konnekt:\/\/user\/([a-f0-9-]{36})/i);
+    if (protocolMatch) return { type: "user", value: protocolMatch[1] };
+    
+    // UUID directly (could be userId)
+    const uuidMatch = code.match(/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i);
+    if (uuidMatch) return { type: "user", value: code };
+    
+    // Default: treat as order code
+    return { type: "order", value: code.toUpperCase() };
+  };
 
   const handleCameraScan = (code: string) => {
     setCameraOpen(false);
-    lookupOrder(code.toUpperCase());
+    const parsed = parseQRContent(code);
+    if (parsed.type === "user") {
+      setScannedUserId(parsed.value);
+      setShowResult(true);
+    } else {
+      lookupOrder(parsed.value);
+    }
   };
 
   const handleManualSubmit = async () => {
     if (!manualCode.trim()) return;
-    await lookupOrder(manualCode.trim().toUpperCase());
+    const parsed = parseQRContent(manualCode.trim());
+    if (parsed.type === "user") {
+      setScannedUserId(parsed.value);
+      setShowResult(true);
+    } else {
+      await lookupOrder(parsed.value);
+    }
   };
 
   const lookupOrder = async (code: string) => {
@@ -175,6 +209,7 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
   const handleClose = () => {
     setShowResult(false);
     setScannedOrder(null);
+    setScannedUserId(null);
     setManualCode("");
   };
 
@@ -284,7 +319,16 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
             </SheetTitle>
           </SheetHeader>
 
-          {scannedOrder && (
+          {/* User QR scan result */}
+          {scannedUserId && (
+            <UnifiedScanRouter
+              scannedUserId={scannedUserId}
+              onComplete={handleActionComplete}
+            />
+          )}
+
+          {/* Order QR scan result */}
+          {scannedOrder && !scannedUserId && (
             <>
               {scanRole === "client" && (
                 <ScanResultClient order={scannedOrder} />

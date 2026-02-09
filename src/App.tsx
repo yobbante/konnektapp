@@ -80,6 +80,7 @@ import MovingConfirmation from "./pages/MovingConfirmation";
 import OrderQRCode from "./pages/OrderQRCode";
 import PublicTracking from "./pages/PublicTracking";
 import DeliveryConfirmation from "./pages/DeliveryConfirmation";
+import PublicUserProfile from "./pages/PublicUserProfile";
 import AgentDashboard from "./pages/AgentDashboard";
 import GPApercuPage from "./pages/gp/GPApercuPage";
 import GPKTPGeoTrackPage from "./pages/gp/GPKTPGeoTrackPage";
@@ -117,6 +118,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/install" element={<Install />} />
             <Route path="/track/:orderId" element={<PublicTracking />} />
+            <Route path="/track/user/:userId" element={<PublicUserProfile />} />
             <Route path="/deliver/:orderId" element={<DeliveryConfirmation />} />
             
             {/* ============================================
