@@ -287,30 +287,40 @@ function CityListContent({
           </div>
         ) : (
           <div className="p-1">
-            {filteredCities.map((city, index) => {
-              const isSelected = value === city.city && countryCode === city.country;
-              return (
-                <button
-                  key={`${city.city}-${city.country}-${index}`}
-                  onClick={() => {
-                    onSelect(city.city, city.country);
-                    onClose();
-                  }}
-                  className={cn(
-                    "flex items-center gap-3 w-full py-3 px-3 rounded-md text-left transition-colors",
-                    isSelected
-                      ? "bg-primary/10 text-primary"
-                      : "hover:bg-muted/80 active:bg-muted"
-                  )}
-                >
-                  <span className="text-xl flex-shrink-0">{city.flag}</span>
-                  <span className="flex-1 text-sm font-medium">{city.city}</span>
-                  {isSelected && (
-                    <Check className="h-4 w-4 flex-shrink-0 text-primary" />
-                  )}
-                </button>
-              );
-            })}
+            {(() => {
+              let lastCountry = "";
+              return filteredCities.map((city, index) => {
+                const isSelected = value === city.city && countryCode === city.country;
+                const showHeader = city.country !== lastCountry;
+                lastCountry = city.country;
+                return (
+                  <div key={`${city.city}-${city.country}-${index}`}>
+                    {showHeader && (
+                      <div className="px-3 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mt-1 first:mt-0">
+                        {city.flag} {city.country}
+                      </div>
+                    )}
+                    <button
+                      onClick={() => {
+                        onSelect(city.city, city.country);
+                        onClose();
+                      }}
+                      className={cn(
+                        "flex items-center gap-3 w-full py-2.5 px-3 rounded-md text-left transition-colors",
+                        isSelected
+                          ? "bg-primary/10 text-primary"
+                          : "hover:bg-muted/80 active:bg-muted"
+                      )}
+                    >
+                      <span className="flex-1 text-sm font-medium">{city.city}</span>
+                      {isSelected && (
+                        <Check className="h-4 w-4 flex-shrink-0 text-primary" />
+                      )}
+                    </button>
+                  </div>
+                );
+              });
+            })()}
           </div>
         )}
       </ScrollArea>
@@ -344,18 +354,20 @@ export function SearchableCitySelect({
            WORLD_CITIES.find(c => c.city === value);
   }, [value, countryCode]);
 
+  // Group cities: current country first, then popular, then rest
   const filteredCities = useMemo(() => {
     if (!searchQuery) {
-      const popularCities = WORLD_CITIES.filter(c => POPULAR_CITIES.includes(c.city));
-      const others = WORLD_CITIES.filter(c => !POPULAR_CITIES.includes(c.city));
-      return [...popularCities, ...others];
+      const currentCountryCities = WORLD_CITIES.filter(c => c.country === countryCode);
+      const popularOther = WORLD_CITIES.filter(c => c.country !== countryCode && POPULAR_CITIES.includes(c.city));
+      const rest = WORLD_CITIES.filter(c => c.country !== countryCode && !POPULAR_CITIES.includes(c.city));
+      return [...currentCountryCities, ...popularOther, ...rest];
     }
     const query = searchQuery.toLowerCase();
     return WORLD_CITIES.filter(c =>
       c.city.toLowerCase().includes(query) ||
-      c.country.toLowerCase().includes(query)
-    ).slice(0, 50);
-  }, [searchQuery]);
+      c.flag.includes(searchQuery)
+    ).slice(0, 30);
+  }, [searchQuery, countryCode]);
 
   const handleClose = () => {
     setOpen(false);

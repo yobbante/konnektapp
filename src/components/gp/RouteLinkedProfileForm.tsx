@@ -192,34 +192,6 @@ export function RouteLinkedProfileForm({
 
   return (
     <div className="space-y-4">
-      {/* Name Card */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <User className="w-5 h-5 text-primary" />
-            <CardTitle className="text-lg">Votre identité</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="fullName">Nom & Prénom *</Label>
-              <ValidationIcon isValid={isNameValid} />
-            </div>
-            <Input
-              id="fullName"
-              placeholder="Ex: Mamadou Diallo"
-              value={data.fullName}
-              onChange={(e) => handleChange("fullName", e.target.value)}
-              className={cn(
-                "h-12 text-base",
-                showValidation && !isNameValid && "border-destructive"
-              )}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Route Card - Simplified */}
       <Card>
         <CardHeader className="pb-3">
@@ -274,22 +246,6 @@ export function RouteLinkedProfileForm({
             </div>
           </div>
 
-          {/* Quick routes */}
-          <div className="flex flex-wrap gap-1.5">
-            {POPULAR_ROUTES.map((route, i) => {
-              const isSelected = data.originCity === route.originCity && data.destinationCity === route.destCity;
-              return (
-                <Badge
-                  key={i}
-                  variant={isSelected ? "default" : "outline"}
-                  className="cursor-pointer py-1 px-2.5 text-[11px] active:scale-95"
-                  onClick={() => handleQuickRoute(route)}
-                >
-                  {route.originCity} → {route.destCity}
-                </Badge>
-              );
-            })}
-          </div>
         </CardContent>
       </Card>
 
