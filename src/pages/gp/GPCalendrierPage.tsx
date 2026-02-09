@@ -1,6 +1,10 @@
+/**
+ * GPCalendrierPage — Departures management with unified SmartVoyageForm
+ * Mobile-optimized compact calendar
+ */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Plus, Plane, Edit, Trash2, List, CalendarDays } from "lucide-react";
+import { Plus, Plane, Edit, Trash2, List, CalendarDays } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -8,9 +12,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
 import { PageLoader } from "@/components/ui/PageLoader";
-import { CreateBaggageVoyageDialog } from "@/components/gp/CreateBaggageVoyageDialog";
+import { SmartVoyageForm } from "@/components/gp/SmartVoyageForm";
 import { EditVoyageDialog } from "@/components/gp/EditVoyageDialog";
-import { DepartureCalendarView } from "@/components/gp/DepartureCalendarView";
+import { GPCompactCalendar } from "@/components/gp/GPCompactCalendar";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { useGPProfile } from "@/hooks/useGPProfile";
 import { format, isFuture, isPast } from "date-fns";
@@ -41,10 +45,11 @@ export default function GPCalendrierPage() {
   const { gpProfile, loading: profileLoading, pendingCount, activeCount, isVerified, gpRoute } = useGPProfile();
   const [voyages, setVoyages] = useState<Voyage[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateVoyage, setShowCreateVoyage] = useState(false);
+  const [showVoyageForm, setShowVoyageForm] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showEditVoyage, setShowEditVoyage] = useState(false);
   const [selectedVoyage, setSelectedVoyage] = useState<Voyage | null>(null);
-  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("calendar");
 
   useEffect(() => {
     if (gpProfile) loadVoyages();
@@ -77,6 +82,16 @@ export default function GPCalendrierPage() {
     }
   };
 
+  const handleDateTap = (date: Date) => {
+    setSelectedDate(date);
+    setShowVoyageForm(true);
+  };
+
+  const handleNewVoyage = () => {
+    setSelectedDate(null);
+    setShowVoyageForm(true);
+  };
+
   if (profileLoading || loading) return <PageLoader message="Chargement..." />;
   if (!gpProfile) return null;
 
@@ -89,57 +104,53 @@ export default function GPCalendrierPage() {
       pendingCount={pendingCount}
       activeOrdersCount={activeCount}
       activeTab="calendrier"
+      onNewVoyage={handleNewVoyage}
     >
       <div className="px-4 py-4 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold">Mes départs</h2>
           <div className="flex gap-1.5">
-            <Button variant={viewMode === "list" ? "default" : "outline"} size="sm" onClick={() => setViewMode("list")} className="h-8 px-2.5">
-              <List className="w-4 h-4" />
-            </Button>
             <Button variant={viewMode === "calendar" ? "default" : "outline"} size="sm" onClick={() => setViewMode("calendar")} className="h-8 px-2.5">
               <CalendarDays className="w-4 h-4" />
+            </Button>
+            <Button variant={viewMode === "list" ? "default" : "outline"} size="sm" onClick={() => setViewMode("list")} className="h-8 px-2.5">
+              <List className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
-        {/* Blocked for unverified */}
         {!isVerified ? (
           <Card className="border-amber-500/30 bg-amber-500/5">
             <CardContent className="p-6 text-center">
               <Plane className="w-10 h-10 mx-auto mb-3 text-amber-500 opacity-60" />
               <p className="font-semibold text-sm">Compte en attente de validation</p>
-              <p className="text-xs text-muted-foreground mt-1">Vous pourrez créer des départs après approbation admin</p>
+              <p className="text-xs text-muted-foreground mt-1">Vous pourrez créer des départs après approbation</p>
             </CardContent>
           </Card>
         ) : (
           <>
-            <Button className="w-full h-12" onClick={() => setShowCreateVoyage(true)}>
+            {/* Add button */}
+            <Button className="w-full h-12" onClick={handleNewVoyage}>
               <Plus className="w-5 h-5 mr-2" /> Nouveau voyage
             </Button>
 
             {viewMode === "calendar" && gpRoute ? (
-              <DepartureCalendarView
+              <GPCompactCalendar
                 departures={voyages.map(v => ({
                   id: v.id,
                   date: v.departure_date,
                   originCity: v.origin_city,
-                  originCountry: v.origin_country,
                   destinationCity: v.destination_city,
-                  destinationCountry: v.destination_country,
-                  capacity: v.total_capacity,
                   availableCapacity: v.available_capacity,
-                  pricePerKg: v.price_per_kg,
                   type: v.origin_city === gpRoute.originCity ? "aller" as const : "retour" as const,
-                  status: v.status === "active" ? "open" as const : "past" as const,
+                  status: v.status === "active" ? (isFuture(new Date(v.departure_date)) ? "open" as const : "past" as const) : "past" as const,
                 }))}
-                onAddDeparture={async () => setShowCreateVoyage(true)}
-                defaultRoute={gpRoute}
+                onDateTap={handleDateTap}
               />
             ) : (
               <>
-                {/* Upcoming */}
+                {/* Upcoming list */}
                 <div className="space-y-3">
                   <p className="text-sm font-medium text-muted-foreground">À venir ({upcomingVoyages.length})</p>
                   {upcomingVoyages.length === 0 ? (
@@ -210,12 +221,13 @@ export default function GPCalendrierPage() {
         )}
       </div>
 
-      <CreateBaggageVoyageDialog
-        open={showCreateVoyage}
-        onClose={() => setShowCreateVoyage(false)}
+      {/* Unified Smart Voyage Form */}
+      <SmartVoyageForm
+        open={showVoyageForm}
+        onClose={() => { setShowVoyageForm(false); setSelectedDate(null); }}
         gpId={gpProfile.id}
-        lastVoyage={voyages[0] || null}
-        onSuccess={() => { setShowCreateVoyage(false); loadVoyages(); }}
+        selectedDate={selectedDate}
+        onSuccess={() => { setShowVoyageForm(false); setSelectedDate(null); loadVoyages(); }}
       />
 
       {selectedVoyage && (

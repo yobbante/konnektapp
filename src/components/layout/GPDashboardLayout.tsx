@@ -4,11 +4,10 @@ import {
   Package, Bell, Menu, ScanLine, Truck,
   Lock, Home, ListChecks, LayoutGrid,
   Shield, DollarSign, History, Calendar,
-  Settings, LogOut, MapPin, User
+  Settings, LogOut, MapPin, User, Plus
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { GPNotificationsDropdown } from "@/components/gp/dashboard/GPNotificationsDropdown";
 import { cn } from "@/lib/utils";
@@ -27,15 +26,14 @@ interface GPDashboardLayoutProps {
   activeOrdersCount?: number;
   activeTab?: string;
   onTabChange?: (tab: string) => void;
+  onNewVoyage?: () => void;
 }
 
 /**
  * GP Dashboard Layout V1 TERRAIN
  * 
- * Header: Logo + SCAN central + Notifications
+ * Header: Logo + [+] Nouveau voyage + SCAN central + Notifications
  * Bottom Nav: Aujourd'hui | Colis | [SCAN] | Distribution | Menu
- * 
- * Scan = coeur du système
  */
 export function GPDashboardLayout({
   children,
@@ -43,6 +41,7 @@ export function GPDashboardLayout({
   pendingCount = 0,
   activeOrdersCount = 0,
   activeTab = "aujourdhui",
+  onNewVoyage,
 }: GPDashboardLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -52,7 +51,6 @@ export function GPDashboardLayout({
   const isVerified = gpProfile.status === "verified";
   useEnforceDashboardRole("gp");
 
-  // Detect active tab from path
   const getActiveTab = () => {
     const path = location.pathname;
     if (path.includes("/gp/colis")) return "colis";
@@ -74,62 +72,76 @@ export function GPDashboardLayout({
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* ══════════════════════════════════════
-          HEADER — Fixed, scan-centric
+          HEADER — Fixed, scan-centric + bouton +
       ══════════════════════════════════════ */}
       <header 
         className="sticky top-0 z-50 bg-primary shadow-lg"
         style={{ paddingTop: 'calc(8px + var(--safe-top, 0px))' }}
       >
-        <div className="px-4 py-3 flex items-center justify-between">
+        <div className="px-3 py-3 flex items-center justify-between gap-2">
           {/* Logo + Name */}
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
-              <Truck className="w-5 h-5 text-white" />
+          <div className="flex items-center gap-2 min-w-0 flex-shrink">
+            <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
+              <Truck className="w-4 h-4 text-white" />
             </div>
-            <div>
-              <p className="text-white font-bold text-sm leading-tight truncate max-w-[140px]">
+            <div className="min-w-0">
+              <p className="text-white font-bold text-xs leading-tight truncate max-w-[100px]">
                 {gpProfile.business_name}
               </p>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1">
                 <div className={cn(
                   "w-1.5 h-1.5 rounded-full",
                   isVerified ? "bg-green-400" : "bg-yellow-400"
                 )} />
-                <span className="text-white/70 text-[10px]">
+                <span className="text-white/70 text-[9px]">
                   {isVerified ? "Vérifié" : "En attente"}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Center: SCAN BUTTON */}
-          <Button
-            onClick={() => {
-              if (!isVerified) return;
-              navigate("/gp/scan");
-            }}
-            disabled={!isVerified}
-            className={cn(
-              "h-11 px-5 rounded-full font-bold text-sm gap-2 shadow-lg",
-              isVerified 
-                ? "bg-white text-primary hover:bg-white/90 active:scale-95 transition-all" 
-                : "bg-white/20 text-white/50 cursor-not-allowed"
+          {/* Center actions: + and SCAN */}
+          <div className="flex items-center gap-2">
+            {/* + Nouveau voyage */}
+            {isVerified && (
+              <Button
+                onClick={() => onNewVoyage?.()}
+                size="icon"
+                className="h-9 w-9 rounded-full bg-white/20 hover:bg-white/30 text-white"
+              >
+                <Plus className="w-5 h-5" />
+              </Button>
             )}
-          >
-            <ScanLine className="w-5 h-5" />
-            SCAN
-          </Button>
+
+            {/* SCAN BUTTON */}
+            <Button
+              onClick={() => {
+                if (!isVerified) return;
+                navigate("/gp/scan");
+              }}
+              disabled={!isVerified}
+              className={cn(
+                "h-10 px-4 rounded-full font-bold text-sm gap-1.5 shadow-lg",
+                isVerified 
+                  ? "bg-white text-primary hover:bg-white/90 active:scale-95 transition-all" 
+                  : "bg-white/20 text-white/50 cursor-not-allowed"
+              )}
+            >
+              <ScanLine className="w-5 h-5" />
+              SCAN
+            </Button>
+          </div>
 
           {/* Right: Notifications */}
           <Button
             variant="ghost"
             size="icon"
-            className="relative text-white hover:bg-white/10 w-10 h-10"
+            className="relative text-white hover:bg-white/10 w-9 h-9 flex-shrink-0"
             onClick={() => setShowNotifications(true)}
           >
             <Bell className="w-5 h-5" />
             {totalBadge > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+              <span className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
                 {totalBadge > 9 ? "9+" : totalBadge}
               </span>
             )}
@@ -170,7 +182,7 @@ export function GPDashboardLayout({
             onClick={() => isVerified && navigate("/gp/colis")}
           />
           
-          {/* SCAN — Center, prominent */}
+          {/* SCAN — Center */}
           <button
             onClick={() => isVerified && navigate("/gp/scan")}
             disabled={!isVerified}
@@ -179,9 +191,7 @@ export function GPDashboardLayout({
             <motion.div
               className={cn(
                 "w-14 h-14 -mt-6 rounded-full flex items-center justify-center shadow-xl",
-                isVerified
-                  ? "bg-primary"
-                  : "bg-muted"
+                isVerified ? "bg-primary" : "bg-muted"
               )}
               whileTap={isVerified ? { scale: 0.9 } : undefined}
             >
@@ -192,10 +202,7 @@ export function GPDashboardLayout({
               )}
             </motion.div>
             {isVerified && (
-              <motion.div
-                className="absolute inset-0 flex items-start justify-center"
-                style={{ top: '-6px' }}
-              >
+              <motion.div className="absolute inset-0 flex items-start justify-center" style={{ top: '-6px' }}>
                 <motion.div
                   className="w-14 h-14 rounded-full border-2 border-primary/30"
                   animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0, 0.5] }}
@@ -203,10 +210,7 @@ export function GPDashboardLayout({
                 />
               </motion.div>
             )}
-            <span className={cn(
-              "text-[10px] font-bold mt-0.5",
-              currentTab === "scan" ? "text-primary" : "text-muted-foreground"
-            )}>
+            <span className={cn("text-[10px] font-bold mt-0.5", currentTab === "scan" ? "text-primary" : "text-muted-foreground")}>
               Scan
             </span>
           </button>
@@ -280,20 +284,14 @@ function NavItem({ icon: Icon, label, active, badge, locked, onClick }: {
         whileTap={!locked ? { scale: 0.85 } : undefined}
         animate={active ? { y: -2 } : { y: 0 }}
       >
-        {locked ? (
-          <Lock className="w-5 h-5" />
-        ) : (
-          <Icon className={cn("w-5 h-5", active && "text-primary")} />
-        )}
+        {locked ? <Lock className="w-5 h-5" /> : <Icon className={cn("w-5 h-5", active && "text-primary")} />}
         {!!badge && badge > 0 && !locked && (
           <span className="absolute -top-1.5 -right-2 w-4 h-4 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center">
             {badge > 9 ? "9+" : badge}
           </span>
         )}
       </motion.div>
-      <span className={cn("text-[10px] font-medium", active && "text-primary font-semibold")}>
-        {label}
-      </span>
+      <span className={cn("text-[10px] font-medium", active && "text-primary font-semibold")}>{label}</span>
       {active && (
         <motion.div
           layoutId="gp-v1-nav"
@@ -323,21 +321,14 @@ function MenuButton({ icon: Icon, label, badge, locked, variant, onClick }: {
       )}
     >
       <div className="relative">
-        {locked ? (
-          <Lock className="w-5 h-5 text-muted-foreground" />
-        ) : (
-          <Icon className={cn("w-5 h-5", variant === "destructive" ? "text-destructive" : "text-foreground")} />
-        )}
+        {locked ? <Lock className="w-5 h-5 text-muted-foreground" /> : <Icon className={cn("w-5 h-5", variant === "destructive" ? "text-destructive" : "text-foreground")} />}
         {!!badge && badge > 0 && !locked && (
           <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-destructive text-destructive-foreground text-[8px] font-bold rounded-full flex items-center justify-center">
             {badge}
           </span>
         )}
       </div>
-      <span className={cn(
-        "text-[11px] font-medium",
-        variant === "destructive" ? "text-destructive" : "text-foreground"
-      )}>
+      <span className={cn("text-[11px] font-medium", variant === "destructive" ? "text-destructive" : "text-foreground")}>
         {label}
       </span>
     </button>
