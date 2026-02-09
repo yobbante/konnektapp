@@ -52,10 +52,11 @@ interface CustomRequest {
 
 interface CustomRequestsTabProps {
   gpId: string;
+  gpType?: string;
   onBack?: () => void;
 }
 
-export function CustomRequestsTab({ gpId, onBack }: CustomRequestsTabProps) {
+export function CustomRequestsTab({ gpId, gpType = "bagages_international", onBack }: CustomRequestsTabProps) {
   const { toast } = useToast();
   const [requests, setRequests] = useState<CustomRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,9 +64,18 @@ export function CustomRequestsTab({ gpId, onBack }: CustomRequestsTabProps) {
   const [selectedRequest, setSelectedRequest] = useState<CustomRequest | null>(null);
   const [responseDialogOpen, setResponseDialogOpen] = useState(false);
 
+  // Transport type compatibility — server-side style filter
+  const compatibleTypes: Record<string, string[]> = {
+    bagages_international: ["GP", "gp", "bagages_international", "aerien"],
+    routier: ["routier", "Routier", "maritime", "Maritime"],
+    aerien: ["aerien", "Aerien", "GP", "gp"],
+    maritime: ["maritime", "Maritime", "routier", "Routier"],
+  };
+  const allowedTypes = compatibleTypes[gpType] || [gpType];
+
   useEffect(() => {
     fetchRequests();
-  }, [gpId]);
+  }, [gpId, gpType]);
 
   const fetchRequests = async () => {
     try {
@@ -78,6 +88,18 @@ export function CustomRequestsTab({ gpId, onBack }: CustomRequestsTabProps) {
 
       if (reqError) throw reqError;
 
+      // PRV §10: Role-based filter — GP only sees compatible transport types
+      const filteredData = (requestsData || []).filter((req) => {
+        // No transport type = visible to all
+        if (!req.transport_type) return true;
+        // Filter by compatibility
+        if (!allowedTypes.includes(req.transport_type)) return false;
+        // Vehicle requests blocked for GP bagages
+        if (gpType === "bagages_international" && req.shipment_type === "vehicle") return false;
+        if (gpType === "bagages_international" && req.shipment_type === "moving") return false;
+        return true;
+      });
+
       // Fetch my responses
       const { data: myResponses, error: respError } = await supabase
         .from("custom_request_responses")
@@ -87,7 +109,7 @@ export function CustomRequestsTab({ gpId, onBack }: CustomRequestsTabProps) {
       if (respError) throw respError;
 
       // Merge data
-      const requestsWithResponses = (requestsData || []).map((req) => {
+      const requestsWithResponses = filteredData.map((req) => {
         const myResponse = myResponses?.find((r) => r.request_id === req.id);
         return {
           ...req,

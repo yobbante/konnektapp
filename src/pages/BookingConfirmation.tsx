@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle, Package, MapPin, Calendar, User, MessageCircle, Home, ArrowRight, Plane, Clock, Shield, Copy, Phone, MapPinned, Lock, Eye, QrCode, Building2 } from "lucide-react";
 import { DepartureInfoCard } from "@/components/booking/DepartureInfoCard";
+import { PDFDownloadGate } from "@/components/booking/PDFDownloadGate";
+import { DepositAddressPopup } from "@/components/client/DepositAddressPopup";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -451,21 +453,55 @@ export default function BookingConfirmation() {
           </Card>
         </motion.div>
 
+        {/* PRV §8: PDF Download Gate — Blocking until downloaded */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}>
+          <PDFDownloadGate
+            order={{
+              orderNumber: order.order_number,
+              orderId: order.id,
+              clientName: publicInfo?.business_name || "Client",
+              gpName: publicInfo?.business_name || "Transporteur",
+              originCity: order.origin_city,
+              destinationCity: order.destination_city,
+              originCountry: order.origin_country,
+              destinationCountry: order.destination_country,
+              weight: order.weight,
+              description: order.description,
+            }}
+            onContinue={() => navigate("/")}
+            continueLabel="Retour à l'accueil"
+          />
+        </motion.div>
+
         {/* QR Code for Deposit/Delivery */}
-        <motion.div initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        delay: 0.55
-      }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
           <OrderQRCode orderNumber={order.order_number} orderId={order.id} status={order.status} />
         </motion.div>
 
-        {/* Action Buttons */}
-        
+        {/* PRV §9: Deposit Address Popup — Visible after acceptance */}
+        {canSeeDepositAddress && contactInfo.deposit_address && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }}>
+            <Card className="border-primary/20">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium mb-1">📍 Adresse de dépôt disponible</p>
+                    <p className="text-xs text-muted-foreground">
+                      Présentez votre QR au transporteur lors du dépôt
+                    </p>
+                  </div>
+                  <DepositAddressPopup
+                    depositAddress={contactInfo.deposit_address}
+                    phone={contactInfo.phone_secondary}
+                    whatsapp={contactInfo.whatsapp_number}
+                    gpName={publicInfo?.business_name || "Transporteur"}
+                    isActive={["accepted"].includes(order.status)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
       </div>
 
       <MobileNav />

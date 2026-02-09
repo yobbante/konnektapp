@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, MapPin, Eye, Phone, Clock, CheckCircle, Truck, X } from "lucide-react";
+import { Package, MapPin, Eye, Phone, Clock, CheckCircle, Truck, X, Navigation, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { DepositAddressPopup } from "@/components/client/DepositAddressPopup";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 interface ActiveOrder {
@@ -174,10 +175,48 @@ export function ActiveReservationBanner() {
     }} exit={{
       opacity: 0,
       y: -50
-    }} className="fixed top-0 left-0 right-0 z-50" style={{
+    }} className="sticky top-0 left-0 right-0 z-40" style={{
       paddingTop: "var(--safe-top, 0px)"
     }}>
-        
+        {/* Active Order Banner */}
+        <div className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20 px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${statusInfo?.color || 'bg-primary/20'}`}>
+              <Package className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold truncate">
+                  {primaryOrder.origin_city} → {primaryOrder.destination_city}
+                </span>
+                <Badge variant="secondary" className="text-[10px] shrink-0">
+                  {statusInfo?.label || primaryOrder.status}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                #{primaryOrder.order_number?.slice(-6)} · {visibleOrders.length > 1 ? `+${visibleOrders.length - 1} autre(s)` : ""}
+              </p>
+            </div>
+            {/* PRV §9: Deposit address popup */}
+            {releasedInfo.depositAddress && gp?.deposit_address && (
+              <DepositAddressPopup
+                depositAddress={gp.deposit_address}
+                phone={gp.phone}
+                whatsapp={gp.whatsapp_phone}
+                gpName={gp.business_name}
+                isActive={primaryOrder.status === "accepted"}
+              />
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="shrink-0 w-8 h-8"
+              onClick={() => setDismissed(prev => [...prev, primaryOrder.id])}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
       </motion.div>
     </AnimatePresence>;
 }
