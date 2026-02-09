@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ChevronLeft, ChevronRight, Plus, Plane, MapPin,
-  Weight, Calendar, Clock, CheckCircle, ArrowLeftRight, X
+  Weight, Calendar, Clock, CheckCircle, ArrowLeftRight, X, Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -394,131 +394,132 @@ export function DepartureCalendarView({
         </Card>
       )}
 
-      {/* Add Departure Sheet - Mobile-optimized */}
+      {/* Add Departure Sheet - Redesigned */}
       <Sheet open={showAddSheet} onOpenChange={setShowAddSheet}>
-        <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl">
-          <SheetHeader className="pb-4">
-            <SheetTitle className="flex items-center gap-2 text-base">
-              <Plus className="w-5 h-5" />
-              Nouveau voyage
-            </SheetTitle>
-          </SheetHeader>
+        <SheetContent side="bottom" className="h-auto max-h-[95vh] rounded-t-2xl p-0">
+          {/* Teal header */}
+          <div className="bg-primary text-primary-foreground px-5 py-4 rounded-t-2xl">
+            <div className="flex items-center gap-2.5">
+              <Plane className="w-5 h-5" />
+              <h2 className="text-lg font-bold">Nouveau voyage</h2>
+            </div>
+          </div>
 
           {selectedDate && (
-            <div className="space-y-5 overflow-y-auto max-h-[calc(85vh-100px)] pb-safe">
-              {/* Date display */}
-              <div className="flex items-center justify-center gap-2 p-3 bg-muted rounded-xl">
-                <Calendar className="w-5 h-5 text-primary" />
-                <p className="font-semibold text-base">
-                  {format(selectedDate, 'EEEE d MMMM yyyy', { locale: fr })}
-                </p>
-              </div>
-
-              {/* Fixed Route Display */}
-              <div className="p-4 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border">
-                <div className="flex items-center justify-center gap-4">
-                  <div className="text-center">
-                    <span className="text-3xl">{getFlag(currentRoute.originCountry)}</span>
-                    <p className="text-sm font-semibold mt-1">{currentRoute.originCity}</p>
-                  </div>
-                  
-                  <div className="flex flex-col items-center">
-                    <Plane className={`w-6 h-6 text-primary ${newDeparture.type === 'retour' ? 'rotate-180' : ''}`} />
-                  </div>
-                  
-                  <div className="text-center">
-                    <span className="text-3xl">{getFlag(currentRoute.destinationCountry)}</span>
-                    <p className="text-sm font-semibold mt-1">{currentRoute.destinationCity}</p>
-                  </div>
+            <div className="px-5 py-5 space-y-5 overflow-y-auto max-h-[calc(95vh-72px)] pb-safe">
+              {/* Route card — locked */}
+              <div className="rounded-2xl border-2 border-primary/20 bg-primary/5 p-4">
+                <div className="flex items-center justify-center gap-5">
+                  <span className="text-3xl">{getFlag(currentRoute.originCountry)}</span>
+                  <Plane className={`w-5 h-5 text-primary ${newDeparture.type === 'retour' ? 'rotate-180' : ''}`} />
+                  <span className="text-3xl">{getFlag(currentRoute.destinationCountry)}</span>
                 </div>
-
-                {/* Type badge */}
-                <div className="flex justify-center mt-3">
-                  <Badge variant={newDeparture.type === "aller" ? "default" : "secondary"} className="px-4 py-1.5">
-                    <Plane className={`w-4 h-4 mr-2 ${newDeparture.type === 'retour' ? 'rotate-180' : ''}`} />
-                    {newDeparture.type === "aller" ? "Aller" : "Retour"}
+                <div className="flex justify-center mt-2.5">
+                  <Badge className="bg-orange-500 hover:bg-orange-600 text-white text-[11px] gap-1 px-3 py-1">
+                    <MapPin className="w-3 h-3" /> Navette verrouillée
                   </Badge>
                 </div>
               </div>
 
-              {/* Type toggle */}
+              {/* Aller / Retour toggle */}
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   type="button"
                   variant={newDeparture.type === "aller" ? "default" : "outline"}
-                  size="lg"
-                  className="h-14"
+                  className={`h-12 text-sm font-semibold gap-2 rounded-xl ${newDeparture.type === "aller" ? "" : "border-2"}`}
                   onClick={() => setNewDeparture(prev => ({ ...prev, type: "aller" }))}
                 >
-                  <Plane className="w-5 h-5 mr-2" /> Aller
+                  <Plane className="w-4 h-4" /> Aller
                 </Button>
                 <Button
                   type="button"
                   variant={newDeparture.type === "retour" ? "default" : "outline"}
-                  size="lg"
-                  className="h-14"
+                  className={`h-12 text-sm font-semibold gap-2 rounded-xl ${newDeparture.type === "retour" ? "" : "border-2"}`}
                   onClick={() => setNewDeparture(prev => ({ ...prev, type: "retour" }))}
                 >
-                  <Plane className="w-5 h-5 mr-2 rotate-180" /> Retour
+                  <Plane className="w-4 h-4 rotate-180" /> Retour
                 </Button>
               </div>
 
-              {/* Capacity input */}
+              {/* Date de départ */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Capacité disponible (kg) *</Label>
-                <div className="relative">
-                  <Weight className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    type="number"
-                    inputMode="numeric"
-                    placeholder="Ex: 30"
-                    className="pl-10 h-14 text-lg"
-                    value={newDeparture.capacity}
-                    onChange={(e) => setNewDeparture(prev => ({ ...prev, capacity: e.target.value }))}
-                  />
+                <Label className="text-sm flex items-center gap-1.5 text-muted-foreground">
+                  <Calendar className="w-4 h-4" /> Date de départ *
+                </Label>
+                <div className="h-12 rounded-xl border-2 border-primary/30 bg-background flex items-center px-3">
+                  <p className="font-semibold text-sm">
+                    {format(selectedDate, 'EEEE d MMMM yyyy', { locale: fr })}
+                  </p>
                 </div>
+              </div>
+
+              {/* Capacité */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-1.5">
+                  <Weight className="w-4 h-4" /> Capacité (kg) *
+                </Label>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="23"
+                  className="h-12 text-lg rounded-xl border-2 border-primary/30 focus:border-primary"
+                  value={newDeparture.capacity}
+                  onChange={(e) => setNewDeparture(prev => ({ ...prev, capacity: e.target.value }))}
+                />
               </div>
 
               {/* Return trip option */}
               {newDeparture.type === "aller" && (
                 <div className="p-4 bg-secondary/10 rounded-xl border border-secondary/20">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Plane className="w-5 h-5 text-secondary rotate-180" />
-                    <span className="font-medium">Ajouter le retour ?</span>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Plane className="w-4 h-4 text-muted-foreground rotate-180" />
+                    <span className="text-sm font-medium">Ajouter le retour ?</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-3">
+                  <p className="text-xs text-muted-foreground mb-3">
                     Programmez directement votre voyage retour
                   </p>
                   <Input
                     type="date"
-                    className="h-12"
+                    className="h-11 rounded-xl border-2 border-primary/30"
                     min={format(selectedDate, 'yyyy-MM-dd')}
                     value={newDeparture.returnDate}
-                    onChange={(e) => {
-                      setNewDeparture(prev => ({
-                        ...prev,
-                        returnDate: e.target.value,
-                      }));
-                    }}
+                    onChange={(e) => setNewDeparture(prev => ({ ...prev, returnDate: e.target.value }))}
                   />
                 </div>
               )}
 
-              {/* Action buttons */}
-              <div className="flex gap-3 pt-2">
-                <Button 
-                  variant="outline" 
-                  className="flex-1 h-14 text-base" 
+              {/* Prix verrouillé */}
+              <div className="flex items-center justify-between p-3.5 rounded-xl bg-muted/60 border">
+                <span className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Info className="w-4 h-4" /> Prix verrouillé
+                </span>
+                <span className="font-bold text-sm">
+                  {defaultPricePerKg} €/kg
+                </span>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-1 pb-4">
+                <Button
+                  variant="outline"
+                  className="flex-1 h-12 rounded-xl border-2 text-sm font-semibold"
                   onClick={() => setShowAddSheet(false)}
                 >
                   Annuler
                 </Button>
-                <Button 
-                  className="flex-1 h-14 text-base" 
+                <Button
+                  className="flex-1 h-12 rounded-xl text-sm font-semibold gap-2"
                   onClick={handleAddDeparture}
                   disabled={loading || !newDeparture.capacity}
                 >
-                  {loading ? "..." : "Ajouter"}
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4" />
+                      Créer le voyage
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
