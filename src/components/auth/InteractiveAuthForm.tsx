@@ -65,7 +65,7 @@ export function InteractiveAuthForm({
   };
 
   const handleInfoNext = () => {
-    if (isValidName && isValidPhone) {
+    if (isValidPhone) {
       setStep("credentials");
     }
   };
@@ -202,23 +202,6 @@ export function InteractiveAuthForm({
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-sm">Nom complet</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    placeholder="Votre nom complet"
-                    className="pl-11 h-12 text-base"
-                    value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    onBlur={() => setTouched({ ...touched, fullName: true })}
-                  />
-                  {touched.fullName && isValidName && (
-                    <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
                 <Label className="text-sm">Téléphone</Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -239,7 +222,7 @@ export function InteractiveAuthForm({
 
             <Button 
               className="w-full h-12 mt-6"
-              disabled={!isValidName || !isValidPhone}
+              disabled={!isValidPhone}
               onClick={handleInfoNext}
             >
               Continuer
@@ -313,6 +296,25 @@ export function InteractiveAuthForm({
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Name field at top for registration */}
+              {mode === "register" && (
+                <div className="space-y-2">
+                  <Label className="text-sm">Nom complet</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      placeholder="Votre nom complet"
+                      className="pl-11 h-12 text-base"
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                      onBlur={() => setTouched({ ...touched, fullName: true })}
+                    />
+                    {touched.fullName && isValidName && (
+                      <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />
+                    )}
+                  </div>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label className="text-sm">Email</Label>
                 <div className="relative">

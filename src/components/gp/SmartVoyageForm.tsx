@@ -176,11 +176,17 @@ export function SmartVoyageForm({
           {/* Route card — locked */}
           <div className="rounded-2xl border-2 border-primary/20 bg-primary/5 p-4">
             <div className="flex items-center justify-center gap-5">
-              <span className="text-3xl">{getFlag(currentRoute.origin.country)}</span>
+              <div className="text-center">
+                <span className="text-3xl">{getFlag(currentRoute.origin.country)}</span>
+                <p className="text-xs font-medium mt-1">{currentRoute.origin.city}</p>
+              </div>
               <motion.div animate={{ x: [0, 3, 0] }} transition={{ repeat: Infinity, duration: 2.5 }}>
                 <Plane className={`w-5 h-5 text-primary ${tripType === "retour" ? "rotate-180" : ""}`} />
               </motion.div>
-              <span className="text-3xl">{getFlag(currentRoute.destination.country)}</span>
+              <div className="text-center">
+                <span className="text-3xl">{getFlag(currentRoute.destination.country)}</span>
+                <p className="text-xs font-medium mt-1">{currentRoute.destination.city}</p>
+              </div>
             </div>
             <div className="flex justify-center mt-2.5">
               <Badge className="bg-orange-500 hover:bg-orange-600 text-white text-[11px] gap-1 px-3 py-1">
