@@ -456,6 +456,23 @@ export default function GPBagagesRegistration() {
                       </button>
                     </>
                   )}
+
+                  {/* Identity - Name field */}
+                  <div className="pt-2 border-t border-border">
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-primary" />
+                        Nom & Prénom *
+                      </Label>
+                      <Input
+                        placeholder="Ex: Mamadou Diallo"
+                        value={profileData.fullName}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, fullName: e.target.value }))}
+                        className="h-12 text-base"
+                      />
+                    </div>
+                  </div>
+
                   <div className="flex justify-end pt-2">
                     <Button onClick={handleNext} disabled={loading} className="gap-2">
                       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Continuer <ArrowRight className="w-4 h-4" /></>}
