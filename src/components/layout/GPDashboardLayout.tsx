@@ -2,7 +2,8 @@ import { ReactNode, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
   Truck, Bell, Package, Clock, Calendar, 
-  DollarSign, User, History, Menu, QrCode, Plus, Plane, ScanLine
+  DollarSign, History, Menu, QrCode, Plus, ScanLine,
+  Shield, Lock, AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,18 +35,9 @@ interface NavTab {
   icon: typeof Package;
   path: string;
   badge?: number;
+  requiresVerification?: boolean;
 }
 
-/**
- * GPDashboardLayout V2 - Layout avec menu hub central
- * 
- * Structure:
- * - Header avec statut, notifications et menu hub
- * - Navigation interne par onglets (tabs horizontaux)
- * - Contenu principal
- * 
- * Principe: Dashboard = outil de travail
- */
 export function GPDashboardLayout({
   children,
   gpProfile,
@@ -61,13 +53,16 @@ export function GPDashboardLayout({
   const [showHubMenu, setShowHubMenu] = useState(false);
   const [showAddDeparture, setShowAddDeparture] = useState(false);
 
-  // Navigation tabs for GP Dashboard — Aperçu first
+  const isVerified = gpProfile.status === "verified";
+  const isPending = gpProfile.status === "pending";
+
+  // Navigation tabs — mark sensitive ones
   const navTabs: NavTab[] = [
     { id: "apercu", label: "Aperçu", icon: Truck, path: "/gp/apercu" },
-    { id: "demandes", label: "Demandes", icon: Package, path: "/gp/demandes", badge: pendingCount },
-    { id: "en-cours", label: "En cours", icon: Clock, path: "/gp/en-cours", badge: activeOrdersCount },
-    { id: "scan", label: "Scan", icon: QrCode, path: "/gp/scan" },
-    { id: "calendrier", label: "Départs", icon: Calendar, path: "/gp/calendrier" },
+    { id: "demandes", label: "Demandes", icon: Package, path: "/gp/demandes", badge: pendingCount, requiresVerification: true },
+    { id: "en-cours", label: "En cours", icon: Clock, path: "/gp/en-cours", badge: activeOrdersCount, requiresVerification: true },
+    { id: "scan", label: "Scan", icon: QrCode, path: "/gp/scan", requiresVerification: true },
+    { id: "calendrier", label: "Départs", icon: Calendar, path: "/gp/calendrier", requiresVerification: true },
     { id: "tarifs", label: "Tarifs", icon: DollarSign, path: "/gp/tarification" },
     { id: "historique", label: "Historique", icon: History, path: "/gp/historique" },
   ];
@@ -87,20 +82,19 @@ export function GPDashboardLayout({
   };
 
   const currentActiveTab = getActiveFromPath();
-
-  // Enforce role: Routier should never see GP dashboard
   useEnforceDashboardRole("gp");
 
   const handleTabClick = (tab: NavTab) => {
+    // Block unverified GPs from accessing sensitive tabs
+    if (tab.requiresVerification && !isVerified) {
+      return; // Don't navigate
+    }
     if (onTabChange) {
       onTabChange(tab.id);
     } else {
       navigate(tab.path);
     }
   };
-
-  const isAvailable = gpProfile.status === "verified";
-  const isPending = gpProfile.status === "pending";
 
   return (
     <div className="min-h-screen pb-safe bg-background">
@@ -124,15 +118,15 @@ export function GPDashboardLayout({
                 <h1 className="text-lg font-bold leading-tight">{gpProfile.business_name}</h1>
                 <div className="flex items-center gap-2">
                   <Badge 
-                    variant={isAvailable ? "secondary" : "outline"}
+                    variant={isVerified ? "secondary" : "outline"}
                     className={cn(
                       "text-[10px] px-1.5 py-0",
-                      isAvailable ? "bg-green-500/20 text-green-100 border-green-400" : 
+                      isVerified ? "bg-green-500/20 text-green-100 border-green-400" : 
                       isPending ? "bg-yellow-500/20 text-yellow-100 border-yellow-400" :
                       "bg-red-500/20 text-red-100 border-red-400"
                     )}
                   >
-                    {isAvailable ? "Disponible" : isPending ? "En attente" : "Indisponible"}
+                    {isVerified ? "Vérifié" : isPending ? "En attente" : "Indisponible"}
                   </Badge>
                   <span className="text-xs opacity-70 capitalize">
                     {gpProfile.gp_type === "bagages_international" ? "GP Bagages" : gpProfile.gp_type}
@@ -143,7 +137,6 @@ export function GPDashboardLayout({
 
             {/* Right Actions */}
             <div className="flex items-center gap-1.5">
-              {/* QR Badge — GP Identity */}
               <HeaderQRBadge
                 qrValue={`${window.location.origin}/gp/${gpProfile.id}`}
                 label={gpProfile.business_name}
@@ -152,27 +145,28 @@ export function GPDashboardLayout({
                 className="bg-white/10 hover:bg-white/20 text-inherit"
               />
 
-              {/* Quick Add Departure Button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative bg-white/10 hover:bg-white/20 text-inherit w-8 h-8"
-                onClick={() => setShowAddDeparture(true)}
-                title="Ajouter un départ"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-
-              {/* Quick Scan Button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative bg-gradient-to-br from-amber-400/20 to-orange-500/20 hover:from-amber-400/30 hover:to-orange-500/30 text-inherit border border-white/20 w-8 h-8"
-                onClick={() => navigate("/gp/scan")}
-                title="Scanner QR Code"
-              >
-                <ScanLine className="w-4 h-4" />
-              </Button>
+              {isVerified && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative bg-white/10 hover:bg-white/20 text-inherit w-8 h-8"
+                    onClick={() => setShowAddDeparture(true)}
+                    title="Ajouter un départ"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative bg-gradient-to-br from-amber-400/20 to-orange-500/20 hover:from-amber-400/30 hover:to-orange-500/30 text-inherit border border-white/20 w-8 h-8"
+                    onClick={() => navigate("/gp/scan")}
+                    title="Scanner QR Code"
+                  >
+                    <ScanLine className="w-4 h-4" />
+                  </Button>
+                </>
+              )}
 
               <Button
                 variant="ghost"
@@ -188,7 +182,6 @@ export function GPDashboardLayout({
                 )}
               </Button>
               
-              {/* Hub Menu Button */}
               <GPDashboardHubSheet
                 open={showHubMenu}
                 onOpenChange={setShowHubMenu}
@@ -208,27 +201,31 @@ export function GPDashboardLayout({
           </div>
         </div>
 
-        {/* Internal Navigation Tabs */}
+        {/* Navigation Tabs */}
         <div className="overflow-x-auto scrollbar-hide">
           <nav className="flex px-2 pb-2 gap-1 min-w-max">
             {navTabs.map((tab) => {
               const isActive = currentActiveTab === tab.id;
+              const isBlocked = tab.requiresVerification && !isVerified;
               const Icon = tab.icon;
               
               return (
                 <button
                   key={tab.id}
                   onClick={() => handleTabClick(tab)}
+                  disabled={isBlocked}
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap",
-                    isActive 
-                      ? "bg-white/90 text-primary shadow-sm" 
-                      : "bg-white/10 text-white/80 hover:bg-white/20"
+                    isBlocked
+                      ? "bg-white/5 text-white/30 cursor-not-allowed"
+                      : isActive 
+                        ? "bg-white/90 text-primary shadow-sm" 
+                        : "bg-white/10 text-white/80 hover:bg-white/20"
                   )}
                 >
-                  <Icon className="w-3.5 h-3.5" />
+                  {isBlocked ? <Lock className="w-3 h-3" /> : <Icon className="w-3.5 h-3.5" />}
                   {tab.label}
-                  {tab.badge && tab.badge > 0 && (
+                  {tab.badge && tab.badge > 0 && !isBlocked && (
                     <Badge 
                       variant="destructive" 
                       className="ml-1 h-4 min-w-4 px-1 text-[10px]"
@@ -248,7 +245,7 @@ export function GPDashboardLayout({
         {children}
       </main>
 
-      {/* Notifications Dropdown */}
+      {/* Notifications */}
       <GPNotificationsDropdown
         gpProfileId={gpProfile.id}
         isOpen={showNotifications}

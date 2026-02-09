@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Plus, Plane, MapPin, Edit, Trash2 } from "lucide-react";
+import { Calendar, Plus, Plane, Edit, Trash2, List, CalendarDays } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { CreateBaggageVoyageDialog } from "@/components/gp/CreateBaggageVoyageDi
 import { EditVoyageDialog } from "@/components/gp/EditVoyageDialog";
 import { DepartureCalendarView } from "@/components/gp/DepartureCalendarView";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
+import { useGPProfile } from "@/hooks/useGPProfile";
 import { format, isFuture, isPast } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -34,118 +35,49 @@ interface Voyage {
   baggage_restrictions: string | null;
 }
 
-interface GPProfile {
-  id: string;
-  business_name: string;
-  gp_type: string;
-  status: string;
-  explicit_restrictions?: string[] | null;
-}
-
-/**
- * GPCalendrierPage - Gestion des départs/voyages
- * 
- * Pour GP Bagages: calendrier des départs programmés
- * Actions: Créer voyage, modifier, supprimer
- */
 export default function GPCalendrierPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
+  const { gpProfile, loading: profileLoading, pendingCount, activeCount, isVerified, gpRoute } = useGPProfile();
   const [voyages, setVoyages] = useState<Voyage[]>([]);
-  const [pendingCount, setPendingCount] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [showCreateVoyage, setShowCreateVoyage] = useState(false);
   const [showEditVoyage, setShowEditVoyage] = useState(false);
   const [selectedVoyage, setSelectedVoyage] = useState<Voyage | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (gpProfile) loadVoyages();
+  }, [gpProfile]);
 
-  const loadData = async () => {
+  const loadVoyages = async () => {
+    if (!gpProfile) return;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate("/auth");
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from("gp_profiles")
-        .select("id, business_name, gp_type, status, explicit_restrictions")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (!profile) {
-        navigate("/gp/inscription");
-        return;
-      }
-
-      setGpProfile(profile);
-
-      // Load all voyages/offers
-      const { data: offersData } = await supabase
+      const { data } = await supabase
         .from("gp_offers")
         .select("*")
-        .eq("gp_id", profile.id)
+        .eq("gp_id", gpProfile.id)
         .order("departure_date", { ascending: true });
-
-      setVoyages(offersData || []);
-
-      // Get pending count
-      const { count } = await supabase
-        .from("orders")
-        .select("*", { count: "exact", head: true })
-        .eq("gp_id", profile.id)
-        .eq("status", "pending");
-
-      setPendingCount(count || 0);
+      setVoyages(data || []);
     } catch (error) {
-      console.error("Error loading data:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les données",
-        variant: "destructive",
-      });
+      console.error("Error:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEditVoyage = (voyage: Voyage) => {
-    setSelectedVoyage(voyage);
-    setShowEditVoyage(true);
-  };
-
   const handleDeleteVoyage = async (voyageId: string) => {
     try {
-      const { error } = await supabase
-        .from("gp_offers")
-        .delete()
-        .eq("id", voyageId);
-
+      const { error } = await supabase.from("gp_offers").delete().eq("id", voyageId);
       if (error) throw error;
-
-      toast({
-        title: "Voyage supprimé",
-        description: "Le départ a été supprimé",
-      });
-      loadData();
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer le voyage",
-        variant: "destructive",
-      });
+      toast({ title: "Voyage supprimé" });
+      loadVoyages();
+    } catch {
+      toast({ title: "Erreur", description: "Impossible de supprimer", variant: "destructive" });
     }
   };
 
-  if (loading) {
-    return <PageLoader message="Chargement du calendrier..." />;
-  }
-
+  if (profileLoading || loading) return <PageLoader message="Chargement..." />;
   if (!gpProfile) return null;
 
   const upcomingVoyages = voyages.filter(v => isFuture(new Date(v.departure_date)));
@@ -155,195 +87,143 @@ export default function GPCalendrierPage() {
     <GPDashboardLayout
       gpProfile={gpProfile}
       pendingCount={pendingCount}
+      activeOrdersCount={activeCount}
       activeTab="calendrier"
     >
       <div className="px-4 py-4 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">
-            Mes départs
-          </h2>
-          <div className="flex gap-2">
-            <Button
-              variant={viewMode === "list" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setViewMode("list")}
-            >
-              Liste
+          <h2 className="text-lg font-bold">Mes départs</h2>
+          <div className="flex gap-1.5">
+            <Button variant={viewMode === "list" ? "default" : "outline"} size="sm" onClick={() => setViewMode("list")} className="h-8 px-2.5">
+              <List className="w-4 h-4" />
             </Button>
-            <Button
-              variant={viewMode === "calendar" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setViewMode("calendar")}
-            >
-              <Calendar className="w-4 h-4" />
+            <Button variant={viewMode === "calendar" ? "default" : "outline"} size="sm" onClick={() => setViewMode("calendar")} className="h-8 px-2.5">
+              <CalendarDays className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
-        {/* Add New Voyage Button */}
-        <Button
-          className="w-full"
-          onClick={() => setShowCreateVoyage(true)}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Nouveau voyage
-        </Button>
-
-        {viewMode === "calendar" ? (
-          <DepartureCalendarView
-            departures={voyages.map(v => ({
-              id: v.id,
-              date: v.departure_date,
-              originCity: v.origin_city,
-              originCountry: v.origin_country,
-              destinationCity: v.destination_city,
-              destinationCountry: v.destination_country,
-              capacity: v.total_capacity,
-              availableCapacity: v.available_capacity,
-              pricePerKg: v.price_per_kg,
-              type: "aller" as const,
-              status: v.status === "active" ? "open" as const : "past" as const,
-            }))}
-            onAddDeparture={async (data) => {
-              // Handle adding departure
-              console.log("Add departure:", data);
-            }}
-          />
+        {/* Blocked for unverified */}
+        {!isVerified ? (
+          <Card className="border-amber-500/30 bg-amber-500/5">
+            <CardContent className="p-6 text-center">
+              <Plane className="w-10 h-10 mx-auto mb-3 text-amber-500 opacity-60" />
+              <p className="font-semibold text-sm">Compte en attente de validation</p>
+              <p className="text-xs text-muted-foreground mt-1">Vous pourrez créer des départs après approbation admin</p>
+            </CardContent>
+          </Card>
         ) : (
           <>
-            {/* Upcoming Voyages */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-medium text-muted-foreground">
-                À venir ({upcomingVoyages.length})
-              </h3>
+            <Button className="w-full h-12" onClick={() => setShowCreateVoyage(true)}>
+              <Plus className="w-5 h-5 mr-2" /> Nouveau voyage
+            </Button>
 
-              {upcomingVoyages.length === 0 ? (
-                <Card className="border-dashed">
-                  <CardContent className="py-8 text-center text-muted-foreground">
-                    <Plane className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                    <p className="text-sm">Aucun voyage programmé</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                upcomingVoyages.map((voyage) => (
-                  <Card key={voyage.id} className="overflow-hidden">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <Plane className="w-4 h-4 text-primary" />
-                            <p className="font-medium text-sm">
-                              {voyage.origin_city} → {voyage.destination_city}
-                            </p>
+            {viewMode === "calendar" && gpRoute ? (
+              <DepartureCalendarView
+                departures={voyages.map(v => ({
+                  id: v.id,
+                  date: v.departure_date,
+                  originCity: v.origin_city,
+                  originCountry: v.origin_country,
+                  destinationCity: v.destination_city,
+                  destinationCountry: v.destination_country,
+                  capacity: v.total_capacity,
+                  availableCapacity: v.available_capacity,
+                  pricePerKg: v.price_per_kg,
+                  type: v.origin_city === gpRoute.originCity ? "aller" as const : "retour" as const,
+                  status: v.status === "active" ? "open" as const : "past" as const,
+                }))}
+                onAddDeparture={async () => setShowCreateVoyage(true)}
+                defaultRoute={gpRoute}
+              />
+            ) : (
+              <>
+                {/* Upcoming */}
+                <div className="space-y-3">
+                  <p className="text-sm font-medium text-muted-foreground">À venir ({upcomingVoyages.length})</p>
+                  {upcomingVoyages.length === 0 ? (
+                    <Card className="border-dashed">
+                      <CardContent className="py-8 text-center text-muted-foreground">
+                        <Plane className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                        <p className="text-sm">Aucun voyage programmé</p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    upcomingVoyages.map((v) => (
+                      <Card key={v.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <Plane className="w-4 h-4 text-primary" />
+                                <p className="font-semibold text-sm">{v.origin_city} → {v.destination_city}</p>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {format(new Date(v.departure_date), "EEEE d MMMM yyyy", { locale: fr })}
+                                {v.flight_number && ` · ${v.flight_number}`}
+                              </p>
+                            </div>
+                            <Badge variant={v.status === "active" ? "default" : "secondary"}>
+                              {v.status === "active" ? "Actif" : "Inactif"}
+                            </Badge>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {format(new Date(voyage.departure_date), "EEEE d MMMM yyyy", { locale: fr })}
-                          </p>
-                        </div>
-                        <Badge 
-                          variant={voyage.status === "active" ? "default" : "secondary"}
-                          className={voyage.status === "active" ? "bg-green-500" : ""}
-                        >
-                          {voyage.status === "active" ? "Actif" : "Inactif"}
-                        </Badge>
-                      </div>
+                          <div className="grid grid-cols-3 gap-2 text-xs mt-3">
+                            <div><span className="text-muted-foreground block">Capacité</span><p className="font-semibold">{v.available_capacity}/{v.total_capacity} kg</p></div>
+                            <div><span className="text-muted-foreground block">Prix/kg</span><p className="font-semibold">{v.price_per_kg} {getCurrencySymbol(v.currency)}</p></div>
+                            <div><span className="text-muted-foreground block">Vol</span><p className="font-semibold">{v.flight_number || "—"}</p></div>
+                          </div>
+                          <div className="flex gap-2 mt-3">
+                            <Button variant="outline" size="sm" className="flex-1" onClick={() => { setSelectedVoyage(v); setShowEditVoyage(true); }}>
+                              <Edit className="w-4 h-4 mr-1" /> Modifier
+                            </Button>
+                            <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteVoyage(v.id)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
 
-                      <div className="grid grid-cols-3 gap-2 text-xs mt-3">
-                        <div>
-                          <span className="text-muted-foreground">Capacité</span>
-                          <p className="font-medium">{voyage.available_capacity}/{voyage.total_capacity} kg</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Prix/kg</span>
-                          <p className="font-medium">{voyage.price_per_kg} {getCurrencySymbol(voyage.currency)}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Vol</span>
-                          <p className="font-medium">{voyage.flight_number || "N/A"}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-2 mt-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => handleEditVoyage(voyage)}
-                        >
-                          <Edit className="w-4 h-4 mr-1" />
-                          Modifier
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:bg-destructive/10"
-                          onClick={() => handleDeleteVoyage(voyage.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-
-            {/* Past Voyages */}
-            {pastVoyages.length > 0 && (
-              <div className="space-y-3 opacity-60">
-                <h3 className="text-sm font-medium text-muted-foreground">
-                  Passés ({pastVoyages.length})
-                </h3>
-                {pastVoyages.slice(0, 3).map((voyage) => (
-                  <Card key={voyage.id} className="overflow-hidden">
-                    <CardContent className="p-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm">
-                            {voyage.origin_city} → {voyage.destination_city}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {format(new Date(voyage.departure_date), "d MMM yyyy", { locale: fr })}
-                          </p>
-                        </div>
-                        <Badge variant="outline">Terminé</Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                {/* Past */}
+                {pastVoyages.length > 0 && (
+                  <div className="space-y-2 opacity-60">
+                    <p className="text-sm font-medium text-muted-foreground">Passés ({pastVoyages.length})</p>
+                    {pastVoyages.slice(0, 3).map((v) => (
+                      <Card key={v.id}>
+                        <CardContent className="p-3 flex items-center justify-between">
+                          <div>
+                            <p className="text-sm">{v.origin_city} → {v.destination_city}</p>
+                            <p className="text-xs text-muted-foreground">{format(new Date(v.departure_date), "d MMM yyyy", { locale: fr })}</p>
+                          </div>
+                          <Badge variant="outline">Terminé</Badge>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
       </div>
 
-      {/* Create Voyage Dialog */}
       <CreateBaggageVoyageDialog
         open={showCreateVoyage}
         onClose={() => setShowCreateVoyage(false)}
         gpId={gpProfile.id}
         lastVoyage={voyages[0] || null}
-        onSuccess={() => {
-          setShowCreateVoyage(false);
-          loadData();
-        }}
+        onSuccess={() => { setShowCreateVoyage(false); loadVoyages(); }}
       />
 
-      {/* Edit Voyage Dialog */}
       {selectedVoyage && (
         <EditVoyageDialog
           open={showEditVoyage}
-          onClose={() => {
-            setShowEditVoyage(false);
-            setSelectedVoyage(null);
-          }}
+          onClose={() => { setShowEditVoyage(false); setSelectedVoyage(null); }}
           voyage={selectedVoyage}
-          onSuccess={() => {
-            setShowEditVoyage(false);
-            setSelectedVoyage(null);
-            loadData();
-          }}
+          onSuccess={() => { setShowEditVoyage(false); setSelectedVoyage(null); loadVoyages(); }}
         />
       )}
     </GPDashboardLayout>
