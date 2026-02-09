@@ -4,7 +4,8 @@ import {
   Package, Bell, Menu, ScanLine, Truck,
   Lock, Home, ListChecks, LayoutGrid,
   Shield, DollarSign, History, Calendar,
-  Settings, LogOut, MapPin, User, Plus
+  Settings, LogOut, MapPin, User, Plus,
+  MessageCircle
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,8 @@ export function GPDashboardLayout({
     if (path.includes("/gp/colis")) return "colis";
     if (path.includes("/gp/distribution")) return "distribution";
     if (path.includes("/gp/scan")) return "scan";
+    if (path.includes("/gp/messages")) return "messages";
+    if (path.includes("/gp/parametres")) return "parametres";
     if (path.includes("/gp/apercu") || path.includes("/gp/demandes") || path.includes("/gp/en-cours")) return "apercu";
     if (path.includes("/gp/ktp")) return "ktp";
     return "aujourdhui";
@@ -242,11 +245,12 @@ export function GPDashboardLayout({
                 <MenuButton icon={LayoutGrid} label="Aperçu" onClick={() => { setShowMenu(false); navigate("/gp/apercu"); }} />
                 <MenuButton icon={Package} label="Demandes" badge={pendingCount} locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/demandes"); }}} />
                 <MenuButton icon={Calendar} label="Départs" locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/calendrier"); }}} />
+                <MenuButton icon={MessageCircle} label="Messages" onClick={() => { setShowMenu(false); navigate("/gp/messages"); }} />
                 <MenuButton icon={DollarSign} label="Tarifs" onClick={() => { setShowMenu(false); navigate("/gp/tarification"); }} />
                 <MenuButton icon={History} label="Historique" onClick={() => { setShowMenu(false); navigate("/gp/historique"); }} />
                 <MenuButton icon={Shield} label="KTP & Geo" onClick={() => { setShowMenu(false); navigate("/gp/ktp-geotrack"); }} />
                 <MenuButton icon={MapPin} label="Profil public" onClick={() => { setShowMenu(false); navigate("/gp/profil-public"); }} />
-                <MenuButton icon={Settings} label="Réglages" onClick={() => { setShowMenu(false); navigate("/settings"); }} />
+                <MenuButton icon={Settings} label="Réglages" onClick={() => { setShowMenu(false); navigate("/gp/parametres"); }} />
                 <MenuButton icon={LogOut} label="Déconnexion" variant="destructive" onClick={() => { setShowMenu(false); handleSignOut(); }} />
               </div>
             </SheetContent>

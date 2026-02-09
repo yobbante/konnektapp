@@ -11,6 +11,7 @@ import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { TypingIndicator } from "./TypingIndicator";
 import { MessageTemplates } from "./MessageTemplates";
 import { SmartClientResponses } from "./SmartClientResponses";
+import { SmartGPResponses } from "./SmartGPResponses";
 import { ChatHeader } from "./ChatHeader";
 import { MessageContent } from "./MessageContent";
 import { MiniLoader } from "@/components/ui/MiniLoader";
@@ -300,7 +301,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Templates - Use SmartClientResponses for clients */}
+      {/* Message Templates - Smart responses by role */}
       {userType === "client" ? (
         <SmartClientResponses
           conversationId={conversationId}
@@ -310,9 +311,10 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
           onToggleExpand={() => setTemplatesExpanded(!templatesExpanded)}
         />
       ) : (
-        <MessageTemplates
-          userType={userType}
-          onSelectTemplate={handleSelectTemplate}
+        <SmartGPResponses
+          conversationId={conversationId}
+          currentUserId={currentUserId}
+          onSelectMessage={handleSelectTemplate}
           isExpanded={templatesExpanded}
           onToggleExpand={() => setTemplatesExpanded(!templatesExpanded)}
         />
