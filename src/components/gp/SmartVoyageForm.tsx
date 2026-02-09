@@ -1,19 +1,12 @@
 /**
- * SmartVoyageForm — Unified intelligent voyage creation form
- * 
- * Used from: Header +, Calendar date tap, Calendrier page button
- * Mobile-optimized with Drawer/Sheet pattern, safe area support
- * 
- * RULES:
- * - Route LOCKED to GP's navette fixe
- * - Price LOCKED from registration
- * - Only capacity, dates, flight info editable
+ * SmartVoyageForm — Redesigned voyage creation form
+ * Matches the mobile-first teal design with locked route card
  */
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Plane, Weight, Calendar, Clock, CheckCircle,
-  MapPin, Info, ArrowRightLeft
+  MapPin, Info, Luggage
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -21,8 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -37,17 +29,12 @@ interface SmartVoyageFormProps {
   open: boolean;
   onClose: () => void;
   gpId: string;
-  /** Pre-selected date (from calendar tap) */
   selectedDate?: Date | null;
   onSuccess: () => void;
 }
 
 export function SmartVoyageForm({
-  open,
-  onClose,
-  gpId,
-  selectedDate,
-  onSuccess,
+  open, onClose, gpId, selectedDate, onSuccess,
 }: SmartVoyageFormProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -70,26 +57,19 @@ export function SmartVoyageForm({
     airline: "",
   });
 
-  // Fetch GP locked route & pricing
   useEffect(() => {
-    if (open && gpId) {
-      loadGpData();
-    }
+    if (open && gpId) loadGpData();
   }, [open, gpId]);
 
-  // Pre-fill date if provided and reset form
   useEffect(() => {
     if (open) {
       setForm({
-        departureDate: selectedDate
-          ? format(selectedDate, "yyyy-MM-dd'T'HH:mm")
-          : "",
+        departureDate: selectedDate ? format(selectedDate, "yyyy-MM-dd'T'HH:mm") : "",
         arrivalDate: "",
         capacity: "23",
         flightNumber: "",
         airline: "",
       });
-      smartDetectTripType();
     }
   }, [open, selectedDate]);
 
@@ -119,16 +99,11 @@ export function SmartVoyageForm({
         currency: profile.default_currency || "XOF",
       });
 
-      // Smart trip type: alternate with last offer
       if (lastOffer && profile.base_origin_city) {
         const lastWasAller = lastOffer.origin_city === profile.base_origin_city;
         setTripType(lastWasAller ? "retour" : "aller");
       }
     }
-  };
-
-  const smartDetectTripType = async () => {
-    // Will be set by loadGpData
   };
 
   if (!gpData) return null;
@@ -151,7 +126,6 @@ export function SmartVoyageForm({
       toast({ title: "Champs requis", description: "Date et capacité obligatoires", variant: "destructive" });
       return;
     }
-
     if (new Date(form.departureDate) <= new Date()) {
       toast({ title: "Date invalide", description: "La date doit être dans le futur", variant: "destructive" });
       return;
@@ -176,13 +150,8 @@ export function SmartVoyageForm({
         airline: form.airline || null,
         status: "active",
       });
-
       if (error) throw error;
-
-      toast({
-        title: "✈️ Voyage créé !",
-        description: `${currentRoute.origin.city} → ${currentRoute.destination.city}`,
-      });
+      toast({ title: "✈️ Voyage créé !", description: `${currentRoute.origin.city} → ${currentRoute.destination.city}` });
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -194,98 +163,82 @@ export function SmartVoyageForm({
 
   return (
     <Drawer open={open} onOpenChange={(o) => !loading && !o && onClose()}>
-      <DrawerContent className="max-h-[92vh]">
-        {/* Header gradient */}
-        <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-5 py-4 rounded-t-2xl">
-          <DrawerTitle className="flex items-center gap-2 text-lg text-primary-foreground">
+      <DrawerContent className="max-h-[95vh] focus:outline-none">
+        {/* Teal header */}
+        <div className="bg-primary text-primary-foreground px-5 py-4 rounded-t-2xl">
+          <div className="flex items-center gap-2.5">
             <Plane className="w-5 h-5" />
-            Nouveau voyage
-          </DrawerTitle>
-          {selectedDate && (
-            <p className="text-sm opacity-90 mt-1">
-              {format(selectedDate, "EEEE d MMMM yyyy", { locale: fr })}
-            </p>
-          )}
+            <h2 className="text-lg font-bold">Nouveau voyage</h2>
+          </div>
         </div>
 
-        <div className="px-5 py-4 space-y-4 overflow-y-auto pb-safe" style={{ maxHeight: 'calc(92vh - 80px)' }}>
-          {/* Route visual — LOCKED */}
-          <Card className="border-2 border-primary/20 bg-primary/5">
-            <CardContent className="p-3">
-              <div className="flex items-center justify-center gap-4">
-                <div className="text-center">
-                  <span className="text-2xl">{getFlag(currentRoute.origin.country)}</span>
-                  <p className="text-xs font-bold mt-1">{currentRoute.origin.city}</p>
-                </div>
-                <motion.div animate={{ x: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
-                  <Plane className={`w-5 h-5 text-primary ${tripType === "retour" ? "rotate-180" : ""}`} />
-                </motion.div>
-                <div className="text-center">
-                  <span className="text-2xl">{getFlag(currentRoute.destination.country)}</span>
-                  <p className="text-xs font-bold mt-1">{currentRoute.destination.city}</p>
-                </div>
-              </div>
-              <div className="flex items-center justify-center mt-2">
-                <Badge variant="secondary" className="text-[10px] gap-1">
-                  <MapPin className="w-3 h-3" /> Navette verrouillée
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="px-5 py-5 space-y-5 overflow-y-auto pb-safe" style={{ maxHeight: 'calc(95vh - 72px)' }}>
+          {/* Route card — locked */}
+          <div className="rounded-2xl border-2 border-primary/20 bg-primary/5 p-4">
+            <div className="flex items-center justify-center gap-5">
+              <span className="text-3xl">{getFlag(currentRoute.origin.country)}</span>
+              <motion.div animate={{ x: [0, 3, 0] }} transition={{ repeat: Infinity, duration: 2.5 }}>
+                <Plane className={`w-5 h-5 text-primary ${tripType === "retour" ? "rotate-180" : ""}`} />
+              </motion.div>
+              <span className="text-3xl">{getFlag(currentRoute.destination.country)}</span>
+            </div>
+            <div className="flex justify-center mt-2.5">
+              <Badge className="bg-orange-500 hover:bg-orange-600 text-white text-[11px] gap-1 px-3 py-1">
+                <MapPin className="w-3 h-3" /> Navette verrouillée
+              </Badge>
+            </div>
+          </div>
 
-          {/* Trip type selector */}
-          <div className="grid grid-cols-2 gap-2">
+          {/* Aller / Retour toggle */}
+          <div className="grid grid-cols-2 gap-3">
             <Button
               type="button"
               variant={tripType === "aller" ? "default" : "outline"}
-              className="h-11 text-sm"
+              className={`h-12 text-sm font-semibold gap-2 rounded-xl ${tripType === "aller" ? "" : "border-2"}`}
               onClick={() => setTripType("aller")}
             >
-              <Plane className="w-4 h-4 mr-2" /> Aller
+              <Plane className="w-4 h-4" /> Aller
             </Button>
             <Button
               type="button"
               variant={tripType === "retour" ? "default" : "outline"}
-              className="h-11 text-sm"
+              className={`h-12 text-sm font-semibold gap-2 rounded-xl ${tripType === "retour" ? "" : "border-2"}`}
               onClick={() => setTripType("retour")}
             >
-              <Plane className="w-4 h-4 mr-2 rotate-180" /> Retour
+              <Luggage className="w-4 h-4" /> Retour
             </Button>
           </div>
 
-          {/* Date departure */}
-          {!selectedDate && (
-            <div className="space-y-1.5">
-              <Label className="text-xs flex items-center gap-1">
-                <Calendar className="w-3 h-3" /> Date de départ *
-              </Label>
-              <Input
-                type="datetime-local"
-                value={form.departureDate}
-                min={new Date().toISOString().slice(0, 16)}
-                onChange={(e) => setForm({ ...form, departureDate: e.target.value })}
-                className="h-11"
-              />
-            </div>
-          )}
+          {/* Date de départ */}
+          <div className="space-y-2">
+            <Label className="text-sm flex items-center gap-1.5 text-muted-foreground">
+              <Calendar className="w-4 h-4" /> Date de départ *
+            </Label>
+            <Input
+              type="datetime-local"
+              value={form.departureDate}
+              min={new Date().toISOString().slice(0, 16)}
+              onChange={(e) => setForm({ ...form, departureDate: e.target.value })}
+              className="h-12 rounded-xl border-2 border-primary/30 focus:border-primary"
+            />
+          </div>
 
-          {/* Capacity — Main input */}
-          <div className="space-y-1.5">
-            <Label className="text-sm font-medium flex items-center gap-2">
-              <Weight className="w-4 h-4" /> Capacité (kg) *
+          {/* Capacité */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium flex items-center gap-1.5">
+              <Luggage className="w-4 h-4" /> Capacité (kg) *
             </Label>
             <Input
               type="number"
               inputMode="numeric"
-              placeholder="Ex: 30"
-              className="h-12 text-lg"
+              placeholder="23"
+              className="h-12 text-lg rounded-xl border-2 border-primary/30 focus:border-primary"
               value={form.capacity}
               onChange={(e) => setForm({ ...form, capacity: e.target.value })}
-              autoFocus
             />
           </div>
 
-          {/* Flight info */}
+          {/* Compagnie + N° Vol */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Compagnie</Label>
@@ -293,7 +246,7 @@ export function SmartVoyageForm({
                 placeholder="Air Sénégal..."
                 value={form.airline}
                 onChange={(e) => setForm({ ...form, airline: e.target.value })}
-                className="h-10"
+                className="h-11 rounded-xl"
               />
             </div>
             <div className="space-y-1.5">
@@ -302,27 +255,27 @@ export function SmartVoyageForm({
                 placeholder="AF123"
                 value={form.flightNumber}
                 onChange={(e) => setForm({ ...form, flightNumber: e.target.value })}
-                className="h-10"
+                className="h-11 rounded-xl"
               />
             </div>
           </div>
 
-          {/* Arrival date */}
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground flex items-center gap-1">
-              <Clock className="w-3 h-3" /> Date d'arrivée estimée
+          {/* Date d'arrivée estimée */}
+          <div className="space-y-2">
+            <Label className="text-sm text-muted-foreground flex items-center gap-1.5">
+              <Clock className="w-4 h-4" /> Date d'arrivée estimée
             </Label>
             <Input
               type="datetime-local"
               value={form.arrivalDate}
               min={form.departureDate}
               onChange={(e) => setForm({ ...form, arrivalDate: e.target.value })}
-              className="h-10"
+              className="h-12 rounded-xl border-2 border-primary/30 focus:border-primary"
             />
           </div>
 
-          {/* Locked price */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
+          {/* Prix verrouillé */}
+          <div className="flex items-center justify-between p-3.5 rounded-xl bg-muted/60 border">
             <span className="text-sm text-muted-foreground flex items-center gap-2">
               <Info className="w-4 h-4" /> Prix verrouillé
             </span>
@@ -332,25 +285,25 @@ export function SmartVoyageForm({
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-1 pb-2">
+          <div className="flex gap-3 pt-1 pb-4">
             <Button
               variant="outline"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 h-12"
+              className="flex-1 h-12 rounded-xl border-2 text-sm font-semibold"
             >
               Annuler
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={loading || !form.capacity || parseFloat(form.capacity) <= 0}
-              className="flex-1 h-12"
+              className="flex-1 h-12 rounded-xl text-sm font-semibold gap-2"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  <CheckCircle className="w-5 h-5 mr-2" />
+                  <CheckCircle className="w-4 h-4" />
                   Créer le voyage
                 </>
               )}
