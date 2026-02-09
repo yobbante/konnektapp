@@ -19,13 +19,12 @@ import { CurrencySelector, getCurrencySymbol, type CurrencyCode } from "@/compon
 import { PricingInputForm } from "@/components/gp/PricingInputForm";
 import { configToDbTiers, validatePricingInputs, type GPPricingConfig } from "@/lib/gpPricingEngine";
 
-const DEFAULT_FLAT_RATE_OBJECTS = [
-  { id: "telephone", label: "Téléphone", defaultPrice: 15 },
-  { id: "ordinateur", label: "Ordinateur", defaultPrice: 25 },
-  { id: "document", label: "Documents administratifs", defaultPrice: 10 },
-  { id: "piece_auto", label: "Pièces auto", defaultPrice: 30 },
-  { id: "bijoux", label: "Bijoux", defaultPrice: 20 },
-];
+type RegistrationFlatRateItem = {
+  id: string;
+  label: string;
+  defaultPrice: number;
+  isActive: boolean;
+};
 
 type RegistrationPhase = "steps" | "pricing_gate";
 
@@ -52,9 +51,8 @@ export default function GPBagagesRegistration() {
   const [pricePerKg, setPricePerKg] = useState("");
   const [forfaitValise, setForfaitValise] = useState("");
   const [defaultCurrency, setDefaultCurrency] = useState<CurrencyCode>("XOF");
-  const [flatRatePricing, setFlatRatePricing] = useState<Map<string, { price: string; isActive: boolean }>>(
-    new Map(DEFAULT_FLAT_RATE_OBJECTS.map(o => [o.id, { price: o.defaultPrice.toString(), isActive: false }]))
-  );
+  const [flatRateItems, setFlatRateItems] = useState<RegistrationFlatRateItem[]>([]);
+  const [flatRatePricing, setFlatRatePricing] = useState<Map<string, { price: string; isActive: boolean }>>(new Map());
 
   useEffect(() => {
     const loadExistingProfile = async () => {
@@ -76,6 +74,32 @@ export default function GPBagagesRegistration() {
     };
     loadExistingProfile();
   }, [navigate, toast]);
+
+  // Load flat rate object types from DB
+  useEffect(() => {
+    const loadFlatRateTypes = async () => {
+      const { data } = await supabase
+        .from("flat_rate_object_types")
+        .select("id, label, default_price")
+        .eq("is_active", true)
+        .order("label");
+      if (data) {
+        const items = data.map(t => ({
+          id: t.id,
+          label: t.label,
+          defaultPrice: t.default_price || 0,
+          isActive: false,
+        }));
+        setFlatRateItems(items);
+        const priceMap = new Map<string, { price: string; isActive: boolean }>();
+        data.forEach(t => {
+          priceMap.set(t.id, { price: (t.default_price || 0).toString(), isActive: false });
+        });
+        setFlatRatePricing(priceMap);
+      }
+    };
+    loadFlatRateTypes();
+  }, []);
 
   // 3 steps only now
   const steps = [
@@ -253,20 +277,13 @@ export default function GPBagagesRegistration() {
       const tiersToInsert = configToDbTiers(pricingConfig).map(t => ({ gp_id: pendingGpId, ...t }));
       if (tiersToInsert.length > 0) await supabase.from("gp_weight_tiers").insert(tiersToInsert);
 
-      // Insert flat rate pricing
-      const { data: objectTypes } = await supabase.from("flat_rate_object_types").select("id, name").eq("is_active", true);
-      if (objectTypes) {
-        const objectTypeMap = new Map(objectTypes.map(t => [t.name, t.id]));
-        for (const [key, value] of flatRatePricing.entries()) {
-          if (value.price && parseFloat(value.price) > 0) {
-            const objectTypeId = objectTypeMap.get(key);
-            if (objectTypeId) {
-              await supabase.from("gp_flat_rate_pricing").upsert({
-                gp_id: pendingGpId, object_type_id: objectTypeId, price: parseFloat(value.price),
-                is_active: value.isActive, currency: defaultCurrency,
-              }, { onConflict: 'gp_id,object_type_id' });
-            }
-          }
+      // Insert flat rate pricing (keys are now DB UUIDs directly)
+      for (const [objectTypeId, value] of flatRatePricing.entries()) {
+        if (value.isActive && value.price && parseFloat(value.price) > 0) {
+          await supabase.from("gp_flat_rate_pricing").upsert({
+            gp_id: pendingGpId, object_type_id: objectTypeId, price: parseFloat(value.price),
+            is_active: true, currency: defaultCurrency,
+          }, { onConflict: 'gp_id,object_type_id' });
         }
       }
 
@@ -314,23 +331,30 @@ export default function GPBagagesRegistration() {
                   <Euro className="w-5 h-5 text-primary" /> Vos tarifs
                 </h2>
                 <p className="text-sm text-muted-foreground">2 prix de référence. Paliers calculés automatiquement.</p>
-                <PricingInputForm pricePerKg={pricePerKg} forfaitValise={forfaitValise} currency={defaultCurrency}
-                  onPriceChange={setPricePerKg} onForfaitChange={setForfaitValise} onCurrencyChange={setDefaultCurrency} />
-                
-                <div className="space-y-3 mt-4">
-                  <p className="font-medium text-sm">Forfaits par objet (optionnel)</p>
-                  {DEFAULT_FLAT_RATE_OBJECTS.map((obj) => {
-                    const pricing = flatRatePricing.get(obj.id) || { price: "", isActive: false };
-                    return (
-                      <div key={obj.id} className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
-                        <span className="text-sm flex-1">{obj.label}</span>
-                        <Input type="number" placeholder={obj.defaultPrice.toString()} value={pricing.price}
-                          onChange={(e) => handleFlatRateChange(obj.id, "price", e.target.value)} className="h-10 w-24" />
-                        <span className="text-xs text-muted-foreground">{getCurrencySymbol(defaultCurrency)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+                <PricingInputForm 
+                  pricePerKg={pricePerKg} 
+                  forfaitValise={forfaitValise} 
+                  currency={defaultCurrency}
+                  onPriceChange={setPricePerKg} 
+                  onForfaitChange={setForfaitValise} 
+                  onCurrencyChange={setDefaultCurrency}
+                  flatRateItems={flatRateItems.map(item => ({
+                    id: item.id,
+                    label: item.label,
+                    isActive: flatRatePricing.get(item.id)?.isActive || false,
+                  }))}
+                  onFlatRateToggle={(id, active) => {
+                    setFlatRatePricing(prev => {
+                      const newMap = new Map(prev);
+                      const current = newMap.get(id) || { price: "", isActive: false };
+                      newMap.set(id, { ...current, isActive: active });
+                      return newMap;
+                    });
+                    setFlatRateItems(prev => prev.map(item => 
+                      item.id === id ? { ...item, isActive: active } : item
+                    ));
+                  }}
+                />
 
                 <div className="pt-4">
                   <Button onClick={handleFinalizePricing} disabled={loading} className="w-full h-12 gap-2">

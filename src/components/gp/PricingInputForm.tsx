@@ -9,14 +9,21 @@
  * Everything else is auto-calculated.
  */
 import { useState, useEffect } from "react";
-import { Euro, Coins, Lock, Info } from "lucide-react";
+import { Euro, Coins, Lock, Info, Package } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { CurrencySelector, getCurrencySymbol, type CurrencyCode } from "@/components/ui/currency-selector";
 import { PricingTiersDisplay } from "./PricingTiersDisplay";
 import { validatePricingInputs, type GPPricingConfig } from "@/lib/gpPricingEngine";
+
+interface FlatRateItem {
+  id: string;
+  label: string;
+  isActive: boolean;
+}
 
 interface PricingInputFormProps {
   pricePerKg: string;
@@ -27,6 +34,8 @@ interface PricingInputFormProps {
   onCurrencyChange: (value: CurrencyCode) => void;
   locked?: boolean;
   showCurrencySelector?: boolean;
+  flatRateItems?: FlatRateItem[];
+  onFlatRateToggle?: (id: string, active: boolean) => void;
 }
 
 export function PricingInputForm({
@@ -38,10 +47,19 @@ export function PricingInputForm({
   onCurrencyChange,
   locked = false,
   showCurrencySelector = true,
+  flatRateItems,
+  onFlatRateToggle,
 }: PricingInputFormProps) {
   const currencySymbol = getCurrencySymbol(currency);
   const basePriceNum = parseFloat(pricePerKg) || 0;
   const forfaitNum = parseFloat(forfaitValise) || 0;
+
+  // Smart placeholders based on currency
+  const isCFA = currency === "XOF";
+  const placeholderPriceKg = isCFA ? "Ex: 8000" : "Ex: 10";
+  const placeholderForfait = isCFA ? "Ex: 150000" : "Ex: 220";
+  const stepPriceKg = isCFA ? "100" : "1";
+  const stepForfait = isCFA ? "500" : "5";
 
   const config: GPPricingConfig = {
     basePricePerKg: basePriceNum,
@@ -100,10 +118,11 @@ export function PricingInputForm({
               <Input
                 type="number"
                 min="1"
-                step="100"
-                placeholder="Ex: 8000"
+                step={stepPriceKg}
+                placeholder={placeholderPriceKg}
                 value={pricePerKg}
                 onChange={(e) => onPriceChange(e.target.value)}
+                onFocus={(e) => { if (e.target.value === "0") onPriceChange(""); }}
                 className="text-xl font-bold h-12 text-center flex-1"
                 disabled={locked}
               />
@@ -132,10 +151,11 @@ export function PricingInputForm({
               <Input
                 type="number"
                 min="1"
-                step="500"
-                placeholder="Ex: 150000"
+                step={stepForfait}
+                placeholder={placeholderForfait}
                 value={forfaitValise}
                 onChange={(e) => onForfaitChange(e.target.value)}
+                onFocus={(e) => { if (e.target.value === "0") onForfaitChange(""); }}
                 className="text-xl font-bold h-12 text-center flex-1"
                 disabled={locked}
               />
@@ -150,6 +170,36 @@ export function PricingInputForm({
       {/* Live preview of calculated tiers */}
       {basePriceNum > 0 && forfaitNum > 0 && (
         <PricingTiersDisplay config={config} locked={locked} />
+      )}
+
+      {/* Flat rate items with switches */}
+      {flatRateItems && flatRateItems.length > 0 && (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <Package className="w-4 h-4 text-primary" />
+              Forfaits par objet
+            </Label>
+            <p className="text-xs text-muted-foreground -mt-1">
+              Activez les objets que vous acceptez à tarif fixe
+            </p>
+            {flatRateItems.map((item) => (
+              <div
+                key={item.id}
+                className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                  item.isActive ? 'border-primary/40 bg-primary/5' : 'border-border'
+                }`}
+              >
+                <span className="text-sm font-medium">{item.label}</span>
+                <Switch
+                  checked={item.isActive}
+                  onCheckedChange={(checked) => onFlatRateToggle?.(item.id, checked)}
+                  disabled={locked}
+                />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       )}
 
       {/* Validation message */}
