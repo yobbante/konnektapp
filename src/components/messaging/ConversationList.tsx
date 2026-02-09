@@ -59,10 +59,33 @@ export function ConversationList({ userType, onSelectConversation, selectedId }:
       if (!user) return;
       setCurrentUserId(user.id);
 
-      const { data, error } = await supabase
+      // Build query based on userType for strict isolation
+      let query = supabase
         .from("conversations")
         .select("*")
         .order("last_message_at", { ascending: false });
+
+      if (userType === "client") {
+        // Client: only show conversations where user is the client
+        query = query.eq("client_id", user.id);
+      } else {
+        // GP: only show conversations where user is the GP (via gp_profiles)
+        const { data: gpProfile } = await supabase
+          .from("gp_profiles")
+          .select("id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        
+        if (gpProfile) {
+          query = query.eq("gp_id", gpProfile.id);
+        } else {
+          setConversations([]);
+          setLoading(false);
+          return;
+        }
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 

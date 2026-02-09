@@ -67,16 +67,11 @@ export default function MessagesPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // Check if user is GP
-        const { data: gpProfile } = await supabase
-          .from("gp_profiles")
-          .select("id")
-          .eq("user_id", user.id)
-          .single();
-
+        // For client messages page, always set as client role
+        // GP messaging is handled separately at /gp/messages
         setCurrentUser({
           id: user.id,
-          isGp: !!gpProfile,
+          isGp: false, // Always client context in /messages
         });
       }
     } catch (error) {
