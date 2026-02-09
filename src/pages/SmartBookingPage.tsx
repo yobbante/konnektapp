@@ -26,6 +26,7 @@ import { useSelfBookingGuard } from "@/hooks/useSelfBookingGuard";
 import { getRegressiveInfo } from "@/lib/gpPricingEngine";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { RecipientField } from "@/components/booking/RecipientField";
 
 // Types
 interface GPProfile {
@@ -120,6 +121,7 @@ export default function SmartBookingPage() {
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState(false);
+  const [recipientData, setRecipientData] = useState<{ name: string; phone: string; userId: string | null }>({ name: "", phone: "", userId: null });
 
   // Data
   const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
@@ -554,7 +556,10 @@ export default function SmartBookingPage() {
         declared_value: insuranceChoice.declaredValue ? Math.round(insuranceChoice.declaredValue) : null,
         // INTEGER column
         content_nature: kiloNatures,
-        content_nature_other: kiloNatures.includes("autres") ? autresNature : null
+        content_nature_other: kiloNatures.includes("autres") ? autresNature : null,
+        recipient_name: recipientData?.name || null,
+        recipient_phone: recipientData?.phone || null,
+        recipient_user_id: recipientData?.userId || null,
       }).select("id").single();
       if (orderError) throw orderError;
 
@@ -1249,6 +1254,18 @@ export default function SmartBookingPage() {
               </motion.div>}
           </AnimatePresence>}
       </div>
+
+      {/* Recipient Field - before floating recap */}
+      {!showEscrow && step >= 1 && step <= 4 && (
+        <div className="px-4 pb-2">
+          <RecipientField
+            recipientName={recipientData.name}
+            recipientPhone={recipientData.phone}
+            recipientUserId={recipientData.userId}
+            onRecipientChange={setRecipientData}
+          />
+        </div>
+      )}
 
       {/* Floating Recap - Always visible except step 5 */}
       {!showEscrow && <FloatingRecap weight={calculations.weight} flatRateCount={calculations.flatRateCount} transportTotal={calculations.transportTotal} insuranceTotal={displayInsuranceAmount} logisticsTotal={displayLogisticsAmount} grandTotal={displayGrandTotal} currency={currency} getFCFAEquivalent={getFCFAEquivalent} hasInsurance={insuranceChoice.hasInsurance} hasLogistics={calculations.hasLogistics} currentStep={step} />}
