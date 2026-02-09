@@ -8,8 +8,8 @@
  * 
  * Everything else is auto-calculated.
  */
-import { useState, useEffect } from "react";
-import { Euro, Coins, Lock, Info, Package } from "lucide-react";
+import { useState } from "react";
+import { Euro, Coins, Lock, Info, Package, Edit, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,6 +23,7 @@ interface FlatRateItem {
   id: string;
   label: string;
   isActive: boolean;
+  price?: number;
 }
 
 interface PricingInputFormProps {
@@ -36,6 +37,7 @@ interface PricingInputFormProps {
   showCurrencySelector?: boolean;
   flatRateItems?: FlatRateItem[];
   onFlatRateToggle?: (id: string, active: boolean) => void;
+  onFlatRatePriceChange?: (id: string, price: number) => void;
 }
 
 export function PricingInputForm({
@@ -49,7 +51,10 @@ export function PricingInputForm({
   showCurrencySelector = true,
   flatRateItems,
   onFlatRateToggle,
+  onFlatRatePriceChange,
 }: PricingInputFormProps) {
+  const [editingFlatRate, setEditingFlatRate] = useState<string | null>(null);
+  const [editingFlatRatePrice, setEditingFlatRatePrice] = useState("");
   const currencySymbol = getCurrencySymbol(currency);
   const basePriceNum = parseFloat(pricePerKg) || 0;
   const forfaitNum = parseFloat(forfaitValise) || 0;
@@ -187,15 +192,59 @@ export function PricingInputForm({
               <div
                 key={item.id}
                 className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
-                  item.isActive ? 'border-primary/40 bg-primary/5' : 'border-border'
+                  item.isActive ? 'border-primary/40 bg-primary/5' : 'border-border opacity-60'
                 }`}
               >
-                <span className="text-sm font-medium">{item.label}</span>
-                <Switch
-                  checked={item.isActive}
-                  onCheckedChange={(checked) => onFlatRateToggle?.(item.id, checked)}
-                  disabled={locked}
-                />
+                <div className="flex items-center gap-3 flex-1">
+                  <Switch
+                    checked={item.isActive}
+                    onCheckedChange={(checked) => onFlatRateToggle?.(item.id, checked)}
+                    disabled={locked}
+                  />
+                  <span className={`text-sm font-medium ${!item.isActive ? 'text-muted-foreground' : ''}`}>{item.label}</span>
+                </div>
+                {item.isActive && (
+                  <div className="flex items-center gap-2">
+                    {onFlatRatePriceChange && editingFlatRate === item.id ? (
+                      <>
+                        <Input
+                          type="number"
+                          value={editingFlatRatePrice}
+                          onChange={(e) => setEditingFlatRatePrice(e.target.value)}
+                          className="w-20 h-8 text-right text-sm"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              onFlatRatePriceChange(item.id, Number(editingFlatRatePrice));
+                              setEditingFlatRate(null);
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={() => {
+                            onFlatRatePriceChange?.(item.id, Number(editingFlatRatePrice));
+                            setEditingFlatRate(null);
+                          }}
+                          className="text-green-600"
+                        >
+                          <Check className="w-4 h-4" />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setEditingFlatRate(item.id);
+                          setEditingFlatRatePrice(String(item.price || 0));
+                        }}
+                        className="text-sm font-semibold text-primary hover:underline flex items-center gap-1"
+                        disabled={locked}
+                      >
+                        {(item.price || 0).toLocaleString()} {currencySymbol}
+                        <Edit className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </CardContent>
