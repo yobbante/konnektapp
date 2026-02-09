@@ -1,19 +1,19 @@
 import { ReactNode, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
-  Truck, Bell, Package, Clock, Calendar, 
-  DollarSign, History, Menu, QrCode, Plus, ScanLine,
-  Shield, Lock, AlertTriangle
+  Package, Bell, Menu, ScanLine, Truck,
+  Lock, Home, ListChecks, LayoutGrid,
+  Shield, DollarSign, History, Calendar,
+  Settings, LogOut, MapPin, User
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useDashboardTheme } from "@/hooks/useDashboardTheme";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { GPNotificationsDropdown } from "@/components/gp/dashboard/GPNotificationsDropdown";
-import { GPDashboardHubSheet } from "@/components/layout/GPDashboardHubSheet";
-import { GPCreateOfferDialog } from "@/components/gp/GPCreateOfferDialog";
-import { HeaderQRBadge } from "@/components/ui/HeaderQRBadge";
 import { cn } from "@/lib/utils";
 import { useEnforceDashboardRole } from "@/hooks/useSmartRedirect";
+import { supabase } from "@/integrations/supabase/client";
 
 interface GPDashboardLayoutProps {
   children: ReactNode;
@@ -29,221 +29,226 @@ interface GPDashboardLayoutProps {
   onTabChange?: (tab: string) => void;
 }
 
-interface NavTab {
-  id: string;
-  label: string;
-  icon: typeof Package;
-  path: string;
-  badge?: number;
-  requiresVerification?: boolean;
-}
-
+/**
+ * GP Dashboard Layout V1 TERRAIN
+ * 
+ * Header: Logo + SCAN central + Notifications
+ * Bottom Nav: Aujourd'hui | Colis | [SCAN] | Distribution | Menu
+ * 
+ * Scan = coeur du système
+ */
 export function GPDashboardLayout({
   children,
   gpProfile,
   pendingCount = 0,
   activeOrdersCount = 0,
-  activeTab = "demandes",
-  onTabChange,
+  activeTab = "aujourdhui",
 }: GPDashboardLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const theme = useDashboardTheme("partner");
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showHubMenu, setShowHubMenu] = useState(false);
-  const [showAddDeparture, setShowAddDeparture] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   const isVerified = gpProfile.status === "verified";
-  const isPending = gpProfile.status === "pending";
-
-  // Navigation tabs — mark sensitive ones
-  const navTabs: NavTab[] = [
-    { id: "apercu", label: "Aperçu", icon: Truck, path: "/gp/apercu" },
-    { id: "demandes", label: "Demandes", icon: Package, path: "/gp/demandes", badge: pendingCount, requiresVerification: true },
-    { id: "en-cours", label: "En cours", icon: Clock, path: "/gp/en-cours", badge: activeOrdersCount, requiresVerification: true },
-    { id: "scan", label: "Scan", icon: QrCode, path: "/gp/scan", requiresVerification: true },
-    { id: "calendrier", label: "Départs", icon: Calendar, path: "/gp/calendrier", requiresVerification: true },
-    { id: "tarifs", label: "Tarifs", icon: DollarSign, path: "/gp/tarification" },
-    { id: "historique", label: "Historique", icon: History, path: "/gp/historique" },
-  ];
-
-  // Detect active tab from path
-  const currentPath = location.pathname;
-  const getActiveFromPath = () => {
-    if (currentPath === "/gp/apercu") return "apercu";
-    if (currentPath === "/gp/dashboard" || currentPath === "/gp/demandes") return "demandes";
-    if (currentPath.includes("en-cours")) return "en-cours";
-    if (currentPath.includes("scan")) return "scan";
-    if (currentPath.includes("historique")) return "historique";
-    if (currentPath.includes("calendrier")) return "calendrier";
-    if (currentPath.includes("tarification")) return "tarifs";
-    if (currentPath.includes("ktp-geotrack")) return "ktp-geotrack";
-    return activeTab;
-  };
-
-  const currentActiveTab = getActiveFromPath();
   useEnforceDashboardRole("gp");
 
-  const handleTabClick = (tab: NavTab) => {
-    // Block unverified GPs from accessing sensitive tabs
-    if (tab.requiresVerification && !isVerified) {
-      return; // Don't navigate
-    }
-    if (onTabChange) {
-      onTabChange(tab.id);
-    } else {
-      navigate(tab.path);
-    }
+  // Detect active tab from path
+  const getActiveTab = () => {
+    const path = location.pathname;
+    if (path.includes("/gp/colis")) return "colis";
+    if (path.includes("/gp/distribution")) return "distribution";
+    if (path.includes("/gp/scan")) return "scan";
+    if (path.includes("/gp/apercu") || path.includes("/gp/demandes") || path.includes("/gp/en-cours")) return "apercu";
+    if (path.includes("/gp/ktp")) return "ktp";
+    return "aujourdhui";
+  };
+
+  const currentTab = getActiveTab();
+  const totalBadge = pendingCount + activeOrdersCount;
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
   };
 
   return (
-    <div className="min-h-screen pb-safe bg-background">
-      {/* Fixed Header */}
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* ══════════════════════════════════════
+          HEADER — Fixed, scan-centric
+      ══════════════════════════════════════ */}
       <header 
-        className={cn(
-          "sticky top-0 z-50 shadow-md",
-          theme.headerBgClass,
-          theme.headerTextClass
-        )}
-        style={{ paddingTop: 'calc(12px + var(--safe-top, 0px))' }}
+        className="sticky top-0 z-50 bg-primary shadow-lg"
+        style={{ paddingTop: 'calc(8px + var(--safe-top, 0px))' }}
       >
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            {/* Logo & Business Name */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                <Truck className="w-5 h-5" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold leading-tight">{gpProfile.business_name}</h1>
-                <div className="flex items-center gap-2">
-                  <Badge 
-                    variant={isVerified ? "secondary" : "outline"}
-                    className={cn(
-                      "text-[10px] px-1.5 py-0",
-                      isVerified ? "bg-green-500/20 text-green-100 border-green-400" : 
-                      isPending ? "bg-yellow-500/20 text-yellow-100 border-yellow-400" :
-                      "bg-red-500/20 text-red-100 border-red-400"
-                    )}
-                  >
-                    {isVerified ? "Vérifié" : isPending ? "En attente" : "Indisponible"}
-                  </Badge>
-                  <span className="text-xs opacity-70 capitalize">
-                    {gpProfile.gp_type === "bagages_international" ? "GP Bagages" : gpProfile.gp_type}
-                  </span>
-                </div>
-              </div>
+        <div className="px-4 py-3 flex items-center justify-between">
+          {/* Logo + Name */}
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+              <Truck className="w-5 h-5 text-white" />
             </div>
-
-            {/* Right Actions */}
-            <div className="flex items-center gap-1.5">
-              <HeaderQRBadge
-                qrValue={`${window.location.origin}/gp/${gpProfile.id}`}
-                label={gpProfile.business_name}
-                subLabel={gpProfile.gp_type === "bagages_international" ? "Konnekt GP" : "Transporteur Konnekt"}
-                variant="transporter"
-                className="bg-white/10 hover:bg-white/20 text-inherit"
-              />
-
-              {isVerified && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="relative bg-white/10 hover:bg-white/20 text-inherit w-8 h-8"
-                    onClick={() => setShowAddDeparture(true)}
-                    title="Ajouter un départ"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="relative bg-gradient-to-br from-amber-400/20 to-orange-500/20 hover:from-amber-400/30 hover:to-orange-500/30 text-inherit border border-white/20 w-8 h-8"
-                    onClick={() => navigate("/gp/scan")}
-                    title="Scanner QR Code"
-                  >
-                    <ScanLine className="w-4 h-4" />
-                  </Button>
-                </>
-              )}
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative bg-white/10 hover:bg-white/20 text-inherit w-8 h-8"
-                onClick={() => setShowNotifications(true)}
-              >
-                <Bell className="w-4 h-4" />
-                {pendingCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] rounded-full flex items-center justify-center">
-                    {pendingCount}
-                  </span>
-                )}
-              </Button>
-              
-              <GPDashboardHubSheet
-                open={showHubMenu}
-                onOpenChange={setShowHubMenu}
-                pendingCount={pendingCount}
-                activeOrdersCount={activeOrdersCount}
-                gpProfile={gpProfile}
-              >
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="bg-white/10 hover:bg-white/20 text-inherit w-8 h-8"
-                >
-                  <Menu className="w-4 h-4" />
-                </Button>
-              </GPDashboardHubSheet>
+            <div>
+              <p className="text-white font-bold text-sm leading-tight truncate max-w-[140px]">
+                {gpProfile.business_name}
+              </p>
+              <div className="flex items-center gap-1.5">
+                <div className={cn(
+                  "w-1.5 h-1.5 rounded-full",
+                  isVerified ? "bg-green-400" : "bg-yellow-400"
+                )} />
+                <span className="text-white/70 text-[10px]">
+                  {isVerified ? "Vérifié" : "En attente"}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Navigation Tabs */}
-        <div className="overflow-x-auto scrollbar-hide">
-          <nav className="flex px-2 pb-2 gap-1 min-w-max">
-            {navTabs.map((tab) => {
-              const isActive = currentActiveTab === tab.id;
-              const isBlocked = tab.requiresVerification && !isVerified;
-              const Icon = tab.icon;
-              
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => handleTabClick(tab)}
-                  disabled={isBlocked}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap",
-                    isBlocked
-                      ? "bg-white/5 text-white/30 cursor-not-allowed"
-                      : isActive 
-                        ? "bg-white/90 text-primary shadow-sm" 
-                        : "bg-white/10 text-white/80 hover:bg-white/20"
-                  )}
-                >
-                  {isBlocked ? <Lock className="w-3 h-3" /> : <Icon className="w-3.5 h-3.5" />}
-                  {tab.label}
-                  {tab.badge && tab.badge > 0 && !isBlocked && (
-                    <Badge 
-                      variant="destructive" 
-                      className="ml-1 h-4 min-w-4 px-1 text-[10px]"
-                    >
-                      {tab.badge}
-                    </Badge>
-                  )}
-                </button>
-              );
-            })}
-          </nav>
+          {/* Center: SCAN BUTTON */}
+          <Button
+            onClick={() => {
+              if (!isVerified) return;
+              navigate("/gp/scan");
+            }}
+            disabled={!isVerified}
+            className={cn(
+              "h-11 px-5 rounded-full font-bold text-sm gap-2 shadow-lg",
+              isVerified 
+                ? "bg-white text-primary hover:bg-white/90 active:scale-95 transition-all" 
+                : "bg-white/20 text-white/50 cursor-not-allowed"
+            )}
+          >
+            <ScanLine className="w-5 h-5" />
+            SCAN
+          </Button>
+
+          {/* Right: Notifications */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative text-white hover:bg-white/10 w-10 h-10"
+            onClick={() => setShowNotifications(true)}
+          >
+            <Bell className="w-5 h-5" />
+            {totalBadge > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                {totalBadge > 9 ? "9+" : totalBadge}
+              </span>
+            )}
+          </Button>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1">
+      {/* ══════════════════════════════════════
+          MAIN CONTENT
+      ══════════════════════════════════════ */}
+      <main className="flex-1 pb-20">
         {children}
       </main>
+
+      {/* ══════════════════════════════════════
+          BOTTOM NAV — 5 tabs, SCAN central
+      ══════════════════════════════════════ */}
+      <nav 
+        className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border/50 md:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
+        <div className="flex items-center justify-around h-16 px-1">
+          {/* Aujourd'hui */}
+          <NavItem 
+            icon={Home} 
+            label="Aujourd'hui" 
+            active={currentTab === "aujourdhui"}
+            onClick={() => navigate("/gp/apercu")}
+          />
+          
+          {/* Colis */}
+          <NavItem 
+            icon={Package} 
+            label="Colis" 
+            active={currentTab === "colis"}
+            badge={activeOrdersCount}
+            locked={!isVerified}
+            onClick={() => isVerified && navigate("/gp/colis")}
+          />
+          
+          {/* SCAN — Center, prominent */}
+          <button
+            onClick={() => isVerified && navigate("/gp/scan")}
+            disabled={!isVerified}
+            className="flex flex-col items-center justify-center flex-1 h-full relative"
+          >
+            <motion.div
+              className={cn(
+                "w-14 h-14 -mt-6 rounded-full flex items-center justify-center shadow-xl",
+                isVerified
+                  ? "bg-primary"
+                  : "bg-muted"
+              )}
+              whileTap={isVerified ? { scale: 0.9 } : undefined}
+            >
+              {isVerified ? (
+                <ScanLine className="w-6 h-6 text-primary-foreground" />
+              ) : (
+                <Lock className="w-5 h-5 text-muted-foreground" />
+              )}
+            </motion.div>
+            {isVerified && (
+              <motion.div
+                className="absolute inset-0 flex items-start justify-center"
+                style={{ top: '-6px' }}
+              >
+                <motion.div
+                  className="w-14 h-14 rounded-full border-2 border-primary/30"
+                  animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0, 0.5] }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                />
+              </motion.div>
+            )}
+            <span className={cn(
+              "text-[10px] font-bold mt-0.5",
+              currentTab === "scan" ? "text-primary" : "text-muted-foreground"
+            )}>
+              Scan
+            </span>
+          </button>
+
+          {/* Distribution */}
+          <NavItem 
+            icon={ListChecks} 
+            label="Distribution" 
+            active={currentTab === "distribution"}
+            locked={!isVerified}
+            onClick={() => isVerified && navigate("/gp/distribution")}
+          />
+
+          {/* Menu */}
+          <Sheet open={showMenu} onOpenChange={setShowMenu}>
+            <SheetTrigger asChild>
+              <button className="flex flex-col items-center justify-center flex-1 h-full gap-0.5">
+                <Menu className={cn("w-5 h-5", showMenu ? "text-primary" : "text-muted-foreground")} />
+                <span className={cn("text-[10px] font-medium", showMenu ? "text-primary" : "text-muted-foreground")}>
+                  Plus
+                </span>
+              </button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="rounded-t-2xl pb-safe">
+              <SheetHeader className="pb-4">
+                <SheetTitle className="text-left">Menu GP</SheetTitle>
+              </SheetHeader>
+              <div className="grid grid-cols-3 gap-3 pb-4">
+                <MenuButton icon={LayoutGrid} label="Aperçu" onClick={() => { setShowMenu(false); navigate("/gp/apercu"); }} />
+                <MenuButton icon={Package} label="Demandes" badge={pendingCount} locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/demandes"); }}} />
+                <MenuButton icon={Calendar} label="Départs" locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/calendrier"); }}} />
+                <MenuButton icon={DollarSign} label="Tarifs" onClick={() => { setShowMenu(false); navigate("/gp/tarification"); }} />
+                <MenuButton icon={History} label="Historique" onClick={() => { setShowMenu(false); navigate("/gp/historique"); }} />
+                <MenuButton icon={Shield} label="KTP & Geo" onClick={() => { setShowMenu(false); navigate("/gp/ktp-geotrack"); }} />
+                <MenuButton icon={MapPin} label="Profil public" onClick={() => { setShowMenu(false); navigate("/gp/profil-public"); }} />
+                <MenuButton icon={Settings} label="Réglages" onClick={() => { setShowMenu(false); navigate("/settings"); }} />
+                <MenuButton icon={LogOut} label="Déconnexion" variant="destructive" onClick={() => { setShowMenu(false); handleSignOut(); }} />
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </nav>
 
       {/* Notifications */}
       <GPNotificationsDropdown
@@ -252,17 +257,89 @@ export function GPDashboardLayout({
         onClose={() => setShowNotifications(false)}
         onViewOrderDetail={(orderId) => navigate(`/gp/order/${orderId}`)}
       />
-
-      {/* Quick Add Departure Dialog */}
-      <GPCreateOfferDialog
-        open={showAddDeparture}
-        onClose={() => setShowAddDeparture(false)}
-        gpProfile={gpProfile}
-        onSuccess={() => {
-          setShowAddDeparture(false);
-          navigate("/gp/calendrier");
-        }}
-      />
     </div>
+  );
+}
+
+/* ─── Bottom Nav Item ─── */
+function NavItem({ icon: Icon, label, active, badge, locked, onClick }: {
+  icon: any; label: string; active: boolean; badge?: number; locked?: boolean; onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={locked}
+      className={cn(
+        "flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors relative",
+        locked ? "opacity-40 cursor-not-allowed" : "",
+        active ? "text-primary" : "text-muted-foreground"
+      )}
+    >
+      <motion.div
+        className="relative"
+        whileTap={!locked ? { scale: 0.85 } : undefined}
+        animate={active ? { y: -2 } : { y: 0 }}
+      >
+        {locked ? (
+          <Lock className="w-5 h-5" />
+        ) : (
+          <Icon className={cn("w-5 h-5", active && "text-primary")} />
+        )}
+        {!!badge && badge > 0 && !locked && (
+          <span className="absolute -top-1.5 -right-2 w-4 h-4 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center">
+            {badge > 9 ? "9+" : badge}
+          </span>
+        )}
+      </motion.div>
+      <span className={cn("text-[10px] font-medium", active && "text-primary font-semibold")}>
+        {label}
+      </span>
+      {active && (
+        <motion.div
+          layoutId="gp-v1-nav"
+          className="absolute bottom-1 w-1 h-1 rounded-full bg-primary"
+          transition={{ type: "spring", stiffness: 500, damping: 30 }}
+        />
+      )}
+    </button>
+  );
+}
+
+/* ─── Menu Button ─── */
+function MenuButton({ icon: Icon, label, badge, locked, variant, onClick }: {
+  icon: any; label: string; badge?: number; locked?: boolean; variant?: "destructive"; onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={locked}
+      className={cn(
+        "flex flex-col items-center gap-2 p-3 rounded-xl transition-all active:scale-95",
+        locked 
+          ? "bg-muted/30 opacity-40 cursor-not-allowed" 
+          : variant === "destructive" 
+            ? "bg-destructive/10 hover:bg-destructive/15"
+            : "bg-muted/50 hover:bg-muted"
+      )}
+    >
+      <div className="relative">
+        {locked ? (
+          <Lock className="w-5 h-5 text-muted-foreground" />
+        ) : (
+          <Icon className={cn("w-5 h-5", variant === "destructive" ? "text-destructive" : "text-foreground")} />
+        )}
+        {!!badge && badge > 0 && !locked && (
+          <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-destructive text-destructive-foreground text-[8px] font-bold rounded-full flex items-center justify-center">
+            {badge}
+          </span>
+        )}
+      </div>
+      <span className={cn(
+        "text-[11px] font-medium",
+        variant === "destructive" ? "text-destructive" : "text-foreground"
+      )}>
+        {label}
+      </span>
+    </button>
   );
 }

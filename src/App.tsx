@@ -82,6 +82,8 @@ import PublicTracking from "./pages/PublicTracking";
 import AgentDashboard from "./pages/AgentDashboard";
 import GPApercuPage from "./pages/gp/GPApercuPage";
 import GPKTPGeoTrackPage from "./pages/gp/GPKTPGeoTrackPage";
+import GPColisPage from "./pages/gp/GPColisPage";
+import GPDistributionPage from "./pages/gp/GPDistributionPage";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -153,6 +155,8 @@ const App = () => (
             {/* Redirection: /gp/dashboard → /gp/apercu */}
             <Route path="/gp/dashboard" element={<Navigate to="/gp/apercu" replace />} />
             <Route path="/gp/apercu" element={<GPApercuPage />} />
+            <Route path="/gp/colis" element={<GPColisPage />} />
+            <Route path="/gp/distribution" element={<GPDistributionPage />} />
             <Route path="/gp/demandes" element={<GPDemandesPage />} />
             <Route path="/gp/en-cours" element={<GPEnCoursPage />} />
             <Route path="/gp/historique" element={<GPHistoriquePage />} />
