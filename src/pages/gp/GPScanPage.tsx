@@ -1,16 +1,23 @@
-import { useState, useEffect } from "react";
+/**
+ * GPScanPage — V1 TERRAIN
+ * 
+ * Default: opens camera immediately for scan
+ * Bottom tabs: Scanner | Mon QR | Lot
+ * Camera ready in < 0.5s
+ */
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { QrCode, AlertTriangle, ListChecks, ScanLine, Globe } from "lucide-react";
+import { QrCode, AlertTriangle, ListChecks, ScanLine, Camera, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { UniversalScanner } from "@/components/scan/UniversalScanner";
 import { BulkScanner } from "@/components/scan/BulkScanner";
-import { GeolocationConsentCard } from "@/components/scan/GeolocationConsentCard";
-import { useGPGeolocation } from "@/hooks/useGPGeolocation";
+import { OrderQRCode } from "@/components/client/OrderQRCode";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface GPProfile {
   id: string;
@@ -19,14 +26,6 @@ interface GPProfile {
   status: string;
 }
 
-/**
- * GPScanPage - KONNEKT SCAN CORE + GeoTrack™ integration for GP
- * 
- * Features:
- * - ScanFlow™: Unitary and batch scanning
- * - GeoTrack™: Passive geolocation for auto-status updates
- * - ScanTrust™: Duplicate scan prevention
- */
 export default function GPScanPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -34,9 +33,7 @@ export default function GPScanPage() {
   const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
   const [activeOrdersCount, setActiveOrdersCount] = useState(0);
-  const [userId, setUserId] = useState<string | null>(null);
-
-  const geo = useGPGeolocation(gpProfile?.id || null, userId);
+  const [activeTab, setActiveTab] = useState("scanner");
 
   useEffect(() => {
     loadData();
@@ -46,7 +43,6 @@ export default function GPScanPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/auth"); return; }
-      setUserId(user.id);
 
       const { data: profile } = await supabase
         .from("gp_profiles")
@@ -66,8 +62,7 @@ export default function GPScanPage() {
       setPendingCount(pending || 0);
       setActiveOrdersCount(active || 0);
     } catch (error) {
-      console.error("Error loading data:", error);
-      toast({ title: "Erreur", description: "Impossible de charger les données", variant: "destructive" });
+      console.error("Error:", error);
     } finally {
       setLoading(false);
     }
@@ -90,52 +85,57 @@ export default function GPScanPage() {
   return (
     <GPDashboardLayout gpProfile={gpProfile} pendingCount={pendingCount} activeOrdersCount={activeOrdersCount} activeTab="scan">
       <div className="px-4 py-4 space-y-4">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">KONNEKT SCAN</h2>
-          <div className="flex items-center gap-1.5">
-            {geo.trackingActive && (
-              <Badge variant="outline" className="gap-1 text-[10px] border-green-300 text-green-700">
-                <Globe className="w-2.5 h-2.5" />
-                GeoTrack
-              </Badge>
-            )}
-            <Badge variant="secondary" className="gap-1 text-xs">
-              <QrCode className="w-3 h-3" />
-              ScanFlow™
-            </Badge>
-          </div>
-        </div>
-
-        {/* GeoTrack™ Card */}
-        <GeolocationConsentCard
-          consentGiven={geo.consentGiven}
-          trackingActive={geo.trackingActive}
-          lastCountry={geo.lastCountry}
-          lastCity={geo.lastCity}
-          lastCheckAt={geo.lastCheckAt}
-          loading={geo.loading}
-          onGiveConsent={geo.giveConsent}
-          onToggleTracking={geo.toggleTracking}
-          onRevokeConsent={geo.revokeConsent}
-        />
-        
-        {/* Scan Tabs */}
-        <Tabs defaultValue="single">
-          <TabsList className="grid grid-cols-2 w-full">
-            <TabsTrigger value="single" className="gap-1.5">
-              <ScanLine className="w-3 h-3" />
-              Scan unitaire
+        {/* Scan Tabs — Scanner first (default), Mon QR, Lot */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid grid-cols-3 w-full h-11">
+            <TabsTrigger value="scanner" className="gap-1.5 text-xs">
+              <Camera className="w-3.5 h-3.5" />
+              Scanner
             </TabsTrigger>
-            <TabsTrigger value="batch" className="gap-1.5">
-              <ListChecks className="w-3 h-3" />
-              Scan en lot
+            <TabsTrigger value="myqr" className="gap-1.5 text-xs">
+              <QrCode className="w-3.5 h-3.5" />
+              Mon QR
+            </TabsTrigger>
+            <TabsTrigger value="batch" className="gap-1.5 text-xs">
+              <ListChecks className="w-3.5 h-3.5" />
+              Lot
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="single" className="mt-4">
+
+          {/* Scanner Tab — Auto-opens camera */}
+          <TabsContent value="scanner" className="mt-3">
             <UniversalScanner onComplete={loadData} />
           </TabsContent>
-          <TabsContent value="batch" className="mt-4">
+
+          {/* Mon QR — GP's own QR code for identification */}
+          <TabsContent value="myqr" className="mt-3">
+            <Card className="border-primary/20">
+              <CardContent className="p-5 text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <User className="w-8 h-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">{gpProfile.business_name}</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Présentez ce QR aux clients ou agents
+                  </p>
+                </div>
+                <div className="bg-white p-4 rounded-xl inline-block mx-auto">
+                  <OrderQRCode 
+                    orderId={gpProfile.id} 
+                    orderNumber={`GP-${gpProfile.id.slice(0, 8).toUpperCase()}`}
+                    status="active"
+                  />
+                </div>
+                <Badge variant="secondary" className="text-xs">
+                  ID: GP-{gpProfile.id.slice(0, 8).toUpperCase()}
+                </Badge>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Batch Tab */}
+          <TabsContent value="batch" className="mt-3">
             <BulkScanner gpId={gpProfile.id} onComplete={loadData} />
           </TabsContent>
         </Tabs>
