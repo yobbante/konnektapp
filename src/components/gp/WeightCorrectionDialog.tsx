@@ -29,6 +29,17 @@ interface WeightCorrectionDialogProps {
   currentLogistics?: number;
 }
 
+/**
+ * WeightCorrectionDialog V3
+ * 
+ * RÈGLES:
+ * - Le colis est DÉJÀ collecté (status = collected)
+ * - Seul le prix poids change, assurance et logistique restent FIXES
+ * - Met à jour: orders.weight, orders.total_price, orders.weight_tier_applied
+ * - Met à jour escrow si existant
+ * - Notifie le client avec le nouveau montant
+ * - Log dans order_status_history
+ */
 export function WeightCorrectionDialog({
   open,
   onOpenChange,
@@ -47,11 +58,9 @@ export function WeightCorrectionDialog({
   const [submitting, setSubmitting] = useState(false);
 
   const weightDiff = parseFloat(newWeight) - currentWeight;
-  // V2: Seul le prix poids change, assurance et logistique restent FIXES
   const currentWeightPrice = Math.round(currentWeight * pricePerKg);
   const newWeightPrice = Math.round(parseFloat(newWeight) * pricePerKg);
   const priceDiff = newWeightPrice - currentWeightPrice;
-  // Total = nouveau prix poids + assurance fixe + logistique fixe
   const newTotalPrice = newWeightPrice + currentInsurance + currentLogistics;
 
   const handleSubmit = async () => {
@@ -75,34 +84,80 @@ export function WeightCorrectionDialog({
       const { error: orderError } = await supabase
         .from("orders")
         .update({
-          weight_tier_applied: `pending:${actualWeight}`,
+          weight: actualWeight,
+          total_price: newTotalPrice,
+          weight_tier_applied: actualWeight.toString(),
         })
         .eq("id", orderId);
 
       if (orderError) throw orderError;
 
-      // Log the correction in history
+      // 2. Update escrow transaction if exists
+      const { data: escrow } = await supabase
+        .from("escrow_transactions")
+        .select("id")
+        .eq("order_id", orderId)
+        .maybeSingle();
+
+      if (escrow) {
+        await supabase
+          .from("escrow_transactions")
+          .update({ amount: newTotalPrice })
+          .eq("id", escrow.id);
+      }
+
+      // 3. Log in order_status_history
       await supabase.from("order_status_history").insert({
         order_id: orderId,
         status: "collected",
         changed_by: user.id,
         changed_by_type: "gp",
-        notes: `POIDS MODIFIÉ: ${currentWeight} kg → ${actualWeight} kg. Prix poids: ${currentWeightPrice} → ${newWeightPrice} ${currency}. Assurance et logistique inchangés.`,
+        notes: `POIDS MODIFIÉ (colis déjà collecté): ${currentWeight} kg → ${actualWeight} kg. Prix poids: ${currentWeightPrice} → ${newWeightPrice} ${currency}. Nouveau total: ${newTotalPrice} ${currency}. Assurance (${currentInsurance}) et logistique (${currentLogistics}) inchangés.`,
       });
 
-      // Notify client
+      // 4. Notify client
       await supabase.from("notifications").insert({
         user_id: clientId,
         type: "weight_correction",
-        title: "⚠️ Correction de poids requise",
-        message: `Le poids de votre colis ${orderNumber} a été vérifié: ${actualWeight} kg (déclaré: ${currentWeight} kg). Veuillez confirmer.`,
+        title: "⚖️ Poids ajusté par le transporteur",
+        message: `Le poids de votre colis ${orderNumber} a été vérifié: ${actualWeight} kg (déclaré: ${currentWeight} kg). Nouveau total: ${newTotalPrice.toLocaleString()} ${currency}.`,
         related_type: "order",
         related_id: orderId,
       });
 
+      // 5. Auto-message in conversation if exists
+      const { data: gpProfile } = await supabase
+        .from("gp_profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (gpProfile) {
+        const { data: conv } = await supabase
+          .from("conversations")
+          .select("id")
+          .eq("order_id", orderId)
+          .eq("gp_id", gpProfile.id)
+          .maybeSingle();
+
+        if (conv) {
+          await supabase.from("messages").insert({
+            conversation_id: conv.id,
+            sender_id: user.id,
+            sender_type: "gp",
+            content: `⚖️ Poids ajusté\n\nLe poids de votre colis a été vérifié lors du dépôt.\n\n📦 Poids déclaré: ${currentWeight} kg\n📦 Poids réel: ${actualWeight} kg\n💰 Nouveau total: ${newTotalPrice.toLocaleString()} ${currency}\n\n💡 Seul le prix du poids a été recalculé. Assurance et logistique inchangés.`,
+          });
+
+          await supabase
+            .from("conversations")
+            .update({ last_message_at: new Date().toISOString() })
+            .eq("id", conv.id);
+        }
+      }
+
       toast({
-        title: "✅ Poids modifié",
-        description: "Le client doit confirmer le nouveau poids",
+        title: "✅ Poids ajusté",
+        description: `Nouveau total: ${newTotalPrice.toLocaleString()} ${currency}`,
       });
 
       onCorrected();
@@ -128,18 +183,16 @@ export function WeightCorrectionDialog({
             Modifier le poids
           </DialogTitle>
           <DialogDescription>
-            Commande {orderNumber}
+            Commande {orderNumber} — Colis déjà collecté
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Current Weight */}
           <div className="p-3 bg-muted rounded-lg">
             <p className="text-sm text-muted-foreground">Poids déclaré</p>
             <p className="text-xl font-bold">{currentWeight} kg</p>
           </div>
 
-          {/* New Weight Input */}
           <div className="space-y-2">
             <Label htmlFor="newWeight">Poids réel vérifié (kg)</Label>
             <Input
@@ -153,7 +206,6 @@ export function WeightCorrectionDialog({
             />
           </div>
 
-          {/* Difference Preview */}
           {weightDiff !== 0 && !isNaN(weightDiff) && (
             <Alert className={weightDiff > 0 ? "border-amber-300 bg-amber-50" : "border-green-300 bg-green-50"}>
               <AlertTriangle className={`w-4 h-4 ${weightDiff > 0 ? "text-amber-600" : "text-green-600"}`} />
@@ -163,10 +215,10 @@ export function WeightCorrectionDialog({
                     Différence: {weightDiff > 0 ? "+" : ""}{weightDiff.toFixed(1)} kg
                   </p>
                   <p className="text-sm">
-                    Nouveau prix poids: <span className="font-bold">{newWeightPrice.toLocaleString()} {currency}</span>
+                    Nouveau total: <span className="font-bold">{newTotalPrice.toLocaleString()} {currency}</span>
                   </p>
                   <p className="text-sm">
-                    Différence: ({priceDiff > 0 ? "+" : ""}{priceDiff.toLocaleString()} {currency})
+                    Différence prix: ({priceDiff > 0 ? "+" : ""}{priceDiff.toLocaleString()} {currency})
                   </p>
                   {(currentInsurance > 0 || currentLogistics > 0) && (
                     <p className="text-xs mt-1 text-muted-foreground">
@@ -179,7 +231,7 @@ export function WeightCorrectionDialog({
           )}
 
           <p className="text-xs text-muted-foreground">
-            Le client devra confirmer le nouveau poids avant que la commande puisse continuer.
+            Le nouveau montant sera appliqué immédiatement. Le client sera notifié du changement.
           </p>
         </div>
 
