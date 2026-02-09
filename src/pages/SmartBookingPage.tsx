@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Package, CheckCircle, AlertTriangle, Info, Smartphone, Laptop, Car, FileText, Gem, Tablet, Gamepad2, Wine, Scale, MapPin, Calendar, Plane, User, Star, Shield, Minus, Plus, ChevronRight, Truck } from "lucide-react";
+import { ArrowLeft, Package, CheckCircle, AlertTriangle, Info, Smartphone, Laptop, Car, FileText, Gem, Tablet, Gamepad2, Wine, Scale, MapPin, Calendar, Plane, User, Star, Shield, Minus, Plus, ChevronRight, Truck, TrendingDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import { convertFromFCFA, loadExchangeRates, type ExchangeRate } from "@/lib/cur
 import { createAutoConversationAfterBooking } from "@/lib/autoChat";
 import { normalizeDecimalInput, parseDecimalInput, roundTo2Decimals, formatDecimalDisplay, roundForDatabase } from "@/lib/decimalUtils";
 import { useSelfBookingGuard } from "@/hooks/useSelfBookingGuard";
+import { getRegressiveInfo } from "@/lib/gpPricingEngine";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -312,37 +313,43 @@ export default function SmartBookingPage() {
   // Formule: Prix = getWeightPrice(Poids) + Σ(Quantité × Prix forfaitaire) + Assurance + Logistique
   // V3: Support des décimales à 2 chiffres
   const calculations = useMemo(() => {
-    // V3: Parse avec support virgule/point
     const weight = parseDecimalInput(kiloWeight);
 
-    // V2: Tarification par paliers
-    // Trouve le palier correspondant au poids, sinon utilise le prix de l'offre
     let pricePerKg = offer?.price_per_kg || 0;
     let appliedTier = null;
+    const basePricePerKg = offer?.price_per_kg || 0;
+
     if (weightTiers.length > 0 && weight > 0) {
-      // Find the tier that matches the weight
       const tier = weightTiers.find(t => weight >= t.min_weight && weight <= t.max_weight);
       if (tier && tier.price_per_kg > 0) {
         pricePerKg = tier.price_per_kg;
         appliedTier = tier;
+      } else if (weight > 23) {
+        // 23kg+ packages: coefficient x0.80
+        pricePerKg = Math.round(basePricePerKg * 0.80);
+        appliedTier = { min_weight: 23, max_weight: 999, price_per_kg: pricePerKg };
       }
+    } else if (weight > 23 && basePricePerKg > 0) {
+      // Fallback: apply x0.80 coefficient for 23kg+
+      pricePerKg = Math.round(basePricePerKg * 0.80);
+      appliedTier = { min_weight: 23, max_weight: 999, price_per_kg: pricePerKg };
     }
 
-    // V3: Calcul avec 2 décimales, arrondi seulement à la fin
+    // Regressive pricing info for display
+    const regressiveInfo = weight > 0 && basePricePerKg > 0
+      ? getRegressiveInfo(weight, basePricePerKg)
+      : null;
+
     const kiloTotal = roundTo2Decimals(weight * pricePerKg);
     const flatRateTotal = flatRateItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const flatRateCount = flatRateItems.reduce((sum, item) => sum + item.quantity, 0);
     const transportTotal = roundTo2Decimals(kiloTotal + flatRateTotal);
 
-    // Add insurance if selected — apply KTP coefficient if available
     const rawInsurance = insuranceChoice.hasInsurance ? insuranceChoice.insuranceAmount : 0;
-    const insuranceTotal = rawInsurance; // KTP coefficient applied server-side during evaluation
-
-    // Add logistics if enabled
+    const insuranceTotal = rawInsurance;
     const logisticsTotal = logisticsOptions.totalLogisticsPrice;
-
-    // V3: grandTotal garde les décimales
     const grandTotal = roundTo2Decimals(transportTotal + insuranceTotal + logisticsTotal);
+
     return {
       weight,
       kiloTotal,
@@ -357,7 +364,9 @@ export default function SmartBookingPage() {
       hasAnyItems: weight > 0 || flatRateCount > 0,
       hasLogistics: logisticsOptions.pickupEnabled || logisticsOptions.deliveryEnabled,
       pricePerKg,
-      appliedTier
+      appliedTier,
+      basePricePerKg,
+      regressiveInfo,
     };
   }, [kiloWeight, flatRateItems, offer?.price_per_kg, insuranceChoice, logisticsOptions, weightTiers]);
 

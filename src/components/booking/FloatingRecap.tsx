@@ -18,6 +18,12 @@ interface FloatingRecapProps {
   hasLogistics: boolean;
   currentStep: number;
   className?: string;
+  regressiveInfo?: {
+    coefficient: number;
+    effectivePricePerKg: number;
+    savingsPercent: number;
+    tierLabel: string;
+  } | null;
 }
 
 export function FloatingRecap({
@@ -33,6 +39,7 @@ export function FloatingRecap({
   hasLogistics,
   currentStep,
   className,
+  regressiveInfo,
 }: FloatingRecapProps) {
   const [expanded, setExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -88,6 +95,11 @@ export function FloatingRecap({
                   {weight > 0 && <span>{weight}kg</span>}
                   {weight > 0 && flatRateCount > 0 && <span>+</span>}
                   {flatRateCount > 0 && <span>{flatRateCount} article{flatRateCount > 1 ? 's' : ''}</span>}
+                  {regressiveInfo && regressiveInfo.savingsPercent > 0 && (
+                    <span className="text-[10px] font-semibold text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400 px-1.5 py-0.5 rounded-full">
+                      -{regressiveInfo.savingsPercent}%
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
