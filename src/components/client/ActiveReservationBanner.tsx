@@ -70,11 +70,12 @@ export function ActiveReservationBanner() {
         return;
       }
 
-      // Fetch active orders (accepted, collected, in_transit)
+      // Fetch pre-deposit orders only (accepted status = before deposit)
+      // Banner disappears once GP confirms deposit (collected/in_transit/delivered)
       const {
         data: orders,
         error
-      } = await supabase.from("orders").select("id, order_number, status, origin_city, destination_city, gp_id, created_at, total_price, currency").eq("client_id", user.id).in("status", ["accepted", "collected", "in_transit"]).order("created_at", {
+      } = await supabase.from("orders").select("id, order_number, status, origin_city, destination_city, gp_id, created_at, total_price, currency").eq("client_id", user.id).in("status", ["accepted"]).order("created_at", {
         ascending: false
       });
       if (error) throw error;
@@ -244,7 +245,7 @@ export function useClientActiveReservations() {
       } = await supabase.from("orders").select("id", {
         count: "exact",
         head: true
-      }).eq("client_id", user.id).in("status", ["accepted", "collected", "in_transit"]);
+      }).eq("client_id", user.id).in("status", ["accepted"]);
       setCount(orderCount || 0);
       setHasActive((orderCount || 0) > 0);
       setLoading(false);

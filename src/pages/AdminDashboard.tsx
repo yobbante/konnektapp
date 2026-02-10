@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, RefreshCw, Search, Filter, Truck, Package, Settings, UserCheck } from "lucide-react";
+import { Shield, RefreshCw, Search, Filter, Truck, Package, Settings, UserCheck, ScanLine } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -267,6 +267,15 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => navigate("/admin")}
+                className="bg-white/10 border-white/20 hover:bg-white/20 rounded-xl"
+                title="Vue Terrain"
+              >
+                <ScanLine className="w-4 h-4" />
+              </Button>
               <Button 
                 variant="ghost" 
                 size="icon"

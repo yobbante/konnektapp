@@ -86,14 +86,22 @@ interface ActiveOrder {
 export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRouterProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { scanRole, permissions, userId: scannerId, gpId: scannerGpId, logScan } = useScanRole();
+  const { scanRole, permissions, userId: scannerId, gpId: scannerGpId, logScan, loading: roleLoading } = useScanRole();
   const [loading, setLoading] = useState(true);
   const [scannedUser, setScannedUser] = useState<ScannedUserInfo | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<ActiveOrder | null>(null);
 
   useEffect(() => {
-    resolveScannedUser();
-  }, [scannedUserId, scannerId, scannerGpId]);
+    if (!roleLoading) {
+      // If not authenticated, redirect to public tracking/profile
+      if (!scanRole || !scannerId) {
+        // Unauthenticated scan → public profile/marketing page
+        navigate(`/track/user/${scannedUserId}`);
+        return;
+      }
+      resolveScannedUser();
+    }
+  }, [scannedUserId, scannerId, scannerGpId, roleLoading]);
 
   const resolveScannedUser = async () => {
     setLoading(true);
@@ -346,6 +354,14 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
                   : `${scannedUser.activeOrders.length} colis actifs`
                 }
               </h4>
+            </div>
+
+            {/* Role-based action hint */}
+            <div className="p-2.5 bg-muted/50 rounded-lg text-xs text-muted-foreground">
+              {scanRole === "gp" && "🔧 Vous pouvez: confirmer dépôt, modifier le poids, confirmer livraison"}
+              {scanRole === "client" && "👁️ Consultation: statut, route, historique des scans"}
+              {scanRole === "agent_logistique" && "📋 Actions agent: collecte, distribution, validation stock"}
+              {scanRole === "admin" && "⚙️ Accès complet: tous les statuts, forcer transitions, audit"}
             </div>
 
             <div className="space-y-2">

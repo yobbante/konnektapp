@@ -75,10 +75,17 @@ const volumeSizes: { id: VolumeSize; label: string; description: string }[] = [
 
 const constraintOptions = [
   { id: "fragile", label: "Fragile", icon: AlertTriangle },
-  { id: "urgent", label: "Urgent", icon: Clock },
+  { id: "urgent", label: "Urgent (+30%)", icon: Clock },
   { id: "temperature", label: "Température contrôlée", icon: Thermometer },
   { id: "dangereux", label: "Marchandise dangereuse", icon: AlertTriangle },
   { id: "protection", label: "Protection pluie/vol", icon: Shield },
+];
+
+const senegalCities = [
+  "Dakar", "Thiès", "Saint-Louis", "Kaolack", "Ziguinchor", "Touba", 
+  "Mbour", "Rufisque", "Tambacounda", "Kolda", "Matam", "Louga",
+  "Diourbel", "Fatick", "Sédhiou", "Kaffrine", "Kédougou", "Richard-Toll",
+  "Tivaouane", "Saly", "Joal-Fadiouth"
 ];
 
 // Vehicle matching rules (simplified for V1)
@@ -482,16 +489,22 @@ export default function RoutierDemandePage() {
               <div className="space-y-3">
                 <Label className="text-sm font-medium">Point de départ *</Label>
                 <div className="relative">
-                  <div className="absolute left-3 top-3 w-3 h-3 rounded-full bg-green-500" />
+                  <div className="absolute left-3 top-3 w-3 h-3 rounded-full bg-green-500 z-10" />
                   <Input
-                    placeholder="Ville de départ"
+                    placeholder="Rechercher une ville..."
                     value={formData.originCity}
                     onChange={(e) => setFormData(prev => ({ ...prev, originCity: e.target.value }))}
                     className="pl-8"
+                    list="origin-cities"
                   />
+                  <datalist id="origin-cities">
+                    {senegalCities.filter(c => c.toLowerCase().includes(formData.originCity.toLowerCase())).map(city => (
+                      <option key={city} value={city} />
+                    ))}
+                  </datalist>
                 </div>
                 <Input
-                  placeholder="Adresse exacte (optionnel)"
+                  placeholder="Adresse exacte de collecte (optionnel)"
                   value={formData.originAddress}
                   onChange={(e) => setFormData(prev => ({ ...prev, originAddress: e.target.value }))}
                 />
@@ -508,13 +521,19 @@ export default function RoutierDemandePage() {
               <div className="space-y-3">
                 <Label className="text-sm font-medium">Destination *</Label>
                 <div className="relative">
-                  <div className="absolute left-3 top-3 w-3 h-3 rounded-full bg-red-500" />
+                  <div className="absolute left-3 top-3 w-3 h-3 rounded-full bg-red-500 z-10" />
                   <Input
-                    placeholder="Ville de destination"
+                    placeholder="Rechercher une ville..."
                     value={formData.destinationCity}
                     onChange={(e) => setFormData(prev => ({ ...prev, destinationCity: e.target.value }))}
                     className="pl-8"
+                    list="dest-cities"
                   />
+                  <datalist id="dest-cities">
+                    {senegalCities.filter(c => c.toLowerCase().includes(formData.destinationCity.toLowerCase()) && c !== formData.originCity).map(city => (
+                      <option key={city} value={city} />
+                    ))}
+                  </datalist>
                 </div>
                 <Input
                   placeholder="Adresse de livraison (optionnel)"
