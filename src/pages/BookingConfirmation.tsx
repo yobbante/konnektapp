@@ -236,7 +236,7 @@ export default function BookingConfirmation() {
           </Card>
         </motion.div>
 
-        {/* Order Details */}
+        {/* Order Details with QR Code above total */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <Card className="mb-4">
             <CardContent className="p-4">
@@ -257,6 +257,25 @@ export default function BookingConfirmation() {
                     <span className="text-sm font-medium">{order.weight} kg</span>
                   </div>
                 )}
+
+                {/* Mini QR Code block above total price */}
+                {["accepted", "collected", "in_transit", "delivered"].includes(order.status) && (
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 border">
+                    <div className="flex-shrink-0 bg-white p-1.5 rounded-lg">
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(order.order_number)}&format=png&margin=4`}
+                        alt="QR"
+                        className="w-14 h-14"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">QR Commande</p>
+                      <p className="font-mono text-sm font-bold text-primary truncate">{order.order_number}</p>
+                      <p className="text-[10px] text-muted-foreground">Prêt à être scanné</p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex justify-between pt-2 border-t">
                   <span className="font-medium">Total à payer</span>
                   <span className="text-lg font-bold text-primary">
