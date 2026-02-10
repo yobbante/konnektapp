@@ -189,7 +189,8 @@ const App = () => (
             <Route path="/routier/historique" element={<RoutierHistoriquePage />} />
             <Route path="/routier/vehicules" element={<RoutierVehiculesPage />} />
             <Route path="/routier/profil-public" element={<RoutierProfilPublicPage />} />
-            {/* Client-facing routier booking - redirects to moving */}
+            {/* Client-facing routier booking form */}
+            <Route path="/routier/demande" element={<RoutierDemandePage />} />
             {/* Legacy redirect - tarification removed for routier */}
             <Route path="/routier/tarification" element={<Navigate to="/routier/demandes" replace />} />
             

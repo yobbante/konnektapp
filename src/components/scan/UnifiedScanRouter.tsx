@@ -395,7 +395,7 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
         </Card>
       )}
 
-      {/* No active orders — Contextual CTA */}
+      {/* No active orders — Always show contextual actions */}
       {scannedUser.activeOrders.length === 0 && (
         <Card className="border-dashed">
           <CardContent className="p-4 text-center space-y-3">
@@ -403,13 +403,23 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
               <Eye className="w-6 h-6 text-muted-foreground" />
             </div>
             <div>
-              <p className="font-medium text-sm">Aucune action en cours</p>
+              <p className="font-medium text-sm">Aucun colis actif entre vous</p>
               <p className="text-xs text-muted-foreground mt-1">
                 {scannedUser.type === "gp"
                   ? "Ce transporteur n'a aucun colis actif avec vous"
                   : "Aucun colis en attente pour ce client"
                 }
               </p>
+            </div>
+
+            {/* Role-based action hints - always visible */}
+            <div className="p-2.5 bg-muted/50 rounded-lg text-xs text-muted-foreground text-left">
+              {scanRole === "gp" && scannedUser.type === "client" && "🔧 Ce client n'a pas de colis en cours avec vous. Il peut réserver via votre profil."}
+              {scanRole === "gp" && scannedUser.type === "gp" && "ℹ️ Vous avez scanné un autre transporteur. Consultez son profil ci-dessous."}
+              {scanRole === "client" && scannedUser.type === "gp" && "📦 Réservez un envoi avec ce transporteur pour débloquer les actions de scan."}
+              {scanRole === "client" && scannedUser.type === "client" && "ℹ️ Vous avez scanné un autre client Konnekt."}
+              {scanRole === "agent_logistique" && "📋 Aucune mission active pour cet utilisateur."}
+              {scanRole === "admin" && "⚙️ Aucune commande active trouvée pour cet utilisateur."}
             </div>
 
             {/* GP: "Envoyer un colis avec ce GP" */}
@@ -426,7 +436,7 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
               </Button>
             )}
 
-            {/* Client: "Ajouter comme destinataire" */}
+            {/* Client scanned by GP: context */}
             {scannedUser.type === "client" && scanRole === "gp" && (
               <div className="space-y-2">
                 <Badge variant="secondary" className="gap-1">
@@ -451,6 +461,23 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
               >
                 <User className="w-4 h-4" />
                 Voir le profil complet
+              </Button>
+            )}
+
+            {/* Admin/Agent: view all orders for this user */}
+            {(scanRole === "admin" || scanRole === "agent_logistique") && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  onComplete();
+                  navigate(scannedUser.type === "gp" && scannedUser.gpId 
+                    ? `/admin/gp/${scannedUser.gpId}` 
+                    : `/admin/search?q=${scannedUser.name}`);
+                }}
+                className="w-full gap-2"
+              >
+                <Eye className="w-4 h-4" />
+                Voir dans l'admin
               </Button>
             )}
           </CardContent>

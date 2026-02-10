@@ -23,10 +23,20 @@ export function OrderQRCode({ orderNumber, orderId, status }: OrderQRCodeProps) 
   const [copied, setCopied] = useState(false);
   const [qrLoaded, setQrLoaded] = useState(false);
   const [qrError, setQrError] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  // Generate QR code URL with proper encoding and cache busting
+  // Auto-refresh QR every 30s to catch new actions
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRefreshKey(k => k + 1);
+      setQrLoaded(false);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Generate QR code URL with cache busting
   const qrData = encodeURIComponent(orderNumber);
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}&format=png&margin=10`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}&format=png&margin=10&t=${refreshKey}`;
   const qrCodeSvgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}&format=svg&margin=10`;
 
   const handleCopyCode = () => {
