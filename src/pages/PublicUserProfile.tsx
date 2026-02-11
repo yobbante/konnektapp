@@ -45,7 +45,7 @@ export default function PublicUserProfile() {
 
   const loadUser = async (id: string) => {
     try {
-      // Check if user is a GP
+      // Check if user is a GP (public access via RLS)
       const { data: gpRaw } = await supabase
         .from("gp_profiles")
         .select("id, business_name, gp_type, rating, total_deliveries, verified_at, city")
@@ -67,21 +67,23 @@ export default function PublicUserProfile() {
           city: gp.city,
         });
       } else {
-        // Just a client — show minimal info
+        // Use public view for basic profile info (works for anon users)
         const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name")
+          .from("public_user_profiles" as any)
+          .select("full_name, city")
           .eq("user_id", id)
           .maybeSingle();
 
         if (profile) {
-          setUser({ type: "client", name: profile.full_name || "Utilisateur Konnekt" });
+          setUser({ type: "client", name: (profile as any).full_name || "Utilisateur Konnekt" });
         } else {
-          setNotFound(true);
+          // Still show the page with a generic welcome — never show "not found" for valid QR
+          setUser({ type: "client", name: "Utilisateur Konnekt" });
         }
       }
     } catch {
-      setNotFound(true);
+      // Fallback: show generic profile instead of error
+      setUser({ type: "client", name: "Utilisateur Konnekt" });
     } finally {
       setLoading(false);
     }
@@ -98,12 +100,20 @@ export default function PublicUserProfile() {
   if (notFound || !user) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex flex-col items-center justify-center p-6 text-center">
-        <User className="w-16 h-16 text-slate-400 mb-4" />
-        <h1 className="text-xl font-bold text-white mb-2">Profil non trouvé</h1>
-        <p className="text-slate-400 mb-6">Ce QR code n'est pas valide.</p>
-        <Button onClick={() => navigate("/")} className="bg-white text-slate-900 hover:bg-white/90">
-          Découvrir Konnekt
-        </Button>
+        <QrCode className="w-16 h-16 text-primary mb-4" />
+        <h1 className="text-xl font-bold text-white mb-2">Bienvenue sur Konnekt</h1>
+        <p className="text-slate-400 mb-6">La plateforme d'envoi de colis entre particuliers.</p>
+        <div className="space-y-2 w-full max-w-xs">
+          <Button onClick={() => navigate("/auth")} className="w-full bg-primary text-white hover:bg-primary/90">
+            <Sparkles className="w-4 h-4 mr-2" /> Créer un compte
+          </Button>
+          <Button variant="outline" onClick={() => navigate("/offres")} className="w-full border-white/20 text-white hover:bg-white/10">
+            Voir les offres disponibles
+          </Button>
+          <Button variant="ghost" onClick={() => navigate("/")} className="w-full text-white/60 hover:text-white">
+            Découvrir la plateforme
+          </Button>
+        </div>
       </div>
     );
   }
@@ -211,6 +221,14 @@ export default function PublicUserProfile() {
           <Button
             variant="outline"
             className="w-full border-white/20 text-white hover:bg-white/10 gap-2"
+            onClick={() => navigate("/offres")}
+          >
+            Voir les offres disponibles
+          </Button>
+
+          <Button
+            variant="ghost"
+            className="w-full text-white/50 hover:text-white gap-2"
             onClick={() => navigate("/")}
           >
             Découvrir la plateforme

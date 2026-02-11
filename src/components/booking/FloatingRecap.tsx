@@ -1,9 +1,10 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, Shield, Truck, ChevronUp, ChevronDown } from "lucide-react";
+import { Package, Shield, Truck, ChevronUp, ChevronDown, QrCode } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { DualCurrencyCompact } from "@/components/booking/DualCurrencyDisplay";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { cn } from "@/lib/utils";
+import QRCode from "react-qr-code";
 
 interface FloatingRecapProps {
   weight: number;
@@ -18,6 +19,7 @@ interface FloatingRecapProps {
   hasLogistics: boolean;
   currentStep: number;
   className?: string;
+  orderId?: string;
   regressiveInfo?: {
     coefficient: number;
     effectivePricePerKg: number;
@@ -39,6 +41,7 @@ export function FloatingRecap({
   hasLogistics,
   currentStep,
   className,
+  orderId,
   regressiveInfo,
 }: FloatingRecapProps) {
   const [expanded, setExpanded] = useState(false);
@@ -163,6 +166,21 @@ export function FloatingRecap({
                         currency={currency}
                         fcfaEquivalent={getFCFAEquivalent(logisticsTotal)}
                       />
+                    </div>
+                  )}
+                  
+                  {/* Mini QR Code */}
+                  {orderId && (
+                    <div className="flex items-center gap-3 py-2 border-t">
+                      <div className="bg-white p-1.5 rounded-lg">
+                        <QRCode value={orderId} size={40} level="L" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                          <QrCode className="w-2.5 h-2.5" /> QR Commande
+                        </p>
+                        <p className="text-[10px] text-muted-foreground/60 truncate">{orderId.slice(0, 8)}…</p>
+                      </div>
                     </div>
                   )}
                   
