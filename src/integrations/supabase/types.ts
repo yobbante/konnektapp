@@ -3329,6 +3329,27 @@ export type Database = {
         }
         Relationships: []
       }
+      public_user_profiles: {
+        Row: {
+          avatar_url: string | null
+          city: string | null
+          full_name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          city?: string | null
+          full_name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          city?: string | null
+          full_name?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_create_transaction: {
