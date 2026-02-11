@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { MiniLoader } from "@/components/ui/MiniLoader";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
 import { MessageCircle, Plus } from "lucide-react";
@@ -97,7 +98,7 @@ export default function MessagesPage() {
       <div className="min-h-screen bg-background pb-safe">
         <MobileHeader />
         <div className="flex items-center justify-center h-[60vh]">
-          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+          <MiniLoader size="lg" showText text="Chargement..." />
         </div>
         <MobileNav />
       </div>

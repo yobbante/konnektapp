@@ -27,6 +27,7 @@ import { getRegressiveInfo } from "@/lib/gpPricingEngine";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { RecipientField } from "@/components/booking/RecipientField";
+import { MiniLoader } from "@/components/ui/MiniLoader";
 
 // Types
 interface GPProfile {
@@ -741,7 +742,7 @@ export default function SmartBookingPage() {
   const displayGrandTotal = roundTo2Decimals(calculations.transportTotal + displayInsuranceAmount + displayLogisticsAmount);
   if (loading) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+        <MiniLoader size="lg" showText text="Chargement..." />
       </div>;
   }
   if (!gpProfile || !offer) {

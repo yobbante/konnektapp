@@ -18,6 +18,7 @@ import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { RealTimeTrackingMap } from "@/components/tracking/RealTimeTrackingMap";
+import { MiniLoader } from "@/components/ui/MiniLoader";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "bagages_international";
 
@@ -164,7 +165,7 @@ export default function OfferDetail() {
     return (
       <div className="min-h-screen bg-background pb-safe">
         <div className="flex items-center justify-center h-screen">
-          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+          <MiniLoader size="lg" showText text="Chargement..." />
         </div>
       </div>
     );

@@ -155,7 +155,7 @@ export function AppleNotification({
   timestamp,
   link,
   action,
-  duration = 5000,
+  duration = 4000,
   onDismiss,
   senderName,
   senderAvatar,
@@ -202,6 +202,9 @@ export function AppleNotification({
     } else if (action) {
       action.onClick();
       onDismiss(id);
+    } else {
+      // No redirect → just dismiss on click, don't force anything
+      onDismiss(id);
     }
   }, [link, type, action, navigate, onDismiss, id]);
 
@@ -213,6 +216,7 @@ export function AppleNotification({
   };
 
   const isClickable = !!(link || TYPE_TO_ROUTE[type] || action);
+  const hasRedirect = !!(link || TYPE_TO_ROUTE[type]);
   const timeStr = timestamp || new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
   return (
@@ -316,16 +320,16 @@ export function AppleNotification({
             )}
             <p className="text-sm font-semibold text-foreground leading-tight">{title}</p>
             {description && (
-              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-relaxed">
+              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1 leading-relaxed">
                 {description}
               </p>
             )}
             
-            {/* Action label / CTA */}
-            {isClickable && (
-              <div className="flex items-center gap-1 mt-1.5">
+            {/* Only show CTA arrow if there's a real redirect */}
+            {hasRedirect && (
+              <div className="flex items-center gap-1 mt-1">
                 <span className={cn("text-[11px] font-semibold", config.accent)}>
-                  {action?.label || "Voir les détails"}
+                  {action?.label || "Voir"}
                 </span>
                 <ChevronRight className={cn("w-3 h-3", config.accent)} />
               </div>

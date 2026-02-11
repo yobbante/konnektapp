@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { MiniLoader } from "@/components/ui/MiniLoader";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
@@ -263,7 +264,7 @@ export default function PostBookingForm() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+        <MiniLoader size="lg" showText text="Chargement..." />
       </div>
     );
   }

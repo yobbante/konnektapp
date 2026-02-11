@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { MiniLoader } from "@/components/ui/MiniLoader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -95,13 +96,33 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
     if (!roleLoading) {
       // If not authenticated, redirect to public tracking/profile
       if (!scanRole || !scannerId) {
-        // Unauthenticated scan → public profile/marketing page
-        navigate(`/track/user/${scannedUserId}`);
+        redirectToPublicPage();
         return;
       }
       resolveScannedUser();
     }
   }, [scannedUserId, scannerId, scannerGpId, roleLoading]);
+
+  const redirectToPublicPage = async () => {
+    try {
+      // Check if scanned user is a GP → redirect to public GP profile
+      const { data: gpProfile } = await supabase
+        .from("gp_profiles")
+        .select("id")
+        .eq("user_id", scannedUserId)
+        .eq("status", "verified")
+        .maybeSingle();
+
+      if (gpProfile) {
+        navigate(`/client/transporteurs/${gpProfile.id}`);
+      } else {
+        // Client or unknown → public user page with CTAs
+        navigate(`/track/user/${scannedUserId}`);
+      }
+    } catch {
+      navigate(`/track/user/${scannedUserId}`);
+    }
+  };
 
   const resolveScannedUser = async () => {
     setLoading(true);
@@ -206,15 +227,7 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <div className="flex flex-col items-center gap-3">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          >
-            <ScanLine className="w-8 h-8 text-primary" />
-          </motion.div>
-          <p className="text-sm text-muted-foreground">Résolution du QR...</p>
-        </div>
+        <MiniLoader size="md" showText text="Résolution du QR..." />
       </div>
     );
   }
@@ -412,18 +425,18 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
               </p>
             </div>
 
-            {/* Role-based action hints - always visible */}
+            {/* Role-based action hints */}
             <div className="p-2.5 bg-muted/50 rounded-lg text-xs text-muted-foreground text-left">
               {scanRole === "gp" && scannedUser.type === "client" && "🔧 Ce client n'a pas de colis en cours avec vous. Il peut réserver via votre profil."}
-              {scanRole === "gp" && scannedUser.type === "gp" && "ℹ️ Vous avez scanné un autre transporteur. Consultez son profil ci-dessous."}
-              {scanRole === "client" && scannedUser.type === "gp" && "📦 Réservez un envoi avec ce transporteur pour débloquer les actions de scan."}
+              {scanRole === "gp" && scannedUser.type === "gp" && "ℹ️ Vous avez scanné un autre transporteur."}
+              {scanRole === "client" && scannedUser.type === "gp" && "📦 Réservez un envoi avec ce transporteur."}
               {scanRole === "client" && scannedUser.type === "client" && "ℹ️ Vous avez scanné un autre client Konnekt."}
               {scanRole === "agent_logistique" && "📋 Aucune mission active pour cet utilisateur."}
-              {scanRole === "admin" && "⚙️ Aucune commande active trouvée pour cet utilisateur."}
+              {scanRole === "admin" && "⚙️ Aucune commande active trouvée."}
             </div>
 
-            {/* GP: "Envoyer un colis avec ce GP" */}
-            {scannedUser.type === "gp" && scanRole === "client" && scannedUser.gpId && (
+            {/* GP: redirect to public profile */}
+            {scannedUser.type === "gp" && scannedUser.gpId && (
               <Button
                 onClick={() => {
                   onComplete();
@@ -432,39 +445,26 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
                 className="w-full gap-2"
               >
                 <Truck className="w-4 h-4" />
-                Envoyer un colis avec ce GP
+                {scanRole === "client" ? "Envoyer un colis avec ce GP" : "Voir le profil public"}
               </Button>
             )}
 
-            {/* Client scanned by GP: context */}
-            {scannedUser.type === "client" && scanRole === "gp" && (
-              <div className="space-y-2">
-                <Badge variant="secondary" className="gap-1">
-                  <UserPlus className="w-3 h-3" />
-                  Contact enregistré
-                </Badge>
-                <p className="text-[11px] text-muted-foreground">
-                  Ce client pourra être sélectionné comme destinataire lors de vos prochains envois
-                </p>
-              </div>
-            )}
-
-            {/* GP profile button for all roles */}
-            {scannedUser.type === "gp" && scannedUser.gpId && (
+            {/* Client scanned without action → redirect to public page */}
+            {scannedUser.type === "client" && scanRole !== "admin" && scanRole !== "agent_logistique" && (
               <Button
                 variant="outline"
                 onClick={() => {
                   onComplete();
-                  navigate(`/client/transporteurs/${scannedUser.gpId}`);
+                  navigate(`/track/user/${scannedUser.userId}`);
                 }}
                 className="w-full gap-2"
               >
                 <User className="w-4 h-4" />
-                Voir le profil complet
+                Voir le profil public
               </Button>
             )}
 
-            {/* Admin/Agent: view all orders for this user */}
+            {/* Admin/Agent: view in admin */}
             {(scanRole === "admin" || scanRole === "agent_logistique") && (
               <Button
                 variant="outline"

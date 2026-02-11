@@ -1,15 +1,22 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { QrCode, Download, Share2, Copy, CheckCircle, Info } from "lucide-react";
+import { QrCode, Download, Share2, Copy, CheckCircle, Info, Package, MapPin, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { MiniLoader } from "@/components/ui/MiniLoader";
 
 interface OrderQRCodeProps {
   orderNumber: string;
   orderId: string;
   status: string;
+  weight?: number;
+  originCity?: string;
+  destinationCity?: string;
+  totalPrice?: number;
+  currency?: string;
 }
 
 /**
@@ -18,19 +25,19 @@ interface OrderQRCodeProps {
  * Shows QR code that encodes the order number for GP scanning
  * Available after payment is confirmed
  */
-export function OrderQRCode({ orderNumber, orderId, status }: OrderQRCodeProps) {
+export function OrderQRCode({ orderNumber, orderId, status, weight, originCity, destinationCity, totalPrice, currency }: OrderQRCodeProps) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [qrLoaded, setQrLoaded] = useState(false);
   const [qrError, setQrError] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Auto-refresh QR every 30s to catch new actions
+  // Auto-refresh QR every 15s for faster action sync
   useEffect(() => {
     const interval = setInterval(() => {
       setRefreshKey(k => k + 1);
       setQrLoaded(false);
-    }, 30000);
+    }, 15000);
     return () => clearInterval(interval);
   }, []);
 
@@ -113,7 +120,7 @@ export function OrderQRCode({ orderNumber, orderId, status }: OrderQRCodeProps) 
           <div className="p-4 bg-white rounded-xl shadow-sm border relative">
             {!qrLoaded && !qrError && (
               <div className="w-48 h-48 flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <MiniLoader size="md" />
               </div>
             )}
             {qrError ? (
@@ -133,6 +140,29 @@ export function OrderQRCode({ orderNumber, orderId, status }: OrderQRCodeProps) 
             )}
           </div>
         </motion.div>
+
+        {/* Parcel info summary if active */}
+        {(weight || originCity || destinationCity) && status !== "delivered" && (
+          <div className="p-3 bg-muted/50 rounded-lg border border-border/50">
+            <div className="flex items-center gap-2 text-xs">
+              <Package className="w-3.5 h-3.5 text-primary" />
+              <span className="font-medium">{weight ? `${weight} kg` : ""}</span>
+              {originCity && destinationCity && (
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <MapPin className="w-3 h-3" />
+                  {originCity}
+                  <ArrowRight className="w-2.5 h-2.5" />
+                  {destinationCity}
+                </span>
+              )}
+              {totalPrice && currency && (
+                <span className="ml-auto font-semibold text-primary">
+                  {totalPrice.toLocaleString()} {currency}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Order Number */}
         <div className="text-center">
@@ -166,13 +196,9 @@ export function OrderQRCode({ orderNumber, orderId, status }: OrderQRCodeProps) 
         <div className="p-3 bg-primary/5 rounded-lg border border-primary/10">
           <div className="flex items-start gap-2">
             <Info className="w-4 h-4 text-primary mt-0.5" />
-            <div className="text-xs text-muted-foreground space-y-1">
-              <p><strong>Dépôt:</strong> Présentez ce QR au transporteur lors du dépôt de votre colis.</p>
-              <p><strong>Réception:</strong> Le destinataire doit présenter ce QR pour récupérer le colis.</p>
-              <p className="text-primary/80">
-                Toute personne munie de ce code est réputée mandatée.
-              </p>
-            </div>
+            <p className="text-xs text-muted-foreground">
+              <strong>Dépôt:</strong> Présentez ce QR au transporteur. <strong>Réception:</strong> Le destinataire doit présenter ce QR.
+            </p>
           </div>
         </div>
       </CardContent>
