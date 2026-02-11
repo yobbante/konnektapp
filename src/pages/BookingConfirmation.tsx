@@ -16,6 +16,7 @@ import { useGPContactRelease } from "@/hooks/useGPContactRelease";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { OrderQRCode } from "@/components/client/OrderQRCode";
 import { LogisticsLabelGenerator } from "@/components/logistics/LogisticsLabelGenerator";
+import { MiniLoader } from "@/components/ui/MiniLoader";
 
 interface OrderDetails {
   id: string;
@@ -114,7 +115,7 @@ export default function BookingConfirmation() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+        <MiniLoader size="lg" showText text="Chargement..." />
       </div>
     );
   }
