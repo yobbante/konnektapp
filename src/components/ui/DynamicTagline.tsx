@@ -45,7 +45,7 @@ export function DynamicTagline({ className, variant = "default" }: DynamicTaglin
       <h1 className={cn("font-bold text-foreground leading-tight", textSizes[variant])}>
         Envoyez
       </h1>
-      <div className="relative h-10 md:h-12 flex items-center justify-center overflow-hidden">
+      <div className="relative h-12 md:h-14 flex items-center justify-center overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.span
             key={currentIndex}
