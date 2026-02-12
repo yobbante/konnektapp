@@ -1794,6 +1794,90 @@ export type Database = {
         }
         Relationships: []
       }
+      manual_parcels: {
+        Row: {
+          amount_paid: number
+          client_name: string
+          client_phone: string
+          commission_amount: number
+          commission_deducted: boolean
+          created_at: string
+          currency: string
+          declared_value: number | null
+          destination_city: string
+          gp_id: string
+          id: string
+          is_manual: boolean
+          notes: string | null
+          order_number: string
+          origin_city: string
+          parcel_type: string
+          payment_mode: string
+          status: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          amount_paid?: number
+          client_name: string
+          client_phone: string
+          commission_amount?: number
+          commission_deducted?: boolean
+          created_at?: string
+          currency?: string
+          declared_value?: number | null
+          destination_city: string
+          gp_id: string
+          id?: string
+          is_manual?: boolean
+          notes?: string | null
+          order_number?: string
+          origin_city: string
+          parcel_type?: string
+          payment_mode?: string
+          status?: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          amount_paid?: number
+          client_name?: string
+          client_phone?: string
+          commission_amount?: number
+          commission_deducted?: boolean
+          created_at?: string
+          currency?: string
+          declared_value?: number | null
+          destination_city?: string
+          gp_id?: string
+          id?: string
+          is_manual?: boolean
+          notes?: string | null
+          order_number?: string
+          origin_city?: string
+          parcel_type?: string
+          payment_mode?: string
+          status?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manual_parcels_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manual_parcels_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_templates: {
         Row: {
           category: string
