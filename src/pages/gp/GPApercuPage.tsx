@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 import {
   Package, Plane, MapPin, Send,
   AlertTriangle, Clock, ChevronRight, Sparkles,
-  Calendar, RefreshCw, MessageSquare, Scale
+  Calendar, RefreshCw, MessageSquare, Scale, Wallet
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,6 +22,7 @@ import { useGPProfile } from "@/hooks/useGPProfile";
 import { format, isAfter, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { getCurrencySymbol } from "@/components/ui/currency-selector";
 
 interface StatusCounts {
   toCollect: number;
@@ -47,6 +48,7 @@ export default function GPApercuPage() {
   const [customRequests, setCustomRequests] = useState(0);
   const [customRequestPreviews, setCustomRequestPreviews] = useState<CustomRequestPreview[]>([]);
   const [weightAlerts, setWeightAlerts] = useState(0);
+  const [walletData, setWalletData] = useState<{ balance: number; pending: number; currency: string } | null>(null);
   const [upcomingDepartures, setUpcomingDepartures] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -61,7 +63,7 @@ export default function GPApercuPage() {
     if (refresh) setRefreshing(true);
     
     try {
-      const [ordersRes, offersRes, customReqRes, customReqPreviews] = await Promise.all([
+      const [ordersRes, offersRes, customReqRes, customReqPreviews, walletRes] = await Promise.all([
         supabase.from("orders").select("status").eq("gp_id", gpProfile.id),
         supabase.from("gp_offers").select("id, departure_date, origin_city, destination_city, available_capacity, flight_number")
           .eq("gp_id", gpProfile.id).eq("status", "active")
@@ -72,6 +74,7 @@ export default function GPApercuPage() {
           .eq("status", "open")
           .order("created_at", { ascending: false })
           .limit(3),
+        supabase.from("gp_wallets").select("balance, pending_balance, currency").eq("gp_id", gpProfile.id).maybeSingle(),
       ]);
 
       const orders = ordersRes.data || [];
@@ -86,6 +89,13 @@ export default function GPApercuPage() {
       setCustomRequests(customReqRes.data?.length || 0);
       setCustomRequestPreviews(customReqPreviews.data || []);
       setWeightAlerts(statusList.filter(s => s === "pending_client_validation").length);
+      if (walletRes.data) {
+        setWalletData({
+          balance: walletRes.data.balance,
+          pending: walletRes.data.pending_balance,
+          currency: walletRes.data.currency || "XOF",
+        });
+      }
       setUpcomingDepartures(
         (offersRes.data || []).filter(o => isAfter(new Date(o.departure_date), startOfDay(new Date())))
       );
@@ -156,6 +166,31 @@ export default function GPApercuPage() {
             <StatusCard icon={MapPin} label="Arrivés" count={counts.arrived} color="purple" onClick={() => navigate("/gp/colis?filter=arrived")} />
             <StatusCard icon={Send} label="À remettre" count={counts.toDeliver} color="green" onClick={() => navigate("/gp/distribution")} />
           </div>
+        )}
+
+        {/* ─── WALLET QUICK VIEW ─── */}
+        {!isPending && walletData && (
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate("/gp/wallet")}
+            className="w-full p-4 rounded-2xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 flex items-center gap-4 text-left"
+          >
+            <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+              <Wallet className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground">Solde disponible</p>
+              <p className="text-lg font-bold text-foreground">
+                {walletData.balance.toLocaleString()} <span className="text-sm font-normal text-muted-foreground">{getCurrencySymbol(walletData.currency as any)}</span>
+              </p>
+            </div>
+            {walletData.pending > 0 && (
+              <Badge variant="secondary" className="text-[10px]">
+                +{walletData.pending.toLocaleString()} en attente
+              </Badge>
+            )}
+            <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          </motion.button>
         )}
 
         {/* ─── ALERTS ─── */}

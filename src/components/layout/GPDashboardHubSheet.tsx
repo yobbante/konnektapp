@@ -102,6 +102,12 @@ export function GPDashboardHubSheet({
           path: "/gp/tarification",
           description: "Prix et forfaits"
         },
+        { 
+          icon: Wallet, 
+          label: "Wallet", 
+          path: "/gp/wallet",
+          description: "Solde et retraits"
+        },
       ]
     },
     {

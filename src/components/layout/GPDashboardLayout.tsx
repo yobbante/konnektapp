@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { 
   Package, Bell, Menu, ScanLine, Truck,
   Lock, Home, ListChecks, LayoutGrid,
-  Shield, DollarSign, History, Calendar,
+  Shield, DollarSign, History, Calendar, Wallet,
   Settings, LogOut, MapPin, User, Plus,
   MessageCircle
 } from "lucide-react";
@@ -247,6 +247,7 @@ export function GPDashboardLayout({
                 <MenuButton icon={Calendar} label="Départs" locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/calendrier"); }}} />
                 <MenuButton icon={MessageCircle} label="Messages" onClick={() => { setShowMenu(false); navigate("/gp/messages"); }} />
                 <MenuButton icon={DollarSign} label="Tarifs" onClick={() => { setShowMenu(false); navigate("/gp/tarification"); }} />
+                <MenuButton icon={Wallet} label="Wallet" onClick={() => { setShowMenu(false); navigate("/gp/wallet"); }} />
                 <MenuButton icon={History} label="Historique" onClick={() => { setShowMenu(false); navigate("/gp/historique"); }} />
                 <MenuButton icon={Shield} label="KTP & Geo" onClick={() => { setShowMenu(false); navigate("/gp/ktp-geotrack"); }} />
                 <MenuButton icon={MapPin} label="Profil public" onClick={() => { setShowMenu(false); navigate("/gp/profil-public"); }} />
