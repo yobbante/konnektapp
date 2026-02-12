@@ -21,6 +21,7 @@ import { PageLoader } from "@/components/ui/PageLoader";
 import { SmartVoyageForm } from "@/components/gp/SmartVoyageForm";
 import { CreateManualParcelDialog } from "@/components/gp/CreateManualParcelDialog";
 import { ManualParcelBadge } from "@/components/gp/ManualParcelBadge";
+import { GPKYCProgressCard } from "@/components/gp/GPKYCProgressCard";
 import { useGPProfile } from "@/hooks/useGPProfile";
 import { getOrderStatusLabel, getOrderStatusColor } from "@/lib/transportTypes";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
@@ -246,6 +247,19 @@ export default function GPApercuPage() {
                 </div>
               </div>
             )}
+
+            {/* ═══════════════════════════════════
+                KYC PROGRESSION CARD
+            ═══════════════════════════════════ */}
+            <GPKYCProgressCard
+              kycLevel={gpProfile.kyc_level ?? 0}
+              kycStatus={gpProfile.kyc_status ?? "none"}
+              status={gpProfile.status}
+              hasIdDocument={!!gpProfile.id_document_url}
+              hasSelfie={!!gpProfile.selfie_url}
+              hasBusinessReg={!!gpProfile.business_registration_url}
+              onActivateBadge={() => navigate("/gp/profil-public")}
+            />
 
             {/* ═══════════════════════════════════
                 3️⃣ ACTIONS RAPIDES (4 boutons max)

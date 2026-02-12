@@ -25,6 +25,12 @@ export interface GPProfileData {
   rating: number | null;
   total_deliveries: number | null;
   verified_at: string | null;
+  kyc_level: number;
+  kyc_status: string;
+  withdrawal_limit: number;
+  id_document_url: string | null;
+  selfie_url: string | null;
+  business_registration_url: string | null;
 }
 
 export function useGPProfile() {
@@ -45,7 +51,7 @@ export function useGPProfile() {
 
       const { data: profile } = await supabase
         .from("gp_profiles")
-        .select("id, business_name, gp_type, status, base_origin_city, base_origin_country, base_destination_city, base_destination_country, base_price_per_kg, default_currency, deposit_address, reception_address, phone, whatsapp_phone, explicit_restrictions, rating, total_deliveries, verified_at")
+        .select("id, business_name, gp_type, status, base_origin_city, base_origin_country, base_destination_city, base_destination_country, base_price_per_kg, default_currency, deposit_address, reception_address, phone, whatsapp_phone, explicit_restrictions, rating, total_deliveries, verified_at, kyc_level, kyc_status, withdrawal_limit, id_document_url, selfie_url, business_registration_url")
         .eq("user_id", user.id)
         .maybeSingle();
 
