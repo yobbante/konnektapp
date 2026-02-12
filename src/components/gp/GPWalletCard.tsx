@@ -38,6 +38,9 @@ interface GPWalletCardProps {
   } | null;
   gpId?: string;
   compact?: boolean;
+  withdrawalLimit?: number;
+  kycLevel?: number;
+  onActivateKYC?: () => void;
 }
 
 interface LedgerEntry {
@@ -61,7 +64,7 @@ interface WithdrawalRequest {
   created_at: string;
 }
 
-export function GPWalletCard({ wallet, gpId, compact }: GPWalletCardProps) {
+export function GPWalletCard({ wallet, gpId, compact, withdrawalLimit = 0, kycLevel = 0, onActivateKYC }: GPWalletCardProps) {
   const { toast } = useToast();
   const balance = wallet?.balance || 0;
   const pending = wallet?.pending_balance || 0;
@@ -128,6 +131,16 @@ export function GPWalletCard({ wallet, gpId, compact }: GPWalletCardProps) {
     const amount = parseInt(withdrawAmount);
     if (isNaN(amount) || amount <= 0 || amount > balance) {
       toast({ title: "Montant invalide", variant: "destructive" });
+      return;
+    }
+    // KYC withdrawal limit check
+    if (withdrawalLimit > 0 && amount > withdrawalLimit && kycLevel < 1) {
+      toast({
+        title: "Limite de retrait",
+        description: `Activez votre badge professionnel pour retirer au-delà de ${withdrawalLimit.toLocaleString()} FCFA.`,
+        variant: "destructive",
+      });
+      if (onActivateKYC) onActivateKYC();
       return;
     }
     setWithdrawing(true);

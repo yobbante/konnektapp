@@ -1037,6 +1037,8 @@ export type Database = {
           id_type: string | null
           insurance_document_url: string | null
           international_destinations: string[] | null
+          kyc_level: number
+          kyc_status: string
           last_warning_at: string | null
           max_response_delay_hours: number | null
           navette_locked_at: string | null
@@ -1045,6 +1047,7 @@ export type Database = {
           price_locked_at: string | null
           rating: number | null
           reception_address: string | null
+          selfie_url: string | null
           status: Database["public"]["Enums"]["gp_status"]
           subscription: Database["public"]["Enums"]["gp_subscription"]
           total_deliveries: number | null
@@ -1055,6 +1058,7 @@ export type Database = {
           verified_at: string | null
           whatsapp: string | null
           whatsapp_phone: string | null
+          withdrawal_limit: number
           years_experience: number | null
           zones_covered: string[] | null
         }
@@ -1084,6 +1088,8 @@ export type Database = {
           id_type?: string | null
           insurance_document_url?: string | null
           international_destinations?: string[] | null
+          kyc_level?: number
+          kyc_status?: string
           last_warning_at?: string | null
           max_response_delay_hours?: number | null
           navette_locked_at?: string | null
@@ -1092,6 +1098,7 @@ export type Database = {
           price_locked_at?: string | null
           rating?: number | null
           reception_address?: string | null
+          selfie_url?: string | null
           status?: Database["public"]["Enums"]["gp_status"]
           subscription?: Database["public"]["Enums"]["gp_subscription"]
           total_deliveries?: number | null
@@ -1102,6 +1109,7 @@ export type Database = {
           verified_at?: string | null
           whatsapp?: string | null
           whatsapp_phone?: string | null
+          withdrawal_limit?: number
           years_experience?: number | null
           zones_covered?: string[] | null
         }
@@ -1131,6 +1139,8 @@ export type Database = {
           id_type?: string | null
           insurance_document_url?: string | null
           international_destinations?: string[] | null
+          kyc_level?: number
+          kyc_status?: string
           last_warning_at?: string | null
           max_response_delay_hours?: number | null
           navette_locked_at?: string | null
@@ -1139,6 +1149,7 @@ export type Database = {
           price_locked_at?: string | null
           rating?: number | null
           reception_address?: string | null
+          selfie_url?: string | null
           status?: Database["public"]["Enums"]["gp_status"]
           subscription?: Database["public"]["Enums"]["gp_subscription"]
           total_deliveries?: number | null
@@ -1149,6 +1160,7 @@ export type Database = {
           verified_at?: string | null
           whatsapp?: string | null
           whatsapp_phone?: string | null
+          withdrawal_limit?: number
           years_experience?: number | null
           zones_covered?: string[] | null
         }
@@ -3682,7 +3694,13 @@ export type Database = {
         | "awaiting_response"
         | "provisional_decision"
         | "closed"
-      gp_status: "pending" | "verified" | "suspended" | "rejected"
+      gp_status:
+        | "starter"
+        | "pending"
+        | "verified"
+        | "premium"
+        | "suspended"
+        | "rejected"
       gp_subscription: "free" | "premium"
       gp_type:
         | "express"
@@ -3874,7 +3892,14 @@ export const Constants = {
         "provisional_decision",
         "closed",
       ],
-      gp_status: ["pending", "verified", "suspended", "rejected"],
+      gp_status: [
+        "starter",
+        "pending",
+        "verified",
+        "premium",
+        "suspended",
+        "rejected",
+      ],
       gp_subscription: ["free", "premium"],
       gp_type: [
         "express",

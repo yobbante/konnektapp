@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
 import { GPWalletCard } from "@/components/gp/GPWalletCard";
@@ -7,6 +8,7 @@ import { useGPProfile } from "@/hooks/useGPProfile";
 import { SmartVoyageForm } from "@/components/gp/SmartVoyageForm";
 
 export default function GPWalletPage() {
+  const navigate = useNavigate();
   const { gpProfile, loading: profileLoading, pendingCount, activeCount } = useGPProfile();
   const [wallet, setWallet] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -39,7 +41,13 @@ export default function GPWalletPage() {
       onNewVoyage={() => setShowVoyageForm(true)}
     >
       <div className="px-4 py-4">
-        <GPWalletCard wallet={wallet} gpId={gpProfile.id} />
+        <GPWalletCard
+          wallet={wallet}
+          gpId={gpProfile.id}
+          withdrawalLimit={gpProfile.withdrawal_limit ?? 300000}
+          kycLevel={gpProfile.kyc_level ?? 0}
+          onActivateKYC={() => navigate("/gp/profil-public")}
+        />
       </div>
 
       {gpProfile && (

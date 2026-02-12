@@ -11,6 +11,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { GPNotificationsDropdown } from "@/components/gp/dashboard/GPNotificationsDropdown";
+import { GPKYCBadge, getGPDisplayStatus } from "@/components/gp/GPKYCBadge";
 import { cn } from "@/lib/utils";
 import { useEnforceDashboardRole } from "@/hooks/useSmartRedirect";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +23,7 @@ interface GPDashboardLayoutProps {
     business_name: string;
     gp_type: string;
     status: string;
+    kyc_level?: number;
   };
   pendingCount?: number;
   activeOrdersCount?: number;
@@ -49,7 +51,9 @@ export function GPDashboardLayout({
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
-  const isVerified = gpProfile.status === "verified";
+  const kycLevel = gpProfile.kyc_level ?? 0;
+  const displayStatus = getGPDisplayStatus(gpProfile.status, kycLevel);
+  const isVerified = gpProfile.status === "verified" || gpProfile.status === "premium" || gpProfile.status === "starter";
   useEnforceDashboardRole("gp");
 
   const getActiveTab = () => {
@@ -91,15 +95,7 @@ export function GPDashboardLayout({
               <p className="text-white font-bold text-xs leading-tight truncate max-w-[100px]">
                 {gpProfile.business_name}
               </p>
-              <div className="flex items-center gap-1">
-                <div className={cn(
-                  "w-1.5 h-1.5 rounded-full",
-                  isVerified ? "bg-green-400" : "bg-yellow-400"
-                )} />
-                <span className="text-white/70 text-[9px]">
-                  {isVerified ? "Vérifié" : "En attente"}
-                </span>
-              </div>
+              <GPKYCBadge status={displayStatus} kycLevel={kycLevel} size="sm" />
             </div>
           </div>
 
