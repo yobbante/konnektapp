@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { 
-  Wallet, ArrowUpRight, CheckCircle, XCircle, Clock, 
-  TrendingUp, AlertTriangle, Loader2, Search, RefreshCw 
+import {
+  Wallet, ArrowUpRight, CheckCircle, XCircle, Clock,
+  TrendingUp, AlertTriangle, Loader2, Search, RefreshCw
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,20 +42,16 @@ export function AdminWalletPanel() {
   const [search, setSearch] = useState("");
   const [processing, setProcessing] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      // Load wallets
       const { data: walletsData } = await supabase
         .from("gp_wallets")
         .select("gp_id, balance, pending_balance, locked_balance, commission_rate, commission_due, total_earned")
         .order("balance", { ascending: false });
 
-      // Load GP names
       const gpIds = (walletsData || []).map(w => w.gp_id);
       const { data: profiles } = await supabase
         .from("gp_profiles")
@@ -70,7 +66,6 @@ export function AdminWalletPanel() {
         gp_name: nameMap[w.gp_id] || "GP inconnu",
       })));
 
-      // Load pending withdrawals
       const { data: wData } = await supabase
         .from("withdrawal_requests")
         .select("*")
@@ -81,7 +76,7 @@ export function AdminWalletPanel() {
       const { data: wProfiles } = await supabase
         .from("gp_profiles")
         .select("id, business_name")
-        .in("id", wGpIds);
+        .in("id", wGpIds.length > 0 ? wGpIds : ["__none__"]);
 
       const wNameMap: Record<string, string> = {};
       (wProfiles || []).forEach(p => { wNameMap[p.id] = p.business_name; });
@@ -102,24 +97,18 @@ export function AdminWalletPanel() {
     try {
       const { error } = await supabase
         .from("withdrawal_requests")
-        .update({
-          status: action,
-          processed_at: new Date().toISOString(),
-        })
+        .update({ status: action, processed_at: new Date().toISOString() })
         .eq("id", id);
-
       if (error) throw error;
 
       if (action === "completed") {
         const req = withdrawals.find(w => w.id === id);
         if (req) {
-          // Debit GP wallet
           const { data: wallet } = await supabase
             .from("gp_wallets")
             .select("id, balance, total_withdrawn")
             .eq("gp_id", req.gp_id)
             .single();
-
           if (wallet) {
             await supabase.from("gp_wallets").update({
               balance: wallet.balance - req.amount_fcfa,
@@ -158,6 +147,14 @@ export function AdminWalletPanel() {
 
   return (
     <div className="space-y-6">
+      {/* Header with refresh */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-bold text-foreground">Finance & Wallets</h3>
+        <Button variant="ghost" size="sm" onClick={loadData} className="gap-1.5 text-xs">
+          <RefreshCw className="w-3.5 h-3.5" /> Actualiser
+        </Button>
+      </div>
+
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KpiCard icon={Wallet} label="Escrow total" value={totalEscrow} color="text-secondary" />
@@ -208,7 +205,7 @@ export function AdminWalletPanel() {
                     </Button>
                     <Button
                       size="sm"
-                      className="h-8 text-xs bg-success hover:bg-success/90"
+                      className="h-8 text-xs bg-success hover:bg-success/90 text-success-foreground"
                       disabled={processing === w.id}
                       onClick={() => handleWithdrawal(w.id, "completed")}
                     >
