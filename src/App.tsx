@@ -57,6 +57,7 @@ import Install from "./pages/Install";
 import LoyaltyTiersPage from "./pages/LoyaltyTiersPage";
 import AdminMessages from "./pages/AdminMessages";
 import NotFound from "./pages/NotFound";
+import Recipients from "./pages/Recipients";
 // Routier pages
 import RoutierDemandesPage from "./pages/routier/RoutierDemandesPage";
 import RoutierEnCoursPage from "./pages/routier/RoutierEnCoursPage";
@@ -146,6 +147,7 @@ const App = () => (
             <Route path="/historique" element={<OrderHistory />} />
             <Route path="/documents-legaux" element={<LegalDocuments />} />
             <Route path="/profil" element={<UnifiedProfile />} />
+            <Route path="/destinataires" element={<Recipients />} />
             <Route path="/profil/complet" element={<ClientProfileComplete />} />
             <Route path="/transporteur/inscription" element={<TransporteurRegistration />} />
             <Route path="/order/:orderId/complete" element={<PostBookingForm />} />

@@ -7,7 +7,7 @@ import {
   MessageCircle, MapPin, LayoutDashboard,
   Users, ClipboardList, AlertTriangle,
   ScanLine, BarChart3, Calendar, DollarSign,
-  Eye, X, ArrowLeftRight
+  Eye, X, ArrowLeftRight, Send
 } from "lucide-react";
 import {
   Sheet,
@@ -101,11 +101,11 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
         { icon: Home, label: "Aperçu", href: "/gp/apercu" },
         { icon: Package, label: "Demandes", href: "/gp/demandes" },
         { icon: Calendar, label: "Départs", href: "/gp/calendrier" },
+        { icon: Send, label: "Envoyer", href: "#gp-send", highlight: true },
         { icon: MessageCircle, label: "Messages", href: "/gp/messages" },
         { icon: DollarSign, label: "Tarifs", href: "/gp/tarification" },
         { icon: History, label: "Historique", href: "/gp/historique" },
         { icon: Shield, label: "KTP & Geo", href: "/gp/ktp-geotrack" },
-        { icon: MapPin, label: "Profil public", href: "/gp/profil-public" },
         { icon: Settings, label: "Réglages", href: "/gp/parametres" },
       ];
     }
@@ -138,11 +138,11 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
       { icon: Package, label: "Envoyer", href: "/envoyer" },
       { icon: Search, label: "Offres", href: "/offres" },
       { icon: MapPin, label: "Suivre", href: "/tracking" },
+      { icon: Users, label: "Destinataires", href: "/destinataires" },
       { icon: User, label: "Profil", href: "/profil" },
       { icon: MessageCircle, label: "Messages", href: "/messages" },
       { icon: History, label: "Historique", href: "/historique" },
       { icon: Heart, label: "Favoris", href: "/favoris" },
-      { icon: Gift, label: "Fidélité", href: "/loyalty", highlight: true },
     ];
 
     return items;

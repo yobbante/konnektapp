@@ -1,21 +1,12 @@
+// ============= ClientAppHome - Improved Centering =============
+
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Package, Truck, Shield, CreditCard, BadgeCheck, LogIn } from "lucide-react";
+import { Package, Truck, Shield, CreditCard, BadgeCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { DynamicTagline } from "@/components/ui/DynamicTagline";
 
-/**
- * AppLikeHome - Homepage V1 App-Like / Conversion First
- * 
- * Règles:
- * - 1 écran = 1 décision
- * - AUCUN scroll vertical
- * - 2 CTAs principaux grands formats
- * - Bouton connexion visible pour non-connectés
- * - Micro-réassurance (3 icônes max)
- */
 export function AppLikeHome() {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -57,31 +48,27 @@ export function AppLikeHome() {
     if (isGP) {
       navigate("/gp/dashboard");
     } else {
-     // V2: Navigation directe sans forcer la connexion
       navigate("/transporteur/inscription");
     }
   };
 
   return (
     <div 
-      className="flex flex-col bg-background overflow-hidden"
+      className="flex flex-col bg-background overflow-hidden relative"
       style={{
-       height: '100%',
-       maxHeight: 'calc(100vh - 60px - 64px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))',
-        minHeight: '400px',
+       height: 'calc(100vh - 60px - 64px)', // Adjust for header/nav
+       minHeight: '500px',
       }}
     >
-      {/* Login button moved to header - see AppHeader */}
-
-      {/* Main Content - Centered vertically */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-4">
+      {/* Main Content - Perfectly Centered */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center px-6 pb-16">
         
-        {/* Central Message - Dynamic Tagline */}
+        {/* Dynamic Tagline */}
         <motion.div 
           initial={{ opacity: 0, y: -10 }} 
           animate={{ opacity: 1, y: 0 }} 
           transition={{ duration: 0.4 }} 
-          className="mb-8"
+          className="mb-10 w-full max-w-sm text-center"
         >
           <DynamicTagline />
         </motion.div>
@@ -91,7 +78,7 @@ export function AppLikeHome() {
           initial={{ opacity: 0, y: 10 }} 
           animate={{ opacity: 1, y: 0 }} 
           transition={{ duration: 0.4, delay: 0.1 }} 
-          className="w-full max-w-sm space-y-4 mb-8"
+          className="w-full max-w-sm space-y-4 mb-10"
         >
           {/* CTA 1: Envoyer un colis */}
           <button 
@@ -141,40 +128,40 @@ export function AppLikeHome() {
           initial={{ opacity: 0 }} 
           animate={{ opacity: 1 }} 
           transition={{ duration: 0.4, delay: 0.2 }} 
-          className="flex items-center justify-center gap-6"
+          className="flex items-center justify-center gap-8"
         >
-          <div className="flex flex-col items-center gap-1">
-            <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
-              <Shield className="w-5 h-5 text-success" />
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+              <Shield className="w-5 h-5 text-green-600" />
             </div>
-            <span className="text-xs text-muted-foreground font-medium">Fiable</span>
+            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Fiable</span>
           </div>
           
-          <div className="flex flex-col items-center gap-1">
+          <div className="flex flex-col items-center gap-1.5">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
               <BadgeCheck className="w-5 h-5 text-primary" />
             </div>
-            <span className="text-xs text-muted-foreground font-medium">Assurance</span>
+            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Assuré</span>
           </div>
           
-          <div className="flex flex-col items-center gap-1">
-            <div className="w-10 h-10 rounded-full bg-warning/10 flex items-center justify-center">
-              <CreditCard className="w-5 h-5 text-warning" />
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
+              <CreditCard className="w-5 h-5 text-amber-600" />
             </div>
-            <span className="text-xs text-muted-foreground font-medium">Sécurisé</span>
+            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Sécurisé</span>
           </div>
         </motion.div>
       </div>
 
-      {/* Explore link */}
+      {/* Footer Link - Pinned to bottom */}
       <motion.div 
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }} 
         transition={{ duration: 0.4, delay: 0.3 }} 
-        className="pb-4 text-center"
+        className="absolute bottom-4 left-0 right-0 text-center pb-safe"
       >
-        <Link to="/offres" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-          Explorer les offres disponibles →
+        <Link to="/offres" className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1">
+          Explorer les offres disponibles <span className="text-lg">→</span>
         </Link>
       </motion.div>
     </div>
