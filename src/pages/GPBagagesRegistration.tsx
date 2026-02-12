@@ -418,10 +418,25 @@ export default function GPBagagesRegistration() {
             <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <Card>
                 <CardContent className="p-5 space-y-4">
-                  <h2 className="text-lg font-semibold flex items-center gap-2">
-                    <Lock className="w-5 h-5 text-primary" />
-                    {isLogin ? "Connexion" : "Créer un compte"}
-                  </h2>
+                  {/* Identity - Name field */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-primary" />
+                      Nom & Prénom *
+                    </Label>
+                    <Input
+                      placeholder="Ex: Mamadou Diallo"
+                      value={profileData.fullName}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, fullName: e.target.value }))}
+                      className="h-12 text-base"
+                    />
+                  </div>
+
+                  <div className="pt-2 border-t border-border">
+                    <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+                      <Lock className="w-5 h-5 text-primary" />
+                      {isLogin ? "Connexion" : "Créer un compte"}
+                    </h2>
                   {existingUser ? (
                     <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-sm text-green-700 flex items-center gap-2">
                       <CheckCircle className="w-4 h-4" /> Connecté: {existingUser.fullName || existingUser.email}
@@ -435,7 +450,7 @@ export default function GPBagagesRegistration() {
                           <Input type="email" placeholder="votre@email.com" className="pl-10 h-12" value={authData.email} onChange={(e) => setAuthData({ ...authData, email: e.target.value })} />
                         </div>
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-2 mt-4">
                         <Label>Mot de passe *</Label>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -446,31 +461,16 @@ export default function GPBagagesRegistration() {
                         </div>
                       </div>
                       {!isLogin && (
-                        <div className="space-y-2">
+                        <div className="space-y-2 mt-4">
                           <Label>Confirmer *</Label>
                           <Input type={showPassword ? "text" : "password"} placeholder="••••••••" className="h-12" value={authData.confirmPassword} onChange={(e) => setAuthData({ ...authData, confirmPassword: e.target.value })} />
                         </div>
                       )}
-                      <button type="button" onClick={() => setIsLogin(!isLogin)} className="text-sm text-primary hover:underline w-full text-center">
+                      <button type="button" onClick={() => setIsLogin(!isLogin)} className="text-sm text-primary hover:underline w-full text-center mt-4">
                         {isLogin ? "Pas de compte ? S'inscrire" : "Déjà un compte ? Se connecter"}
                       </button>
                     </>
                   )}
-
-                  {/* Identity - Name field */}
-                  <div className="pt-2 border-t border-border">
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-primary" />
-                        Nom & Prénom *
-                      </Label>
-                      <Input
-                        placeholder="Ex: Mamadou Diallo"
-                        value={profileData.fullName}
-                        onChange={(e) => setProfileData(prev => ({ ...prev, fullName: e.target.value }))}
-                        className="h-12 text-base"
-                      />
-                    </div>
                   </div>
 
                   <div className="flex justify-end pt-2">
