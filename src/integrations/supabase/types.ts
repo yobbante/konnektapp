@@ -1219,10 +1219,13 @@ export type Database = {
       gp_wallets: {
         Row: {
           balance: number
+          commission_due: number
+          commission_rate: number
           created_at: string
           currency: string
           gp_id: string
           id: string
+          locked_balance: number
           pending_balance: number
           total_earned: number
           total_withdrawn: number
@@ -1230,10 +1233,13 @@ export type Database = {
         }
         Insert: {
           balance?: number
+          commission_due?: number
+          commission_rate?: number
           created_at?: string
           currency?: string
           gp_id: string
           id?: string
+          locked_balance?: number
           pending_balance?: number
           total_earned?: number
           total_withdrawn?: number
@@ -1241,10 +1247,13 @@ export type Database = {
         }
         Update: {
           balance?: number
+          commission_due?: number
+          commission_rate?: number
           created_at?: string
           currency?: string
           gp_id?: string
           id?: string
+          locked_balance?: number
           pending_balance?: number
           total_earned?: number
           total_withdrawn?: number
@@ -1353,6 +1362,77 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      konnekt_ledger: {
+        Row: {
+          amount_display: number
+          amount_fcfa: number
+          created_at: string
+          currency_display: string
+          description: string | null
+          gp_id: string | null
+          id: string
+          order_id: string | null
+          reference: string | null
+          status: string
+          type: string
+        }
+        Insert: {
+          amount_display?: number
+          amount_fcfa: number
+          created_at?: string
+          currency_display?: string
+          description?: string | null
+          gp_id?: string | null
+          id?: string
+          order_id?: string | null
+          reference?: string | null
+          status?: string
+          type: string
+        }
+        Update: {
+          amount_display?: number
+          amount_fcfa?: number
+          created_at?: string
+          currency_display?: string
+          description?: string | null
+          gp_id?: string | null
+          id?: string
+          order_id?: string | null
+          reference?: string | null
+          status?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "konnekt_ledger_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "konnekt_ledger_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "konnekt_ledger_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "konnekt_ledger_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ktp_history: {
         Row: {
@@ -3231,6 +3311,69 @@ export type Database = {
           },
         ]
       }
+      withdrawal_requests: {
+        Row: {
+          admin_notes: string | null
+          amount_display: number
+          amount_fcfa: number
+          created_at: string
+          currency_display: string
+          gp_id: string
+          id: string
+          method: string
+          phone_or_account: string | null
+          processed_at: string | null
+          processed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount_display?: number
+          amount_fcfa: number
+          created_at?: string
+          currency_display?: string
+          gp_id: string
+          id?: string
+          method: string
+          phone_or_account?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          amount_display?: number
+          amount_fcfa?: number
+          created_at?: string
+          currency_display?: string
+          gp_id?: string
+          id?: string
+          method?: string
+          phone_or_account?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "withdrawal_requests_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "withdrawal_requests_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       gp_contact_release: {
@@ -3407,6 +3550,10 @@ export type Database = {
         Returns: number
       }
       get_ktp_payment_rule: { Args: { p_trust_score: number }; Returns: string }
+      get_progressive_commission_rate: {
+        Args: { p_total_deliveries: number }
+        Returns: number
+      }
       get_public_tracking: {
         Args: { p_order_identifier: string }
         Returns: Json
@@ -3487,6 +3634,10 @@ export type Database = {
         | "commission"
         | "refund"
         | "bonus"
+        | "order_payment"
+        | "manual_commission"
+        | "release"
+        | "insurance_hold"
       user_role_extended:
         | "super_admin"
         | "moderator_arbitrage"
@@ -3679,6 +3830,10 @@ export const Constants = {
         "commission",
         "refund",
         "bonus",
+        "order_payment",
+        "manual_commission",
+        "release",
+        "insurance_hold",
       ],
       user_role_extended: [
         "super_admin",
