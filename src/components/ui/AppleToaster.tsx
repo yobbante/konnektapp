@@ -61,7 +61,7 @@ export function AppleToaster() {
         title: titleStr,
         description: descStr,
         link: inferLink(titleStr, descStr),
-        duration: t.variant === "destructive" ? 7000 : 5000,
+        duration: t.variant === "destructive" ? 6000 : 3000,
       });
 
       // Dismiss from shadcn queue so it doesn't stack
