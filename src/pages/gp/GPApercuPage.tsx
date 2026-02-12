@@ -1,15 +1,16 @@
 /**
- * GPApercuPage — "Aujourd'hui" default screen
+ * GPApercuPage — Dashboard GP V1 Terrain (refactored per PRV)
  * 
- * V1 TERRAIN: 4 status cards + Custom requests preview + Upcoming departures
+ * Hierarchy: Finance → Quick Actions → Active Parcels → Performance → Departures
+ * Mobile-first, max 6 elements per screen, scan-centric.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Package, Plane, MapPin, Send,
-  AlertTriangle, Clock, ChevronRight, Sparkles,
-  Calendar, RefreshCw, MessageSquare, Scale, Wallet, Plus
+  Package, Plane, Send, AlertTriangle, Clock, ChevronRight,
+  Calendar, RefreshCw, Scale, Wallet, Plus, ScanLine,
+  TrendingUp, Shield, Percent, History, BarChart3
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,104 +19,131 @@ import { Button } from "@/components/ui/button";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { SmartVoyageForm } from "@/components/gp/SmartVoyageForm";
+import { CreateManualParcelDialog } from "@/components/gp/CreateManualParcelDialog";
+import { ManualParcelBadge } from "@/components/gp/ManualParcelBadge";
 import { useGPProfile } from "@/hooks/useGPProfile";
+import { getOrderStatusLabel, getOrderStatusColor } from "@/lib/transportTypes";
+import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { format, isAfter, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { getCurrencySymbol } from "@/components/ui/currency-selector";
-import { CreateManualParcelDialog } from "@/components/gp/CreateManualParcelDialog";
 
-interface StatusCounts {
-  toCollect: number;
-  inTransit: number;
-  arrived: number;
-  toDeliver: number;
-}
-
-interface CustomRequestPreview {
-  id: string;
-  origin_city: string;
-  destination_city: string;
-  weight_estimate: number | null;
-  description: string;
-  created_at: string;
-  shipment_type: string;
+interface DashboardData {
+  wallet: { balance: number; pending: number; totalMonth: number; commissionRate: number; commissionDue: number; currency: string } | null;
+  activeParcels: any[];
+  manualParcels: any[];
+  departures: any[];
+  stats: { delivered: number; successRate: number; disputes: number; manualPercent: number };
+  pendingActions: { weightAlerts: number; pendingOrders: number; customRequests: number };
 }
 
 export default function GPApercuPage() {
   const navigate = useNavigate();
   const { gpProfile, loading: profileLoading, pendingCount, activeCount } = useGPProfile();
-  const [counts, setCounts] = useState<StatusCounts>({ toCollect: 0, inTransit: 0, arrived: 0, toDeliver: 0 });
-  const [customRequests, setCustomRequests] = useState(0);
-  const [customRequestPreviews, setCustomRequestPreviews] = useState<CustomRequestPreview[]>([]);
-  const [weightAlerts, setWeightAlerts] = useState(0);
-  const [walletData, setWalletData] = useState<{ balance: number; pending: number; currency: string } | null>(null);
-  const [upcomingDepartures, setUpcomingDepartures] = useState<any[]>([]);
-  const [manualParcelCount, setManualParcelCount] = useState(0);
+  const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showVoyageForm, setShowVoyageForm] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
+  const [colisFilter, setColisFilter] = useState<"transit" | "deliver" | "manual" | "dispute">("transit");
 
   useEffect(() => {
-    if (gpProfile) loadData();
+    if (gpProfile) loadAll();
   }, [gpProfile]);
 
-  const loadData = async (refresh = false) => {
+  const loadAll = async (refresh = false) => {
     if (!gpProfile) return;
     if (refresh) setRefreshing(true);
-    
+
     try {
-      const [ordersRes, offersRes, customReqRes, customReqPreviews, walletRes, manualRes] = await Promise.all([
-        supabase.from("orders").select("status").eq("gp_id", gpProfile.id),
-        supabase.from("gp_offers").select("id, departure_date, origin_city, destination_city, available_capacity, flight_number")
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+      const [ordersRes, offersRes, walletRes, manualRes, ktpRes, monthLedger] = await Promise.all([
+        supabase.from("orders")
+          .select("id, order_number, origin_city, destination_city, weight, status, total_price, currency, created_at, client_id")
+          .eq("gp_id", gpProfile.id).not("status", "eq", "cancelled"),
+        supabase.from("gp_offers")
+          .select("id, departure_date, origin_city, destination_city, available_capacity, flight_number")
           .eq("gp_id", gpProfile.id).eq("status", "active")
+          .gte("departure_date", now.toISOString())
           .order("departure_date", { ascending: true }).limit(3),
-        supabase.from("custom_request_responses").select("id").eq("gp_id", gpProfile.id).eq("status", "pending"),
-        supabase.from("custom_requests")
-          .select("id, origin_city, destination_city, weight_estimate, description, created_at, shipment_type")
-          .eq("status", "open")
-          .order("created_at", { ascending: false })
-          .limit(3),
-        supabase.from("gp_wallets").select("balance, pending_balance, currency").eq("gp_id", gpProfile.id).maybeSingle(),
-        supabase.from("manual_parcels").select("id", { count: "exact", head: true }).eq("gp_id", gpProfile.id).neq("status", "delivered"),
+        supabase.from("gp_wallets")
+          .select("balance, pending_balance, currency, commission_rate, commission_due, total_earned")
+          .eq("gp_id", gpProfile.id).maybeSingle(),
+        supabase.from("manual_parcels")
+          .select("id, order_number, origin_city, destination_city, weight, status, client_name, amount_paid, currency, created_at")
+          .eq("gp_id", gpProfile.id),
+        supabase.from("ktp_status")
+          .select("trust_score, ktp_level")
+          .eq("gp_id", gpProfile.id).maybeSingle(),
+        supabase.from("konnekt_ledger")
+          .select("amount_fcfa")
+          .eq("gp_id", gpProfile.id).eq("type", "release")
+          .gte("created_at", monthStart),
       ]);
 
       const orders = ordersRes.data || [];
-      const statusList = orders.map(o => o.status as string);
-      setCounts({
-        toCollect: statusList.filter(s => s === "accepted").length,
-        inTransit: statusList.filter(s => ["collected", "in_transit"].includes(s)).length,
-        arrived: statusList.filter(s => s === "arrived").length,
-        toDeliver: statusList.filter(s => s === "arrived").length,
-      });
-      
-      setCustomRequests(customReqRes.data?.length || 0);
-      setCustomRequestPreviews(customReqPreviews.data || []);
-      setWeightAlerts(statusList.filter(s => s === "pending_client_validation").length);
-      if (walletRes.data) {
-        setWalletData({
+      const manuals = manualRes.data || [];
+      const statuses = orders.map(o => o.status as string);
+      const delivered = statuses.filter(s => s === "delivered").length;
+      const total = orders.length;
+      const manualActive = manuals.filter(m => m.status !== "delivered").length;
+      const totalMonth = (monthLedger.data || []).reduce((s, e) => s + (e.amount_fcfa || 0), 0);
+
+      const activeParcels = orders.filter(o => 
+        ["accepted", "collected", "in_transit", "arrived"].includes(o.status as string)
+      ).slice(0, 5);
+
+      const manualActive2 = manuals.filter(m => m.status !== "delivered").slice(0, 5);
+
+      setData({
+        wallet: walletRes.data ? {
           balance: walletRes.data.balance,
           pending: walletRes.data.pending_balance,
+          totalMonth,
+          commissionRate: walletRes.data.commission_rate || 5,
+          commissionDue: walletRes.data.commission_due || 0,
           currency: walletRes.data.currency || "XOF",
-        });
-      }
-      setManualParcelCount(manualRes.count || 0);
-      setUpcomingDepartures(
-        (offersRes.data || []).filter(o => isAfter(new Date(o.departure_date), startOfDay(new Date())))
-      );
-    } catch (error) {
-      console.error("Error loading dashboard:", error);
+        } : null,
+        activeParcels,
+        manualParcels: manualActive2,
+        departures: (offersRes.data || []).filter(o => isAfter(new Date(o.departure_date), startOfDay(now))),
+        stats: {
+          delivered,
+          successRate: total > 0 ? Math.round((delivered / total) * 100) : 0,
+          disputes: statuses.filter(s => s === "disputed").length,
+          manualPercent: (total + manuals.length) > 0 ? Math.round((manuals.length / (total + manuals.length)) * 100) : 0,
+        },
+        pendingActions: {
+          weightAlerts: statuses.filter(s => s === "pending_client_validation").length,
+          pendingOrders: pendingCount,
+          customRequests: 0,
+        },
+      });
+    } catch (err) {
+      console.error("Dashboard load error:", err);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  if (profileLoading || loading) return <PageLoader message="Chargement..." />;
-  if (!gpProfile) return null;
+  const isPending = gpProfile?.status === "pending";
+  const w = data?.wallet;
+  const currency = w?.currency || "XOF";
 
-  const isPending = gpProfile.status === "pending";
+  const filteredColis = useMemo(() => {
+    if (!data) return [];
+    if (colisFilter === "transit") return data.activeParcels.filter(c => ["collected", "in_transit"].includes(c.status));
+    if (colisFilter === "deliver") return data.activeParcels.filter(c => c.status === "arrived");
+    if (colisFilter === "manual") return data.manualParcels;
+    if (colisFilter === "dispute") return data.activeParcels.filter(c => c.status === "disputed");
+    return data?.activeParcels || [];
+  }, [colisFilter, data]);
+
+  if (profileLoading || loading) return <PageLoader message="Chargement..." />;
+  if (!gpProfile || !data) return null;
 
   return (
     <GPDashboardLayout
@@ -126,13 +154,10 @@ export default function GPApercuPage() {
       onNewVoyage={() => setShowVoyageForm(true)}
     >
       <div className="px-4 py-4 space-y-4">
-        {/* ─── Pending Account Alert ─── */}
+        {/* ─── PENDING ACCOUNT ─── */}
         {isPending && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30"
-          >
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+            className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
                 <Clock className="w-6 h-6 text-amber-500" />
@@ -147,257 +172,370 @@ export default function GPApercuPage() {
           </motion.div>
         )}
 
-        {/* ─── REFRESH ─── */}
         {!isPending && (
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold">Aujourd'hui</h2>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => loadData(true)}
-              disabled={refreshing}
-            >
-              <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
-            </Button>
-          </div>
-        )}
-
-        {/* ─── 4 STATUS CARDS ─── */}
-        {!isPending && (
-          <div className="grid grid-cols-2 gap-3">
-            <StatusCard icon={Package} label="À collecter" count={counts.toCollect} color="amber" onClick={() => navigate("/gp/colis?filter=accepted")} />
-            <StatusCard icon={Plane} label="En transit" count={counts.inTransit} color="blue" onClick={() => navigate("/gp/colis?filter=in_transit")} />
-            <StatusCard icon={MapPin} label="Arrivés" count={counts.arrived} color="purple" onClick={() => navigate("/gp/colis?filter=arrived")} />
-            <StatusCard icon={Send} label="À remettre" count={counts.toDeliver} color="green" onClick={() => navigate("/gp/distribution")} />
-          </div>
-        )}
-
-        {/* ─── WALLET QUICK VIEW ─── */}
-        {!isPending && walletData && (
-          <motion.button
-            whileTap={{ scale: 0.98 }}
-            onClick={() => navigate("/gp/wallet")}
-            className="w-full p-4 rounded-2xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 flex items-center gap-4 text-left"
-          >
-            <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
-              <Wallet className="w-5 h-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground">Solde disponible</p>
-              <p className="text-lg font-bold text-foreground">
-                {walletData.balance.toLocaleString()} <span className="text-sm font-normal text-muted-foreground">{getCurrencySymbol(walletData.currency as any)}</span>
-              </p>
-            </div>
-            {walletData.pending > 0 && (
-              <Badge variant="secondary" className="text-[10px]">
-                +{walletData.pending.toLocaleString()} en attente
-              </Badge>
-            )}
-            <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-          </motion.button>
-        )}
-
-        {/* ─── MANUAL PARCEL QUICK ACTION ─── */}
-        {!isPending && (
-          <motion.button
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setShowManualForm(true)}
-            className="w-full p-3 rounded-xl border border-amber-500/20 bg-amber-500/5 flex items-center gap-3 text-left"
-          >
-            <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-              <Plus className="w-4 h-4 text-amber-500" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium">Ajouter un colis manuel</p>
-              <p className="text-xs text-muted-foreground">
-                {manualParcelCount > 0 ? `${manualParcelCount} colis hors plateforme actifs` : "Enregistrer un colis pris hors Konnekt"}
-              </p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-          </motion.button>
-        )}
-
-        {/* ─── KTP PEDAGOGY ─── */}
-        {!isPending && manualParcelCount > 0 && (
-          <div className="p-3 rounded-xl bg-muted/30 border border-border/50 text-xs text-muted-foreground">
-            💡 Les réservations complètes Konnekt améliorent votre score KTP et votre visibilité.
-          </div>
-        )}
-
-        {/* ─── ALERTS ─── */}
-        {!isPending && (weightAlerts > 0 || pendingCount > 0 || customRequests > 0) && (
-          <div className="space-y-2">
-            {weightAlerts > 0 && (
-              <AlertBanner icon={AlertTriangle} iconColor="text-red-500" bgColor="bg-red-500/10 border-red-500/30"
-                title={`${weightAlerts} poids modifié${weightAlerts > 1 ? "s" : ""} — validation client`}
-                subtitle="Action requise"
-                onClick={() => navigate("/gp/colis?filter=pending_client_validation")}
-              />
-            )}
-            {pendingCount > 0 && (
-              <AlertBanner icon={Package} iconColor="text-amber-500" bgColor="bg-amber-500/10 border-amber-500/30"
-                title={`${pendingCount} demande${pendingCount > 1 ? "s" : ""} en attente`}
-                subtitle="Répondez rapidement"
-                onClick={() => navigate("/gp/demandes")}
-              />
-            )}
-          </div>
-        )}
-
-        {/* ─── CUSTOM REQUESTS PREVIEW ─── */}
-        {!isPending && customRequestPreviews.length > 0 && (
-          <div className="space-y-2">
+          <>
+            {/* ─── HEADER ROW ─── */}
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" />
-                Demandes personnalisées
-              </h3>
-              <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate("/gp/demandes-personnalisees")}>
-                Voir tout
+              <h2 className="text-lg font-bold">Tableau de bord</h2>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => loadAll(true)} disabled={refreshing}>
+                <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
               </Button>
             </div>
-            {customRequestPreviews.map(req => (
-              <motion.button
-                key={req.id}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => navigate("/gp/demandes-personnalisees")}
-                className="w-full p-3 rounded-xl border bg-blue-500/5 border-blue-500/20 flex items-center gap-3 text-left"
+
+            {/* ═══════════════════════════════════
+                2️⃣ BLOC FINANCIER PRINCIPAL 
+            ═══════════════════════════════════ */}
+            {w && (
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-2xl bg-gradient-to-br from-primary to-primary/80 p-5 text-primary-foreground shadow-xl"
               >
-                <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                  <MessageSquare className="w-4 h-4 text-blue-500" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {req.origin_city} → {req.destination_city}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {req.weight_estimate ? `${req.weight_estimate} kg · ` : ""}{req.description?.slice(0, 40)}
-                  </p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              </motion.button>
-            ))}
-          </div>
-        )}
-
-        {/* ─── UPCOMING DEPARTURES ─── */}
-        {!isPending && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                Prochains départs
-              </h3>
-              <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate("/gp/calendrier")}>
-                Voir tout
-              </Button>
-            </div>
-            {upcomingDepartures.length === 0 ? (
-              <Card className="border-dashed">
-                <CardContent className="py-8 text-center text-muted-foreground">
-                  <Calendar className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">Aucun départ planifié</p>
-                  <Button variant="link" size="sm" className="mt-1" onClick={() => setShowVoyageForm(true)}>
-                    Ajouter un voyage
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              upcomingDepartures.map((dep) => (
-                <Card key={dep.id} className="cursor-pointer hover:shadow-md transition-shadow active:scale-[0.98]" onClick={() => navigate("/gp/calendrier")}>
-                  <CardContent className="p-3 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Plane className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate">
-                        {dep.origin_city} → {dep.destination_city}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(dep.departure_date), "EEE d MMM", { locale: fr })}
-                        {dep.flight_number && ` · ${dep.flight_number}`}
-                      </p>
-                    </div>
-                    <Badge variant="outline" className="text-xs flex-shrink-0">
-                      {dep.available_capacity} kg
+                {/* Balance */}
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <p className="text-primary-foreground/70 text-xs">Solde disponible</p>
+                    <p className="text-3xl font-extrabold mt-0.5">
+                      {w.balance.toLocaleString()} <span className="text-base font-normal opacity-70">{getCurrencySymbol(currency as any)}</span>
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5">
+                    <Badge className="bg-primary-foreground/15 text-primary-foreground text-[10px] border-none">
+                      <Percent className="w-3 h-3 mr-0.5" /> {w.commissionRate}%
                     </Badge>
+                  </div>
+                </div>
+
+                {/* Sub-stats */}
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <div className="bg-primary-foreground/10 rounded-xl p-2 text-center">
+                    <p className="text-[10px] opacity-70">En attente</p>
+                    <p className="text-sm font-bold">{w.pending.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-primary-foreground/10 rounded-xl p-2 text-center">
+                    <p className="text-[10px] opacity-70">Ce mois</p>
+                    <p className="text-sm font-bold">{w.totalMonth.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-primary-foreground/10 rounded-xl p-2 text-center">
+                    <p className="text-[10px] opacity-70">% Manuel</p>
+                    <p className="text-sm font-bold">{data.stats.manualPercent}%</p>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2">
+                  <Button size="sm" className="flex-1 h-9 bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-none text-xs"
+                    onClick={() => navigate("/gp/wallet")}>
+                    <Wallet className="w-3.5 h-3.5 mr-1" /> Retirer
+                  </Button>
+                  <Button size="sm" variant="outline" className="flex-1 h-9 bg-transparent border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 text-xs"
+                    onClick={() => navigate("/gp/wallet")}>
+                    <BarChart3 className="w-3.5 h-3.5 mr-1" /> Détails
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Commission debt */}
+            {w && w.commissionDue > 0 && (
+              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-destructive/10 border border-destructive/20">
+                <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
+                <div className="text-xs">
+                  <p className="font-semibold text-destructive">Commission impayée: {w.commissionDue.toLocaleString()} FCFA</p>
+                  <p className="text-muted-foreground">Sera déduite du prochain paiement</p>
+                </div>
+              </div>
+            )}
+
+            {/* ═══════════════════════════════════
+                3️⃣ ACTIONS RAPIDES (4 boutons max)
+            ═══════════════════════════════════ */}
+            <div className="grid grid-cols-4 gap-2">
+              <QuickAction
+                icon={ScanLine}
+                label="Scanner"
+                primary
+                onClick={() => navigate("/gp/scan")}
+              />
+              <QuickAction
+                icon={Plus}
+                label="Konnekt"
+                onClick={() => setShowVoyageForm(true)}
+              />
+              <QuickAction
+                icon={Package}
+                label="Manuel"
+                variant="amber"
+                onClick={() => setShowManualForm(true)}
+              />
+              <QuickAction
+                icon={History}
+                label="Historique"
+                onClick={() => navigate("/gp/historique")}
+              />
+            </div>
+
+            {/* ─── ALERTS ─── */}
+            {(data.pendingActions.weightAlerts > 0 || pendingCount > 0) && (
+              <div className="space-y-2">
+                {data.pendingActions.weightAlerts > 0 && (
+                  <AlertRow
+                    icon={Scale} color="text-red-500" bg="bg-red-500/10 border-red-500/30"
+                    text={`${data.pendingActions.weightAlerts} poids modifié(s) — validation client`}
+                    onClick={() => navigate("/gp/colis?filter=pending_client_validation")}
+                  />
+                )}
+                {pendingCount > 0 && (
+                  <AlertRow
+                    icon={Package} color="text-amber-500" bg="bg-amber-500/10 border-amber-500/30"
+                    text={`${pendingCount} demande(s) en attente`}
+                    onClick={() => navigate("/gp/demandes")}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* ═══════════════════════════════════
+                4️⃣ COLIS ACTIFS
+            ═══════════════════════════════════ */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold">Colis actifs</h3>
+                <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate("/gp/colis")}>
+                  Voir tout <ChevronRight className="w-3 h-3 ml-0.5" />
+                </Button>
+              </div>
+
+              {/* Horizontal filters */}
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
+                {([
+                  { key: "transit" as const, label: "En transit", count: data.activeParcels.filter(c => ["collected", "in_transit"].includes(c.status)).length },
+                  { key: "deliver" as const, label: "À livrer", count: data.activeParcels.filter(c => c.status === "arrived").length },
+                  { key: "manual" as const, label: "Manuel", count: data.manualParcels.length },
+                  { key: "dispute" as const, label: "Litige", count: data.activeParcels.filter(c => c.status === "disputed").length },
+                ]).map(f => (
+                  <button key={f.key}
+                    onClick={() => setColisFilter(f.key)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all",
+                      colisFilter === f.key
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-muted/50 text-muted-foreground"
+                    )}>
+                    {f.label}
+                    {f.count > 0 && (
+                      <span className={cn("w-4 h-4 rounded-full text-[10px] flex items-center justify-center",
+                        colisFilter === f.key ? "bg-primary-foreground/20" : "bg-muted-foreground/20"
+                      )}>{f.count}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Parcel cards */}
+              {filteredColis.length === 0 ? (
+                <div className="py-6 text-center text-muted-foreground text-xs">
+                  <Package className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                  Aucun colis dans cette catégorie
+                </div>
+              ) : (
+                <AnimatePresence>
+                  {filteredColis.map((c: any, i: number) => {
+                    const isManual = colisFilter === "manual";
+                    return (
+                      <motion.div key={c.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.03 }}>
+                        <Card
+                          className={cn(
+                            "cursor-pointer active:scale-[0.98] transition-all",
+                            isManual && "border-amber-500/30"
+                          )}
+                          onClick={() => !isManual && navigate(`/gp/order/${c.id}`)}
+                        >
+                          <CardContent className="p-3 flex items-center gap-3">
+                            <div className={cn(
+                              "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
+                              isManual ? "bg-amber-500/10" :
+                              c.status === "in_transit" ? "bg-blue-500/10" :
+                              c.status === "arrived" ? "bg-purple-500/10" :
+                              "bg-muted/50"
+                            )}>
+                              <Package className={cn("w-5 h-5",
+                                isManual ? "text-amber-500" :
+                                c.status === "in_transit" ? "text-blue-500" :
+                                c.status === "arrived" ? "text-purple-500" :
+                                "text-muted-foreground"
+                              )} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <p className="text-sm font-semibold truncate">
+                                  {c.origin_city} → {c.destination_city}
+                                </p>
+                                {isManual && <ManualParcelBadge />}
+                              </div>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-[11px] text-muted-foreground font-mono">
+                                  #{(c.order_number || "").slice(-6)}
+                                </span>
+                                <span className="text-[11px] text-muted-foreground">{c.weight} kg</span>
+                                {isManual && <span className="text-[11px] text-muted-foreground">{c.client_name}</span>}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              <Badge className={cn("text-[10px]", getOrderStatusColor(c.status))}>
+                                {getOrderStatusLabel(c.status)}
+                              </Badge>
+                              {!isManual && (
+                                <Button variant="ghost" size="icon" className="h-8 w-8 bg-primary/10 hover:bg-primary/20"
+                                  onClick={(e) => { e.stopPropagation(); navigate("/gp/scan"); }}>
+                                  <ScanLine className="w-4 h-4 text-primary" />
+                                </Button>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              )}
+            </div>
+
+            {/* ═══════════════════════════════════
+                5️⃣ PERFORMANCE
+            ═══════════════════════════════════ */}
+            <div className="space-y-2">
+              <h3 className="text-sm font-bold">Performance du mois</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <PerfCard label="Livraisons" value={String(data.stats.delivered)} icon={Send} />
+                <PerfCard label="Taux réussite" value={`${data.stats.successRate}%`} icon={TrendingUp} />
+                <PerfCard label="Litiges" value={String(data.stats.disputes)} icon={AlertTriangle} highlight={data.stats.disputes > 0} />
+                <PerfCard label="% Manuel" value={`${data.stats.manualPercent}%`} icon={Package} highlight={data.stats.manualPercent > 20} />
+              </div>
+              {data.stats.manualPercent > 20 && (
+                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-muted-foreground flex items-center gap-2">
+                  <Shield className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                  Passez sous 20% de colis manuels pour booster votre score KTP.
+                </div>
+              )}
+            </div>
+
+            {/* ═══════════════════════════════════
+                PROCHAINS DÉPARTS
+            ═══════════════════════════════════ */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold">Prochains départs</h3>
+                <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate("/gp/calendrier")}>
+                  Voir tout
+                </Button>
+              </div>
+              {data.departures.length === 0 ? (
+                <Card className="border-dashed">
+                  <CardContent className="py-6 text-center text-muted-foreground">
+                    <Calendar className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                    <p className="text-xs">Aucun départ planifié</p>
+                    <Button variant="link" size="sm" className="mt-1 text-xs" onClick={() => setShowVoyageForm(true)}>
+                      Ajouter un voyage
+                    </Button>
                   </CardContent>
                 </Card>
-              ))
+              ) : (
+                data.departures.map((dep: any) => (
+                  <Card key={dep.id} className="cursor-pointer active:scale-[0.98] transition-all" onClick={() => navigate("/gp/calendrier")}>
+                    <CardContent className="p-3 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Plane className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold truncate">{dep.origin_city} → {dep.destination_city}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(dep.departure_date), "EEE d MMM", { locale: fr })}
+                          {dep.flight_number && ` · ${dep.flight_number}`}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="text-xs">{dep.available_capacity} kg</Badge>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+
+            {/* KTP pedagogy */}
+            {data.manualParcels.length > 0 && (
+              <div className="p-3 rounded-xl bg-muted/30 border border-border/50 text-xs text-muted-foreground">
+                💡 Les réservations complètes Konnekt améliorent votre score KTP et votre visibilité.
+              </div>
             )}
-          </div>
+          </>
         )}
       </div>
 
-      {/* Smart Voyage Form */}
       {gpProfile && (
-        <SmartVoyageForm
-          open={showVoyageForm}
-          onClose={() => setShowVoyageForm(false)}
-          gpId={gpProfile.id}
-          onSuccess={() => { setShowVoyageForm(false); loadData(); }}
-        />
-      )}
-
-      {/* Manual Parcel Dialog */}
-      {gpProfile && (
-        <CreateManualParcelDialog
-          open={showManualForm}
-          onClose={() => setShowManualForm(false)}
-          gpId={gpProfile.id}
-          gpCurrency={gpProfile.default_currency || "XOF"}
-          onSuccess={() => loadData(true)}
-        />
+        <>
+          <SmartVoyageForm open={showVoyageForm} onClose={() => setShowVoyageForm(false)}
+            gpId={gpProfile.id} onSuccess={() => { setShowVoyageForm(false); loadAll(); }} />
+          <CreateManualParcelDialog open={showManualForm} onClose={() => setShowManualForm(false)}
+            gpId={gpProfile.id} gpCurrency={gpProfile.default_currency || "XOF"} onSuccess={() => loadAll(true)} />
+        </>
       )}
     </GPDashboardLayout>
   );
 }
 
-/* ─── Status Card ─── */
-function StatusCard({ icon: Icon, label, count, color, onClick }: {
-  icon: any; label: string; count: number; color: string; onClick: () => void;
+/* ─── Quick Action Button ─── */
+function QuickAction({ icon: Icon, label, primary, variant, onClick }: {
+  icon: any; label: string; primary?: boolean; variant?: "amber"; onClick: () => void;
 }) {
-  const colorMap: Record<string, { bg: string; text: string; ring: string }> = {
-    amber: { bg: "bg-amber-500/10", text: "text-amber-600 dark:text-amber-400", ring: "ring-amber-500/20" },
-    blue: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", ring: "ring-blue-500/20" },
-    purple: { bg: "bg-purple-500/10", text: "text-purple-600 dark:text-purple-400", ring: "ring-purple-500/20" },
-    green: { bg: "bg-green-500/10", text: "text-green-600 dark:text-green-400", ring: "ring-green-500/20" },
-  };
-  const c = colorMap[color];
-
   return (
     <motion.button
-      whileTap={{ scale: 0.95 }}
+      whileTap={{ scale: 0.9 }}
       onClick={onClick}
-      className={cn("p-4 rounded-2xl text-left transition-all", c.bg, "ring-1", c.ring, count > 0 ? "shadow-sm" : "")}
+      className={cn(
+        "flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all",
+        primary ? "bg-primary text-primary-foreground shadow-lg" :
+        variant === "amber" ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" :
+        "bg-muted/60 text-foreground"
+      )}
     >
-      <div className="flex items-center gap-2 mb-2">
-        <Icon className={cn("w-5 h-5", c.text)} />
-        <span className={cn("text-xs font-medium", c.text)}>{label}</span>
-      </div>
-      <p className={cn("text-3xl font-bold", c.text)}>{count}</p>
+      <Icon className="w-5 h-5" />
+      <span className="text-[10px] font-semibold">{label}</span>
     </motion.button>
   );
 }
 
-/* ─── Alert Banner ─── */
-function AlertBanner({ icon: Icon, iconColor, bgColor, title, subtitle, onClick }: {
-  icon: any; iconColor: string; bgColor: string; title: string; subtitle: string; onClick: () => void;
+/* ─── Alert Row ─── */
+function AlertRow({ icon: Icon, color, bg, text, onClick }: {
+  icon: any; color: string; bg: string; text: string; onClick: () => void;
 }) {
   return (
-    <motion.button
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className={cn("w-full p-3 rounded-xl border flex items-center gap-3 text-left", bgColor)}
-    >
-      <Icon className={cn("w-5 h-5 flex-shrink-0", iconColor)} />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold truncate">{title}</p>
-        <p className="text-xs text-muted-foreground">{subtitle}</p>
-      </div>
-      <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+    <motion.button initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+      whileTap={{ scale: 0.98 }} onClick={onClick}
+      className={cn("w-full p-3 rounded-xl border flex items-center gap-3 text-left", bg)}>
+      <Icon className={cn("w-5 h-5 flex-shrink-0", color)} />
+      <p className="text-sm font-medium flex-1">{text}</p>
+      <ChevronRight className="w-4 h-4 text-muted-foreground" />
     </motion.button>
+  );
+}
+
+/* ─── Performance Card ─── */
+function PerfCard({ label, value, icon: Icon, highlight }: {
+  label: string; value: string; icon: any; highlight?: boolean;
+}) {
+  return (
+    <div className={cn(
+      "p-3 rounded-xl border bg-card",
+      highlight && "border-amber-500/30 bg-amber-500/5"
+    )}>
+      <div className="flex items-center gap-2 mb-1">
+        <Icon className={cn("w-3.5 h-3.5", highlight ? "text-amber-500" : "text-muted-foreground")} />
+        <span className="text-[11px] text-muted-foreground">{label}</span>
+      </div>
+      <p className={cn("text-xl font-bold", highlight ? "text-amber-600 dark:text-amber-400" : "text-foreground")}>{value}</p>
+    </div>
   );
 }
