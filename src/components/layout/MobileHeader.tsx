@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom";
-import { Package, Menu } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Package, Menu, ScanLine } from "lucide-react";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePageTheme } from "@/hooks/usePageTheme";
@@ -12,16 +12,18 @@ import { useState } from "react";
 interface MobileHeaderProps {
   title?: string;
   showNotifications?: boolean;
+  showScanButton?: boolean;
 }
 
 /**
  * MobileHeader - Unifié avec CentralMenuSheet
  * Plus de menu local dupliqué, utilise le hub central
  */
-export function MobileHeader({ title, showNotifications = true }: MobileHeaderProps) {
+export function MobileHeader({ title, showNotifications = true, showScanButton = true }: MobileHeaderProps) {
   const { isAuthenticated, isProfileComplete } = useUserRole();
   const { logoBackground, logoColor } = usePageTheme();
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <header 
@@ -57,6 +59,18 @@ export function MobileHeader({ title, showNotifications = true }: MobileHeaderPr
         </Link>
 
         <div className="flex items-center gap-2">
+          {/* Scan Button - Quick access */}
+          {showScanButton && isAuthenticated && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full"
+              onClick={() => navigate("/scan")}
+            >
+              <ScanLine className="w-5 h-5 text-primary" />
+            </Button>
+          )}
+
           {/* Role Switch - Subtle in header */}
           <HeaderRoleSwitch />
           
