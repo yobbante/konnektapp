@@ -14,7 +14,7 @@ import { motion } from "framer-motion";
 import {
   User, Package, Truck, Star, MapPin, ArrowRight,
   CheckCircle, QrCode, UserPlus, Eye, ShieldCheck,
-  Calendar, AlertTriangle, ScanLine, UserCheck
+  Calendar, AlertTriangle, ScanLine, UserCheck, Clock
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ import { ScanResultClient } from "./ScanResultClient";
 import { ScanResultAgent } from "./ScanResultAgent";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface UnifiedScanRouterProps {
   scannedUserId: string;
@@ -53,6 +54,8 @@ interface ScannedUserInfo {
   city?: string;
   restrictions?: string[] | null;
   currency?: string | null;
+  depositAddress?: string | null;
+  receptionAddress?: string | null;
   activeOrders: ActiveOrder[];
 }
 
@@ -85,6 +88,7 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
   const [loading, setLoading] = useState(true);
   const [scannedUser, setScannedUser] = useState<ScannedUserInfo | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<ActiveOrder | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     if (!roleLoading) {
@@ -140,7 +144,7 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
       // 2. Check if scanned user is a GP
       const { data: gpProfile } = await supabase
         .from("gp_profiles")
-        .select("id, business_name, gp_type, rating, total_deliveries, verified_at, status, city, explicit_restrictions, default_currency")
+        .select("id, business_name, gp_type, rating, total_deliveries, verified_at, status, city, explicit_restrictions, default_currency, deposit_address, reception_address")
         .eq("user_id", scannedUserId)
         .maybeSingle();
 
@@ -233,6 +237,8 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
         city: gpProfile?.city || profile.city || undefined,
         restrictions: gpProfile?.explicit_restrictions,
         currency: gpProfile?.default_currency,
+        depositAddress: gpProfile?.deposit_address || undefined,
+        receptionAddress: gpProfile?.reception_address || undefined,
         activeOrders,
       });
     } catch (err) {
@@ -240,6 +246,52 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
       toast({ title: "Erreur de résolution", variant: "destructive" });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ─── GP: Confirm deposit action ───
+  const handleConfirmDeposit = async (order: ActiveOrder) => {
+    if (!scannerGpId) return;
+    setActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: "collected" as any })
+        .eq("id", order.id)
+        .eq("gp_id", scannerGpId);
+      if (error) throw error;
+
+      await logScan(order.id, "deposit_confirm", order.status, "collected");
+      toast({ title: "Dépôt confirmé" });
+      resolveScannedUser();
+      setSelectedOrder(null);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // ─── GP: Confirm delivery action ───
+  const handleConfirmDelivery = async (order: ActiveOrder) => {
+    if (!scannerGpId) return;
+    setActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: "delivered" as any })
+        .eq("id", order.id)
+        .eq("gp_id", scannerGpId);
+      if (error) throw error;
+
+      await logScan(order.id, "delivery_confirm", order.status, "delivered");
+      toast({ title: "Livraison confirmée" });
+      resolveScannedUser();
+      setSelectedOrder(null);
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -319,20 +371,22 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
     >
       {/* Scanned User Identity Card */}
       <Card className="overflow-hidden">
-        <div className={`h-1 bg-gradient-to-r ${
-          scannedUser.type === "gp" 
-            ? "from-primary via-accent to-primary" 
-            : "from-blue-500 via-primary to-blue-500"
-        }`} />
+        <div className={cn(
+          "h-1 bg-gradient-to-r",
+          scannedUser.type === "gp"
+            ? "from-primary via-accent to-primary"
+            : "from-secondary via-primary to-secondary"
+        )} />
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
-              scannedUser.type === "gp" ? "bg-primary/10" : "bg-blue-500/10"
-            }`}>
+            <div className={cn(
+              "w-14 h-14 rounded-2xl flex items-center justify-center",
+              scannedUser.type === "gp" ? "bg-primary/10" : "bg-secondary/10"
+            )}>
               {scannedUser.type === "gp" ? (
                 <Truck className="w-7 h-7 text-primary" />
               ) : (
-                <User className="w-7 h-7 text-blue-500" />
+                <User className="w-7 h-7 text-secondary" />
               )}
             </div>
             <div className="flex-1 min-w-0">
@@ -342,22 +396,28 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
                   {scannedUser.type === "gp" ? "Transporteur" : "Client"} Konnekt
                 </Badge>
                 {scannedUser.verified && (
-                  <Badge className="bg-green-500/20 text-green-700 dark:text-green-400 text-[10px] gap-0.5">
+                  <Badge className="bg-success/20 text-success text-[10px] gap-0.5 border-none">
                     <ShieldCheck className="w-2.5 h-2.5" /> Vérifié
                   </Badge>
                 )}
               </div>
+              {scannedUser.city && (
+                <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                  <MapPin className="w-3 h-3" />
+                  <span>{scannedUser.city}</span>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* ── BLOC 1A: CLIENT scanne un GP → profil GP enrichi ── */}
-          {scannedUser.type === "gp" && scanRole === "client" && (
+          {/* ── GP Stats (shown for all scanners when target is GP) ── */}
+          {scannedUser.type === "gp" && (
             <div className="mt-3 space-y-3">
               <div className="grid grid-cols-3 gap-2">
                 {scannedUser.rating !== null && scannedUser.rating !== undefined && (
                   <div className="text-center p-2 rounded-lg bg-muted/50">
                     <div className="flex items-center justify-center gap-1">
-                      <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                      <Star className="w-3 h-3 text-warning fill-warning" />
                       <span className="font-bold text-sm">{scannedUser.rating.toFixed(1)}</span>
                     </div>
                     <span className="text-[10px] text-muted-foreground">Note</span>
@@ -376,48 +436,35 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
                   <span className="text-[10px] text-muted-foreground">KTP</span>
                 </div>
               </div>
-              {scannedUser.restrictions && scannedUser.restrictions.length > 0 && (
-                <div className="p-2 bg-muted/30 rounded-lg">
-                  <p className="text-[10px] font-semibold text-muted-foreground mb-1">Restrictions</p>
-                  <div className="flex flex-wrap gap-1">
-                    {scannedUser.restrictions.map((r, i) => (
-                      <Badge key={i} variant="outline" className="text-[10px]">{r}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {scannedUser.currency && (
-                <p className="text-[10px] text-muted-foreground">
-                  Devise: <span className="font-medium">{scannedUser.currency}</span>
-                </p>
-              )}
-            </div>
-          )}
 
-          {/* GP-specific info for non-client scanners */}
-          {scannedUser.type === "gp" && scanRole !== "client" && (
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              {scannedUser.rating !== null && scannedUser.rating !== undefined && (
-                <div className="text-center p-2 rounded-lg bg-muted/50">
-                  <div className="flex items-center justify-center gap-1">
-                    <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                    <span className="font-bold text-sm">{scannedUser.rating.toFixed(1)}</span>
-                  </div>
-                  <span className="text-[10px] text-muted-foreground">Note</span>
+              {/* Client-only: restrictions + currency */}
+              {scanRole === "client" && (
+                <>
+                  {scannedUser.restrictions && scannedUser.restrictions.length > 0 && (
+                    <div className="p-2 bg-muted/30 rounded-lg">
+                      <p className="text-[10px] font-semibold text-muted-foreground mb-1">Restrictions</p>
+                      <div className="flex flex-wrap gap-1">
+                        {scannedUser.restrictions.map((r, i) => (
+                          <Badge key={i} variant="outline" className="text-[10px]">{r}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {scannedUser.currency && (
+                    <p className="text-[10px] text-muted-foreground">
+                      Devise: <span className="font-medium">{scannedUser.currency}</span>
+                    </p>
+                  )}
+                </>
+              )}
+
+              {/* GP scanning another GP: deposit/reception address */}
+              {scanRole === "gp" && scannedUser.depositAddress && (
+                <div className="p-2 bg-muted/30 rounded-lg text-xs text-muted-foreground">
+                  <MapPin className="w-3 h-3 inline mr-1" />
+                  Dépôt: {scannedUser.depositAddress}
                 </div>
               )}
-              <div className="text-center p-2 rounded-lg bg-muted/50">
-                <span className="font-bold text-sm">{scannedUser.totalDeliveries || 0}</span>
-                <br />
-                <span className="text-[10px] text-muted-foreground">Livraisons</span>
-              </div>
-              <div className="text-center p-2 rounded-lg bg-muted/50">
-                <Badge variant="outline" className="text-[10px]">
-                  {scannedUser.ktpLevel?.toUpperCase()}
-                </Badge>
-                <br />
-                <span className="text-[10px] text-muted-foreground">KTP</span>
-              </div>
             </div>
           )}
         </CardContent>
@@ -469,6 +516,27 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
                       {order.total_price.toLocaleString()} {order.currency}
                     </span>
                   </div>
+
+                  {/* GP quick-action indicators */}
+                  {scanRole === "gp" && (
+                    <div className="mt-2 flex gap-1.5">
+                      {(order.status === "accepted" || order.status === "pending") && (
+                        <Badge className="bg-secondary/20 text-secondary text-[9px] border-none gap-0.5">
+                          <Package className="w-2.5 h-2.5" /> Dépôt possible
+                        </Badge>
+                      )}
+                      {order.status === "in_transit" && (
+                        <Badge className="bg-success/20 text-success text-[9px] border-none gap-0.5">
+                          <CheckCircle className="w-2.5 h-2.5" /> Livraison possible
+                        </Badge>
+                      )}
+                      {order.status === "collected" && (
+                        <Badge className="bg-primary/20 text-primary text-[9px] border-none gap-0.5">
+                          <Truck className="w-2.5 h-2.5" /> En transit
+                        </Badge>
+                      )}
+                    </div>
+                  )}
                 </motion.button>
               ))}
             </div>
@@ -514,7 +582,6 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
               <Button
                 variant="outline"
                 onClick={() => {
-                  // Copy userId to use as recipient
                   toast({ title: "Destinataire noté", description: `${scannedUser.name} peut être ajouté lors d'un envoi.` });
                 }}
                 className="w-full gap-2"
@@ -552,8 +619,8 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
                 variant="outline"
                 onClick={() => {
                   onComplete();
-                  navigate(scannedUser.type === "gp" && scannedUser.gpId 
-                    ? `/admin/gp/${scannedUser.gpId}` 
+                  navigate(scannedUser.type === "gp" && scannedUser.gpId
+                    ? `/admin/gp/${scannedUser.gpId}`
                     : `/admin/search?q=${scannedUser.name}`);
                 }}
                 className="w-full gap-2"
