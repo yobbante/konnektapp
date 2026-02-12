@@ -155,7 +155,7 @@ export function AppleNotification({
   timestamp,
   link,
   action,
-  duration = 4000,
+  duration = 3000,
   onDismiss,
   senderName,
   senderAvatar,
@@ -260,7 +260,7 @@ export function AppleNotification({
       )} />
 
       {/* Content */}
-      <div className="relative px-4 py-3.5">
+      <div className="relative px-3.5 py-2.5">
         {/* Header row: App name + timestamp */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
