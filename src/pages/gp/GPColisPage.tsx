@@ -11,7 +11,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, ScanLine, Scale, Search, Filter,
-  ChevronRight, RefreshCw
+  ChevronRight, RefreshCw, Plus
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,7 +23,24 @@ import { PageLoader } from "@/components/ui/PageLoader";
 import { useGPProfile } from "@/hooks/useGPProfile";
 import { getOrderStatusLabel, getOrderStatusColor } from "@/lib/transportTypes";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
+import { CreateManualParcelDialog } from "@/components/gp/CreateManualParcelDialog";
+import { ManualParcelBadge } from "@/components/gp/ManualParcelBadge";
 import { cn } from "@/lib/utils";
+
+interface ManualParcel {
+  id: string;
+  order_number: string;
+  origin_city: string;
+  destination_city: string;
+  weight: number;
+  status: string;
+  client_name: string;
+  amount_paid: number;
+  currency: string;
+  created_at: string;
+  notes: string | null;
+  is_manual: true;
+}
 
 interface Colis {
   id: string;
@@ -54,10 +71,13 @@ export default function GPColisPage() {
   const [searchParams] = useSearchParams();
   const { gpProfile, loading: profileLoading, pendingCount, activeCount } = useGPProfile();
   const [colis, setColis] = useState<Colis[]>([]);
+  const [manualParcels, setManualParcels] = useState<ManualParcel[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState(searchParams.get("filter") || "all");
+  const [sourceFilter, setSourceFilter] = useState<"all" | "konnekt" | "manual">("all");
+  const [showManualForm, setShowManualForm] = useState(false);
 
   useEffect(() => {
     if (gpProfile) loadColis();
@@ -68,15 +88,23 @@ export default function GPColisPage() {
     if (refresh) setRefreshing(true);
     
     try {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("id, order_number, origin_city, destination_city, weight, status, client_id, total_price, currency, created_at, description")
-        .eq("gp_id", gpProfile.id)
-        .not("status", "eq", "cancelled")
-        .order("created_at", { ascending: false });
+      const [ordersRes, manualsRes] = await Promise.all([
+        supabase
+          .from("orders")
+          .select("id, order_number, origin_city, destination_city, weight, status, client_id, total_price, currency, created_at, description")
+          .eq("gp_id", gpProfile.id)
+          .not("status", "eq", "cancelled")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("manual_parcels")
+          .select("id, order_number, origin_city, destination_city, weight, status, client_name, amount_paid, currency, created_at, notes, is_manual")
+          .eq("gp_id", gpProfile.id)
+          .order("created_at", { ascending: false }),
+      ]);
 
-      if (error) throw error;
-      setColis(data || []);
+      if (ordersRes.error) throw ordersRes.error;
+      setColis(ordersRes.data || []);
+      setManualParcels((manualsRes.data as ManualParcel[]) || []);
     } catch (error) {
       console.error("Error loading colis:", error);
     } finally {
@@ -88,16 +116,27 @@ export default function GPColisPage() {
   if (profileLoading || loading) return <PageLoader message="Chargement des colis..." />;
   if (!gpProfile) return null;
 
-  // Filter and search
-  const filtered = colis.filter(c => {
+  // Unified list: merge orders + manual parcels
+  type UnifiedColis = (Colis & { is_manual?: false }) | (ManualParcel & { is_manual: true });
+
+  const allColis: UnifiedColis[] = [
+    ...(sourceFilter !== "manual" ? colis.map(c => ({ ...c, is_manual: false as const })) : []),
+    ...(sourceFilter !== "konnekt" ? manualParcels : []),
+  ];
+
+  const filtered = allColis.filter(c => {
     const matchesStatus = statusFilter === "all" || c.status === statusFilter;
     const q = searchQuery.toLowerCase();
     const matchesSearch = !q || 
       c.order_number.toLowerCase().includes(q) ||
       c.origin_city.toLowerCase().includes(q) ||
-      c.destination_city.toLowerCase().includes(q);
+      c.destination_city.toLowerCase().includes(q) ||
+      (c.is_manual && c.client_name.toLowerCase().includes(q));
     return matchesStatus && matchesSearch;
   });
+
+  // Sort by date desc
+  filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   return (
     <GPDashboardLayout
@@ -111,28 +150,63 @@ export default function GPColisPage() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold">Mes colis</h2>
-            <p className="text-xs text-muted-foreground">{filtered.length} colis</p>
+            <p className="text-xs text-muted-foreground">
+              {colis.length} Konnekt · {manualParcels.length} manuels
+            </p>
           </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => loadColis(true)} disabled={refreshing}>
-            <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs gap-1"
+              onClick={() => setShowManualForm(true)}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Colis manuel
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => loadColis(true)} disabled={refreshing}>
+              <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
+            </Button>
+          </div>
         </div>
 
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Rechercher par n° commande, ville..."
+            placeholder="Rechercher par n° commande, ville, client..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 h-10 rounded-xl"
           />
         </div>
 
+        {/* Source Filter */}
+        <div className="flex gap-2">
+          {([
+            { val: "all" as const, label: "Tous" },
+            { val: "konnekt" as const, label: "Konnekt" },
+            { val: "manual" as const, label: "🟡 Hors plateforme" },
+          ]).map((f) => (
+            <button
+              key={f.val}
+              onClick={() => setSourceFilter(f.val)}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all",
+                sourceFilter === f.val
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted"
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
         {/* Status Filter Pills */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
           {STATUS_FILTERS.map((f) => {
-            const count = f.value === "all" ? colis.length : colis.filter(c => c.status === f.value).length;
+            const count = f.value === "all" ? allColis.length : allColis.filter(c => c.status === f.value).length;
             return (
               <button
                 key={f.value}
@@ -166,6 +240,9 @@ export default function GPColisPage() {
             <CardContent className="py-12 text-center text-muted-foreground">
               <Package className="w-10 h-10 mx-auto mb-3 opacity-30" />
               <p className="text-sm font-medium">Aucun colis trouvé</p>
+              <Button variant="link" size="sm" className="mt-1" onClick={() => setShowManualForm(true)}>
+                Ajouter un colis manuel
+              </Button>
             </CardContent>
           </Card>
         ) : (
@@ -179,14 +256,18 @@ export default function GPColisPage() {
                   transition={{ delay: i * 0.03 }}
                 >
                   <Card 
-                    className="cursor-pointer hover:shadow-md active:scale-[0.98] transition-all"
-                    onClick={() => navigate(`/gp/order/${c.id}`)}
+                    className={cn(
+                      "cursor-pointer hover:shadow-md active:scale-[0.98] transition-all",
+                      c.is_manual && "border-amber-500/30"
+                    )}
+                    onClick={() => !c.is_manual && navigate(`/gp/order/${c.id}`)}
                   >
                     <CardContent className="p-3">
                       <div className="flex items-center gap-3">
                         {/* Status Dot */}
                         <div className={cn(
                           "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
+                          c.is_manual ? "bg-amber-500/10" :
                           c.status === "accepted" ? "bg-amber-500/10" :
                           c.status === "collected" || c.status === "in_transit" ? "bg-blue-500/10" :
                           c.status === "arrived" ? "bg-purple-500/10" :
@@ -195,6 +276,7 @@ export default function GPColisPage() {
                         )}>
                           <Package className={cn(
                             "w-5 h-5",
+                            c.is_manual ? "text-amber-500" :
                             c.status === "accepted" ? "text-amber-500" :
                             c.status === "collected" || c.status === "in_transit" ? "text-blue-500" :
                             c.status === "arrived" ? "text-purple-500" :
@@ -209,6 +291,7 @@ export default function GPColisPage() {
                             <p className="text-sm font-semibold truncate">
                               {c.origin_city} → {c.destination_city}
                             </p>
+                            {c.is_manual && <ManualParcelBadge />}
                           </div>
                           <div className="flex items-center gap-3 mt-0.5">
                             <span className="text-xs text-muted-foreground font-mono">
@@ -217,6 +300,9 @@ export default function GPColisPage() {
                             <span className="text-xs text-muted-foreground flex items-center gap-0.5">
                               <Scale className="w-3 h-3" /> {c.weight} kg
                             </span>
+                            {c.is_manual && (
+                              <span className="text-xs text-muted-foreground">{c.client_name}</span>
+                            )}
                           </div>
                         </div>
 
@@ -225,7 +311,7 @@ export default function GPColisPage() {
                           <Badge className={cn("text-[10px]", getOrderStatusColor(c.status as any))}>
                             {getOrderStatusLabel(c.status as any)}
                           </Badge>
-                          {["accepted", "collected", "in_transit", "arrived"].includes(c.status) && (
+                          {!c.is_manual && ["accepted", "collected", "in_transit", "arrived"].includes(c.status) && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -248,6 +334,17 @@ export default function GPColisPage() {
           </div>
         )}
       </div>
+
+      {/* Manual Parcel Dialog */}
+      {gpProfile && (
+        <CreateManualParcelDialog
+          open={showManualForm}
+          onClose={() => setShowManualForm(false)}
+          gpId={gpProfile.id}
+          gpCurrency={gpProfile.default_currency || "XOF"}
+          onSuccess={() => loadColis(true)}
+        />
+      )}
     </GPDashboardLayout>
   );
 }

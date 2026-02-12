@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 import {
   Package, Plane, MapPin, Send,
   AlertTriangle, Clock, ChevronRight, Sparkles,
-  Calendar, RefreshCw, MessageSquare, Scale, Wallet
+  Calendar, RefreshCw, MessageSquare, Scale, Wallet, Plus
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,6 +23,7 @@ import { format, isAfter, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
+import { CreateManualParcelDialog } from "@/components/gp/CreateManualParcelDialog";
 
 interface StatusCounts {
   toCollect: number;
@@ -50,9 +51,11 @@ export default function GPApercuPage() {
   const [weightAlerts, setWeightAlerts] = useState(0);
   const [walletData, setWalletData] = useState<{ balance: number; pending: number; currency: string } | null>(null);
   const [upcomingDepartures, setUpcomingDepartures] = useState<any[]>([]);
+  const [manualParcelCount, setManualParcelCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showVoyageForm, setShowVoyageForm] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
 
   useEffect(() => {
     if (gpProfile) loadData();
@@ -63,7 +66,7 @@ export default function GPApercuPage() {
     if (refresh) setRefreshing(true);
     
     try {
-      const [ordersRes, offersRes, customReqRes, customReqPreviews, walletRes] = await Promise.all([
+      const [ordersRes, offersRes, customReqRes, customReqPreviews, walletRes, manualRes] = await Promise.all([
         supabase.from("orders").select("status").eq("gp_id", gpProfile.id),
         supabase.from("gp_offers").select("id, departure_date, origin_city, destination_city, available_capacity, flight_number")
           .eq("gp_id", gpProfile.id).eq("status", "active")
@@ -75,6 +78,7 @@ export default function GPApercuPage() {
           .order("created_at", { ascending: false })
           .limit(3),
         supabase.from("gp_wallets").select("balance, pending_balance, currency").eq("gp_id", gpProfile.id).maybeSingle(),
+        supabase.from("manual_parcels").select("id", { count: "exact", head: true }).eq("gp_id", gpProfile.id).neq("status", "delivered"),
       ]);
 
       const orders = ordersRes.data || [];
@@ -96,6 +100,7 @@ export default function GPApercuPage() {
           currency: walletRes.data.currency || "XOF",
         });
       }
+      setManualParcelCount(manualRes.count || 0);
       setUpcomingDepartures(
         (offersRes.data || []).filter(o => isAfter(new Date(o.departure_date), startOfDay(new Date())))
       );
@@ -191,6 +196,33 @@ export default function GPApercuPage() {
             )}
             <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
           </motion.button>
+        )}
+
+        {/* ─── MANUAL PARCEL QUICK ACTION ─── */}
+        {!isPending && (
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setShowManualForm(true)}
+            className="w-full p-3 rounded-xl border border-amber-500/20 bg-amber-500/5 flex items-center gap-3 text-left"
+          >
+            <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+              <Plus className="w-4 h-4 text-amber-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium">Ajouter un colis manuel</p>
+              <p className="text-xs text-muted-foreground">
+                {manualParcelCount > 0 ? `${manualParcelCount} colis hors plateforme actifs` : "Enregistrer un colis pris hors Konnekt"}
+              </p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          </motion.button>
+        )}
+
+        {/* ─── KTP PEDAGOGY ─── */}
+        {!isPending && manualParcelCount > 0 && (
+          <div className="p-3 rounded-xl bg-muted/30 border border-border/50 text-xs text-muted-foreground">
+            💡 Les réservations complètes Konnekt améliorent votre score KTP et votre visibilité.
+          </div>
         )}
 
         {/* ─── ALERTS ─── */}
@@ -304,6 +336,17 @@ export default function GPApercuPage() {
           onClose={() => setShowVoyageForm(false)}
           gpId={gpProfile.id}
           onSuccess={() => { setShowVoyageForm(false); loadData(); }}
+        />
+      )}
+
+      {/* Manual Parcel Dialog */}
+      {gpProfile && (
+        <CreateManualParcelDialog
+          open={showManualForm}
+          onClose={() => setShowManualForm(false)}
+          gpId={gpProfile.id}
+          gpCurrency={gpProfile.default_currency || "XOF"}
+          onSuccess={() => loadData(true)}
         />
       )}
     </GPDashboardLayout>
