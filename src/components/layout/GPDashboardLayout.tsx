@@ -5,7 +5,7 @@ import {
   Lock, Home, ListChecks, LayoutGrid,
   Shield, DollarSign, History, Calendar, Wallet,
   Settings, LogOut, MapPin, User, Plus,
-  MessageCircle
+  MessageCircle, UserCircle
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -55,13 +55,13 @@ export function GPDashboardLayout({
   const getActiveTab = () => {
     const path = location.pathname;
     if (path.includes("/gp/colis")) return "colis";
-    if (path.includes("/gp/distribution")) return "distribution";
+    if (path.includes("/gp/wallet")) return "wallet";
     if (path.includes("/gp/scan")) return "scan";
+    if (path.includes("/gp/profil-public") || path.includes("/gp/parametres")) return "profil";
+    if (path.includes("/gp/distribution")) return "distribution";
     if (path.includes("/gp/messages")) return "messages";
-    if (path.includes("/gp/parametres")) return "parametres";
     if (path.includes("/gp/apercu") || path.includes("/gp/demandes") || path.includes("/gp/en-cours")) return "apercu";
-    if (path.includes("/gp/ktp")) return "ktp";
-    return "aujourdhui";
+    return "apercu";
   };
 
   const currentTab = getActiveTab();
@@ -167,11 +167,11 @@ export function GPDashboardLayout({
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <div className="flex items-center justify-around h-16 px-1">
-          {/* Aujourd'hui */}
+          {/* Accueil */}
           <NavItem 
             icon={Home} 
-            label="Aujourd'hui" 
-            active={currentTab === "aujourdhui"}
+            label="Accueil" 
+            active={currentTab === "apercu"}
             onClick={() => navigate("/gp/apercu")}
           />
           
@@ -185,7 +185,7 @@ export function GPDashboardLayout({
             onClick={() => isVerified && navigate("/gp/colis")}
           />
           
-          {/* SCAN — Center */}
+          {/* SCAN — Center, larger */}
           <button
             onClick={() => isVerified && navigate("/gp/scan")}
             disabled={!isVerified}
@@ -218,23 +218,24 @@ export function GPDashboardLayout({
             </span>
           </button>
 
-          {/* Distribution */}
+          {/* Wallet */}
           <NavItem 
-            icon={ListChecks} 
-            label="Distribution" 
-            active={currentTab === "distribution"}
+            icon={Wallet} 
+            label="Wallet" 
+            active={currentTab === "wallet"}
             locked={!isVerified}
-            onClick={() => isVerified && navigate("/gp/distribution")}
+            onClick={() => isVerified && navigate("/gp/wallet")}
           />
 
-          {/* Menu */}
+          {/* Profil — opens menu sheet */}
           <Sheet open={showMenu} onOpenChange={setShowMenu}>
             <SheetTrigger asChild>
-              <button className="flex flex-col items-center justify-center flex-1 h-full gap-0.5">
-                <Menu className={cn("w-5 h-5", showMenu ? "text-primary" : "text-muted-foreground")} />
-                <span className={cn("text-[10px] font-medium", showMenu ? "text-primary" : "text-muted-foreground")}>
-                  Plus
-                </span>
+              <button className={cn(
+                "flex flex-col items-center justify-center flex-1 h-full gap-0.5",
+                currentTab === "profil" ? "text-primary" : "text-muted-foreground"
+              )}>
+                <UserCircle className="w-5 h-5" />
+                <span className="text-[10px] font-medium">Profil</span>
               </button>
             </SheetTrigger>
             <SheetContent side="bottom" className="rounded-t-2xl pb-safe">
@@ -242,15 +243,14 @@ export function GPDashboardLayout({
                 <SheetTitle className="text-left">Menu GP</SheetTitle>
               </SheetHeader>
               <div className="grid grid-cols-3 gap-3 pb-4">
-                <MenuButton icon={LayoutGrid} label="Aperçu" onClick={() => { setShowMenu(false); navigate("/gp/apercu"); }} />
+                <MenuButton icon={MapPin} label="Profil public" onClick={() => { setShowMenu(false); navigate("/gp/profil-public"); }} />
                 <MenuButton icon={Package} label="Demandes" badge={pendingCount} locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/demandes"); }}} />
                 <MenuButton icon={Calendar} label="Départs" locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/calendrier"); }}} />
                 <MenuButton icon={MessageCircle} label="Messages" onClick={() => { setShowMenu(false); navigate("/gp/messages"); }} />
                 <MenuButton icon={DollarSign} label="Tarifs" onClick={() => { setShowMenu(false); navigate("/gp/tarification"); }} />
-                <MenuButton icon={Wallet} label="Wallet" onClick={() => { setShowMenu(false); navigate("/gp/wallet"); }} />
+                <MenuButton icon={ListChecks} label="Distribution" locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/distribution"); }}} />
                 <MenuButton icon={History} label="Historique" onClick={() => { setShowMenu(false); navigate("/gp/historique"); }} />
                 <MenuButton icon={Shield} label="KTP & Geo" onClick={() => { setShowMenu(false); navigate("/gp/ktp-geotrack"); }} />
-                <MenuButton icon={MapPin} label="Profil public" onClick={() => { setShowMenu(false); navigate("/gp/profil-public"); }} />
                 <MenuButton icon={Settings} label="Réglages" onClick={() => { setShowMenu(false); navigate("/gp/parametres"); }} />
                 <MenuButton icon={LogOut} label="Déconnexion" variant="destructive" onClick={() => { setShowMenu(false); handleSignOut(); }} />
               </div>
