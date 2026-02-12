@@ -89,6 +89,7 @@ import GPColisPage from "./pages/gp/GPColisPage";
 import GPDistributionPage from "./pages/gp/GPDistributionPage";
 import GPMessagesPage from "./pages/gp/GPMessagesPage";
 import GPParametresPage from "./pages/gp/GPParametresPage";
+import GPWalletPage from "./pages/gp/GPWalletPage";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -172,6 +173,7 @@ const App = () => (
             <Route path="/gp/scan" element={<GPScanPage />} />
             <Route path="/gp/messages" element={<GPMessagesPage />} />
             <Route path="/gp/parametres" element={<GPParametresPage />} />
+            <Route path="/gp/wallet" element={<GPWalletPage />} />
             <Route path="/gp/profil-public" element={<GPProfilPublicPage />} />
             <Route path="/gp/requests" element={<GPCustomRequests />} />
             <Route path="/gp/order/:orderId" element={<GPOrderDetail />} />

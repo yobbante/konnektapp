@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { 
   ChevronDown, Settings, Users, Truck, Package, 
   MessageSquare, AlertTriangle, Shield, Award, LogOut, Home, Route, Cog, Building, UserCheck,
-  BarChart3, FileText
+  BarChart3, FileText, Wallet
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -49,6 +49,7 @@ const menuSections = [
   {
     title: "Gouvernance",
     items: [
+      { id: "finance", label: "Finance & Wallets", icon: Wallet },
       { id: "stats", label: "Statistiques", icon: BarChart3 },
       { id: "reputation", label: "Réputation", icon: Award },
       { id: "permissions", label: "Rôles & Permissions", icon: Shield },

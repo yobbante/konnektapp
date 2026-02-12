@@ -26,6 +26,7 @@ import { AdminAutoMessageTemplates } from "@/components/admin/AdminAutoMessageTe
 import { AdminLogisticsOrdersV2 } from "@/components/admin/AdminLogisticsOrdersV2";
 import { AdminConfigPanel } from "@/components/admin/AdminConfigPanel";
 import { AdminMovingRequestsTab } from "@/components/admin/AdminMovingRequestsTab";
+import { AdminWalletPanel } from "@/components/admin/AdminWalletPanel";
 import { AdminNavetteApprovals } from "@/components/admin/AdminNavetteApprovals";
 import { AdminGPApprovalPanel } from "@/components/admin/AdminGPApprovalPanel";
 import { PageLoader } from "@/components/ui/PageLoader";
@@ -503,6 +504,11 @@ export default function AdminDashboard() {
           {/* Moving Requests - Konnekt Internal Service */}
           <TabsContent value="moving">
             <AdminMovingRequestsTab />
+          </TabsContent>
+
+          {/* Finance & Wallets */}
+          <TabsContent value="finance">
+            <AdminWalletPanel />
           </TabsContent>
         </Tabs>
       </div>
