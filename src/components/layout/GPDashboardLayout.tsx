@@ -82,69 +82,54 @@ export function GPDashboardLayout({
           HEADER — Fixed, scan-centric + bouton +
       ══════════════════════════════════════ */}
       <header 
-        className="sticky top-0 z-50 bg-primary shadow-lg"
+        className="sticky top-0 z-50 bg-gradient-to-r from-primary to-primary/90 shadow-lg"
         style={{ paddingTop: 'calc(8px + var(--safe-top, 0px))' }}
       >
-        <div className="px-3 py-3 flex items-center justify-between gap-2">
-          {/* Logo + Name */}
-          <div className="flex items-center gap-2 min-w-0 flex-shrink">
-            <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
-              <Truck className="w-4 h-4 text-white" />
+        {/* Main header row */}
+        <div className="px-3 py-2.5 flex items-center justify-between gap-2">
+          {/* Logo + Name + Badge */}
+          <div className="flex items-center gap-2.5 min-w-0 flex-shrink">
+            <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 shadow-sm">
+              <Truck className="w-5 h-5 text-white" />
             </div>
             <div className="min-w-0">
-              <p className="text-white font-bold text-xs leading-tight truncate max-w-[100px]">
-                {gpProfile.business_name}
-              </p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-white font-bold text-sm leading-tight truncate max-w-[120px]">
+                  {gpProfile.business_name}
+                </p>
+              </div>
               <GPKYCBadge status={displayStatus} kycLevel={kycLevel} size="sm" />
             </div>
           </div>
 
-          {/* Center actions: + and SCAN */}
-          <div className="flex items-center gap-2">
+          {/* Right actions */}
+          <div className="flex items-center gap-1.5">
             {/* + Nouveau voyage */}
             {isVerified && (
               <Button
                 onClick={() => onNewVoyage?.()}
                 size="icon"
-                className="h-9 w-9 rounded-full bg-white/20 hover:bg-white/30 text-white"
+                className="h-8 w-8 rounded-full bg-white/15 hover:bg-white/25 text-white border-none"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4" />
               </Button>
             )}
 
-            {/* SCAN BUTTON */}
+            {/* Notifications */}
             <Button
-              onClick={() => {
-                if (!isVerified) return;
-                navigate("/gp/scan");
-              }}
-              disabled={!isVerified}
-              className={cn(
-                "h-10 px-4 rounded-full font-bold text-sm gap-1.5 shadow-lg",
-                isVerified 
-                  ? "bg-white text-primary hover:bg-white/90 active:scale-95 transition-all" 
-                  : "bg-white/20 text-white/50 cursor-not-allowed"
-              )}
+              variant="ghost"
+              size="icon"
+              className="relative text-white hover:bg-white/10 w-8 h-8 flex-shrink-0"
+              onClick={() => setShowNotifications(true)}
             >
-              <ScanLine className="w-5 h-5" />
-              SCAN
+              <Bell className="w-4.5 h-4.5" />
+              {totalBadge > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                  {totalBadge > 9 ? "9+" : totalBadge}
+                </span>
+              )}
             </Button>
           </div>
-
-          {/* Right: Notifications */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative text-white hover:bg-white/10 w-9 h-9 flex-shrink-0"
-            onClick={() => setShowNotifications(true)}
-          >
-            <Bell className="w-5 h-5" />
-            {totalBadge > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
-                {totalBadge > 9 ? "9+" : totalBadge}
-              </span>
-            )}
-          </Button>
         </div>
       </header>
 

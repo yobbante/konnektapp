@@ -10,27 +10,48 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Plane, Send, AlertTriangle, Clock, ChevronRight,
   Calendar, RefreshCw, Scale, Wallet, Plus, ScanLine,
-  TrendingUp, Shield, Percent, History, BarChart3
+  TrendingUp, Shield, Percent, History, BarChart3,
+  ArrowUpRight, CreditCard, Smartphone, Building, Loader2,
+  Info, X
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { SmartVoyageForm } from "@/components/gp/SmartVoyageForm";
 import { CreateManualParcelDialog } from "@/components/gp/CreateManualParcelDialog";
 import { ManualParcelBadge } from "@/components/gp/ManualParcelBadge";
 import { GPKYCProgressCard } from "@/components/gp/GPKYCProgressCard";
+import { QRCameraScanner } from "@/components/gp/QRCameraScanner";
 import { useGPProfile } from "@/hooks/useGPProfile";
 import { getOrderStatusLabel, getOrderStatusColor } from "@/lib/transportTypes";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
+import {
+  Dialog, DialogContent, DialogDescription,
+  DialogFooter, DialogHeader, DialogTitle
+} from "@/components/ui/dialog";
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle
+} from "@/components/ui/sheet";
+import {
+  Select, SelectContent, SelectItem,
+  SelectTrigger, SelectValue
+} from "@/components/ui/select";
+import {
+  Popover, PopoverContent, PopoverTrigger
+} from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 import { format, isAfter, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
 interface DashboardData {
-  wallet: { balance: number; pending: number; totalMonth: number; commissionRate: number; commissionDue: number; currency: string } | null;
+  wallet: { balance: number; pending: number; totalMonth: number; commissionRate: number; commissionDue: number; currency: string; totalEarned: number; totalWithdrawn: number; locked: number } | null;
   activeParcels: any[];
   manualParcels: any[];
   departures: any[];
@@ -40,6 +61,7 @@ interface DashboardData {
 
 export default function GPApercuPage() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { gpProfile, loading: profileLoading, pendingCount, activeCount } = useGPProfile();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,6 +69,17 @@ export default function GPApercuPage() {
   const [showVoyageForm, setShowVoyageForm] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
   const [colisFilter, setColisFilter] = useState<"transit" | "deliver" | "manual" | "dispute">("transit");
+
+  // Interactive popups
+  const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
+  const [showDetailsSheet, setShowDetailsSheet] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [withdrawMethod, setWithdrawMethod] = useState("wave");
+  const [withdrawPhone, setWithdrawPhone] = useState("");
+  const [withdrawing, setWithdrawing] = useState(false);
+
+  // Camera scanner
+  const [cameraOpen, setCameraOpen] = useState(false);
 
   useEffect(() => {
     if (gpProfile) loadAll();
@@ -70,7 +103,7 @@ export default function GPApercuPage() {
           .gte("departure_date", now.toISOString())
           .order("departure_date", { ascending: true }).limit(3),
         supabase.from("gp_wallets")
-          .select("balance, pending_balance, currency, commission_rate, commission_due, total_earned")
+          .select("balance, pending_balance, currency, commission_rate, commission_due, total_earned, total_withdrawn, locked_balance")
           .eq("gp_id", gpProfile.id).maybeSingle(),
         supabase.from("manual_parcels")
           .select("id, order_number, origin_city, destination_city, weight, status, client_name, amount_paid, currency, created_at")
@@ -89,7 +122,6 @@ export default function GPApercuPage() {
       const statuses = orders.map(o => o.status as string);
       const delivered = statuses.filter(s => s === "delivered").length;
       const total = orders.length;
-      const manualActive = manuals.filter(m => m.status !== "delivered").length;
       const totalMonth = (monthLedger.data || []).reduce((s, e) => s + (e.amount_fcfa || 0), 0);
 
       const activeParcels = orders.filter(o => 
@@ -106,6 +138,9 @@ export default function GPApercuPage() {
           commissionRate: walletRes.data.commission_rate || 5,
           commissionDue: walletRes.data.commission_due || 0,
           currency: walletRes.data.currency || "XOF",
+          totalEarned: walletRes.data.total_earned || 0,
+          totalWithdrawn: walletRes.data.total_withdrawn || 0,
+          locked: walletRes.data.locked_balance || 0,
         } : null,
         activeParcels,
         manualParcels: manualActive2,
@@ -128,6 +163,52 @@ export default function GPApercuPage() {
       setLoading(false);
       setRefreshing(false);
     }
+  };
+
+  const handleWithdraw = async () => {
+    if (!gpProfile || !withdrawAmount || !withdrawPhone) return;
+    const amount = parseInt(withdrawAmount);
+    const balance = data?.wallet?.balance || 0;
+    if (isNaN(amount) || amount <= 0 || amount > balance) {
+      toast({ title: "Montant invalide", variant: "destructive" });
+      return;
+    }
+    const withdrawalLimit = gpProfile.withdrawal_limit ?? 300000;
+    const kycLevel = gpProfile.kyc_level ?? 0;
+    if (withdrawalLimit > 0 && amount > withdrawalLimit && kycLevel < 1) {
+      toast({
+        title: "Limite de retrait",
+        description: `Activez votre badge professionnel pour retirer au-delà de ${withdrawalLimit.toLocaleString()} FCFA.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    setWithdrawing(true);
+    try {
+      const { error } = await supabase.from("withdrawal_requests").insert({
+        gp_id: gpProfile.id,
+        amount_fcfa: amount,
+        amount_display: amount,
+        currency_display: data?.wallet?.currency || "XOF",
+        method: withdrawMethod,
+        phone_or_account: withdrawPhone,
+      });
+      if (error) throw error;
+      toast({ title: "✅ Demande envoyée", description: "Votre retrait sera traité sous 24-48h." });
+      setShowWithdrawDialog(false);
+      setWithdrawAmount("");
+      setWithdrawPhone("");
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setWithdrawing(false);
+    }
+  };
+
+  const handleScanFromCamera = (code: string) => {
+    setCameraOpen(false);
+    // Navigate to scan page with the code
+    navigate("/gp/scan", { state: { scannedCode: code } });
   };
 
   const isPending = gpProfile?.status === "pending";
@@ -184,7 +265,7 @@ export default function GPApercuPage() {
             </div>
 
             {/* ═══════════════════════════════════
-                2️⃣ BLOC FINANCIER PRINCIPAL 
+                2️⃣ BLOC FINANCIER PRINCIPAL — INTERACTIVE
             ═══════════════════════════════════ */}
             {w && (
               <motion.div
@@ -201,9 +282,40 @@ export default function GPApercuPage() {
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-1.5">
-                    <Badge className="bg-primary-foreground/15 text-primary-foreground text-[10px] border-none">
-                      <Percent className="w-3 h-3 mr-0.5" /> {w.commissionRate}%
-                    </Badge>
+                    {/* Commission badge with info popover */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="flex items-center gap-1 bg-primary-foreground/15 text-primary-foreground text-[10px] px-2 py-1 rounded-full hover:bg-primary-foreground/25 transition-colors">
+                          <Percent className="w-3 h-3" /> {w.commissionRate}%
+                          <Info className="w-3 h-3 opacity-60" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-72 p-4" side="bottom" align="end">
+                        <h4 className="text-sm font-bold mb-2">Barème de commission</h4>
+                        <p className="text-xs text-muted-foreground mb-3">
+                          Votre taux actuel : <span className="font-bold text-primary">{w.commissionRate}%</span>
+                        </p>
+                        <div className="space-y-1">
+                          {[
+                            { range: "0 — 49", rate: "5%" },
+                            { range: "50 — 149", rate: "6%" },
+                            { range: "150 — 299", rate: "7%" },
+                            { range: "300 — 599", rate: "8%" },
+                            { range: "600 — 999", rate: "9%" },
+                            { range: "1000+", rate: "10%" },
+                          ].map((tier) => (
+                            <div key={tier.range} className={cn(
+                              "flex items-center justify-between py-1 px-2 rounded text-xs",
+                              `${w.commissionRate}%` === tier.rate ? "bg-primary/10 font-bold text-primary" : "text-muted-foreground"
+                            )}>
+                              <span>{tier.range} livraisons</span>
+                              <span>{tier.rate}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-2">Colis manuel : commission fixe 3%</p>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
 
@@ -223,14 +335,14 @@ export default function GPApercuPage() {
                   </div>
                 </div>
 
-                {/* Actions */}
+                {/* Actions — NOW INTERACTIVE */}
                 <div className="flex gap-2">
                   <Button size="sm" className="flex-1 h-9 bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-none text-xs"
-                    onClick={() => navigate("/gp/wallet")}>
+                    onClick={() => setShowWithdrawDialog(true)}>
                     <Wallet className="w-3.5 h-3.5 mr-1" /> Retirer
                   </Button>
                   <Button size="sm" variant="outline" className="flex-1 h-9 bg-transparent border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 text-xs"
-                    onClick={() => navigate("/gp/wallet")}>
+                    onClick={() => setShowDetailsSheet(true)}>
                     <BarChart3 className="w-3.5 h-3.5 mr-1" /> Détails
                   </Button>
                 </div>
@@ -262,14 +374,14 @@ export default function GPApercuPage() {
             />
 
             {/* ═══════════════════════════════════
-                3️⃣ ACTIONS RAPIDES (4 boutons max)
+                3️⃣ ACTIONS RAPIDES — SCAN OPENS CAMERA DIRECTLY
             ═══════════════════════════════════ */}
             <div className="grid grid-cols-4 gap-2">
               <QuickAction
                 icon={ScanLine}
                 label="Scanner"
                 primary
-                onClick={() => navigate("/gp/scan")}
+                onClick={() => setCameraOpen(true)}
               />
               <QuickAction
                 icon={Plus}
@@ -404,7 +516,7 @@ export default function GPApercuPage() {
                               </Badge>
                               {!isManual && (
                                 <Button variant="ghost" size="icon" className="h-8 w-8 bg-primary/10 hover:bg-primary/20"
-                                  onClick={(e) => { e.stopPropagation(); navigate("/gp/scan"); }}>
+                                  onClick={(e) => { e.stopPropagation(); setCameraOpen(true); }}>
                                   <ScanLine className="w-4 h-4 text-primary" />
                                 </Button>
                               )}
@@ -488,6 +600,150 @@ export default function GPApercuPage() {
         )}
       </div>
 
+      {/* ═══════════════════════════════════
+          WITHDRAWAL DIALOG
+      ═══════════════════════════════════ */}
+      <Dialog open={showWithdrawDialog} onOpenChange={setShowWithdrawDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wallet className="w-5 h-5 text-primary" />
+              Demande de retrait
+            </DialogTitle>
+            <DialogDescription>
+              Solde disponible : {(w?.balance || 0).toLocaleString()} {getCurrencySymbol(currency as any)}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label className="text-xs">Montant ({getCurrencySymbol(currency as any)})</Label>
+              <Input
+                type="number"
+                placeholder="Ex: 50000"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                className="mt-1"
+              />
+              {(w?.balance || 0) > 0 && (
+                <Button variant="ghost" size="sm" className="text-xs mt-1 h-6 text-primary"
+                  onClick={() => setWithdrawAmount(String(w?.balance || 0))}>
+                  Retirer tout ({(w?.balance || 0).toLocaleString()})
+                </Button>
+              )}
+            </div>
+            <div>
+              <Label className="text-xs">Méthode</Label>
+              <Select value={withdrawMethod} onValueChange={setWithdrawMethod}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="wave">
+                    <span className="flex items-center gap-2"><Smartphone className="w-4 h-4" /> Wave</span>
+                  </SelectItem>
+                  <SelectItem value="orange_money">
+                    <span className="flex items-center gap-2"><Smartphone className="w-4 h-4" /> Orange Money</span>
+                  </SelectItem>
+                  <SelectItem value="bank_transfer">
+                    <span className="flex items-center gap-2"><Building className="w-4 h-4" /> Virement bancaire</span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">
+                {withdrawMethod === "bank_transfer" ? "IBAN / RIB" : "Numéro de téléphone"}
+              </Label>
+              <Input
+                placeholder={withdrawMethod === "bank_transfer" ? "SNXXXXXXXX..." : "+221 7X XXX XX XX"}
+                value={withdrawPhone}
+                onChange={(e) => setWithdrawPhone(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowWithdrawDialog(false)}>Annuler</Button>
+            <Button onClick={handleWithdraw} disabled={withdrawing || !withdrawAmount || !withdrawPhone}>
+              {withdrawing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <ArrowUpRight className="w-4 h-4 mr-1" />}
+              Confirmer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══════════════════════════════════
+          DETAILS SHEET (wallet overview)
+      ═══════════════════════════════════ */}
+      <Sheet open={showDetailsSheet} onOpenChange={setShowDetailsSheet}>
+        <SheetContent side="bottom" className="rounded-t-2xl pb-safe max-h-[80vh] overflow-y-auto">
+          <SheetHeader className="pb-3">
+            <SheetTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-primary" />
+              Détails financiers
+            </SheetTitle>
+          </SheetHeader>
+          {w && (
+            <div className="space-y-4 pb-4">
+              {/* Summary grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <WalletStatCard icon={Wallet} label="Solde disponible" value={w.balance} currency={currency} color="text-primary" bg="bg-primary/10" />
+                <WalletStatCard icon={Clock} label="En attente" value={w.pending} currency={currency} color="text-amber-500" bg="bg-amber-500/10" />
+                <WalletStatCard icon={TrendingUp} label="Total gagné" value={w.totalEarned} currency={currency} color="text-green-500" bg="bg-green-500/10" />
+                <WalletStatCard icon={ArrowUpRight} label="Total retiré" value={w.totalWithdrawn} currency={currency} color="text-blue-500" bg="bg-blue-500/10" />
+              </div>
+
+              {/* Commission info */}
+              <div className="p-3 rounded-xl bg-muted/50 border border-border">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium">Commission actuelle</span>
+                  <Badge variant="outline" className="text-xs">{w.commissionRate}%</Badge>
+                </div>
+                {w.commissionDue > 0 && (
+                  <div className="flex items-center gap-2 text-xs text-destructive">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    Commission impayée : {w.commissionDue.toLocaleString()} FCFA
+                  </div>
+                )}
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  La commission est prélevée sur chaque livraison confirmée.
+                </p>
+              </div>
+
+              {/* Locked balance */}
+              {w.locked > 0 && (
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-amber-500" />
+                    <span className="text-xs font-medium">Fonds verrouillés : {w.locked.toLocaleString()} {getCurrencySymbol(currency as any)}</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Colis en transit — sera libéré après livraison confirmée.
+                  </p>
+                </div>
+              )}
+
+              {/* CTA */}
+              <div className="flex gap-2">
+                <Button className="flex-1" onClick={() => { setShowDetailsSheet(false); setShowWithdrawDialog(true); }}>
+                  <Wallet className="w-4 h-4 mr-1" /> Retirer
+                </Button>
+                <Button variant="outline" className="flex-1" onClick={() => { setShowDetailsSheet(false); navigate("/gp/wallet"); }}>
+                  Voir tout l'historique
+                </Button>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* ═══════════════════════════════════
+          QR CAMERA SCANNER — DIRECT
+      ═══════════════════════════════════ */}
+      <QRCameraScanner
+        isOpen={cameraOpen}
+        onScan={handleScanFromCamera}
+        onClose={() => setCameraOpen(false)}
+      />
+
       {gpProfile && (
         <>
           <SmartVoyageForm open={showVoyageForm} onClose={() => setShowVoyageForm(false)}
@@ -550,6 +806,21 @@ function PerfCard({ label, value, icon: Icon, highlight }: {
         <span className="text-[11px] text-muted-foreground">{label}</span>
       </div>
       <p className={cn("text-xl font-bold", highlight ? "text-amber-600 dark:text-amber-400" : "text-foreground")}>{value}</p>
+    </div>
+  );
+}
+
+/* ─── Wallet Stat Card for Details Sheet ─── */
+function WalletStatCard({ icon: Icon, label, value, currency, color, bg }: {
+  icon: any; label: string; value: number; currency: string; color: string; bg: string;
+}) {
+  return (
+    <div className="bg-card rounded-xl border border-border p-3">
+      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center mb-1.5", bg)}>
+        <Icon className={cn("w-4 h-4", color)} />
+      </div>
+      <p className="text-lg font-bold">{value.toLocaleString()}</p>
+      <p className="text-[10px] text-muted-foreground">{label} ({getCurrencySymbol(currency as any)})</p>
     </div>
   );
 }
