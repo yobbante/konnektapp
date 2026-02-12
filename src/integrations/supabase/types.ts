@@ -2548,6 +2548,75 @@ export type Database = {
         }
         Relationships: []
       }
+      recipient_requests: {
+        Row: {
+          created_at: string | null
+          id: string
+          requester_id: string
+          requester_name: string | null
+          status: string
+          target_user_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          requester_id: string
+          requester_name?: string | null
+          status?: string
+          target_user_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          requester_id?: string
+          requester_name?: string | null
+          status?: string
+          target_user_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      recipients: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          full_name: string
+          id: string
+          is_favorite: boolean | null
+          nickname: string | null
+          owner_id: string
+          phone: string | null
+          recipient_user_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          is_favorite?: boolean | null
+          nickname?: string | null
+          owner_id: string
+          phone?: string | null
+          recipient_user_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          is_favorite?: boolean | null
+          nickname?: string | null
+          owner_id?: string
+          phone?: string | null
+          recipient_user_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       reputation_incidents: {
         Row: {
           created_at: string
