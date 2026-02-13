@@ -2,12 +2,13 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Mail, Lock, Eye, EyeOff, User, Phone, ArrowRight, 
-  Package, Truck, Users, CheckCircle2, ChevronLeft
+  Package, Truck, Users, CheckCircle2, ChevronLeft, AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { supabase } from "@/integrations/supabase/client";
 
 interface InteractiveAuthFormProps {
   mode: "login" | "register";
@@ -24,7 +25,7 @@ export interface AuthFormData {
   phone?: string;
 }
 
-type Step = "type" | "info" | "credentials";
+type Step = "type" | "phone" | "credentials";
 
 export function InteractiveAuthForm({
   mode,
@@ -44,6 +45,10 @@ export function InteractiveAuthForm({
 
   // Validation states
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [checkingPhone, setCheckingPhone] = useState(false);
+  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("phone");
+  const [phoneLoginLookup, setPhoneLoginLookup] = useState<string | null>(null);
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
   const isValidPassword = formData.password.length >= 6;
@@ -54,26 +59,78 @@ export function InteractiveAuthForm({
     if (mode === "login") return 100;
     switch (step) {
       case "type": return 33;
-      case "info": return 66;
+      case "phone": return 66;
       case "credentials": return 100;
       default: return 0;
     }
   };
 
   const handleClientSelect = () => {
-    setStep("info");
+    setStep("phone");
   };
 
-  const handleInfoNext = () => {
-    if (isValidPhone) {
+  // Check if phone already exists in profiles
+  const checkPhoneDuplicate = async (phone: string): Promise<boolean> => {
+    if (phone.length < 8) return false;
+    setCheckingPhone(true);
+    setPhoneError(null);
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, email")
+        .eq("phone", phone.trim())
+        .maybeSingle();
+
+      if (data) {
+        setPhoneError(`Ce numéro est déjà associé au compte ${data.email || data.full_name || "existant"}. Connectez-vous plutôt.`);
+        setCheckingPhone(false);
+        return true;
+      }
+      setCheckingPhone(false);
+      return false;
+    } catch {
+      setCheckingPhone(false);
+      return false;
+    }
+  };
+
+  // Login: lookup email from phone number
+  const lookupEmailByPhone = async (phone: string) => {
+    if (phone.length < 8) return;
+    setCheckingPhone(true);
+    setPhoneLoginLookup(null);
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("email, user_id")
+        .eq("phone", phone.trim())
+        .maybeSingle();
+
+      if (data?.email) {
+        setPhoneLoginLookup(data.email);
+        setFormData(prev => ({ ...prev, email: data.email || "" }));
+      } else {
+        setPhoneLoginLookup(null);
+      }
+    } catch {
+      setPhoneLoginLookup(null);
+    } finally {
+      setCheckingPhone(false);
+    }
+  };
+
+  const handlePhoneNext = async () => {
+    if (!isValidPhone) return;
+    const isDuplicate = await checkPhoneDuplicate(formData.phone || "");
+    if (!isDuplicate) {
       setStep("credentials");
     }
   };
 
   const handleBack = () => {
     if (step === "credentials" && mode === "register") {
-      setStep("info");
-    } else if (step === "info") {
+      setStep("phone");
+    } else if (step === "phone") {
       setStep("type");
     }
   };
@@ -99,7 +156,7 @@ export function InteractiveAuthForm({
           <Progress value={getProgress()} className="h-1.5" />
           <div className="flex justify-between mt-2 text-xs text-muted-foreground">
             <span className={step === "type" ? "text-primary font-medium" : ""}>Profil</span>
-            <span className={step === "info" ? "text-primary font-medium" : ""}>Infos</span>
+            <span className={step === "phone" ? "text-primary font-medium" : ""}>Téléphone</span>
             <span className={step === "credentials" ? "text-primary font-medium" : ""}>Compte</span>
           </div>
         </motion.div>
@@ -146,7 +203,6 @@ export function InteractiveAuthForm({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => {
-                // Navigate directly to registration without requiring login
                 window.location.href = "/transporteur/inscription";
               }}
               className="w-full p-5 rounded-2xl border-2 border-border bg-card hover:border-secondary hover:bg-secondary/5 transition-all"
@@ -179,10 +235,10 @@ export function InteractiveAuthForm({
           </motion.div>
         )}
 
-        {/* Step 2: Personal Info (Register only) */}
-        {mode === "register" && step === "info" && (
+        {/* Step 2: Phone Number (Register only) - TOP PRIORITY */}
+        {mode === "register" && step === "phone" && (
           <motion.div
-            key="info"
+            key="phone"
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -50 }}
@@ -193,40 +249,80 @@ export function InteractiveAuthForm({
                 <ChevronLeft className="w-5 h-5" />
               </Button>
               <div>
-                <h2 className="text-xl font-bold">Vos informations</h2>
+                <h2 className="text-xl font-bold">Votre téléphone</h2>
                 <p className="text-sm text-muted-foreground">
-                  Comment vous joindre ?
+                  Numéro unique pour votre compte
                 </p>
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-sm">Téléphone</Label>
+                <Label className="text-sm">Numéro de téléphone *</Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     type="tel"
                     placeholder="+221 77 123 45 67"
-                    className="pl-11 h-12 text-base"
+                    className={`pl-11 h-12 text-base ${phoneError ? "border-destructive" : ""}`}
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, phone: e.target.value });
+                      setPhoneError(null);
+                    }}
                     onBlur={() => setTouched({ ...touched, phone: true })}
                   />
-                  {touched.phone && isValidPhone && (
+                  {checkingPhone && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+                  {touched.phone && isValidPhone && !phoneError && !checkingPhone && (
                     <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />
                   )}
                 </div>
+                {phoneError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-start gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20"
+                  >
+                    <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-destructive font-medium">{phoneError}</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onModeChange("login");
+                          setStep("credentials");
+                          setPhoneError(null);
+                        }}
+                        className="text-xs text-primary font-semibold hover:underline mt-1 block"
+                      >
+                        → Se connecter
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+                <p className="text-[11px] text-muted-foreground">
+                  Ce numéro servira à vous identifier et retrouver votre compte
+                </p>
               </div>
             </div>
 
             <Button 
               className="w-full h-12 mt-6"
-              disabled={!isValidPhone}
-              onClick={handleInfoNext}
+              disabled={!isValidPhone || checkingPhone}
+              onClick={handlePhoneNext}
             >
-              Continuer
-              <ArrowRight className="w-4 h-4" />
+              {checkingPhone ? (
+                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  Continuer
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </Button>
           </motion.div>
         )}
@@ -295,8 +391,36 @@ export function InteractiveAuthForm({
               </button>
             </div>
 
+            {/* Login: Phone or Email toggle */}
+            {mode === "login" && (
+              <div className="flex rounded-lg bg-muted/50 p-0.5 mb-4">
+                <button
+                  onClick={() => setLoginMethod("phone")}
+                  className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
+                    loginMethod === "phone"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                  Téléphone
+                </button>
+                <button
+                  onClick={() => setLoginMethod("email")}
+                  className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
+                    loginMethod === "email"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  Email
+                </button>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Name field at top for registration */}
+              {/* Name field for registration */}
               {mode === "register" && (
                 <div className="space-y-2">
                   <Label className="text-sm">Nom complet</Label>
@@ -315,24 +439,79 @@ export function InteractiveAuthForm({
                   </div>
                 </div>
               )}
-              <div className="space-y-2">
-                <Label className="text-sm">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    type="email"
-                    placeholder="votre@email.com"
-                    className="pl-11 h-12 text-base"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    onBlur={() => setTouched({ ...touched, email: true })}
-                    required
-                  />
-                  {touched.email && isValidEmail && (
-                    <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />
+
+              {/* Login by phone: phone field first */}
+              {mode === "login" && loginMethod === "phone" && (
+                <div className="space-y-2">
+                  <Label className="text-sm">Numéro de téléphone</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      type="tel"
+                      placeholder="+221 77 123 45 67"
+                      className="pl-11 h-12 text-base"
+                      value={formData.phone}
+                      onChange={(e) => {
+                        setFormData({ ...formData, phone: e.target.value });
+                        setPhoneLoginLookup(null);
+                      }}
+                      onBlur={(e) => lookupEmailByPhone(e.target.value)}
+                    />
+                    {checkingPhone && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </div>
+                  {phoneLoginLookup && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center gap-2 p-2.5 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+                      <p className="text-xs text-green-700 dark:text-green-300">
+                        Compte trouvé : <span className="font-medium">{phoneLoginLookup}</span>
+                      </p>
+                    </motion.div>
+                  )}
+                  {formData.phone && (formData.phone?.length || 0) >= 8 && !checkingPhone && !phoneLoginLookup && (
+                    <p className="text-xs text-muted-foreground">
+                      Aucun compte trouvé avec ce numéro.{" "}
+                      <button type="button" onClick={() => { onModeChange("register"); setStep("type"); }} className="text-primary hover:underline">
+                        Créer un compte
+                      </button>
+                    </p>
                   )}
                 </div>
-              </div>
+              )}
+
+              {/* Email field - shown always for email login, always for register */}
+              {(mode === "register" || loginMethod === "email") && (
+                <div className="space-y-2">
+                  <Label className="text-sm">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      type="email"
+                      placeholder="votre@email.com"
+                      className="pl-11 h-12 text-base"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      onBlur={() => setTouched({ ...touched, email: true })}
+                      required
+                    />
+                    {touched.email && isValidEmail && (
+                      <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Hidden email for phone login (auto-filled) */}
+              {mode === "login" && loginMethod === "phone" && phoneLoginLookup && (
+                <input type="hidden" value={formData.email} />
+              )}
 
               <div className="space-y-2">
                 <Label className="text-sm">Mot de passe</Label>
@@ -369,7 +548,6 @@ export function InteractiveAuthForm({
                     className="text-sm text-primary hover:underline"
                     onClick={(e) => {
                       e.preventDefault();
-                      // Show password reset dialog
                       const email = formData.email;
                       if (!email || !isValidEmail) {
                         alert("Veuillez entrer votre email d'abord");
@@ -396,7 +574,13 @@ export function InteractiveAuthForm({
               <Button 
                 type="submit" 
                 className="w-full h-12"
-                disabled={loading || !isValidEmail || !isValidPassword}
+                disabled={
+                  loading || 
+                  (mode === "login" && loginMethod === "phone" && !phoneLoginLookup) ||
+                  (mode === "login" && loginMethod === "email" && (!isValidEmail || !isValidPassword)) ||
+                  (mode === "login" && loginMethod === "phone" && (!isValidPassword)) ||
+                  (mode === "register" && (!isValidEmail || !isValidPassword))
+                }
               >
                 {loading ? (
                   <div className="animate-spin w-5 h-5 border-2 border-current border-t-transparent rounded-full" />
