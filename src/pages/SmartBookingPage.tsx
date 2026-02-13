@@ -968,27 +968,17 @@ export default function SmartBookingPage() {
                 </div>
 
                 {/* Price breakdown */}
-                <div className="p-4 bg-card border rounded-xl space-y-3">
-                  {calculations.hasKiloItems && <div className="flex justify-between items-center py-2 border-b">
-                      <div>
-                        <p className="font-medium text-sm">Colis au kilo</p>
-                        <p className="text-xs text-muted-foreground">{calculations.weight} kg × {offer.price_per_kg.toLocaleString()} {currencySymbol}</p>
-                      </div>
-                      <p className="font-semibold text-sm">{calculations.kiloTotal.toLocaleString()} {currencySymbol}</p>
-                    </div>}
-
-                  {flatRateItems.filter(i => i.quantity > 0).map(item => <div key={item.id} className="flex justify-between items-center py-2 border-b">
-                      <div>
-                        <p className="font-medium text-sm">{item.label}</p>
-                        <p className="text-xs text-muted-foreground">{item.quantity} × {item.price.toLocaleString()} {currencySymbol}</p>
-                      </div>
-                      <p className="font-semibold text-sm">{(item.quantity * item.price).toLocaleString()} {currencySymbol}</p>
-                    </div>)}
-
-                  <div className="flex justify-between items-center py-2 border-t">
-                    <p className="text-sm text-muted-foreground">Sous-total transport</p>
-                    <DualCurrencyCompact amount={calculations.transportTotal} currency={currency} fcfaEquivalent={getFCFAEquivalent(calculations.transportTotal)} />
+                <div className="p-4 bg-card border rounded-xl flex justify-between items-center">
+                  <div>
+                    <p className="font-medium text-sm">Sous-total transport</p>
+                    <p className="text-xs text-muted-foreground">
+                      {calculations.hasKiloItems && `${calculations.weight}kg`}
+                      {calculations.hasKiloItems && calculations.flatRateCount > 0 && ' + '}
+                      {calculations.flatRateCount > 0 && `${calculations.flatRateCount} article${calculations.flatRateCount > 1 ? 's' : ''}`}
+                      {' · Détails dans le récap ↓'}
+                    </p>
                   </div>
+                  <DualCurrencyCompact amount={calculations.transportTotal} currency={currency} fcfaEquivalent={getFCFAEquivalent(calculations.transportTotal)} />
                 </div>
 
                 {/* Logistics Options */}
@@ -1207,7 +1197,7 @@ export default function SmartBookingPage() {
       )}
 
       {/* Floating Recap - Always visible except step 4 */}
-      {!showEscrow && <FloatingRecap weight={calculations.weight} flatRateCount={calculations.flatRateCount} transportTotal={calculations.transportTotal} insuranceTotal={displayInsuranceAmount} logisticsTotal={displayLogisticsAmount} grandTotal={displayGrandTotal} currency={currency} getFCFAEquivalent={getFCFAEquivalent} hasInsurance={insuranceChoice.hasInsurance} hasLogistics={calculations.hasLogistics} currentStep={step} />}
+      {!showEscrow && <FloatingRecap weight={calculations.weight} flatRateCount={calculations.flatRateCount} transportTotal={calculations.transportTotal} insuranceTotal={displayInsuranceAmount} logisticsTotal={displayLogisticsAmount} grandTotal={displayGrandTotal} currency={currency} getFCFAEquivalent={getFCFAEquivalent} hasInsurance={insuranceChoice.hasInsurance} hasLogistics={calculations.hasLogistics} currentStep={step} pricePerKg={offer?.price_per_kg} flatRateItems={flatRateItems.filter(i => i.quantity > 0)} />}
 
       {/* Bottom Navigation */}
       {!showEscrow && <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 z-50" style={{
