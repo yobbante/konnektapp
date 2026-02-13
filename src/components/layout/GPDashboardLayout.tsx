@@ -60,13 +60,11 @@ export function GPDashboardLayout({
 
   const getActiveTab = () => {
     const path = location.pathname;
-    if (path.includes("/gp/colis")) return "colis";
+    if (path.includes("/gp/colis") || path.includes("/gp/demandes") || path.includes("/gp/en-cours")) return "colis";
     if (path.includes("/gp/wallet")) return "wallet";
     if (path.includes("/gp/scan")) return "scan";
-    if (path.includes("/gp/profil-public") || path.includes("/gp/parametres")) return "profil";
-    if (path.includes("/gp/distribution")) return "distribution";
-    if (path.includes("/gp/messages")) return "messages";
-    if (path.includes("/gp/apercu") || path.includes("/gp/demandes") || path.includes("/gp/en-cours")) return "apercu";
+    if (path.includes("/gp/profil-public") || path.includes("/gp/parametres") || path.includes("/gp/messages") || path.includes("/gp/historique") || path.includes("/gp/calendrier") || path.includes("/gp/tarification") || path.includes("/gp/ktp-geotrack") || path.includes("/gp/distribution")) return "profil";
+    if (path.includes("/gp/apercu")) return "apercu";
     return "apercu";
   };
 
@@ -158,12 +156,12 @@ export function GPDashboardLayout({
             onClick={() => navigate("/gp/apercu")}
           />
           
-          {/* Colis */}
+          {/* Colis — includes demandes */}
           <NavItem 
             icon={Package} 
             label="Colis" 
             active={currentTab === "colis"}
-            badge={activeOrdersCount}
+            badge={pendingCount + activeOrdersCount}
             locked={!isVerified}
             onClick={() => isVerified && navigate("/gp/colis")}
           />
