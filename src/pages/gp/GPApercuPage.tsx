@@ -27,6 +27,7 @@ import { CreateManualParcelDialog } from "@/components/gp/CreateManualParcelDial
 import { ManualParcelBadge } from "@/components/gp/ManualParcelBadge";
 import { GPKYCProgressCard } from "@/components/gp/GPKYCProgressCard";
 import { QRCameraScanner } from "@/components/gp/QRCameraScanner";
+import { GPScanSheet } from "@/components/scan/GPScanSheet";
 import { useGPProfile } from "@/hooks/useGPProfile";
 import { getOrderStatusLabel, getOrderStatusColor } from "@/lib/transportTypes";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
@@ -80,6 +81,7 @@ export default function GPApercuPage() {
 
   // Camera scanner
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [scanSheetOpen, setScanSheetOpen] = useState(false);
 
   useEffect(() => {
     if (gpProfile) loadAll();
@@ -381,7 +383,7 @@ export default function GPApercuPage() {
                 icon={ScanLine}
                 label="Scanner"
                 primary
-                onClick={() => setCameraOpen(true)}
+                onClick={() => setScanSheetOpen(true)}
               />
               <QuickAction
                 icon={Plus}
@@ -742,6 +744,14 @@ export default function GPApercuPage() {
         isOpen={cameraOpen}
         onScan={handleScanFromCamera}
         onClose={() => setCameraOpen(false)}
+      />
+
+      {/* GP Scan Sheet — opens from Scanner quick action */}
+      <GPScanSheet
+        open={scanSheetOpen}
+        onOpenChange={setScanSheetOpen}
+        gpId={gpProfile?.id}
+        isVerified={gpProfile?.status === "verified" || gpProfile?.status === "premium" || gpProfile?.status === "starter"}
       />
 
       {gpProfile && (
