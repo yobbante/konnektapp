@@ -8,3 +8,18 @@ verify_jwt = false
 
 [functions.release-funds]
 verify_jwt = false
+
+[functions.lock-escrow]
+verify_jwt = false
+
+[functions.adjust-weight-financial]
+verify_jwt = false
+
+[functions.confirm-delivery-release]
+verify_jwt = false
+
+[functions.wallet-withdraw]
+verify_jwt = false
+
+[functions.wallet-ledger]
+verify_jwt = false
