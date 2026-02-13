@@ -424,20 +424,20 @@ export function LocalLogisticsOptions({
               </div>
               
               {/* Terms Link */}
-              <label className="flex items-start gap-2 mt-3 cursor-pointer">
-                <Checkbox checked={termsAccepted} onCheckedChange={(checked) => setTermsAccepted(checked === true)} className="mt-0.5" />
-                <span className="text-xs text-muted-foreground">
-                  J'accepte les{" "}
-                  <a href="#" className="text-primary underline hover:no-underline inline-flex items-center gap-1" onClick={(e) => {
-                e.preventDefault();
-                // Would open modal with terms - for V1, just a link
-                window.open("/cgu#logistique-interne", "_blank");
-              }}>
-                    conditions de la logistique interne
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                </span>
-              </label>
+              
+
+
+
+
+
+
+
+
+
+
+
+
+
             </motion.div>}
 
           {/* Info note */}
