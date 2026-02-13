@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { GPNotificationsDropdown } from "@/components/gp/dashboard/GPNotificationsDropdown";
 import { GPKYCBadge, getGPDisplayStatus } from "@/components/gp/GPKYCBadge";
+import { GPScanSheet } from "@/components/scan/GPScanSheet";
 import { cn } from "@/lib/utils";
 import { useEnforceDashboardRole } from "@/hooks/useSmartRedirect";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,6 +51,7 @@ export function GPDashboardLayout({
   const location = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showScanSheet, setShowScanSheet] = useState(false);
 
   const kycLevel = gpProfile.kyc_level ?? 0;
   const displayStatus = getGPDisplayStatus(gpProfile.status, kycLevel);
@@ -166,9 +168,9 @@ export function GPDashboardLayout({
             onClick={() => isVerified && navigate("/gp/colis")}
           />
           
-          {/* SCAN — Center, larger */}
+          {/* SCAN — Center, larger — opens GPScanSheet */}
           <button
-            onClick={() => isVerified && navigate("/gp/scan")}
+            onClick={() => isVerified && setShowScanSheet(true)}
             disabled={!isVerified}
             className="flex flex-col items-center justify-center flex-1 h-full relative"
           >
@@ -246,6 +248,14 @@ export function GPDashboardLayout({
         isOpen={showNotifications}
         onClose={() => setShowNotifications(false)}
         onViewOrderDetail={(orderId) => navigate(`/gp/order/${orderId}`)}
+      />
+
+      {/* GP Scan Sheet */}
+      <GPScanSheet
+        open={showScanSheet}
+        onOpenChange={setShowScanSheet}
+        gpId={gpProfile.id}
+        isVerified={isVerified}
       />
     </div>
   );
