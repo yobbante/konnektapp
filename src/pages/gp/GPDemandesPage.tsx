@@ -1,9 +1,13 @@
+/**
+ * GPDemandesPage — Nouvelles demandes (refactored)
+ * Uses shared useGPProfile hook for consistency
+ */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Package, Eye, CheckCircle, XCircle, ChevronDown, 
-  Scale, Calendar, RefreshCw, Sparkles 
+  Scale, Calendar, RefreshCw, Sparkles, Inbox
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -12,13 +16,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
 import { PageLoader } from "@/components/ui/PageLoader";
-import { GPQuickStats } from "@/components/gp/dashboard/GPQuickStats";
 import { WeightRefusalAlert } from "@/components/gp/WeightRefusalAlert";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
+import { useGPProfile } from "@/hooks/useGPProfile";
+import { sendAcceptanceNotification } from "@/lib/autoChat";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { sendAcceptanceNotification } from "@/lib/autoChat";
 
 interface Order {
   id: string;
@@ -35,72 +39,31 @@ interface Order {
   pickup_date: string | null;
 }
 
-interface GPProfile {
-  id: string;
-  business_name: string;
-  gp_type: string;
-  status: string;
-}
-
-/**
- * GPDemandesPage — Nouvelles demandes
- * KTP & GeoTrack removed (point 2)
- */
 export default function GPDemandesPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { gpProfile, loading: profileLoading, pendingCount, activeCount } = useGPProfile();
+  const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
-  const [pendingOrders, setPendingOrders] = useState<Order[]>([]);
-  const [activeOrdersCount, setActiveOrdersCount] = useState(0);
-  const [completedThisMonth, setCompletedThisMonth] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (gpProfile) loadOrders();
+  }, [gpProfile]);
 
-  const loadData = async (showRefresh = false) => {
+  const loadOrders = async (showRefresh = false) => {
+    if (!gpProfile) return;
+    if (showRefresh) setRefreshing(true);
     try {
-      if (showRefresh) setRefreshing(true);
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { navigate("/auth"); return; }
-
-      const { data: profile } = await supabase
-        .from("gp_profiles")
-        .select("id, business_name, gp_type, status")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (!profile) { navigate("/gp/inscription"); return; }
-      setGpProfile(profile);
-
-      const { data: allOrders } = await supabase
-        .from("orders")
-        .select("status, created_at")
-        .eq("gp_id", profile.id);
-
-      const pending = allOrders?.filter(o => o.status === "pending") || [];
-      const active = allOrders?.filter(o => ["accepted", "collected", "in_transit"].includes(o.status)) || [];
-      
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const completed = allOrders?.filter(o => 
-        o.status === "delivered" && new Date(o.created_at) >= startOfMonth
-      ) || [];
-
       const { data: orders } = await supabase
         .from("orders")
         .select("*")
-        .eq("gp_id", profile.id)
+        .eq("gp_id", gpProfile.id)
         .eq("status", "pending")
         .order("created_at", { ascending: false });
       
       setPendingOrders(orders || []);
-      setActiveOrdersCount(active.length);
-      setCompletedThisMonth(completed.length);
     } catch (error) {
       console.error("Error:", error);
       toast({ title: "Erreur", description: "Impossible de charger les données", variant: "destructive" });
@@ -134,7 +97,7 @@ export default function GPDemandesPage() {
 
       toast({ title: "✅ Demande acceptée", description: "Le client sera notifié." });
       setExpandedId(null);
-      loadData();
+      loadOrders();
     } catch {
       toast({ title: "Erreur", description: "Impossible d'accepter", variant: "destructive" });
     }
@@ -146,42 +109,57 @@ export default function GPDemandesPage() {
       if (error) throw error;
       toast({ title: "Demande refusée", description: "Le client sera notifié" });
       setExpandedId(null);
-      loadData();
+      loadOrders();
     } catch {
       toast({ title: "Erreur", description: "Impossible de refuser", variant: "destructive" });
     }
   };
 
-  if (loading) return <PageLoader message="Chargement des demandes..." />;
+  if (profileLoading || loading) return <PageLoader message="Chargement des demandes..." />;
   if (!gpProfile) return null;
 
   return (
     <GPDashboardLayout
       gpProfile={gpProfile}
-      pendingCount={pendingOrders.length}
-      activeOrdersCount={activeOrdersCount}
+      pendingCount={pendingCount}
+      activeOrdersCount={activeCount}
       activeTab="demandes"
     >
       <div className="px-4 py-4 space-y-4">
         {/* Weight Refusal Alerts */}
         <WeightRefusalAlert gpId={gpProfile.id} />
 
-        {/* Quick Stats — NO KTP here */}
-        <GPQuickStats 
-          pendingCount={pendingOrders.length}
-          activeCount={activeOrdersCount}
-          completedThisMonth={completedThisMonth}
-        />
-
-        {/* Header */}
+        {/* Header with count */}
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold">Nouvelles demandes</h2>
-            <p className="text-xs text-muted-foreground">Répondez rapidement pour maintenir votre score</p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Inbox className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold">Demandes</h2>
+              <p className="text-xs text-muted-foreground">
+                {pendingOrders.length > 0 
+                  ? `${pendingOrders.length} en attente de réponse`
+                  : "Tout est à jour"
+                }
+              </p>
+            </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => loadData(true)} disabled={refreshing}>
+          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => loadOrders(true)} disabled={refreshing}>
             <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
           </Button>
+        </div>
+
+        {/* Quick stats bar */}
+        <div className="flex gap-2">
+          <div className="flex-1 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
+            <p className="text-lg font-bold text-amber-600 dark:text-amber-400">{pendingOrders.length}</p>
+            <p className="text-[10px] text-muted-foreground">En attente</p>
+          </div>
+          <div className="flex-1 p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-center">
+            <p className="text-lg font-bold text-primary">{activeCount}</p>
+            <p className="text-[10px] text-muted-foreground">En cours</p>
+          </div>
         </div>
 
         {/* Orders List */}
@@ -199,10 +177,17 @@ export default function GPDemandesPage() {
         ) : (
           <div className="space-y-3">
             <AnimatePresence>
-              {pendingOrders.map((order) => {
+              {pendingOrders.map((order, index) => {
                 const isExpanded = expandedId === order.id;
                 return (
-                  <motion.div key={order.id} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -100 }}>
+                  <motion.div 
+                    key={order.id} 
+                    layout 
+                    initial={{ opacity: 0, y: 20 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    exit={{ opacity: 0, x: -100 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
                     <Card
                       className={cn("overflow-hidden cursor-pointer transition-all", isExpanded && "ring-2 ring-primary shadow-lg")}
                       onClick={() => setExpandedId(isExpanded ? null : order.id)}

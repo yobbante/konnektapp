@@ -237,7 +237,7 @@ export default function GPApercuPage() {
       activeTab="aujourdhui"
       onNewVoyage={() => setShowVoyageForm(true)}
     >
-      <div className="px-4 py-4 space-y-4">
+      <div className="px-4 py-4 space-y-5">
         {/* ─── PENDING ACCOUNT ─── */}
         {isPending && (
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
@@ -258,9 +258,17 @@ export default function GPApercuPage() {
 
         {!isPending && (
           <>
-            {/* ─── HEADER ROW ─── */}
+            {/* ─── HEADER — Route + Refresh ─── */}
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">Tableau de bord</h2>
+              <div>
+                <h2 className="text-lg font-bold">Aperçu</h2>
+                {gpProfile.base_origin_city && gpProfile.base_destination_city && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                    <Plane className="w-3 h-3" />
+                    {gpProfile.base_origin_city} → {gpProfile.base_destination_city}
+                  </p>
+                )}
+              </div>
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => loadAll(true)} disabled={refreshing}>
                 <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
               </Button>
@@ -386,15 +394,15 @@ export default function GPApercuPage() {
                 onClick={() => setScanSheetOpen(true)}
               />
               <QuickAction
-                icon={Plus}
-                label="Konnekt"
-                onClick={() => setShowVoyageForm(true)}
+                icon={Package}
+                label="Demandes"
+                badge={pendingCount}
+                onClick={() => navigate("/gp/demandes")}
               />
               <QuickAction
-                icon={Package}
-                label="Manuel"
-                variant="amber"
-                onClick={() => setShowManualForm(true)}
+                icon={Plus}
+                label="Voyage"
+                onClick={() => setShowVoyageForm(true)}
               />
               <QuickAction
                 icon={History}
@@ -404,23 +412,12 @@ export default function GPApercuPage() {
             </div>
 
             {/* ─── ALERTS ─── */}
-            {(data.pendingActions.weightAlerts > 0 || pendingCount > 0) && (
-              <div className="space-y-2">
-                {data.pendingActions.weightAlerts > 0 && (
-                  <AlertRow
-                    icon={Scale} color="text-red-500" bg="bg-red-500/10 border-red-500/30"
-                    text={`${data.pendingActions.weightAlerts} poids modifié(s) — validation client`}
-                    onClick={() => navigate("/gp/colis?filter=pending_client_validation")}
-                  />
-                )}
-                {pendingCount > 0 && (
-                  <AlertRow
-                    icon={Package} color="text-amber-500" bg="bg-amber-500/10 border-amber-500/30"
-                    text={`${pendingCount} demande(s) en attente`}
-                    onClick={() => navigate("/gp/demandes")}
-                  />
-                )}
-              </div>
+            {(data.pendingActions.weightAlerts > 0) && (
+              <AlertRow
+                icon={Scale} color="text-destructive" bg="bg-destructive/10 border-destructive/30"
+                text={`${data.pendingActions.weightAlerts} poids modifié(s) — validation client`}
+                onClick={() => navigate("/gp/colis?filter=pending_client_validation")}
+              />
             )}
 
             {/* ═══════════════════════════════════
@@ -767,21 +764,28 @@ export default function GPApercuPage() {
 }
 
 /* ─── Quick Action Button ─── */
-function QuickAction({ icon: Icon, label, primary, variant, onClick }: {
-  icon: any; label: string; primary?: boolean; variant?: "amber"; onClick: () => void;
+function QuickAction({ icon: Icon, label, primary, variant, badge, onClick }: {
+  icon: any; label: string; primary?: boolean; variant?: "amber"; badge?: number; onClick: () => void;
 }) {
   return (
     <motion.button
       whileTap={{ scale: 0.9 }}
       onClick={onClick}
       className={cn(
-        "flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all",
+        "flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all relative",
         primary ? "bg-primary text-primary-foreground shadow-lg" :
         variant === "amber" ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" :
         "bg-muted/60 text-foreground"
       )}
     >
-      <Icon className="w-5 h-5" />
+      <div className="relative">
+        <Icon className="w-5 h-5" />
+        {!!badge && badge > 0 && (
+          <span className="absolute -top-1.5 -right-2.5 w-4 h-4 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center">
+            {badge > 9 ? "9+" : badge}
+          </span>
+        )}
+      </div>
       <span className="text-[10px] font-semibold">{label}</span>
     </motion.button>
   );
