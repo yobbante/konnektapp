@@ -209,7 +209,7 @@ export default function SmartBookingPage() {
         }
 
         // Jump to final step
-        setStep(5);
+        setStep(6);
 
         // Clean up
         sessionStorage.removeItem("pending_booking_complete");
@@ -394,7 +394,7 @@ export default function SmartBookingPage() {
     return types;
   };
 
-  // Validation - Updated for 4 steps (merged calculation+insurance)
+  // Validation - Updated for 5 steps
   const canProceed = (currentStep: number): boolean => {
     if (currentStep === 1) {
       // Must have items AND if kilo items, must have nature selected
@@ -404,10 +404,15 @@ export default function SmartBookingPage() {
       return true;
     }
     if (currentStep === 2) {
+      // If logistics enabled, must accept terms
+      if ((logisticsOptions.pickupEnabled || logisticsOptions.deliveryEnabled) && !logisticsOptions.termsAccepted) return false;
+      return true;
+    }
+    if (currentStep === 3) {
       // RÈGLE INS-01: Choix assurance obligatoire
       return insuranceChoice.choiceMade;
     }
-    if (currentStep === 3) {
+    if (currentStep === 4) {
       return acceptedRestrictions;
     }
     return true;
@@ -418,7 +423,7 @@ export default function SmartBookingPage() {
     setKiloNatures(prev => prev.includes(nature) ? prev.filter(n => n !== nature) : [...prev, nature]);
   };
 
-  // Navigation - 4 steps now (merged calc+insurance)
+  // Navigation - 5 steps
   const handleNext = () => {
     if (!canProceed(step)) {
       if (step === 1) {
@@ -430,13 +435,15 @@ export default function SmartBookingPage() {
           toast({ title: "Précision requise", description: "Veuillez préciser la nature de vos articles", variant: "destructive" });
         }
       } else if (step === 2) {
-        toast({ title: "Choix d'assurance requis", description: "Vous devez faire un choix d'assurance pour continuer", variant: "destructive" });
+        toast({ title: "Conditions requises", description: "Vous devez accepter les conditions de Konnekt Logistique", variant: "destructive" });
       } else if (step === 3) {
+        toast({ title: "Choix d'assurance requis", description: "Vous devez faire un choix d'assurance pour continuer", variant: "destructive" });
+      } else if (step === 4) {
         toast({ title: "Acceptation requise", description: "Vous devez accepter les règles du transporteur", variant: "destructive" });
       }
       return;
     }
-    setStep(prev => Math.min(prev + 1, 4));
+    setStep(prev => Math.min(prev + 1, 5));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const handleBack = () => {
@@ -456,7 +463,7 @@ export default function SmartBookingPage() {
       return;
     }
 
-    if (!canProceed(3)) {
+    if (!canProceed(4)) {
       toast({ title: "Veuillez accepter les conditions", variant: "destructive" });
       return;
     }
@@ -725,7 +732,7 @@ export default function SmartBookingPage() {
       </div>;
   }
     return <div className="min-h-screen bg-background" style={{
-    paddingBottom: `calc(${step === 4 ? 100 : 220}px + var(--safe-bottom, 0px))`
+    paddingBottom: `calc(${step === 5 ? 100 : 220}px + var(--safe-bottom, 0px))`
   }}>
       <MobileHeader showScanButton={false} />
 
@@ -741,13 +748,13 @@ export default function SmartBookingPage() {
           </div>
         </div>
 
-        {/* Progress - 4 steps */}
+        {/* Progress - 5 steps */}
         <div className="flex items-center justify-center gap-1 mb-6">
-          {[1, 2, 3, 4].map(s => <div key={s} className="flex items-center">
+          {[1, 2, 3, 4, 5].map(s => <div key={s} className="flex items-center">
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${step >= s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
                 {step > s ? <CheckCircle className="w-3 h-3" /> : s}
               </div>
-              {s < 4 && <div className={`w-6 h-0.5 mx-0.5 rounded ${step > s ? "bg-primary" : "bg-muted"}`} />}
+              {s < 5 && <div className={`w-6 h-0.5 mx-0.5 rounded ${step > s ? "bg-primary" : "bg-muted"}`} />}
             </div>)}
         </div>
 
@@ -951,7 +958,7 @@ export default function SmartBookingPage() {
                   </div>}
               </motion.div>}
 
-            {/* STEP 2: Calcul + Assurance + Logistique (merged) */}
+            {/* STEP 2: Logistique */}
             {step === 2 && <motion.div key="step2" initial={{
           opacity: 0,
           x: 20
@@ -963,61 +970,44 @@ export default function SmartBookingPage() {
           x: -20
         }} className="space-y-6">
                 <div className="flex items-center gap-2">
-                  <Scale className="w-5 h-5 text-primary" />
-                  <h2 className="font-semibold text-lg">Calcul & protection</h2>
-                </div>
-
-                {/* Price breakdown */}
-                <div className="p-4 bg-card border rounded-xl flex justify-between items-center">
-                  <div>
-                    <p className="font-medium text-sm">Sous-total transport</p>
-                    <p className="text-xs text-muted-foreground">
-                      {calculations.hasKiloItems && `${calculations.weight}kg`}
-                      {calculations.hasKiloItems && calculations.flatRateCount > 0 && ' + '}
-                      {calculations.flatRateCount > 0 && `${calculations.flatRateCount} article${calculations.flatRateCount > 1 ? 's' : ''}`}
-                      {' · Détails dans le récap ↓'}
-                    </p>
-                  </div>
-                  <DualCurrencyCompact amount={calculations.transportTotal} currency={currency} fcfaEquivalent={getFCFAEquivalent(calculations.transportTotal)} />
+                  <Truck className="w-5 h-5 text-primary" />
+                  <h2 className="font-semibold text-lg">Logistique locale</h2>
                 </div>
 
                 {/* Logistics Options */}
                 <LocalLogisticsOptions weight={calculations.weight} isFragile={false} originCity={offer.origin_city} destinationCity={offer.destination_city} currency={currency} onChange={setLogisticsOptions} />
 
-                {/* Insurance - inline */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-primary" />
-                    <h3 className="font-semibold">Assurance</h3>
-                    <Badge variant="outline" className="text-[10px] ml-auto">Obligatoire</Badge>
+                {/* Logistics terms validation warning */}
+                {(logisticsOptions.pickupEnabled || logisticsOptions.deliveryEnabled) && !logisticsOptions.termsAccepted && (
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-destructive" />
+                    <p className="text-sm text-destructive">Vous devez accepter les conditions de Konnekt Logistique pour continuer</p>
                   </div>
-                  <MandatoryInsuranceChoice selectedContentTypes={getAllContentTypes()} currency={currency as any} onChoiceChange={setInsuranceChoice} />
-                </div>
-
-                {/* Total preview */}
-                {insuranceChoice.choiceMade && <div className="p-4 bg-card border rounded-xl space-y-2">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground">Transport</span>
-                      <DualCurrencyCompact amount={calculations.transportTotal} currency={currency} fcfaEquivalent={getFCFAEquivalent(calculations.transportTotal)} />
-                    </div>
-                    {insuranceChoice.hasInsurance && <div className="flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground">Assurance</span>
-                      <DualCurrencyCompact amount={displayInsuranceAmount} currency={currency} fcfaEquivalent={calculations.insuranceTotal} />
-                    </div>}
-                    {calculations.hasLogistics && <div className="flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground">Logistique</span>
-                      <DualCurrencyCompact amount={displayLogisticsAmount} currency={currency} fcfaEquivalent={calculations.logisticsTotal} />
-                    </div>}
-                    <div className="flex justify-between items-center pt-2 border-t">
-                      <span className="font-semibold">Total</span>
-                      <DualCurrencyDisplay amount={displayGrandTotal} currency={currency} fcfaEquivalent={calculations.transportTotal > 0 ? getFCFAEquivalent(calculations.transportTotal) + calculations.insuranceTotal + calculations.logisticsTotal : 0} size="xl" variant="primary" />
-                    </div>
-                    <CurrencyInfoBanner className="mt-2" />
-                  </div>}
+                )}
               </motion.div>}
 
-            {/* STEP 3: Restrictions & Validation */}
+            {/* STEP 3: Assurance (seule) */}
             {step === 3 && <motion.div key="step3" initial={{
+          opacity: 0,
+          x: 20
+        }} animate={{
+          opacity: 1,
+          x: 0
+        }} exit={{
+          opacity: 0,
+          x: -20
+        }} className="space-y-6">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-primary" />
+                  <h2 className="font-semibold text-lg">Assurance Konnekt</h2>
+                  <Badge variant="outline" className="text-[10px] ml-auto">Obligatoire</Badge>
+                </div>
+
+                <MandatoryInsuranceChoice selectedContentTypes={getAllContentTypes()} currency={currency as any} onChoiceChange={setInsuranceChoice} />
+              </motion.div>}
+
+            {/* STEP 4: Restrictions & Validation */}
+            {step === 4 && <motion.div key="step4" initial={{
           opacity: 0,
           x: 20
         }} animate={{
@@ -1081,8 +1071,8 @@ export default function SmartBookingPage() {
                 </div>
               </motion.div>}
 
-            {/* STEP 4: Recap */}
-            {step === 4 && <motion.div key="step4" initial={{
+            {/* STEP 5: Recap */}
+            {step === 5 && <motion.div key="step5" initial={{
           opacity: 0,
           x: 20
         }} animate={{
@@ -1208,7 +1198,7 @@ export default function SmartBookingPage() {
                 Retour
               </Button>}
             
-            {step < 4 ? <Button onClick={handleNext} disabled={!canProceed(step)} className="flex-1 h-12">
+            {step < 5 ? <Button onClick={handleNext} disabled={!canProceed(step)} className="flex-1 h-12">
                 Continuer
               </Button> : <Button onClick={handleSubmit} disabled={submitting} className="flex-1 h-12">
                 {submitting ? "Réservation..." : "Confirmer la réservation"}
