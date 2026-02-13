@@ -208,6 +208,34 @@ export default function GPApercuPage() {
               </Button>
             </div>
 
+            {/* ═══════════════════════════════════
+                ACTIONS RAPIDES — juste sous le header
+            ═══════════════════════════════════ */}
+            <div className="grid grid-cols-4 gap-2">
+              <QuickAction
+                icon={ScanLine}
+                label="Scanner"
+                primary
+                onClick={() => setScanSheetOpen(true)}
+              />
+              <QuickAction
+                icon={Package}
+                label="Demandes"
+                badge={pendingCount}
+                onClick={() => navigate("/gp/demandes")}
+              />
+              <QuickAction
+                icon={Plus}
+                label="Voyage"
+                onClick={() => setShowVoyageForm(true)}
+              />
+              <QuickAction
+                icon={History}
+                label="Historique"
+                onClick={() => navigate("/gp/historique")}
+              />
+            </div>
+
             {/* ─── Compact wallet shortcut ─── */}
             {w && (
               <motion.button
@@ -246,33 +274,6 @@ export default function GPApercuPage() {
               onActivateBadge={() => navigate("/gp/profil-public")}
             />
 
-            {/* ═══════════════════════════════════
-                3️⃣ ACTIONS RAPIDES — SCAN OPENS CAMERA DIRECTLY
-            ═══════════════════════════════════ */}
-            <div className="grid grid-cols-4 gap-2">
-              <QuickAction
-                icon={ScanLine}
-                label="Scanner"
-                primary
-                onClick={() => setScanSheetOpen(true)}
-              />
-              <QuickAction
-                icon={Package}
-                label="Demandes"
-                badge={pendingCount}
-                onClick={() => navigate("/gp/demandes")}
-              />
-              <QuickAction
-                icon={Plus}
-                label="Voyage"
-                onClick={() => setShowVoyageForm(true)}
-              />
-              <QuickAction
-                icon={History}
-                label="Historique"
-                onClick={() => navigate("/gp/historique")}
-              />
-            </div>
 
             {/* ─── ALERTS ─── */}
             {(data.pendingActions.weightAlerts > 0) && (
