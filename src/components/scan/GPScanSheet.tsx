@@ -1,14 +1,14 @@
 /**
- * GPScanSheet V3 — Deep Blue Premium Konnekt Scan for GP transporters
+ * GPScanSheet V4 — Refined Konnekt Scan for GP transporters
  * 
- * Operational field tool. Blue night base with orange productivity accents.
- * Continuous scan mode for batch processing.
+ * Operational field tool. Softer dark theme with warm amber accents.
+ * Balance toggle, continuous scan mode, proper redirections.
  */
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ScanLine, X, PackageOpen, PackageCheck, Scale, QrCode,
-  History, Banknote, ArrowRight, Eye, Zap, ShieldCheck,
+  Clock, Banknote, ArrowRight, Eye, EyeOff, Zap, ShieldCheck,
   Star
 } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -26,19 +26,19 @@ interface GPScanSheetProps {
 }
 
 const gpQuickActions = [
-  { icon: PackageOpen, label: "Enregistrer colis", desc: "Check-in", action: "checkin" },
-  { icon: PackageCheck, label: "Confirmer livraison", desc: "Libération escrow", action: "confirm_delivery" },
-  { icon: Scale, label: "Ajuster poids", desc: "Poids réel", action: "adjust_weight" },
-  { icon: QrCode, label: "Paiement manuel", desc: "QR pour client", action: "manual_payment" },
-  { icon: History, label: "Historique ops", desc: "Logs terrain", action: "history" },
-  { icon: Banknote, label: "Retrait rapide", desc: "QR admin", action: "withdraw" },
+  { icon: PackageOpen, label: "Enregistrer colis", action: "checkin" },
+  { icon: PackageCheck, label: "Confirmer livraison", action: "confirm_delivery" },
+  { icon: Scale, label: "Ajuster poids", action: "adjust_weight" },
+  { icon: QrCode, label: "Paiement manuel", action: "manual_payment" },
+  { icon: Clock, label: "Historique ops", action: "history" },
+  { icon: Banknote, label: "Retrait rapide", action: "withdraw" },
 ];
 
 const gpCarouselSlides = [
   { title: "Confirmez pour débloquer le paiement", text: "Scannez le QR client pour finaliser et recevoir vos fonds.", icon: Banknote },
   { title: "Passez Vérifié", text: "Complétez votre KYC pour retirer plus vite et augmenter vos limites.", icon: ShieldCheck },
   { title: "Scan continu", text: "Activez le mode continu pour scanner plusieurs colis d'affilée.", icon: Zap },
-  { title: "Konnekt Premium GP", text: "Commission réduite, priorité, badge premium. Passez au niveau supérieur.", icon: Star },
+  { title: "Konnekt Premium GP", text: "Commission réduite, priorité, badge premium.", icon: Star },
 ];
 
 export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanSheetProps) {
@@ -47,6 +47,7 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
   const [continuousMode, setContinuousMode] = useState(false);
   const [scannedCode, setScannedCode] = useState<string | null>(null);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [showBalance, setShowBalance] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -73,17 +74,14 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
   const handleAction = (action: string) => {
     handleOpenChange(false);
     switch (action) {
-      case "checkin": navigate("/gp/scan"); break;
-      case "confirm_delivery": navigate("/gp/scan"); break;
+      case "checkin": navigate("/gp/colis"); break;
+      case "confirm_delivery": navigate("/gp/en-cours"); break;
       case "adjust_weight": navigate("/gp/en-cours"); break;
       case "manual_payment": navigate("/gp/scan"); break;
       case "history": navigate("/gp/historique"); break;
       case "withdraw": navigate("/gp/wallet"); break;
     }
   };
-
-  // GP uses orange accent for productivity
-  const gpAccent = "var(--k-scan-gp-accent)";
 
   return (
     <>
@@ -98,93 +96,98 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
           side="bottom"
           className="h-[92vh] rounded-t-3xl p-0 border-t-0 overflow-hidden"
           style={{
-            background: `linear-gradient(180deg, hsl(var(--k-scan-bg-top)) 0%, hsl(var(--k-scan-bg-bottom)) 100%)`,
+            background: "linear-gradient(180deg, #0F1923 0%, #15232F 50%, #1A2B3A 100%)",
           }}
         >
+          {/* Drag handle */}
+          <div className="flex justify-center pt-3 pb-1">
+            <div className="w-10 h-1 rounded-full bg-white/20" />
+          </div>
+
           {/* Header */}
-          <div className="relative px-5 pt-5 pb-6">
+          <div className="relative px-5 pt-2 pb-4">
             <button
               onClick={() => handleOpenChange(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center z-10"
-              style={{ background: "hsl(var(--k-scan-surface))" }}
+              className="absolute top-2 right-4 w-8 h-8 rounded-full flex items-center justify-center z-10 bg-white/10 backdrop-blur-sm"
             >
-              <X className="w-4 h-4" style={{ color: "hsl(var(--k-scan-text-muted))" }} />
+              <X className="w-4 h-4 text-white/60" />
             </button>
 
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-bold" style={{ color: "hsl(var(--k-scan-text))" }}>
+                  <h2 className="text-lg font-bold text-white">
                     Scanner — Espace GP
                   </h2>
                   {isVerified && (
                     <Badge
                       variant="outline"
-                      className="text-[10px]"
-                      style={{
-                        borderColor: "hsl(var(--k-scan-success) / 0.5)",
-                        color: "hsl(var(--k-scan-success))",
-                      }}
+                      className="text-[9px] border-emerald-500/40 text-emerald-400 px-1.5 py-0"
                     >
-                      <ShieldCheck className="w-3 h-3 mr-1" /> Vérifié
+                      <ShieldCheck className="w-2.5 h-2.5 mr-0.5" /> Vérifié
                     </Badge>
                   )}
                 </div>
-                <p className="text-sm mt-1" style={{ color: "hsl(var(--k-scan-text-muted))" }}>
-                  Colis, livraison, ajustement
+                <p className="text-xs mt-0.5 text-white/50">
+                  Colis · Livraison · Ajustement
                 </p>
 
-                <div className="flex items-center gap-2 mt-4">
-                  <Eye className="w-4 h-4" style={{ color: "hsl(var(--k-scan-text-muted))" }} />
-                  <span className="text-xs tracking-widest" style={{ color: "hsl(var(--k-scan-text-muted))" }}>• • • •</span>
+                {/* Balance section with toggle */}
+                <div className="mt-3 flex items-center gap-2">
+                  <button
+                    onClick={() => setShowBalance(!showBalance)}
+                    className="flex items-center gap-2 group"
+                  >
+                    {showBalance ? (
+                      <EyeOff className="w-3.5 h-3.5 text-white/40" />
+                    ) : (
+                      <Eye className="w-3.5 h-3.5 text-white/40" />
+                    )}
+                    {showBalance ? (
+                      <span className="text-lg font-bold text-white">45 200 FCFA</span>
+                    ) : (
+                      <span className="text-sm tracking-[0.3em] text-white/40 font-medium">••••••</span>
+                    )}
+                  </button>
                 </div>
 
                 <button
-                  onClick={() => { handleOpenChange(false); navigate("/gp/historique"); }}
-                  className="flex items-center gap-1 mt-2 text-sm font-medium"
-                  style={{ color: `hsl(${gpAccent})` }}
+                  onClick={() => { handleOpenChange(false); navigate("/gp/wallet"); }}
+                  className="flex items-center gap-1 mt-1.5 text-xs font-medium text-amber-400"
                 >
-                  Voir opérations <ArrowRight className="w-4 h-4" />
+                  Voir les revenus <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
 
-              {/* QR Scan button — orange glow for GP */}
+              {/* QR Scan button — amber glow for GP */}
               <motion.button
                 onClick={() => setCameraOpen(true)}
-                className="relative w-28 h-28 rounded-2xl overflow-hidden flex-shrink-0"
-                whileTap={{ scale: 0.97 }}
+                className="relative w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0"
+                whileTap={{ scale: 0.95 }}
               >
-                <div
-                  className="absolute inset-0 rounded-2xl border-[3px]"
-                  style={{ borderColor: `hsl(${gpAccent})` }}
-                />
+                <div className="absolute inset-0 rounded-2xl border-2 border-amber-400/40" />
                 <motion.div
-                  className="absolute -inset-1 rounded-2xl border-[3px]"
-                  style={{ borderColor: `hsl(${gpAccent} / 0.3)` }}
-                  animate={{ rotate: [0, 5, -5, 0] }}
+                  className="absolute -inset-0.5 rounded-2xl border border-amber-400/15"
+                  animate={{ opacity: [0.3, 0.7, 0.3] }}
                   transition={{ duration: 3, repeat: Infinity }}
                 />
-                <div
-                  className="absolute inset-1 rounded-xl flex flex-col items-center justify-center gap-1"
-                  style={{ background: `hsl(${gpAccent} / 0.15)` }}
-                >
+                <div className="absolute inset-[3px] rounded-xl flex flex-col items-center justify-center gap-1 bg-amber-500/10">
                   <motion.div
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
+                    animate={{ scale: [1, 1.08, 1] }}
+                    transition={{ duration: 2.5, repeat: Infinity }}
                   >
-                    <ScanLine className="w-10 h-10" style={{ color: `hsl(${gpAccent})` }} />
+                    <ScanLine className="w-8 h-8 text-amber-400" />
                   </motion.div>
-                  <span className="text-[10px] font-bold" style={{ color: `hsl(${gpAccent})` }}>scanner</span>
+                  <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider">Scanner</span>
                 </div>
-                {["top-0 left-0 border-t-[3px] border-l-[3px] rounded-tl-lg",
-                  "top-0 right-0 border-t-[3px] border-r-[3px] rounded-tr-lg",
-                  "bottom-0 left-0 border-b-[3px] border-l-[3px] rounded-bl-lg",
-                  "bottom-0 right-0 border-b-[3px] border-r-[3px] rounded-br-lg"
+                {["top-0 left-0 border-t-2 border-l-2 rounded-tl-md",
+                  "top-0 right-0 border-t-2 border-r-2 rounded-tr-md",
+                  "bottom-0 left-0 border-b-2 border-l-2 rounded-bl-md",
+                  "bottom-0 right-0 border-b-2 border-r-2 rounded-br-md"
                 ].map((pos) => (
                   <div
                     key={pos}
-                    className={cn("absolute w-4 h-4", pos)}
-                    style={{ borderColor: `hsl(${gpAccent} / 0.6)` }}
+                    className={cn("absolute w-3 h-3 border-amber-400/60", pos)}
                   />
                 ))}
               </motion.button>
@@ -193,21 +196,21 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
             {/* Continuous mode toggle */}
             <motion.button
               onClick={() => setContinuousMode(!continuousMode)}
-              className="mt-3 px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition-colors"
-              style={{
-                background: continuousMode ? `hsl(${gpAccent})` : "hsl(var(--k-scan-surface))",
-                color: continuousMode ? "#fff" : "hsl(var(--k-scan-text-muted))",
-                border: continuousMode ? "none" : "1px solid hsl(var(--k-scan-surface-hover))",
-              }}
+              className={cn(
+                "mt-3 px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all",
+                continuousMode
+                  ? "bg-amber-500 text-white"
+                  : "bg-white/[0.06] text-white/50 border border-white/[0.08]"
+              )}
               whileTap={{ scale: 0.95 }}
             >
               <Zap className="w-3 h-3" />
-              Mode scan continu {continuousMode ? "ON" : "OFF"}
+              Scan continu {continuousMode ? "ON" : "OFF"}
             </motion.button>
           </div>
 
           {/* Content */}
-          <div className="px-4 pb-safe overflow-y-auto" style={{ maxHeight: "calc(92vh - 260px)" }}>
+          <div className="px-4 pb-safe overflow-y-auto" style={{ maxHeight: "calc(92vh - 240px)" }}>
             {scannedCode ? (
               <div className="pt-4">
                 <UniversalScanner onComplete={() => handleOpenChange(false)} />
@@ -215,50 +218,18 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
             ) : (
               <>
                 {/* Quick Actions Grid 3x2 */}
-                <div className="grid grid-cols-3 gap-3 mt-4">
-                  {gpQuickActions.slice(0, 3).map((action) => (
+                <div className="grid grid-cols-3 gap-2.5 mt-2">
+                  {gpQuickActions.map((action) => (
                     <motion.button
                       key={action.action}
                       onClick={() => handleAction(action.action)}
-                      className="flex flex-col items-center gap-2 p-4 rounded-2xl border transition-colors"
-                      style={{
-                        background: "hsl(var(--k-scan-surface))",
-                        borderColor: "hsl(var(--k-scan-surface-hover))",
-                      }}
-                      whileTap={{ scale: 0.97 }}
+                      className="flex flex-col items-center gap-2 p-3.5 rounded-2xl border border-white/[0.06] bg-white/[0.04] backdrop-blur-sm"
+                      whileTap={{ scale: 0.95 }}
                     >
-                      <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center"
-                        style={{ background: `hsl(${gpAccent} / 0.15)` }}
-                      >
-                        <action.icon className="w-6 h-6" style={{ color: `hsl(${gpAccent})` }} />
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-amber-500/10">
+                        <action.icon className="w-5 h-5 text-amber-400" />
                       </div>
-                      <span className="text-xs font-semibold text-center leading-tight" style={{ color: "hsl(var(--k-scan-text))" }}>
-                        {action.label}
-                      </span>
-                    </motion.button>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-3 gap-3 mt-3">
-                  {gpQuickActions.slice(3).map((action) => (
-                    <motion.button
-                      key={action.action}
-                      onClick={() => handleAction(action.action)}
-                      className="flex flex-col items-center gap-2 p-4 rounded-2xl border transition-colors"
-                      style={{
-                        background: "hsl(var(--k-scan-surface))",
-                        borderColor: "hsl(var(--k-scan-surface-hover))",
-                      }}
-                      whileTap={{ scale: 0.97 }}
-                    >
-                      <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center"
-                        style={{ background: `hsl(${gpAccent} / 0.15)` }}
-                      >
-                        <action.icon className="w-6 h-6" style={{ color: `hsl(${gpAccent})` }} />
-                      </div>
-                      <span className="text-xs font-semibold text-center leading-tight" style={{ color: "hsl(var(--k-scan-text))" }}>
+                      <span className="text-[10px] font-semibold text-center leading-tight text-white/80">
                         {action.label}
                       </span>
                     </motion.button>
@@ -270,27 +241,26 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={activeSlide}
-                      initial={{ opacity: 0, x: 30 }}
+                      initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -30 }}
-                      transition={{ duration: 0.3 }}
-                      className="relative rounded-2xl overflow-hidden p-4 border"
-                      style={{
-                        background: "hsl(var(--k-scan-surface))",
-                        borderColor: `hsl(${gpAccent} / 0.2)`,
-                        boxShadow: `0 0 20px -5px hsl(${gpAccent} / 0.1)`,
-                      }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.25 }}
+                      className="rounded-2xl overflow-hidden p-3.5 border border-white/[0.06] bg-white/[0.03]"
                     >
                       <div className="flex items-start gap-3">
                         {(() => {
                           const Icon = gpCarouselSlides[activeSlide].icon;
-                          return <Icon className="w-8 h-8 flex-shrink-0 mt-0.5" style={{ color: `hsl(${gpAccent})` }} />;
+                          return (
+                            <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-amber-500/10 flex-shrink-0">
+                              <Icon className="w-4.5 h-4.5 text-amber-400" />
+                            </div>
+                          );
                         })()}
-                        <div className="flex-1">
-                          <h4 className="font-bold text-sm" style={{ color: "hsl(var(--k-scan-text))" }}>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-xs text-white/90">
                             {gpCarouselSlides[activeSlide].title}
                           </h4>
-                          <p className="text-xs mt-1" style={{ color: "hsl(var(--k-scan-text-muted))" }}>
+                          <p className="text-[11px] mt-0.5 text-white/40 leading-relaxed">
                             {gpCarouselSlides[activeSlide].text}
                           </p>
                         </div>
@@ -302,12 +272,10 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
                       <button
                         key={i}
                         onClick={() => setActiveSlide(i)}
-                        className="h-1.5 rounded-full transition-all"
+                        className="h-1 rounded-full transition-all"
                         style={{
-                          width: i === activeSlide ? "1.5rem" : "0.375rem",
-                          background: i === activeSlide
-                            ? `hsl(${gpAccent})`
-                            : "hsl(var(--k-scan-text-muted) / 0.3)",
+                          width: i === activeSlide ? "1.25rem" : "0.3rem",
+                          background: i === activeSlide ? "#fbbf24" : "rgba(255,255,255,0.15)",
                         }}
                       />
                     ))}
