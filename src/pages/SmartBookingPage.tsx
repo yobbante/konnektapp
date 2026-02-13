@@ -122,7 +122,7 @@ export default function SmartBookingPage() {
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState(false);
-  const [recipientData, setRecipientData] = useState<{ name: string; phone: string; userId: string | null }>({ name: "", phone: "", userId: null });
+  const [recipientData, setRecipientData] = useState<{name: string;phone: string;userId: string | null;}>({ name: "", phone: "", userId: null });
 
   // Data
   const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
@@ -199,7 +199,7 @@ export default function SmartBookingPage() {
 
         // Restore flat rate quantities
         if (state.flatRateItems && state.flatRateItems.length > 0) {
-          setFlatRateItems(prev => prev.map(item => {
+          setFlatRateItems((prev) => prev.map((item) => {
             const savedItem = state.flatRateItems.find((s: any) => s.id === item.id);
             return savedItem ? {
               ...item,
@@ -323,7 +323,7 @@ export default function SmartBookingPage() {
     const basePricePerKg = offer?.price_per_kg || 0;
 
     if (weightTiers.length > 0 && weight > 0) {
-      const tier = weightTiers.find(t => weight >= t.min_weight && weight <= t.max_weight);
+      const tier = weightTiers.find((t) => weight >= t.min_weight && weight <= t.max_weight);
       if (tier && tier.price_per_kg > 0) {
         pricePerKg = tier.price_per_kg;
         appliedTier = tier;
@@ -339,9 +339,9 @@ export default function SmartBookingPage() {
     }
 
     // Regressive pricing info for display
-    const regressiveInfo = weight > 0 && basePricePerKg > 0
-      ? getRegressiveInfo(weight, basePricePerKg)
-      : null;
+    const regressiveInfo = weight > 0 && basePricePerKg > 0 ?
+    getRegressiveInfo(weight, basePricePerKg) :
+    null;
 
     const kiloTotal = roundTo2Decimals(weight * pricePerKg);
     const flatRateTotal = flatRateItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -369,13 +369,13 @@ export default function SmartBookingPage() {
       pricePerKg,
       appliedTier,
       basePricePerKg,
-      regressiveInfo,
+      regressiveInfo
     };
   }, [kiloWeight, flatRateItems, offer?.price_per_kg, insuranceChoice, logisticsOptions, weightTiers]);
 
   // Update flat-rate quantity
   const updateFlatRateQuantity = (id: string, delta: number) => {
-    setFlatRateItems(prev => prev.map(item => {
+    setFlatRateItems((prev) => prev.map((item) => {
       if (item.id === id) {
         const newQty = Math.max(0, item.quantity + delta);
         return {
@@ -390,7 +390,7 @@ export default function SmartBookingPage() {
   // Get all selected content types for insurance
   const getAllContentTypes = (): string[] => {
     const types = [...kiloNatures];
-    flatRateItems.filter(i => i.quantity > 0).forEach(i => types.push(i.name));
+    flatRateItems.filter((i) => i.quantity > 0).forEach((i) => types.push(i.name));
     return types;
   };
 
@@ -415,7 +415,7 @@ export default function SmartBookingPage() {
 
   // Toggle kilo nature
   const toggleKiloNature = (nature: string) => {
-    setKiloNatures(prev => prev.includes(nature) ? prev.filter(n => n !== nature) : [...prev, nature]);
+    setKiloNatures((prev) => prev.includes(nature) ? prev.filter((n) => n !== nature) : [...prev, nature]);
   };
 
   // Navigation - 4 steps now (merged calc+insurance)
@@ -436,11 +436,11 @@ export default function SmartBookingPage() {
       }
       return;
     }
-    setStep(prev => Math.min(prev + 1, 4));
+    setStep((prev) => Math.min(prev + 1, 4));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const handleBack = () => {
-    setStep(prev => Math.max(prev - 1, 1));
+    setStep((prev) => Math.max(prev - 1, 1));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -470,7 +470,7 @@ export default function SmartBookingPage() {
         kiloWeight,
         kiloNatures,
         autresNature,
-        flatRateItems: flatRateItems.filter(i => i.quantity > 0),
+        flatRateItems: flatRateItems.filter((i) => i.quantity > 0),
         insuranceChoice,
         logisticsOptions,
         acceptedRestrictions,
@@ -528,7 +528,7 @@ export default function SmartBookingPage() {
         content_nature_other: kiloNatures.includes("autres") ? autresNature : null,
         recipient_name: recipientData?.name || null,
         recipient_phone: recipientData?.phone || null,
-        recipient_user_id: recipientData?.userId || null,
+        recipient_user_id: recipientData?.userId || null
       }).select("id").single();
       if (orderError) throw orderError;
 
@@ -644,14 +644,14 @@ export default function SmartBookingPage() {
       tissus: "Tissus",
       autres: autresNature || "Autres"
     };
-    return kiloNatures.map(n => labels[n]).join(", ");
+    return kiloNatures.map((n) => labels[n]).join(", ");
   };
   const buildOrderDescription = (): string => {
     const parts: string[] = [];
     if (calculations.hasKiloItems) {
       parts.push(`${calculations.weight}kg (${getKiloNatureLabels()})`);
     }
-    flatRateItems.filter(i => i.quantity > 0).forEach(item => {
+    flatRateItems.filter((i) => i.quantity > 0).forEach((item) => {
       parts.push(`${item.quantity}x ${item.label}`);
     });
     return parts.join(", ");
@@ -724,7 +724,7 @@ export default function SmartBookingPage() {
         </div>
       </div>;
   }
-    return <div className="min-h-screen bg-background" style={{
+  return <div className="min-h-screen bg-background" style={{
     paddingBottom: `calc(${step === 4 ? 100 : 220}px + var(--safe-bottom, 0px))`
   }}>
       <MobileHeader showScanButton={false} />
@@ -743,7 +743,7 @@ export default function SmartBookingPage() {
 
         {/* Progress - 4 steps */}
         <div className="flex items-center justify-center gap-1 mb-6">
-          {[1, 2, 3, 4].map(s => <div key={s} className="flex items-center">
+          {[1, 2, 3, 4].map((s) => <div key={s} className="flex items-center">
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${step >= s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
                 {step > s ? <CheckCircle className="w-3 h-3" /> : s}
               </div>
@@ -793,7 +793,7 @@ export default function SmartBookingPage() {
 
                   <div>
                     <Label className="text-sm">Poids total estimé (kg)</Label>
-                    <Input type="text" inputMode="decimal" placeholder="Ex: 5,5 ou 5.5" value={kiloWeight} onChange={e => setKiloWeight(normalizeDecimalInput(e.target.value))} className="mt-1" />
+                    <Input type="text" inputMode="decimal" placeholder="Ex: 5,5 ou 5.5" value={kiloWeight} onChange={(e) => setKiloWeight(normalizeDecimalInput(e.target.value))} className="mt-1" />
                     <p className="text-xs text-muted-foreground mt-1">
                       Accepte virgule (5,5) ou point (5.5) comme séparateur décimal
                     </p>
@@ -818,7 +818,7 @@ export default function SmartBookingPage() {
                 }, {
                   id: "autres",
                   label: "📦 Autres"
-                }].map(nature => <button key={nature.id} type="button" onClick={() => toggleKiloNature(nature.id)} className={`
+                }].map((nature) => <button key={nature.id} type="button" onClick={() => toggleKiloNature(nature.id)} className={`
                               flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all text-sm font-medium
                               ${kiloNatures.includes(nature.id) ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 text-muted-foreground hover:border-primary/50"}
                             `}>
@@ -830,7 +830,7 @@ export default function SmartBookingPage() {
                       {/* Autres input field */}
                       {kiloNatures.includes("autres") && <div className="mt-2">
                           <Label className="text-sm text-muted-foreground">Précisez la nature *</Label>
-                          <Input placeholder="Ex: jouets, livres, accessoires..." value={autresNature} onChange={e => setAutresNature(e.target.value)} className="mt-1" />
+                          <Input placeholder="Ex: jouets, livres, accessoires..." value={autresNature} onChange={(e) => setAutresNature(e.target.value)} className="mt-1" />
                         </div>}
 
                       {kiloNatures.length === 0 && <p className="text-xs text-destructive flex items-center gap-1">
@@ -860,7 +860,7 @@ export default function SmartBookingPage() {
                     </p>
 
                     <div className="space-y-2">
-                      {flatRateItems.map(item => {
+                      {flatRateItems.map((item) => {
                 const Icon = OBJECT_ICONS[item.name] || Package;
                 return <div key={item.id} className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${item.quantity > 0 ? "border-primary/50 bg-primary/5" : "border-border"}`}>
                             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${item.quantity > 0 ? "bg-primary/10" : "bg-muted"}`}>
@@ -968,18 +968,28 @@ export default function SmartBookingPage() {
                 </div>
 
                 {/* Price breakdown */}
-                <div className="p-4 bg-card border rounded-xl flex justify-between items-center">
-                  <div>
-                    <p className="font-medium text-sm">Sous-total transport</p>
-                    <p className="text-xs text-muted-foreground">
-                      {calculations.hasKiloItems && `${calculations.weight}kg`}
-                      {calculations.hasKiloItems && calculations.flatRateCount > 0 && ' + '}
-                      {calculations.flatRateCount > 0 && `${calculations.flatRateCount} article${calculations.flatRateCount > 1 ? 's' : ''}`}
-                      {' · Détails dans le récap ↓'}
-                    </p>
-                  </div>
-                  <DualCurrencyCompact amount={calculations.transportTotal} currency={currency} fcfaEquivalent={getFCFAEquivalent(calculations.transportTotal)} />
-                </div>
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
                 {/* Logistics Options */}
                 <LocalLogisticsOptions weight={calculations.weight} isFragile={false} originCity={offer.origin_city} destinationCity={offer.destination_city} currency={currency} onChange={setLogisticsOptions} />
@@ -1041,14 +1051,14 @@ export default function SmartBookingPage() {
                     
                    {/* Restrictions from GP profile */}
                    {gpProfile.explicit_restrictions && gpProfile.explicit_restrictions.length > 0 && <div className="flex flex-wrap gap-2">
-                       {gpProfile.explicit_restrictions.map(r => <Badge key={r} variant="destructive" className="text-xs">
+                       {gpProfile.explicit_restrictions.map((r) => <Badge key={r} variant="destructive" className="text-xs">
                            {RESTRICTION_LABELS[r] || r}
                          </Badge>)}
                      </div>}
                    
                    {/* Restrictions from offer */}
                    {offer.explicit_restrictions && offer.explicit_restrictions.length > 0 && <div className="flex flex-wrap gap-2">
-                        {offer.explicit_restrictions.map(r => <Badge key={r} variant="destructive" className="text-xs">
+                        {offer.explicit_restrictions.map((r) => <Badge key={r} variant="destructive" className="text-xs">
                             {RESTRICTION_LABELS[r] || r}
                           </Badge>)}
                       </div>}
@@ -1073,7 +1083,7 @@ export default function SmartBookingPage() {
                 {/* Acceptance checkbox */}
                 <div className="p-4 bg-card border rounded-xl">
                   <label className="flex items-start gap-3 cursor-pointer">
-                    <Checkbox checked={acceptedRestrictions} onCheckedChange={v => setAcceptedRestrictions(v === true)} className="mt-0.5" />
+                    <Checkbox checked={acceptedRestrictions} onCheckedChange={(v) => setAcceptedRestrictions(v === true)} className="mt-0.5" />
                     <span className="text-sm">
                       J'accepte les règles du transporteur et confirme que mon colis respecte les restrictions mentionnées.
                     </span>
@@ -1123,7 +1133,7 @@ export default function SmartBookingPage() {
                     <p className="text-sm text-muted-foreground mb-2">Contenu déclaré</p>
                     <div className="space-y-1">
                       {calculations.hasKiloItems && <p className="text-sm">• {calculations.weight} kg ({getKiloNatureLabels()})</p>}
-                      {flatRateItems.filter(i => i.quantity > 0).map(item => <p key={item.id} className="text-sm">• {item.quantity}× {item.label}</p>)}
+                      {flatRateItems.filter((i) => i.quantity > 0).map((item) => <p key={item.id} className="text-sm">• {item.quantity}× {item.label}</p>)}
                     </div>
                   </div>
 
@@ -1185,19 +1195,19 @@ export default function SmartBookingPage() {
       </div>
 
       {/* Recipient Field - integrated in step 1 area */}
-      {!showEscrow && step === 1 && (
-        <div className="px-4 pb-2">
+      {!showEscrow && step === 1 &&
+    <div className="px-4 pb-2">
           <RecipientField
-            recipientName={recipientData.name}
-            recipientPhone={recipientData.phone}
-            recipientUserId={recipientData.userId}
-            onRecipientChange={setRecipientData}
-          />
+        recipientName={recipientData.name}
+        recipientPhone={recipientData.phone}
+        recipientUserId={recipientData.userId}
+        onRecipientChange={setRecipientData} />
+
         </div>
-      )}
+    }
 
       {/* Floating Recap - Always visible except step 4 */}
-      {!showEscrow && <FloatingRecap weight={calculations.weight} flatRateCount={calculations.flatRateCount} transportTotal={calculations.transportTotal} insuranceTotal={displayInsuranceAmount} logisticsTotal={displayLogisticsAmount} grandTotal={displayGrandTotal} currency={currency} getFCFAEquivalent={getFCFAEquivalent} hasInsurance={insuranceChoice.hasInsurance} hasLogistics={calculations.hasLogistics} currentStep={step} pricePerKg={offer?.price_per_kg} flatRateItems={flatRateItems.filter(i => i.quantity > 0)} />}
+      {!showEscrow && <FloatingRecap weight={calculations.weight} flatRateCount={calculations.flatRateCount} transportTotal={calculations.transportTotal} insuranceTotal={displayInsuranceAmount} logisticsTotal={displayLogisticsAmount} grandTotal={displayGrandTotal} currency={currency} getFCFAEquivalent={getFCFAEquivalent} hasInsurance={insuranceChoice.hasInsurance} hasLogistics={calculations.hasLogistics} currentStep={step} />}
 
       {/* Bottom Navigation */}
       {!showEscrow && <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 z-50" style={{
