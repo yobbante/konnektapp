@@ -1,16 +1,13 @@
 /**
- * UnifiedProfile — Refactored modular client profile page
- * 5 blocks: Header, Security, Wallet, Parcels, Settings
+ * UnifiedProfile — Modular client hub (no inline editing)
+ * Links to /profil/complet for profile completion and /client/wallet for finances
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Save, X } from "lucide-react";
+import { ArrowLeft, Camera, Loader2, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { MiniLoader } from "@/components/ui/MiniLoader";
@@ -53,16 +50,16 @@ export default function UnifiedProfile() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [stats, setStats] = useState<OrderStats>({ total: 0, pending: 0, inTransit: 0, delivered: 0, totalSpent: 0 });
   const [escrowTotal, setEscrowTotal] = useState(0);
-  const [isEditing, setIsEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState({ full_name: "", phone: "", city: "", address: "" });
+
+  // Avatar upload
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const loadProfile = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/auth"); return; }
 
-      // Parallel queries
       const [profileRes, ordersRes, escrowRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
         supabase.from("orders").select("status, total_price").eq("client_id", user.id),
@@ -70,14 +67,7 @@ export default function UnifiedProfile() {
       ]);
 
       if (profileRes.data) {
-        const p = { ...profileRes.data, email: user.email } as ProfileData;
-        setProfile(p);
-        setFormData({
-          full_name: p.full_name || "",
-          phone: p.phone || "",
-          city: p.city || "",
-          address: p.address || "",
-        });
+        setProfile({ ...profileRes.data, email: user.email } as ProfileData);
       }
 
       if (ordersRes.data) {
@@ -103,22 +93,28 @@ export default function UnifiedProfile() {
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
 
-  const handleSave = async () => {
-    if (!profile) return;
-    setSaving(true);
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profile) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: "Fichier trop volumineux", description: "Max 10 Mo", variant: "destructive" });
+      return;
+    }
+    setUploadingAvatar(true);
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ ...formData, updated_at: new Date().toISOString() })
-        .eq("id", profile.id);
+      const ext = file.name.split(".").pop()?.toLowerCase();
+      const path = `${profile.user_id}/avatar/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("gp-documents").upload(path, file, { cacheControl: "3600", upsert: false });
       if (error) throw error;
-      setProfile({ ...profile, ...formData });
-      setIsEditing(false);
-      toast({ title: "Profil mis à jour" });
-    } catch {
-      toast({ title: "Erreur", description: "Impossible de sauvegarder", variant: "destructive" });
+      const { data: urlData } = supabase.storage.from("gp-documents").getPublicUrl(path);
+      const publicUrl = urlData?.publicUrl || path;
+      await supabase.from("profiles").update({ avatar_url: publicUrl, updated_at: new Date().toISOString() }).eq("id", profile.id);
+      setProfile({ ...profile, avatar_url: publicUrl });
+      toast({ title: "Photo mise à jour" });
+    } catch (error: any) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } finally {
-      setSaving(false);
+      setUploadingAvatar(false);
     }
   };
 
@@ -127,7 +123,6 @@ export default function UnifiedProfile() {
     navigate("/");
   };
 
-  // Calculate protection score
   const getProtectionScore = (): number => {
     if (!profile) return 0;
     let score = 0;
@@ -139,11 +134,7 @@ export default function UnifiedProfile() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <MiniLoader size="lg" />
-      </div>
-    );
+    return <div className="min-h-screen bg-background flex items-center justify-center"><MiniLoader size="lg" /></div>;
   }
 
   const kycLevel = (profile?.kyc_level || 0) as ClientKYCLevel;
@@ -155,13 +146,9 @@ export default function UnifiedProfile() {
   return (
     <div className="min-h-screen bg-muted/30 pb-safe">
       <MobileHeader />
-      
+
       <main className="px-4 pb-24" style={{ paddingTop: "calc(70px + env(safe-area-inset-top, 0px))" }}>
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-lg mx-auto space-y-4"
-        >
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-lg mx-auto space-y-4">
           {/* Page title */}
           <div className="flex items-center gap-3 mb-2">
             <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
@@ -170,79 +157,100 @@ export default function UnifiedProfile() {
             <h1 className="text-xl font-bold">Mon Espace</h1>
           </div>
 
-          {/* 1️⃣ Header Identity & Badge */}
-          <ProfileHeader
-            fullName={profile?.full_name || null}
-            email={profile?.email || null}
-            avatarUrl={profile?.avatar_url || null}
-            memberSince={memberSince}
-            kycLevel={kycLevel}
-            protectionScore={protectionScore}
-            userId={profile?.user_id}
-          />
+          {/* Profile Header with avatar upload */}
+          <div className="bg-card rounded-2xl border border-border p-4">
+            <div className="flex items-start gap-4 mb-3">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center border-2 border-primary/20 overflow-hidden">
+                  {uploadingAvatar ? (
+                    <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                  ) : profile?.avatar_url ? (
+                    <img src={profile.avatar_url} alt="Avatar" className="w-full h-full rounded-2xl object-cover" />
+                  ) : (
+                    <User className="w-8 h-8 text-primary" />
+                  )}
+                </div>
+                <button
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-md"
+                >
+                  <Camera className="w-3 h-3 text-primary-foreground" />
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="font-bold text-lg truncate">{profile?.full_name || "Utilisateur"}</h2>
+                <p className="text-sm text-muted-foreground truncate">{profile?.email}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  {profile?.user_id && (
+                    <span className="text-xs text-muted-foreground font-mono">
+                      KN-{profile.user_id.slice(0, 4).toUpperCase()}
+                    </span>
+                  )}
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full border border-transparent ${
+                    kycLevel === 2 ? "bg-amber-500/10 text-amber-600" :
+                    kycLevel === 1 ? "bg-emerald-500/10 text-emerald-600" :
+                    "bg-muted text-muted-foreground"
+                  }`}>
+                    {kycLevel === 2 ? "🏆 Confirmé" : kycLevel === 1 ? "✅ Vérifié" : "🔘 Starter"}
+                  </span>
+                </div>
+              </div>
+            </div>
 
-          {/* 2️⃣ Security & Verification */}
+            {/* Protection Score */}
+            <div className="pt-3 border-t border-border">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-muted-foreground">Compte sécurisé</span>
+                <span className={protectionScore >= 100 ? "text-emerald-500 font-medium" : "text-primary font-medium"}>
+                  {protectionScore}%
+                </span>
+              </div>
+              <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{ width: `${protectionScore}%` }}
+                />
+              </div>
+              {protectionScore < 100 && (
+                <p className="text-[11px] text-muted-foreground mt-1.5">
+                  Complétez votre profil pour débloquer plus d'avantages
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Security */}
           <SecurityModule
             kycLevel={kycLevel}
             phoneVerified={!!profile?.phone}
             emailVerified={!!profile?.email}
             idVerified={!!profile?.id_document_url}
             addressConfirmed={!!profile?.address}
-            onUpgradeClick={() => toast({ title: "Bientôt disponible", description: "La vérification d'identité sera disponible prochainement" })}
+            onUpgradeClick={() => navigate("/profil/complet")}
           />
 
-          {/* 3️⃣ Wallet */}
+          {/* Wallet — links to dedicated page */}
           <WalletModule
             availableBalance={0}
             pendingEscrow={escrowTotal}
             creditBonus={0}
             currency="FCFA"
-            onViewTransactions={() => navigate("/historique")}
+            onViewTransactions={() => navigate("/client/wallet")}
           />
 
-          {/* 4️⃣ Parcels */}
+          {/* Parcels */}
           <ParcelModule stats={stats} />
 
-          {/* Edit form (inline, toggled) */}
-          {isEditing && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              className="bg-card rounded-2xl border border-border p-4 space-y-4"
-            >
-              <h3 className="font-semibold text-sm">Modifier mes informations</h3>
-              <div className="space-y-3">
-                {[
-                  { key: "full_name" as const, label: "Nom complet", placeholder: "Votre nom" },
-                  { key: "phone" as const, label: "Téléphone", placeholder: "+221 77 123 45 67" },
-                  { key: "city" as const, label: "Ville", placeholder: "Votre ville" },
-                  { key: "address" as const, label: "Adresse", placeholder: "Votre adresse" },
-                ].map((field) => (
-                  <div key={field.key}>
-                    <Label className="text-xs text-muted-foreground">{field.label}</Label>
-                    <Input
-                      value={formData[field.key]}
-                      onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
-                      placeholder={field.placeholder}
-                      className="mt-1"
-                    />
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-2 pt-2">
-                <Button variant="outline" className="flex-1" onClick={() => setIsEditing(false)}>
-                  <X className="w-4 h-4 mr-1" /> Annuler
-                </Button>
-                <Button className="flex-1" onClick={handleSave} disabled={saving}>
-                  {saving ? <MiniLoader size="sm" /> : <><Save className="w-4 h-4 mr-1" /> Enregistrer</>}
-                </Button>
-              </div>
-            </motion.div>
-          )}
-
-          {/* 5️⃣ Settings & Support */}
+          {/* Settings — edit goes to completion page */}
           <SettingsModule
-            onEditProfile={() => setIsEditing(!isEditing)}
+            onEditProfile={() => navigate("/profil/complet")}
             onSignOut={handleSignOut}
           />
         </motion.div>
