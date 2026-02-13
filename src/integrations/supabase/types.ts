@@ -67,6 +67,39 @@ export type Database = {
           },
         ]
       }
+      client_wallets: {
+        Row: {
+          available_balance: number
+          created_at: string
+          credit_bonus: number
+          currency: string
+          escrow_balance: number
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          available_balance?: number
+          created_at?: string
+          credit_bonus?: number
+          currency?: string
+          escrow_balance?: number
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          available_balance?: number
+          created_at?: string
+          credit_bonus?: number
+          currency?: string
+          escrow_balance?: number
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           client_id: string
@@ -1235,6 +1268,7 @@ export type Database = {
           commission_rate: number
           created_at: string
           currency: string
+          debt_balance: number
           gp_id: string
           id: string
           locked_balance: number
@@ -1249,6 +1283,7 @@ export type Database = {
           commission_rate?: number
           created_at?: string
           currency?: string
+          debt_balance?: number
           gp_id: string
           id?: string
           locked_balance?: number
@@ -1263,6 +1298,7 @@ export type Database = {
           commission_rate?: number
           created_at?: string
           currency?: string
+          debt_balance?: number
           gp_id?: string
           id?: string
           locked_balance?: number
@@ -1338,6 +1374,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      idempotency_keys: {
+        Row: {
+          created_at: string
+          key: string
+          result: Json | null
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          result?: Json | null
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          result?: Json | null
+        }
+        Relationships: []
       }
       insurance_tiers: {
         Row: {
@@ -2311,6 +2365,7 @@ export type Database = {
       orders: {
         Row: {
           actual_delivery_date: string | null
+          adjustment_amount: number | null
           client_disclaimer_accepted_at: string | null
           client_id: string
           commission_amount: number
@@ -2328,6 +2383,10 @@ export type Database = {
           destination_country: string
           dimensions: string | null
           escrow_id: string | null
+          final_amount: number | null
+          financial_status:
+            | Database["public"]["Enums"]["financial_status"]
+            | null
           flat_rate_items: Json | null
           gp_id: string
           gp_response_deadline: string | null
@@ -2355,6 +2414,7 @@ export type Database = {
         }
         Insert: {
           actual_delivery_date?: string | null
+          adjustment_amount?: number | null
           client_disclaimer_accepted_at?: string | null
           client_id: string
           commission_amount?: number
@@ -2372,6 +2432,10 @@ export type Database = {
           destination_country: string
           dimensions?: string | null
           escrow_id?: string | null
+          final_amount?: number | null
+          financial_status?:
+            | Database["public"]["Enums"]["financial_status"]
+            | null
           flat_rate_items?: Json | null
           gp_id: string
           gp_response_deadline?: string | null
@@ -2399,6 +2463,7 @@ export type Database = {
         }
         Update: {
           actual_delivery_date?: string | null
+          adjustment_amount?: number | null
           client_disclaimer_accepted_at?: string | null
           client_id?: string
           commission_amount?: number
@@ -2416,6 +2481,10 @@ export type Database = {
           destination_country?: string
           dimensions?: string | null
           escrow_id?: string | null
+          final_amount?: number | null
+          financial_status?:
+            | Database["public"]["Enums"]["financial_status"]
+            | null
           flat_rate_items?: Json | null
           gp_id?: string
           gp_response_deadline?: string | null
@@ -2500,6 +2569,30 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      platform_wallet: {
+        Row: {
+          currency: string
+          id: string
+          total_commission: number
+          total_escrow_held: number
+          updated_at: string
+        }
+        Insert: {
+          currency?: string
+          id?: string
+          total_commission?: number
+          total_escrow_held?: number
+          updated_at?: string
+        }
+        Update: {
+          currency?: string
+          id?: string
+          total_commission?: number
+          total_escrow_held?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -3778,6 +3871,14 @@ export type Database = {
         | "awaiting_response"
         | "provisional_decision"
         | "closed"
+      financial_status:
+        | "pending_payment"
+        | "escrow_locked"
+        | "adjustment_required"
+        | "adjustment_paid"
+        | "completed"
+        | "cancelled"
+        | "refunded"
       gp_status:
         | "starter"
         | "pending"
@@ -3975,6 +4076,15 @@ export const Constants = {
         "awaiting_response",
         "provisional_decision",
         "closed",
+      ],
+      financial_status: [
+        "pending_payment",
+        "escrow_locked",
+        "adjustment_required",
+        "adjustment_paid",
+        "completed",
+        "cancelled",
+        "refunded",
       ],
       gp_status: [
         "starter",
