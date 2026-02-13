@@ -228,39 +228,63 @@ export function GPWalletCard({ wallet, gpId, compact, withdrawalLimit = 0, kycLe
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-hero-gradient rounded-2xl p-6 text-primary-foreground"
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[hsl(var(--primary))] via-[hsl(var(--primary)/0.85)] to-[hsl(220,60%,15%)] p-6 text-white shadow-xl"
       >
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <p className="text-primary-foreground/70 text-sm mb-1">Solde disponible</p>
-            <p className="text-3xl font-bold text-secondary">
-              {balance.toLocaleString()} <span className="text-lg font-normal">{getCurrencySymbol(currency)}</span>
-            </p>
-            {!isFCFA && (
-              <p className="text-xs text-primary-foreground/50 mt-1">{formatDual(balance)}</p>
-            )}
+        {/* Card chip & logo */}
+        <div className="flex items-start justify-between mb-8">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-7 rounded-md bg-gradient-to-br from-amber-300 to-amber-500 shadow-inner" />
+            <div className="w-6 h-7 rounded-sm bg-white/10 backdrop-blur-sm" />
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <div className="w-10 h-10 rounded-xl bg-secondary/20 flex items-center justify-center">
-              <Wallet className="w-5 h-5 text-secondary" />
-            </div>
-            <Badge className="bg-secondary/20 text-secondary text-[10px] border-none">
+          <div className="text-right">
+            <p className="text-[10px] uppercase tracking-widest text-white/50">Konnekt Pay</p>
+            <p className="text-xs font-semibold text-white/70">Carte GP</p>
+          </div>
+        </div>
+
+        {/* Balance */}
+        <div className="mb-6">
+          <p className="text-[11px] uppercase tracking-wider text-white/50 mb-1">Solde disponible</p>
+          <p className="text-3xl font-bold tracking-tight">
+            {balance.toLocaleString()} <span className="text-lg font-normal text-white/60">{getCurrencySymbol(currency)}</span>
+          </p>
+          {!isFCFA && (
+            <p className="text-xs text-white/40 mt-0.5">{formatDual(balance)}</p>
+          )}
+        </div>
+
+        {/* Card footer */}
+        <div className="flex items-end justify-between">
+          <div>
+            <Badge className="bg-white/10 text-white/80 border-white/10 text-[10px] backdrop-blur-sm">
               <Percent className="w-3 h-3 mr-0.5" />
               Commission {commissionRate}%
             </Badge>
           </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              className="h-8 text-xs bg-white/15 hover:bg-white/25 text-white border-none backdrop-blur-sm"
+              onClick={() => setWithdrawOpen(true)}
+            >
+              <ArrowUpRight className="w-3.5 h-3.5 mr-1" />
+              Retirer
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 text-xs text-white/70 hover:text-white hover:bg-white/10"
+              onClick={() => setActiveTab("history")}
+            >
+              <CreditCard className="w-3.5 h-3.5 mr-1" />
+              Historique
+            </Button>
+          </div>
         </div>
 
-        <div className="flex gap-3">
-          <Button variant="hero" className="flex-1 h-10 text-sm" onClick={() => setWithdrawOpen(true)}>
-            <ArrowUpRight className="w-4 h-4" />
-            Retirer
-          </Button>
-          <Button variant="hero-outline" className="flex-1 h-10 text-sm" onClick={() => setActiveTab("history")}>
-            <CreditCard className="w-4 h-4" />
-            Historique
-          </Button>
-        </div>
+        {/* Decorative circles */}
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/5 pointer-events-none" />
+        <div className="absolute -bottom-14 -left-14 w-48 h-48 rounded-full bg-white/[0.03] pointer-events-none" />
       </motion.div>
 
       {/* Stats Grid */}
