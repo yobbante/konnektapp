@@ -6,6 +6,13 @@ import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { cn } from "@/lib/utils";
 import QRCode from "react-qr-code";
 
+interface LineItem {
+  id: string;
+  label: string;
+  quantity: number;
+  price: number;
+}
+
 interface FloatingRecapProps {
   weight: number;
   flatRateCount: number;
@@ -20,6 +27,8 @@ interface FloatingRecapProps {
   currentStep: number;
   className?: string;
   orderId?: string;
+  pricePerKg?: number;
+  flatRateItems?: LineItem[];
   regressiveInfo?: {
     coefficient: number;
     effectivePricePerKg: number;
@@ -42,6 +51,8 @@ export function FloatingRecap({
   currentStep,
   className,
   orderId,
+  pricePerKg,
+  flatRateItems,
   regressiveInfo,
 }: FloatingRecapProps) {
   const [expanded, setExpanded] = useState(false);
@@ -126,8 +137,22 @@ export function FloatingRecap({
                 className="overflow-hidden"
               >
                 <div className="px-4 pb-4 pt-0 space-y-2 border-t">
-                  {/* Transport */}
-                  <div className="flex justify-between items-center text-sm pt-3">
+                  {/* Line items detail */}
+                  {weight > 0 && (
+                    <div className="flex justify-between items-center text-xs pt-3">
+                      <span className="text-muted-foreground">Colis au kilo ({weight}kg × {pricePerKg?.toLocaleString('fr-FR') ?? '—'} {currencySymbol})</span>
+                      <span className="text-sm">{(weight * (pricePerKg ?? 0)).toLocaleString('fr-FR')} {currencySymbol}</span>
+                    </div>
+                  )}
+                  {flatRateItems?.filter(i => i.quantity > 0).map(item => (
+                    <div key={item.id} className="flex justify-between items-center text-xs">
+                      <span className="text-muted-foreground">{item.label} ({item.quantity} × {item.price.toLocaleString('fr-FR')} {currencySymbol})</span>
+                      <span className="text-sm">{(item.quantity * item.price).toLocaleString('fr-FR')} {currencySymbol}</span>
+                    </div>
+                  ))}
+
+                  {/* Transport subtotal */}
+                  <div className="flex justify-between items-center text-sm pt-1 border-t">
                     <span className="text-muted-foreground flex items-center gap-2">
                       <Package className="w-3 h-3" />
                       Transport
