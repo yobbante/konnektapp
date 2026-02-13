@@ -2,13 +2,45 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Mail, Lock, Eye, EyeOff, User, Phone, ArrowRight, 
-  Package, Truck, Users, CheckCircle2, ChevronLeft, AlertCircle
+  Package, Truck, Users, CheckCircle2, ChevronLeft, AlertCircle, Globe, ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
+import { COUNTRY_PHONE_CODES } from "@/lib/phoneCountryCodes";
+
+const COUNTRY_OPTIONS = [
+  { code: "SN", name: "Sénégal", flag: "🇸🇳" },
+  { code: "CI", name: "Côte d'Ivoire", flag: "🇨🇮" },
+  { code: "CM", name: "Cameroun", flag: "🇨🇲" },
+  { code: "ML", name: "Mali", flag: "🇲🇱" },
+  { code: "GN", name: "Guinée", flag: "🇬🇳" },
+  { code: "BF", name: "Burkina Faso", flag: "🇧🇫" },
+  { code: "TG", name: "Togo", flag: "🇹🇬" },
+  { code: "BJ", name: "Bénin", flag: "🇧🇯" },
+  { code: "GH", name: "Ghana", flag: "🇬🇭" },
+  { code: "NG", name: "Nigeria", flag: "🇳🇬" },
+  { code: "GA", name: "Gabon", flag: "🇬🇦" },
+  { code: "CG", name: "Congo", flag: "🇨🇬" },
+  { code: "CD", name: "RD Congo", flag: "🇨🇩" },
+  { code: "MA", name: "Maroc", flag: "🇲🇦" },
+  { code: "DZ", name: "Algérie", flag: "🇩🇿" },
+  { code: "TN", name: "Tunisie", flag: "🇹🇳" },
+  { code: "FR", name: "France", flag: "🇫🇷" },
+  { code: "BE", name: "Belgique", flag: "🇧🇪" },
+  { code: "DE", name: "Allemagne", flag: "🇩🇪" },
+  { code: "GB", name: "Royaume-Uni", flag: "🇬🇧" },
+  { code: "ES", name: "Espagne", flag: "🇪🇸" },
+  { code: "IT", name: "Italie", flag: "🇮🇹" },
+  { code: "CH", name: "Suisse", flag: "🇨🇭" },
+  { code: "US", name: "États-Unis", flag: "🇺🇸" },
+  { code: "CA", name: "Canada", flag: "🇨🇦" },
+  { code: "AE", name: "Émirats", flag: "🇦🇪" },
+  { code: "SA", name: "Arabie Saoudite", flag: "🇸🇦" },
+  { code: "TR", name: "Turquie", flag: "🇹🇷" },
+];
 
 interface InteractiveAuthFormProps {
   mode: "login" | "register";
@@ -23,6 +55,7 @@ export interface AuthFormData {
   password: string;
   fullName?: string;
   phone?: string;
+  country?: string;
 }
 
 type Step = "type" | "phone" | "credentials";
@@ -41,6 +74,7 @@ export function InteractiveAuthForm({
     password: "",
     fullName: "",
     phone: "",
+    country: "SN",
   });
 
   // Validation states
@@ -50,10 +84,21 @@ export function InteractiveAuthForm({
   const [loginMethod, setLoginMethod] = useState<"email" | "phone">("phone");
   const [phoneLoginLookup, setPhoneLoginLookup] = useState<string | null>(null);
 
+  const [selectedCountry, setSelectedCountry] = useState("SN");
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  // For login phone field
+  const [loginSelectedCountry, setLoginSelectedCountry] = useState("SN");
+  const [showLoginCountryDropdown, setShowLoginCountryDropdown] = useState(false);
+
+  const selectedDialCode = COUNTRY_PHONE_CODES[selectedCountry] || "+221";
+  const loginDialCode = COUNTRY_PHONE_CODES[loginSelectedCountry] || "+221";
+  const selectedFlag = COUNTRY_OPTIONS.find(c => c.code === selectedCountry)?.flag || "🇸🇳";
+  const loginFlag = COUNTRY_OPTIONS.find(c => c.code === loginSelectedCountry)?.flag || "🇸🇳";
+
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
   const isValidPassword = formData.password.length >= 6;
   const isValidName = (formData.fullName?.length || 0) >= 2;
-  const isValidPhone = (formData.phone?.length || 0) >= 8;
+  const isValidPhone = (formData.phone?.length || 0) >= 6;
 
   const getProgress = () => {
     if (mode === "login") return 100;
@@ -71,14 +116,15 @@ export function InteractiveAuthForm({
 
   // Check if phone already exists in profiles
   const checkPhoneDuplicate = async (phone: string): Promise<boolean> => {
-    if (phone.length < 8) return false;
+    const fullPhone = `${selectedDialCode} ${phone}`.trim();
+    if (phone.length < 6) return false;
     setCheckingPhone(true);
     setPhoneError(null);
     try {
       const { data } = await supabase
         .from("profiles")
         .select("user_id, full_name, email")
-        .eq("phone", phone.trim())
+        .eq("phone", fullPhone)
         .maybeSingle();
 
       if (data) {
@@ -96,14 +142,15 @@ export function InteractiveAuthForm({
 
   // Login: lookup email from phone number
   const lookupEmailByPhone = async (phone: string) => {
-    if (phone.length < 8) return;
+    const fullPhone = `${loginDialCode} ${phone}`.trim();
+    if (phone.length < 6) return;
     setCheckingPhone(true);
     setPhoneLoginLookup(null);
     try {
       const { data } = await supabase
         .from("profiles")
         .select("email, user_id")
-        .eq("phone", phone.trim())
+        .eq("phone", fullPhone)
         .maybeSingle();
 
       if (data?.email) {
@@ -123,9 +170,46 @@ export function InteractiveAuthForm({
     if (!isValidPhone) return;
     const isDuplicate = await checkPhoneDuplicate(formData.phone || "");
     if (!isDuplicate) {
+      // Store full phone with country code for the credentials step
+      setFormData(prev => ({ ...prev, phone: `${selectedDialCode} ${prev.phone}` }));
       setStep("credentials");
     }
   };
+
+  // Country dropdown component
+  const CountryCodeDropdown = ({ 
+    selected, onSelect, show, setShow, flag, dialCode 
+  }: { 
+    selected: string; onSelect: (code: string) => void; show: boolean; setShow: (v: boolean) => void; flag: string; dialCode: string;
+  }) => (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setShow(!show)}
+        className="flex items-center gap-1 h-12 px-3 rounded-l-lg border border-r-0 border-input bg-muted/50 hover:bg-muted transition-colors text-sm font-medium"
+      >
+        <span className="text-base">{flag}</span>
+        <span className="text-xs text-muted-foreground">{dialCode}</span>
+        <ChevronDown className="w-3 h-3 text-muted-foreground" />
+      </button>
+      {show && (
+        <div className="absolute top-full left-0 mt-1 w-56 max-h-48 overflow-y-auto bg-popover border border-border rounded-xl shadow-lg z-50">
+          {COUNTRY_OPTIONS.map((c) => (
+            <button
+              key={c.code}
+              type="button"
+              onClick={() => { onSelect(c.code); setShow(false); }}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors ${selected === c.code ? "bg-primary/10 font-medium" : ""}`}
+            >
+              <span>{c.flag}</span>
+              <span className="flex-1 text-left">{c.name}</span>
+              <span className="text-xs text-muted-foreground">{COUNTRY_PHONE_CODES[c.code]}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   const handleBack = () => {
     if (step === "credentials" && mode === "register") {
@@ -258,28 +342,37 @@ export function InteractiveAuthForm({
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-sm">Numéro de téléphone *</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    type="tel"
-                    placeholder="+221 77 123 45 67"
-                    className={`pl-11 h-12 text-base ${phoneError ? "border-destructive" : ""}`}
-                    value={formData.phone}
-                    onChange={(e) => {
-                      setFormData({ ...formData, phone: e.target.value });
-                      setPhoneError(null);
-                    }}
-                    onBlur={() => setTouched({ ...touched, phone: true })}
+                <Label className="text-sm">Pays & Numéro de téléphone *</Label>
+                <div className="flex">
+                  <CountryCodeDropdown
+                    selected={selectedCountry}
+                    onSelect={setSelectedCountry}
+                    show={showCountryDropdown}
+                    setShow={setShowCountryDropdown}
+                    flag={selectedFlag}
+                    dialCode={selectedDialCode}
                   />
-                  {checkingPhone && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                    </div>
-                  )}
-                  {touched.phone && isValidPhone && !phoneError && !checkingPhone && (
-                    <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />
-                  )}
+                  <div className="relative flex-1">
+                    <Input
+                      type="tel"
+                      placeholder="77 123 45 67"
+                      className={`rounded-l-none h-12 text-base ${phoneError ? "border-destructive" : ""}`}
+                      value={formData.phone}
+                      onChange={(e) => {
+                        setFormData({ ...formData, phone: e.target.value });
+                        setPhoneError(null);
+                      }}
+                      onBlur={() => setTouched({ ...touched, phone: true })}
+                    />
+                    {checkingPhone && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                    {touched.phone && isValidPhone && !phoneError && !checkingPhone && (
+                      <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />
+                    )}
+                  </div>
                 </div>
                 {phoneError && (
                   <motion.div
@@ -420,48 +513,77 @@ export function InteractiveAuthForm({
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Name field for registration */}
+              {/* Name & Country fields for registration */}
               {mode === "register" && (
-                <div className="space-y-2">
-                  <Label className="text-sm">Nom complet</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input
-                      placeholder="Votre nom complet"
-                      className="pl-11 h-12 text-base"
-                      value={formData.fullName}
-                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                      onBlur={() => setTouched({ ...touched, fullName: true })}
-                    />
-                    {touched.fullName && isValidName && (
-                      <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />
-                    )}
+                <>
+                  <div className="space-y-2">
+                    <Label className="text-sm">Nom complet</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Input
+                        placeholder="Votre nom complet"
+                        className="pl-11 h-12 text-base"
+                        value={formData.fullName}
+                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                        onBlur={() => setTouched({ ...touched, fullName: true })}
+                      />
+                      {touched.fullName && isValidName && (
+                        <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />
+                      )}
+                    </div>
                   </div>
-                </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">Pays de résidence</Label>
+                    <div className="relative">
+                      <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
+                      <select
+                        className="w-full h-12 pl-11 pr-4 rounded-lg border border-input bg-background text-sm appearance-none cursor-pointer"
+                        value={formData.country}
+                        onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                      >
+                        {COUNTRY_OPTIONS.map((c) => (
+                          <option key={c.code} value={c.code}>
+                            {c.flag} {c.name}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                    </div>
+                  </div>
+                </>
               )}
 
               {/* Login by phone: phone field first */}
               {mode === "login" && loginMethod === "phone" && (
                 <div className="space-y-2">
                   <Label className="text-sm">Numéro de téléphone</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input
-                      type="tel"
-                      placeholder="+221 77 123 45 67"
-                      className="pl-11 h-12 text-base"
-                      value={formData.phone}
-                      onChange={(e) => {
-                        setFormData({ ...formData, phone: e.target.value });
-                        setPhoneLoginLookup(null);
-                      }}
-                      onBlur={(e) => lookupEmailByPhone(e.target.value)}
+                  <div className="flex">
+                    <CountryCodeDropdown
+                      selected={loginSelectedCountry}
+                      onSelect={setLoginSelectedCountry}
+                      show={showLoginCountryDropdown}
+                      setShow={setShowLoginCountryDropdown}
+                      flag={loginFlag}
+                      dialCode={loginDialCode}
                     />
-                    {checkingPhone && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                      </div>
-                    )}
+                    <div className="relative flex-1">
+                      <Input
+                        type="tel"
+                        placeholder="77 123 45 67"
+                        className="rounded-l-none h-12 text-base"
+                        value={formData.phone}
+                        onChange={(e) => {
+                          setFormData({ ...formData, phone: e.target.value });
+                          setPhoneLoginLookup(null);
+                        }}
+                        onBlur={(e) => lookupEmailByPhone(e.target.value)}
+                      />
+                      {checkingPhone && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        </div>
+                      )}
+                    </div>
                   </div>
                   {phoneLoginLookup && (
                     <motion.div
