@@ -1,26 +1,26 @@
 /**
- * UnifiedProfile - Page profil client unifiée
- * 
- * Remplace /profil, /profile, /client/profil
- * Interface épurée et intuitive avec les infos essentielles
+ * UnifiedProfile — Refactored modular client profile page
+ * 5 blocks: Header, Security, Wallet, Parcels, Settings
  */
-
-import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { User, Mail, Phone, MapPin, Camera, Save, Edit2, Package, CheckCircle, Clock, Truck, LogOut, Settings, ChevronRight, Shield, Star, ArrowLeft, Key } from "lucide-react";
+import { ArrowLeft, Save, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { MiniLoader } from "@/components/ui/MiniLoader";
-import { SwitchToTransporteurButton } from "@/components/profile/SwitchToTransporteurButton";
-interface UserProfile {
+import { ProfileHeader, type ClientKYCLevel } from "@/components/client/profile/ProfileHeader";
+import { SecurityModule } from "@/components/client/profile/SecurityModule";
+import { WalletModule } from "@/components/client/profile/WalletModule";
+import { ParcelModule } from "@/components/client/profile/ParcelModule";
+import { SettingsModule } from "@/components/client/profile/SettingsModule";
+
+interface ProfileData {
   id: string;
   user_id: string;
   full_name: string | null;
@@ -29,8 +29,15 @@ interface UserProfile {
   city: string | null;
   address: string | null;
   avatar_url: string | null;
+  country_code: string | null;
+  kyc_level: number;
+  cumulative_spent: number;
+  id_document_url: string | null;
+  selfie_url: string | null;
+  kyc_verified_at: string | null;
   created_at: string;
 }
+
 interface OrderStats {
   total: number;
   pending: number;
@@ -38,147 +45,124 @@ interface OrderStats {
   delivered: number;
   totalSpent: number;
 }
+
 export default function UnifiedProfile() {
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [stats, setStats] = useState<OrderStats>({ total: 0, pending: 0, inTransit: 0, delivered: 0, totalSpent: 0 });
+  const [escrowTotal, setEscrowTotal] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [stats, setStats] = useState<OrderStats>({
-    total: 0,
-    pending: 0,
-    inTransit: 0,
-    delivered: 0,
-    totalSpent: 0
-  });
-  const [formData, setFormData] = useState({
-    full_name: "",
-    phone: "",
-    city: "",
-    address: ""
-  });
-  useEffect(() => {
-    loadProfile();
-  }, []);
-  const loadProfile = async () => {
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({ full_name: "", phone: "", city: "", address: "" });
+
+  const loadProfile = useCallback(async () => {
     try {
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
-      if (!user) {
-        navigate("/auth");
-        return;
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { navigate("/auth"); return; }
 
-      // Load profile
-      const {
-        data: profileData
-      } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
-      if (profileData) {
-        setProfile({
-          ...profileData,
-          email: user.email
-        });
+      // Parallel queries
+      const [profileRes, ordersRes, escrowRes] = await Promise.all([
+        supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
+        supabase.from("orders").select("status, total_price").eq("client_id", user.id),
+        supabase.from("escrow_transactions").select("amount, status").eq("client_id", user.id).eq("status", "held"),
+      ]);
+
+      if (profileRes.data) {
+        const p = { ...profileRes.data, email: user.email } as ProfileData;
+        setProfile(p);
         setFormData({
-          full_name: profileData.full_name || "",
-          phone: profileData.phone || "",
-          city: profileData.city || "",
-          address: profileData.address || ""
+          full_name: p.full_name || "",
+          phone: p.phone || "",
+          city: p.city || "",
+          address: p.address || "",
         });
       }
 
-      // Load order stats
-      const {
-        data: orders
-      } = await supabase.from("orders").select("status, total_price").eq("client_id", user.id);
-      if (orders) {
+      if (ordersRes.data) {
+        const orders = ordersRes.data;
         setStats({
           total: orders.length,
-          pending: orders.filter(o => ['pending', 'accepted'].includes(o.status)).length,
-          inTransit: orders.filter(o => ['collected', 'in_transit'].includes(o.status)).length,
-          delivered: orders.filter(o => o.status === 'delivered').length,
-          totalSpent: orders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.total_price || 0), 0)
+          pending: orders.filter(o => ["pending", "accepted"].includes(o.status)).length,
+          inTransit: orders.filter(o => ["collected", "in_transit"].includes(o.status)).length,
+          delivered: orders.filter(o => o.status === "delivered").length,
+          totalSpent: orders.filter(o => o.status === "delivered").reduce((s, o) => s + (o.total_price || 0), 0),
         });
+      }
+
+      if (escrowRes.data) {
+        setEscrowTotal(escrowRes.data.reduce((s, e) => s + (e.amount || 0), 0));
       }
     } catch (error) {
       console.error("Error loading profile:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => { loadProfile(); }, [loadProfile]);
+
   const handleSave = async () => {
     if (!profile) return;
     setSaving(true);
     try {
-      const {
-        error
-      } = await supabase.from("profiles").update({
-        full_name: formData.full_name,
-        phone: formData.phone,
-        city: formData.city,
-        address: formData.address,
-        updated_at: new Date().toISOString()
-      }).eq("id", profile.id);
+      const { error } = await supabase
+        .from("profiles")
+        .update({ ...formData, updated_at: new Date().toISOString() })
+        .eq("id", profile.id);
       if (error) throw error;
-      setProfile({
-        ...profile,
-        ...formData
-      });
+      setProfile({ ...profile, ...formData });
       setIsEditing(false);
-      toast({
-        title: "Profil mis à jour",
-        description: "Vos informations ont été enregistrées"
-      });
-    } catch (error) {
-      console.error("Error saving:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de sauvegarder",
-        variant: "destructive"
-      });
+      toast({ title: "Profil mis à jour" });
+    } catch {
+      toast({ title: "Erreur", description: "Impossible de sauvegarder", variant: "destructive" });
     } finally {
       setSaving(false);
     }
   };
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate("/");
   };
-  const calculateCompletion = () => {
+
+  // Calculate protection score
+  const getProtectionScore = (): number => {
     if (!profile) return 0;
-    const fields = [profile.full_name, profile.phone, profile.city, profile.address, profile.avatar_url];
-    const completed = fields.filter(f => f && String(f).trim() !== "").length;
-    return Math.round(completed / fields.length * 100);
+    let score = 0;
+    if (profile.phone) score += 25;
+    if (profile.email) score += 25;
+    if (profile.id_document_url) score += 25;
+    if (profile.address) score += 25;
+    return score;
   };
+
   if (loading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <MiniLoader size="lg" />
-      </div>;
+      </div>
+    );
   }
-  const completion = calculateCompletion();
-  const memberSince = profile?.created_at ? new Date(profile.created_at).toLocaleDateString('fr-FR', {
-    month: 'long',
-    year: 'numeric'
-  }) : '';
-  return <div className="min-h-screen bg-muted/30 pb-safe">
+
+  const kycLevel = (profile?.kyc_level || 0) as ClientKYCLevel;
+  const protectionScore = getProtectionScore();
+  const memberSince = profile?.created_at
+    ? new Date(profile.created_at).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
+    : "";
+
+  return (
+    <div className="min-h-screen bg-muted/30 pb-safe">
       <MobileHeader />
       
-      <main className="px-4 pb-24" style={{
-      paddingTop: 'calc(70px + env(safe-area-inset-top, 0px))'
-    }}>
-        <motion.div initial={{
-        opacity: 0,
-        y: 10
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} className="max-w-lg mx-auto space-y-4">
-          {/* Header */}
+      <main className="px-4 pb-24" style={{ paddingTop: "calc(70px + env(safe-area-inset-top, 0px))" }}>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-lg mx-auto space-y-4"
+        >
+          {/* Page title */}
           <div className="flex items-center gap-3 mb-2">
             <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
               <ArrowLeft className="w-5 h-5" />
@@ -186,183 +170,85 @@ export default function UnifiedProfile() {
             <h1 className="text-xl font-bold">Mon Espace</h1>
           </div>
 
-          {/* Profile Card */}
-          <motion.div initial={{
-          opacity: 0,
-          y: 10
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} className="bg-card rounded-2xl border border-border p-4">
-            <div className="flex items-start gap-4 mb-4">
-              <div className="relative">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center border-2 border-primary/20">
-                  {profile?.avatar_url ? <img src={profile.avatar_url} alt="Avatar" className="w-full h-full rounded-2xl object-cover" /> : <User className="w-8 h-8 text-primary" />}
-                </div>
-                <button className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-md">
-                  <Camera className="w-3 h-3 text-primary-foreground" />
-                </button>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="font-bold text-lg truncate">
-                  {profile?.full_name || 'Utilisateur'}
-                </h2>
-                <p className="text-sm text-muted-foreground truncate">{profile?.email}</p>
-                <p className="text-xs text-muted-foreground mt-1">Membre depuis {memberSince}</p>
-              </div>
-              <Button variant="ghost" size="icon" onClick={() => setIsEditing(!isEditing)} className="rounded-full">
-                <Edit2 className="w-4 h-4" />
-              </Button>
-            </div>
+          {/* 1️⃣ Header Identity & Badge */}
+          <ProfileHeader
+            fullName={profile?.full_name || null}
+            email={profile?.email || null}
+            avatarUrl={profile?.avatar_url || null}
+            memberSince={memberSince}
+            kycLevel={kycLevel}
+            protectionScore={protectionScore}
+            userId={profile?.user_id}
+          />
 
-            {/* Completion */}
-            <div className="pt-3 border-t border-border">
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-muted-foreground">Profil complété</span>
-                <span className={completion === 100 ? 'text-success font-medium' : 'text-primary font-medium'}>
-                  {completion}%
-                </span>
-              </div>
-              <Progress value={completion} className="h-2" />
-            </div>
-          </motion.div>
+          {/* 2️⃣ Security & Verification */}
+          <SecurityModule
+            kycLevel={kycLevel}
+            phoneVerified={!!profile?.phone}
+            emailVerified={!!profile?.email}
+            idVerified={!!profile?.id_document_url}
+            addressConfirmed={!!profile?.address}
+            onUpgradeClick={() => toast({ title: "Bientôt disponible", description: "La vérification d'identité sera disponible prochainement" })}
+          />
 
-          {/* Edit Form */}
-          {isEditing && <motion.div initial={{
-          opacity: 0,
-          height: 0
-        }} animate={{
-          opacity: 1,
-          height: 'auto'
-        }} exit={{
-          opacity: 0,
-          height: 0
-        }} className="bg-card rounded-2xl border border-border p-4 space-y-4">
-              <h3 className="font-semibold flex items-center gap-2">
-                <Edit2 className="w-4 h-4" />
-                Modifier mes informations
-              </h3>
-              
+          {/* 3️⃣ Wallet */}
+          <WalletModule
+            availableBalance={0}
+            pendingEscrow={escrowTotal}
+            creditBonus={0}
+            currency="FCFA"
+            onViewTransactions={() => navigate("/historique")}
+          />
+
+          {/* 4️⃣ Parcels */}
+          <ParcelModule stats={stats} />
+
+          {/* Edit form (inline, toggled) */}
+          {isEditing && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              className="bg-card rounded-2xl border border-border p-4 space-y-4"
+            >
+              <h3 className="font-semibold text-sm">Modifier mes informations</h3>
               <div className="space-y-3">
-                <div>
-                  <Label className="text-xs text-muted-foreground">Nom complet</Label>
-                  <Input value={formData.full_name} onChange={e => setFormData({
-                ...formData,
-                full_name: e.target.value
-              })} placeholder="Votre nom" className="mt-1" />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Téléphone</Label>
-                  <Input value={formData.phone} onChange={e => setFormData({
-                ...formData,
-                phone: e.target.value
-              })} placeholder="+221 77 123 45 67" className="mt-1" />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Ville</Label>
-                  <Input value={formData.city} onChange={e => setFormData({
-                ...formData,
-                city: e.target.value
-              })} placeholder="Votre ville" className="mt-1" />
-                </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Adresse</Label>
-                  <Input value={formData.address} onChange={e => setFormData({
-                ...formData,
-                address: e.target.value
-              })} placeholder="Votre adresse" className="mt-1" />
-                </div>
+                {[
+                  { key: "full_name" as const, label: "Nom complet", placeholder: "Votre nom" },
+                  { key: "phone" as const, label: "Téléphone", placeholder: "+221 77 123 45 67" },
+                  { key: "city" as const, label: "Ville", placeholder: "Votre ville" },
+                  { key: "address" as const, label: "Adresse", placeholder: "Votre adresse" },
+                ].map((field) => (
+                  <div key={field.key}>
+                    <Label className="text-xs text-muted-foreground">{field.label}</Label>
+                    <Input
+                      value={formData[field.key]}
+                      onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
+                      placeholder={field.placeholder}
+                      className="mt-1"
+                    />
+                  </div>
+                ))}
               </div>
-
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" className="flex-1" onClick={() => setIsEditing(false)}>
-                  Annuler
+                  <X className="w-4 h-4 mr-1" /> Annuler
                 </Button>
                 <Button className="flex-1" onClick={handleSave} disabled={saving}>
-                  {saving ? <MiniLoader size="sm" /> : <><Save className="w-4 h-4 mr-2" /> Enregistrer</>}
+                  {saving ? <MiniLoader size="sm" /> : <><Save className="w-4 h-4 mr-1" /> Enregistrer</>}
                 </Button>
               </div>
-            </motion.div>}
+            </motion.div>
+          )}
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-4 gap-2">
-            {[{
-            icon: Package,
-            value: stats.total,
-            label: "Total",
-            color: "text-primary"
-          }, {
-            icon: Clock,
-            value: stats.pending,
-            label: "Attente",
-            color: "text-warning"
-          }, {
-            icon: Truck,
-            value: stats.inTransit,
-            label: "Transit",
-            color: "text-blue-500"
-          }, {
-            icon: CheckCircle,
-            value: stats.delivered,
-            label: "Livrés",
-            color: "text-success"
-          }].map((stat, i) => <motion.div key={i} initial={{
-            opacity: 0,
-            y: 10
-          }} animate={{
-            opacity: 1,
-            y: 0
-          }} transition={{
-            delay: 0.1 + i * 0.05
-          }} className="bg-card rounded-xl border border-border p-3 text-center">
-                <stat.icon className={`w-5 h-5 ${stat.color} mx-auto mb-1`} />
-                <p className="text-lg font-bold">{stat.value}</p>
-                <p className="text-[10px] text-muted-foreground">{stat.label}</p>
-              </motion.div>)}
-          </div>
-
-          {/* Quick Links */}
-          <div className="bg-card rounded-2xl border border-border overflow-hidden">
-            <Link to="/historique" className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Package className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">Historique des envois</p>
-                  <p className="text-xs text-muted-foreground">{stats.total} envois au total</p>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </Link>
-            
-            <div className="h-px bg-border" />
-            
-            <Link to="/settings" className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
-                  <Settings className="w-5 h-5 text-secondary" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">Paramètres</p>
-                  <p className="text-xs text-muted-foreground">Notifications, sécurité</p>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </Link>
-          </div>
-
-          {/* Become Transporter */}
-          <SwitchToTransporteurButton />
-
-          {/* Logout */}
-          <Button variant="ghost" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleSignOut}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Se déconnecter
-          </Button>
+          {/* 5️⃣ Settings & Support */}
+          <SettingsModule
+            onEditProfile={() => setIsEditing(!isEditing)}
+            onSignOut={handleSignOut}
+          />
         </motion.div>
       </main>
 
       <MobileNav />
-    </div>;
+    </div>
+  );
 }
