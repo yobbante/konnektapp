@@ -2510,11 +2510,16 @@ export type Database = {
           city: string | null
           country_code: string | null
           created_at: string
+          cumulative_spent: number
           email: string | null
           full_name: string | null
           id: string
+          id_document_url: string | null
           is_gp: boolean | null
+          kyc_level: number
+          kyc_verified_at: string | null
           phone: string | null
+          selfie_url: string | null
           updated_at: string
           user_id: string
         }
@@ -2524,11 +2529,16 @@ export type Database = {
           city?: string | null
           country_code?: string | null
           created_at?: string
+          cumulative_spent?: number
           email?: string | null
           full_name?: string | null
           id?: string
+          id_document_url?: string | null
           is_gp?: boolean | null
+          kyc_level?: number
+          kyc_verified_at?: string | null
           phone?: string | null
+          selfie_url?: string | null
           updated_at?: string
           user_id: string
         }
@@ -2538,11 +2548,16 @@ export type Database = {
           city?: string | null
           country_code?: string | null
           created_at?: string
+          cumulative_spent?: number
           email?: string | null
           full_name?: string | null
           id?: string
+          id_document_url?: string | null
           is_gp?: boolean | null
+          kyc_level?: number
+          kyc_verified_at?: string | null
           phone?: string | null
+          selfie_url?: string | null
           updated_at?: string
           user_id?: string
         }
