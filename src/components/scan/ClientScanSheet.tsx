@@ -1,18 +1,16 @@
 /**
- * ClientScanSheet V2 — Orange Money-inspired premium scan popup for clients
+ * ClientScanSheet V3 — Deep Blue Premium Konnekt Scan for clients
  * 
  * Full-screen modal with QR scanner, quick actions grid, education carousel.
- * Actions: pay supplement, confirm delivery, track parcel, wallet, insurance, history.
+ * Blue night theme matching Konnekt home identity.
  */
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ScanLine, X, Keyboard, Wallet, Shield, History,
-  PackageCheck, Scale, Eye, ChevronRight, Lock, Sparkles,
-  ArrowRight
+  PackageCheck, Scale, Eye, ArrowRight, Lock, Sparkles
 } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
 import { QRCameraScanner } from "@/components/gp/QRCameraScanner";
 import { UniversalScanner } from "@/components/scan/UniversalScanner";
 import { useNavigate } from "react-router-dom";
@@ -24,12 +22,12 @@ interface ClientScanSheetProps {
 }
 
 const quickActions = [
-  { icon: Scale, label: "Payer supplément", desc: "Ajustement poids", color: "from-orange-500 to-amber-500", action: "pay_supplement" },
-  { icon: PackageCheck, label: "Confirmer réception", desc: "Libérer escrow", color: "from-emerald-500 to-green-500", action: "confirm_delivery" },
-  { icon: Eye, label: "Suivre un colis", desc: "Scan QR reçu", color: "from-sky-500 to-blue-500", action: "track" },
-  { icon: Wallet, label: "Mes paiements", desc: "Ouvrir wallet", color: "from-violet-500 to-purple-500", action: "wallet" },
-  { icon: Shield, label: "Assurance", desc: "Protection colis", color: "from-rose-500 to-pink-500", action: "insurance" },
-  { icon: History, label: "Historique scan", desc: "Liste personnelle", color: "from-slate-500 to-gray-500", action: "history" },
+  { icon: Scale, label: "Payer supplément", desc: "Ajustement poids", action: "pay_supplement" },
+  { icon: PackageCheck, label: "Confirmer réception", desc: "Libérer escrow", action: "confirm_delivery" },
+  { icon: Eye, label: "Suivre un colis", desc: "Scan QR reçu", action: "track" },
+  { icon: Wallet, label: "Mes paiements", desc: "Ouvrir wallet", action: "wallet" },
+  { icon: Shield, label: "Assurance", desc: "Protection colis", action: "insurance" },
+  { icon: History, label: "Historique scan", desc: "Liste personnelle", action: "history" },
 ];
 
 const carouselSlides = [
@@ -46,7 +44,6 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
   const [scannedCode, setScannedCode] = useState<string | null>(null);
   const [activeSlide, setActiveSlide] = useState(0);
 
-  // Auto-slide carousel
   useEffect(() => {
     if (!open) return;
     const timer = setInterval(() => {
@@ -81,10 +78,6 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
     }
   };
 
-  const openCamera = () => {
-    setCameraOpen(true);
-  };
-
   return (
     <>
       <QRCameraScanner
@@ -94,64 +87,86 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
       />
 
       <Sheet open={open && !cameraOpen} onOpenChange={handleOpenChange}>
-        <SheetContent side="bottom" className="h-[92vh] rounded-t-3xl p-0 bg-[hsl(var(--background))] border-t-0 overflow-hidden">
-          {/* Dark premium header with QR */}
-          <div className="relative bg-gradient-to-br from-[hsl(var(--card))] to-[hsl(var(--muted))] px-5 pt-5 pb-6">
-            {/* Close button */}
+        <SheetContent
+          side="bottom"
+          className="h-[92vh] rounded-t-3xl p-0 border-t-0 overflow-hidden"
+          style={{
+            background: `linear-gradient(180deg, hsl(var(--k-scan-bg-top)) 0%, hsl(var(--k-scan-bg-bottom)) 100%)`,
+          }}
+        >
+          {/* Header */}
+          <div className="relative px-5 pt-5 pb-6">
             <button
               onClick={() => handleOpenChange(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center z-10"
+              className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center z-10"
+              style={{ background: "hsl(var(--k-scan-surface))" }}
             >
-              <X className="w-4 h-4 text-muted-foreground" />
+              <X className="w-4 h-4" style={{ color: "hsl(var(--k-scan-text-muted))" }} />
             </button>
 
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h2 className="text-xl font-bold text-foreground">Scanner avec Konnekt</h2>
-                <p className="text-sm text-muted-foreground mt-1">Paiement, suivi ou confirmation</p>
+                <h2 className="text-xl font-bold" style={{ color: "hsl(var(--k-scan-text))" }}>
+                  Scanner avec Konnekt
+                </h2>
+                <p className="text-sm mt-1" style={{ color: "hsl(var(--k-scan-text-muted))" }}>
+                  Paiement, suivi ou confirmation
+                </p>
 
-                {/* Balance hint */}
                 <div className="flex items-center gap-2 mt-4">
-                  <Eye className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground tracking-widest">• • • •</span>
+                  <Eye className="w-4 h-4" style={{ color: "hsl(var(--k-scan-text-muted))" }} />
+                  <span className="text-xs tracking-widest" style={{ color: "hsl(var(--k-scan-text-muted))" }}>• • • •</span>
                 </div>
 
                 <button
                   onClick={() => { handleOpenChange(false); navigate("/client/wallet"); }}
-                  className="flex items-center gap-1 mt-2 text-primary text-sm font-medium"
+                  className="flex items-center gap-1 mt-2 text-sm font-medium"
+                  style={{ color: "hsl(var(--k-scan-accent))" }}
                 >
                   Voir l'historique <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* QR Scan button - styled like Orange Money */}
+              {/* QR Scan button — blue glow */}
               <motion.button
-                onClick={openCamera}
+                onClick={() => setCameraOpen(true)}
                 className="relative w-28 h-28 rounded-2xl overflow-hidden flex-shrink-0"
-                whileTap={{ scale: 0.95 }}
+                whileTap={{ scale: 0.97 }}
               >
-                {/* Animated border */}
-                <div className="absolute inset-0 rounded-2xl border-[3px] border-primary" />
+                <div
+                  className="absolute inset-0 rounded-2xl border-[3px]"
+                  style={{ borderColor: "hsl(var(--k-scan-accent))" }}
+                />
                 <motion.div
-                  className="absolute -inset-1 rounded-2xl border-[3px] border-accent/50"
+                  className="absolute -inset-1 rounded-2xl border-[3px]"
+                  style={{ borderColor: "hsl(var(--k-scan-accent) / 0.3)" }}
                   animate={{ rotate: [0, 5, -5, 0] }}
                   transition={{ duration: 3, repeat: Infinity }}
                 />
-                {/* Inner QR area */}
-                <div className="absolute inset-1 rounded-xl bg-primary/10 flex flex-col items-center justify-center gap-1">
+                <div
+                  className="absolute inset-1 rounded-xl flex flex-col items-center justify-center gap-1"
+                  style={{ background: "hsl(var(--k-scan-accent-soft))" }}
+                >
                   <motion.div
                     animate={{ scale: [1, 1.1, 1] }}
                     transition={{ duration: 2, repeat: Infinity }}
                   >
-                    <ScanLine className="w-10 h-10 text-primary" />
+                    <ScanLine className="w-10 h-10" style={{ color: "hsl(var(--k-scan-accent))" }} />
                   </motion.div>
-                  <span className="text-[10px] font-bold text-primary">scanner</span>
+                  <span className="text-[10px] font-bold" style={{ color: "hsl(var(--k-scan-accent))" }}>scanner</span>
                 </div>
                 {/* Corner accents */}
-                <div className="absolute top-0 left-0 w-4 h-4 border-t-[3px] border-l-[3px] border-accent rounded-tl-lg" />
-                <div className="absolute top-0 right-0 w-4 h-4 border-t-[3px] border-r-[3px] border-accent rounded-tr-lg" />
-                <div className="absolute bottom-0 left-0 w-4 h-4 border-b-[3px] border-l-[3px] border-accent rounded-bl-lg" />
-                <div className="absolute bottom-0 right-0 w-4 h-4 border-b-[3px] border-r-[3px] border-accent rounded-br-lg" />
+                {["top-0 left-0 border-t-[3px] border-l-[3px] rounded-tl-lg",
+                  "top-0 right-0 border-t-[3px] border-r-[3px] rounded-tr-lg",
+                  "bottom-0 left-0 border-b-[3px] border-l-[3px] rounded-bl-lg",
+                  "bottom-0 right-0 border-b-[3px] border-r-[3px] rounded-br-lg"
+                ].map((pos) => (
+                  <div
+                    key={pos}
+                    className={cn("absolute w-4 h-4", pos)}
+                    style={{ borderColor: "hsl(var(--k-scan-glow))" }}
+                  />
+                ))}
               </motion.button>
             </div>
           </div>
@@ -164,19 +179,29 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
               </div>
             ) : (
               <>
-                {/* Quick Actions Grid - 3x2 like Orange Money */}
+                {/* Quick Actions Grid */}
                 <div className="grid grid-cols-3 gap-3 mt-4">
                   {quickActions.slice(0, 3).map((action) => (
                     <motion.button
                       key={action.action}
                       onClick={() => handleAction(action.action)}
-                      className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-card border border-border/50 hover:border-primary/30 transition-colors"
-                      whileTap={{ scale: 0.95 }}
+                      className="flex flex-col items-center gap-2 p-4 rounded-2xl border transition-colors"
+                      style={{
+                        background: "hsl(var(--k-scan-surface))",
+                        borderColor: "hsl(var(--k-scan-surface-hover))",
+                      }}
+                      whileTap={{ scale: 0.97 }}
+                      whileHover={{ backgroundColor: "hsl(var(--k-scan-surface-hover))" }}
                     >
-                      <div className={cn("w-12 h-12 rounded-xl bg-gradient-to-br flex items-center justify-center", action.color)}>
-                        <action.icon className="w-6 h-6 text-white" />
+                      <div
+                        className="w-12 h-12 rounded-xl flex items-center justify-center"
+                        style={{ background: "hsl(var(--k-scan-accent-soft))" }}
+                      >
+                        <action.icon className="w-6 h-6" style={{ color: "hsl(var(--k-scan-accent))" }} />
                       </div>
-                      <span className="text-xs font-semibold text-foreground text-center leading-tight">{action.label}</span>
+                      <span className="text-xs font-semibold text-center leading-tight" style={{ color: "hsl(var(--k-scan-text))" }}>
+                        {action.label}
+                      </span>
                     </motion.button>
                   ))}
                 </div>
@@ -186,25 +211,43 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
                     <motion.button
                       key={action.action}
                       onClick={() => handleAction(action.action)}
-                      className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-card border border-border/50 hover:border-primary/30 transition-colors"
-                      whileTap={{ scale: 0.95 }}
+                      className="flex flex-col items-center gap-2 p-3 rounded-2xl border transition-colors"
+                      style={{
+                        background: "hsl(var(--k-scan-surface))",
+                        borderColor: "hsl(var(--k-scan-surface-hover))",
+                      }}
+                      whileTap={{ scale: 0.97 }}
                     >
-                      <div className={cn("w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center", action.color)}>
-                        <action.icon className="w-5 h-5 text-white" />
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center"
+                        style={{ background: "hsl(var(--k-scan-accent-soft))" }}
+                      >
+                        <action.icon className="w-5 h-5" style={{ color: "hsl(var(--k-scan-accent))" }} />
                       </div>
-                      <span className="text-[10px] font-semibold text-foreground text-center leading-tight">{action.label}</span>
+                      <span className="text-[10px] font-semibold text-center leading-tight" style={{ color: "hsl(var(--k-scan-text))" }}>
+                        {action.label}
+                      </span>
                     </motion.button>
                   ))}
-                  {/* "Voir plus" placeholder */}
+                  {/* Manual code entry */}
                   <motion.button
                     onClick={() => setManualMode(true)}
-                    className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-card border border-border/50 hover:border-primary/30 transition-colors"
-                    whileTap={{ scale: 0.95 }}
+                    className="flex flex-col items-center gap-2 p-3 rounded-2xl border transition-colors"
+                    style={{
+                      background: "hsl(var(--k-scan-surface))",
+                      borderColor: "hsl(var(--k-scan-surface-hover))",
+                    }}
+                    whileTap={{ scale: 0.97 }}
                   >
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-muted to-muted-foreground/20 flex items-center justify-center">
-                      <Keyboard className="w-5 h-5 text-foreground" />
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center"
+                      style={{ background: "hsl(var(--k-scan-surface-hover))" }}
+                    >
+                      <Keyboard className="w-5 h-5" style={{ color: "hsl(var(--k-scan-text-muted))" }} />
                     </div>
-                    <span className="text-[10px] font-semibold text-foreground text-center leading-tight">Code manuel</span>
+                    <span className="text-[10px] font-semibold text-center leading-tight" style={{ color: "hsl(var(--k-scan-text))" }}>
+                      Code manuel
+                    </span>
                   </motion.button>
                 </div>
 
@@ -231,27 +274,41 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -30 }}
                       transition={{ duration: 0.3 }}
-                      className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20 p-4"
+                      className="relative rounded-2xl overflow-hidden p-4 border"
+                      style={{
+                        background: "hsl(var(--k-scan-surface))",
+                        borderColor: "hsl(var(--k-scan-accent) / 0.2)",
+                        boxShadow: "0 0 20px -5px hsl(var(--k-scan-accent) / 0.1)",
+                      }}
                     >
                       <div className="flex items-start gap-3">
-                        {(() => { const Icon = carouselSlides[activeSlide].icon; return <Icon className="w-8 h-8 text-primary flex-shrink-0 mt-0.5" />; })()}
+                        {(() => {
+                          const Icon = carouselSlides[activeSlide].icon;
+                          return <Icon className="w-8 h-8 flex-shrink-0 mt-0.5" style={{ color: "hsl(var(--k-scan-accent))" }} />;
+                        })()}
                         <div className="flex-1">
-                          <h4 className="font-bold text-sm text-foreground">{carouselSlides[activeSlide].title}</h4>
-                          <p className="text-xs text-muted-foreground mt-1">{carouselSlides[activeSlide].text}</p>
+                          <h4 className="font-bold text-sm" style={{ color: "hsl(var(--k-scan-text))" }}>
+                            {carouselSlides[activeSlide].title}
+                          </h4>
+                          <p className="text-xs mt-1" style={{ color: "hsl(var(--k-scan-text-muted))" }}>
+                            {carouselSlides[activeSlide].text}
+                          </p>
                         </div>
                       </div>
                     </motion.div>
                   </AnimatePresence>
-                  {/* Dots */}
                   <div className="flex justify-center gap-1.5 mt-3">
                     {carouselSlides.map((_, i) => (
                       <button
                         key={i}
                         onClick={() => setActiveSlide(i)}
-                        className={cn(
-                          "h-1.5 rounded-full transition-all",
-                          i === activeSlide ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/30"
-                        )}
+                        className={cn("h-1.5 rounded-full transition-all")}
+                        style={{
+                          width: i === activeSlide ? "1.5rem" : "0.375rem",
+                          background: i === activeSlide
+                            ? "hsl(var(--k-scan-accent))"
+                            : "hsl(var(--k-scan-text-muted) / 0.3)",
+                        }}
                       />
                     ))}
                   </div>

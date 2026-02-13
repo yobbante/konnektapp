@@ -82,6 +82,20 @@
     --dashboard-header-partner: 210 100% 55%;
     --dashboard-header-client: 185 60% 88%;
 
+    /* Konnekt Scan — Deep Blue Premium Theme */
+    --k-scan-bg-top: 207 55% 11%;
+    --k-scan-bg-bottom: 207 48% 15%;
+    --k-scan-surface: 207 40% 18%;
+    --k-scan-surface-hover: 207 38% 22%;
+    --k-scan-accent: 222 100% 59%;
+    --k-scan-accent-soft: 222 100% 59% / 0.15;
+    --k-scan-glow: 222 100% 65%;
+    --k-scan-text: 210 20% 95%;
+    --k-scan-text-muted: 210 15% 60%;
+    --k-scan-success: 152 55% 50%;
+    --k-scan-error: 0 60% 55%;
+    --k-scan-gp-accent: 24 85% 55%;
+
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 hsl(220 20% 20% / 0.05);
     --shadow-md: 0 4px 6px -1px hsl(220 20% 20% / 0.08);
