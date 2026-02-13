@@ -67,8 +67,9 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
   const [priceDiff, setPriceDiff] = useState(0);
 
   const isDepositMode = ["accepted", "pending"].includes(order.status);
+  const isTransitMode = order.status === "collected";
   const isDeliveryMode = order.status === "in_transit";
-  const alreadyProcessed = ["collected", "delivered", "cancelled"].includes(order.status);
+  const alreadyProcessed = ["delivered", "cancelled"].includes(order.status);
 
   useEffect(() => {
     const actual = parseFloat(actualWeight) || 0;
@@ -332,6 +333,74 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
                 <>
                   <Package className="w-4 h-4 mr-2" />
                   {weightDiff !== 0 ? "Soumettre modification" : "Confirmer le dépôt"}
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Transit Mode — Colis reçu, marquer en transit */}
+      {isTransitMode && (
+        <Card className="border-secondary/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Truck className="w-4 h-4 text-secondary" />
+              Colis reçu — Marquer en transit
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Ce colis a été collecté. Confirmez le départ en transit vers la destination.
+            </p>
+            <Button 
+              className="w-full h-12" 
+              variant="secondary"
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  await supabase.from("orders").update({
+                    status: "in_transit",
+                  }).eq("id", order.id);
+
+                  const { data: { user } } = await supabase.auth.getUser();
+                  if (user) {
+                    await supabase.from("order_status_history").insert({
+                      order_id: order.id,
+                      status: "in_transit",
+                      changed_by: user.id,
+                      changed_by_type: "gp",
+                      notes: "Colis marqué en transit par scan QR",
+                    });
+                  }
+
+                  await supabase.from("notifications").insert({
+                    user_id: order.client_id,
+                    type: "order_update",
+                    title: "🚚 Colis en transit",
+                    message: `Votre colis ${order.order_number} est en route vers ${order.destination_city}`,
+                    related_type: "order",
+                    related_id: order.id,
+                  });
+
+                  await logScan(order.id, "transit_confirm", "qr", "collected", "in_transit");
+                  toast({ title: "🚚 Colis en transit" });
+                  onComplete();
+                } catch (err) {
+                  console.error("Transit error:", err);
+                  toast({ title: "Erreur", variant: "destructive" });
+                } finally {
+                  setLoading(false);
+                }
+              }} 
+              disabled={loading}
+            >
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Truck className="w-4 h-4 mr-2" />
+                  Confirmer départ en transit
                 </>
               )}
             </Button>
