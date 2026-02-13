@@ -1,8 +1,10 @@
-import { motion } from "framer-motion";
-import { Shield, ShieldCheck, Star, Camera, CreditCard, ChevronRight, Sparkles } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Shield, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 interface GPKYCProgressCardProps {
   kycLevel: number;
@@ -11,7 +13,7 @@ interface GPKYCProgressCardProps {
   hasIdDocument: boolean;
   hasSelfie: boolean;
   hasBusinessReg: boolean;
-  onActivateBadge: () => void;
+  onActivateBadge?: () => void;
 }
 
 export function GPKYCProgressCard({
@@ -21,15 +23,15 @@ export function GPKYCProgressCard({
   hasIdDocument,
   hasSelfie,
   hasBusinessReg,
-  onActivateBadge,
 }: GPKYCProgressCardProps) {
-  // Don't show if already premium or suspended
-  if (kycLevel >= 2 || status === "suspended") return null;
+  const navigate = useNavigate();
+  const [expanded, setExpanded] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const steps = [
-    { label: "Inscription", done: true, icon: Shield },
-    { label: "Pièce d'identité", done: hasIdDocument, icon: CreditCard },
-    { label: "Selfie vérification", done: hasSelfie, icon: Camera },
+    { label: "Inscription", done: true },
+    { label: "Pièce d'identité", done: hasIdDocument },
+    { label: "Selfie", done: hasSelfie },
   ];
 
   const completedSteps = steps.filter(s => s.done).length;
@@ -37,95 +39,130 @@ export function GPKYCProgressCard({
   const isVerifying = kycStatus === "pending";
   const isVerified = kycLevel >= 1;
 
-  if (isVerified && kycLevel < 2) {
-    // Level 1 verified — show premium upgrade nudge
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl border border-amber-400/30 bg-gradient-to-r from-amber-500/5 to-yellow-500/5 p-4"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-            <Star className="w-5 h-5 text-amber-500" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold">Passez GP Premium</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Commission réduite, support prioritaire, mise en avant.
-            </p>
-          </div>
-          <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-        </div>
-      </motion.div>
-    );
-  }
+  useEffect(() => {
+    if (!expanded) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setExpanded(false);
+      }
+    };
+    const handleScroll = () => setExpanded(false);
+    document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("scroll", handleScroll, true);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [expanded]);
 
-  // Level 0 — show KYC progression
+  if (kycLevel >= 2 || status === "suspended") return null;
+
+  const label = isVerified
+    ? "GP Vérifié — Passez Premium"
+    : isVerifying
+    ? "Vérification en cours..."
+    : `Profil ${progress}% complété`;
+
+  const accentColor = isVerified
+    ? "from-amber-500/10 to-amber-500/5 border-amber-500/20"
+    : progress === 100
+    ? "from-emerald-500/10 to-emerald-500/5 border-emerald-500/20"
+    : "from-primary/5 to-primary/[0.02] border-primary/15";
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-border/50 bg-card p-4 space-y-3"
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-primary" />
-          <p className="text-sm font-semibold">Profil professionnel</p>
-        </div>
-        <span className={cn(
-          "text-xs font-bold px-2 py-0.5 rounded-full",
-          progress === 100 ? "bg-emerald-500/10 text-emerald-600" :
-          progress >= 50 ? "bg-amber-500/10 text-amber-600" :
-          "bg-muted text-muted-foreground"
-        )}>
-          {progress}%
-        </span>
-      </div>
-
-      <Progress value={progress} className="h-2" />
-
-      {isVerifying ? (
-        <div className="flex items-center gap-2 p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20">
-          <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-          <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-            Vérification en cours...
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="space-y-1.5">
-            {steps.map((step, i) => (
-              <div key={i} className="flex items-center gap-2.5">
-                <div className={cn(
-                  "w-5 h-5 rounded-full flex items-center justify-center",
-                  step.done ? "bg-emerald-500/10" : "bg-muted"
-                )}>
-                  <step.icon className={cn("w-3 h-3", step.done ? "text-emerald-500" : "text-muted-foreground")} />
-                </div>
-                <span className={cn("text-xs", step.done ? "text-foreground" : "text-muted-foreground")}>
-                  {step.label}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {progress < 100 && (
-            <Button
-              size="sm"
-              className="w-full text-xs h-9"
-              onClick={onActivateBadge}
-            >
-              <ShieldCheck className="w-3.5 h-3.5 mr-1.5" />
-              Activer le badge Vérifié
-            </Button>
+    <div ref={containerRef} className="w-full">
+      <motion.button
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        whileTap={{ scale: 0.995 }}
+        onClick={() => setExpanded(prev => !prev)}
+        className={cn(
+          "w-full flex items-center gap-2.5 px-4 py-2 border-b bg-gradient-to-r transition-colors",
+          accentColor
+        )}
+      >
+        <ShieldCheck className={cn(
+          "w-4 h-4 flex-shrink-0",
+          isVerified ? "text-amber-500" : isVerifying ? "text-blue-500" : "text-primary"
+        )} />
+        <div className="flex-1 flex items-center gap-2 min-w-0">
+          <span className="text-xs font-medium truncate">{label}</span>
+          {!isVerified && !isVerifying && (
+            <Progress value={progress} className="h-1 w-16 flex-shrink-0" />
           )}
+          {isVerifying && (
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse flex-shrink-0" />
+          )}
+        </div>
+        {expanded ? (
+          <ChevronUp className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+        ) : (
+          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+        )}
+      </motion.button>
 
-          <p className="text-[10px] text-muted-foreground text-center">
-            Les clients préfèrent les GP vérifiés. Débloquez retrait illimité.
-          </p>
-        </>
-      )}
-    </motion.div>
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden border-b border-border/50 bg-card/80 backdrop-blur-sm"
+          >
+            <div className="px-4 py-3 space-y-2.5">
+              {!isVerified && !isVerifying && (
+                <div className="flex items-center gap-3">
+                  {steps.map((step, i) => (
+                    <div key={i} className="flex items-center gap-1.5">
+                      <div className={cn(
+                        "w-4 h-4 rounded-full flex items-center justify-center",
+                        step.done ? "bg-emerald-500/15" : "bg-muted"
+                      )}>
+                        {step.done ? (
+                          <Shield className="w-2.5 h-2.5 text-emerald-500" />
+                        ) : (
+                          <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
+                        )}
+                      </div>
+                      <span className={cn(
+                        "text-[11px]",
+                        step.done ? "text-foreground" : "text-muted-foreground"
+                      )}>
+                        {step.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {isVerifying && (
+                <p className="text-xs text-blue-600 dark:text-blue-400">
+                  Vos documents sont en cours de vérification.
+                </p>
+              )}
+
+              {isVerified && (
+                <p className="text-xs text-muted-foreground">
+                  Commission réduite, support prioritaire, mise en avant.
+                </p>
+              )}
+
+              <Button
+                size="sm"
+                className="w-full text-xs h-8"
+                onClick={() => {
+                  setExpanded(false);
+                  navigate("/gp/profil-public");
+                }}
+              >
+                <ShieldCheck className="w-3.5 h-3.5 mr-1.5" />
+                {isVerified ? "Passer Premium" : "Compléter mon profil"}
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
