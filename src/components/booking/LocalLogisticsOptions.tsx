@@ -122,8 +122,8 @@ export function LocalLogisticsOptions({
       data
     } = await supabase.from("logistics_pricing_config").select("*").eq("zone", "dakar").eq("is_active", true);
     if (data) {
-      const pickup = data.find(c => c.service_type === "pickup");
-      const delivery = data.find(c => c.service_type === "delivery");
+      const pickup = data.find((c) => c.service_type === "pickup");
+      const delivery = data.find((c) => c.service_type === "delivery");
       setPricingConfig({
         pickup: pickup ? {
           basePrice: pickup.base_price,
@@ -230,7 +230,7 @@ export function LocalLogisticsOptions({
           {/* Pickup Option */}
           {originSupported && <div className="space-y-3">
               <label className="flex items-start gap-3 p-3 bg-muted/30 rounded-xl cursor-pointer hover:bg-muted/50 transition-colors">
-                <Checkbox checked={pickupEnabled} onCheckedChange={checked => setPickupEnabled(checked === true)} className="mt-0.5" />
+                <Checkbox checked={pickupEnabled} onCheckedChange={(checked) => setPickupEnabled(checked === true)} className="mt-0.5" />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Package className="w-4 h-4 text-primary" />
@@ -268,7 +268,7 @@ export function LocalLogisticsOptions({
                           <MapPin className="w-3 h-3" />
                           Adresse complète <span className="text-destructive">*</span>
                         </Label>
-                        <Input placeholder="Rue, quartier, point de repère..." value={pickupAddress} onChange={e => setPickupAddress(e.target.value)} className="mt-1" />
+                        <Input placeholder="Rue, quartier, point de repère..." value={pickupAddress} onChange={(e) => setPickupAddress(e.target.value)} className="mt-1" />
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
@@ -276,20 +276,20 @@ export function LocalLogisticsOptions({
                             <User className="w-3 h-3" />
                             Nom du contact <span className="text-destructive">*</span>
                           </Label>
-                          <Input placeholder="Nom complet" value={pickupContactName} onChange={e => setPickupContactName(e.target.value)} className="mt-1" />
+                          <Input placeholder="Nom complet" value={pickupContactName} onChange={(e) => setPickupContactName(e.target.value)} className="mt-1" />
                         </div>
                         <div>
                           <Label className="text-xs flex items-center gap-1">
                             <Phone className="w-3 h-3" />
                             Téléphone <span className="text-destructive">*</span>
                           </Label>
-                          <Input placeholder="77 XXX XX XX" value={pickupPhone} onChange={e => setPickupPhone(e.target.value)} className="mt-1" />
+                          <Input placeholder="77 XXX XX XX" value={pickupPhone} onChange={(e) => setPickupPhone(e.target.value)} className="mt-1" />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <Label className="text-xs">WhatsApp (optionnel)</Label>
-                          <Input placeholder="77 XXX XX XX" value={pickupWhatsapp} onChange={e => setPickupWhatsapp(e.target.value)} className="mt-1" />
+                          <Input placeholder="77 XXX XX XX" value={pickupWhatsapp} onChange={(e) => setPickupWhatsapp(e.target.value)} className="mt-1" />
                         </div>
                         <div>
                           <Label className="text-xs flex items-center gap-1">
@@ -301,7 +301,7 @@ export function LocalLogisticsOptions({
                               <SelectValue placeholder="Choisir..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {TIME_SLOTS.map(slot => <SelectItem key={slot.value} value={slot.value}>
+                              {TIME_SLOTS.map((slot) => <SelectItem key={slot.value} value={slot.value}>
                                   {slot.label}
                                 </SelectItem>)}
                             </SelectContent>
@@ -314,17 +314,17 @@ export function LocalLogisticsOptions({
             </div>}
 
           {/* Non-Dakar origin warning */}
-          {!originSupported && <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200">
-              <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-700 dark:text-amber-400">
-                L'enlèvement à domicile est disponible uniquement à Dakar.
-              </p>
-            </div>}
+          {!originSupported
+
+
+
+
+        }
 
           {/* Delivery Option */}
           {destinationSupported && <div className="space-y-3">
               <label className="flex items-start gap-3 p-3 bg-muted/30 rounded-xl cursor-pointer hover:bg-muted/50 transition-colors">
-                <Checkbox checked={deliveryEnabled} onCheckedChange={checked => setDeliveryEnabled(checked === true)} className="mt-0.5" />
+                <Checkbox checked={deliveryEnabled} onCheckedChange={(checked) => setDeliveryEnabled(checked === true)} className="mt-0.5" />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Truck className="w-4 h-4 text-success" />
@@ -362,7 +362,7 @@ export function LocalLogisticsOptions({
                           <MapPin className="w-3 h-3" />
                           Adresse de livraison <span className="text-destructive">*</span>
                         </Label>
-                        <Input placeholder="Rue, quartier, point de repère..." value={deliveryAddress} onChange={e => setDeliveryAddress(e.target.value)} className="mt-1" />
+                        <Input placeholder="Rue, quartier, point de repère..." value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} className="mt-1" />
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
@@ -370,24 +370,24 @@ export function LocalLogisticsOptions({
                             <User className="w-3 h-3" />
                             Nom du destinataire <span className="text-destructive">*</span>
                           </Label>
-                          <Input placeholder="Nom complet" value={deliveryContactName} onChange={e => setDeliveryContactName(e.target.value)} className="mt-1" />
+                          <Input placeholder="Nom complet" value={deliveryContactName} onChange={(e) => setDeliveryContactName(e.target.value)} className="mt-1" />
                         </div>
                         <div>
                           <Label className="text-xs flex items-center gap-1">
                             <Phone className="w-3 h-3" />
                             Téléphone <span className="text-destructive">*</span>
                           </Label>
-                          <Input placeholder="77 XXX XX XX" value={deliveryPhone} onChange={e => setDeliveryPhone(e.target.value)} className="mt-1" />
+                          <Input placeholder="77 XXX XX XX" value={deliveryPhone} onChange={(e) => setDeliveryPhone(e.target.value)} className="mt-1" />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <Label className="text-xs">WhatsApp (optionnel)</Label>
-                          <Input placeholder="77 XXX XX XX" value={deliveryWhatsapp} onChange={e => setDeliveryWhatsapp(e.target.value)} className="mt-1" />
+                          <Input placeholder="77 XXX XX XX" value={deliveryWhatsapp} onChange={(e) => setDeliveryWhatsapp(e.target.value)} className="mt-1" />
                         </div>
                         <div>
                           <Label className="text-xs">Instructions (optionnel)</Label>
-                          <Input placeholder="Code porte, étage..." value={deliveryInstructions} onChange={e => setDeliveryInstructions(e.target.value)} className="mt-1" />
+                          <Input placeholder="Code porte, étage..." value={deliveryInstructions} onChange={(e) => setDeliveryInstructions(e.target.value)} className="mt-1" />
                         </div>
                       </div>
                     </div>
@@ -425,10 +425,10 @@ export function LocalLogisticsOptions({
               
               {/* Terms Link */}
               <label className="flex items-start gap-2 mt-3 cursor-pointer">
-                <Checkbox checked={termsAccepted} onCheckedChange={checked => setTermsAccepted(checked === true)} className="mt-0.5" />
+                <Checkbox checked={termsAccepted} onCheckedChange={(checked) => setTermsAccepted(checked === true)} className="mt-0.5" />
                 <span className="text-xs text-muted-foreground">
                   J'accepte les{" "}
-                  <a href="#" className="text-primary underline hover:no-underline inline-flex items-center gap-1" onClick={e => {
+                  <a href="#" className="text-primary underline hover:no-underline inline-flex items-center gap-1" onClick={(e) => {
                 e.preventDefault();
                 // Would open modal with terms - for V1, just a link
                 window.open("/cgu#logistique-interne", "_blank");
