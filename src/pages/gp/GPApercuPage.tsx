@@ -171,6 +171,18 @@ export default function GPApercuPage() {
       activeTab="aujourdhui"
       onNewVoyage={() => setShowVoyageForm(true)}
     >
+      {/* KYC banner — collé au header */}
+      {!isPending && (
+        <GPKYCProgressCard
+          kycLevel={gpProfile.kyc_level ?? 0}
+          kycStatus={gpProfile.kyc_status ?? "none"}
+          status={gpProfile.status}
+          hasIdDocument={!!gpProfile.id_document_url}
+          hasSelfie={!!gpProfile.selfie_url}
+          hasBusinessReg={!!gpProfile.business_registration_url}
+        />
+      )}
+
       <div className="px-4 py-4 space-y-5">
         {/* ─── PENDING ACCOUNT ─── */}
         {isPending && (
@@ -208,9 +220,7 @@ export default function GPApercuPage() {
               </Button>
             </div>
 
-            {/* ═══════════════════════════════════
-                ACTIONS RAPIDES — juste sous le header
-            ═══════════════════════════════════ */}
+            {/* ACTIONS RAPIDES */}
             <div className="grid grid-cols-4 gap-2">
               <QuickAction
                 icon={ScanLine}
@@ -260,19 +270,6 @@ export default function GPApercuPage() {
                 <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               </motion.button>
             )}
-
-            {/* ═══════════════════════════════════
-                KYC PROGRESSION CARD
-            ═══════════════════════════════════ */}
-            <GPKYCProgressCard
-              kycLevel={gpProfile.kyc_level ?? 0}
-              kycStatus={gpProfile.kyc_status ?? "none"}
-              status={gpProfile.status}
-              hasIdDocument={!!gpProfile.id_document_url}
-              hasSelfie={!!gpProfile.selfie_url}
-              hasBusinessReg={!!gpProfile.business_registration_url}
-              onActivateBadge={() => navigate("/gp/profil-public")}
-            />
 
 
             {/* ─── ALERTS ─── */}
