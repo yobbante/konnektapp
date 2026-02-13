@@ -77,6 +77,7 @@ import TransporteurRegistration from "./pages/TransporteurRegistration";
 import LegalDocuments from "./pages/LegalDocuments";
 import UnifiedProfile from "./pages/UnifiedProfile";
 import ClientProfileComplete from "./pages/ClientProfileComplete";
+import ClientWallet from "./pages/ClientWallet";
 import MovingRequest from "./pages/MovingRequest";
 import MovingConfirmation from "./pages/MovingConfirmation";
 import OrderQRCode from "./pages/OrderQRCode";
@@ -151,6 +152,7 @@ const App = () => (
             <Route path="/destinataires" element={<Recipients />} />
             <Route path="/scan" element={<ClientScanPage />} />
             <Route path="/profil/complet" element={<ClientProfileComplete />} />
+            <Route path="/client/wallet" element={<ClientWallet />} />
             <Route path="/transporteur/inscription" element={<TransporteurRegistration />} />
             <Route path="/order/:orderId/complete" element={<PostBookingForm />} />
             <Route path="/order/:orderId/qrcode" element={<OrderQRCode />} />
