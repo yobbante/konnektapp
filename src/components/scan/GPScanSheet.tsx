@@ -19,6 +19,8 @@ import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import QRCodeDisplay from "react-qr-code";
+import { useSwipeDown } from "@/hooks/useSwipeDown";
+import { supabase } from "@/integrations/supabase/client";
 
 interface GPScanSheetProps {
   open: boolean;
@@ -76,6 +78,7 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
   const [showBalance, setShowBalance] = useState(false);
   const [continuousMode, setContinuousMode] = useState(false);
   const [scannedCode, setScannedCode] = useState<string | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
 
   // Layer 2 state
   const [scanViewOpen, setScanViewOpen] = useState(false);
@@ -87,6 +90,24 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
   const [manualCode, setManualCode] = useState("");
   const [codeValidated, setCodeValidated] = useState(false);
   const [showManualInput, setShowManualInput] = useState(false);
+
+  // Swipe down to close
+  const swipeLayer1 = useSwipeDown(() => handleOpenChange(false));
+  const swipeLayer2 = useSwipeDown(() => setScanViewOpen(false));
+
+  // Load wallet balance
+  useEffect(() => {
+    if (!open || !gpId) return;
+    const loadBalance = async () => {
+      const { data } = await supabase
+        .from("gp_wallets")
+        .select("balance")
+        .eq("gp_id", gpId)
+        .maybeSingle();
+      if (data) setWalletBalance(data.balance);
+    };
+    loadBalance();
+  }, [open, gpId]);
 
   useEffect(() => {
     if (!open) return;
@@ -180,7 +201,7 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
           className="h-[95vh] rounded-t-3xl p-0 border-t-0 overflow-hidden z-[60]"
           style={{ background: BG_GRADIENT }}
         >
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full" {...swipeLayer2}>
             <div className="flex justify-center pt-3 pb-1">
               <div className="w-10 h-1 rounded-full bg-white/20" />
             </div>
@@ -454,6 +475,7 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
           className="h-[92vh] rounded-t-3xl p-0 border-t-0 overflow-hidden"
           style={{ background: BG_GRADIENT }}
         >
+          <div {...swipeLayer1}>
           <div className="flex justify-center pt-3 pb-1">
             <div className="w-10 h-1 rounded-full bg-white/20" />
           </div>
@@ -496,7 +518,7 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
                   <button onClick={() => setShowBalance(!showBalance)} className="flex items-center gap-2 group">
                     {showBalance ? <EyeOff className="w-3.5 h-3.5 text-white/40" /> : <Eye className="w-3.5 h-3.5 text-white/40" />}
                     {showBalance ? (
-                      <span className="text-lg font-bold text-white">45 200 FCFA</span>
+                      <span className="text-lg font-bold text-white">{walletBalance !== null ? `${walletBalance.toLocaleString()} FCFA` : "-- FCFA"}</span>
                     ) : (
                       <span className="text-sm tracking-[0.3em] text-white/40 font-medium">••••••</span>
                     )}
@@ -627,6 +649,7 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
                 </div>
               </>
             )}
+          </div>
           </div>
         </SheetContent>
       </Sheet>

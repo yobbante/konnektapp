@@ -85,6 +85,9 @@ import PublicTracking from "./pages/PublicTracking";
 import DeliveryConfirmation from "./pages/DeliveryConfirmation";
 import PublicUserProfile from "./pages/PublicUserProfile";
 import AgentDashboard from "./pages/AgentDashboard";
+import PaySupplement from "./pages/PaySupplement";
+import ConfirmReception from "./pages/ConfirmReception";
+import InsurancePage from "./pages/InsurancePage";
 import GPApercuPage from "./pages/gp/GPApercuPage";
 import GPKTPGeoTrackPage from "./pages/gp/GPKTPGeoTrackPage";
 import GPColisPage from "./pages/gp/GPColisPage";
@@ -154,6 +157,9 @@ const App = () => (
             <Route path="/profil/complet" element={<ClientProfileComplete />} />
             <Route path="/client/wallet" element={<ClientWallet />} />
             <Route path="/transporteur/inscription" element={<TransporteurRegistration />} />
+            <Route path="/payer-supplement" element={<PaySupplement />} />
+            <Route path="/confirmer-reception" element={<ConfirmReception />} />
+            <Route path="/assurance" element={<InsurancePage />} />
             <Route path="/order/:orderId/complete" element={<PostBookingForm />} />
             <Route path="/order/:orderId/qrcode" element={<OrderQRCode />} />
             <Route path="/booking/confirmation/:orderId" element={<BookingConfirmation />} />

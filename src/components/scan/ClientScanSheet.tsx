@@ -16,6 +16,8 @@ import { UniversalScanner } from "@/components/scan/UniversalScanner";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import QRCodeDisplay from "react-qr-code";
+import { useSwipeDown } from "@/hooks/useSwipeDown";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ClientScanSheetProps {
   open: boolean;
@@ -71,6 +73,7 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
   const [scannedCode, setScannedCode] = useState<string | null>(null);
   const [activeSlide, setActiveSlide] = useState(0);
   const [showBalance, setShowBalance] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
 
   // Layer 2 state
   const [scanViewOpen, setScanViewOpen] = useState(false);
@@ -82,6 +85,26 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
   const [manualCode, setManualCode] = useState("");
   const [codeValidated, setCodeValidated] = useState(false);
   const [showManualInput, setShowManualInput] = useState(false);
+
+  // Swipe down to close
+  const swipeLayer1 = useSwipeDown(() => handleOpenChange(false));
+  const swipeLayer2 = useSwipeDown(() => setScanViewOpen(false));
+
+  // Load wallet balance
+  useEffect(() => {
+    if (!open) return;
+    const loadBalance = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("client_wallets")
+        .select("available_balance")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (data) setWalletBalance(data.available_balance);
+    };
+    loadBalance();
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -115,11 +138,11 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
   const handleAction = (action: string) => {
     handleOpenChange(false);
     switch (action) {
-      case "pay_supplement":navigate("/tracking");break;
-      case "confirm_delivery":navigate("/delivery-confirmation");break;
+      case "pay_supplement":navigate("/payer-supplement");break;
+      case "confirm_delivery":navigate("/confirmer-reception");break;
       case "track":navigate("/tracking");break;
       case "wallet":navigate("/client/wallet");break;
-      case "insurance":navigate("/offres");break;
+      case "insurance":navigate("/assurance");break;
       case "history":navigate("/historique");break;
     }
   };
@@ -128,9 +151,9 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
     handleOpenChange(false);
     switch (action) {
       case "track":navigate(`/tracking?code=${manualCode}`);break;
-      case "confirm":navigate("/delivery-confirmation");break;
-      case "pay":navigate("/tracking");break;
-      case "insurance":navigate("/offres");break;
+      case "confirm":navigate("/confirmer-reception");break;
+      case "pay":navigate("/payer-supplement");break;
+      case "insurance":navigate("/assurance");break;
     }
   };
 
@@ -163,7 +186,7 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
           className="h-[95vh] rounded-t-3xl p-0 border-t-0 overflow-hidden z-[60]"
           style={{ background: BG_GRADIENT }}>
 
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full" {...swipeLayer2}>
             {/* Drag handle */}
             <div className="flex justify-center pt-3 pb-1">
               <div className="w-10 h-1 rounded-full bg-white/20" />
@@ -458,7 +481,7 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
           side="bottom"
           className="h-[92vh] rounded-t-3xl p-0 border-t-0 overflow-hidden"
           style={{ background: BG_GRADIENT }}>
-
+          <div {...swipeLayer1}>
           {/* Drag handle */}
           <div className="flex justify-center pt-3 pb-1">
             <div className="w-10 h-1 rounded-full bg-white/20" />
@@ -479,7 +502,7 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
                   <button onClick={() => setShowBalance(!showBalance)} className="flex items-center gap-2">
                     {showBalance ? <EyeOff className="w-3.5 h-3.5 text-white/40" /> : <Eye className="w-3.5 h-3.5 text-white/40" />}
                     {showBalance ?
-                    <span className="text-lg font-bold text-white">12 500 FCFA</span> :
+                    <span className="text-lg font-bold text-white">{walletBalance !== null ? `${walletBalance.toLocaleString()} FCFA` : "-- FCFA"}</span> :
 
                     <span className="text-sm tracking-[0.3em] text-white/40 font-medium">••••••</span>
                     }
@@ -599,6 +622,7 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
                 </div>
               </>
             }
+          </div>
           </div>
         </SheetContent>
       </Sheet>
