@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.wallet-ledger]
 verify_jwt = false
+
+[functions.scan-engine]
+verify_jwt = false

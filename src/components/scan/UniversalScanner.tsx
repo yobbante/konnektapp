@@ -1,17 +1,25 @@
 /**
  * UniversalScanner - Role-based QR scanner component
  * 
- * Handles TWO types of QR codes:
- * 1. USER QR: konnekt://user/{userId} or URL /track/user/{userId} → UnifiedScanRouter
- * 2. ORDER QR: CMD-XXXXXXXX or tracking code → order lookup
+ * NOW POWERED BY KonnektScanEngine — all decisions are backend-driven.
  * 
- * Security: Each scan is logged to scan_logs. Same action can't trigger twice.
+ * Handles ALL QR types:
+ * - QR_COLIS: Order/parcel → role-specific result sheet
+ * - QR_USER / QR_GP: Identity → profile/orders resolution
+ * - QR_PAYMENT: Payment verification
+ * - QR_ADJUSTMENT: Weight adjustment redirect
+ * - QR_CONFIRMATION: Reception confirmation
+ * - QR_EXTERNAL: External QR handling
+ * 
+ * Security: Rate limited, idempotent, signature-verified via backend.
  */
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { 
   QrCode, Package, Truck, Scale, 
-  Eye, ScanLine, ShieldCheck, Keyboard
+  Eye, ScanLine, ShieldCheck, Keyboard,
+  Globe, CreditCard, AlertTriangle, CheckCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,41 +27,15 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useScanRole, ScanRole } from "@/hooks/useScanRole";
+import { useScanRole } from "@/hooks/useScanRole";
+import { useScanEngine } from "@/hooks/useScanEngine";
+import { KonnektScanEngine, type ScanEngineResponse } from "@/lib/scanEngine";
 import { QRCameraScanner } from "@/components/gp/QRCameraScanner";
 import { ScanResultClient } from "./ScanResultClient";
 import { ScanResultGP } from "./ScanResultGP";
 import { ScanResultAgent } from "./ScanResultAgent";
 import { UnifiedScanRouter } from "./UnifiedScanRouter";
-
-interface ScannedOrderData {
-  id: string;
-  order_number: string;
-  status: string;
-  weight: number;
-  total_price: number;
-  currency: string;
-  origin_city: string;
-  destination_city: string;
-  origin_country: string;
-  destination_country: string;
-  description: string | null;
-  client_id: string;
-  gp_id: string;
-  price_per_kg: number;
-  delivery_date: string | null;
-  client_name?: string | null;
-  gp_name?: string | null;
-  client_phone?: string | null;
-  delivery_address?: string | null;
-  scan_history?: Array<{
-    action: string;
-    user_role: string;
-    created_at: string;
-  }>;
-}
 
 interface UniversalScannerProps {
   onComplete?: () => void;
@@ -66,150 +48,102 @@ const ROLE_CONFIG: Record<string, { label: string; color: string; icon: typeof E
   admin: { label: "Admin", color: "bg-accent/10 text-accent border-accent/30", icon: ShieldCheck, description: "Gestion complète" },
 };
 
+const QR_TYPE_ICONS: Record<string, typeof Package> = {
+  QR_COLIS: Package,
+  QR_USER: Eye,
+  QR_GP: Truck,
+  QR_PAYMENT: CreditCard,
+  QR_ADJUSTMENT: Scale,
+  QR_CONFIRMATION: CheckCircle,
+  QR_EXTERNAL: Globe,
+  QR_ADMIN: ShieldCheck,
+};
+
 export function UniversalScanner({ onComplete }: UniversalScannerProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { scanRole, permissions, loading: roleLoading, userId, gpId, logScan } = useScanRole();
   const [manualCode, setManualCode] = useState("");
   const [cameraOpen, setCameraOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [scannedOrder, setScannedOrder] = useState<ScannedOrderData | null>(null);
-  const [scannedUserId, setScannedUserId] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
+  
+  // Engine-resolved state
+  const [engineResponse, setEngineResponse] = useState<ScanEngineResponse | null>(null);
+  
+  // Legacy state for backward compat with existing result components
+  const [scannedUserId, setScannedUserId] = useState<string | null>(null);
+  const [scannedOrder, setScannedOrder] = useState<any>(null);
 
-  /**
-   * Parse QR content to detect type:
-   * - User QR: contains "/track/user/" or "konnekt://user/"
-   * - Order QR: CMD-XXXX or tracking code
-   */
-  const parseQRContent = (code: string): { type: "user" | "order"; value: string } => {
-    // URL format: .../track/user/{userId}
-    const userUrlMatch = code.match(/\/track\/user\/([a-f0-9-]{36})/i);
-    if (userUrlMatch) return { type: "user", value: userUrlMatch[1] };
-    
-    // Protocol format: konnekt://user/{userId}
-    const protocolMatch = code.match(/konnekt:\/\/user\/([a-f0-9-]{36})/i);
-    if (protocolMatch) return { type: "user", value: protocolMatch[1] };
-    
-    // UUID directly (could be userId)
-    const uuidMatch = code.match(/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i);
-    if (uuidMatch) return { type: "user", value: code };
-    
-    // Default: treat as order code
-    return { type: "order", value: code.toUpperCase() };
+  const { resolve, loading } = useScanEngine({
+    autoNavigate: false, // We handle navigation manually here
+    onResult: (response) => {
+      setEngineResponse(response);
+    },
+  });
+
+  const handleScanResult = async (code: string) => {
+    const result = await resolve(code, scanRole || undefined);
+    if (!result) return;
+
+    const { response, action } = result;
+
+    // Route based on engine response
+    switch (action.type) {
+      case "navigate":
+        if (action.target) navigate(action.target);
+        return;
+
+      case "external":
+        if (action.target) window.open(action.target, "_blank");
+        return;
+
+      case "toast":
+        toast({
+          title: action.data?.title,
+          description: action.data?.description,
+          variant: action.data?.variant,
+        });
+        return;
+
+      case "sheet":
+        // Map engine response to legacy component data
+        if (response.data?.order) {
+          setScannedOrder(response.data.order);
+          setScannedUserId(null);
+        } else if (response.data?.user) {
+          setScannedUserId(response.data.user.user_id || response.data.gp?.user_id);
+          setScannedOrder(null);
+        } else if (response.data?.show_manual_options) {
+          // External QR — show in result sheet
+          setScannedOrder(null);
+          setScannedUserId(null);
+        }
+        setShowResult(true);
+        break;
+
+      default:
+        if (response.status !== "failed") {
+          setShowResult(true);
+        }
+        break;
+    }
   };
 
   const handleCameraScan = (code: string) => {
     setCameraOpen(false);
-    const parsed = parseQRContent(code);
-    if (parsed.type === "user") {
-      setScannedUserId(parsed.value);
-      setShowResult(true);
-    } else {
-      lookupOrder(parsed.value);
-    }
+    handleScanResult(code);
   };
 
   const handleManualSubmit = async () => {
     if (!manualCode.trim()) return;
-    const parsed = parseQRContent(manualCode.trim());
-    if (parsed.type === "user") {
-      setScannedUserId(parsed.value);
-      setShowResult(true);
-    } else {
-      await lookupOrder(parsed.value);
-    }
-  };
-
-  const lookupOrder = async (code: string) => {
-    setLoading(true);
-    try {
-      let query = supabase
-        .from("orders")
-        .select(`
-          id, order_number, status, weight, total_price, currency,
-          origin_city, destination_city, origin_country, destination_country,
-          description, client_id, gp_id, price_per_kg, delivery_date
-        `)
-        .or(`order_number.eq.${code},tracking_code.eq.${code}`);
-
-      if (scanRole === "gp" && gpId) {
-        query = query.eq("gp_id", gpId);
-      }
-
-      const { data: order, error } = await query.single();
-
-      if (error || !order) {
-        toast({
-          title: scanRole === "gp" 
-            ? "Commande non trouvée pour votre profil" 
-            : "Commande non trouvée",
-          description: "Vérifiez le code et réessayez",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      let clientName: string | null = null;
-      let gpName: string | null = null;
-      let clientPhone: string | null = null;
-      let deliveryAddress: string | null = null;
-
-      if (permissions.canViewContact || scanRole === "admin") {
-        const [clientResult, gpResult] = await Promise.all([
-          supabase.from("profiles").select("full_name, phone").eq("user_id", order.client_id).single(),
-          supabase.from("gp_profiles").select("business_name").eq("id", order.gp_id).single(),
-        ]);
-        clientName = clientResult.data?.full_name || null;
-        clientPhone = clientResult.data?.phone || null;
-        gpName = gpResult.data?.business_name || null;
-      } else if (scanRole === "client") {
-        const { data: gpData } = await supabase
-          .from("public_gp_profiles")
-          .select("business_name")
-          .eq("id", order.gp_id)
-          .single();
-        gpName = gpData?.business_name || null;
-      }
-
-      if (permissions.canDeliver) {
-        const { data: logistics } = await supabase
-          .from("order_logistics_options")
-          .select("delivery_address")
-          .eq("order_id", order.id)
-          .single();
-        deliveryAddress = logistics?.delivery_address || null;
-      }
-
-      const { data: history } = await supabase
-        .from("scan_logs")
-        .select("action, user_role, created_at")
-        .eq("order_id", order.id)
-        .order("created_at", { ascending: false })
-        .limit(20);
-
-      await logScan(order.id, "view", "qr");
-
-      setScannedOrder({
-        ...order,
-        client_name: clientName,
-        gp_name: gpName,
-        client_phone: clientPhone,
-        delivery_address: deliveryAddress,
-        scan_history: history || [],
-      });
-      setShowResult(true);
-    } catch (err) {
-      console.error("Lookup error:", err);
-      toast({ title: "Erreur de recherche", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
+    await handleScanResult(manualCode.trim());
   };
 
   const handleClose = () => {
     setShowResult(false);
     setScannedOrder(null);
     setScannedUserId(null);
+    setEngineResponse(null);
     setManualCode("");
   };
 
@@ -219,6 +153,7 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
   };
 
   const currentRole = ROLE_CONFIG[scanRole || "client"];
+  const QRIcon = engineResponse ? (QR_TYPE_ICONS[engineResponse.qr_type] || QrCode) : QrCode;
 
   if (roleLoading) {
     return (
@@ -238,7 +173,7 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
         </Badge>
         <Badge variant="outline" className="gap-1 text-xs text-muted-foreground">
           <QrCode className="w-3 h-3" />
-          KONNEKT SCAN
+          SCAN ENGINE
         </Badge>
       </div>
 
@@ -248,7 +183,7 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <ScanLine className="w-4 h-4 text-primary" />
-            Scanner un colis
+            Scanner un QR
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -288,7 +223,7 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
             </Label>
             <div className="flex gap-2">
               <Input
-                placeholder="CMD-XXXXXXXX"
+                placeholder="CMD-XXXXXXXX ou UUID"
                 value={manualCode}
                 onChange={(e) => setManualCode(e.target.value.toUpperCase())}
                 className="font-mono"
@@ -306,6 +241,16 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
               </Button>
             </div>
           </div>
+
+          {/* Engine Status Indicator */}
+          {engineResponse && !showResult && (
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 text-xs">
+              <QRIcon className="w-3.5 h-3.5 text-primary" />
+              <span className="text-muted-foreground">
+                Dernier scan: {KonnektScanEngine.getQRTypeLabel(engineResponse.qr_type)} — {engineResponse.message}
+              </span>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -314,12 +259,30 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
         <SheetContent side="bottom" className="h-[90vh] rounded-t-2xl overflow-y-auto">
           <SheetHeader className="pb-2">
             <SheetTitle className="flex items-center gap-2 text-base">
-              <QrCode className="w-4 h-4 text-primary" />
-              Résultat du scan
+              <QRIcon className="w-4 h-4 text-primary" />
+              {engineResponse ? KonnektScanEngine.getQRTypeLabel(engineResponse.qr_type) : "Résultat du scan"}
+              {engineResponse && (
+                <Badge variant="outline" className={`text-[10px] ml-auto ${KonnektScanEngine.getQRTypeColor(engineResponse.qr_type)}`}>
+                  {engineResponse.scenario}
+                </Badge>
+              )}
             </SheetTitle>
           </SheetHeader>
 
-          {/* User QR scan result */}
+          {/* Engine message */}
+          {engineResponse && (
+            <div className="mb-3 p-2 rounded-lg bg-muted/50 text-sm text-muted-foreground">
+              {engineResponse.message}
+              {engineResponse.financial_impact && (
+                <div className="mt-1 flex items-center gap-1 text-xs font-medium">
+                  <CreditCard className="w-3 h-3" />
+                  Impact: {engineResponse.financial_impact.amount?.toLocaleString()} {engineResponse.financial_impact.currency}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* User QR scan result — delegate to UnifiedScanRouter */}
           {scannedUserId && (
             <UnifiedScanRouter
               scannedUserId={scannedUserId}
@@ -327,16 +290,16 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
             />
           )}
 
-          {/* Order QR scan result */}
+          {/* Order QR scan result — delegate to role-specific components */}
           {scannedOrder && !scannedUserId && (
             <>
               {scanRole === "client" && (
                 <ScanResultClient order={scannedOrder} />
               )}
-              {scanRole === "gp" && (
+              {scanRole === "gp" && gpId && (
                 <ScanResultGP 
                   order={scannedOrder} 
-                  gpId={gpId!}
+                  gpId={gpId}
                   logScan={logScan}
                   onComplete={handleActionComplete} 
                 />
@@ -357,6 +320,52 @@ export function UniversalScanner({ onComplete }: UniversalScannerProps) {
                 />
               )}
             </>
+          )}
+
+          {/* External QR — manual options */}
+          {!scannedOrder && !scannedUserId && engineResponse?.data?.show_manual_options && (
+            <div className="py-8 space-y-4 text-center">
+              <Globe className="w-12 h-12 text-muted-foreground mx-auto" />
+              <h3 className="font-bold">QR Externe détecté</h3>
+              <p className="text-sm text-muted-foreground">
+                Ce code n'est pas reconnu par Konnekt.
+              </p>
+              <div className="space-y-2">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => {
+                    handleClose();
+                    // Could navigate to manual parcel creation
+                    toast({ title: "Fonctionnalité à venir", description: "Création de colis manuel depuis QR externe" });
+                  }}
+                >
+                  <Package className="w-4 h-4 mr-2" />
+                  Créer un colis manuel
+                </Button>
+                {engineResponse.data?.is_url && (
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => {
+                      window.open(engineResponse.data?.raw, "_blank");
+                      handleClose();
+                    }}
+                  >
+                    <Globe className="w-4 h-4 mr-2" />
+                    Ouvrir dans le navigateur
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* No data state */}
+          {!scannedOrder && !scannedUserId && !engineResponse?.data?.show_manual_options && engineResponse?.status === "failed" && (
+            <div className="py-8 text-center space-y-3">
+              <AlertTriangle className="w-12 h-12 text-warning mx-auto" />
+              <h3 className="font-bold">{engineResponse.message}</h3>
+            </div>
           )}
         </SheetContent>
       </Sheet>
