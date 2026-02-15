@@ -2973,36 +2973,60 @@ export type Database = {
         Row: {
           action: string
           created_at: string
+          device: string | null
+          engine_status: string | null
+          financial_impact: Json | null
           id: string
+          idempotency_key: string | null
+          ip: string | null
           metadata: Json | null
           new_status: string | null
-          order_id: string
+          order_id: string | null
           previous_status: string | null
+          qr_type: string | null
+          reference_id: string | null
           scan_type: string
+          signature_valid: boolean | null
           user_id: string
           user_role: string
         }
         Insert: {
           action: string
           created_at?: string
+          device?: string | null
+          engine_status?: string | null
+          financial_impact?: Json | null
           id?: string
+          idempotency_key?: string | null
+          ip?: string | null
           metadata?: Json | null
           new_status?: string | null
-          order_id: string
+          order_id?: string | null
           previous_status?: string | null
+          qr_type?: string | null
+          reference_id?: string | null
           scan_type?: string
+          signature_valid?: boolean | null
           user_id: string
           user_role: string
         }
         Update: {
           action?: string
           created_at?: string
+          device?: string | null
+          engine_status?: string | null
+          financial_impact?: Json | null
           id?: string
+          idempotency_key?: string | null
+          ip?: string | null
           metadata?: Json | null
           new_status?: string | null
-          order_id?: string
+          order_id?: string | null
           previous_status?: string | null
+          qr_type?: string | null
+          reference_id?: string | null
           scan_type?: string
+          signature_valid?: boolean | null
           user_id?: string
           user_role?: string
         }
