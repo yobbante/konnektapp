@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Plane, Send, AlertTriangle, Clock, ChevronRight,
   Calendar, RefreshCw, Scale, Wallet, Plus, ScanLine,
-  TrendingUp, Shield, History,
+  TrendingUp, Shield, History, Camera,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,6 +25,7 @@ import { ManualParcelBadge } from "@/components/gp/ManualParcelBadge";
 import { GPKYCProgressCard } from "@/components/gp/GPKYCProgressCard";
 import { QRCameraScanner } from "@/components/gp/QRCameraScanner";
 import { GPScanSheet } from "@/components/scan/GPScanSheet";
+import { SelfieVerificationSheet } from "@/components/gp/SelfieVerificationSheet";
 import { useGPProfile } from "@/hooks/useGPProfile";
 import { getOrderStatusLabel, getOrderStatusColor } from "@/lib/transportTypes";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
@@ -56,6 +57,7 @@ export default function GPApercuPage() {
   // Camera scanner
   const [cameraOpen, setCameraOpen] = useState(false);
   const [scanSheetOpen, setScanSheetOpen] = useState(false);
+  const [selfieSheetOpen, setSelfieSheetOpen] = useState(false);
 
   useEffect(() => {
     if (gpProfile) loadAll();
@@ -195,9 +197,9 @@ export default function GPApercuPage() {
           const progress = Math.round((completedChecks / totalChecks) * 100);
           const allDone = completedChecks === totalChecks;
 
-          const missing: { label: string; action: string; route: string }[] = [];
-          if (!hasId) missing.push({ label: "Pièce d'identité", action: "Ajouter", route: "/gp/profil-public" });
-          if (!hasSelfie) missing.push({ label: "Selfie de vérification", action: "Prendre", route: "/gp/profil-public" });
+          const missing: { label: string; action: string; route?: string; onClick?: () => void; icon?: React.ReactNode }[] = [];
+          if (!hasId) missing.push({ label: "Passeport ou CNI", action: "Ajouter", route: "/gp/parametres" });
+          if (!hasSelfie) missing.push({ label: "Selfie de vérification", action: "📸 Prendre", onClick: () => setSelfieSheetOpen(true), icon: <Camera className="w-3.5 h-3.5 text-primary" /> });
           if (!hasRoute) missing.push({ label: "Navette définie", action: "Configurer", route: "/gp/parametres" });
           if (!hasPrice) missing.push({ label: "Tarification", action: "Définir", route: "/gp/tarification" });
 
@@ -250,12 +252,12 @@ export default function GPApercuPage() {
                       {missing.map((step, i) => (
                         <button
                           key={i}
-                          onClick={() => navigate(step.route)}
+                          onClick={() => step.onClick ? step.onClick() : step.route && navigate(step.route)}
                           className="w-full flex items-center justify-between p-2 rounded-lg bg-background/80 border border-border/50 hover:border-primary/30 transition-colors group"
                         >
                           <div className="flex items-center gap-2">
                             <span className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
-                              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+                              {step.icon || <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />}
                             </span>
                             <span className="text-xs">{step.label}</span>
                           </div>
@@ -557,6 +559,16 @@ export default function GPApercuPage() {
         gpId={gpProfile?.id}
         isVerified={gpProfile?.status === "verified" || gpProfile?.status === "premium" || gpProfile?.status === "starter"}
       />
+
+      {/* Selfie Verification Sheet */}
+      {gpProfile && (
+        <SelfieVerificationSheet
+          open={selfieSheetOpen}
+          onClose={() => setSelfieSheetOpen(false)}
+          gpId={gpProfile.id}
+          onSuccess={() => loadAll(true)}
+        />
+      )}
 
       {gpProfile && (
         <>

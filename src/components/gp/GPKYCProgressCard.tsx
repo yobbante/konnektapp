@@ -30,7 +30,7 @@ export function GPKYCProgressCard({
 
   const steps = [
     { label: "Inscription", done: true },
-    { label: "Pièce d'identité", done: hasIdDocument },
+    { label: "Passeport / CNI", done: hasIdDocument },
     { label: "Selfie", done: hasSelfie },
   ];
 
