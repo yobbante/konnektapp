@@ -576,6 +576,7 @@ function SmartVoyageFormInline({
             <Input
               type="datetime-local"
               value={form.arrivalDate}
+              min={format(selectedDate, "yyyy-MM-dd'T'HH:mm")}
               onChange={(e) => setForm({ ...form, arrivalDate: e.target.value })}
               className="h-12 rounded-xl border-2 border-primary/30 focus:border-primary"
             />
