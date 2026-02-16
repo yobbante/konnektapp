@@ -1,12 +1,8 @@
 /**
- * ScanResultAgent - Agent Logistique / Admin scan result (ScanFlow™)
+ * ScanResultAgent - Agent Logistique / Admin scan result
  * 
- * Actions:
- * - Pickup: "Colis enlevé" → PRIS EN CHARGE
- * - Delivery: "Livré" → LIVRÉ CONFIRMÉ
- * - Stock: "Réception stock Konnekt"
- * 
- * Includes ScanTrust™ duplicate prevention + payment block check.
+ * ALL actions go through KonnektScanEngine.executeAction().
+ * No direct DB calls. The backend handles everything.
  * Uses ScanStatusBadge and semantic tokens.
  */
 import { useState, useEffect } from "react";
@@ -23,10 +19,9 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
-import { useDuplicateScanCheck } from "@/hooks/useDuplicateScanCheck";
 import { ScanStatusBadge } from "./ScanStatusBadge";
 import { DeliveryProofCapture } from "./DeliveryProofCapture";
-import { validateScanAction, isTerminalStatus, type ScanAction, type ScanUserRole } from "@/lib/scanValidation";
+import { useScanEngine } from "@/hooks/useScanEngine";
 
 interface ScanResultAgentProps {
   order: {
@@ -62,8 +57,7 @@ const ACTION_LABELS: Record<string, string> = {
 
 export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanResultAgentProps) {
   const { toast } = useToast();
-  const { canPerformAction } = useDuplicateScanCheck();
-  const [loading, setLoading] = useState(false);
+  const { executeAction, executing } = useScanEngine();
   const [paymentBlocked, setPaymentBlocked] = useState(false);
   const [deliveryProof, setDeliveryProof] = useState<string | null>(null);
   const [showProofCapture, setShowProofCapture] = useState(false);
@@ -88,62 +82,11 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
     }
   };
 
-  const agentRole: ScanUserRole = isAdmin ? "admin" : "agent_logistique";
-
   const confirmPickup = async () => {
-    // ── VALIDATION LAYER ──
-    const validation = validateScanAction(agentRole, "pickup_confirm", order.status);
-    if (!validation.allowed) {
-      toast({ title: "⚠️ Action non autorisée", description: validation.reason, variant: "destructive" });
-      return;
-    }
-
-    const allowed = await canPerformAction(order.id, "pickup_confirm", agentRole);
-    if (!allowed) return;
-
-    setLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-
-      await supabase
-        .from("order_logistics_options")
-        .update({ 
-          pickup_status: "collected",
-          pickup_collected_at: new Date().toISOString(),
-        })
-        .eq("order_id", order.id);
-
-      if (user) {
-        await supabase.from("order_status_history").insert({
-          order_id: order.id,
-          status: order.status as any,
-          changed_by: user.id,
-          changed_by_type: isAdmin ? "admin" : "agent",
-          notes: "📦 Colis enlevé par agent Konnekt",
-        });
-      }
-
-      await supabase.from("notifications").insert({
-        user_id: order.client_id,
-        type: "logistics_update",
-        title: "📦 Colis enlevé",
-        message: `Votre colis ${order.order_number} a été enlevé par un agent Konnekt`,
-        related_type: "order",
-        related_id: order.id,
-      });
-
-      await logScan(order.id, "pickup_confirm", "qr", order.status, order.status, {
-        agent_type: agentRole,
-      });
-
-      toast({ title: "✅ Enlèvement confirmé" });
-      onComplete();
-    } catch (err) {
-      console.error("Pickup error:", err);
-      toast({ title: "Erreur", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
+    const result = await executeAction("pickup_confirm", order.id, {
+      agent_type: isAdmin ? "admin" : "agent_logistique",
+    });
+    if (result?.status === "executed") onComplete();
   };
 
   const handleDeliveryClick = () => {
@@ -160,109 +103,19 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
   };
 
   const confirmDelivery = async () => {
-    // ── VALIDATION LAYER ──
-    const validation = validateScanAction(agentRole, "delivery_confirm", order.status, {
-      newStatus: "delivered",
+    const result = await executeAction("confirm_delivery", order.id, {
+      agent_type: isAdmin ? "admin" : "agent_logistique",
+      has_proof: !!deliveryProof && deliveryProof !== "skipped",
     });
-    if (!validation.allowed) {
-      toast({ title: "⚠️ Action non autorisée", description: validation.reason, variant: "destructive" });
-      return;
-    }
-
-    const allowed = await canPerformAction(order.id, "delivery_confirm", agentRole);
-    if (!allowed) return;
-
-    setLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-
-      await supabase
-        .from("order_logistics_options")
-        .update({
-          delivery_status: "delivered",
-          delivery_completed_at: new Date().toISOString(),
-          logistics_status: "completed",
-        })
-        .eq("order_id", order.id);
-
-      await supabase
-        .from("orders")
-        .update({
-          status: "delivered",
-          actual_delivery_date: new Date().toISOString(),
-        })
-        .eq("id", order.id);
-
-      if (user) {
-        await supabase.from("order_status_history").insert({
-          order_id: order.id,
-          status: "delivered",
-          changed_by: user.id,
-          changed_by_type: isAdmin ? "admin" : "agent",
-          notes: `🎉 Livré par agent Konnekt — LIVRÉ CONFIRMÉ${deliveryProof ? " (photo preuve jointe)" : ""}`,
-        });
-      }
-
-      await supabase.from("notifications").insert({
-        user_id: order.client_id,
-        type: "order_update",
-        title: "🎉 Colis livré !",
-        message: `Votre colis ${order.order_number} a été livré avec succès`,
-        related_type: "order",
-        related_id: order.id,
-      });
-
-      await logScan(order.id, "delivery_confirm", "qr", order.status, "delivered", {
-        agent_type: agentRole,
-      });
-
-      toast({ title: "🎉 Livraison confirmée" });
-      onComplete();
-    } catch (err) {
-      console.error("Delivery error:", err);
-      toast({ title: "Erreur", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
+    if (result?.status === "executed") onComplete();
   };
 
   const confirmStockReception = async () => {
-    // ── VALIDATION LAYER ──
-    const validation = validateScanAction(agentRole, "stock_confirm", order.status);
-    if (!validation.allowed) {
-      toast({ title: "⚠️ Action non autorisée", description: validation.reason, variant: "destructive" });
-      return;
-    }
-
-    const allowed = await canPerformAction(order.id, "stock_confirm", agentRole);
-    if (!allowed) return;
-
-    setLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (user) {
-        await supabase.from("order_status_history").insert({
-          order_id: order.id,
-          status: order.status as any,
-          changed_by: user.id,
-          changed_by_type: isAdmin ? "admin" : "agent",
-          notes: "📋 Réception stock Konnekt — Dakar",
-        });
-      }
-
-      await logScan(order.id, "stock_confirm", "qr", order.status, order.status, {
-        location: "stock_konnekt_dakar",
-      });
-
-      toast({ title: "✅ Réception stock confirmée" });
-      onComplete();
-    } catch (err) {
-      console.error("Stock error:", err);
-      toast({ title: "Erreur", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
+    const result = await executeAction("stock_confirm", order.id, {
+      location: "stock_konnekt_dakar",
+      agent_type: isAdmin ? "admin" : "agent_logistique",
+    });
+    if (result?.status === "executed") onComplete();
   };
 
   const copyToClipboard = (text: string) => {
@@ -370,8 +223,8 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
       {/* Action Buttons */}
       <div className="space-y-2">
         {["accepted", "pending"].includes(order.status) && (
-          <Button className="w-full h-12" onClick={confirmPickup} disabled={loading}>
-            {loading ? (
+          <Button className="w-full h-12" onClick={confirmPickup} disabled={executing}>
+            {executing ? (
               <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             ) : (
               <>
@@ -383,7 +236,7 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
         )}
 
         {["collected", "in_transit"].includes(order.status) && (
-          <Button variant="outline" className="w-full h-11" onClick={confirmStockReception} disabled={loading}>
+          <Button variant="outline" className="w-full h-11" onClick={confirmStockReception} disabled={executing}>
             <Package className="w-4 h-4 mr-2" />
             Stock Konnekt — Dakar
           </Button>
@@ -415,9 +268,9 @@ export function ScanResultAgent({ order, logScan, onComplete, isAdmin }: ScanRes
           <Button 
             className="w-full h-12 bg-success hover:bg-success/90 text-success-foreground" 
             onClick={handleDeliveryClick} 
-            disabled={loading}
+            disabled={executing}
           >
-            {loading ? (
+            {executing ? (
               <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             ) : !deliveryProof ? (
               <>

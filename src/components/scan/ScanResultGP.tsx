@@ -1,9 +1,14 @@
 /**
  * ScanResultGP - GP scan result with deposit/delivery actions
  * 
- * Actions: confirm deposit, modify weight (triggers PRV), confirm delivery
- * Weight modification freezes order until client validates.
- * Includes ScanTrust™ duplicate scan prevention.
+ * ALL actions go through KonnektScanEngine.executeAction().
+ * No direct DB calls. The backend handles:
+ * - Status transitions
+ * - Notifications
+ * - Escrow/commission triggers
+ * - Scan logging
+ * - Duplicate prevention
+ * 
  * Uses ScanStatusBadge for consistent theming.
  */
 import { useState, useEffect } from "react";
@@ -18,13 +23,11 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
-import { useDuplicateScanCheck } from "@/hooks/useDuplicateScanCheck";
 import { ScanStatusBadge } from "./ScanStatusBadge";
-import { validateScanAction, isTerminalStatus, type ScanAction } from "@/lib/scanValidation";
 import { ExternalHandoverCard } from "@/components/gp/ExternalHandoverCard";
+import { useScanEngine } from "@/hooks/useScanEngine";
 
 interface ScanResultGPProps {
   order: {
@@ -60,8 +63,7 @@ const ACTION_LABELS: Record<string, string> = {
 
 export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPProps) {
   const { toast } = useToast();
-  const { canPerformAction } = useDuplicateScanCheck();
-  const [loading, setLoading] = useState(false);
+  const { executeAction, executing } = useScanEngine();
   const [actualWeight, setActualWeight] = useState(order.weight.toString());
   const [weightDiff, setWeightDiff] = useState(0);
   const [priceDiff, setPriceDiff] = useState(0);
@@ -79,144 +81,34 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
   }, [actualWeight, order.weight, order.price_per_kg]);
 
   const confirmDeposit = async () => {
-    const actionType: ScanAction = Math.abs(weightDiff) > 0.01 ? "weight_modify" : "deposit_confirm";
-    
-    // ── VALIDATION LAYER ──
-    const validation = validateScanAction("gp", actionType, order.status, {
-      newStatus: Math.abs(weightDiff) > 0.01 ? undefined : "collected",
-    });
-    if (!validation.allowed) {
-      toast({ title: "⚠️ Action non autorisée", description: validation.reason, variant: "destructive" });
-      return;
-    }
+    const actual = parseFloat(actualWeight) || order.weight;
+    const hasWeightChange = Math.abs(weightDiff) > 0.01;
 
-    const allowed = await canPerformAction(order.id, actionType, "gp");
-    if (!allowed) return;
-
-    setLoading(true);
-    try {
-      const actual = parseFloat(actualWeight) || order.weight;
-      const hasWeightChange = Math.abs(weightDiff) > 0.01;
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (hasWeightChange) {
-        await supabase.from("orders").update({
-          weight_tier_applied: actual.toString(),
-        }).eq("id", order.id);
-
-        if (user) {
-          await supabase.from("order_status_history").insert({
-            order_id: order.id,
-            status: order.status as any,
-            changed_by: user.id,
-            changed_by_type: "gp",
-            notes: `⚠️ POIDS MODIFIÉ — VALIDATION REQUISE: ${order.weight} kg → ${actual} kg. Diff prix: ${priceDiff > 0 ? '+' : ''}${priceDiff} ${order.currency}`,
-          });
-        }
-
-        await supabase.from("notifications").insert({
-          user_id: order.client_id,
-          type: "weight_validation_required",
-          title: "⚠️ Validation requise — Poids modifié",
-          message: `Poids modifié pour ${order.order_number}. Validez depuis votre espace.`,
-          related_type: "order",
-          related_id: order.id,
-        });
-
-        await logScan(order.id, "weight_modify", "qr", order.status, order.status, {
-          declared_weight: order.weight,
-          actual_weight: actual,
-          price_diff: priceDiff,
-        });
-
-        toast({ title: "⚠️ Poids modifié", description: "En attente validation client." });
-      } else {
-        await supabase.from("orders").update({
-          status: "collected",
-          weight: actual,
-        }).eq("id", order.id);
-
-        if (user) {
-          await supabase.from("order_status_history").insert({
-            order_id: order.id,
-            status: "collected",
-            changed_by: user.id,
-            changed_by_type: "gp",
-            notes: "Dépôt confirmé par scan — poids conforme",
-          });
-        }
-
-        await supabase.from("notifications").insert({
-          user_id: order.client_id,
-          type: "order_update",
-          title: "📦 Colis reçu",
-          message: `Votre colis ${order.order_number} a été reçu par le transporteur`,
-          related_type: "order",
-          related_id: order.id,
-        });
-
-        await logScan(order.id, "deposit_confirm", "qr", order.status, "collected");
-        toast({ title: "✅ Dépôt confirmé" });
-      }
-
-      onComplete();
-    } catch (err) {
-      console.error("Deposit error:", err);
-      toast({ title: "Erreur", variant: "destructive" });
-    } finally {
-      setLoading(false);
+    if (hasWeightChange) {
+      // Weight modification → engine handles PRV freeze + notifications
+      const result = await executeAction("weight_modify", order.id, {
+        declared_weight: order.weight,
+        actual_weight: actual,
+        price_diff: priceDiff,
+      });
+      if (result?.status === "executed") onComplete();
+    } else {
+      // Standard deposit → engine updates status + notifications
+      const result = await executeAction("deposit_confirm", order.id, {
+        weight: actual,
+      });
+      if (result?.status === "executed") onComplete();
     }
   };
 
+  const confirmTransit = async () => {
+    const result = await executeAction("mark_transit", order.id);
+    if (result?.status === "executed") onComplete();
+  };
+
   const confirmDelivery = async () => {
-    // ── VALIDATION LAYER ──
-    const validation = validateScanAction("gp", "delivery_confirm", order.status, {
-      newStatus: "delivered",
-    });
-    if (!validation.allowed) {
-      toast({ title: "⚠️ Action non autorisée", description: validation.reason, variant: "destructive" });
-      return;
-    }
-
-    const allowed = await canPerformAction(order.id, "delivery_confirm", "gp");
-    if (!allowed) return;
-
-    setLoading(true);
-    try {
-      await supabase.from("orders").update({
-        status: "delivered",
-        actual_delivery_date: new Date().toISOString(),
-      }).eq("id", order.id);
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from("order_status_history").insert({
-          order_id: order.id,
-          status: "delivered",
-          changed_by: user.id,
-          changed_by_type: "gp",
-          notes: "Livraison confirmée par scan QR",
-        });
-      }
-
-      await supabase.from("notifications").insert({
-        user_id: order.client_id,
-        type: "order_update",
-        title: "🎉 Colis livré",
-        message: `Votre colis ${order.order_number} a été livré !`,
-        related_type: "order",
-        related_id: order.id,
-      });
-
-      await logScan(order.id, "delivery_confirm", "qr", "in_transit", "delivered");
-      toast({ title: "🎉 Livraison confirmée" });
-      onComplete();
-    } catch (err) {
-      console.error("Delivery error:", err);
-      toast({ title: "Erreur", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
+    const result = await executeAction("confirm_delivery", order.id);
+    if (result?.status === "executed") onComplete();
   };
 
   return (
@@ -326,8 +218,8 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
               </motion.div>
             )}
 
-            <Button className="w-full h-12" onClick={confirmDeposit} disabled={loading}>
-              {loading ? (
+            <Button className="w-full h-12" onClick={confirmDeposit} disabled={executing}>
+              {executing ? (
                 <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
@@ -356,46 +248,10 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
             <Button 
               className="w-full h-12" 
               variant="secondary"
-              onClick={async () => {
-                setLoading(true);
-                try {
-                  await supabase.from("orders").update({
-                    status: "in_transit",
-                  }).eq("id", order.id);
-
-                  const { data: { user } } = await supabase.auth.getUser();
-                  if (user) {
-                    await supabase.from("order_status_history").insert({
-                      order_id: order.id,
-                      status: "in_transit",
-                      changed_by: user.id,
-                      changed_by_type: "gp",
-                      notes: "Colis marqué en transit par scan QR",
-                    });
-                  }
-
-                  await supabase.from("notifications").insert({
-                    user_id: order.client_id,
-                    type: "order_update",
-                    title: "🚚 Colis en transit",
-                    message: `Votre colis ${order.order_number} est en route vers ${order.destination_city}`,
-                    related_type: "order",
-                    related_id: order.id,
-                  });
-
-                  await logScan(order.id, "transit_confirm", "qr", "collected", "in_transit");
-                  toast({ title: "🚚 Colis en transit" });
-                  onComplete();
-                } catch (err) {
-                  console.error("Transit error:", err);
-                  toast({ title: "Erreur", variant: "destructive" });
-                } finally {
-                  setLoading(false);
-                }
-              }} 
-              disabled={loading}
+              onClick={confirmTransit}
+              disabled={executing}
             >
-              {loading ? (
+              {executing ? (
                 <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
@@ -420,7 +276,7 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
               recipientName={order.recipient_name}
               recipientPhone={order.recipient_phone}
               onConfirmManual={confirmDelivery}
-              loading={loading}
+              loading={executing}
             />
           )}
 
@@ -440,9 +296,9 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
                 <Button 
                   className="w-full h-12 bg-success hover:bg-success/90 text-success-foreground" 
                   onClick={confirmDelivery} 
-                  disabled={loading}
+                  disabled={executing}
                 >
-                  {loading ? (
+                  {executing ? (
                     <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
