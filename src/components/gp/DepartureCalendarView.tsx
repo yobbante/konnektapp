@@ -230,27 +230,29 @@ export function DepartureCalendarView({
       )}
 
       {/* Calendar Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-1">
+        <div className="flex items-center gap-0.5 min-w-0 flex-1">
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-sm"
+            className="shrink-0"
             onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4" />
           </Button>
-          <h2 className="text-lg font-semibold min-w-[160px] text-center">
+          <h2 className="text-sm sm:text-lg font-semibold text-center capitalize truncate">
             {format(currentMonth, 'MMMM yyyy', { locale: fr })}
           </h2>
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-sm"
+            className="shrink-0"
             onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
-        <Button size="sm" variant="outline" onClick={() => setCurrentMonth(new Date())}>
+        <Button size="sm" variant="outline" className="shrink-0 text-xs px-2.5" onClick={() => setCurrentMonth(new Date())}>
           Aujourd'hui
         </Button>
       </div>
