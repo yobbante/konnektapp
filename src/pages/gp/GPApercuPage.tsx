@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Plane, Send, AlertTriangle, Clock, ChevronRight,
   Calendar, RefreshCw, Scale, Wallet, Plus, ScanLine,
-  TrendingUp, Shield, History, Camera, FileText,
+  TrendingUp, Shield, History, Camera, FileText, Check,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -199,11 +199,12 @@ export default function GPApercuPage() {
           const progress = Math.round((completedChecks / totalChecks) * 100);
           const allDone = completedChecks === totalChecks;
 
-          const missing: { label: string; action: string; route?: string; onClick?: () => void; icon?: React.ReactNode }[] = [];
-          if (!hasId) missing.push({ label: "Passeport ou CNI", action: "📸 Photographier", onClick: () => setDocumentSheetOpen(true), icon: <FileText className="w-3.5 h-3.5 text-primary" /> });
-          if (!hasSelfie) missing.push({ label: "Selfie de vérification", action: "📸 Prendre", onClick: () => setSelfieSheetOpen(true), icon: <Camera className="w-3.5 h-3.5 text-primary" /> });
-          if (!hasRoute) missing.push({ label: "Navette définie", action: "Configurer", route: "/gp/parametres" });
-          if (!hasPrice) missing.push({ label: "Tarification", action: "Définir", route: "/gp/tarification" });
+          const allSteps: { label: string; done: boolean; action: string; route?: string; onClick?: () => void; icon?: React.ReactNode }[] = [
+            { label: "Passeport ou CNI", done: hasId, action: "📸 Photographier", onClick: () => setDocumentSheetOpen(true), icon: <FileText className="w-3.5 h-3.5 text-primary" /> },
+            { label: "Selfie de vérification", done: hasSelfie, action: "📸 Prendre", onClick: () => setSelfieSheetOpen(true), icon: <Camera className="w-3.5 h-3.5 text-primary" /> },
+            { label: "Navette définie", done: hasRoute, action: "Configurer", route: "/gp/parametres" },
+            { label: "Tarification", done: hasPrice, action: "Définir", route: "/gp/tarification" },
+          ];
 
           return (
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
@@ -248,35 +249,70 @@ export default function GPApercuPage() {
                     </div>
                   </div>
 
-                  {/* Missing steps */}
-                  {missing.length > 0 && (
-                    <div className="mt-3 space-y-1.5">
-                      {missing.map((step, i) => (
-                        <button
-                          key={i}
-                          onClick={() => step.onClick ? step.onClick() : step.route && navigate(step.route)}
-                          className="w-full flex items-center justify-between p-2 rounded-lg bg-background/80 border border-border/50 hover:border-primary/30 transition-colors group"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
-                              {step.icon || <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />}
-                            </span>
-                            <span className="text-xs">{step.label}</span>
-                          </div>
+                  {/* All steps — show validated or action needed */}
+                  <div className="mt-3 space-y-1.5">
+                    {allSteps.map((step, i) => (
+                      <button
+                        key={i}
+                        onClick={() => !step.done && (step.onClick ? step.onClick() : step.route && navigate(step.route))}
+                        disabled={step.done}
+                        className={cn(
+                          "w-full flex items-center justify-between p-2 rounded-lg border transition-colors",
+                          step.done
+                            ? "bg-emerald-500/5 border-emerald-500/20 cursor-default"
+                            : "bg-background/80 border-border/50 hover:border-primary/30 group"
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            "w-5 h-5 rounded-full flex items-center justify-center",
+                            step.done ? "bg-emerald-500/20" : "bg-muted"
+                          )}>
+                            {step.done 
+                              ? <Check className="w-3 h-3 text-emerald-500" />
+                              : step.icon || <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+                            }
+                          </span>
+                          <span className={cn("text-xs", step.done && "text-emerald-600 dark:text-emerald-400")}>{step.label}</span>
+                          {step.done && <Badge className="text-[9px] h-4 bg-emerald-500/10 text-emerald-600 border-emerald-500/20">Validé ✓</Badge>}
+                        </div>
+                        {!step.done && (
                           <span className="text-[11px] font-medium text-primary group-hover:underline flex items-center gap-0.5">
                             {step.action} <ChevronRight className="w-3 h-3" />
                           </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                        )}
+                      </button>
+                    ))}
+                  </div>
 
                   {allDone && (
-                    <div className="mt-3 flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }}>
-                        <RefreshCw className="w-3.5 h-3.5" />
-                      </motion.div>
-                      <span className="text-xs font-medium">Vérification automatique...</span>
+                    <div className="mt-3 space-y-2">
+                      <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }}>
+                          <RefreshCw className="w-3.5 h-3.5" />
+                        </motion.div>
+                        <span className="text-xs font-medium">Activation automatique en cours...</span>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"
+                        onClick={async () => {
+                          try {
+                            const { error } = await supabase
+                              .from("gp_profiles")
+                              .update({ status: "verified" as any, kyc_status: "verified", kyc_level: 1, verified_at: new Date().toISOString() })
+                              .eq("id", gpProfile.id);
+                            if (error) throw error;
+                            toast({ title: "Compte activé ✅", description: "Vous avez maintenant accès à toutes les fonctionnalités." });
+                            window.location.reload();
+                          } catch (err: any) {
+                            toast({ title: "Erreur", description: err.message, variant: "destructive" });
+                          }
+                        }}
+                      >
+                        <Check className="w-4 h-4 mr-1.5" />
+                        Activer mon compte maintenant
+                      </Button>
                     </div>
                   )}
                 </div>
