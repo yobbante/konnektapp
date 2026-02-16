@@ -1,11 +1,8 @@
 /**
  * BulkScanner - GP bulk scan management
  * 
- * Allows GP to scan multiple parcels in batch mode:
- * - Sequential scan with running list
- * - Batch confirmation (deposit all / deliver all)
- * - Summary view before confirmation
- * - Individual item removal
+ * Now uses KonnektScanEngine.executeAction() for ALL batch operations.
+ * No direct DB calls — everything goes through the backend engine.
  */
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,7 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { QRCameraScanner } from "@/components/gp/QRCameraScanner";
-import { useDuplicateScanCheck } from "@/hooks/useDuplicateScanCheck";
+import { KonnektScanEngine, type ExecuteAction } from "@/lib/scanEngine";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,7 +51,6 @@ interface BulkScannerProps {
 
 export function BulkScanner({ gpId, onComplete }: BulkScannerProps) {
   const { toast } = useToast();
-  const { canPerformAction } = useDuplicateScanCheck();
   const [cameraOpen, setCameraOpen] = useState(false);
   const [manualCode, setManualCode] = useState("");
   const [items, setItems] = useState<ScannedItem[]>([]);
@@ -66,7 +62,6 @@ export function BulkScanner({ gpId, onComplete }: BulkScannerProps) {
   const addItem = useCallback(async (code: string) => {
     const normalizedCode = code.trim().toUpperCase();
     
-    // Check if already in list
     if (items.some(i => i.orderNumber === normalizedCode)) {
       toast({ title: "Déjà scanné", description: `${normalizedCode} est déjà dans la liste`, variant: "destructive" });
       return;
@@ -76,10 +71,7 @@ export function BulkScanner({ gpId, onComplete }: BulkScannerProps) {
     try {
       const { data: order, error } = await supabase
         .from("orders")
-        .select(`
-          id, order_number, status, weight, 
-          origin_city, destination_city, client_id
-        `)
+        .select(`id, order_number, status, weight, origin_city, destination_city, client_id`)
         .eq("gp_id", gpId)
         .or(`order_number.eq.${normalizedCode},tracking_code.eq.${normalizedCode}`)
         .single();
@@ -89,7 +81,6 @@ export function BulkScanner({ gpId, onComplete }: BulkScannerProps) {
         return;
       }
 
-      // Get client name
       const { data: profile } = await supabase
         .from("profiles")
         .select("full_name")
@@ -107,7 +98,6 @@ export function BulkScanner({ gpId, onComplete }: BulkScannerProps) {
         destinationCity: order.destination_city,
       };
 
-      // Check if action is valid for this order
       if (bulkAction === "deposit" && !["accepted", "pending"].includes(order.status)) {
         newItem.error = `Statut "${order.status}" — dépôt impossible`;
       }
@@ -116,10 +106,7 @@ export function BulkScanner({ gpId, onComplete }: BulkScannerProps) {
       }
 
       setItems(prev => [...prev, newItem]);
-      
-      // Haptic feedback
       if (navigator.vibrate) navigator.vibrate(50);
-      
       toast({ title: `✅ ${order.order_number} ajouté` });
     } catch (err) {
       console.error("Scan error:", err);
@@ -137,7 +124,6 @@ export function BulkScanner({ gpId, onComplete }: BulkScannerProps) {
   const handleCameraScan = (code: string) => {
     setCameraOpen(false);
     addItem(code);
-    // Reopen camera for continuous scanning
     setTimeout(() => setCameraOpen(true), 500);
   };
 
@@ -152,69 +138,21 @@ export function BulkScanner({ gpId, onComplete }: BulkScannerProps) {
     let failCount = 0;
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Non authentifié");
+      const engineAction: ExecuteAction = bulkAction === "deposit" ? "deposit_confirm" : "confirm_delivery";
 
       for (const item of validItems) {
         try {
-          const actionType = bulkAction === "deposit" ? "deposit_confirm" : "delivery_confirm";
-          const allowed = await canPerformAction(item.orderId, actionType, "gp");
-          if (!allowed) {
-            failCount++;
-            continue;
-          }
+          const response = await KonnektScanEngine.executeAction(engineAction, item.orderId, {
+            scan_type: "batch",
+            batch_size: validItems.length,
+          });
 
-          if (bulkAction === "deposit") {
-            await supabase.from("orders").update({
-              status: "collected",
-            }).eq("id", item.orderId);
-
-            await supabase.from("order_status_history").insert({
-              order_id: item.orderId,
-              status: "collected",
-              changed_by: user.id,
-              changed_by_type: "gp",
-              notes: "📦 Dépôt confirmé par scan batch — poids conforme",
-            });
-
-            // Log scan
-            await supabase.from("scan_logs").insert({
-              order_id: item.orderId,
-              user_id: user.id,
-              user_role: "gp",
-              action: "deposit_confirm",
-              scan_type: "batch",
-              previous_status: item.status,
-              new_status: "collected",
-              metadata: { batch_size: validItems.length },
-            });
+          if (response.status === "executed") {
+            successCount++;
           } else {
-            await supabase.from("orders").update({
-              status: "delivered",
-              actual_delivery_date: new Date().toISOString(),
-            }).eq("id", item.orderId);
-
-            await supabase.from("order_status_history").insert({
-              order_id: item.orderId,
-              status: "delivered",
-              changed_by: user.id,
-              changed_by_type: "gp",
-              notes: "🎉 Livraison confirmée par scan batch",
-            });
-
-            await supabase.from("scan_logs").insert({
-              order_id: item.orderId,
-              user_id: user.id,
-              user_role: "gp",
-              action: "delivery_confirm",
-              scan_type: "batch",
-              previous_status: item.status,
-              new_status: "delivered",
-              metadata: { batch_size: validItems.length },
-            });
+            console.warn(`Engine rejected ${item.orderNumber}:`, response.message);
+            failCount++;
           }
-
-          successCount++;
         } catch (err) {
           console.error(`Error processing ${item.orderNumber}:`, err);
           failCount++;
@@ -270,9 +208,7 @@ export function BulkScanner({ gpId, onComplete }: BulkScannerProps) {
             onClick={() => setCameraOpen(true)}
           >
             <ScanLine className="w-5 h-5 text-primary" />
-            <span className="text-sm font-medium text-primary">
-              Scanner en continu
-            </span>
+            <span className="text-sm font-medium text-primary">Scanner en continu</span>
           </Button>
 
           <QRCameraScanner
@@ -362,7 +298,6 @@ export function BulkScanner({ gpId, onComplete }: BulkScannerProps) {
 
             <Separator />
 
-            {/* Summary */}
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">
                 {validItems.length} valide(s)
@@ -373,7 +308,6 @@ export function BulkScanner({ gpId, onComplete }: BulkScannerProps) {
               </span>
             </div>
 
-            {/* Confirm Button */}
             <Button 
               className="w-full gap-2" 
               disabled={validItems.length === 0}
