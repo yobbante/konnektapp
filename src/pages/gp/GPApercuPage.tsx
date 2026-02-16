@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Plane, Send, AlertTriangle, Clock, ChevronRight,
   Calendar, RefreshCw, Scale, Wallet, Plus, ScanLine,
-  TrendingUp, Shield, History, Camera,
+  TrendingUp, Shield, History, Camera, FileText,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,6 +26,7 @@ import { GPKYCProgressCard } from "@/components/gp/GPKYCProgressCard";
 import { QRCameraScanner } from "@/components/gp/QRCameraScanner";
 import { GPScanSheet } from "@/components/scan/GPScanSheet";
 import { SelfieVerificationSheet } from "@/components/gp/SelfieVerificationSheet";
+import { DocumentVerificationSheet } from "@/components/gp/DocumentVerificationSheet";
 import { useGPProfile } from "@/hooks/useGPProfile";
 import { getOrderStatusLabel, getOrderStatusColor } from "@/lib/transportTypes";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
@@ -58,6 +59,7 @@ export default function GPApercuPage() {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [scanSheetOpen, setScanSheetOpen] = useState(false);
   const [selfieSheetOpen, setSelfieSheetOpen] = useState(false);
+  const [documentSheetOpen, setDocumentSheetOpen] = useState(false);
 
   useEffect(() => {
     if (gpProfile) loadAll();
@@ -198,7 +200,7 @@ export default function GPApercuPage() {
           const allDone = completedChecks === totalChecks;
 
           const missing: { label: string; action: string; route?: string; onClick?: () => void; icon?: React.ReactNode }[] = [];
-          if (!hasId) missing.push({ label: "Passeport ou CNI", action: "Ajouter", route: "/gp/parametres" });
+          if (!hasId) missing.push({ label: "Passeport ou CNI", action: "📸 Photographier", onClick: () => setDocumentSheetOpen(true), icon: <FileText className="w-3.5 h-3.5 text-primary" /> });
           if (!hasSelfie) missing.push({ label: "Selfie de vérification", action: "📸 Prendre", onClick: () => setSelfieSheetOpen(true), icon: <Camera className="w-3.5 h-3.5 text-primary" /> });
           if (!hasRoute) missing.push({ label: "Navette définie", action: "Configurer", route: "/gp/parametres" });
           if (!hasPrice) missing.push({ label: "Tarification", action: "Définir", route: "/gp/tarification" });
@@ -565,6 +567,16 @@ export default function GPApercuPage() {
         <SelfieVerificationSheet
           open={selfieSheetOpen}
           onClose={() => setSelfieSheetOpen(false)}
+          gpId={gpProfile.id}
+          onSuccess={() => loadAll(true)}
+        />
+      )}
+
+      {/* Document Verification Sheet */}
+      {gpProfile && (
+        <DocumentVerificationSheet
+          open={documentSheetOpen}
+          onClose={() => setDocumentSheetOpen(false)}
           gpId={gpProfile.id}
           onSuccess={() => loadAll(true)}
         />
