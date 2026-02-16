@@ -1,27 +1,25 @@
 /**
- * ClientScanSheet V7 — Engine-driven two-layer scan experience
- * Layer 1: Quick actions + balance (original popup)
- * Layer 2: Camera-first tabbed view — same style as Layer 1
+ * ClientScanSheet V8 — Unified with ScanHeart
+ * Layer 1: Quick actions + balance dashboard
+ * Layer 2: ScanHeart + ScanQRTab + ScanColisTab (shared components)
  * 
- * ALL scan logic now goes through useScanEngine — no legacy routing.
+ * "One scan heart" — all logic through shared ScanHeart component.
  */
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ScanLine, X, Keyboard, CreditCard, ShieldCheck, Clock,
-  PackageCheck, TrendingUp, Eye, EyeOff, ArrowRight, Lock, Sparkles,
-  ChevronLeft, QrCode, Package, ChevronDown, Search, CheckCircle2
+  ScanLine, CreditCard, ShieldCheck, Clock,
+  PackageCheck, TrendingUp, Eye, EyeOff, ArrowRight, Lock, Sparkles
 } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { QRCameraScanner } from "@/components/gp/QRCameraScanner";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import QRCodeDisplay from "react-qr-code";
 import { useSwipeDown } from "@/hooks/useSwipeDown";
 import { supabase } from "@/integrations/supabase/client";
-import { useScanEngine } from "@/hooks/useScanEngine";
-import { KonnektScanEngine } from "@/lib/scanEngine";
 import { Badge } from "@/components/ui/badge";
+import { ScanHeart } from "./ScanHeart";
+import { ScanQRTab } from "./ScanQRTab";
+import { ScanColisTab } from "./ScanColisTab";
 
 interface ClientScanSheetProps {
   open: boolean;
@@ -30,7 +28,6 @@ interface ClientScanSheetProps {
 
 const BG_GRADIENT = "linear-gradient(180deg, #0F1923 0%, #15232F 50%, #1A2B3A 100%)";
 
-/* ── Layer 1 data ── */
 const quickActions = [
   { icon: CreditCard, label: "Payer supplément", action: "pay_supplement" },
   { icon: PackageCheck, label: "Confirmer réception", action: "confirm_delivery" },
@@ -47,7 +44,6 @@ const carouselSlides = [
   { title: "Konnekt Pay", text: "Payez, transférez et retirez directement depuis votre wallet.", icon: Sparkles },
 ];
 
-/* ── Layer 2 data ── */
 type TabKey = "scanner" | "mon_qr" | "mes_colis";
 const tabs: { key: TabKey; label: string }[] = [
   { key: "scanner", label: "Scanner" },
@@ -55,174 +51,76 @@ const tabs: { key: TabKey; label: string }[] = [
   { key: "mes_colis", label: "Mes Colis" },
 ];
 
-const mockColis = [
-  { id: "KNK-2024-0847", status: "En transit", dest: "Paris → Dakar", weight: "3.2 kg", date: "12 Fév 2026" },
-  { id: "KNK-2024-0923", status: "Livré", dest: "Abidjan → Paris", weight: "1.5 kg", date: "08 Fév 2026" },
-  { id: "KNK-2024-1002", status: "En attente", dest: "Dakar → Marseille", weight: "5.0 kg", date: "13 Fév 2026" },
-];
-
 export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
   const navigate = useNavigate();
-
-  // Layer 1 state
-  const [manualMode, setManualMode] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
   const [showBalance, setShowBalance] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
-
-  // Layer 2 state
+  const [userId, setUserId] = useState<string | null>(null);
   const [scanViewOpen, setScanViewOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>("scanner");
-  const [cameraActive, setCameraActive] = useState(false);
-  const [expandedColis, setExpandedColis] = useState<string | null>(null);
 
-  // Manual code input state (Layer 2)
-  const [manualCode, setManualCode] = useState("");
-  const [codeValidated, setCodeValidated] = useState(false);
-  const [showManualInput, setShowManualInput] = useState(false);
-
-  // Engine state
-  const [engineMessage, setEngineMessage] = useState<string | null>(null);
-
-  // Swipe down to close
   const swipeLayer1 = useSwipeDown(() => handleOpenChange(false));
   const swipeLayer2 = useSwipeDown(() => setScanViewOpen(false));
 
-  // Scan Engine — all scan logic goes through here
-  const { resolve, loading: scanLoading } = useScanEngine({
-    autoNavigate: true, // Engine handles navigation, toasts, sheets
-    onResult: (response) => {
-      setEngineMessage(response.message);
-      // Close sheets after successful resolution
-      if (response.status !== "failed") {
-        setTimeout(() => {
-          setScanViewOpen(false);
-          handleOpenChange(false);
-        }, 300);
-      }
-    },
-  });
-
-  // Load wallet balance
   useEffect(() => {
     if (!open) return;
-    const loadBalance = async () => {
+    const load = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase
-        .from("client_wallets")
-        .select("available_balance")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      setUserId(user.id);
+      const { data } = await supabase.from("client_wallets").select("available_balance").eq("user_id", user.id).maybeSingle();
       if (data) setWalletBalance(data.available_balance);
     };
-    loadBalance();
+    load();
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
-    const timer = setInterval(() => {
-      setActiveSlide((prev) => (prev + 1) % carouselSlides.length);
-    }, 4000);
+    const timer = setInterval(() => setActiveSlide(prev => (prev + 1) % carouselSlides.length), 4000);
     return () => clearInterval(timer);
   }, [open]);
 
   const handleOpenChange = useCallback((isOpen: boolean) => {
-    if (!isOpen) {
-      setManualMode(false);
-      setScanViewOpen(false);
-      setCameraActive(false);
-      setActiveTab("scanner");
-      setExpandedColis(null);
-      setManualCode("");
-      setCodeValidated(false);
-      setShowManualInput(false);
-      setEngineMessage(null);
-    }
+    if (!isOpen) { setScanViewOpen(false); setActiveTab("scanner"); }
     onOpenChange(isOpen);
   }, [onOpenChange]);
 
-  // Camera scan → resolve through engine
-  const handleScan = async (code: string) => {
-    setCameraActive(false);
-    await resolve(code, "client");
-  };
-
-  // Manual code validation → resolve through engine
-  const validateAndResolveCode = async () => {
-    if (manualCode.trim().length < 3) return;
-    setCodeValidated(true);
-    await resolve(manualCode.trim(), "client");
-  };
-
   const handleAction = (action: string) => {
     handleOpenChange(false);
-    switch (action) {
-      case "pay_supplement": navigate("/payer-supplement"); break;
-      case "confirm_delivery": navigate("/confirmer-reception"); break;
-      case "track": navigate("/tracking"); break;
-      case "wallet": navigate("/client/wallet"); break;
-      case "insurance": navigate("/assurance"); break;
-      case "history": navigate("/historique"); break;
-    }
+    const routes: Record<string, string> = {
+      pay_supplement: "/payer-supplement", confirm_delivery: "/confirmer-reception",
+      track: "/tracking", wallet: "/client/wallet", insurance: "/assurance", history: "/historique",
+    };
+    if (routes[action]) navigate(routes[action]);
   };
 
-  const openScanView = () => {
-    setScanViewOpen(true);
-    setActiveTab("scanner");
-    setManualCode("");
-    setCodeValidated(false);
-    setShowManualInput(false);
-    setEngineMessage(null);
-  };
+  const closeBoth = () => { setScanViewOpen(false); handleOpenChange(false); };
 
   return (
     <>
-      <QRCameraScanner
-        isOpen={cameraActive}
-        onScan={handleScan}
-        onClose={() => setCameraActive(false)}
-      />
-
-      {/* ═══ LAYER 2: Camera-first tabbed scan view ═══ */}
-      <Sheet open={scanViewOpen && !cameraActive} onOpenChange={(o) => { if (!o) setScanViewOpen(false); }}>
-        <SheetContent
-          side="bottom"
-          className="h-[95vh] rounded-t-3xl p-0 border-t-0 overflow-hidden z-[60]"
-          style={{ background: BG_GRADIENT }}
-        >
+      {/* ═══ LAYER 2: Tabbed scan view ═══ */}
+      <Sheet open={scanViewOpen} onOpenChange={(o) => { if (!o) setScanViewOpen(false); }}>
+        <SheetContent side="bottom" className="h-[95vh] rounded-t-3xl p-0 border-t-0 overflow-hidden z-[60]" style={{ background: BG_GRADIENT }}>
           <div className="flex flex-col h-full" {...swipeLayer2}>
-            {/* Drag handle */}
-            <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 rounded-full bg-white/20" />
-            </div>
+            <div className="flex justify-center pt-3 pb-1"><div className="w-10 h-1 rounded-full bg-white/20" /></div>
 
-            {/* Header */}
             <div className="flex items-center gap-3 px-5 pt-1 pb-3">
-              <button
-                onClick={() => setScanViewOpen(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center bg-white/[0.08]"
-              >
-                <ChevronLeft className="w-4 h-4 text-white/60" />
+              <button onClick={() => setScanViewOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/[0.08]">
+                <ArrowRight className="w-4 h-4 text-white/60 rotate-180" />
               </button>
               <h2 className="text-[15px] font-semibold text-white">Konnekt Scan</h2>
-              <Badge variant="outline" className="ml-auto text-[9px] border-emerald-400/30 text-emerald-400 px-1.5">
-                ENGINE
-              </Badge>
+              <Badge variant="outline" className="ml-auto text-[9px] border-emerald-400/30 text-emerald-400 px-1.5">ENGINE</Badge>
             </div>
 
-            {/* Tabs — emerald accent like Layer 1 */}
+            {/* Tabs */}
             <div className="px-5 pb-3">
               <div className="flex rounded-xl overflow-hidden border border-emerald-400/20 bg-white/[0.03]">
                 {tabs.map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => { setActiveTab(tab.key); setShowManualInput(false); setCodeValidated(false); setManualCode(""); setEngineMessage(null); }}
-                    className={cn(
-                      "flex-1 py-2.5 text-xs font-semibold transition-all duration-200",
+                  <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                    className={cn("flex-1 py-2.5 text-xs font-semibold transition-all duration-200",
                       activeTab === tab.key ? "bg-emerald-500/20 text-emerald-400" : "text-white/40"
-                    )}
-                  >
+                    )}>
                     {tab.label}
                   </button>
                 ))}
@@ -230,244 +128,45 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
             </div>
 
             {/* Tab content */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto px-5 pb-6">
               <AnimatePresence mode="wait">
-                {/* ── Scanner Tab ── */}
                 {activeTab === "scanner" && (
-                  <motion.div key="scanner" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center h-full px-5">
-                    {/* Camera area */}
-                    <div
-                      className="relative w-full rounded-2xl overflow-hidden border border-white/[0.06]"
-                      style={{ background: "rgba(0,0,0,0.3)", height: "50vh", maxHeight: "420px" }}
-                    >
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="relative w-56 h-56">
-                          {["top-0 left-0 border-t-[3px] border-l-[3px] rounded-tl-2xl",
-                            "top-0 right-0 border-t-[3px] border-r-[3px] rounded-tr-2xl",
-                            "bottom-0 left-0 border-b-[3px] border-l-[3px] rounded-bl-2xl",
-                            "bottom-0 right-0 border-b-[3px] border-r-[3px] rounded-br-2xl"
-                          ].map((pos) => (
-                            <div key={pos} className={cn("absolute w-10 h-10 border-emerald-400/50", pos)} />
-                          ))}
-                          <motion.div
-                            className="absolute left-3 right-3 h-0.5 bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent"
-                            animate={{ top: ["10%", "90%", "10%"] }}
-                            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                          />
-                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                            <ScanLine className="w-7 h-7 text-emerald-400/30" />
-                            <span className="text-[11px] text-white/25 font-medium">Placez le QR ici</span>
-                          </div>
-                        </div>
-                      </div>
-                      <button onClick={() => setCameraActive(true)} className="absolute inset-0 w-full h-full z-10" />
-                      <div className="absolute bottom-4 left-0 right-0 text-center">
-                        <span className="text-[10px] text-white/35 font-medium bg-black/20 px-3 py-1 rounded-full">
-                          Appuyez pour activer la caméra
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Engine feedback message */}
-                    {engineMessage && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="w-full mt-3 p-2.5 rounded-xl border border-emerald-400/20 bg-emerald-500/10 text-xs text-emerald-400 font-medium"
-                      >
-                        {engineMessage}
-                      </motion.div>
-                    )}
-
-                    {/* Manual entry button */}
-                    <div className="w-full mt-4">
-                      {!showManualInput && !codeValidated && (
-                        <motion.button
-                          onClick={() => setShowManualInput(true)}
-                          className="w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 border border-emerald-400/25 bg-emerald-500/10 text-emerald-400"
-                          whileTap={{ scale: 0.97 }}
-                        >
-                          <Keyboard className="w-4 h-4" />
-                          Entrez le code colis
-                        </motion.button>
-                      )}
-
-                      {/* Manual code input field */}
-                      <AnimatePresence>
-                        {showManualInput && !codeValidated && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
-                            className="flex flex-col gap-3"
-                          >
-                            <div className="flex gap-2">
-                              <div className="flex-1 relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                                <input
-                                  type="text"
-                                  value={manualCode}
-                                  onChange={(e) => setManualCode(e.target.value.toUpperCase())}
-                                  onKeyDown={(e) => e.key === "Enter" && validateAndResolveCode()}
-                                  placeholder="Ex: KNK-2024-0847"
-                                  className="w-full pl-9 pr-4 py-3 rounded-xl text-sm font-medium text-white placeholder:text-white/25 border border-white/[0.08] bg-white/[0.04] focus:outline-none focus:border-emerald-400/40"
-                                  autoFocus
-                                />
-                              </div>
-                              <motion.button
-                                onClick={validateAndResolveCode}
-                                disabled={manualCode.trim().length < 3 || scanLoading}
-                                className="px-5 py-3 rounded-xl font-semibold text-sm bg-emerald-500/20 text-emerald-400 border border-emerald-400/25 disabled:opacity-30 disabled:cursor-not-allowed"
-                                whileTap={{ scale: 0.97 }}
-                              >
-                                {scanLoading ? "..." : "OK"}
-                              </motion.button>
-                            </div>
-                            <button
-                              onClick={() => { setShowManualInput(false); setManualCode(""); }}
-                              className="text-xs text-white/30 font-medium"
-                            >
-                              Annuler
-                            </button>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
+                  <motion.div key="scanner" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <ScanHeart
+                      role="client"
+                      accent="emerald"
+                      darkMode
+                      onResolved={() => setTimeout(closeBoth, 300)}
+                    />
                   </motion.div>
                 )}
-
-                {/* ── Mon QR Tab ── */}
                 {activeTab === "mon_qr" && (
-                  <motion.div key="mon_qr" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center px-5 pt-2">
-                    <p className="text-xs text-white/40 mb-4 self-start">Ma carte QR</p>
-                    <div className="w-full rounded-2xl p-6 flex flex-col items-center border border-white/[0.06] bg-white/[0.03]">
-                      <div className="bg-white rounded-xl p-4 mb-3">
-                        <QRCodeDisplay value="konnekt://user/client-demo-id" size={170} />
-                      </div>
-                      <p className="text-[11px] text-white/35 mt-1">Présentez ce QR au transporteur</p>
-                    </div>
-                    <div className="flex items-center gap-3 w-full my-5">
-                      <div className="flex-1 h-px bg-white/[0.06]" />
-                      <span className="text-[10px] text-white/30 font-medium">Ou</span>
-                      <div className="flex-1 h-px bg-white/[0.06]" />
-                    </div>
-                    <button onClick={() => setActiveTab("scanner")} className="w-full py-3 rounded-xl border border-white/[0.08] bg-white/[0.04] flex items-center justify-center gap-2 text-white/50 text-sm font-medium">
-                      <QrCode className="w-4 h-4" />
-                      Scanner un QR
-                    </button>
+                  <motion.div key="qr" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <ScanQRTab role="client" accent="emerald" darkMode onSwitchToScanner={() => setActiveTab("scanner")} />
                   </motion.div>
                 )}
-
-                {/* ── Mes Colis Tab — Interactive with expandable QR ── */}
                 {activeTab === "mes_colis" && (
-                  <motion.div key="mes_colis" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-5 pt-2">
-                    <p className="text-xs text-white/40 mb-3">Mes colis — Appuyez pour afficher le QR</p>
-                    <div className="flex flex-col gap-2.5">
-                      {mockColis.map((colis) => {
-                        const isExpanded = expandedColis === colis.id;
-                        return (
-                          <motion.div
-                            key={colis.id}
-                            layout
-                            className="rounded-xl border border-white/[0.06] bg-white/[0.03] overflow-hidden"
-                          >
-                            <button
-                              onClick={() => setExpandedColis(isExpanded ? null : colis.id)}
-                              className="flex items-center gap-3 p-3.5 w-full text-left"
-                            >
-                              <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-emerald-500/10">
-                                <Package className="w-5 h-5 text-emerald-400" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-white/90 truncate">{colis.id}</p>
-                                <p className="text-[11px] text-white/35">{colis.dest} · {colis.weight}</p>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className={cn(
-                                  "text-[10px] font-semibold px-2 py-1 rounded-full",
-                                  colis.status === "Livré" ? "bg-emerald-500/15 text-emerald-400" :
-                                  colis.status === "En transit" ? "bg-sky-500/15 text-sky-400" :
-                                  "bg-amber-500/15 text-amber-400"
-                                )}>{colis.status}</span>
-                                <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                                  <ChevronDown className="w-4 h-4 text-white/30" />
-                                </motion.div>
-                              </div>
-                            </button>
-
-                            <AnimatePresence>
-                              {isExpanded && (
-                                <motion.div
-                                  initial={{ height: 0, opacity: 0 }}
-                                  animate={{ height: "auto", opacity: 1 }}
-                                  exit={{ height: 0, opacity: 0 }}
-                                  transition={{ duration: 0.25 }}
-                                  className="overflow-hidden"
-                                >
-                                  <div className="px-4 pb-4 pt-1 flex flex-col items-center gap-3">
-                                    <div className="h-px w-full bg-white/[0.05]" />
-                                    <p className="text-[10px] text-white/30 font-medium">QR à présenter au GP pour scan rapide</p>
-                                    <div className="bg-white rounded-xl p-3">
-                                      <QRCodeDisplay value={`konnekt://colis/${colis.id}`} size={140} />
-                                    </div>
-                                    <p className="text-[10px] text-white/25 font-mono">{colis.id}</p>
-                                    <div className="flex gap-2 w-full">
-                                      <button
-                                        onClick={() => { setScanViewOpen(false); handleOpenChange(false); navigate(`/tracking?code=${colis.id}`); }}
-                                        className="flex-1 py-2.5 rounded-lg text-xs font-semibold border border-emerald-400/20 bg-emerald-500/10 text-emerald-400"
-                                      >
-                                        Suivre
-                                      </button>
-                                      <button
-                                        onClick={() => { setScanViewOpen(false); handleOpenChange(false); navigate("/delivery-confirmation"); }}
-                                        className="flex-1 py-2.5 rounded-lg text-xs font-semibold border border-white/[0.08] bg-white/[0.04] text-white/60"
-                                      >
-                                        Confirmer
-                                      </button>
-                                    </div>
-                                  </div>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </motion.div>
-                        );
-                      })}
-                    </div>
+                  <motion.div key="colis" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <ScanColisTab role="client" accent="emerald" darkMode userId={userId} onClose={closeBoth} />
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
-
-            {/* Quitter */}
-            <div className="px-5 pb-6 pt-3">
-              <button onClick={() => setScanViewOpen(false)} className="w-full py-3 rounded-xl border border-white/[0.08] text-white/40 text-sm font-semibold">
-                Quitter
-              </button>
             </div>
           </div>
         </SheetContent>
       </Sheet>
 
-      {/* ═══ LAYER 1: Main scan popup ═══ */}
-      <Sheet open={open && !cameraActive && !scanViewOpen} onOpenChange={handleOpenChange}>
-        <SheetContent
-          side="bottom"
-          className="h-[92vh] rounded-t-3xl p-0 border-t-0 overflow-hidden"
-          style={{ background: BG_GRADIENT }}
-        >
+      {/* ═══ LAYER 1: Dashboard popup ═══ */}
+      <Sheet open={open && !scanViewOpen} onOpenChange={handleOpenChange}>
+        <SheetContent side="bottom" className="h-[92vh] rounded-t-3xl p-0 border-t-0 overflow-hidden" style={{ background: BG_GRADIENT }}>
           <div {...swipeLayer1}>
-            {/* Drag handle */}
-            <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 rounded-full bg-white/20" />
-            </div>
+            <div className="flex justify-center pt-3 pb-1"><div className="w-10 h-1 rounded-full bg-white/20" /></div>
 
-            {/* Header */}
             <div className="relative px-5 pt-2 pb-4">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <h2 className="text-lg font-bold text-white">Scanner avec Konnekt</h2>
                   <p className="text-xs mt-0.5 text-white/50">Paiement · Suivi · Confirmation</p>
-
                   <div className="mt-3 flex items-center gap-2">
                     <button onClick={() => setShowBalance(!showBalance)} className="flex items-center gap-2">
                       {showBalance ? <EyeOff className="w-3.5 h-3.5 text-white/40" /> : <Eye className="w-3.5 h-3.5 text-white/40" />}
@@ -478,18 +177,13 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
                       )}
                     </button>
                   </div>
-
                   <button onClick={() => { handleOpenChange(false); navigate("/client/wallet"); }} className="flex items-center gap-1 mt-1.5 text-xs font-medium text-emerald-400">
                     Voir le wallet <ArrowRight className="w-3 h-3" />
                   </button>
                 </div>
 
-                {/* ★ QR Scan button → opens Layer 2 */}
-                <motion.button
-                  onClick={openScanView}
-                  className="relative w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0"
-                  whileTap={{ scale: 0.95 }}
-                >
+                {/* Scan button → opens Layer 2 */}
+                <motion.button onClick={() => setScanViewOpen(true)} className="relative w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0" whileTap={{ scale: 0.95 }}>
                   <div className="absolute inset-0 rounded-2xl border-2 border-emerald-400/40" />
                   <motion.div className="absolute -inset-0.5 rounded-2xl border border-emerald-400/15" animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 3, repeat: Infinity }} />
                   <div className="absolute inset-[3px] rounded-xl flex flex-col items-center justify-center gap-1 bg-emerald-500/10">
@@ -498,28 +192,18 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
                     </motion.div>
                     <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider">Scanner</span>
                   </div>
-                  {["top-0 left-0 border-t-2 border-l-2 rounded-tl-md",
-                    "top-0 right-0 border-t-2 border-r-2 rounded-tr-md",
-                    "bottom-0 left-0 border-b-2 border-l-2 rounded-bl-md",
-                    "bottom-0 right-0 border-b-2 border-r-2 rounded-br-md"
-                  ].map((pos) => (
-                    <div key={pos} className={cn("absolute w-3 h-3 border-emerald-400/60", pos)} />
-                  ))}
+                  {["top-0 left-0 border-t-2 border-l-2 rounded-tl-md", "top-0 right-0 border-t-2 border-r-2 rounded-tr-md",
+                    "bottom-0 left-0 border-b-2 border-l-2 rounded-bl-md", "bottom-0 right-0 border-b-2 border-r-2 rounded-br-md"
+                  ].map((pos) => (<div key={pos} className={cn("absolute w-3 h-3 border-emerald-400/60", pos)} />))}
                 </motion.button>
               </div>
             </div>
 
-            {/* Content */}
             <div className="px-4 pb-safe overflow-y-auto" style={{ maxHeight: "calc(92vh - 200px)" }}>
-              {/* Quick Actions Grid */}
               <div className="grid grid-cols-3 gap-2.5 mt-2">
                 {quickActions.map((action) => (
-                  <motion.button
-                    key={action.action}
-                    onClick={() => handleAction(action.action)}
-                    className="flex flex-col items-center gap-2 p-3.5 rounded-2xl border border-white/[0.06] bg-white/[0.04] backdrop-blur-sm"
-                    whileTap={{ scale: 0.95 }}
-                  >
+                  <motion.button key={action.action} onClick={() => handleAction(action.action)}
+                    className="flex flex-col items-center gap-2 p-3.5 rounded-2xl border border-white/[0.06] bg-white/[0.04] backdrop-blur-sm" whileTap={{ scale: 0.95 }}>
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-500/10">
                       <action.icon className="w-5 h-5 text-emerald-400" />
                     </div>
@@ -528,26 +212,14 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
                 ))}
               </div>
 
-              {/* Carousel */}
               <div className="mt-4 mb-4">
                 <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeSlide}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.25 }}
-                    className="rounded-2xl overflow-hidden p-3.5 border border-white/[0.06] bg-white/[0.03]"
-                  >
+                  <motion.div key={activeSlide} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }}
+                    className="rounded-2xl overflow-hidden p-3.5 border border-white/[0.06] bg-white/[0.03]">
                     <div className="flex items-start gap-3">
-                      {(() => {
-                        const Icon = carouselSlides[activeSlide].icon;
-                        return (
-                          <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-emerald-500/10 flex-shrink-0">
-                            <Icon className="w-4.5 h-4.5 text-emerald-400" />
-                          </div>
-                        );
-                      })()}
+                      {(() => { const Icon = carouselSlides[activeSlide].icon; return (
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-emerald-500/10 flex-shrink-0"><Icon className="w-4 h-4 text-emerald-400" /></div>
+                      ); })()}
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-xs text-white/90">{carouselSlides[activeSlide].title}</h4>
                         <p className="text-[11px] mt-0.5 text-white/40 leading-relaxed">{carouselSlides[activeSlide].text}</p>
@@ -557,15 +229,8 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
                 </AnimatePresence>
                 <div className="flex justify-center gap-1.5 mt-3">
                   {carouselSlides.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setActiveSlide(i)}
-                      className="h-1 rounded-full transition-all"
-                      style={{
-                        width: i === activeSlide ? "1.25rem" : "0.3rem",
-                        background: i === activeSlide ? "#34d399" : "rgba(255,255,255,0.15)",
-                      }}
-                    />
+                    <button key={i} onClick={() => setActiveSlide(i)} className="h-1 rounded-full transition-all"
+                      style={{ width: i === activeSlide ? "1.25rem" : "0.3rem", background: i === activeSlide ? "#34d399" : "rgba(255,255,255,0.15)" }} />
                   ))}
                 </div>
               </div>
