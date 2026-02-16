@@ -184,9 +184,10 @@ export function PricingInputForm({
             <Label className="text-sm font-medium flex items-center gap-2">
               <Package className="w-4 h-4 text-primary" />
               Forfaits par objet
+              <span className="text-destructive">*</span>
             </Label>
             <p className="text-xs text-muted-foreground -mt-1">
-              Activez les objets que vous acceptez à tarif fixe
+              Activez au moins 1 objet à tarif fixe (prix pré-remplis, modifiables)
             </p>
             {flatRateItems.map((item) => (
               <div
@@ -211,7 +212,7 @@ export function PricingInputForm({
                           type="number"
                           value={editingFlatRatePrice}
                           onChange={(e) => setEditingFlatRatePrice(e.target.value)}
-                          className="w-20 h-8 text-right text-sm"
+                          className="w-24 h-8 text-right text-sm"
                           autoFocus
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
@@ -225,7 +226,7 @@ export function PricingInputForm({
                             onFlatRatePriceChange?.(item.id, Number(editingFlatRatePrice));
                             setEditingFlatRate(null);
                           }}
-                          className="text-green-600"
+                          className="text-primary"
                         >
                           <Check className="w-4 h-4" />
                         </button>
@@ -247,6 +248,13 @@ export function PricingInputForm({
                 )}
               </div>
             ))}
+            {/* Min 1 active validation hint */}
+            {flatRateItems.filter(i => i.isActive).length === 0 && (
+              <p className="text-xs text-destructive flex items-center gap-1.5 pt-1">
+                <Info className="w-3.5 h-3.5" />
+                Activez au moins 1 article forfaitaire pour continuer
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
