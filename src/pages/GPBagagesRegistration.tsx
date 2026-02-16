@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { loadExchangeRates, convertFromFCFA, type ExchangeRate } from "@/lib/currencyUtils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,6 +54,8 @@ export default function GPBagagesRegistration() {
   const [defaultCurrency, setDefaultCurrency] = useState<CurrencyCode>("XOF");
   const [flatRateItems, setFlatRateItems] = useState<RegistrationFlatRateItem[]>([]);
   const [flatRatePricing, setFlatRatePricing] = useState<Map<string, { price: string; isActive: boolean }>>(new Map());
+  const [exchangeRates, setExchangeRates] = useState<ExchangeRate[]>([]);
+  const [flatRateDefaultsFCFA, setFlatRateDefaultsFCFA] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
     const loadExistingProfile = async () => {
@@ -78,28 +81,72 @@ export default function GPBagagesRegistration() {
   // Load flat rate object types from DB
   useEffect(() => {
     const loadFlatRateTypes = async () => {
-      const { data } = await supabase
-        .from("flat_rate_object_types")
-        .select("id, label, default_price")
-        .eq("is_active", true)
-        .order("label");
+      const [{ data }, rates] = await Promise.all([
+        supabase
+          .from("flat_rate_object_types")
+          .select("id, label, default_price")
+          .eq("is_active", true)
+          .order("label"),
+        loadExchangeRates(),
+      ]);
+      setExchangeRates(rates);
       if (data) {
-        const items = data.map(t => ({
-          id: t.id,
-          label: t.label,
-          defaultPrice: t.default_price || 0,
-          isActive: false,
-        }));
-        setFlatRateItems(items);
+        // Store raw FCFA defaults
+        const fcfaDefaults = new Map<string, number>();
+        data.forEach(t => fcfaDefaults.set(t.id, t.default_price || 0));
+        setFlatRateDefaultsFCFA(fcfaDefaults);
+
+        // Convert defaults to current currency
+        const convertedItems = data.map(t => {
+          const fcfaPrice = t.default_price || 0;
+          const converted = defaultCurrency === "XOF"
+            ? fcfaPrice 
+            : Math.round(convertFromFCFA(fcfaPrice, defaultCurrency, rates));
+          return {
+            id: t.id,
+            label: t.label,
+            defaultPrice: converted,
+            isActive: false,
+          };
+        });
+        setFlatRateItems(convertedItems);
         const priceMap = new Map<string, { price: string; isActive: boolean }>();
-        data.forEach(t => {
-          priceMap.set(t.id, { price: (t.default_price || 0).toString(), isActive: false });
+        convertedItems.forEach(t => {
+          priceMap.set(t.id, { price: t.defaultPrice.toString(), isActive: false });
         });
         setFlatRatePricing(priceMap);
       }
     };
     loadFlatRateTypes();
   }, []);
+
+  // Re-convert flat rate defaults when currency changes
+  useEffect(() => {
+    if (flatRateDefaultsFCFA.size === 0 || exchangeRates.length === 0) return;
+    
+    setFlatRateItems(prev => prev.map(item => {
+      const fcfaPrice = flatRateDefaultsFCFA.get(item.id) || 0;
+      const converted = defaultCurrency === "XOF"
+        ? fcfaPrice
+        : Math.round(convertFromFCFA(fcfaPrice, defaultCurrency, exchangeRates));
+      return { ...item, defaultPrice: converted };
+    }));
+    
+    setFlatRatePricing(prev => {
+      const newMap = new Map(prev);
+      newMap.forEach((value, id) => {
+        if (!value.isActive) {
+          // Only update price if user hasn't manually edited (not active = not confirmed)
+          const fcfaPrice = flatRateDefaultsFCFA.get(id) || 0;
+          const converted = defaultCurrency === "XOF"
+            ? fcfaPrice
+            : Math.round(convertFromFCFA(fcfaPrice, defaultCurrency, exchangeRates));
+          newMap.set(id, { ...value, price: converted.toString() });
+        }
+      });
+      return newMap;
+    });
+  }, [defaultCurrency, flatRateDefaultsFCFA, exchangeRates]);
 
   // 3 steps only now
   const steps = [
