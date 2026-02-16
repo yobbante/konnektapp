@@ -1,13 +1,11 @@
 /**
- * UnifiedScanRouter — Smart QR scan result router (V1 STABLE)
+ * UnifiedScanRouter — Smart QR scan result router (V2 ENGINE-DRIVEN)
  * 
- * LOGIQUE SCAN KONNEKT:
- *   Scan Client → VOIR (informatif, relationnel, jamais opérationnel)
- *   Scan GP → AGIR (dépôt, livraison, poids, transitions)
- *   Scan hors app → DÉCOUVRIR (pages publiques, CTAs marketing)
+ * Resolution logic is now handled by the backend scan-engine.
+ * This component only handles USER QR scans (konnekt://user/{userId}).
+ * All operational actions delegate to useScanEngine.executeAction().
  * 
- * 1 user = 1 QR, payload = konnekt://user/{userId} or URL
- * The router resolves scanned user identity + active orders + role permissions.
+ * No direct DB mutations for order status changes.
  */
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -88,11 +86,9 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
   const [loading, setLoading] = useState(true);
   const [scannedUser, setScannedUser] = useState<ScannedUserInfo | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<ActiveOrder | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     if (!roleLoading) {
-      // BLOC 3: Hors application → redirect to public pages
       if (!scanRole || !scannerId) {
         redirectToPublicPage();
         return;
@@ -101,11 +97,6 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
     }
   }, [scannedUserId, scannerId, scannerGpId, roleLoading]);
 
-  /**
-   * BLOC 3: SCAN HORS APPLICATION
-   * GP → profil public GP
-   * Client → page publique utilisateur avec CTAs
-   */
   const redirectToPublicPage = async () => {
     try {
       const { data: gpProfile } = await supabase
@@ -128,7 +119,6 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
   const resolveScannedUser = async () => {
     setLoading(true);
     try {
-      // 1. Get scanned user's profile
       const { data: profile } = await supabase
         .from("profiles")
         .select("user_id, full_name, avatar_url, city")
@@ -141,14 +131,12 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
         return;
       }
 
-      // 2. Check if scanned user is a GP
       const { data: gpProfile } = await supabase
         .from("gp_profiles")
         .select("id, business_name, gp_type, rating, total_deliveries, verified_at, status, city, explicit_restrictions, default_currency, deposit_address, reception_address")
         .eq("user_id", scannedUserId)
         .maybeSingle();
 
-      // 3. Get KTP level for GP
       let ktpLevel = "basic";
       if (gpProfile) {
         const { data: ktp } = await supabase
@@ -159,12 +147,10 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
         ktpLevel = ktp?.ktp_level || "basic";
       }
 
-      // 4. Find active orders based on scanner role
       let activeOrders: ActiveOrder[] = [];
       const nonTerminalStatuses: Array<"pending" | "accepted" | "collected" | "in_transit"> = ["pending", "accepted", "collected", "in_transit"];
 
       if (scanRole === "gp" && scannerGpId) {
-        // BLOC 2A: GP scanne un client → commandes actives entre eux
         const { data: orders } = await supabase
           .from("orders")
           .select("id, order_number, status, weight, total_price, currency, price_per_kg, origin_city, destination_city, origin_country, destination_country, description, client_id, gp_id, delivery_date, delivery_code, recipient_name, recipient_phone, recipient_user_id")
@@ -173,7 +159,6 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
           .in("status", nonTerminalStatuses);
         activeOrders = (orders || []) as ActiveOrder[];
         
-        // Also check if scanned user is a recipient
         if (activeOrders.length === 0) {
           const { data: recipientOrders } = await supabase
             .from("orders")
@@ -184,7 +169,6 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
           activeOrders = (recipientOrders || []) as ActiveOrder[];
         }
       } else if (scanRole === "client" && scannerId && gpProfile) {
-        // BLOC 1A: Client scanne un GP → commandes du client avec ce GP
         const { data: orders } = await supabase
           .from("orders")
           .select("id, order_number, status, weight, total_price, currency, price_per_kg, origin_city, destination_city, origin_country, destination_country, description, client_id, gp_id, delivery_date, delivery_code, recipient_name, recipient_phone, recipient_user_id")
@@ -193,7 +177,6 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
           .in("status", nonTerminalStatuses);
         activeOrders = (orders || []) as ActiveOrder[];
       } else if (scanRole === "client" && scannerId && !gpProfile) {
-        // BLOC 1B: Client scanne un autre client → colis actifs entre eux
         const { data: orders } = await supabase
           .from("orders")
           .select("id, order_number, status, weight, total_price, currency, price_per_kg, origin_city, destination_city, origin_country, destination_country, description, client_id, gp_id, delivery_date, delivery_code, recipient_name, recipient_phone, recipient_user_id")
@@ -202,7 +185,6 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
           .in("status", nonTerminalStatuses);
         activeOrders = (orders || []) as ActiveOrder[];
       } else if ((scanRole === "admin" || scanRole === "agent_logistique")) {
-        // Admin/Agent → all active orders for this user
         const gpIdFilter = gpProfile?.id;
         if (gpIdFilter) {
           const { data: orders } = await supabase
@@ -246,52 +228,6 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
       toast({ title: "Erreur de résolution", variant: "destructive" });
     } finally {
       setLoading(false);
-    }
-  };
-
-  // ─── GP: Confirm deposit action ───
-  const handleConfirmDeposit = async (order: ActiveOrder) => {
-    if (!scannerGpId) return;
-    setActionLoading(true);
-    try {
-      const { error } = await supabase
-        .from("orders")
-        .update({ status: "collected" as any })
-        .eq("id", order.id)
-        .eq("gp_id", scannerGpId);
-      if (error) throw error;
-
-      await logScan(order.id, "deposit_confirm", order.status, "collected");
-      toast({ title: "Dépôt confirmé" });
-      resolveScannedUser();
-      setSelectedOrder(null);
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  // ─── GP: Confirm delivery action ───
-  const handleConfirmDelivery = async (order: ActiveOrder) => {
-    if (!scannerGpId) return;
-    setActionLoading(true);
-    try {
-      const { error } = await supabase
-        .from("orders")
-        .update({ status: "delivered" as any })
-        .eq("id", order.id)
-        .eq("gp_id", scannerGpId);
-      if (error) throw error;
-
-      await logScan(order.id, "delivery_confirm", order.status, "delivered");
-      toast({ title: "Livraison confirmée" });
-      resolveScannedUser();
-      setSelectedOrder(null);
-    } catch (e: any) {
-      toast({ title: "Erreur", description: e.message, variant: "destructive" });
-    } finally {
-      setActionLoading(false);
     }
   };
 
@@ -410,7 +346,7 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
             </div>
           </div>
 
-          {/* ── GP Stats (shown for all scanners when target is GP) ── */}
+          {/* GP Stats */}
           {scannedUser.type === "gp" && (
             <div className="mt-3 space-y-3">
               <div className="grid grid-cols-3 gap-2">
@@ -437,7 +373,6 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
                 </div>
               </div>
 
-              {/* Client-only: restrictions + currency */}
               {scanRole === "client" && (
                 <>
                   {scannedUser.restrictions && scannedUser.restrictions.length > 0 && (
@@ -458,7 +393,6 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
                 </>
               )}
 
-              {/* GP scanning another GP: deposit/reception address */}
               {scanRole === "gp" && scannedUser.depositAddress && (
                 <div className="p-2 bg-muted/30 rounded-lg text-xs text-muted-foreground">
                   <MapPin className="w-3 h-3 inline mr-1" />
@@ -470,7 +404,7 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
         </CardContent>
       </Card>
 
-      {/* ── Active Orders → Actions disponibles ── */}
+      {/* Active Orders */}
       {scannedUser.activeOrders.length > 0 && (
         <Card className="border-primary/20">
           <CardContent className="p-4 space-y-3">
@@ -484,7 +418,6 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
               </h4>
             </div>
 
-            {/* Role-based action hint */}
             <div className="p-2.5 bg-muted/50 rounded-lg text-xs text-muted-foreground">
               {scanRole === "gp" && "🔧 Confirmer dépôt, modifier poids, confirmer livraison"}
               {scanRole === "client" && "👁️ Consultation: statut, trajet, historique"}
@@ -517,7 +450,6 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
                     </span>
                   </div>
 
-                  {/* GP quick-action indicators */}
                   {scanRole === "gp" && (
                     <div className="mt-2 flex gap-1.5">
                       {(order.status === "accepted" || order.status === "pending") && (
@@ -544,7 +476,7 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
         </Card>
       )}
 
-      {/* ── No active orders → Contextual actions by role ── */}
+      {/* No active orders */}
       {scannedUser.activeOrders.length === 0 && (
         <Card className="border-dashed">
           <CardContent className="p-4 text-center space-y-3">
@@ -563,13 +495,9 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
               </p>
             </div>
 
-            {/* ── BLOC 1A: Client scanne GP sans commande → "Réserver" ── */}
             {scanRole === "client" && scannedUser.type === "gp" && scannedUser.gpId && (
               <Button
-                onClick={() => {
-                  onComplete();
-                  navigate(`/client/transporteurs/${scannedUser.gpId}`);
-                }}
+                onClick={() => { onComplete(); navigate(`/client/transporteurs/${scannedUser.gpId}`); }}
                 className="w-full gap-2"
               >
                 <Package className="w-4 h-4" />
@@ -577,13 +505,10 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
               </Button>
             )}
 
-            {/* ── BLOC 1B: Client scanne Client sans colis → "Ajouter comme destinataire" ── */}
             {scanRole === "client" && scannedUser.type === "client" && (
               <Button
                 variant="outline"
-                onClick={() => {
-                  toast({ title: "Destinataire noté", description: `${scannedUser.name} peut être ajouté lors d'un envoi.` });
-                }}
+                onClick={() => { toast({ title: "Destinataire noté", description: `${scannedUser.name} peut être ajouté lors d'un envoi.` }); }}
                 className="w-full gap-2"
               >
                 <UserPlus className="w-4 h-4" />
@@ -591,14 +516,10 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
               </Button>
             )}
 
-            {/* ── BLOC 2B: GP scanne GP → Profil public uniquement ── */}
             {scanRole === "gp" && scannedUser.type === "gp" && scannedUser.gpId && (
               <Button
                 variant="outline"
-                onClick={() => {
-                  onComplete();
-                  navigate(`/client/transporteurs/${scannedUser.gpId}`);
-                }}
+                onClick={() => { onComplete(); navigate(`/client/transporteurs/${scannedUser.gpId}`); }}
                 className="w-full gap-2"
               >
                 <Eye className="w-4 h-4" />
@@ -606,14 +527,12 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
               </Button>
             )}
 
-            {/* ── BLOC 2A: GP scanne Client sans action → info only ── */}
             {scanRole === "gp" && scannedUser.type === "client" && (
               <div className="p-2.5 bg-muted/50 rounded-lg text-xs text-muted-foreground">
                 Aucune action en attente pour ce client.
               </div>
             )}
 
-            {/* ── Admin/Agent: View in admin ── */}
             {(scanRole === "admin" || scanRole === "agent_logistique") && (
               <Button
                 variant="outline"
