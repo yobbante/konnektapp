@@ -12,22 +12,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  ORDER_STATUS_LABELS, 
-  type OrderStatus,
-  assertValidOrderStatus 
-} from "@/lib/enumMappings";
+import { ORDER_STATUS_LABELS } from "@/lib/enumMappings";
 import {
   hasLastMileLogistics,
   hasPickupLogistics,
-  handleArrivedStatus,
-  notifyAdminPickupMission,
-  canGPMarkDelivered,
   isOrderAwaitingAdminDelivery,
 } from "@/hooks/useLogisticsSync";
-import { validateStatusTransition, validateScanAction } from "@/lib/scanValidation";
+import { KonnektScanEngine, type ExecuteAction } from "@/lib/scanEngine";
 import { cn } from "@/lib/utils";
 
 // Status config with colors for gamification
@@ -86,12 +78,8 @@ interface MissionStatusUpdaterV2Props {
 /**
  * MissionStatusUpdaterV2 - V2.0 with gamification and visual feedback
  * 
- * Features:
- * - Color-coded status buttons for visual appeal
- * - Pulsing animation to encourage action
- * - Detects if internal logistics is active
- * - Shows "Arrivé" button when destination has delivery logistics
- * - Blocks GP from marking "Livré" when admin handles last-mile
+ * Now uses KonnektScanEngine.executeAction() for ALL status transitions.
+ * No direct DB calls — everything goes through the backend engine.
  */
 export function MissionStatusUpdaterV2({
   orderId,
@@ -109,7 +97,6 @@ export function MissionStatusUpdaterV2({
   const [awaitingAdminDelivery, setAwaitingAdminDelivery] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Check logistics options on mount and status change
   useEffect(() => {
     checkLogisticsState();
   }, [orderId, currentStatus]);
@@ -125,95 +112,49 @@ export function MissionStatusUpdaterV2({
     setAwaitingAdminDelivery(awaiting);
   };
 
+  /**
+   * Map UI status selection to engine action
+   */
+  const getEngineAction = (newStatus: string): ExecuteAction | null => {
+    switch (newStatus) {
+      case "collected": return "deposit_confirm";
+      case "in_transit": return "mark_transit";
+      case "arrived": return "confirm_delivery"; // arrived = GP signals arrival
+      case "delivered": return "confirm_delivery";
+      default: return null;
+    }
+  };
+
   const handleStatusUpdate = async (newStatus: string) => {
-    console.log("=== MissionStatusUpdaterV2 handleStatusUpdate ===");
+    console.log("=== MissionStatusUpdaterV2 handleStatusUpdate (ENGINE) ===");
     console.log("Order ID:", orderId);
     console.log("Current:", currentStatus, "→ New:", newStatus);
 
-    // ── STRICT VALIDATION LAYER ──
-    const transitionCheck = validateStatusTransition(currentStatus, newStatus);
-    if (!transitionCheck.allowed && newStatus !== "arrived") {
-      toast({
-        title: "⚠️ Transition non autorisée",
-        description: transitionCheck.reason,
-        variant: "destructive",
-      });
+    const engineAction = getEngineAction(newStatus);
+    if (!engineAction) {
+      toast({ title: "Action non reconnue", variant: "destructive" });
       return;
     }
 
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Non authentifié");
-
-      // SPECIAL CASE: "arrived" status (V1.1)
-      if (newStatus === "arrived") {
-        const result = await handleArrivedStatus(orderId, gpProfileId, user.id);
-        if (!result.success) {
-          throw new Error(result.error);
-        }
-
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 2000);
-        
-        toast({
-          title: "📍 Colis marqué ARRIVÉ",
-          description: "L'équipe Konnekt a été notifiée pour la livraison",
-        });
-
-        onStatusUpdated();
-        return;
-      }
-
-      // Block delivery if admin handles last-mile
-      if (newStatus === "delivered" && hasDeliveryLogistics) {
-        const canDeliver = await canGPMarkDelivered(orderId);
-        if (!canDeliver) {
-          toast({
-            title: "Action non autorisée",
-            description: "La livraison est gérée par l'équipe Konnekt",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-
-      // Validate enum for standard statuses
-      const validatedStatus = assertValidOrderStatus(newStatus);
-
-      const { error: orderError } = await supabase
-        .from("orders")
-        .update({
-          status: validatedStatus,
-          ...(validatedStatus === "delivered" ? { actual_delivery_date: new Date().toISOString() } : {}),
-        })
-        .eq("id", orderId);
-
-      if (orderError) throw orderError;
-
-      // Log status history
-      const { error: historyError } = await supabase
-        .from("order_status_history")
-        .insert({
-          order_id: orderId,
-          status: validatedStatus,
-          changed_by: user.id,
-          changed_by_type: "gp",
-        });
-
-      if (historyError) {
-        console.error("History insert error:", historyError);
-      }
-
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 2000);
-
-      toast({
-        title: "✅ Statut mis à jour",
-        description: `Commande marquée comme "${ORDER_STATUS_LABELS[validatedStatus]}"`,
+      const response = await KonnektScanEngine.executeAction(engineAction, orderId, {
+        target_status: newStatus,
+        has_last_mile_logistics: hasDeliveryLogistics,
       });
 
-      onStatusUpdated();
+      if (response.status === "executed") {
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
+        toast({ title: response.message || "✅ Statut mis à jour" });
+        onStatusUpdated();
+      } else {
+        toast({
+          title: "⚠️ Action refusée",
+          description: response.message || response.error,
+          variant: "destructive",
+        });
+      }
     } catch (error: any) {
       console.error("Status update error:", error);
       toast({
@@ -230,10 +171,7 @@ export function MissionStatusUpdaterV2({
   const getAvailableActions = (): { status: string; label: string; config: typeof STATUS_CONFIG[string]; blocked?: boolean; blockReason?: string }[] => {
     const actions: { status: string; label: string; config: typeof STATUS_CONFIG[string]; blocked?: boolean; blockReason?: string }[] = [];
 
-    // If awaiting admin delivery, no actions available
-    if (awaitingAdminDelivery) {
-      return [];
-    }
+    if (awaitingAdminDelivery) return [];
 
     switch (currentStatus) {
       case "accepted":
@@ -244,14 +182,12 @@ export function MissionStatusUpdaterV2({
         break;
       case "in_transit":
         if (hasDeliveryLogistics) {
-          // V1.1: GP marks "arrived", admin handles delivery
           actions.push({ 
             status: "arrived", 
             label: "Arrivé à destination", 
             config: STATUS_CONFIG.arrived 
           });
         } else {
-          // No logistics - direct delivery
           actions.push({ status: "delivered", label: "Livré", config: STATUS_CONFIG.delivered });
         }
         break;
@@ -263,7 +199,6 @@ export function MissionStatusUpdaterV2({
   const availableActions = getAvailableActions();
   const nextAction = availableActions[0];
 
-  // Show waiting message if awaiting admin delivery
   if (awaitingAdminDelivery) {
     return (
       <Alert className="bg-amber-50 border-amber-200">
@@ -277,12 +212,8 @@ export function MissionStatusUpdaterV2({
     );
   }
 
-  // No actions available (delivered, cancelled, etc.)
-  if (!nextAction || currentStatus === "delivered") {
-    return null;
-  }
+  if (!nextAction || currentStatus === "delivered") return null;
 
-  // Success overlay animation
   const SuccessOverlay = () => (
     <AnimatePresence>
       {showSuccess && (
@@ -298,7 +229,6 @@ export function MissionStatusUpdaterV2({
     </AnimatePresence>
   );
 
-  // Compact mode - single animated button
   if (compact) {
     const Icon = nextAction.config.icon;
     
@@ -314,21 +244,15 @@ export function MissionStatusUpdaterV2({
               `0 0 0 0 ${nextAction.config.glowColor}`,
             ]
           }}
-          transition={{ 
-            duration: 2, 
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
           className="rounded-xl"
         >
           <Button 
             size="sm" 
             className={cn(
               "gap-2 w-full font-semibold transition-all",
-              nextAction.config.bgColor,
-              nextAction.config.textColor,
-              "hover:opacity-90 shadow-lg",
-              nextAction.config.glowColor
+              nextAction.config.bgColor, nextAction.config.textColor,
+              "hover:opacity-90 shadow-lg", nextAction.config.glowColor
             )}
             onClick={() => handleStatusUpdate(nextAction.status)}
             disabled={loading}
@@ -354,7 +278,6 @@ export function MissionStatusUpdaterV2({
     );
   }
 
-  // Full mode - interactive dropdown with colored options
   return (
     <div className="space-y-2 relative">
       <SuccessOverlay />
@@ -362,21 +285,14 @@ export function MissionStatusUpdaterV2({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <motion.div
-            animate={{ 
-              scale: [1, 1.01, 1],
-            }}
-            transition={{ 
-              duration: 1.5, 
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
+            animate={{ scale: [1, 1.01, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
           >
             <Button 
               size="sm" 
               className={cn(
                 "gap-2 w-full font-semibold shadow-lg transition-all",
-                nextAction.config.bgColor,
-                nextAction.config.textColor,
+                nextAction.config.bgColor, nextAction.config.textColor,
                 "hover:opacity-90"
               )}
               disabled={loading}
@@ -403,15 +319,11 @@ export function MissionStatusUpdaterV2({
                 className={cn(
                   "gap-3 p-3 rounded-lg cursor-pointer transition-all mb-1",
                   action.blocked ? "opacity-50 cursor-not-allowed" : "hover:scale-[1.02]",
-                  action.config.bgColor,
-                  action.config.textColor
+                  action.config.bgColor, action.config.textColor
                 )}
                 disabled={action.blocked}
               >
-                <div className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center",
-                  "bg-white/20"
-                )}>
+                <div className={cn("w-8 h-8 rounded-full flex items-center justify-center", "bg-white/20")}>
                   <Icon className="w-4 h-4" />
                 </div>
                 <div className="flex-1">
@@ -427,7 +339,6 @@ export function MissionStatusUpdaterV2({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Logistics indicator */}
       {hasDeliveryLogistics && (
         <Badge variant="outline" className="w-full justify-center text-xs gap-1 py-1 bg-purple-50 border-purple-200 text-purple-700">
           <Truck className="w-3 h-3" />
