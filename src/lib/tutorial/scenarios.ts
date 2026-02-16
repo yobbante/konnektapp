@@ -1,0 +1,265 @@
+// ═══════════════════════════════════════════════
+// KONNEKT TUTORIAL ENGINE — Scenario Definitions
+// Client + GP scenarios with mock financial logic
+// ═══════════════════════════════════════════════
+
+import type { TutorialScenario, TutorialStep } from "./types";
+
+// ─── CLIENT SCENARIOS ───────────────────────────
+
+export const clientScenarios: TutorialScenario[] = [
+  {
+    id: "client-envoi-complet",
+    title: "Envoyer un colis",
+    description: "Apprenez le parcours complet d'envoi : recherche, réservation, paiement et suivi.",
+    icon: "Package",
+    role: "client",
+    status: "available",
+    category: "envoi",
+    steps: [
+      { id: "c1-1", title: "Rechercher une offre", description: "Parcourez les offres disponibles", instruction: "Sélectionnez une destination et filtrez les offres par prix et date.", status: "locked" },
+      { id: "c1-2", title: "Choisir un transporteur", description: "Comparez les profils et avis", instruction: "Vérifiez la note, le badge KTP et les avis avant de choisir.", status: "locked" },
+      { id: "c1-3", title: "Indiquer le poids", description: "Entrez le poids estimé de votre colis", instruction: "Le prix sera calculé dynamiquement selon le poids × tarif/kg.", status: "locked" },
+      { id: "c1-4", title: "Paiement & Escrow", description: "Vos fonds sont bloqués en sécurité", instruction: "L'argent est bloqué en escrow. Le GP ne le reçoit qu'après livraison.", status: "locked" },
+      { id: "c1-5", title: "Scan dépôt", description: "Le GP scanne votre colis au départ", instruction: "Le statut passe à 'Collecté'. Vous recevez une notification.", status: "locked" },
+      { id: "c1-6", title: "Suivi en transit", description: "Suivez votre colis en temps réel", instruction: "Le statut se met à jour automatiquement à chaque étape.", status: "locked" },
+      { id: "c1-7", title: "Confirmer réception", description: "Validez la livraison", instruction: "Confirmez que vous avez reçu le colis. Les fonds sont libérés au GP.", status: "locked" },
+      { id: "c1-8", title: "Résultat financier", description: "Voir le détail de la transaction", instruction: "Consultez le ledger : escrow libéré → commission déduite → payout GP.", status: "locked" },
+    ],
+  },
+  {
+    id: "client-wallet",
+    title: "Comprendre le Wallet",
+    description: "Découvrez comment fonctionne votre portefeuille : solde, escrow et transactions.",
+    icon: "Wallet",
+    role: "client",
+    status: "available",
+    category: "wallet",
+    steps: [
+      { id: "c2-1", title: "Votre solde", description: "Le wallet affiche votre solde disponible", instruction: "Le solde disponible est l'argent que vous pouvez utiliser immédiatement.", status: "locked" },
+      { id: "c2-2", title: "Fonds en escrow", description: "L'escrow protège vos transactions", instruction: "Quand vous payez, les fonds sont bloqués jusqu'à la livraison confirmée.", status: "locked" },
+      { id: "c2-3", title: "Historique", description: "Chaque mouvement est tracé", instruction: "Le ledger est immuable : chaque entrée/sortie est enregistrée définitivement.", status: "locked" },
+    ],
+  },
+  {
+    id: "client-escrow",
+    title: "Comprendre l'Escrow",
+    description: "Comment Konnekt protège votre argent avec le système de séquestre.",
+    icon: "Shield",
+    role: "client",
+    status: "available",
+    category: "escrow",
+    steps: [
+      { id: "c3-1", title: "Blocage des fonds", description: "L'escrow se verrouille au paiement", instruction: "Vos fonds sont bloqués dès que vous confirmez la réservation.", status: "locked" },
+      { id: "c3-2", title: "Pendant le transport", description: "L'argent reste en sécurité", instruction: "Ni vous ni le GP ne pouvez toucher aux fonds pendant le transport.", status: "locked" },
+      { id: "c3-3", title: "Libération", description: "Fonds libérés à la livraison", instruction: "Après votre confirmation de réception, l'escrow est libéré automatiquement.", status: "locked" },
+      { id: "c3-4", title: "Remboursement", description: "En cas de problème", instruction: "Si le colis est perdu ou endommagé, un litige permet le remboursement.", status: "locked" },
+    ],
+  },
+  {
+    id: "client-ajustement",
+    title: "Ajustement de poids",
+    description: "Que se passe-t-il si le poids réel diffère du poids estimé.",
+    icon: "Scale",
+    role: "client",
+    status: "available",
+    category: "ajustement",
+    steps: [
+      { id: "c4-1", title: "Poids estimé vs réel", description: "Le GP pèse votre colis au dépôt", instruction: "Vous avez estimé 5kg. Le GP constate 6kg au dépôt.", status: "locked" },
+      { id: "c4-2", title: "Notification supplément", description: "Vous recevez une alerte", instruction: "Konnekt calcule automatiquement le supplément et vous notifie.", status: "locked" },
+      { id: "c4-3", title: "Accepter ou refuser", description: "Vous décidez", instruction: "Accepter : le supplément est ajouté à l'escrow. Refuser : commande annulée.", status: "locked" },
+      { id: "c4-4", title: "Poids inférieur", description: "Remboursement automatique", instruction: "Si le poids réel est inférieur, la différence est remboursée sur votre wallet.", status: "locked" },
+    ],
+  },
+  {
+    id: "client-scan",
+    title: "Scanner un colis",
+    description: "Utilisez le scan pour suivre et gérer vos colis.",
+    icon: "ScanLine",
+    role: "client",
+    status: "available",
+    category: "scan",
+    steps: [
+      { id: "c5-1", title: "Scanner QR colis", description: "Chaque colis a un QR unique", instruction: "Scannez le QR code de votre colis pour voir son statut en temps réel.", status: "locked" },
+      { id: "c5-2", title: "Scanner QR paiement", description: "Payez un supplément par scan", instruction: "Le scan d'un QR de paiement déclenche le processus de supplément.", status: "locked" },
+      { id: "c5-3", title: "Votre QR identité", description: "Votre identité numérique", instruction: "Montrez votre QR au GP pour qu'il vous identifie lors du dépôt.", status: "locked" },
+    ],
+  },
+  {
+    id: "client-livraison",
+    title: "Confirmer livraison",
+    description: "Le processus de confirmation de réception en détail.",
+    icon: "CheckCircle",
+    role: "client",
+    status: "available",
+    category: "livraison",
+    steps: [
+      { id: "c6-1", title: "Notification d'arrivée", description: "Le GP déclare l'arrivée", instruction: "Vous recevez une notification quand le colis arrive à destination.", status: "locked" },
+      { id: "c6-2", title: "Code de confirmation", description: "Entrez le code de livraison", instruction: "Le GP vous donne un code à 6 chiffres. Entrez-le pour confirmer.", status: "locked" },
+      { id: "c6-3", title: "Vérification état", description: "Checklist état du colis", instruction: "Vérifiez que le colis est intact avant de valider définitivement.", status: "locked" },
+      { id: "c6-4", title: "Fonds libérés", description: "Escrow → GP automatiquement", instruction: "La confirmation déclenche la libération des fonds vers le GP.", status: "locked" },
+    ],
+  },
+  {
+    id: "client-litige",
+    title: "Gestion litige",
+    description: "Comment ouvrir et suivre un litige en cas de problème.",
+    icon: "AlertTriangle",
+    role: "client",
+    status: "available",
+    category: "litige",
+    steps: [
+      { id: "c7-1", title: "Ouvrir un litige", description: "Signalez un problème", instruction: "Depuis le suivi de commande, cliquez 'Signaler un problème'.", status: "locked" },
+      { id: "c7-2", title: "Catégories", description: "Choisissez le type de problème", instruction: "Colis endommagé, retard, perte… chaque catégorie a un traitement spécifique.", status: "locked" },
+      { id: "c7-3", title: "Délai de réponse", description: "Le GP a 72h pour répondre", instruction: "Le transporteur doit répondre dans les 72h, sinon escalade automatique.", status: "locked" },
+      { id: "c7-4", title: "Résolution", description: "Décision et compensation", instruction: "L'admin arbitre et peut ordonner un remboursement partiel ou total.", status: "locked" },
+    ],
+  },
+  {
+    id: "client-badges",
+    title: "Comprendre les badges GP",
+    description: "Décryptez les indicateurs de confiance des transporteurs.",
+    icon: "Award",
+    role: "client",
+    status: "available",
+    category: "badges",
+    steps: [
+      { id: "c8-1", title: "Badge KTP", description: "Le Trust Score™ du GP", instruction: "Basic (<75), Vérifié (75-89), Pro (90+) — plus le score est élevé, plus le GP est fiable.", status: "locked" },
+      { id: "c8-2", title: "Impact sur les prix", description: "Score élevé = meilleurs tarifs", instruction: "Les GP Pro ont des commissions réduites, ce qui peut se répercuter sur vos tarifs.", status: "locked" },
+      { id: "c8-3", title: "Badge vérifié", description: "KYC complet", instruction: "Le badge ✓ signifie que le GP a vérifié son identité et ses documents.", status: "locked" },
+    ],
+  },
+];
+
+// ─── GP SCENARIOS ───────────────────────────────
+
+export const gpScenarios: TutorialScenario[] = [
+  {
+    id: "gp-mission-complete",
+    title: "Mission GP complète",
+    description: "De la déclaration de vol à la livraison et paiement.",
+    icon: "Plane",
+    role: "gp",
+    status: "available",
+    category: "mission",
+    steps: [
+      { id: "g1-1", title: "Déclarer un voyage", description: "Créez votre prochain départ", instruction: "Indiquez trajet, date, capacité disponible et tarif au kilo.", status: "locked" },
+      { id: "g1-2", title: "Recevoir une demande", description: "Un client réserve chez vous", instruction: "Vous recevez une notification avec les détails du colis.", status: "locked" },
+      { id: "g1-3", title: "Accepter la mission", description: "Confirmez la prise en charge", instruction: "Vous avez 24h pour accepter. Passé ce délai, la commande est annulée.", status: "locked" },
+      { id: "g1-4", title: "Scanner le dépôt", description: "Scannez le colis à la réception", instruction: "Le scan confirme que vous avez le colis. Le statut passe à 'Collecté'.", status: "locked" },
+      { id: "g1-5", title: "Déclarer transit", description: "Le colis est en route", instruction: "Mettez à jour le statut quand vous êtes en déplacement.", status: "locked" },
+      { id: "g1-6", title: "Scanner arrivée", description: "Confirmez l'arrivée à destination", instruction: "Le scan déclenche la notification au client pour la collecte.", status: "locked" },
+      { id: "g1-7", title: "Livraison", description: "Remettez le colis au destinataire", instruction: "Donnez le code de livraison au client. Il confirme la réception.", status: "locked" },
+      { id: "g1-8", title: "Paiement reçu", description: "Escrow libéré vers votre wallet", instruction: "Les fonds sont libérés, commission déduite, solde crédité.", status: "locked" },
+    ],
+  },
+  {
+    id: "gp-commission",
+    title: "Comprendre la commission",
+    description: "Comment Konnekt calcule et prélève sa commission progressive.",
+    icon: "Percent",
+    role: "gp",
+    status: "available",
+    category: "commission",
+    steps: [
+      { id: "g2-1", title: "Commission progressive", description: "Le taux diminue avec l'expérience", instruction: "0-49 livraisons : 5% → 50+ : 6% → 150+ : 7% → etc. Plus vous livrez, mieux c'est.", status: "locked" },
+      { id: "g2-2", title: "Calcul automatique", description: "La commission se déduit au payout", instruction: "Sur 10 000 FCFA, avec 5% de commission : vous recevez 9 500 FCFA.", status: "locked" },
+      { id: "g2-3", title: "Commission KTP", description: "Le Trust Score™ réduit votre taux", instruction: "GP Pro (score 90+) : seulement 2% de commission au lieu de 5%.", status: "locked" },
+      { id: "g2-4", title: "Voir dans le ledger", description: "Chaque commission est tracée", instruction: "Consultez le détail de chaque déduction dans votre historique.", status: "locked" },
+    ],
+  },
+  {
+    id: "gp-dette",
+    title: "Comprendre la dette",
+    description: "Comment le système de dette automatique fonctionne.",
+    icon: "AlertCircle",
+    role: "gp",
+    status: "available",
+    category: "dette",
+    steps: [
+      { id: "g3-1", title: "Comment naît une dette", description: "Commission non payée = dette", instruction: "Si votre solde est insuffisant pour la commission, elle devient une dette.", status: "locked" },
+      { id: "g3-2", title: "Déduction automatique", description: "La dette se déduit des prochains gains", instruction: "GP a 2 000 FCFA de dette. Prochain payout 10 000 → commission 500 → dette 2 000 → net 7 500.", status: "locked" },
+      { id: "g3-3", title: "Seuil de blocage", description: "Dette excessive = blocage", instruction: "Si votre dette dépasse un seuil, vous ne pouvez plus créer de colis manuels.", status: "locked" },
+      { id: "g3-4", title: "Résolution", description: "Livrer pour rembourser", instruction: "Chaque livraison réduit automatiquement votre dette. Continuez à livrer !", status: "locked" },
+    ],
+  },
+  {
+    id: "gp-ajustement",
+    title: "Ajustement de poids",
+    description: "Gérer la différence entre poids estimé et poids réel.",
+    icon: "Scale",
+    role: "gp",
+    status: "available",
+    category: "ajustement",
+    steps: [
+      { id: "g4-1", title: "Peser le colis", description: "Vérifiez le poids au dépôt", instruction: "Utilisez votre balance pour peser le colis du client.", status: "locked" },
+      { id: "g4-2", title: "Déclarer la différence", description: "Indiquez le poids réel", instruction: "Le système calcule automatiquement le supplément ou le remboursement.", status: "locked" },
+      { id: "g4-3", title: "Attente validation", description: "Le client doit accepter", instruction: "La commande est gelée. Le client accepte le nouveau prix ou annule.", status: "locked" },
+      { id: "g4-4", title: "Notification critique", description: "En cas de refus", instruction: "Si le client refuse : 'NE PAS PRENDRE EN CHARGE' — le colis doit être rendu.", status: "locked" },
+    ],
+  },
+  {
+    id: "gp-scan",
+    title: "Scanner — Opérations GP",
+    description: "Tous les types de scans que vous effectuez en tant que GP.",
+    icon: "ScanLine",
+    role: "gp",
+    status: "available",
+    category: "scan",
+    steps: [
+      { id: "g5-1", title: "Scan dépôt", description: "Confirmez la réception du colis", instruction: "Scannez le QR du colis pour enregistrer le dépôt.", status: "locked" },
+      { id: "g5-2", title: "Scan livraison", description: "Confirmez la remise au destinataire", instruction: "Le scan de livraison déclenche la procédure de libération escrow.", status: "locked" },
+      { id: "g5-3", title: "Scan client", description: "Identifiez le client par QR", instruction: "Scannez le QR du client pour vérifier son identité au dépôt.", status: "locked" },
+      { id: "g5-4", title: "Votre QR GP", description: "Les clients scannent votre profil", instruction: "Votre QR permet aux clients de voir votre profil et vos offres.", status: "locked" },
+    ],
+  },
+  {
+    id: "gp-colis-manuel",
+    title: "Colis manuel hors plateforme",
+    description: "Déclarer un colis géré en dehors de Konnekt.",
+    icon: "FileEdit",
+    role: "gp",
+    status: "available",
+    category: "colis_manuel",
+    steps: [
+      { id: "g6-1", title: "Créer colis manuel", description: "Déclarez un colis hors plateforme", instruction: "Un colis manuel est un envoi que vous gérez directement avec votre client.", status: "locked" },
+      { id: "g6-2", title: "Commission fixe 3%", description: "Taux réduit mais pas d'assurance", instruction: "Les colis manuels ont une commission fixe de 3%, sans assurance Konnekt.", status: "locked" },
+      { id: "g6-3", title: "Pas de protection litige", description: "Aucune couverture Konnekt", instruction: "En cas de problème, Konnekt ne peut pas arbitrer. Pas de remboursement possible.", status: "locked" },
+      { id: "g6-4", title: "Impact KTP", description: "Pas de bonus de confiance", instruction: "Les colis manuels ne contribuent pas à l'amélioration de votre Trust Score™.", status: "locked" },
+    ],
+  },
+  {
+    id: "gp-kyc",
+    title: "KYC & Badges",
+    description: "Complétez votre vérification pour débloquer toutes les fonctionnalités.",
+    icon: "BadgeCheck",
+    role: "gp",
+    status: "available",
+    category: "kyc",
+    steps: [
+      { id: "g7-1", title: "Passeport / CNI", description: "Téléchargez votre pièce d'identité", instruction: "Prenez une photo claire de votre passeport ou CNI.", status: "locked" },
+      { id: "g7-2", title: "Selfie de vérification", description: "Confirmez votre identité", instruction: "Prenez un selfie pour vérifier que vous êtes bien le titulaire du document.", status: "locked" },
+      { id: "g7-3", title: "Route / Navette", description: "Configurez votre trajet principal", instruction: "Définissez votre route fixe. Elle sera verrouillée après validation.", status: "locked" },
+      { id: "g7-4", title: "Tarification", description: "Fixez vos prix", instruction: "Configurez vos paliers de prix. Ils seront verrouillés après validation admin.", status: "locked" },
+      { id: "g7-5", title: "Activation", description: "Compte activé", instruction: "Une fois toutes les étapes validées, votre compte est activé et vous pouvez opérer.", status: "locked" },
+    ],
+  },
+  {
+    id: "gp-wallet",
+    title: "Wallet GP & Revenus",
+    description: "Gérez vos gains, retraits et suivez votre activité financière.",
+    icon: "Wallet",
+    role: "gp",
+    status: "available",
+    category: "wallet",
+    steps: [
+      { id: "g8-1", title: "Solde disponible", description: "Vos gains nets après commission", instruction: "Le solde disponible = revenus - commissions - dettes.", status: "locked" },
+      { id: "g8-2", title: "Revenus en attente", description: "Fonds en transit ou escrow", instruction: "Les fonds en attente sont ceux des commandes pas encore livrées.", status: "locked" },
+      { id: "g8-3", title: "Effectuer un retrait", description: "Transférez vers votre compte", instruction: "Retirez vos gains vers votre compte mobile money ou bancaire.", status: "locked" },
+    ],
+  },
+];
+
+export function getScenariosForRole(role: "client" | "gp"): TutorialScenario[] {
+  return role === "client" ? clientScenarios : gpScenarios;
+}

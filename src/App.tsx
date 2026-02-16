@@ -70,7 +70,7 @@ import RoutierDemandePage from "./pages/routier/RoutierDemandePage";
 // Universal shipment entry
 import ShipmentTypeSelector from "./pages/ShipmentTypeSelector";
 // Tutorials and History pages
-import Tutorials from "./pages/Tutorials";
+import TutorialEngine from "./pages/TutorialEngine";
 import OrderHistory from "./pages/OrderHistory";
 // Additional pages
 import TransporteurRegistration from "./pages/TransporteurRegistration";
@@ -148,7 +148,7 @@ const App = () => (
             <Route path="/settings" element={<Settings />} />
             <Route path="/alerts" element={<Alerts />} />
             <Route path="/loyalty" element={<LoyaltyTiersPage />} />
-            <Route path="/tutoriels" element={<Tutorials />} />
+            <Route path="/tutoriels" element={<TutorialEngine />} />
             <Route path="/historique" element={<OrderHistory />} />
             <Route path="/documents-legaux" element={<LegalDocuments />} />
             <Route path="/profil" element={<UnifiedProfile />} />

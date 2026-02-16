@@ -105,7 +105,7 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
         { icon: MessageCircle, label: "Messages", href: "/gp/messages" },
         { icon: DollarSign, label: "Tarifs", href: "/gp/tarification" },
         { icon: History, label: "Historique", href: "/gp/historique" },
-        { icon: Shield, label: "KTP & Geo", href: "/gp/ktp-geotrack" },
+        { icon: BookOpen, label: "Tutoriels", href: "/tutoriels" },
         { icon: Settings, label: "Réglages", href: "/gp/parametres" },
       ];
     }
