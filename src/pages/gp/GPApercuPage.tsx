@@ -184,23 +184,102 @@ export default function GPApercuPage() {
       )}
 
       <div className="px-4 py-4 space-y-5">
-        {/* ─── PENDING ACCOUNT ─── */}
-        {isPending && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-            className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                <Clock className="w-6 h-6 text-amber-500" />
+        {/* ─── SMART AUTO-VALIDATION BANNER ─── */}
+        {isPending && (() => {
+          const hasId = !!gpProfile.id_document_url;
+          const hasSelfie = !!gpProfile.selfie_url;
+          const hasRoute = !!gpProfile.base_origin_city && !!gpProfile.base_destination_city;
+          const hasPrice = (gpProfile.base_price_per_kg ?? 0) > 0;
+          const completedChecks = [hasId, hasSelfie, hasRoute, hasPrice].filter(Boolean).length;
+          const totalChecks = 4;
+          const progress = Math.round((completedChecks / totalChecks) * 100);
+          const allDone = completedChecks === totalChecks;
+
+          const missing: { label: string; action: string; route: string }[] = [];
+          if (!hasId) missing.push({ label: "Pièce d'identité", action: "Ajouter", route: "/gp/profil-public" });
+          if (!hasSelfie) missing.push({ label: "Selfie de vérification", action: "Prendre", route: "/gp/profil-public" });
+          if (!hasRoute) missing.push({ label: "Navette définie", action: "Configurer", route: "/gp/parametres" });
+          if (!hasPrice) missing.push({ label: "Tarification", action: "Définir", route: "/gp/tarification" });
+
+          return (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+              className={cn(
+                "p-4 rounded-2xl border-2 transition-colors",
+                allDone 
+                  ? "bg-emerald-500/10 border-emerald-500/30" 
+                  : "bg-primary/5 border-primary/20"
+              )}
+            >
+              <div className="flex items-start gap-3">
+                <div className={cn(
+                  "w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0",
+                  allDone ? "bg-emerald-500/20" : "bg-primary/10"
+                )}>
+                  <Shield className={cn("w-6 h-6", allDone ? "text-emerald-500" : "text-primary")} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm">
+                    {allDone ? "Validation automatique en cours ✨" : "Activez votre compte instantanément"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {allDone 
+                      ? "Tous les critères sont remplis. Votre compte sera validé automatiquement sous quelques minutes."
+                      : `Complétez ${totalChecks - completedChecks} étape${totalChecks - completedChecks > 1 ? "s" : ""} pour une activation immédiate — sans attente admin.`
+                    }
+                  </p>
+
+                  {/* Progress bar */}
+                  <div className="mt-3 space-y-1">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-muted-foreground">Progression</span>
+                      <span className={cn("font-bold", allDone ? "text-emerald-500" : "text-primary")}>{progress}%</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                        className={cn("h-full rounded-full", allDone ? "bg-emerald-500" : "bg-primary")}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Missing steps */}
+                  {missing.length > 0 && (
+                    <div className="mt-3 space-y-1.5">
+                      {missing.map((step, i) => (
+                        <button
+                          key={i}
+                          onClick={() => navigate(step.route)}
+                          className="w-full flex items-center justify-between p-2 rounded-lg bg-background/80 border border-border/50 hover:border-primary/30 transition-colors group"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
+                              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+                            </span>
+                            <span className="text-xs">{step.label}</span>
+                          </div>
+                          <span className="text-[11px] font-medium text-primary group-hover:underline flex items-center gap-0.5">
+                            {step.action} <ChevronRight className="w-3 h-3" />
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {allDone && (
+                    <div className="mt-3 flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }}>
+                        <RefreshCw className="w-3.5 h-3.5" />
+                      </motion.div>
+                      <span className="text-xs font-medium">Vérification automatique...</span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div>
-                <p className="font-bold text-sm">Compte en attente</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Konnekt vérifie votre profil. Les fonctions terrain seront débloquées après validation.
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          );
+        })()}
 
         {!isPending && (
           <>
