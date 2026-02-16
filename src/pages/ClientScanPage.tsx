@@ -1,6 +1,8 @@
 /**
- * ClientScanPage — Page scan client avec 3 onglets
+ * ClientScanPage — Engine-driven scan page with 3 tabs
  * Scanner | Mon QR | Mes Colis
+ * 
+ * ALL scan resolution goes through useScanEngine.
  */
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -14,9 +16,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MiniLoader } from "@/components/ui/MiniLoader";
 import { QRCameraScanner } from "@/components/gp/QRCameraScanner";
-import { UnifiedScanRouter } from "@/components/scan/UnifiedScanRouter";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useScanEngine } from "@/hooks/useScanEngine";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -49,8 +51,6 @@ export default function ClientScanPage() {
   const [activeTab, setActiveTab] = useState("scanner");
   const [cameraOpen, setCameraOpen] = useState(false);
   const [manualCode, setManualCode] = useState("");
-  const [scannedUserId, setScannedUserId] = useState<string | null>(null);
-  const [showResult, setShowResult] = useState(false);
 
   // Mon QR
   const [userId, setUserId] = useState<string | null>(null);
@@ -61,6 +61,11 @@ export default function ClientScanPage() {
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
+
+  // Scan Engine — replaces legacy parseQRContent + UnifiedScanRouter
+  const { resolve, loading: scanLoading } = useScanEngine({
+    autoNavigate: true, // Engine handles all navigation/toasts/sheets
+  });
 
   useEffect(() => {
     loadUserAndOrders();
@@ -81,33 +86,16 @@ export default function ClientScanPage() {
     setLoadingOrders(false);
   };
 
-  // Scanner logic
-  const parseQRContent = (code: string): { type: "user" | "order"; value: string } => {
-    const userUrlMatch = code.match(/\/track\/user\/([a-f0-9-]{36})/i);
-    if (userUrlMatch) return { type: "user", value: userUrlMatch[1] };
-    const protocolMatch = code.match(/konnekt:\/\/user\/([a-f0-9-]{36})/i);
-    if (protocolMatch) return { type: "user", value: protocolMatch[1] };
-    const uuidMatch = code.match(/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i);
-    if (uuidMatch) return { type: "user", value: code };
-    return { type: "order", value: code.toUpperCase() };
-  };
-
-  const handleCameraScan = (code: string) => {
+  // Camera scan → resolve through engine
+  const handleCameraScan = async (code: string) => {
     setCameraOpen(false);
-    const parsed = parseQRContent(code);
-    if (parsed.type === "user") {
-      setScannedUserId(parsed.value);
-      setShowResult(true);
-    } else {
-      // Order code — show in result
-      setScannedUserId(null);
-      toast({ title: "Code scanné", description: parsed.value });
-    }
+    await resolve(code, "client");
   };
 
-  const handleManualSubmit = () => {
+  // Manual code → resolve through engine
+  const handleManualSubmit = async () => {
     if (!manualCode.trim()) return;
-    handleCameraScan(manualCode.trim());
+    await resolve(manualCode.trim(), "client");
   };
 
   const handleCopyUserId = () => {
@@ -186,8 +174,12 @@ export default function ClientScanPage() {
                 className="font-mono"
                 onKeyDown={(e) => e.key === "Enter" && handleManualSubmit()}
               />
-              <Button onClick={handleManualSubmit} disabled={!manualCode.trim()}>
-                <Keyboard className="w-4 h-4" />
+              <Button onClick={handleManualSubmit} disabled={!manualCode.trim() || scanLoading}>
+                {scanLoading ? (
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Keyboard className="w-4 h-4" />
+                )}
               </Button>
             </div>
 
@@ -266,7 +258,6 @@ export default function ClientScanPage() {
                   </Button>
                 </div>
 
-                {/* Explications */}
                 <Card className="bg-muted/30 border-border/50">
                   <CardContent className="p-4 space-y-3">
                     <h4 className="font-medium flex items-center gap-2 text-sm">
@@ -311,7 +302,6 @@ export default function ClientScanPage() {
               </div>
             ) : (
               <>
-                {/* Active orders */}
                 {activeOrders.length > 0 && (
                   <div className="space-y-2">
                     <h3 className="text-sm font-semibold text-muted-foreground">En cours ({activeOrders.length})</h3>
@@ -320,7 +310,6 @@ export default function ClientScanPage() {
                     ))}
                   </div>
                 )}
-                {/* Past orders */}
                 {pastOrders.length > 0 && (
                   <div className="space-y-2">
                     <h3 className="text-sm font-semibold text-muted-foreground">Historique ({pastOrders.length})</h3>
@@ -332,7 +321,6 @@ export default function ClientScanPage() {
               </>
             )}
 
-            {/* Explications */}
             <Card className="bg-muted/30 border-border/50">
               <CardContent className="p-4 space-y-3">
                 <h4 className="font-medium flex items-center gap-2 text-sm">
@@ -362,157 +350,70 @@ export default function ClientScanPage() {
       {/* Camera Scanner */}
       <QRCameraScanner isOpen={cameraOpen} onScan={handleCameraScan} onClose={() => setCameraOpen(false)} />
 
-      {/* Scan Result Sheet */}
-      <Sheet open={showResult} onOpenChange={(open) => { if (!open) { setShowResult(false); setScannedUserId(null); } }}>
-        <SheetContent side="bottom" className="h-[90vh] rounded-t-2xl overflow-y-auto">
-          <SheetHeader className="pb-2">
-            <SheetTitle className="flex items-center gap-2 text-base">
-              <QrCode className="w-4 h-4 text-primary" />
-              Résultat du scan
-            </SheetTitle>
-          </SheetHeader>
-          {scannedUserId && (
-            <UnifiedScanRouter scannedUserId={scannedUserId} onComplete={() => { setShowResult(false); setScannedUserId(null); }} />
+      {/* Order Detail Sheet */}
+      <Sheet open={!!selectedOrder} onOpenChange={(open) => { if (!open) setSelectedOrder(null); }}>
+        <SheetContent side="bottom" className="h-[80vh] rounded-t-2xl overflow-y-auto">
+          {selectedOrder && (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-base">{selectedOrder.order_number}</h3>
+                <Badge className={STATUS_LABELS[selectedOrder.status]?.color || "bg-muted"}>
+                  {STATUS_LABELS[selectedOrder.status]?.label || selectedOrder.status}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <MapPin className="w-4 h-4" />
+                {selectedOrder.origin_city} → {selectedOrder.destination_city}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground">Poids</p>
+                  <p className="font-bold">{selectedOrder.weight} kg</p>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground">Montant</p>
+                  <p className="font-bold">{selectedOrder.total_price?.toLocaleString()} {selectedOrder.currency}</p>
+                </div>
+              </div>
+              <div className="flex justify-center py-4">
+                <div className="bg-white p-4 rounded-xl shadow-sm">
+                  <img
+                    src={orderQrUrl(selectedOrder.order_number)}
+                    alt={`QR ${selectedOrder.order_number}`}
+                    className="w-48 h-48"
+                  />
+                </div>
+              </div>
+              <p className="text-center text-xs text-muted-foreground">
+                Présentez ce QR au transporteur ou au destinataire
+              </p>
+              <p className="text-center text-[10px] text-muted-foreground/60">
+                {format(new Date(selectedOrder.created_at), "d MMMM yyyy 'à' HH:mm", { locale: fr })}
+              </p>
+            </div>
           )}
         </SheetContent>
       </Sheet>
-
-      {/* Order Detail Sheet */}
-      <Sheet open={!!selectedOrder} onOpenChange={(open) => { if (!open) setSelectedOrder(null); }}>
-        <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl overflow-y-auto">
-          {selectedOrder && <OrderDetailSheet order={selectedOrder} onClose={() => setSelectedOrder(null)} />}
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }
 
-// ─── Order Card Component ───
+/* ─── Order Card Component ─── */
 function OrderCard({ order, onSelect }: { order: OrderItem; onSelect: () => void }) {
-  const statusInfo = STATUS_LABELS[order.status] || { label: order.status, color: "bg-muted text-muted-foreground" };
-
-  return (
-    <button onClick={onSelect} className="w-full text-left p-3 bg-card border rounded-xl hover:border-primary/30 transition-all flex items-center gap-3">
-      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-        <Package className="w-5 h-5 text-primary" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-xs font-semibold truncate">{order.order_number}</span>
-          <Badge className={`text-[10px] ${statusInfo.color} border-none`}>{statusInfo.label}</Badge>
-        </div>
-        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-          <MapPin className="w-3 h-3" />
-          <span>{order.origin_city}</span>
-          <ArrowRight className="w-2.5 h-2.5" />
-          <span>{order.destination_city}</span>
-          <span className="ml-auto">{order.weight}kg</span>
-        </div>
-      </div>
-      <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-    </button>
-  );
-}
-
-// ─── Order Detail Sheet ───
-function OrderDetailSheet({ order, onClose }: { order: OrderItem; onClose: () => void }) {
-  const { toast } = useToast();
-  const [qrLoaded, setQrLoaded] = useState(false);
   const statusInfo = STATUS_LABELS[order.status] || { label: order.status, color: "bg-muted" };
-  const canShowQR = ["accepted", "collected", "in_transit", "delivered"].includes(order.status);
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(order.order_number)}&format=png&margin=10`;
-
   return (
-    <div className="space-y-4 py-2">
-      <SheetHeader>
-        <SheetTitle className="text-base">Détails du colis</SheetTitle>
-      </SheetHeader>
-
-      {/* Status */}
-      <div className="flex items-center justify-between">
-        <span className="font-mono text-sm font-bold">{order.order_number}</span>
-        <Badge className={`${statusInfo.color} border-none`}>{statusInfo.label}</Badge>
-      </div>
-
-      {/* Route */}
-      <Card>
-        <CardContent className="p-4 space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 text-primary" />
-              <span className="font-medium text-sm">{order.origin_city}</span>
-            </div>
-            <ArrowRight className="w-4 h-4 text-muted-foreground" />
-            <div className="flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 text-accent" />
-              <span className="font-medium text-sm">{order.destination_city}</span>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <p className="text-xs text-muted-foreground">Poids</p>
-              <p className="font-semibold">{order.weight} kg</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Prix total</p>
-              <p className="font-semibold text-primary">{order.total_price?.toLocaleString()} {order.currency}</p>
-            </div>
-          </div>
-          <div className="text-xs text-muted-foreground">
-            Créée le {format(new Date(order.created_at), "d MMMM yyyy", { locale: fr })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* QR Code */}
-      {canShowQR ? (
-        <Card>
-          <CardContent className="p-4 space-y-3">
-            <h4 className="font-medium text-sm flex items-center gap-2">
-              <QrCode className="w-4 h-4 text-primary" />
-              QR Code du colis
-            </h4>
-            <div className="flex justify-center">
-              <div className="p-4 bg-white rounded-xl border">
-                {!qrLoaded && <div className="w-44 h-44 flex items-center justify-center"><MiniLoader size="md" /></div>}
-                <img
-                  src={qrUrl}
-                  alt={`QR ${order.order_number}`}
-                  className={`w-44 h-44 ${qrLoaded ? "block" : "hidden"}`}
-                  onLoad={() => setQrLoaded(true)}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" size="sm" onClick={() => {
-                navigator.clipboard.writeText(order.order_number);
-                toast({ title: "Code copié" });
-              }}>
-                <Copy className="w-4 h-4 mr-1.5" />
-                Copier
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => {
-                const link = document.createElement("a");
-                link.href = qrUrl;
-                link.download = `qr-${order.order_number}.png`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-              }}>
-                <Download className="w-4 h-4 mr-1.5" />
-                Télécharger
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="border-dashed">
-          <CardContent className="p-6 text-center">
-            <QrCode className="w-10 h-10 mx-auto text-muted-foreground/30 mb-2" />
-            <p className="text-xs text-muted-foreground">QR disponible après acceptation par le transporteur</p>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+    <Card className="cursor-pointer hover:border-primary/30 transition-colors" onClick={onSelect}>
+      <CardContent className="p-3">
+        <div className="flex items-center justify-between mb-1">
+          <span className="font-mono text-xs font-bold">{order.order_number}</span>
+          <Badge className={`text-[10px] ${statusInfo.color}`}>{statusInfo.label}</Badge>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <MapPin className="w-3 h-3" />
+          <span>{order.origin_city} → {order.destination_city}</span>
+          <span className="ml-auto font-medium">{order.weight} kg</span>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

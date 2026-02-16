@@ -1,8 +1,9 @@
 /**
- * GPScanSheet V5 — Two-layer scan experience for GP transporters
+ * GPScanSheet V6 — Engine-driven two-layer scan experience for GP transporters
  * Layer 1: Quick actions + balance (original popup)
  * Layer 2: Camera-first tabbed view (Scanner / Mon QR / Mes Colis)
- * Same dark premium identity as ClientScanSheet with amber GP accents
+ * 
+ * ALL scan logic now goes through useScanEngine — no legacy routing.
  */
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,13 +15,13 @@ import {
 } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { QRCameraScanner } from "@/components/gp/QRCameraScanner";
-import { UniversalScanner } from "@/components/scan/UniversalScanner";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import QRCodeDisplay from "react-qr-code";
 import { useSwipeDown } from "@/hooks/useSwipeDown";
 import { supabase } from "@/integrations/supabase/client";
+import { useScanEngine } from "@/hooks/useScanEngine";
 
 interface GPScanSheetProps {
   open: boolean;
@@ -62,14 +63,6 @@ const mockGPColis = [
   { id: "KNK-2024-0703", status: "À livrer", route: "Dakar → Marseille", weight: "6.2 kg", client: "Moussa B." },
 ];
 
-/* ── Manual code actions for GP ── */
-const codeActions = [
-  { icon: PackageOpen, label: "Enregistrer dépôt", action: "checkin" },
-  { icon: PackageCheck, label: "Confirmer livraison", action: "confirm" },
-  { icon: Scale, label: "Ajuster le poids", action: "adjust" },
-  { icon: Truck, label: "Voir la mission", action: "mission" },
-];
-
 export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanSheetProps) {
   const navigate = useNavigate();
 
@@ -77,7 +70,6 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
   const [activeSlide, setActiveSlide] = useState(0);
   const [showBalance, setShowBalance] = useState(false);
   const [continuousMode, setContinuousMode] = useState(false);
-  const [scannedCode, setScannedCode] = useState<string | null>(null);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
 
   // Layer 2 state
@@ -91,9 +83,26 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
   const [codeValidated, setCodeValidated] = useState(false);
   const [showManualInput, setShowManualInput] = useState(false);
 
+  // Engine state
+  const [engineMessage, setEngineMessage] = useState<string | null>(null);
+
   // Swipe down to close
   const swipeLayer1 = useSwipeDown(() => handleOpenChange(false));
   const swipeLayer2 = useSwipeDown(() => setScanViewOpen(false));
+
+  // Scan Engine — all scan logic goes through here
+  const { resolve, loading: scanLoading } = useScanEngine({
+    autoNavigate: true,
+    onResult: (response) => {
+      setEngineMessage(response.message);
+      if (response.status !== "failed") {
+        setTimeout(() => {
+          setScanViewOpen(false);
+          handleOpenChange(false);
+        }, 300);
+      }
+    },
+  });
 
   // Load wallet balance
   useEffect(() => {
@@ -119,7 +128,6 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
 
   const handleOpenChange = useCallback((isOpen: boolean) => {
     if (!isOpen) {
-      setScannedCode(null);
       setScanViewOpen(false);
       setCameraActive(false);
       setActiveTab("scanner");
@@ -128,19 +136,26 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
       setCodeValidated(false);
       setShowManualInput(false);
       setContinuousMode(false);
+      setEngineMessage(null);
     }
     onOpenChange(isOpen);
   }, [onOpenChange]);
 
-  const handleScan = (code: string) => {
+  // Camera scan → resolve through engine
+  const handleScan = async (code: string) => {
     setCameraActive(false);
-    if (scanViewOpen) {
-      setScanViewOpen(false);
+    await resolve(code, "gp");
+    if (continuousMode) {
+      // In continuous mode, reopen camera after resolution
+      setTimeout(() => setCameraActive(true), 1000);
     }
-    setScannedCode(code);
-    if (!continuousMode) {
-      // Process scan result
-    }
+  };
+
+  // Manual code validation → resolve through engine
+  const validateAndResolveCode = async () => {
+    if (manualCode.trim().length < 3) return;
+    setCodeValidated(true);
+    await resolve(manualCode.trim(), "gp");
   };
 
   const handleAction = (action: string) => {
@@ -155,28 +170,13 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
     }
   };
 
-  const handleCodeAction = (action: string) => {
-    handleOpenChange(false);
-    switch (action) {
-      case "checkin": navigate("/gp/colis"); break;
-      case "confirm": navigate("/gp/en-cours"); break;
-      case "adjust": navigate("/gp/en-cours"); break;
-      case "mission": navigate(`/gp/order/${manualCode}`); break;
-    }
-  };
-
-  const validateCode = () => {
-    if (manualCode.trim().length >= 3) {
-      setCodeValidated(true);
-    }
-  };
-
   const openScanView = () => {
     setScanViewOpen(true);
     setActiveTab("scanner");
     setManualCode("");
     setCodeValidated(false);
     setShowManualInput(false);
+    setEngineMessage(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -231,7 +231,7 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
                 {tabs.map((tab) => (
                   <button
                     key={tab.key}
-                    onClick={() => { setActiveTab(tab.key); setShowManualInput(false); setCodeValidated(false); setManualCode(""); }}
+                    onClick={() => { setActiveTab(tab.key); setShowManualInput(false); setCodeValidated(false); setManualCode(""); setEngineMessage(null); }}
                     className={cn(
                       "flex-1 py-2.5 text-xs font-semibold transition-all duration-200",
                       activeTab === tab.key ? "bg-amber-500/20 text-amber-400" : "text-white/40"
@@ -281,6 +281,17 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
                       </div>
                     </div>
 
+                    {/* Engine feedback message */}
+                    {engineMessage && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="w-full mt-3 p-2.5 rounded-xl border border-amber-400/20 bg-amber-500/10 text-xs text-amber-400 font-medium"
+                      >
+                        {engineMessage}
+                      </motion.div>
+                    )}
+
                     {/* Manual entry */}
                     <div className="w-full mt-4">
                       {!showManualInput && !codeValidated && (
@@ -304,54 +315,24 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
                                   type="text"
                                   value={manualCode}
                                   onChange={(e) => setManualCode(e.target.value.toUpperCase())}
-                                  onKeyDown={(e) => e.key === "Enter" && validateCode()}
+                                  onKeyDown={(e) => e.key === "Enter" && validateAndResolveCode()}
                                   placeholder="Ex: KNK-2024-0501"
                                   className="w-full pl-9 pr-4 py-3 rounded-xl text-sm font-medium text-white placeholder:text-white/25 border border-white/[0.08] bg-white/[0.04] focus:outline-none focus:border-amber-400/40"
                                   autoFocus
                                 />
                               </div>
                               <motion.button
-                                onClick={validateCode}
-                                disabled={manualCode.trim().length < 3}
+                                onClick={validateAndResolveCode}
+                                disabled={manualCode.trim().length < 3 || scanLoading}
                                 className="px-5 py-3 rounded-xl font-semibold text-sm bg-amber-500/20 text-amber-400 border border-amber-400/25 disabled:opacity-30 disabled:cursor-not-allowed"
                                 whileTap={{ scale: 0.97 }}
                               >
-                                OK
+                                {scanLoading ? "..." : "OK"}
                               </motion.button>
                             </div>
                             <button onClick={() => { setShowManualInput(false); setManualCode(""); }} className="text-xs text-white/30 font-medium">
                               Annuler
                             </button>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-
-                      {/* Code validated → show GP actions */}
-                      <AnimatePresence>
-                        {codeValidated && (
-                          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="flex flex-col gap-3">
-                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-amber-400/20 bg-amber-500/10">
-                              <CheckCircle2 className="w-4 h-4 text-amber-400" />
-                              <span className="text-sm font-semibold text-amber-400">{manualCode}</span>
-                              <button onClick={() => { setCodeValidated(false); setShowManualInput(true); }} className="ml-auto text-[10px] text-white/40 font-medium">
-                                Modifier
-                              </button>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              {codeActions.map((a) => (
-                                <motion.button
-                                  key={a.action}
-                                  onClick={() => handleCodeAction(a.action)}
-                                  className="flex items-center gap-2.5 p-3 rounded-xl border border-white/[0.06] bg-white/[0.04]"
-                                  whileTap={{ scale: 0.96 }}
-                                >
-                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-500/10">
-                                    <a.icon className="w-4 h-4 text-amber-400" />
-                                  </div>
-                                  <span className="text-[11px] font-semibold text-white/80">{a.label}</span>
-                                </motion.button>
-                              ))}
-                            </div>
                           </motion.div>
                         )}
                       </AnimatePresence>
@@ -386,7 +367,7 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
                   </motion.div>
                 )}
 
-                {/* ── Mes Colis Tab — Interactive with expandable QR ── */}
+                {/* ── Mes Colis Tab ── */}
                 {activeTab === "mes_colis" && (
                   <motion.div key="mes_colis" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-5 pt-2">
                     <p className="text-xs text-white/40 mb-3">Colis actifs — Appuyez pour afficher le QR</p>
@@ -476,180 +457,164 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
           style={{ background: BG_GRADIENT }}
         >
           <div {...swipeLayer1}>
-          <div className="flex justify-center pt-3 pb-1">
-            <div className="w-10 h-1 rounded-full bg-white/20" />
-          </div>
-
-          {/* Header */}
-          <div className="relative px-5 pt-2 pb-4">
-            <div className="absolute top-2 right-4 flex items-center gap-2 z-10">
-              {/* Open Layer 2 scanner button */}
-              <motion.button
-                onClick={openScanView}
-                className="w-8 h-8 rounded-full flex items-center justify-center bg-amber-500/15 border border-amber-400/20"
-                whileTap={{ scale: 0.9 }}
-              >
-                <ScanLine className="w-4 h-4 text-amber-400" />
-              </motion.button>
-              <button
-                onClick={() => handleOpenChange(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center bg-white/10 backdrop-blur-sm"
-              >
-                <X className="w-4 h-4 text-white/60" />
-              </button>
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full bg-white/20" />
             </div>
 
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-white">Espace GP</h2>
-                  {isVerified && (
-                    <Badge variant="outline" className="text-[9px] border-amber-500/40 text-amber-400 px-1.5 py-0">
-                      <ShieldCheck className="w-2.5 h-2.5 mr-0.5" /> Vérifié
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-xs mt-0.5 text-white/50">
-                  Colis · Livraison · Ajustement
-                </p>
-
-                {/* Balance section */}
-                <div className="mt-3 flex items-center gap-2">
-                  <button onClick={() => setShowBalance(!showBalance)} className="flex items-center gap-2 group">
-                    {showBalance ? <EyeOff className="w-3.5 h-3.5 text-white/40" /> : <Eye className="w-3.5 h-3.5 text-white/40" />}
-                    {showBalance ? (
-                      <span className="text-lg font-bold text-white">{walletBalance !== null ? `${walletBalance.toLocaleString()} FCFA` : "-- FCFA"}</span>
-                    ) : (
-                      <span className="text-sm tracking-[0.3em] text-white/40 font-medium">••••••</span>
-                    )}
-                  </button>
-                </div>
-
-                <button
-                  onClick={() => { handleOpenChange(false); navigate("/gp/wallet"); }}
-                  className="flex items-center gap-1 mt-1.5 text-xs font-medium text-amber-400"
+            {/* Header */}
+            <div className="relative px-5 pt-2 pb-4">
+              <div className="absolute top-2 right-4 flex items-center gap-2 z-10">
+                <motion.button
+                  onClick={openScanView}
+                  className="w-8 h-8 rounded-full flex items-center justify-center bg-amber-500/15 border border-amber-400/20"
+                  whileTap={{ scale: 0.9 }}
                 >
-                  Voir les revenus <ArrowRight className="w-3 h-3" />
+                  <ScanLine className="w-4 h-4 text-amber-400" />
+                </motion.button>
+                <button
+                  onClick={() => handleOpenChange(false)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center bg-white/10 backdrop-blur-sm"
+                >
+                  <X className="w-4 h-4 text-white/60" />
                 </button>
               </div>
 
-              {/* QR Scan button — amber glow */}
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-white">Espace GP</h2>
+                    {isVerified && (
+                      <Badge variant="outline" className="text-[9px] border-amber-500/40 text-amber-400 px-1.5 py-0">
+                        <ShieldCheck className="w-2.5 h-2.5 mr-0.5" /> Vérifié
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs mt-0.5 text-white/50">Colis · Livraison · Ajustement</p>
+
+                  <div className="mt-3 flex items-center gap-2">
+                    <button onClick={() => setShowBalance(!showBalance)} className="flex items-center gap-2 group">
+                      {showBalance ? <EyeOff className="w-3.5 h-3.5 text-white/40" /> : <Eye className="w-3.5 h-3.5 text-white/40" />}
+                      {showBalance ? (
+                        <span className="text-lg font-bold text-white">{walletBalance !== null ? `${walletBalance.toLocaleString()} FCFA` : "-- FCFA"}</span>
+                      ) : (
+                        <span className="text-sm tracking-[0.3em] text-white/40 font-medium">••••••</span>
+                      )}
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => { handleOpenChange(false); navigate("/gp/wallet"); }}
+                    className="flex items-center gap-1 mt-1.5 text-xs font-medium text-amber-400"
+                  >
+                    Voir les revenus <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+
+                {/* QR Scan button — amber glow */}
+                <motion.button
+                  onClick={() => setCameraActive(true)}
+                  className="relative w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0"
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <div className="absolute inset-0 rounded-2xl border-2 border-amber-400/40" />
+                  <motion.div
+                    className="absolute -inset-0.5 rounded-2xl border border-amber-400/15"
+                    animate={{ opacity: [0.3, 0.7, 0.3] }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                  />
+                  <div className="absolute inset-[3px] rounded-xl flex flex-col items-center justify-center gap-1 bg-amber-500/10">
+                    <motion.div animate={{ scale: [1, 1.08, 1] }} transition={{ duration: 2.5, repeat: Infinity }}>
+                      <ScanLine className="w-8 h-8 text-amber-400" />
+                    </motion.div>
+                    <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider">Scanner</span>
+                  </div>
+                  {["top-0 left-0 border-t-2 border-l-2 rounded-tl-md",
+                    "top-0 right-0 border-t-2 border-r-2 rounded-tr-md",
+                    "bottom-0 left-0 border-b-2 border-l-2 rounded-bl-md",
+                    "bottom-0 right-0 border-b-2 border-r-2 rounded-br-md"
+                  ].map((pos) => (
+                    <div key={pos} className={cn("absolute w-3 h-3 border-amber-400/60", pos)} />
+                  ))}
+                </motion.button>
+              </div>
+
+              {/* Continuous mode toggle */}
               <motion.button
-                onClick={() => setCameraActive(true)}
-                className="relative w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0"
+                onClick={() => setContinuousMode(!continuousMode)}
+                className={cn(
+                  "mt-3 px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all",
+                  continuousMode ? "bg-amber-500 text-white" : "bg-white/[0.06] text-white/50 border border-white/[0.08]"
+                )}
                 whileTap={{ scale: 0.95 }}
               >
-                <div className="absolute inset-0 rounded-2xl border-2 border-amber-400/40" />
-                <motion.div
-                  className="absolute -inset-0.5 rounded-2xl border border-amber-400/15"
-                  animate={{ opacity: [0.3, 0.7, 0.3] }}
-                  transition={{ duration: 3, repeat: Infinity }}
-                />
-                <div className="absolute inset-[3px] rounded-xl flex flex-col items-center justify-center gap-1 bg-amber-500/10">
-                  <motion.div animate={{ scale: [1, 1.08, 1] }} transition={{ duration: 2.5, repeat: Infinity }}>
-                    <ScanLine className="w-8 h-8 text-amber-400" />
-                  </motion.div>
-                  <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider">Scanner</span>
-                </div>
-                {["top-0 left-0 border-t-2 border-l-2 rounded-tl-md",
-                  "top-0 right-0 border-t-2 border-r-2 rounded-tr-md",
-                  "bottom-0 left-0 border-b-2 border-l-2 rounded-bl-md",
-                  "bottom-0 right-0 border-b-2 border-r-2 rounded-br-md"
-                ].map((pos) => (
-                  <div key={pos} className={cn("absolute w-3 h-3 border-amber-400/60", pos)} />
-                ))}
+                <Zap className="w-3 h-3" />
+                Scan continu {continuousMode ? "ON" : "OFF"}
               </motion.button>
             </div>
 
-            {/* Continuous mode toggle */}
-            <motion.button
-              onClick={() => setContinuousMode(!continuousMode)}
-              className={cn(
-                "mt-3 px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all",
-                continuousMode ? "bg-amber-500 text-white" : "bg-white/[0.06] text-white/50 border border-white/[0.08]"
-              )}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Zap className="w-3 h-3" />
-              Scan continu {continuousMode ? "ON" : "OFF"}
-            </motion.button>
-          </div>
-
-          {/* Content */}
-          <div className="px-4 pb-safe overflow-y-auto" style={{ maxHeight: "calc(92vh - 280px)" }}>
-            {scannedCode ? (
-              <div className="pt-4">
-                <UniversalScanner onComplete={() => handleOpenChange(false)} />
+            {/* Content */}
+            <div className="px-4 pb-safe overflow-y-auto" style={{ maxHeight: "calc(92vh - 280px)" }}>
+              {/* Quick Actions Grid 3x2 */}
+              <div className="grid grid-cols-3 gap-2.5 mt-2">
+                {gpQuickActions.map((action) => (
+                  <motion.button
+                    key={action.action}
+                    onClick={() => handleAction(action.action)}
+                    className="flex flex-col items-center gap-2 p-3.5 rounded-2xl border border-white/[0.06] bg-white/[0.04] backdrop-blur-sm"
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-amber-500/10">
+                      <action.icon className="w-5 h-5 text-amber-400" />
+                    </div>
+                    <span className="text-[10px] font-semibold text-center leading-tight text-white/80">
+                      {action.label}
+                    </span>
+                  </motion.button>
+                ))}
               </div>
-            ) : (
-              <>
-                {/* Quick Actions Grid 3x2 */}
-                <div className="grid grid-cols-3 gap-2.5 mt-2">
-                  {gpQuickActions.map((action) => (
-                    <motion.button
-                      key={action.action}
-                      onClick={() => handleAction(action.action)}
-                      className="flex flex-col items-center gap-2 p-3.5 rounded-2xl border border-white/[0.06] bg-white/[0.04] backdrop-blur-sm"
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-amber-500/10">
-                        <action.icon className="w-5 h-5 text-amber-400" />
+
+              {/* Carousel */}
+              <div className="mt-4 mb-4">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeSlide}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.25 }}
+                    className="rounded-2xl overflow-hidden p-3.5 border border-white/[0.06] bg-white/[0.03]"
+                  >
+                    <div className="flex items-start gap-3">
+                      {(() => {
+                        const Icon = gpCarouselSlides[activeSlide].icon;
+                        return (
+                          <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-amber-500/10 flex-shrink-0">
+                            <Icon className="w-4.5 h-4.5 text-amber-400" />
+                          </div>
+                        );
+                      })()}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-xs text-white/90">{gpCarouselSlides[activeSlide].title}</h4>
+                        <p className="text-[11px] mt-0.5 text-white/40 leading-relaxed">{gpCarouselSlides[activeSlide].text}</p>
                       </div>
-                      <span className="text-[10px] font-semibold text-center leading-tight text-white/80">
-                        {action.label}
-                      </span>
-                    </motion.button>
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+                <div className="flex justify-center gap-1.5 mt-3">
+                  {gpCarouselSlides.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setActiveSlide(i)}
+                      className="h-1 rounded-full transition-all"
+                      style={{
+                        width: i === activeSlide ? "1.25rem" : "0.3rem",
+                        background: i === activeSlide ? "#fbbf24" : "rgba(255,255,255,0.15)",
+                      }}
+                    />
                   ))}
                 </div>
-
-                {/* Carousel */}
-                <div className="mt-4 mb-4">
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={activeSlide}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.25 }}
-                      className="rounded-2xl overflow-hidden p-3.5 border border-white/[0.06] bg-white/[0.03]"
-                    >
-                      <div className="flex items-start gap-3">
-                        {(() => {
-                          const Icon = gpCarouselSlides[activeSlide].icon;
-                          return (
-                            <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-amber-500/10 flex-shrink-0">
-                              <Icon className="w-4.5 h-4.5 text-amber-400" />
-                            </div>
-                          );
-                        })()}
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-xs text-white/90">
-                            {gpCarouselSlides[activeSlide].title}
-                          </h4>
-                          <p className="text-[11px] mt-0.5 text-white/40 leading-relaxed">
-                            {gpCarouselSlides[activeSlide].text}
-                          </p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  </AnimatePresence>
-                  <div className="flex justify-center gap-1.5 mt-3">
-                    {gpCarouselSlides.map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setActiveSlide(i)}
-                        className="h-1 rounded-full transition-all"
-                        style={{
-                          width: i === activeSlide ? "1.25rem" : "0.3rem",
-                          background: i === activeSlide ? "#fbbf24" : "rgba(255,255,255,0.15)",
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+              </div>
+            </div>
           </div>
         </SheetContent>
       </Sheet>
