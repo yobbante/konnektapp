@@ -581,15 +581,17 @@ function SmartVoyageFormInline({
             />
           </div>
 
-          {/* Prix verrouillé */}
-          <div className="flex items-center justify-between p-3.5 rounded-xl bg-muted/60 border">
-            <span className="text-sm text-muted-foreground flex items-center gap-2">
-              <Info className="w-4 h-4" /> Prix verrouillé
-            </span>
-            <span className="font-bold text-sm">
-              {defaultPricePerKg.toLocaleString()} /kg
-            </span>
-          </div>
+          {/* Prix — affiché uniquement si déjà défini via la Pricing Gate */}
+          {defaultPricePerKg > 0 && (
+            <div className="flex items-center justify-between p-3.5 rounded-xl bg-primary/5 border border-primary/20">
+              <span className="text-sm text-muted-foreground flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-primary" /> Tarif défini
+              </span>
+              <span className="font-bold text-sm text-primary">
+                {defaultPricePerKg.toLocaleString()} FCFA/kg
+              </span>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex gap-3 pt-1 pb-4">
