@@ -31,7 +31,7 @@ export interface MockLedgerEntry {
 }
 
 export interface MockCommission {
-  rate: number; // percentage
+  rate: number;
   amount: number;
   type: "progressive" | "manual_fixed";
 }
@@ -47,17 +47,23 @@ export interface TutorialStep {
   description: string;
   instruction: string;
   status: StepStatus;
-  // Mock data mutations for this step
   mockAction?: () => TutorialMockState;
-  // Visual highlight target (CSS selector or element ID)
   highlightTarget?: string;
+  /** The emoji/icon for the simulated action button */
+  actionIcon?: string;
+  /** Label for the simulated action the user "performs" */
+  actionLabel?: string;
+  /** Visual mock screen to show during this step */
+  mockScreen?: "search" | "offer-detail" | "weight-input" | "payment" | "scan-deposit" | "scan-delivery" | "tracking" | "confirm-reception" | "ledger-result" | "wallet-overview" | "escrow-detail" | "supplement-alert" | "dispute-form" | "badge-info" | "declare-flight" | "accept-mission" | "commission-calc" | "debt-calc" | "manual-parcel" | "kyc-upload" | "qr-scan" | "withdrawal";
+  /** Mock data mutation key for this step */
+  mockMutation?: "escrow_lock" | "escrow_release" | "weight_adjust_up" | "weight_adjust_down" | "scan_deposit" | "scan_delivery" | "commission_split" | "debt_deduct" | "supplement_pay" | "refund";
 }
 
 export interface TutorialScenario {
   id: string;
   title: string;
   description: string;
-  icon: string; // lucide icon name
+  icon: string;
   role: TutorialRole;
   status: ScenarioStatus;
   steps: TutorialStep[];
