@@ -253,6 +253,8 @@ export default function GPBagagesRegistration() {
     if (!pricePerKg || parseFloat(pricePerKg) <= 0) { toast({ title: "Prix au kilo requis", variant: "destructive" }); return; }
     const forfaitNum = parseFloat(forfaitValise) || 0;
     if (!forfaitNum) { toast({ title: "Forfait valise requis", variant: "destructive" }); return; }
+    const activeFlatRates = Array.from(flatRatePricing.values()).filter(v => v.isActive && v.price && parseFloat(v.price) > 0);
+    if (activeFlatRates.length < 1) { toast({ title: "Minimum 1 article forfaitaire", description: "Activez au moins un objet à tarif fixe", variant: "destructive" }); return; }
     const pv = validatePricingInputs(parseFloat(pricePerKg), forfaitNum);
     if (!pv.valid) { toast({ title: "Tarifs invalides", description: pv.error, variant: "destructive" }); return; }
 
@@ -342,17 +344,26 @@ export default function GPBagagesRegistration() {
                     id: item.id,
                     label: item.label,
                     isActive: flatRatePricing.get(item.id)?.isActive || false,
+                    price: parseFloat(flatRatePricing.get(item.id)?.price || "0") || item.defaultPrice || 0,
                   }))}
                   onFlatRateToggle={(id, active) => {
                     setFlatRatePricing(prev => {
                       const newMap = new Map(prev);
-                      const current = newMap.get(id) || { price: "", isActive: false };
+                      const current = newMap.get(id) || { price: String(flatRateItems.find(i => i.id === id)?.defaultPrice || 0), isActive: false };
                       newMap.set(id, { ...current, isActive: active });
                       return newMap;
                     });
                     setFlatRateItems(prev => prev.map(item => 
                       item.id === id ? { ...item, isActive: active } : item
                     ));
+                  }}
+                  onFlatRatePriceChange={(id, price) => {
+                    setFlatRatePricing(prev => {
+                      const newMap = new Map(prev);
+                      const current = newMap.get(id) || { price: "0", isActive: true };
+                      newMap.set(id, { ...current, price: String(price) });
+                      return newMap;
+                    });
                   }}
                 />
 
