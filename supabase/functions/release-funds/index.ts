@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     // Get order details
     const { data: order, error: orderErr } = await supabase
       .from("orders")
-      .select("id, gp_id, total_price, currency, status, client_id, order_number")
+      .select("id, gp_id, total_price, currency, status, client_id, order_number, commission_amount")
       .eq("id", order_id)
       .single();
 
@@ -68,8 +68,12 @@ Deno.serve(async (req) => {
     }
 
     const totalFcfa = order.total_price || 0;
+    // Use the commission_amount stored at booking time (source of truth)
+    // Fall back to wallet rate calculation only if not stored
     const commissionRate = wallet.commission_rate || 5;
-    const commissionAmount = Math.ceil(totalFcfa * commissionRate / 100);
+    const commissionAmount = order.commission_amount != null && order.commission_amount > 0
+      ? order.commission_amount
+      : Math.ceil(totalFcfa * commissionRate / 100);
     const netGP = totalFcfa - commissionAmount;
 
     // Get insurance amount from escrow if any

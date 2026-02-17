@@ -277,6 +277,10 @@ export default function BookingConfirmation() {
                   </div>
                 )}
 
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Frais de service</span>
+                  <span className="text-xs font-medium text-green-600 dark:text-green-400">0% jusqu'au 31/01/2027</span>
+                </div>
                 <div className="flex justify-between pt-2 border-t">
                   <span className="font-medium">Total à payer</span>
                   <span className="text-lg font-bold text-primary">
