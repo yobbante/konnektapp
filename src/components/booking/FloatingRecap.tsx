@@ -209,6 +209,12 @@ export function FloatingRecap({
                     </div>
                   )}
                   
+                  {/* Client fee promo */}
+                  <div className="flex justify-between items-center text-sm text-muted-foreground">
+                    <span>Frais de service</span>
+                    <span className="text-xs font-medium text-green-600 dark:text-green-400">0% jusqu'au 31/01/2027</span>
+                  </div>
+
                   {/* Total line */}
                   <div className="flex justify-between items-center pt-2 border-t font-medium">
                     <span>Total</span>
