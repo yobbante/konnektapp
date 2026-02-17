@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { 
   Package, MapPin, Calendar, Clock, User, Phone, 
   MessageCircle, Weight, AlertTriangle, Zap, CheckCircle,
-  XCircle, Truck, ArrowRight, FileText
+  XCircle, Truck, ArrowRight, FileText, Wallet, Percent,
+  ReceiptText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,11 +31,15 @@ interface OrderDetails {
   destination_country: string;
   weight: number;
   total_price: number;
+  price_per_kg: number;
   currency: string;
   status: string;
   created_at: string;
   pickup_date: string | null;
   client_id: string;
+  commission_amount: number;
+  has_insurance: boolean | null;
+  insurance_amount: number | null;
 }
 
 interface OrderLogistics {
@@ -345,18 +350,48 @@ export function GPOrderDetailsSheet({
               </>
             )}
 
-            {/* Financial */}
-            <div className="p-4 bg-primary/10 rounded-xl">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">Poids total</p>
-                  <p className="font-semibold">{order.weight} kg</p>
+            {/* Financial Breakdown */}
+            <div className="p-4 bg-card border rounded-xl space-y-3">
+              <h3 className="font-semibold text-sm flex items-center gap-2">
+                <ReceiptText className="w-4 h-4" />
+                Fiche financière
+              </h3>
+              <div className="space-y-2 text-sm">
+                {order.price_per_kg > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Prix/kg</span>
+                    <span>{order.price_per_kg.toLocaleString()} {order.currency}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Poids total</span>
+                  <span className="font-medium">{order.weight} kg</span>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs text-muted-foreground">Montant total</p>
-                  <p className="text-xl font-bold text-primary">
-                    {order.total_price.toLocaleString()} {order.currency}
-                  </p>
+                {order.has_insurance && order.insurance_amount != null && order.insurance_amount > 0 && (
+                  <div className="flex justify-between text-amber-600">
+                    <span>Assurance (inclus)</span>
+                    <span>{order.insurance_amount.toLocaleString()} {order.currency}</span>
+                  </div>
+                )}
+                <div className="border-t pt-2 flex justify-between">
+                  <span className="text-muted-foreground">Total client</span>
+                  <span className="font-medium">{order.total_price.toLocaleString()} {order.currency}</span>
+                </div>
+                <div className="flex justify-between text-destructive">
+                  <span className="flex items-center gap-1">
+                    <Percent className="w-3 h-3" />
+                    Commission Konnekt
+                  </span>
+                  <span>-{order.commission_amount.toLocaleString()} {order.currency}</span>
+                </div>
+                <div className="border-t pt-2 flex justify-between text-lg">
+                  <span className="font-bold flex items-center gap-1">
+                    <Wallet className="w-4 h-4" />
+                    Vos gains
+                  </span>
+                  <span className="font-bold text-primary">
+                    {(order.total_price - order.commission_amount).toLocaleString()} {order.currency}
+                  </span>
                 </div>
               </div>
             </div>

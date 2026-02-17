@@ -128,6 +128,7 @@ export default function SmartBookingPage() {
   const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
   const [offer, setOffer] = useState<GPOffer | null>(null);
   const [flatRateItems, setFlatRateItems] = useState<FlatRateItem[]>([]);
+  const [gpCommissionRate, setGpCommissionRate] = useState<number>(5);
   const [weightTiers, setWeightTiers] = useState<{
     min_weight: number;
     max_weight: number;
@@ -290,6 +291,16 @@ export default function SmartBookingPage() {
           price: fr.price,
           quantity: 0
         })));
+      }
+
+      // Fetch GP's commission rate from wallet
+      const { data: walletData } = await supabase
+        .from("gp_wallets")
+        .select("commission_rate")
+        .eq("gp_id", gpId)
+        .maybeSingle();
+      if (walletData?.commission_rate) {
+        setGpCommissionRate(walletData.commission_rate);
       }
 
       // Fetch GP's weight tiers for tiered pricing
@@ -501,6 +512,10 @@ export default function SmartBookingPage() {
     try {
       // Create order with insurance info
       const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}`;
+      // Calculate commission amount based on GP's rate
+      const totalForCommission = Math.round(displayGrandTotal);
+      const commissionAmount = Math.round(totalForCommission * gpCommissionRate / 100);
+
       const {
         data: orderData,
         error: orderError
@@ -513,29 +528,23 @@ export default function SmartBookingPage() {
         destination_city: offer.destination_city,
         destination_country: offer.destination_country,
         price_per_kg: offer.price_per_kg,
-        // V3 FIX DÉFINITIF: PostgreSQL integer columns require integer values
-        // weight is NUMERIC (accepts decimals), but total_price/insurance_amount are INTEGER
         weight: calculations.weight,
-        // NUMERIC column - keep decimal precision
-        total_price: Math.round(displayGrandTotal),
-        // INTEGER column - must be whole number
+        total_price: totalForCommission,
         currency: offer.currency,
         status: "pending" as const,
         logistics_status: "submitted",
         order_number: orderNumber,
         description: buildOrderDescription(),
-        // Insurance fields
         has_insurance: insuranceChoice.hasInsurance,
         insurance_amount: Math.round(displayInsuranceAmount || 0),
-        // INTEGER column
         insurance_tier_id: insuranceChoice.tierId,
         declared_value: insuranceChoice.declaredValue ? Math.round(insuranceChoice.declaredValue) : null,
-        // INTEGER column
         content_nature: kiloNatures,
         content_nature_other: kiloNatures.includes("autres") ? autresNature : null,
         recipient_name: recipientData?.name || null,
         recipient_phone: recipientData?.phone || null,
         recipient_user_id: recipientData?.userId || null,
+        commission_amount: commissionAmount,
       }).select("id").single();
       if (orderError) throw orderError;
 
