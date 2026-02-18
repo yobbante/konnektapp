@@ -31,11 +31,11 @@ interface GPScanSheetProps {
 const BG_GRADIENT = "linear-gradient(180deg, #0F1923 0%, #15232F 50%, #1A2B3A 100%)";
 
 const gpQuickActions = [
-  { icon: PackageOpen, label: "Enregistrer colis", action: "checkin" },
+  { icon: PackageOpen, label: "Enregistrer dépôt", action: "checkin" },
   { icon: PackageCheck, label: "Confirmer livraison", action: "confirm_delivery" },
   { icon: Scale, label: "Ajuster poids", action: "adjust_weight" },
-  { icon: Banknote, label: "Retrait rapide", action: "withdraw" },
-  { icon: ShieldCheck, label: "Vérifier KYC", action: "kyc" },
+  { icon: Banknote, label: "Libérer fonds", action: "release_funds" },
+  { icon: ShieldCheck, label: "Mon profil public", action: "public_profile" },
   { icon: Clock, label: "Historique ops", action: "history" },
 ];
 
@@ -88,8 +88,12 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
   const handleAction = (action: string) => {
     handleOpenChange(false);
     const routes: Record<string, string> = {
-      checkin: "/gp/colis", confirm_delivery: "/gp/en-cours", adjust_weight: "/gp/en-cours",
-      withdraw: "/gp/wallet", kyc: "/gp/profil-public", history: "/gp/historique",
+      checkin: "/gp/colis",               // Register new parcel deposits
+      confirm_delivery: "/confirm-reception", // Confirm delivery + release funds via code
+      adjust_weight: "/gp/en-cours",      // Adjust weight on active orders
+      release_funds: "/confirm-reception", // Release funds using delivery code
+      public_profile: "/gp/profil-public", // Public profile visible to clients
+      history: "/gp/historique",           // Operations history
     };
     if (routes[action]) navigate(routes[action]);
   };

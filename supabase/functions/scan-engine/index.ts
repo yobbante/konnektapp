@@ -182,7 +182,9 @@ async function checkIdempotency(supabase: any, key: string): Promise<boolean> {
 }
 
 async function markIdempotency(supabase: any, key: string, result: any): Promise<void> {
-  await supabase.from("idempotency_keys").insert({ key, result }).onConflict("key").merge();
+  try {
+    await supabase.from("idempotency_keys").upsert({ key, result }, { onConflict: "key" });
+  } catch { /* ignore */ }
 }
 
 // ═══════════════ ACTION EXECUTOR ═══════════════
@@ -289,14 +291,16 @@ async function executeAction(
   if (result.status === "executed") {
     await markIdempotency(supabase, idempKey, { action, orderId, at: new Date().toISOString() });
 
-    await supabase.from("scan_logs").insert({
-      user_id: userId, user_role: role, action,
-      scan_type: "engine_action", qr_type: "QR_COLIS",
-      order_id: orderId, engine_status: "executed",
-      financial_impact: result.financial_impact || null,
-      idempotency_key: idempKey,
-      metadata: { scenario: result.scenario, action_data: actionData },
-    }).catch(() => {});
+    try {
+      await supabase.from("scan_logs").insert({
+        user_id: userId, user_role: role, action,
+        scan_type: "engine_action", qr_type: "QR_COLIS",
+        order_id: orderId, engine_status: "executed",
+        financial_impact: result.financial_impact || null,
+        idempotency_key: idempKey,
+        metadata: { scenario: result.scenario, action_data: actionData },
+      });
+    } catch { /* non-blocking log */ }
   }
 
   return result;
@@ -762,10 +766,9 @@ Deno.serve(async (req) => {
     });
 
     if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.replace("Bearer ", "");
-      const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-      if (!claimsError && claimsData?.claims) {
-        userId = claimsData.claims.sub as string;
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      if (!authError && authUser) {
+        userId = authUser.id;
 
         if (!body.role || body.role === "external") {
           const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
@@ -864,14 +867,16 @@ Deno.serve(async (req) => {
     // Log
     if (userId) {
       const idempotencyKey = generateIdempotencyKey(userId, parsed.type, parsed.reference_id, response.next_action);
-      await supabase.from("scan_logs").insert({
-        user_id: userId, user_role: role, action: response.next_action,
-        scan_type: "engine", qr_type: parsed.type, reference_id: parsed.reference_id || null,
-        order_id: response.data?.order?.id || null, engine_status: response.status,
-        financial_impact: response.financial_impact || null, signature_valid: parsed.signature ? true : null,
-        idempotency_key: idempotencyKey,
-        metadata: { scenario: response.scenario, raw_length: scanned_data.length },
-      }).catch(() => {});
+      try {
+        await supabase.from("scan_logs").insert({
+          user_id: userId, user_role: role, action: response.next_action,
+          scan_type: "engine", qr_type: parsed.type, reference_id: parsed.reference_id || null,
+          order_id: response.data?.order?.id || null, engine_status: response.status,
+          financial_impact: response.financial_impact || null, signature_valid: parsed.signature ? true : null,
+          idempotency_key: idempotencyKey,
+          metadata: { scenario: response.scenario, raw_length: scanned_data.length },
+        });
+      } catch { /* non-blocking log */ }
     }
 
     return new Response(JSON.stringify(response), {
