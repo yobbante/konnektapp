@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    const { order_id, idempotency_key } = await req.json();
+    const { order_id, idempotency_key, delivery_code } = await req.json();
 
     if (!order_id) {
       return new Response(JSON.stringify({ error: "order_id required" }), {
@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     // Get order
     const { data: order, error: orderErr } = await supabase
       .from("orders")
-      .select("id, gp_id, client_id, total_price, currency, status, financial_status, order_number, commission_amount")
+      .select("id, gp_id, client_id, total_price, currency, status, financial_status, order_number, commission_amount, delivery_code")
       .eq("id", order_id)
       .single();
 
@@ -65,6 +65,15 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Verify delivery code if provided (alternative to client scan)
+    if (delivery_code) {
+      if (!order.delivery_code || order.delivery_code.toUpperCase() !== delivery_code.toUpperCase()) {
+        return new Response(JSON.stringify({ error: "Code de livraison incorrect" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     const totalAmount = order.total_price || 0;
 
     // Get GP wallet
@@ -80,9 +89,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ── Commission calculation ──
+    // ── Commission calculation — use stored commission_amount if available ──
     const commissionRate = gpWallet.commission_rate || 5;
-    const commissionAmount = Math.ceil(totalAmount * commissionRate / 100);
+    const commissionAmount = order.commission_amount != null && order.commission_amount > 0
+      ? order.commission_amount
+      : Math.ceil(totalAmount * commissionRate / 100);
     let netGP = totalAmount - commissionAmount;
 
     // ── Debt deduction ──

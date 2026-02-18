@@ -99,11 +99,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   const checkRoleAccess = async (userId: string, email: string) => {
     const pathname = location.pathname;
-    
-    if (isPublicRoute(pathname)) return;
 
     try {
-      // ── AGENT EMAIL: always redirect to /agent ──
+      // ── AGENT EMAIL: always redirect to /agent, even from public routes ──
       if (email.toLowerCase() === AGENT_EMAIL) {
         const isOnAgentRoute = AGENT_ROUTES.some(route => pathname.startsWith(route));
         if (!isOnAgentRoute) {
@@ -112,6 +110,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
         }
         return;
       }
+
+      if (isPublicRoute(pathname)) return;
 
       // Check admin/moderator roles
       const { data: rolesData } = await supabase

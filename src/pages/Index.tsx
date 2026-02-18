@@ -159,11 +159,11 @@ function IndexContent() {
 
   return (
     <div className="min-h-screen bg-background pb-safe overflow-hidden">
-      {/* RÈGLE NOTIF-01: Bande persistante pour réservations acceptées */}
-      {isAuthenticated && !isGP && <ActiveReservationBanner />}
-      
       <PullToRefreshIndicator isRefreshing={isRefreshing} progress={progress} pullDistance={pullDistance} />
       <AppHeader />
+      
+      {/* RÈGLE NOTIF-01: Bande persistante juste en dessous du header */}
+      {isAuthenticated && !isGP && <ActiveReservationBanner />}
 
       {/* APP-LIKE HOME: 1 écran, pas de scroll, conversion first */}
       {/* Show for guests OR GPs - single screen app-like experience */}
