@@ -2,41 +2,36 @@
  * ScanHeart — The unified scan brain/core component
  * 
  * Shared by ClientScanSheet, GPScanSheet, and ClientScanPage.
- * Provides: camera area, manual code input, engine feedback.
+ * Provides: camera area, manual code input, engine feedback, AND inline result display.
  * The "one scan heart" principle — all scan logic flows through here.
- * 
- * Props allow visual customization (accent color, labels) while
- * keeping the engine logic identical across all entry points.
  */
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ScanLine, Keyboard, Search, Loader2 } from "lucide-react";
+import { ScanLine, Keyboard, Search, Loader2, ArrowLeft } from "lucide-react";
 import { QRCameraScanner } from "@/components/gp/QRCameraScanner";
 import { useScanEngine } from "@/hooks/useScanEngine";
+import { useScanRole } from "@/hooks/useScanRole";
 import type { ScanEngineResponse } from "@/lib/scanEngine";
+import { ScanResultGP } from "./ScanResultGP";
+import { ScanResultClient } from "./ScanResultClient";
+import { ScanResultAgent } from "./ScanResultAgent";
+import { UnifiedScanRouter } from "./UnifiedScanRouter";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export type ScanAccent = "emerald" | "amber" | "primary";
 
 interface ScanHeartProps {
-  /** Role passed to engine resolve */
   role: string;
-  /** Visual accent color theme */
   accent?: ScanAccent;
-  /** Dark mode (sheets) vs light mode (page) */
   darkMode?: boolean;
-  /** Called after successful engine resolution */
   onResolved?: (response: ScanEngineResponse) => void;
-  /** Called when engine fails */
   onError?: (response: ScanEngineResponse) => void;
-  /** Whether to auto-close after successful resolution */
   autoClose?: boolean;
-  /** Continuous scan mode (GP feature) */
   continuousMode?: boolean;
-  /** Camera area max height */
   cameraHeight?: string;
-  /** Optional class for the container */
   className?: string;
+  gpId?: string | null;
 }
 
 const ACCENT_CLASSES: Record<ScanAccent, {
@@ -70,32 +65,40 @@ export function ScanHeart({
   darkMode = true,
   onResolved,
   onError,
-  autoClose = true,
+  autoClose = false,
   continuousMode = false,
   cameraHeight = "50vh",
   className,
+  gpId,
 }: ScanHeartProps) {
   const [cameraActive, setCameraActive] = useState(false);
   const [manualCode, setManualCode] = useState("");
   const [showManualInput, setShowManualInput] = useState(false);
   const [engineMessage, setEngineMessage] = useState<string | null>(null);
   const [engineStatus, setEngineStatus] = useState<"idle" | "success" | "error">("idle");
+  
+  // Scan result state — render inline instead of navigating away
+  const [scanResult, setScanResult] = useState<ScanEngineResponse | null>(null);
+  const [showResult, setShowResult] = useState(false);
+
+  const { scanRole, gpId: scannerGpId, logScan } = useScanRole();
 
   const a = ACCENT_CLASSES[accent];
 
   const { resolve, loading } = useScanEngine({
-    autoNavigate: true,
+    autoNavigate: false, // We handle display ourselves
     onResult: (response) => {
       setEngineMessage(response.message);
       if (response.status === "failed") {
         setEngineStatus("error");
         onError?.(response);
+        setTimeout(() => setEngineStatus("idle"), 3000);
       } else {
         setEngineStatus("success");
+        setScanResult(response);
+        setShowResult(true);
         onResolved?.(response);
       }
-      // Reset after delay
-      setTimeout(() => setEngineStatus("idle"), 3000);
     },
   });
 
@@ -114,12 +117,114 @@ export function ScanHeart({
     setShowManualInput(false);
   }, [manualCode, resolve, role]);
 
+  const resetResult = useCallback(() => {
+    setShowResult(false);
+    setScanResult(null);
+    setEngineMessage(null);
+    setEngineStatus("idle");
+  }, []);
+
   const textMuted = darkMode ? "text-white/25" : "text-muted-foreground";
   const textSoft = darkMode ? "text-white/40" : "text-muted-foreground/70";
-  const cardBg = darkMode ? "bg-white/[0.04]" : "bg-muted/30";
-  const cardBorder = darkMode ? "border-white/[0.06]" : "border-border/50";
   const inputBg = darkMode ? "bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/25" : "bg-background border-border text-foreground placeholder:text-muted-foreground";
+  const cardBorder = darkMode ? "border-white/[0.06]" : "border-border/50";
 
+  // ─── RENDER SCAN RESULT INLINE ───
+  if (showResult && scanResult) {
+    const scenario = scanResult.scenario;
+    const data = scanResult.data;
+    const effectiveGpId = gpId || scannerGpId;
+
+    return (
+      <div className={cn("flex flex-col", className)}>
+        {/* Back button */}
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={resetResult}
+          className={cn("self-start mb-3 gap-2", darkMode ? "text-white/60 hover:text-white hover:bg-white/10" : "")}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Nouveau scan
+        </Button>
+
+        {/* USER QR scanned → show UnifiedScanRouter */}
+        {(scanResult.qr_type === "QR_USER" || scanResult.qr_type === "QR_GP") && data?.user && (
+          <UnifiedScanRouter
+            scannedUserId={data.user.user_id || scanResult.data?.redirect?.match(/([a-f0-9-]{36})/)?.[1] || ""}
+            onComplete={resetResult}
+          />
+        )}
+
+        {/* GP QR scanned with redirect → show profile link */}
+        {scanResult.qr_type === "QR_GP" && !data?.user && data?.redirect && (
+          <div className="text-center py-8 space-y-3">
+            <p className={cn("text-sm", darkMode ? "text-white/70" : "text-muted-foreground")}>{scanResult.message}</p>
+            <Button onClick={() => window.location.href = data.redirect} className="gap-2">
+              Voir le profil
+            </Button>
+          </div>
+        )}
+
+        {/* ORDER QR scanned → show role-specific result */}
+        {scanResult.qr_type === "QR_COLIS" && data?.order && (
+          <>
+            {role === "gp" && effectiveGpId && (
+              <ScanResultGP
+                order={{ ...data.order, scan_history: [] }}
+                gpId={effectiveGpId}
+                logScan={logScan}
+                onComplete={resetResult}
+              />
+            )}
+            {role === "client" && (
+              <ScanResultClient
+                order={{ ...data.order, scan_history: [] }}
+              />
+            )}
+            {(role === "admin" || role === "agent_logistique") && (
+              <ScanResultAgent
+                order={{ ...data.order, scan_history: [] }}
+                logScan={logScan}
+                onComplete={resetResult}
+                isAdmin={role === "admin"}
+              />
+            )}
+          </>
+        )}
+
+        {/* GP scanned client QR with linked orders */}
+        {scenario === "gp_client_with_orders" && data?.orders && (
+          <UnifiedScanRouter
+            scannedUserId={data.user?.user_id || ""}
+            onComplete={resetResult}
+          />
+        )}
+
+        {/* External / unknown QR */}
+        {scanResult.qr_type === "QR_EXTERNAL" && (
+          <div className={cn("text-center py-8 space-y-3", darkMode ? "text-white/70" : "text-muted-foreground")}>
+            <ScanLine className="w-12 h-12 mx-auto opacity-40" />
+            <p className="text-sm">{scanResult.message}</p>
+            {data?.raw && data.is_url && (
+              <Button variant="outline" onClick={() => window.open(data.raw, "_blank")}>
+                Ouvrir le lien
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Fallback for unhandled scenarios */}
+        {!data?.order && !data?.user && !data?.redirect && scanResult.qr_type !== "QR_EXTERNAL" && (
+          <div className={cn("text-center py-8", darkMode ? "text-white/60" : "text-muted-foreground")}>
+            <p className="text-sm">{scanResult.message}</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ─── SCANNER VIEW ───
   return (
     <>
       <QRCameraScanner
@@ -134,7 +239,6 @@ export function ScanHeart({
           className={cn("relative w-full rounded-2xl overflow-hidden", cardBorder, "border")}
           style={{ background: darkMode ? "rgba(0,0,0,0.3)" : undefined, height: cameraHeight, maxHeight: "420px" }}
         >
-          {/* Scanning frame */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative w-52 h-52">
               {["top-0 left-0 border-t-[3px] border-l-[3px] rounded-tl-2xl",
@@ -144,15 +248,11 @@ export function ScanHeart({
               ].map((pos) => (
                 <div key={pos} className={cn("absolute w-10 h-10", a.border, pos)} />
               ))}
-
-              {/* Animated scan line */}
               <motion.div
                 className={cn("absolute left-3 right-3 h-0.5 bg-gradient-to-r from-transparent to-transparent", a.scanLine)}
                 animate={{ top: ["10%", "90%", "10%"] }}
                 transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
               />
-
-              {/* Center icon */}
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                 {loading ? (
                   <Loader2 className={cn("w-7 h-7 animate-spin", a.text)} />
@@ -165,11 +265,7 @@ export function ScanHeart({
               </div>
             </div>
           </div>
-
-          {/* Tap to activate camera */}
           <button onClick={() => setCameraActive(true)} className="absolute inset-0 w-full h-full z-10" />
-
-          {/* Bottom hint */}
           <div className="absolute bottom-4 left-0 right-0 text-center">
             <span className={cn(
               "text-[10px] font-medium px-3 py-1 rounded-full",
@@ -178,8 +274,6 @@ export function ScanHeart({
               Appuyez pour activer la caméra
             </span>
           </div>
-
-          {/* Status glow ring on scan result */}
           <AnimatePresence>
             {engineStatus !== "idle" && (
               <motion.div
@@ -197,7 +291,7 @@ export function ScanHeart({
 
         {/* ── Engine Feedback ── */}
         <AnimatePresence>
-          {engineMessage && (
+          {engineMessage && !showResult && (
             <motion.div
               initial={{ opacity: 0, y: 5, height: 0 }}
               animate={{ opacity: 1, y: 0, height: "auto" }}

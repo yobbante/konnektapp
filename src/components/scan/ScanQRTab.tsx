@@ -38,10 +38,11 @@ export function ScanQRTab({ role, accent = "emerald", darkMode = true, gpId, isV
     load();
   }, []);
 
+  // Simple, reliable QR formats that the engine detects instantly
   const qrValue = role === "gp" && gpId
-    ? `konnekt://gp/${gpId}`
+    ? `GP:${gpId}`
     : userId
-      ? `konnekt://user/${userId}`
+      ? `USER:${userId}`
       : "";
 
   const handleCopy = () => {

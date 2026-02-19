@@ -15,7 +15,8 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   Package, Truck, Scale, CheckCircle, AlertTriangle,
-  User, History, ArrowRight, ShieldAlert, Smartphone
+  User, History, ArrowRight, ShieldAlert, Smartphone,
+  KeyRound, Send
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,6 +68,8 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
   const [actualWeight, setActualWeight] = useState(order.weight.toString());
   const [weightDiff, setWeightDiff] = useState(0);
   const [priceDiff, setPriceDiff] = useState(0);
+  const [showDeliveryCode, setShowDeliveryCode] = useState(false);
+  const [deliveryCodeInput, setDeliveryCodeInput] = useState("");
 
   const isDepositMode = ["accepted", "pending"].includes(order.status);
   const isTransitMode = order.status === "collected";
@@ -106,8 +109,23 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
     if (result?.status === "executed") onComplete();
   };
 
+  const initiateDelivery = () => {
+    // Show delivery code input — the code was sent to the client
+    setShowDeliveryCode(true);
+    toast({
+      title: "📱 Code envoyé au client",
+      description: `Le code de livraison a été envoyé à ${order.recipient_name || order.client_name || "le client"}. Demandez-lui le code pour confirmer.`,
+    });
+  };
+
   const confirmDelivery = async () => {
-    const result = await executeAction("confirm_delivery", order.id);
+    if (!deliveryCodeInput.trim()) {
+      toast({ title: "Entrez le code de livraison", variant: "destructive" });
+      return;
+    }
+    const result = await executeAction("confirm_delivery", order.id, {
+      delivery_code: deliveryCodeInput.trim(),
+    });
     if (result?.status === "executed") onComplete();
   };
 
@@ -264,53 +282,72 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
         </Card>
       )}
 
-      {/* Delivery Mode */}
+      {/* Delivery Mode — Interactive code verification */}
       {isDeliveryMode && (
-        <>
-          {/* External handover — recipient has no app */}
-          {!order.recipient_user_id && order.delivery_code && (
-            <ExternalHandoverCard
-              orderId={order.id}
-              orderNumber={order.order_number}
-              deliveryCode={order.delivery_code}
-              recipientName={order.recipient_name}
-              recipientPhone={order.recipient_phone}
-              onConfirmManual={confirmDelivery}
-              loading={executing}
-            />
-          )}
-
-          {/* Standard delivery confirmation — recipient has app or no external flow */}
-          {(order.recipient_user_id || !order.delivery_code) && (
-            <Card className="border-success/20">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Truck className="w-4 h-4 text-success" />
-                  Confirmer la livraison
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+        <Card className="border-success/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Truck className="w-4 h-4 text-success" />
+              Confirmer la livraison
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {!showDeliveryCode ? (
+              <>
                 <p className="text-sm text-muted-foreground">
-                  Scannez le QR à la remise au destinataire pour confirmer la livraison.
+                  Un code de livraison sera envoyé au client/destinataire. Demandez-lui le code pour finaliser.
                 </p>
-                <Button 
-                  className="w-full h-12 bg-success hover:bg-success/90 text-success-foreground" 
-                  onClick={confirmDelivery} 
+                <Button
+                  className="w-full h-12 bg-success hover:bg-success/90 text-success-foreground"
+                  onClick={initiateDelivery}
                   disabled={executing}
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Envoyer le code au client
+                </Button>
+              </>
+            ) : (
+              <>
+                <div className="p-3 rounded-lg bg-success/5 border border-success/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <KeyRound className="w-4 h-4 text-success" />
+                    <span className="font-medium text-sm">Entrez le code de livraison</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Demandez le code à {order.recipient_name || order.client_name || "le client"}.
+                    {order.delivery_code && (
+                      <span className="block mt-1 text-[10px] text-muted-foreground/60">
+                        Code: <span className="font-mono font-bold">{order.delivery_code}</span>
+                      </span>
+                    )}
+                  </p>
+                  <Input
+                    value={deliveryCodeInput}
+                    onChange={(e) => setDeliveryCodeInput(e.target.value.toUpperCase())}
+                    placeholder="Ex: A3F29B"
+                    className="font-mono text-center text-lg tracking-widest h-12"
+                    maxLength={6}
+                    autoFocus
+                  />
+                </div>
+                <Button
+                  className="w-full h-12 bg-success hover:bg-success/90 text-success-foreground"
+                  onClick={confirmDelivery}
+                  disabled={executing || deliveryCodeInput.length < 4}
                 >
                   {executing ? (
                     <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
                       <CheckCircle className="w-4 h-4 mr-2" />
-                      Confirmer livraison
+                      Valider et confirmer livraison
                     </>
                   )}
                 </Button>
-              </CardContent>
-            </Card>
-          )}
-        </>
+              </>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Scan History */}
