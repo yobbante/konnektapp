@@ -144,7 +144,8 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
                       accent="amber"
                       darkMode
                       continuousMode={continuousMode}
-                      onResolved={() => { if (!continuousMode) setTimeout(closeBoth, 300); }}
+                      gpId={gpId}
+                      autoClose={false}
                     />
                   </motion.div>
                 )}

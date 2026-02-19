@@ -126,31 +126,37 @@ function detectQRType(scannedData: string): ParsedQR {
     }
   } catch { /* Not JSON */ }
 
-  // 2. CMD number
+  // 2. Simple prefix formats: USER:{uuid} and GP:{uuid}
+  const userPrefixMatch = trimmed.match(/^USER:([a-f0-9-]{36})$/i);
+  if (userPrefixMatch) return { type: "QR_USER", reference_id: userPrefixMatch[1], raw: trimmed };
+  const gpPrefixMatch = trimmed.match(/^GP:([a-f0-9-]{36})$/i);
+  if (gpPrefixMatch) return { type: "QR_GP", reference_id: gpPrefixMatch[1], raw: trimmed };
+
+  // 3. CMD number
   if (/^CMD-[\dA-Z-]+$/i.test(trimmed)) {
     return { type: "QR_COLIS", raw: trimmed };
   }
-  // 3. User URL
+  // 4. User URL
   const userUrlMatch = trimmed.match(/\/track\/user\/([a-f0-9-]{36})/i);
   if (userUrlMatch) return { type: "QR_USER", reference_id: userUrlMatch[1], raw: trimmed };
-  // 4. Protocol
+  // 5. Protocol
   const protocolMatch = trimmed.match(/konnekt:\/\/(?:user|gp)\/([a-f0-9-]{36})/i);
   if (protocolMatch) {
     const isGP = trimmed.includes("konnekt://gp/");
     return { type: isGP ? "QR_GP" : "QR_USER", reference_id: protocolMatch[1], raw: trimmed };
   }
-  // 5. GP URL
+  // 6. GP URL
   const gpUrlMatch = trimmed.match(/\/client\/transporteurs\/([a-f0-9-]{36})/i);
   if (gpUrlMatch) return { type: "QR_GP", reference_id: gpUrlMatch[1], raw: trimmed };
-  // 6. UUID
+  // 7. UUID
   if (/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(trimmed)) {
     return { type: "QR_USER", reference_id: trimmed, raw: trimmed };
   }
-  // 7. URL
+  // 8. URL
   if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
     return { type: "QR_EXTERNAL", raw: trimmed, metadata: { is_url: true } };
   }
-  // 8. Default
+  // 9. Default
   return { type: "QR_EXTERNAL", raw: trimmed };
 }
 
@@ -404,10 +410,21 @@ async function execMarkTransit(
 }
 
 async function execConfirmDelivery(
-  supabase: any, order: any, userId: string, role: string
+  supabase: any, order: any, userId: string, role: string, actionData?: Record<string, any>
 ): Promise<ScanResponse> {
   if (!["in_transit", "arrived", "collected"].includes(order.status)) {
     return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_status", next_action: "none", message: "Le colis doit être « En transit » ou « Arrivé » pour confirmer la livraison." };
+  }
+
+  // Validate delivery code if order has one
+  if (order.delivery_code) {
+    const providedCode = actionData?.delivery_code;
+    if (!providedCode) {
+      return { status: "failed", qr_type: "QR_COLIS", scenario: "code_required", next_action: "enter_code", message: "Un code de livraison est requis. Demandez-le au client." };
+    }
+    if (providedCode.toUpperCase() !== order.delivery_code.toUpperCase()) {
+      return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_code", next_action: "retry_code", message: "Code de livraison incorrect. Vérifiez et réessayez." };
+    }
   }
 
   const now = new Date().toISOString();
@@ -428,9 +445,22 @@ async function execConfirmDelivery(
     related_type: "order", related_id: order.id,
   });
 
+  // Trigger escrow release
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (serviceKey) {
+      await fetch(`${supabaseUrl}/functions/v1/confirm-delivery-release`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+        body: JSON.stringify({ order_id: order.id }),
+      }).catch(() => {});
+    }
+  } catch { /* best effort */ }
+
   return {
     status: "executed", qr_type: "QR_COLIS", scenario: "delivery_confirmed",
-    next_action: "none", message: "🎉 Livraison confirmée avec succès.",
+    next_action: "none", message: "🎉 Livraison confirmée. Fonds en cours de libération.",
     data: { order: { ...order, status: "delivered" } },
     financial_impact: { amount: order.total_price, currency: order.currency, type: "release" },
   };

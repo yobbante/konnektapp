@@ -136,7 +136,7 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
                       role="client"
                       accent="emerald"
                       darkMode
-                      onResolved={() => setTimeout(closeBoth, 300)}
+                      autoClose={false}
                     />
                   </motion.div>
                 )}
