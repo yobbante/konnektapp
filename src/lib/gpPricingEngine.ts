@@ -9,12 +9,14 @@
  */
 
 // ── Regressive Coefficients (System-level, fixed) ──────────────────────
+// Sub-1kg: forfait minimum at 1.50x (e.g. 10€/kg → 15€ minimum)
+// Then regressive: more weight = lower effective price/kg
 export const WEIGHT_TIER_COEFFICIENTS = [
-  { min: 0, max: 1, coefficient: 1.00, label: "≤ 1 kg", description: "Prix plein" },
-  { min: 1, max: 5, coefficient: 0.95, label: "1 – 5 kg", description: "Légère réduction" },
-  { min: 5, max: 10, coefficient: 0.90, label: "5 – 10 kg", description: "Économie volume" },
-  { min: 10, max: 15, coefficient: 0.85, label: "10 – 15 kg", description: "Fret léger" },
-  { min: 15, max: 23, coefficient: 0.80, label: "15 – 23 kg", description: "Pré-forfait" },
+  { min: 0, max: 1, coefficient: 1.50, label: "< 1 kg", description: "Forfait petit colis" },
+  { min: 1, max: 5, coefficient: 1.00, label: "1 – 5 kg", description: "Prix de base" },
+  { min: 5, max: 10, coefficient: 0.95, label: "5 – 10 kg", description: "Légère réduction" },
+  { min: 10, max: 15, coefficient: 0.90, label: "10 – 15 kg", description: "Économie volume" },
+  { min: 15, max: 23, coefficient: 0.85, label: "15 – 23 kg", description: "Pré-forfait" },
 ] as const;
 
 export interface CalculatedTier {
@@ -73,15 +75,20 @@ export function calculatePrice(weight: number, config: GPPricingConfig): number 
     return config.forfaitValise23kg;
   }
 
-  // 23kg+ packages: coefficient x0.80 (same as 15-23kg tier)
+  // Sub-1kg: flat forfait = basePricePerKg × 1.50 (minimum charge)
+  if (weight > 0 && weight < 1) {
+    return Math.round(config.basePricePerKg * 1.50);
+  }
+
+  // 23kg+ packages: coefficient x0.85 (same as 15-23kg tier)
   if (weight > 23) {
-    const effectivePricePerKg = config.basePricePerKg * 0.80;
+    const effectivePricePerKg = config.basePricePerKg * 0.85;
     return Math.round(weight * effectivePricePerKg);
   }
 
-  // Find the right tier
+  // Find the right tier (1kg+)
   const tier = WEIGHT_TIER_COEFFICIENTS.find(
-    t => weight > t.min && weight <= t.max
+    t => weight >= t.min && weight <= t.max
   ) || WEIGHT_TIER_COEFFICIENTS[WEIGHT_TIER_COEFFICIENTS.length - 1];
 
   const effectivePricePerKg = config.basePricePerKg * tier.coefficient;
@@ -98,16 +105,24 @@ export function getRegressiveInfo(weight: number, basePricePerKg: number): {
   savingsPercent: number;
   tierLabel: string;
 } {
+  if (weight > 0 && weight < 1) {
+    return {
+      coefficient: 1.50,
+      effectivePricePerKg: Math.round(basePricePerKg * 1.50),
+      savingsPercent: 0,
+      tierLabel: "< 1 kg (forfait)",
+    };
+  }
   if (weight > 23) {
     return {
-      coefficient: 0.80,
-      effectivePricePerKg: Math.round(basePricePerKg * 0.80),
-      savingsPercent: 20,
+      coefficient: 0.85,
+      effectivePricePerKg: Math.round(basePricePerKg * 0.85),
+      savingsPercent: 15,
       tierLabel: "+23 kg (gros volume)",
     };
   }
   const tier = WEIGHT_TIER_COEFFICIENTS.find(
-    t => weight > t.min && weight <= t.max
+    t => weight >= t.min && weight <= t.max
   );
   if (!tier) {
     return { coefficient: 1, effectivePricePerKg: basePricePerKg, savingsPercent: 0, tierLabel: "—" };
@@ -115,7 +130,7 @@ export function getRegressiveInfo(weight: number, basePricePerKg: number): {
   return {
     coefficient: tier.coefficient,
     effectivePricePerKg: Math.round(basePricePerKg * tier.coefficient),
-    savingsPercent: Math.round((1 - tier.coefficient) * 100),
+    savingsPercent: tier.coefficient > 1 ? 0 : Math.round((1 - tier.coefficient) * 100),
     tierLabel: tier.label,
   };
 }
