@@ -1028,21 +1028,25 @@ Deno.serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
     const body: ScanRequest = await req.json();
 
-    // Auth
+    // Auth — use anon client only for auth.getUser(), then service role for all DB queries
     const authHeader = req.headers.get("Authorization");
     let userId: string | null = null;
     let role: UserRole = body.role || "external";
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: authHeader ? { Authorization: authHeader } : {} },
-    });
+    // Service role client for all DB operations (bypasses RLS for cross-role scan resolution)
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     if (authHeader?.startsWith("Bearer ")) {
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      // Use anon client with user's token ONLY to validate their identity
+      const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user: authUser }, error: authError } = await authClient.auth.getUser();
       if (!authError && authUser) {
         userId = authUser.id;
 
