@@ -7,15 +7,12 @@
  */
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ScanLine, Keyboard, Search, Loader2, ArrowLeft } from "lucide-react";
+import { ScanLine, Keyboard, Search, Loader2 } from "lucide-react";
 import { QRCameraScanner } from "@/components/gp/QRCameraScanner";
 import { useScanEngine } from "@/hooks/useScanEngine";
 import { useScanRole } from "@/hooks/useScanRole";
 import type { ScanEngineResponse } from "@/lib/scanEngine";
-import { ScanResultGP } from "./ScanResultGP";
-import { ScanResultClient } from "./ScanResultClient";
-import { ScanResultAgent } from "./ScanResultAgent";
-import { UnifiedScanRouter } from "./UnifiedScanRouter";
+import { ScannerInterfaceV2 } from "./v2/ScannerInterfaceV2";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -129,97 +126,23 @@ export function ScanHeart({
   const inputBg = darkMode ? "bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/25" : "bg-background border-border text-foreground placeholder:text-muted-foreground";
   const cardBorder = darkMode ? "border-white/[0.06]" : "border-border/50";
 
-  // ─── RENDER SCAN RESULT INLINE ───
+  // ─── RENDER SCAN RESULT INLINE — V2 ───
   if (showResult && scanResult) {
-    const scenario = scanResult.scenario;
-    const data = scanResult.data;
+    const scanRole = (role === "gp" || role === "client" || role === "admin" || role === "agent_logistique")
+      ? role as "gp" | "client" | "admin" | "agent_logistique"
+      : "client" as const;
     const effectiveGpId = gpId || scannerGpId;
 
     return (
       <div className={cn("flex flex-col", className)}>
-        {/* Back button */}
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={resetResult}
-          className={cn("self-start mb-3 gap-2", darkMode ? "text-white/60 hover:text-white hover:bg-white/10" : "")}
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Nouveau scan
-        </Button>
-
-        {/* USER QR scanned → show UnifiedScanRouter */}
-        {(scanResult.qr_type === "QR_USER" || scanResult.qr_type === "QR_GP") && data?.user && (
-          <UnifiedScanRouter
-            scannedUserId={data.user.user_id || scanResult.data?.redirect?.match(/([a-f0-9-]{36})/)?.[1] || ""}
-            onComplete={resetResult}
-          />
-        )}
-
-        {/* GP QR scanned with redirect → show profile link */}
-        {scanResult.qr_type === "QR_GP" && !data?.user && data?.redirect && (
-          <div className="text-center py-8 space-y-3">
-            <p className={cn("text-sm", darkMode ? "text-white/70" : "text-muted-foreground")}>{scanResult.message}</p>
-            <Button onClick={() => window.location.href = data.redirect} className="gap-2">
-              Voir le profil
-            </Button>
-          </div>
-        )}
-
-        {/* ORDER QR scanned → show role-specific result */}
-        {scanResult.qr_type === "QR_COLIS" && data?.order && (
-          <>
-            {role === "gp" && effectiveGpId && (
-              <ScanResultGP
-                order={{ ...data.order, scan_history: [] }}
-                gpId={effectiveGpId}
-                logScan={logScan}
-                onComplete={resetResult}
-              />
-            )}
-            {role === "client" && (
-              <ScanResultClient
-                order={{ ...data.order, scan_history: [] }}
-              />
-            )}
-            {(role === "admin" || role === "agent_logistique") && (
-              <ScanResultAgent
-                order={{ ...data.order, scan_history: [] }}
-                logScan={logScan}
-                onComplete={resetResult}
-                isAdmin={role === "admin"}
-              />
-            )}
-          </>
-        )}
-
-        {/* GP scanned client QR with linked orders */}
-        {scenario === "gp_client_with_orders" && data?.orders && (
-          <UnifiedScanRouter
-            scannedUserId={data.user?.user_id || ""}
-            onComplete={resetResult}
-          />
-        )}
-
-        {/* External / unknown QR */}
-        {scanResult.qr_type === "QR_EXTERNAL" && (
-          <div className={cn("text-center py-8 space-y-3", darkMode ? "text-white/70" : "text-muted-foreground")}>
-            <ScanLine className="w-12 h-12 mx-auto opacity-40" />
-            <p className="text-sm">{scanResult.message}</p>
-            {data?.raw && data.is_url && (
-              <Button variant="outline" onClick={() => window.open(data.raw, "_blank")}>
-                Ouvrir le lien
-              </Button>
-            )}
-          </div>
-        )}
-
-        {/* Fallback for unhandled scenarios */}
-        {!data?.order && !data?.user && !data?.redirect && scanResult.qr_type !== "QR_EXTERNAL" && (
-          <div className={cn("text-center py-8", darkMode ? "text-white/60" : "text-muted-foreground")}>
-            <p className="text-sm">{scanResult.message}</p>
-          </div>
-        )}
+        <ScannerInterfaceV2
+          engineResponse={scanResult}
+          role={scanRole}
+          gpId={effectiveGpId}
+          onBack={resetResult}
+          darkMode={darkMode}
+          accent={accent}
+        />
       </div>
     );
   }
