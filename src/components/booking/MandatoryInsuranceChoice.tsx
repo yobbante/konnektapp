@@ -223,7 +223,7 @@ export function MandatoryInsuranceChoice({
                     <Label className="text-xs text-muted-foreground">
                       Valeur déclarée en {gpSymbol} (optionnel)
                     </Label>
-                    <Input type="number" placeholder="Ex: 50000" value={declaredValue} onChange={e => setDeclaredValue(e.target.value)} className={cn("mt-1", exceedsMaxCoverage && "border-destructive focus-visible:ring-destructive")} />
+                    <Input type="number" placeholder="Ex: 50" value={declaredValue} onChange={e => setDeclaredValue(e.target.value)} className={cn("mt-1", exceedsMaxCoverage && "border-destructive focus-visible:ring-destructive")} />
                     <p className="text-xs text-muted-foreground mt-1">
                       Maximum couvert:{" "}
                       <span className="font-medium">
