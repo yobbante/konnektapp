@@ -477,15 +477,50 @@ export type Database = {
           },
         ]
       }
+      escrow_logs: {
+        Row: {
+          action: string
+          actor: string
+          commission_amount: number
+          created_at: string
+          id: string
+          new_amount: number
+          order_id: string
+          previous_amount: number
+        }
+        Insert: {
+          action: string
+          actor?: string
+          commission_amount?: number
+          created_at?: string
+          id?: string
+          new_amount?: number
+          order_id: string
+          previous_amount?: number
+        }
+        Update: {
+          action?: string
+          actor?: string
+          commission_amount?: number
+          created_at?: string
+          id?: string
+          new_amount?: number
+          order_id?: string
+          previous_amount?: number
+        }
+        Relationships: []
+      }
       escrow_transactions: {
         Row: {
           amount: number
           client_id: string
+          commission_amount: number
           created_at: string
           currency: string
           gp_id: string
           held_at: string | null
           id: string
+          net_to_gp: number
           order_id: string
           payment_method: string | null
           payment_reference: string | null
@@ -499,11 +534,13 @@ export type Database = {
         Insert: {
           amount: number
           client_id: string
+          commission_amount?: number
           created_at?: string
           currency?: string
           gp_id: string
           held_at?: string | null
           id?: string
+          net_to_gp?: number
           order_id: string
           payment_method?: string | null
           payment_reference?: string | null
@@ -517,11 +554,13 @@ export type Database = {
         Update: {
           amount?: number
           client_id?: string
+          commission_amount?: number
           created_at?: string
           currency?: string
           gp_id?: string
           held_at?: string | null
           id?: string
+          net_to_gp?: number
           order_id?: string
           payment_method?: string | null
           payment_reference?: string | null
@@ -3928,6 +3967,14 @@ export type Database = {
         | "delivered"
         | "cancelled"
         | "disputed"
+        | "paid_held"
+        | "checked_in"
+        | "weight_pending_payment"
+        | "scheduled_departure"
+        | "arrived_destination"
+        | "delivery_pending"
+        | "delivery_confirmed"
+        | "released"
       reputation_status:
         | "verified"
         | "under_observation"
@@ -4137,6 +4184,14 @@ export const Constants = {
         "delivered",
         "cancelled",
         "disputed",
+        "paid_held",
+        "checked_in",
+        "weight_pending_payment",
+        "scheduled_departure",
+        "arrived_destination",
+        "delivery_pending",
+        "delivery_confirmed",
+        "released",
       ],
       reputation_status: [
         "verified",
