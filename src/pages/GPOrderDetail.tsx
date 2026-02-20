@@ -30,6 +30,7 @@ import {
 } from "@/lib/transportTypes";
 import { assertValidOrderStatus } from "@/lib/enumMappings";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 
 interface OrderDetail {
   id: string;
@@ -166,6 +167,9 @@ export default function GPOrderDetail() {
   // UI State
   const [showTimeline, setShowTimeline] = useState(false);
   const [showFinancials, setShowFinancials] = useState(false);
+  
+  // Currency hook (must be before any early returns)
+  const currencyConversion = useCurrencyConversion({ gpCurrency: order?.currency || "XOF" });
 
   useEffect(() => {
     loadOrderDetails();
@@ -308,12 +312,21 @@ export default function GPOrderDetail() {
   const hasInternalLogistics = logisticsOptions?.pickup_enabled || logisticsOptions?.delivery_enabled;
   const isBlockedByLogistics = order.status === "in_transit" && logisticsOptions?.delivery_enabled && order.logistics_status === "awaiting_admin_delivery";
   const currencySymbol = getCurrencySymbol(order.currency);
+  const { formatDual, fromFCFA, isFCFA } = currencyConversion;
   const transportPrice = order.weight * order.price_per_kg;
   const gpEarnings = transportPrice - order.commission_amount;
   const insuranceAmount = order.has_insurance ? (order.insurance_amount || 0) : 0;
-  const logisticsPrice = logisticsOptions ? 
+  // Logistics prices are stored in FCFA — convert to GP currency for display
+  const logisticsPriceFCFA = logisticsOptions ? 
     ((logisticsOptions.pickup_enabled ? (logisticsOptions as any).pickup_price || 0 : 0) + 
      (logisticsOptions.delivery_enabled ? (logisticsOptions as any).delivery_price || 0 : 0)) : 0;
+  const logisticsPrice = isFCFA ? logisticsPriceFCFA : Math.round(fromFCFA(logisticsPriceFCFA) * 100) / 100;
+
+  // Helper: format amount in GP currency + (≈ FCFA)
+  const dualFormat = (amount: number) => {
+    if (isFCFA) return `${amount.toLocaleString('fr-FR')} FCFA`;
+    return formatDual(amount);
+  };
 
   return (
     <div className="min-h-screen bg-background pb-safe">
@@ -591,23 +604,23 @@ export default function GPOrderDetail() {
                   <div className="space-y-2 text-sm">
                     {/* GP Revenue Section */}
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Vos revenus</p>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Transport ({order.weight} kg × {order.price_per_kg})</span><span>{transportPrice.toLocaleString()} {currencySymbol}</span></div>
-                    <div className="flex justify-between text-destructive"><span>Commission Konnekt</span><span>-{order.commission_amount.toLocaleString()} {currencySymbol}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Transport ({order.weight} kg × {order.price_per_kg})</span><span>{dualFormat(transportPrice)}</span></div>
+                    <div className="flex justify-between text-destructive"><span>Commission Konnekt</span><span>-{dualFormat(order.commission_amount)}</span></div>
                     <Separator />
-                    <div className="flex justify-between text-lg"><span className="font-bold">Vos gains nets</span><span className="font-bold text-success">{gpEarnings.toLocaleString()} {currencySymbol}</span></div>
+                    <div className="flex justify-between text-lg"><span className="font-bold">Vos gains nets</span><span className="font-bold text-success">{dualFormat(gpEarnings)}</span></div>
 
                     {/* Client total breakdown */}
                     <div className="mt-4 p-3 bg-muted/30 rounded-lg space-y-1.5">
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Facture client</p>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Transport</span><span>{transportPrice.toLocaleString()} {currencySymbol}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Transport</span><span>{dualFormat(transportPrice)}</span></div>
                       {insuranceAmount > 0 && (
-                        <div className="flex justify-between"><span className="text-muted-foreground">Assurance Konnekt</span><span>{insuranceAmount.toLocaleString()} {currencySymbol}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Assurance Konnekt</span><span>{dualFormat(insuranceAmount)}</span></div>
                       )}
                       {logisticsPrice > 0 && (
-                        <div className="flex justify-between"><span className="text-muted-foreground">Logistique interne</span><span>{logisticsPrice.toLocaleString()} {currencySymbol}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Logistique interne</span><span>{dualFormat(logisticsPrice)}</span></div>
                       )}
                       <Separator />
-                      <div className="flex justify-between font-medium"><span>Total payé</span><span>{order.total_price.toLocaleString()} {currencySymbol}</span></div>
+                      <div className="flex justify-between font-medium"><span>Total payé</span><span>{dualFormat(order.total_price)}</span></div>
                     </div>
                     
                     {escrow && (
