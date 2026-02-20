@@ -569,6 +569,180 @@ async function execConfirmReception(
   };
 }
 
+// ═══════════════ CROSS-MODULE COHERENCE VALIDATOR ═══════════════
+//
+// Section X — Interconnexions & Tests Croisés
+// Vérifie la cohérence entre State ↔ Escrow ↔ Dispute ↔ Geo
+// Appelé à chaque RESOLVE pour garantir la synchronisation totale.
+//
+// Retourne un tableau de violations détectées.
+// Une violation "critical" bloque la réponse et retourne un scénario d'erreur.
+
+interface CoherenceViolation {
+  code: string;
+  severity: "warn" | "critical";
+  message: string;
+  details?: Record<string, any>;
+}
+
+async function validateCrossModuleCoherence(
+  supabase: any,
+  orderId: string,
+  role: UserRole
+): Promise<CoherenceViolation[]> {
+  const violations: CoherenceViolation[] = [];
+
+  // Charger les données de tous les modules en parallèle
+  const [orderRes, escrowRes, disputeRes] = await Promise.all([
+    supabase
+      .from("orders")
+      .select("id, status, financial_status, geo_suspicious, delivery_blocked_until, delivery_attempt_count")
+      .eq("id", orderId)
+      .maybeSingle(),
+    supabase
+      .from("escrow_transactions")
+      .select("id, status, amount, released_at")
+      .eq("order_id", orderId)
+      .maybeSingle(),
+    supabase
+      .from("disputes")
+      .select("id, status")
+      .eq("order_id", orderId)
+      .in("status", ["open", "under_review", "awaiting_response"])
+      .limit(1),
+  ]);
+
+  const order = orderRes.data;
+  const escrow = escrowRes.data;
+  const disputes = disputeRes.data || [];
+
+  if (!order) return violations; // Pas de commande à valider
+
+  // ── RÈGLE 1 : Escrow released ↔ State released ──────────────────
+  // Les deux doivent évoluer ensemble (Section VIII §10)
+  if (escrow) {
+    if (escrow.status === "released" && order.status !== "released" && order.financial_status !== "completed") {
+      violations.push({
+        code: "ESCROW_STATE_DESYNC",
+        severity: "critical",
+        message: "Escrow libéré mais commande pas en état 'released'. Incohérence critique.",
+        details: { order_status: order.status, escrow_status: escrow.status },
+      });
+    }
+
+    if (order.status === "released" && escrow.status !== "released") {
+      violations.push({
+        code: "STATE_ESCROW_DESYNC",
+        severity: "critical",
+        message: "Commande 'released' mais escrow pas libéré. Incohérence critique.",
+        details: { order_status: order.status, escrow_status: escrow.status },
+      });
+    }
+
+    // ── RÈGLE 2 : Release impossible si litige ouvert ─────────────
+    // (Section IX §12)
+    if (disputes.length > 0 && escrow.status === "released") {
+      violations.push({
+        code: "RELEASE_DURING_DISPUTE",
+        severity: "critical",
+        message: "Fonds libérés malgré un litige ouvert. Audit requis.",
+        details: { dispute_count: disputes.length },
+      });
+    }
+
+    // ── RÈGLE 3 : Supplément bloqué → pas de transit ──────────────
+    // (Section X §4 — Cas 1)
+    if (order.financial_status === "adjustment_required" &&
+        ["in_transit", "delivery_confirmed", "delivered", "released"].includes(order.status)) {
+      violations.push({
+        code: "SUPPLEMENT_BYPASS",
+        severity: "critical",
+        message: "Commande en transit/livrée avec supplément impayé. Anti-bypass déclenché.",
+        details: { financial_status: order.financial_status, order_status: order.status },
+      });
+    }
+  }
+
+  // ── RÈGLE 4 : Litige → aucune action de livraison possible ───────
+  // (Section IX §12 & Section X §8 Scénario D)
+  if (disputes.length > 0) {
+    const blockingStatuses = ["delivery_confirmed", "delivered", "released"];
+    if (blockingStatuses.includes(order.status)) {
+      violations.push({
+        code: "DELIVERY_DURING_DISPUTE",
+        severity: "warn",
+        message: "Livraison confirmée malgré litige en cours. Vérifier la chronologie.",
+        details: { dispute_ids: disputes.map((d: any) => d.id) },
+      });
+    }
+  }
+
+  // ── RÈGLE 5 : Geo suspicious → alerte scan ────────────────────────
+  // (Section IX §8 & Section X §5)
+  if (order.geo_suspicious && role === "gp") {
+    violations.push({
+      code: "GEO_SUSPICIOUS_ACTIVE",
+      severity: "warn",
+      message: "Anomalie géographique détectée sur cette commande.",
+      details: { geo_suspicious: true },
+    });
+  }
+
+  // ── RÈGLE 6 : Code livraison bloqué → pas de delivery ─────────
+  // (Section IX §6 & Section X §6)
+  if (order.delivery_blocked_until && new Date(order.delivery_blocked_until) > new Date()) {
+    const remainingMin = Math.ceil((new Date(order.delivery_blocked_until).getTime() - Date.now()) / 60000);
+    violations.push({
+      code: "DELIVERY_CODE_BLOCKED",
+      severity: "critical",
+      message: `Code de livraison bloqué suite à 3 tentatives. Réessayez dans ${remainingMin} min.`,
+      details: {
+        blocked_until: order.delivery_blocked_until,
+        attempt_count: order.delivery_attempt_count,
+      },
+    });
+  }
+
+  // ── LOG des violations critiques dans security_audit_log ─────────
+  const criticals = violations.filter((v) => v.severity === "critical");
+  if (criticals.length > 0) {
+    await supabase.from("security_audit_log").insert(
+      criticals.map((v) => ({
+        event_type: "coherence_violation",
+        order_id: orderId,
+        details: { code: v.code, message: v.message, ...v.details },
+        severity: "critical",
+      }))
+    ).catch(() => {});
+  }
+
+  return violations;
+}
+
+// Helper : Construire une réponse bloquée depuis une violation critique
+function buildViolationResponse(violations: CoherenceViolation[]): ScanResponse | null {
+  const critical = violations.find((v) => v.severity === "critical");
+  if (!critical) return null;
+
+  const codeToScenario: Record<string, string> = {
+    ESCROW_STATE_DESYNC: "engine_error",
+    STATE_ESCROW_DESYNC: "engine_error",
+    RELEASE_DURING_DISPUTE: "unauthorized",
+    SUPPLEMENT_BYPASS: "unauthorized",
+    DELIVERY_CODE_BLOCKED: "rate_limited",
+    DELIVERY_DURING_DISPUTE: "unauthorized",
+  };
+
+  return {
+    status: "failed",
+    qr_type: "QR_COLIS",
+    scenario: codeToScenario[critical.code] || "engine_error",
+    next_action: "none",
+    message: critical.message,
+    data: { violation_code: critical.code, details: critical.details },
+  };
+}
+
 // ═══════════════ SCENARIO RESOLVERS (READ-ONLY) ═══════════════
 
 async function resolveColisScenario(supabase: any, parsed: ParsedQR, role: UserRole, userId: string): Promise<ScanResponse> {
@@ -585,6 +759,20 @@ async function resolveColisScenario(supabase: any, parsed: ParsedQR, role: UserR
   const { data: order, error } = await orderQuery.maybeSingle();
   if (error || !order) {
     return { status: "failed", qr_type: "QR_COLIS", scenario: "order_not_found", next_action: "retry", message: "Commande non trouvée. Vérifiez le code et réessayez." };
+  }
+
+  // ── Section X : Validation cross-module obligatoire ──────────────
+  // Vérifie cohérence State ↔ Escrow ↔ Dispute ↔ Geo avant toute réponse
+  if (role !== "external") {
+    const violations = await validateCrossModuleCoherence(supabase, order.id, role);
+    const violationResponse = buildViolationResponse(violations);
+    if (violationResponse) return violationResponse;
+
+    // Ajouter les warnings non-bloquants aux données de réponse
+    const warns = violations.filter((v) => v.severity === "warn");
+    if (warns.length > 0) {
+      order._coherence_warnings = warns.map((w) => ({ code: w.code, message: w.message }));
+    }
   }
 
   if (role === "gp") {
