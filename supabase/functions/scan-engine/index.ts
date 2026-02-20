@@ -329,8 +329,8 @@ async function executeAction(
 async function execDepositConfirm(
   supabase: any, order: any, userId: string, role: string, actionData?: Record<string, any>
 ): Promise<ScanResponse> {
-  if (!["pending", "accepted"].includes(order.status)) {
-    return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_status", next_action: "none", message: "Le dépôt n'est possible qu'en statut « En attente » ou « Acceptée »." };
+  if (!["pending", "accepted", "paid_held", "collected"].includes(order.status)) {
+    return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_status", next_action: "none", message: "Le dépôt n'est possible qu'en statut « En attente », « Acceptée » ou « Paiement reçu »." };
   }
 
   const actualWeight = actionData?.actual_weight || order.weight;
