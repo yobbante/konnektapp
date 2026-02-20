@@ -482,7 +482,7 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
     const [ordersRes, walletRes] = await Promise.all([
       supabase
         .from("orders")
-        .select("id, order_number, status, destination_city, weight, supplement_amount, new_weight")
+        .select("id, order_number, status, destination_city, weight, adjustment_amount, declared_weight, price_per_kg, currency")
         .eq("client_id", user.id)
         .not("status", "in", '("cancelled","released","disputed")')
         .order("created_at", { ascending: false })
@@ -494,7 +494,17 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
         .maybeSingle(),
     ]);
 
-    const orders: ContextOrder[] = (ordersRes.data ?? []) as any[];
+    const orders: ContextOrder[] = (ordersRes.data ?? []).map((o: any) => ({
+      id: o.id,
+      order_number: o.order_number,
+      status: o.status,
+      destination_city: o.destination_city,
+      weight: o.declared_weight ?? o.weight,
+      new_weight: o.weight,
+      supplement_amount: o.adjustment_amount ?? (o.weight && o.declared_weight && o.price_per_kg
+        ? Math.round((o.weight - o.declared_weight) * o.price_per_kg)
+        : 0),
+    }));
 
     setCtx({
       supplement_orders: orders.filter(o => o.status === "weight_pending_payment"),
