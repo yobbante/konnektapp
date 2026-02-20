@@ -154,6 +154,13 @@ export type Database = {
             foreignKeyName: "conversations_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "mvp_coherence_dashboard"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "conversations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -341,6 +348,13 @@ export type Database = {
             foreignKeyName: "delivery_confirmations_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "mvp_coherence_dashboard"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "delivery_confirmations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -472,6 +486,13 @@ export type Database = {
             foreignKeyName: "disputes_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "mvp_coherence_dashboard"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "disputes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -591,6 +612,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "escrow_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "mvp_coherence_dashboard"
             referencedColumns: ["order_id"]
           },
           {
@@ -1295,6 +1323,13 @@ export type Database = {
             foreignKeyName: "gp_response_tracking_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: true
+            referencedRelation: "mvp_coherence_dashboard"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "gp_response_tracking_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -1540,6 +1575,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "konnekt_ledger_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "mvp_coherence_dashboard"
             referencedColumns: ["order_id"]
           },
           {
@@ -1793,6 +1835,13 @@ export type Database = {
             foreignKeyName: "logistics_status_history_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "mvp_coherence_dashboard"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "logistics_status_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -1832,6 +1881,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "loyalty_points_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "mvp_coherence_dashboard"
             referencedColumns: ["order_id"]
           },
           {
@@ -2246,6 +2302,13 @@ export type Database = {
             foreignKeyName: "order_logistics_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: true
+            referencedRelation: "mvp_coherence_dashboard"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_logistics_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -2363,6 +2426,13 @@ export type Database = {
             foreignKeyName: "order_logistics_options_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: true
+            referencedRelation: "mvp_coherence_dashboard"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_logistics_options_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -2402,6 +2472,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "order_status_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "mvp_coherence_dashboard"
             referencedColumns: ["order_id"]
           },
           {
@@ -2906,6 +2983,13 @@ export type Database = {
             foreignKeyName: "reviews_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: true
+            referencedRelation: "mvp_coherence_dashboard"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -3315,6 +3399,13 @@ export type Database = {
             foreignKeyName: "support_tickets_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "mvp_coherence_dashboard"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "support_tickets_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -3372,6 +3463,13 @@ export type Database = {
             foreignKeyName: "tracking_issues_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
+            referencedRelation: "mvp_coherence_dashboard"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "tracking_issues_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
@@ -3420,6 +3518,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "mvp_coherence_dashboard"
             referencedColumns: ["order_id"]
           },
           {
@@ -3852,6 +3957,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      mvp_coherence_dashboard: {
+        Row: {
+          coherence_alert: string | null
+          commission_amount: number | null
+          delivery_attempt_count: number | null
+          delivery_blocked_until: string | null
+          escrow_amount: number | null
+          escrow_status: string | null
+          financial_status:
+            | Database["public"]["Enums"]["financial_status"]
+            | null
+          geo_suspicious: boolean | null
+          is_coherent: boolean | null
+          net_to_gp: number | null
+          order_id: string | null
+          order_number: string | null
+          order_status: Database["public"]["Enums"]["order_status"] | null
+          updated_at: string | null
+        }
+        Relationships: []
       }
       public_gp_profiles: {
         Row: {

@@ -73,17 +73,29 @@ interface ScanResponse {
   error?: string;
 }
 
-// ═══════════════ STATUS RULES ═══════════════
+// ═══════════════ STATUS RULES — Aligné avec State Machine V2 (Section VIII) ═══════════════
 
-const VALID_TRANSITIONS: Record<string, string[]> = {
-  pending: ["accepted", "collected", "cancelled"],
-  accepted: ["collected", "cancelled"],
-  collected: ["in_transit", "cancelled"],
-  in_transit: ["arrived", "delivered"],
-  arrived: ["delivered"],
+// États terminaux : aucune action possible
+const TERMINAL_STATUSES = new Set(["released", "cancelled"]);
+
+// Map état → actions autorisées par rôle (Section XI)
+const STATUS_GP_ACTIONS: Record<string, string> = {
+  pending:                "check_in",          // GP enregistre le dépôt
+  accepted:               "check_in",
+  paid_held:              "check_in",          // Escrow verrouillé → check-in possible
+  checked_in:             "none",              // En attente départ automatique
+  weight_pending_payment: "none",              // Attente paiement supplément client
+  scheduled_departure:    "none",              // Départ programmé — automatique
+  collected:              "none",              // Ancien état → mappé
+  in_transit:             "confirm_delivery",  // En transit → livraison
+  arrived_destination:    "confirm_delivery",  // Arrivé → livraison
+  delivery_pending:       "confirm_delivery",
+  delivery_confirmed:     "none",              // Code validé, release en cours
+  delivered:              "none",
+  released:               "none",
+  cancelled:              "none",
+  disputed:               "none",             // Bloqué par litige
 };
-
-const TERMINAL_STATUSES = new Set(["delivered", "cancelled", "disputed"]);
 
 const ROLE_ACTIONS: Record<string, Set<string>> = {
   client: new Set(["view", "confirm_reception"]),
@@ -329,23 +341,24 @@ async function execDepositConfirm(
     return execWeightModify(supabase, order, userId, role, { actual_weight: actualWeight });
   }
 
-  // Standard deposit: update status to collected
-  await supabase.from("orders").update({ status: "collected", weight: actualWeight }).eq("id", order.id);
+  // Standard deposit: update status to checked_in (state machine V2)
+  await supabase.from("orders").update({ status: "checked_in", weight: actualWeight }).eq("id", order.id);
   await supabase.from("order_status_history").insert({
-    order_id: order.id, status: "collected", changed_by: userId, changed_by_type: role,
-    notes: "Dépôt confirmé par scan — poids conforme",
+    order_id: order.id, status: "checked_in", changed_by: userId, changed_by_type: role,
+    notes: "Dépôt confirmé par scan — poids conforme — check-in effectué",
   });
   await supabase.from("notifications").insert({
     user_id: order.client_id, type: "order_update",
-    title: "📦 Colis reçu", message: `Votre colis ${order.order_number} a été reçu par le transporteur`,
+    title: "📦 Colis enregistré", message: `Votre colis ${order.order_number} a été enregistré par le transporteur. Départ automatique à l'heure prévue.`,
     related_type: "order", related_id: order.id,
   });
 
   return {
     status: "executed", qr_type: "QR_COLIS", scenario: "deposit_confirmed",
-    next_action: "none", message: "✅ Dépôt confirmé avec succès.",
-    data: { order: { ...order, status: "collected" } },
+    next_action: "none", message: "✅ Dépôt confirmé. Colis enregistré (check-in).",
+    data: { order: { ...order, status: "checked_in" } },
   };
+
 }
 
 async function execWeightModify(
@@ -412,59 +425,81 @@ async function execMarkTransit(
 async function execConfirmDelivery(
   supabase: any, order: any, userId: string, role: string, actionData?: Record<string, any>
 ): Promise<ScanResponse> {
-  if (!["in_transit", "arrived", "collected"].includes(order.status)) {
-    return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_status", next_action: "none", message: "Le colis doit être « En transit » ou « Arrivé » pour confirmer la livraison." };
+  // États valides : V2 state machine
+  const validStates = ["in_transit", "arrived_destination", "delivery_pending", "collected", "arrived"];
+  if (!validStates.includes(order.status)) {
+    return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_status", next_action: "none", message: "Le colis doit être « En transit » ou « Arrivé à destination » pour confirmer la livraison." };
   }
 
-  // Validate delivery code if order has one
+  // Vérifier supplément impayé — bloquer livraison
+  if (order.financial_status === "adjustment_required") {
+    return { status: "failed", qr_type: "QR_COLIS", scenario: "supplement_unpaid", next_action: "await_payment", message: "⚠️ Supplément de poids impayé. Le client doit régler avant livraison." };
+  }
+
+  // Valider code livraison (brute force géré dans security-qr-verify)
   if (order.delivery_code) {
     const providedCode = actionData?.delivery_code;
     if (!providedCode) {
       return { status: "failed", qr_type: "QR_COLIS", scenario: "code_required", next_action: "enter_code", message: "Un code de livraison est requis. Demandez-le au client." };
     }
     if (providedCode.toUpperCase() !== order.delivery_code.toUpperCase()) {
+      // Incrémenter le compteur d'échecs
+      await supabase.from("orders").update({
+        delivery_attempt_count: (order.delivery_attempt_count || 0) + 1,
+        delivery_blocked_until: (order.delivery_attempt_count || 0) >= 2
+          ? new Date(Date.now() + 30 * 60 * 1000).toISOString()
+          : null,
+      }).eq("id", order.id);
+      await supabase.rpc("log_delivery_attempt_failed", {
+        p_order_id: order.id, p_actor_id: userId, p_attempt_count: (order.delivery_attempt_count || 0) + 1,
+      }).catch(() => {});
       return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_code", next_action: "retry_code", message: "Code de livraison incorrect. Vérifiez et réessayez." };
     }
+    // Code correct → réinitialiser compteur
+    await supabase.from("orders").update({ delivery_attempt_count: 0, delivery_blocked_until: null }).eq("id", order.id);
   }
 
   const now = new Date().toISOString();
-  await supabase.from("orders").update({ status: "delivered", actual_delivery_date: now }).eq("id", order.id);
+  // Passer à delivery_confirmed (state machine V2)
+  await supabase.from("orders").update({ status: "delivery_confirmed", actual_delivery_date: now }).eq("id", order.id);
 
   // Update logistics if exists
   await supabase.from("order_logistics_options").update({
     delivery_status: "delivered", delivery_completed_at: now, logistics_status: "completed",
-  }).eq("order_id", order.id);
+  }).eq("order_id", order.id).catch(() => {});
 
   await supabase.from("order_status_history").insert({
-    order_id: order.id, status: "delivered", changed_by: userId, changed_by_type: role,
-    notes: `🎉 Livraison confirmée par scan QR (${role})`,
+    order_id: order.id, status: "delivery_confirmed", changed_by: userId, changed_by_type: role,
+    notes: `🎉 Livraison confirmée par scan QR (${role}) — code validé`,
   });
   await supabase.from("notifications").insert({
     user_id: order.client_id, type: "order_update",
-    title: "🎉 Colis livré !", message: `Votre colis ${order.order_number} a été livré avec succès`,
+    title: "🎉 Colis livré !", message: `Votre colis ${order.order_number} a été livré. Fonds en cours de libération.`,
     related_type: "order", related_id: order.id,
   });
 
-  // Trigger escrow release
+  // ── Déclencher release-funds-v2 (unique point de release) ────────
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (serviceKey) {
-      await fetch(`${supabaseUrl}/functions/v1/confirm-delivery-release`, {
+      const idempKey = `delivery_release:${order.id}`;
+      await fetch(`${supabaseUrl}/functions/v1/release-funds-v2`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
-        body: JSON.stringify({ order_id: order.id }),
-      }).catch(() => {});
+        body: JSON.stringify({ order_id: order.id, idempotency_key: idempKey }),
+      }).catch((e) => console.error("release-funds-v2 call failed:", e));
     }
-  } catch { /* best effort */ }
+  } catch (e) { console.error("Release trigger error:", e); }
 
   return {
     status: "executed", qr_type: "QR_COLIS", scenario: "delivery_confirmed",
     next_action: "none", message: "🎉 Livraison confirmée. Fonds en cours de libération.",
-    data: { order: { ...order, status: "delivered" } },
+    data: { order: { ...order, status: "delivery_confirmed" } },
     financial_impact: { amount: order.total_price, currency: order.currency, type: "release" },
   };
 }
+
 
 async function execPickupConfirm(
   supabase: any, order: any, userId: string, role: string
@@ -516,23 +551,31 @@ async function execStockConfirm(
 async function execConfirmReception(
   supabase: any, order: any, userId: string, role: string, actionData?: Record<string, any>
 ): Promise<ScanResponse> {
-  if (!["in_transit", "arrived", "delivered"].includes(order.status)) {
+  // États valides pour réception client (V2)
+  const validStates = ["in_transit", "arrived_destination", "delivery_pending", "arrived", "delivered"];
+  if (!validStates.includes(order.status)) {
     return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_status", next_action: "none", message: "La confirmation de réception n'est possible que pour un colis en transit ou arrivé." };
   }
 
-  // If delivery code is required, validate it
-  if (order.delivery_code && actionData?.delivery_code) {
-    if (actionData.delivery_code.toUpperCase() !== order.delivery_code.toUpperCase()) {
-      return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_code", next_action: "none", message: "Code de livraison incorrect." };
+  // Code de livraison obligatoire si défini
+  if (order.delivery_code) {
+    const providedCode = actionData?.delivery_code;
+    if (!providedCode) {
+      return { status: "failed", qr_type: "QR_COLIS", scenario: "code_required", next_action: "enter_code", message: "Saisissez le code de livraison fourni par votre transporteur." };
+    }
+    if (providedCode.toUpperCase() !== order.delivery_code.toUpperCase()) {
+      return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_code", next_action: "retry_code", message: "Code de livraison incorrect." };
     }
   }
 
-  // Mark as delivered if not already
-  if (order.status !== "delivered") {
-    await supabase.from("orders").update({ status: "delivered", actual_delivery_date: new Date().toISOString() }).eq("id", order.id);
+  const now = new Date().toISOString();
+
+  // → delivery_confirmed (si pas déjà livré)
+  if (!["delivered", "delivery_confirmed"].includes(order.status)) {
+    await supabase.from("orders").update({ status: "delivery_confirmed", actual_delivery_date: now }).eq("id", order.id);
   }
 
-  // Record confirmation
+  // Enregistrer confirmation physique
   await supabase.from("delivery_confirmations").insert({
     order_id: order.id,
     confirmed_by_phone: actionData?.phone || "app",
@@ -541,33 +584,32 @@ async function execConfirmReception(
   }).catch(() => {});
 
   await supabase.from("order_status_history").insert({
-    order_id: order.id, status: "delivered", changed_by: userId, changed_by_type: "client",
+    order_id: order.id, status: "delivery_confirmed", changed_by: userId, changed_by_type: "client",
     notes: "✅ Réception confirmée par le client via scan",
   });
 
-  // Trigger escrow release via edge function
+  // ── Déclencher release-funds-v2 (unique point de release) ────────
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (serviceKey) {
-      await fetch(`${supabaseUrl}/functions/v1/confirm-delivery-release`, {
+      const idempKey = `client_reception_release:${order.id}`;
+      await fetch(`${supabaseUrl}/functions/v1/release-funds-v2`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${serviceKey}`,
-        },
-        body: JSON.stringify({ order_id: order.id }),
-      }).catch(() => {});
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+        body: JSON.stringify({ order_id: order.id, idempotency_key: idempKey }),
+      }).catch((e) => console.error("release-funds-v2 call failed:", e));
     }
-  } catch { /* best effort */ }
+  } catch (e) { console.error("Release trigger error:", e); }
 
   return {
     status: "executed", qr_type: "QR_COLIS", scenario: "reception_confirmed",
     next_action: "none", message: "✅ Réception confirmée. Fonds en cours de libération.",
-    data: { order: { ...order, status: "delivered" } },
+    data: { order: { ...order, status: "delivery_confirmed" } },
     financial_impact: { amount: order.total_price, currency: order.currency, type: "escrow_release" },
   };
 }
+
 
 // ═══════════════ CROSS-MODULE COHERENCE VALIDATOR ═══════════════
 //
@@ -781,16 +823,26 @@ async function resolveColisScenario(supabase: any, parsed: ParsedQR, role: UserR
       return { status: "failed", qr_type: "QR_COLIS", scenario: "unauthorized", next_action: "none", message: "Ce colis n'est pas associé à votre profil." };
     }
 
-    const actionMap: Record<string, { scenario: string; next_action: string; message: string }> = {
-      pending: { scenario: "gp_deposit", next_action: "check_in", message: "Vérifiez le poids et confirmez le dépôt." },
-      accepted: { scenario: "gp_deposit", next_action: "check_in", message: "Vérifiez le poids et confirmez le dépôt." },
-      collected: { scenario: "gp_transit", next_action: "mark_transit", message: "Colis collecté. Marquez le départ en transit." },
-      in_transit: { scenario: "gp_delivery", next_action: "confirm_delivery", message: "Colis en transit. Confirmez la livraison au destinataire." },
-      delivered: { scenario: "gp_completed", next_action: "none", message: "Colis déjà livré. Aucune action disponible." },
-      cancelled: { scenario: "gp_cancelled", next_action: "none", message: "Commande annulée." },
+    // Map état → action GP (aligné avec state machine V2)
+    const gpActionMap: Record<string, { scenario: string; next_action: string; message: string }> = {
+      pending:                { scenario: "gp_deposit",   next_action: "deposit_confirm",  message: "Vérifiez le poids et confirmez le dépôt." },
+      accepted:               { scenario: "gp_deposit",   next_action: "deposit_confirm",  message: "Vérifiez le poids et confirmez le dépôt." },
+      paid_held:              { scenario: "gp_deposit",   next_action: "deposit_confirm",  message: "Paiement reçu. Procédez au check-in." },
+      checked_in:             { scenario: "gp_waiting",   next_action: "none",             message: "⏳ Colis enregistré. Départ automatique à l'heure programmée." },
+      weight_pending_payment: { scenario: "gp_blocked",   next_action: "none",             message: "⚠️ En attente du paiement supplément par le client." },
+      scheduled_departure:    { scenario: "gp_departing", next_action: "none",             message: "🛫 Départ programmé. Transit automatique à l'heure prévue." },
+      collected:              { scenario: "gp_deposit",   next_action: "deposit_confirm",  message: "Colis collecté. Vous pouvez confirmer le dépôt." },
+      in_transit:             { scenario: "gp_delivery",  next_action: "confirm_delivery", message: "🚚 En transit. Confirmez la livraison au destinataire avec son code." },
+      arrived_destination:    { scenario: "gp_delivery",  next_action: "confirm_delivery", message: "✈️ Arrivé à destination. Confirmez la livraison au destinataire." },
+      delivery_pending:       { scenario: "gp_delivery",  next_action: "confirm_delivery", message: "📦 Livraison en attente. Saisissez le code du client." },
+      delivery_confirmed:     { scenario: "gp_released",  next_action: "none",             message: "✅ Livraison confirmée. Paiement en cours de libération." },
+      delivered:              { scenario: "gp_completed", next_action: "none",             message: "🎉 Colis livré. Aucune action disponible." },
+      released:               { scenario: "gp_paid",      next_action: "none",             message: "💰 Paiement reçu sur votre wallet." },
+      cancelled:              { scenario: "gp_cancelled", next_action: "none",             message: "❌ Commande annulée." },
+      disputed:               { scenario: "gp_disputed",  next_action: "none",             message: "⚠️ Litige en cours. Contactez le support Konnekt." },
     };
 
-    const action = actionMap[order.status] || { scenario: "gp_view", next_action: "view", message: "Consultez les détails du colis." };
+    const action = gpActionMap[order.status] || { scenario: "gp_view", next_action: "view", message: "Consultez les détails du colis." };
 
     return {
       status: "authorized", qr_type: "QR_COLIS", ...action,
@@ -804,12 +856,18 @@ async function resolveColisScenario(supabase: any, parsed: ParsedQR, role: UserR
       return { status: "failed", qr_type: "QR_COLIS", scenario: "unauthorized", next_action: "none", message: "Ce colis ne vous appartient pas." };
     }
 
-    const isDeliveryReady = ["in_transit", "arrived"].includes(order.status);
+    // États où le client peut confirmer la réception (V2)
+    const clientCanConfirm = ["in_transit", "arrived_destination", "delivery_pending", "arrived", "delivered", "delivery_confirmed"].includes(order.status);
+    // Supplément à payer ?
+    const needsPayment = order.financial_status === "adjustment_required";
+
     return {
       status: "authorized", qr_type: "QR_COLIS",
-      scenario: isDeliveryReady ? "client_confirm_reception" : "client_view",
-      next_action: isDeliveryReady ? "confirm_reception" : "view",
-      message: isDeliveryReady ? "Votre colis est prêt. Confirmez la réception." : `Statut actuel : ${order.status}`,
+      scenario: needsPayment ? "client_pay_supplement" : (clientCanConfirm ? "client_confirm_reception" : "client_view"),
+      next_action: needsPayment ? "pay_supplement" : (clientCanConfirm ? "confirm_reception" : "view"),
+      message: needsPayment
+        ? "⚠️ Un supplément de poids est dû. Réglez pour débloquer la livraison."
+        : (clientCanConfirm ? "Votre colis est arrivé. Confirmez la réception." : `Statut actuel : ${order.status}`),
       data: { order },
       financial_impact: order.total_price ? { amount: order.total_price, currency: order.currency, type: "escrow" } : null,
     };
