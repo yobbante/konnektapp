@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     // Get order
     const { data: order, error: orderErr } = await supabase
       .from("orders")
-      .select("id, gp_id, client_id, total_price, currency, status, financial_status, order_number, commission_amount, delivery_code")
+      .select("id, gp_id, client_id, total_price, weight, price_per_kg, insurance_amount, has_insurance, currency, status, financial_status, order_number, commission_amount, delivery_code")
       .eq("id", order_id)
       .single();
 
@@ -75,6 +75,8 @@ Deno.serve(async (req) => {
     }
 
     const totalAmount = order.total_price || 0;
+    const transportPrice = (order.weight || 0) * (order.price_per_kg || 0);
+    const insuranceAmount = order.has_insurance ? (order.insurance_amount || 0) : 0;
 
     // Get GP wallet
     const { data: gpWallet } = await supabase
@@ -89,12 +91,24 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ── Commission calculation — use stored commission_amount if available ──
+    // Load logistics price
+    const { data: logOpts } = await supabase
+      .from("order_logistics_options")
+      .select("pickup_price, delivery_price, pickup_enabled, delivery_enabled")
+      .eq("order_id", order_id)
+      .maybeSingle();
+    const logisticsRevenue = logOpts
+      ? ((logOpts.pickup_enabled ? (logOpts.pickup_price || 0) : 0) + (logOpts.delivery_enabled ? (logOpts.delivery_price || 0) : 0))
+      : 0;
+
+    // ── Commission on TRANSPORT only (not insurance/logistics) ──
     const commissionRate = gpWallet.commission_rate || 5;
     const commissionAmount = order.commission_amount != null && order.commission_amount > 0
       ? order.commission_amount
-      : Math.ceil(totalAmount * commissionRate / 100);
-    let netGP = totalAmount - commissionAmount;
+      : Math.ceil(transportPrice * commissionRate / 100);
+    
+    // GP net = transport - commission (NOT total_price - commission)
+    let netGP = transportPrice - commissionAmount;
 
     // ── Debt deduction ──
     let debtDeducted = 0;
@@ -154,11 +168,11 @@ Deno.serve(async (req) => {
       })
       .eq("id", gpWallet.id);
 
-    // ── 5. Update platform wallet ──
+    // ── 5. Update platform wallet (commission + insurance + logistics → Konnekt) ──
     const { data: pw } = await supabase.from("platform_wallet").select("id, total_commission, total_escrow_held").single();
     if (pw) {
       await supabase.from("platform_wallet").update({
-        total_commission: pw.total_commission + commissionAmount,
+        total_commission: pw.total_commission + commissionAmount + insuranceAmount + logisticsRevenue,
         total_escrow_held: Math.max(0, pw.total_escrow_held - totalAmount),
         updated_at: new Date().toISOString(),
       }).eq("id", pw.id);

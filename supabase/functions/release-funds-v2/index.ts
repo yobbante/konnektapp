@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
     const { data: order, error: orderErr } = await supabase
       .from("orders")
       .select(
-        "id, gp_id, client_id, total_price, currency, status, financial_status, order_number, commission_amount, delivery_code"
+        "id, gp_id, client_id, total_price, weight, price_per_kg, insurance_amount, has_insurance, currency, status, financial_status, order_number, commission_amount, delivery_code"
       )
       .eq("id", order_id)
       .single();
@@ -182,22 +182,33 @@ Deno.serve(async (req) => {
     }
 
     // ── 9. Calcul financier final ──────────────────────────────────
-    const totalAmount = escrow.amount; // Source de vérité : escrow, pas order.total_price
+    // RÈGLE CLÉ: GP ne touche QUE le transport. Assurance + Logistique → Konnekt.
+    const totalAmount = escrow.amount; // Montant total bloqué (transport + insurance + logistics)
+    const transportPrice = (order.weight || 0) * (order.price_per_kg || 0); // Revenu transport brut
+    const insuranceAmount = order.has_insurance ? (order.insurance_amount || 0) : 0;
     const commissionRate = gpWallet.commission_rate || 5;
 
-    // Utiliser commission stockée dans l'escrow (inclut les ajustements de poids)
-    // Fallback : recalcul si non stocké
+    // Commission calculée sur le TRANSPORT uniquement (pas sur assurance/logistics)
     const commissionAmount =
-      escrow.commission_amount > 0
-        ? escrow.commission_amount
-        : order.commission_amount > 0
+      order.commission_amount > 0
         ? order.commission_amount
-        : Math.ceil(totalAmount * commissionRate / 100);
+        : Math.ceil(transportPrice * commissionRate / 100);
 
-    let netGP =
-      escrow.net_to_gp > 0
-        ? escrow.net_to_gp
-        : totalAmount - commissionAmount;
+    // GP net = transport - commission (pas total_price - commission)
+    let netGP = transportPrice - commissionAmount;
+
+    // Konnekt revenue = commission + insurance + logistics (tout le reste)
+    const konnektRevenue = totalAmount - netGP; // = commission + insurance + logistics
+
+    // Charger logistics price
+    const { data: logOpts } = await supabase
+      .from("order_logistics_options")
+      .select("pickup_price, delivery_price, pickup_enabled, delivery_enabled")
+      .eq("order_id", order_id)
+      .maybeSingle();
+    const logisticsRevenue = logOpts
+      ? ((logOpts.pickup_enabled ? (logOpts.pickup_price || 0) : 0) + (logOpts.delivery_enabled ? (logOpts.delivery_price || 0) : 0))
+      : 0;
 
     // Déduction dette GP
     let debtDeducted = 0;
@@ -244,6 +255,7 @@ Deno.serve(async (req) => {
     }
 
     // ── 12. Ledger entries ─────────────────────────────────────────
+    // Commission Konnekt
     await supabase.from("konnekt_ledger").insert({
       type: "commission",
       order_id,
@@ -254,6 +266,34 @@ Deno.serve(async (req) => {
       status: "completed",
       description: `Commission ${commissionRate}% — ${order.order_number}`,
     });
+
+    // Insurance → Konnekt insurance reserve
+    if (insuranceAmount > 0) {
+      await supabase.from("konnekt_ledger").insert({
+        type: "insurance_collected",
+        order_id,
+        gp_id: order.gp_id,
+        amount_fcfa: insuranceAmount,
+        currency_display: order.currency || "XOF",
+        amount_display: insuranceAmount,
+        status: "completed",
+        description: `Assurance Konnekt — ${order.order_number}`,
+      });
+    }
+
+    // Logistics interne → Konnekt revenue
+    if (logisticsRevenue > 0) {
+      await supabase.from("konnekt_ledger").insert({
+        type: "logistics_revenue",
+        order_id,
+        gp_id: order.gp_id,
+        amount_fcfa: logisticsRevenue,
+        currency_display: order.currency || "XOF",
+        amount_display: logisticsRevenue,
+        status: "completed",
+        description: `Logistique interne — ${order.order_number}`,
+      });
+    }
 
     if (debtDeducted > 0) {
       await supabase.from("konnekt_ledger").insert({
@@ -268,6 +308,7 @@ Deno.serve(async (req) => {
       });
     }
 
+    // GP payout
     await supabase.from("konnekt_ledger").insert({
       type: "release",
       order_id,
@@ -291,7 +332,7 @@ Deno.serve(async (req) => {
       })
       .eq("id", gpWallet.id);
 
-    // ── 14. Mettre à jour platform_wallet ──────────────────────────
+    // ── 14. Mettre à jour platform_wallet (commission + insurance + logistics) ──
     const { data: pw } = await supabase
       .from("platform_wallet")
       .select("id, total_commission, total_escrow_held")
@@ -300,7 +341,7 @@ Deno.serve(async (req) => {
       await supabase
         .from("platform_wallet")
         .update({
-          total_commission: pw.total_commission + commissionAmount,
+          total_commission: pw.total_commission + commissionAmount + insuranceAmount + logisticsRevenue,
           total_escrow_held: Math.max(0, pw.total_escrow_held - totalAmount),
           updated_at: now,
         })
@@ -362,8 +403,11 @@ Deno.serve(async (req) => {
     const result = {
       success: true,
       total: totalAmount,
+      transport_price: transportPrice,
       commission: commissionAmount,
       commission_rate: commissionRate,
+      insurance: insuranceAmount,
+      logistics: logisticsRevenue,
       debt_deducted: debtDeducted,
       net_gp: netGP,
       escrow_status: "released",
