@@ -284,4 +284,25 @@
   .pb-safe {
     padding-bottom: calc(80px + env(safe-area-inset-bottom));
   }
+
+  /* html5-qrcode — remove default shaded overlay, keep video clean */
+  #scan-heart-1 div[style*="background"],
+  [id^="scan-heart-"] div[style*="background-color: rgba(0, 0, 0, 0.48)"],
+  [id^="scan-heart-"] #qr-shaded-region {
+    display: none !important;
+  }
+
+  /* Force video fill in inline scanner */
+  [id^="scan-heart-"] video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    border-radius: 1rem;
+  }
+
+  [id^="scan-heart-"] {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
 }
