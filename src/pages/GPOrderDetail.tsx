@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  ArrowLeft, Package, MapPin, Calendar, Clock, User, 
+import { motion } from "framer-motion";
+import {
+  ArrowLeft, Package, MapPin, Calendar, Clock, User,
   Phone, MessageCircle, CheckCircle, Truck, AlertTriangle,
-  FileText, Scale, Zap, Shield, Copy, ExternalLink, 
+  FileText, Scale, Zap, Shield, Copy,
   ChevronDown, ChevronUp, QrCode, Wallet, ReceiptText,
-  MapPinned, Navigation, Milestone, Timer, Plane
+  Navigation, Milestone, Plane, TrendingDown
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -22,15 +22,16 @@ import {
 } from "@/components/ui/collapsible";
 import { format, formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
-import { 
-  orderStatusConfig, 
-  OrderStatus, 
-  getOrderStatusLabel, 
-  getNextOrderStatus 
+import {
+  orderStatusConfig,
+  OrderStatus,
+  getOrderStatusLabel,
+  getNextOrderStatus
 } from "@/lib/transportTypes";
 import { assertValidOrderStatus } from "@/lib/enumMappings";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
+import { getRegressiveInfo } from "@/lib/gpPricingEngine";
 
 interface OrderDetail {
   id: string;
@@ -129,26 +130,18 @@ const merchandiseLabels: Record<string, string> = {
   autres: "Autres",
 };
 
-// Status progress mapping
 const STATUS_PROGRESS: Record<string, number> = {
-  pending: 0,
-  accepted: 20,
-  collected: 40,
-  in_transit: 60,
-  delivered: 100,
-  cancelled: 0,
-  disputed: 0,
+  pending: 5, accepted: 20, paid_held: 30, checked_in: 35,
+  collected: 40, scheduled_departure: 50, in_transit: 60,
+  arrived_destination: 75, delivery_pending: 85,
+  delivery_confirmed: 95, delivered: 100, released: 100,
+  cancelled: 0, disputed: 0,
 };
 
-// Status timeline icons
 const STATUS_ICONS: Record<string, any> = {
-  pending: Clock,
-  accepted: CheckCircle,
-  collected: Package,
-  in_transit: Truck,
-  delivered: CheckCircle,
-  cancelled: AlertTriangle,
-  disputed: AlertTriangle,
+  pending: Clock, accepted: CheckCircle, collected: Package,
+  in_transit: Truck, delivered: CheckCircle,
+  cancelled: AlertTriangle, disputed: AlertTriangle,
 };
 
 export default function GPOrderDetail() {
@@ -163,12 +156,9 @@ export default function GPOrderDetail() {
   const [escrow, setEscrow] = useState<EscrowTransaction | null>(null);
   const [statusHistory, setStatusHistory] = useState<StatusHistoryEntry[]>([]);
   const [client, setClient] = useState<ClientProfile | null>(null);
-  
-  // UI State
   const [showTimeline, setShowTimeline] = useState(false);
   const [showFinancials, setShowFinancials] = useState(false);
   
-  // Currency hook (must be before any early returns)
   const currencyConversion = useCurrencyConversion({ gpCurrency: order?.currency || "XOF" });
 
   useEffect(() => {
@@ -176,47 +166,15 @@ export default function GPOrderDetail() {
   }, [orderId]);
 
   const loadOrderDetails = async () => {
-    if (!orderId) {
-      navigate("/gp/demandes");
-      return;
-    }
-
+    if (!orderId) { navigate("/gp/demandes"); return; }
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate("/auth");
-        return;
-      }
-
-      // Get GP profile
-      const { data: gpProfile } = await supabase
-        .from("gp_profiles")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (!gpProfile) {
-        navigate("/gp/demandes");
-        return;
-      }
-
-      // Get order with more fields
-      const { data: orderData, error: orderError } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("id", orderId)
-        .eq("gp_id", gpProfile.id)
-        .single();
-
-      if (orderError || !orderData) {
-        toast({ title: "Commande non trouvée", variant: "destructive" });
-        navigate("/gp/demandes");
-        return;
-      }
-
+      if (!user) { navigate("/auth"); return; }
+      const { data: gpProfile } = await supabase.from("gp_profiles").select("id").eq("user_id", user.id).maybeSingle();
+      if (!gpProfile) { navigate("/gp/demandes"); return; }
+      const { data: orderData, error: orderError } = await supabase.from("orders").select("*").eq("id", orderId).eq("gp_id", gpProfile.id).single();
+      if (orderError || !orderData) { toast({ title: "Commande non trouvée", variant: "destructive" }); navigate("/gp/demandes"); return; }
       setOrder(orderData as OrderDetail);
-
-      // Parallel data fetching
       const [logisticsRes, logOptRes, escrowRes, historyRes, clientRes] = await Promise.all([
         supabase.from("order_logistics").select("*").eq("order_id", orderId).maybeSingle(),
         supabase.from("order_logistics_options").select("*").eq("order_id", orderId).maybeSingle(),
@@ -224,7 +182,6 @@ export default function GPOrderDetail() {
         supabase.from("order_status_history").select("id, status, created_at, notes, changed_by_type").eq("order_id", orderId).order("created_at", { ascending: false }).limit(10),
         supabase.from("profiles").select("full_name, phone, email").eq("user_id", orderData.client_id).maybeSingle(),
       ]);
-
       setLogistics(logisticsRes.data);
       setLogisticsOptions(logOptRes.data);
       setEscrow(escrowRes.data);
@@ -240,45 +197,22 @@ export default function GPOrderDetail() {
 
   const updateOrderStatus = async (newStatus: OrderStatus) => {
     if (!order) return;
-
     setUpdating(true);
     try {
       const validStatus = assertValidOrderStatus(newStatus);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
-
       const updates: Record<string, any> = { 
         status: validStatus,
         ...(validStatus === "delivered" ? { actual_delivery_date: new Date().toISOString() } : {})
       };
-
-      // If delivered and has delivery logistics, update logistics_status
       if (validStatus === "delivered" && logisticsOptions?.delivery_enabled) {
-        await supabase
-          .from("order_logistics_options")
-          .update({ gp_arrived_at: new Date().toISOString(), logistics_status: "awaiting_admin_delivery" })
-          .eq("order_id", order.id);
+        await supabase.from("order_logistics_options").update({ gp_arrived_at: new Date().toISOString(), logistics_status: "awaiting_admin_delivery" }).eq("order_id", order.id);
       }
-
       const { error } = await supabase.from("orders").update(updates).eq("id", order.id);
       if (error) throw error;
-
-      await supabase.from("order_status_history").insert({
-        order_id: order.id,
-        status: newStatus,
-        changed_by: user.id,
-        changed_by_type: "gp",
-      });
-
-      await supabase.from("notifications").insert({
-        user_id: order.client_id,
-        type: "order_update",
-        title: `📦 ${order.order_number}`,
-        message: `Statut mis à jour: ${getOrderStatusLabel(newStatus)}`,
-        related_type: "order",
-        related_id: order.id,
-      });
-
+      await supabase.from("order_status_history").insert({ order_id: order.id, status: newStatus, changed_by: user.id, changed_by_type: "gp" });
+      await supabase.from("notifications").insert({ user_id: order.client_id, type: "order_update", title: `📦 ${order.order_number}`, message: `Statut mis à jour: ${getOrderStatusLabel(newStatus)}`, related_type: "order", related_id: order.id });
       toast({ title: "✅ Statut mis à jour", description: `Commande marquée comme "${getOrderStatusLabel(newStatus)}"` });
       loadOrderDetails();
     } catch (error: any) {
@@ -295,10 +229,10 @@ export default function GPOrderDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center safe-area-inset">
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
           <div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin mx-auto mb-3" />
-          <p className="text-muted-foreground">Chargement de la mission...</p>
+          <p className="text-muted-foreground">Chargement…</p>
         </motion.div>
       </div>
     );
@@ -316,189 +250,142 @@ export default function GPOrderDetail() {
   const transportPrice = order.weight * order.price_per_kg;
   const gpEarnings = transportPrice - order.commission_amount;
   const insuranceAmount = order.has_insurance ? (order.insurance_amount || 0) : 0;
-  // Logistics prices are stored in FCFA — convert to GP currency for display
-  const logisticsPriceFCFA = logisticsOptions ? 
-    ((logisticsOptions.pickup_enabled ? (logisticsOptions as any).pickup_price || 0 : 0) + 
+  const logisticsPriceFCFA = logisticsOptions ?
+    ((logisticsOptions.pickup_enabled ? (logisticsOptions as any).pickup_price || 0 : 0) +
      (logisticsOptions.delivery_enabled ? (logisticsOptions as any).delivery_price || 0 : 0)) : 0;
   const logisticsPrice = isFCFA ? logisticsPriceFCFA : Math.round(fromFCFA(logisticsPriceFCFA) * 100) / 100;
 
-  // Helper: format amount in GP currency + (≈ FCFA)
   const dualFormat = (amount: number) => {
     if (isFCFA) return `${amount.toLocaleString('fr-FR')} FCFA`;
     return formatDual(amount);
   };
 
+  // Regressive pricing info
+  const regressiveInfo = getRegressiveInfo(order.weight, order.price_per_kg);
+
   return (
-    <div className="min-h-screen bg-background pb-safe">
-      {/* Header with gradient */}
-      <motion.div 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="sticky top-0 z-50 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground py-4 px-4 shadow-lg"
-      >
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-inherit hover:bg-white/10">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold font-mono">{order.order_number}</h1>
-              <Button variant="ghost" size="icon" className="h-6 w-6 text-inherit hover:bg-white/10" onClick={() => copyToClipboard(order.order_number)}>
-                <Copy className="w-3 h-3" />
-              </Button>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* ─── Sticky Header ─── */}
+      <div className="sticky top-0 z-50 bg-card border-b pt-safe">
+        <div className="px-4 py-3">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="shrink-0 -ml-2" onClick={() => navigate(-1)}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="text-base font-bold font-mono truncate">{order.order_number}</h1>
+                <button onClick={() => copyToClipboard(order.order_number)} className="text-muted-foreground hover:text-foreground">
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(order.created_at), { addSuffix: true, locale: fr })}</p>
             </div>
-            <p className="text-xs opacity-80">{formatDistanceToNow(new Date(order.created_at), { addSuffix: true, locale: fr })}</p>
+            <Badge variant={statusConfig?.color as any || "secondary"} className="text-[11px] shrink-0">
+              {getOrderStatusLabel(order.status)}
+            </Badge>
           </div>
-          <Badge variant={statusConfig?.color as any || "secondary"} className="text-xs shrink-0">{getOrderStatusLabel(order.status)}</Badge>
+
+          {order.status !== "cancelled" && order.status !== "disputed" && (
+            <div className="mt-2.5">
+              <Progress value={progress} className="h-1" />
+              <div className="flex justify-between mt-1 text-[10px] text-muted-foreground">
+                <span>Réservé</span><span>Transit</span><span>Livré</span>
+              </div>
+            </div>
+          )}
         </div>
-        
-        {order.status !== "cancelled" && order.status !== "disputed" && (
-          <div className="mt-3">
-            <Progress value={progress} className="h-1.5" />
-            <div className="flex justify-between mt-1 text-[10px] opacity-70">
-              <span>Réservé</span>
-              <span>En transit</span>
-              <span>Livré</span>
-            </div>
+      </div>
+
+      {/* ─── Scrollable Content ─── */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 pb-safe" style={{ paddingBottom: nextStatus ? "calc(env(safe-area-inset-bottom, 0px) + 88px)" : "calc(env(safe-area-inset-bottom, 0px) + 16px)" }}>
+
+        {/* Route Card — compact */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 text-center">
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-1.5">
+                    <Plane className="w-4 h-4 text-primary -rotate-45" />
+                  </div>
+                  <p className="font-semibold text-sm">{order.origin_city}</p>
+                  <p className="text-[10px] text-muted-foreground">{order.origin_country}</p>
+                </div>
+                <div className="flex flex-col items-center gap-0.5 shrink-0">
+                  <Navigation className="w-3.5 h-3.5 text-muted-foreground rotate-90" />
+                  <div className="w-12 h-0.5 bg-gradient-to-r from-primary to-primary/40 rounded-full" />
+                  {order.delivery_date && <p className="text-[9px] text-muted-foreground mt-0.5">{format(new Date(order.delivery_date), "d MMM", { locale: fr })}</p>}
+                </div>
+                <div className="flex-1 text-center">
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-1.5">
+                    <MapPin className="w-4 h-4 text-primary" />
+                  </div>
+                  <p className="font-semibold text-sm">{order.destination_city}</p>
+                  <p className="text-[10px] text-muted-foreground">{order.destination_country}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Quick Stats — 3 chips */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="grid grid-cols-3 gap-2">
+          <div className="bg-card border rounded-xl p-3 text-center">
+            <Scale className="w-4 h-4 text-primary mx-auto mb-1" />
+            <p className="text-base font-bold">{order.weight}<span className="text-xs font-normal text-muted-foreground ml-0.5">kg</span></p>
           </div>
+          <div className="bg-card border rounded-xl p-3 text-center">
+            <Wallet className="w-4 h-4 text-primary mx-auto mb-1" />
+            <p className="text-base font-bold">{gpEarnings.toLocaleString()}<span className="text-xs font-normal text-muted-foreground ml-0.5">{currencySymbol}</span></p>
+            <p className="text-[9px] text-muted-foreground">Gains nets</p>
+          </div>
+          <div className="bg-card border rounded-xl p-3 text-center">
+            <Shield className={`w-4 h-4 mx-auto mb-1 ${order.has_insurance ? "text-primary" : "text-muted-foreground"}`} />
+            <p className={`text-base font-bold ${order.has_insurance ? "" : "text-muted-foreground"}`}>{order.has_insurance ? "Oui" : "Non"}</p>
+            <p className="text-[9px] text-muted-foreground">Assuré</p>
+          </div>
+        </motion.div>
+
+        {/* Regressive pricing indicator */}
+        {regressiveInfo.savingsPercent > 0 && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+            <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/15 rounded-lg text-xs">
+              <TrendingDown className="w-3.5 h-3.5 text-primary shrink-0" />
+              <span className="text-muted-foreground">Tarif régressif appliqué : <span className="font-medium text-foreground">-{regressiveInfo.savingsPercent}%</span> ({regressiveInfo.tierLabel})</span>
+            </div>
+          </motion.div>
         )}
-      </motion.div>
+        {order.weight < 1 && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+            <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/5 border border-amber-500/15 rounded-lg text-xs">
+              <Package className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+              <span className="text-muted-foreground">Forfait petit colis appliqué : <span className="font-medium text-foreground">{dualFormat(Math.round(order.price_per_kg * 1.5))}</span> min.</span>
+            </div>
+          </motion.div>
+        )}
 
-      <div className="px-4 py-4 space-y-4">
-        {/* Quick Stats Row */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-3 gap-2">
-          <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-            <CardContent className="p-3 text-center">
-              <Scale className="w-4 h-4 text-primary mx-auto mb-1" />
-              <p className="text-lg font-bold">{order.weight} kg</p>
-              <p className="text-[10px] text-muted-foreground">Poids</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-success/5 to-success/10 border-success/20">
-            <CardContent className="p-3 text-center">
-              <Wallet className="w-4 h-4 text-success mx-auto mb-1" />
-              <p className="text-lg font-bold">{gpEarnings.toLocaleString()}</p>
-              <p className="text-[10px] text-muted-foreground">Gains {currencySymbol}</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-amber-500/5 to-amber-500/10 border-amber-500/20">
-            <CardContent className="p-3 text-center">
-              {order.has_insurance ? (
-                <>
-                  <Shield className="w-4 h-4 text-amber-600 mx-auto mb-1" />
-                  <p className="text-lg font-bold text-amber-600">Oui</p>
-                  <p className="text-[10px] text-muted-foreground">Assuré</p>
-                </>
-              ) : (
-                <>
-                  <Shield className="w-4 h-4 text-muted-foreground mx-auto mb-1" />
-                  <p className="text-lg font-bold text-muted-foreground">Non</p>
-                  <p className="text-[10px] text-muted-foreground">Assuré</p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Primary Action Card */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <Card className="overflow-hidden">
-            <CardContent className="p-0">
-              {isBlockedByLogistics && (
-                <div className="bg-amber-50 border-b border-amber-200 p-3 flex items-start gap-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-amber-800">Logistique dernier km active</p>
-                    <p className="text-xs text-amber-600">L'admin Konnekt effectuera la livraison finale.</p>
-                  </div>
-                </div>
-              )}
-
-              <div className="p-4">
-                {nextStatus && nextLabel && !isBlockedByLogistics && (
-                  <Button variant="default" size="lg" className="w-full h-14 text-base" disabled={updating} onClick={() => updateOrderStatus(nextStatus)}>
-                    {updating ? (
-                      <div className="w-5 h-5 rounded-full border-2 border-current border-t-transparent animate-spin" />
-                    ) : (
-                      <>
-                        {nextStatus === "accepted" && <CheckCircle className="w-5 h-5 mr-2" />}
-                        {nextStatus === "collected" && <Package className="w-5 h-5 mr-2" />}
-                        {nextStatus === "in_transit" && <Truck className="w-5 h-5 mr-2" />}
-                        {nextStatus === "delivered" && <CheckCircle className="w-5 h-5 mr-2" />}
-                        {nextLabel}
-                      </>
-                    )}
-                  </Button>
-                )}
-
-                {order.status === "delivered" && (
-                  <div className="flex flex-col items-center gap-2 py-4">
-                    <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center">
-                      <CheckCircle className="w-6 h-6 text-success" />
-                    </div>
-                    <span className="font-medium text-success">Mission terminée avec succès</span>
-                    {escrow?.status === "released" && <Badge variant="outline" className="text-success border-success">Fonds libérés</Badge>}
-                  </div>
-                )}
-
-                {order.status === "pending" && <p className="text-xs text-muted-foreground text-center mt-2">⏳ En attente de votre acceptation</p>}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Route Card */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+        {/* Client Contact — compact */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="flex-1 text-center">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                    <Plane className="w-5 h-5 text-primary -rotate-45" />
-                  </div>
-                  <p className="font-bold">{order.origin_city}</p>
-                  <p className="text-xs text-muted-foreground">{order.origin_country}</p>
-                </div>
-
-                <div className="flex flex-col items-center gap-1">
-                  <Navigation className="w-4 h-4 text-muted-foreground rotate-90" />
-                  <div className="w-16 h-0.5 bg-gradient-to-r from-primary to-success" />
-                  {order.delivery_date && <p className="text-[10px] text-muted-foreground">{format(new Date(order.delivery_date), "d MMM", { locale: fr })}</p>}
-                </div>
-
-                <div className="flex-1 text-center">
-                  <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-2">
-                    <MapPin className="w-5 h-5 text-success" />
-                  </div>
-                  <p className="font-bold">{order.destination_city}</p>
-                  <p className="text-xs text-muted-foreground">{order.destination_country}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Client Contact */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                    <User className="w-5 h-5 text-muted-foreground" />
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center shrink-0">
+                    <User className="w-4 h-4 text-muted-foreground" />
                   </div>
-                  <div>
-                    <p className="font-medium">{client?.full_name || "Client"}</p>
-                    <p className="text-xs text-muted-foreground">{client?.email || "Email non disponible"}</p>
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm truncate">{client?.full_name || "Client"}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{client?.email}</p>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-1.5 shrink-0">
                   {client?.phone && (
                     <a href={`tel:${client.phone}`}>
-                      <Button variant="outline" size="icon" className="h-10 w-10"><Phone className="w-4 h-4" /></Button>
+                      <Button variant="outline" size="icon" className="h-9 w-9"><Phone className="w-4 h-4" /></Button>
                     </a>
                   )}
-                  <Button variant="default" size="icon" className="h-10 w-10" onClick={() => navigate("/messages")}>
+                  <Button variant="default" size="icon" className="h-9 w-9" onClick={() => navigate("/messages")}>
                     <MessageCircle className="w-4 h-4" />
                   </Button>
                 </div>
@@ -507,135 +394,156 @@ export default function GPOrderDetail() {
           </Card>
         </motion.div>
 
-        {/* Internal Logistics Section */}
+        {/* Logistics alert */}
+        {isBlockedByLogistics && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+            <div className="flex items-start gap-2.5 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-300">Logistique dernier km active</p>
+                <p className="text-xs text-amber-600 dark:text-amber-400">L'admin Konnekt effectuera la livraison finale.</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Internal Logistics */}
         {hasInternalLogistics && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-            <Card className="border-amber-300 bg-amber-50/50 dark:bg-amber-950/20">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2 text-amber-700 dark:text-amber-400">
-                  <Truck className="w-4 h-4" />
-                  Konnekt Logistique
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+            <Card className="border-amber-200 dark:border-amber-800">
+              <CardHeader className="pb-1.5 pt-3 px-3">
+                <CardTitle className="text-xs flex items-center gap-1.5 text-amber-700 dark:text-amber-400">
+                  <Truck className="w-3.5 h-3.5" /> Konnekt Logistique
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="px-3 pb-3 space-y-2">
                 {logisticsOptions?.pickup_enabled && (
-                  <div className="p-3 bg-background rounded-lg space-y-1">
+                  <div className="p-2.5 bg-muted/50 rounded-lg space-y-0.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium">📦 Enlèvement</span>
-                      <Badge variant="outline" className="text-[10px]">{logisticsOptions.pickup_status || "pending"}</Badge>
+                      <span className="text-[11px] font-medium">📦 Enlèvement</span>
+                      <Badge variant="outline" className="text-[9px] h-5">{logisticsOptions.pickup_status || "pending"}</Badge>
                     </div>
-                    <p className="text-sm">{logisticsOptions.pickup_address}</p>
-                    <p className="text-xs text-muted-foreground">{logisticsOptions.pickup_contact_name} • {logisticsOptions.pickup_phone}</p>
+                    <p className="text-xs">{logisticsOptions.pickup_address}</p>
+                    <p className="text-[10px] text-muted-foreground">{logisticsOptions.pickup_contact_name} • {logisticsOptions.pickup_phone}</p>
                   </div>
                 )}
                 {logisticsOptions?.delivery_enabled && (
-                  <div className="p-3 bg-background rounded-lg space-y-1">
+                  <div className="p-2.5 bg-muted/50 rounded-lg space-y-0.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium">🎯 Livraison dernier km</span>
-                      <Badge variant="outline" className="text-[10px]">{logisticsOptions.delivery_status || "pending"}</Badge>
+                      <span className="text-[11px] font-medium">🎯 Livraison dernier km</span>
+                      <Badge variant="outline" className="text-[9px] h-5">{logisticsOptions.delivery_status || "pending"}</Badge>
                     </div>
-                    <p className="text-sm">{logisticsOptions.delivery_address}</p>
-                    <p className="text-xs text-muted-foreground">{logisticsOptions.delivery_contact_name} • {logisticsOptions.delivery_phone}</p>
-                    {logisticsOptions.logistics_status === "awaiting_admin_delivery" && <Badge className="bg-blue-500 text-[10px] mt-1">Admin prêt à récupérer</Badge>}
+                    <p className="text-xs">{logisticsOptions.delivery_address}</p>
+                    <p className="text-[10px] text-muted-foreground">{logisticsOptions.delivery_contact_name} • {logisticsOptions.delivery_phone}</p>
                   </div>
                 )}
-                <p className="text-[10px] text-amber-600 dark:text-amber-400">⚠️ Vous ne gérez pas la livraison finale — Konnekt s'en charge.</p>
               </CardContent>
             </Card>
           </motion.div>
         )}
 
-        {/* Merchandise Details */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2"><FileText className="w-4 h-4" />Contenu du colis</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {order.content_nature && order.content_nature.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {order.content_nature.map((nature, i) => (
-                    <Badge key={i} variant="secondary" className="text-xs">{merchandiseLabels[nature] || nature}</Badge>
-                  ))}
-                </div>
-              )}
+        {/* Merchandise */}
+        {(order.content_nature?.length || logistics || order.description) && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Card>
+              <CardHeader className="pb-1.5 pt-3 px-3">
+                <CardTitle className="text-xs flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" />Contenu</CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 pb-3 space-y-2">
+                {order.content_nature && order.content_nature.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {order.content_nature.map((nature, i) => (
+                      <Badge key={i} variant="secondary" className="text-[10px]">{merchandiseLabels[nature] || nature}</Badge>
+                    ))}
+                  </div>
+                )}
+                {logistics && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {logistics.is_fragile && <Badge variant="destructive" className="gap-1 text-[10px]"><AlertTriangle className="w-2.5 h-2.5" />Fragile</Badge>}
+                    {logistics.is_urgent && <Badge className="bg-amber-500 gap-1 text-[10px]"><Zap className="w-2.5 h-2.5" />Urgent</Badge>}
+                  </div>
+                )}
+                {order.description && <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-lg">{order.description}</p>}
+                {logistics?.special_conditions && (
+                  <div className="p-2 bg-destructive/5 border border-destructive/20 rounded-lg">
+                    <p className="text-[10px] font-medium text-destructive">⚠️ {logistics.special_conditions}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
-              {logistics && (
-                <div className="flex flex-wrap gap-2">
-                  {logistics.is_fragile && <Badge variant="destructive" className="gap-1"><AlertTriangle className="w-3 h-3" />Fragile</Badge>}
-                  {logistics.is_urgent && <Badge className="bg-amber-500 gap-1"><Zap className="w-3 h-3" />Urgent</Badge>}
-                </div>
-              )}
-
-              {order.description && (
-                <div className="p-3 bg-muted/50 rounded-lg">
-                  <p className="text-xs text-muted-foreground mb-1">Description</p>
-                  <p className="text-sm">{order.description}</p>
-                </div>
-              )}
-
-              {logistics?.special_conditions && (
-                <div className="p-3 bg-warning/10 rounded-lg border border-warning/30">
-                  <p className="text-xs font-medium text-warning">⚠️ Conditions spéciales</p>
-                  <p className="text-sm mt-1">{logistics.special_conditions}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Financial Details - Collapsible */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+        {/* Financial — Collapsible */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
           <Collapsible open={showFinancials} onOpenChange={setShowFinancials}>
             <Card>
               <CollapsibleTrigger asChild>
-                <CardHeader className="pb-2 cursor-pointer hover:bg-muted/50 transition-colors">
+                <CardHeader className="pb-2 pt-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm flex items-center gap-2"><ReceiptText className="w-4 h-4" />Détails financiers</CardTitle>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold text-primary">{gpEarnings.toLocaleString()} {currencySymbol}</span>
-                      {showFinancials ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    <CardTitle className="text-xs flex items-center gap-1.5"><ReceiptText className="w-3.5 h-3.5" />Finances</CardTitle>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-bold text-primary">{dualFormat(gpEarnings)}</span>
+                      {showFinancials ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
                     </div>
                   </div>
                 </CardHeader>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <CardContent className="pt-0">
+                <CardContent className="px-3 pb-3 pt-0">
                   <div className="space-y-2 text-sm">
-                    {/* GP Revenue Section */}
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Vos revenus</p>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Transport ({order.weight} kg × {order.price_per_kg})</span><span>{dualFormat(transportPrice)}</span></div>
-                    <div className="flex justify-between text-destructive"><span>Commission Konnekt</span><span>-{dualFormat(order.commission_amount)}</span></div>
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Vos revenus</p>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Transport ({order.weight} kg × {order.price_per_kg})</span>
+                      <span className="font-medium">{dualFormat(transportPrice)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-destructive">
+                      <span>Commission Konnekt</span>
+                      <span>-{dualFormat(order.commission_amount)}</span>
+                    </div>
                     <Separator />
-                    <div className="flex justify-between text-lg"><span className="font-bold">Vos gains nets</span><span className="font-bold text-success">{dualFormat(gpEarnings)}</span></div>
+                    <div className="flex justify-between">
+                      <span className="font-semibold text-sm">Gains nets</span>
+                      <span className="font-bold text-sm text-primary">{dualFormat(gpEarnings)}</span>
+                    </div>
 
-                    {/* Client total breakdown */}
-                    <div className="mt-4 p-3 bg-muted/30 rounded-lg space-y-1.5">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Facture client</p>
-                      <div className="flex justify-between"><span className="text-muted-foreground">Transport</span><span>{dualFormat(transportPrice)}</span></div>
+                    {/* Client Invoice */}
+                    <div className="mt-3 p-2.5 bg-muted/30 rounded-lg space-y-1.5">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Facture client</p>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Transport</span>
+                        <span>{dualFormat(transportPrice)}</span>
+                      </div>
                       {insuranceAmount > 0 && (
-                        <div className="flex justify-between"><span className="text-muted-foreground">Assurance Konnekt</span><span>{dualFormat(insuranceAmount)}</span></div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">Assurance</span>
+                          <span>{dualFormat(insuranceAmount)}</span>
+                        </div>
                       )}
                       {logisticsPrice > 0 && (
-                        <div className="flex justify-between"><span className="text-muted-foreground">Logistique interne</span><span>{dualFormat(logisticsPrice)}</span></div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">Logistique</span>
+                          <span>{dualFormat(logisticsPrice)}</span>
+                        </div>
                       )}
                       <Separator />
-                      <div className="flex justify-between font-medium"><span>Total payé</span><span>{dualFormat(order.total_price)}</span></div>
+                      <div className="flex justify-between text-xs font-medium">
+                        <span>Total</span>
+                        <span>{dualFormat(order.total_price)}</span>
+                      </div>
                     </div>
                     
                     {escrow && (
-                      <div className="mt-3 p-3 bg-muted/50 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">Statut paiement</span>
-                          <Badge variant={escrow.status === "released" ? "default" : "secondary"}>
-                            {escrow.status === "held" && "🔒 En séquestre"}
-                            {escrow.status === "released" && "✅ Libéré"}
-                            {escrow.status === "pending" && "⏳ En attente"}
-                          </Badge>
-                        </div>
-                        {escrow.released_at && <p className="text-xs text-muted-foreground mt-1">Libéré le {format(new Date(escrow.released_at), "d MMM yyyy", { locale: fr })}</p>}
+                      <div className="mt-2 flex items-center justify-between p-2.5 bg-muted/50 rounded-lg">
+                        <span className="text-[11px] text-muted-foreground">Paiement</span>
+                        <Badge variant={escrow.status === "released" ? "default" : "secondary"} className="text-[10px]">
+                          {escrow.status === "held" && "🔒 Séquestre"}
+                          {escrow.status === "released" && "✅ Libéré"}
+                          {escrow.status === "pending" && "⏳ En attente"}
+                        </Badge>
                       </div>
                     )}
+                    {escrow?.released_at && <p className="text-[10px] text-muted-foreground">Libéré le {format(new Date(escrow.released_at), "d MMM yyyy", { locale: fr })}</p>}
                   </div>
                 </CardContent>
               </CollapsibleContent>
@@ -643,36 +551,36 @@ export default function GPOrderDetail() {
           </Collapsible>
         </motion.div>
 
-        {/* Status Timeline - Collapsible */}
+        {/* Timeline — Collapsible */}
         {statusHistory.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
             <Collapsible open={showTimeline} onOpenChange={setShowTimeline}>
               <Card>
                 <CollapsibleTrigger asChild>
-                  <CardHeader className="pb-2 cursor-pointer hover:bg-muted/50 transition-colors">
+                  <CardHeader className="pb-2 pt-3 px-3 cursor-pointer hover:bg-muted/30 transition-colors">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm flex items-center gap-2"><Milestone className="w-4 h-4" />Historique ({statusHistory.length})</CardTitle>
-                      {showTimeline ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      <CardTitle className="text-xs flex items-center gap-1.5"><Milestone className="w-3.5 h-3.5" />Historique ({statusHistory.length})</CardTitle>
+                      {showTimeline ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
                     </div>
                   </CardHeader>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <CardContent className="pt-0">
-                    <div className="space-y-3">
+                  <CardContent className="px-3 pb-3 pt-0">
+                    <div className="space-y-2.5">
                       {statusHistory.map((entry, i) => {
                         const Icon = STATUS_ICONS[entry.status] || Clock;
                         return (
-                          <div key={entry.id} className="flex items-start gap-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${i === 0 ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                              <Icon className="w-4 h-4" />
+                          <div key={entry.id} className="flex items-start gap-2.5">
+                            <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${i === 0 ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                              <Icon className="w-3.5 h-3.5" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium">{getOrderStatusLabel(entry.status as OrderStatus)}</p>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-xs font-medium">{getOrderStatusLabel(entry.status as OrderStatus)}</p>
+                              <p className="text-[10px] text-muted-foreground">
                                 {format(new Date(entry.created_at), "d MMM yyyy 'à' HH:mm", { locale: fr })}
-                                <span className="ml-1">• Par {entry.changed_by_type === "gp" ? "vous" : entry.changed_by_type}</span>
+                                <span className="ml-1">• {entry.changed_by_type === "gp" ? "Vous" : entry.changed_by_type}</span>
                               </p>
-                              {entry.notes && <p className="text-xs text-muted-foreground mt-0.5">{entry.notes}</p>}
+                              {entry.notes && <p className="text-[10px] text-muted-foreground mt-0.5">{entry.notes}</p>}
                             </div>
                           </div>
                         );
@@ -685,33 +593,63 @@ export default function GPOrderDetail() {
           </motion.div>
         )}
 
-        {/* QR Code Button */}
+        {/* QR / Tracking */}
         {order.status === "accepted" && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
-            <Button variant="outline" className="w-full gap-2" onClick={() => navigate("/gp/scan")}>
-              <QrCode className="w-4 h-4" />
-              Scanner le QR code de dépôt
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+            <Button variant="outline" className="w-full gap-2 h-11" onClick={() => navigate("/gp/scan")}>
+              <QrCode className="w-4 h-4" /> Scanner QR de dépôt
             </Button>
           </motion.div>
         )}
-
-        {/* Tracking Code */}
         {order.tracking_code && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}>
             <Card>
-              <CardContent className="p-4 flex items-center justify-between">
+              <CardContent className="p-3 flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground">Code de suivi</p>
-                  <p className="font-mono font-bold text-lg">{order.tracking_code}</p>
+                  <p className="text-[10px] text-muted-foreground">Code de suivi</p>
+                  <p className="font-mono font-bold">{order.tracking_code}</p>
                 </div>
-                <Button variant="outline" size="icon" onClick={() => copyToClipboard(order.tracking_code!)}>
+                <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => copyToClipboard(order.tracking_code!)}>
                   <Copy className="w-4 h-4" />
                 </Button>
               </CardContent>
             </Card>
           </motion.div>
         )}
+
+        {/* Delivered state */}
+        {order.status === "delivered" && (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}>
+            <div className="flex flex-col items-center gap-2 py-4">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-primary" />
+              </div>
+              <span className="font-medium text-primary text-sm">Mission terminée ✓</span>
+              {escrow?.status === "released" && <Badge variant="outline" className="text-[10px] border-primary text-primary">Fonds libérés</Badge>}
+            </div>
+          </motion.div>
+        )}
       </div>
+
+      {/* ─── Sticky Bottom Action ─── */}
+      {nextStatus && nextLabel && !isBlockedByLogistics && order.status !== "delivered" && (
+        <div className="sticky bottom-0 z-40 bg-card/95 backdrop-blur-sm border-t px-4 py-3 pb-safe">
+          <Button variant="default" size="lg" className="w-full h-12 text-sm font-semibold" disabled={updating} onClick={() => updateOrderStatus(nextStatus)}>
+            {updating ? (
+              <div className="w-5 h-5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+            ) : (
+              <>
+                {nextStatus === "accepted" && <CheckCircle className="w-4 h-4 mr-2" />}
+                {nextStatus === "collected" && <Package className="w-4 h-4 mr-2" />}
+                {nextStatus === "in_transit" && <Truck className="w-4 h-4 mr-2" />}
+                {nextStatus === "delivered" && <CheckCircle className="w-4 h-4 mr-2" />}
+                {nextLabel}
+              </>
+            )}
+          </Button>
+          {order.status === "pending" && <p className="text-[10px] text-muted-foreground text-center mt-1.5">⏳ En attente de votre acceptation</p>}
+        </div>
+      )}
     </div>
   );
 }
