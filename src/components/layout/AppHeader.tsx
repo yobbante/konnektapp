@@ -123,7 +123,7 @@ export function AppHeader({
           {/* Interactive QR Badge — Client identity */}
           {isAuthenticated && userId && (
             <HeaderQRBadge
-              qrValue={`${window.location.origin}/track/user/${userId}`}
+              userId={userId}
               label={userName}
               subLabel="Client Konnekt"
               variant="client"
