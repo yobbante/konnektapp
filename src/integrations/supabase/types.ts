@@ -1416,18 +1416,30 @@ export type Database = {
       }
       idempotency_keys: {
         Row: {
+          action: string | null
+          actor_id: string | null
           created_at: string
+          expires_at: string | null
           key: string
+          order_id: string | null
           result: Json | null
         }
         Insert: {
+          action?: string | null
+          actor_id?: string | null
           created_at?: string
+          expires_at?: string | null
           key: string
+          order_id?: string | null
           result?: Json | null
         }
         Update: {
+          action?: string | null
+          actor_id?: string | null
           created_at?: string
+          expires_at?: string | null
           key?: string
+          order_id?: string | null
           result?: Json | null
         }
         Relationships: []
@@ -2413,6 +2425,9 @@ export type Database = {
           created_at: string
           currency: string
           declared_value: number | null
+          declared_weight: number | null
+          delivery_attempt_count: number
+          delivery_blocked_until: string | null
           delivery_code: string | null
           delivery_confirmed_at: string | null
           delivery_confirmed_by_phone: string | null
@@ -2427,6 +2442,7 @@ export type Database = {
             | Database["public"]["Enums"]["financial_status"]
             | null
           flat_rate_items: Json | null
+          geo_suspicious: boolean
           gp_id: string
           gp_response_deadline: string | null
           has_insurance: boolean | null
@@ -2444,11 +2460,13 @@ export type Database = {
           recipient_name: string | null
           recipient_phone: string | null
           recipient_user_id: string | null
+          security_flags: string[] | null
           status: Database["public"]["Enums"]["order_status"]
           total_price: number
           tracking_code: string | null
           updated_at: string
           weight: number
+          weight_adjustment_count: number
           weight_tier_applied: string | null
         }
         Insert: {
@@ -2462,6 +2480,9 @@ export type Database = {
           created_at?: string
           currency?: string
           declared_value?: number | null
+          declared_weight?: number | null
+          delivery_attempt_count?: number
+          delivery_blocked_until?: string | null
           delivery_code?: string | null
           delivery_confirmed_at?: string | null
           delivery_confirmed_by_phone?: string | null
@@ -2476,6 +2497,7 @@ export type Database = {
             | Database["public"]["Enums"]["financial_status"]
             | null
           flat_rate_items?: Json | null
+          geo_suspicious?: boolean
           gp_id: string
           gp_response_deadline?: string | null
           has_insurance?: boolean | null
@@ -2493,11 +2515,13 @@ export type Database = {
           recipient_name?: string | null
           recipient_phone?: string | null
           recipient_user_id?: string | null
+          security_flags?: string[] | null
           status?: Database["public"]["Enums"]["order_status"]
           total_price: number
           tracking_code?: string | null
           updated_at?: string
           weight: number
+          weight_adjustment_count?: number
           weight_tier_applied?: string | null
         }
         Update: {
@@ -2511,6 +2535,9 @@ export type Database = {
           created_at?: string
           currency?: string
           declared_value?: number | null
+          declared_weight?: number | null
+          delivery_attempt_count?: number
+          delivery_blocked_until?: string | null
           delivery_code?: string | null
           delivery_confirmed_at?: string | null
           delivery_confirmed_by_phone?: string | null
@@ -2525,6 +2552,7 @@ export type Database = {
             | Database["public"]["Enums"]["financial_status"]
             | null
           flat_rate_items?: Json | null
+          geo_suspicious?: boolean
           gp_id?: string
           gp_response_deadline?: string | null
           has_insurance?: boolean | null
@@ -2542,11 +2570,13 @@ export type Database = {
           recipient_name?: string | null
           recipient_phone?: string | null
           recipient_user_id?: string | null
+          security_flags?: string[] | null
           status?: Database["public"]["Enums"]["order_status"]
           total_price?: number
           tracking_code?: string | null
           updated_at?: string
           weight?: number
+          weight_adjustment_count?: number
           weight_tier_applied?: string | null
         }
         Relationships: [
@@ -3153,6 +3183,39 @@ export type Database = {
           },
         ]
       }
+      security_audit_log: {
+        Row: {
+          actor_id: string | null
+          actor_role: string | null
+          created_at: string
+          details: Json | null
+          event_type: string
+          id: string
+          order_id: string | null
+          severity: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_role?: string | null
+          created_at?: string
+          details?: Json | null
+          event_type: string
+          id?: string
+          order_id?: string | null
+          severity?: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_role?: string | null
+          created_at?: string
+          details?: Json | null
+          event_type?: string
+          id?: string
+          order_id?: string | null
+          severity?: string
+        }
+        Relationships: []
+      }
       support_messages: {
         Row: {
           attachments: string[] | null
@@ -3647,6 +3710,48 @@ export type Database = {
           },
         ]
       }
+      weight_adjustment_log: {
+        Row: {
+          actor_id: string
+          actor_role: string
+          block_reason: string | null
+          blocked: boolean
+          created_at: string
+          declared_weight: number
+          delta_amount: number
+          id: string
+          justification: string | null
+          order_id: string
+          original_weight: number
+        }
+        Insert: {
+          actor_id: string
+          actor_role: string
+          block_reason?: string | null
+          blocked?: boolean
+          created_at?: string
+          declared_weight: number
+          delta_amount?: number
+          id?: string
+          justification?: string | null
+          order_id: string
+          original_weight: number
+        }
+        Update: {
+          actor_id?: string
+          actor_role?: string
+          block_reason?: string | null
+          blocked?: boolean
+          created_at?: string
+          declared_weight?: number
+          delta_amount?: number
+          id?: string
+          justification?: string | null
+          order_id?: string
+          original_weight?: number
+        }
+        Relationships: []
+      }
       withdrawal_requests: {
         Row: {
           admin_notes: string | null
@@ -3908,6 +4013,18 @@ export type Database = {
       }
       is_gp_verified: { Args: { gp_id: string }; Returns: boolean }
       is_order_gp: { Args: { order_gp_id: string }; Returns: boolean }
+      is_valid_state_transition: {
+        Args: { p_current_status: string; p_target_status: string }
+        Returns: boolean
+      }
+      log_delivery_attempt_failed: {
+        Args: {
+          p_actor_id: string
+          p_attempt_count: number
+          p_order_id: string
+        }
+        Returns: undefined
+      }
       owns_gp_offer: { Args: { offer_gp_id: string }; Returns: boolean }
       owns_gp_wallet: { Args: { wallet_gp_id: string }; Returns: boolean }
       remove_user_role: {

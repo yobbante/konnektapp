@@ -30,3 +30,7 @@ verify_jwt = false
 [functions.release-funds-v2]
 verify_jwt = false
 
+[functions.security-qr-verify]
+verify_jwt = false
+
+
