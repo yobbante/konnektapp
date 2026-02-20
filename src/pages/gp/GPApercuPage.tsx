@@ -1,9 +1,8 @@
 /**
- * GPApercuPage — Dashboard GP V1 Terrain (refactored)
+ * GPApercuPage — Dashboard GP V2 Terrain
  * 
- * Hierarchy: Quick Actions → Active Parcels → Performance → Departures
- * Finance block moved to Wallet page only.
- * Mobile-first, max 6 elements per screen, scan-centric.
+ * Hierarchy: Alerts → Quick Actions → Active Parcels → Stats → Departures
+ * Clean design, contextual actions, smart flow colis
  */
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -12,16 +11,17 @@ import {
   Package, Plane, Send, AlertTriangle, Clock, ChevronRight,
   Calendar, RefreshCw, Scale, Wallet, Plus, ScanLine,
   TrendingUp, Shield, History, Camera, FileText, Check,
+  Bell, Zap, Star, ArrowRight, CheckCircle2, Truck, Activity,
+  UserCheck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { SmartVoyageForm } from "@/components/gp/SmartVoyageForm";
 import { CreateManualParcelDialog } from "@/components/gp/CreateManualParcelDialog";
-import { ManualParcelBadge } from "@/components/gp/ManualParcelBadge";
 import { GPKYCProgressCard } from "@/components/gp/GPKYCProgressCard";
 import { QRCameraScanner } from "@/components/gp/QRCameraScanner";
 import { GPScanSheet } from "@/components/scan/GPScanSheet";
@@ -31,18 +31,28 @@ import { useGPProfile } from "@/hooks/useGPProfile";
 import { getOrderStatusLabel, getOrderStatusColor } from "@/lib/transportTypes";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { useToast } from "@/hooks/use-toast";
-import { format, isAfter, startOfDay } from "date-fns";
+import { format, isAfter, startOfDay, formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
 interface DashboardData {
   wallet: { balance: number; pending: number; totalMonth: number; commissionRate: number; commissionDue: number; currency: string; totalEarned: number; totalWithdrawn: number; locked: number } | null;
   activeParcels: any[];
+  pendingParcels: any[];
   manualParcels: any[];
   departures: any[];
   stats: { delivered: number; successRate: number; disputes: number; manualPercent: number };
   pendingActions: { weightAlerts: number; pendingOrders: number; customRequests: number };
 }
+
+const STATUS_FLOW: Record<string, { label: string; next: string; nextLabel: string; color: string; bg: string }> = {
+  pending: { label: "En attente", next: "accepted", nextLabel: "Accepter", color: "text-amber-600", bg: "bg-amber-500/10" },
+  accepted: { label: "À collecter", next: "collected", nextLabel: "Confirmer collecte", color: "text-blue-600", bg: "bg-blue-500/10" },
+  collected: { label: "Collecté", next: "in_transit", nextLabel: "Départ", color: "text-indigo-600", bg: "bg-indigo-500/10" },
+  in_transit: { label: "En transit", next: "arrived", nextLabel: "Arrivée destination", color: "text-purple-600", bg: "bg-purple-500/10" },
+  arrived: { label: "Arrivé", next: "delivered", nextLabel: "Confirmer livraison", color: "text-green-600", bg: "bg-green-500/10" },
+  delivered: { label: "Livré ✓", next: "", nextLabel: "", color: "text-green-700", bg: "bg-green-500/10" },
+};
 
 export default function GPApercuPage() {
   const navigate = useNavigate();
@@ -53,9 +63,8 @@ export default function GPApercuPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [showVoyageForm, setShowVoyageForm] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
-  const [colisFilter, setColisFilter] = useState<"transit" | "deliver" | "manual" | "dispute">("transit");
+  const [updatingOrder, setUpdatingOrder] = useState<string | null>(null);
 
-  // Camera scanner
   const [cameraOpen, setCameraOpen] = useState(false);
   const [scanSheetOpen, setScanSheetOpen] = useState(false);
   const [selfieSheetOpen, setSelfieSheetOpen] = useState(false);
@@ -73,10 +82,11 @@ export default function GPApercuPage() {
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-      const [ordersRes, offersRes, walletRes, manualRes, ktpRes, monthLedger] = await Promise.all([
+      const [ordersRes, offersRes, walletRes, manualRes, monthLedger] = await Promise.all([
         supabase.from("orders")
-          .select("id, order_number, origin_city, destination_city, weight, status, total_price, currency, created_at, client_id")
-          .eq("gp_id", gpProfile.id).not("status", "eq", "cancelled"),
+          .select("id, order_number, origin_city, destination_city, weight, status, total_price, currency, created_at, client_id, description")
+          .eq("gp_id", gpProfile.id).not("status", "eq", "cancelled")
+          .order("created_at", { ascending: false }),
         supabase.from("gp_offers")
           .select("id, departure_date, origin_city, destination_city, available_capacity, flight_number")
           .eq("gp_id", gpProfile.id).eq("status", "active")
@@ -87,10 +97,7 @@ export default function GPApercuPage() {
           .eq("gp_id", gpProfile.id).maybeSingle(),
         supabase.from("manual_parcels")
           .select("id, order_number, origin_city, destination_city, weight, status, client_name, amount_paid, currency, created_at")
-          .eq("gp_id", gpProfile.id),
-        supabase.from("ktp_status")
-          .select("trust_score, ktp_level")
-          .eq("gp_id", gpProfile.id).maybeSingle(),
+          .eq("gp_id", gpProfile.id).neq("status", "delivered"),
         supabase.from("konnekt_ledger")
           .select("amount_fcfa")
           .eq("gp_id", gpProfile.id).eq("type", "release")
@@ -104,11 +111,10 @@ export default function GPApercuPage() {
       const total = orders.length;
       const totalMonth = (monthLedger.data || []).reduce((s, e) => s + (e.amount_fcfa || 0), 0);
 
-      const activeParcels = orders.filter(o => 
+      const pendingParcels = orders.filter(o => o.status === "pending").slice(0, 5);
+      const activeParcels = orders.filter(o =>
         ["accepted", "collected", "in_transit", "arrived"].includes(o.status as string)
-      ).slice(0, 5);
-
-      const manualActive2 = manuals.filter(m => m.status !== "delivered").slice(0, 5);
+      ).slice(0, 8);
 
       setData({
         wallet: walletRes.data ? {
@@ -123,7 +129,8 @@ export default function GPApercuPage() {
           locked: walletRes.data.locked_balance || 0,
         } : null,
         activeParcels,
-        manualParcels: manualActive2,
+        pendingParcels,
+        manualParcels: manuals.slice(0, 5),
         departures: (offersRes.data || []).filter(o => isAfter(new Date(o.departure_date), startOfDay(now))),
         stats: {
           delivered,
@@ -145,27 +152,30 @@ export default function GPApercuPage() {
     }
   };
 
-  const handleScanFromCamera = (code: string) => {
-    setCameraOpen(false);
-    // Navigate to scan page with the code
-    navigate("/gp/scan", { state: { scannedCode: code } });
+  const handleQuickStatusUpdate = async (orderId: string, newStatus: string) => {
+    setUpdatingOrder(orderId);
+    try {
+      const { error } = await supabase.from("orders")
+        .update({ status: newStatus as any })
+        .eq("id", orderId);
+      if (error) throw error;
+      toast({ title: "Statut mis à jour ✓", description: `Commande passée à "${getOrderStatusLabel(newStatus as any)}"` });
+      loadAll(true);
+    } catch (err: any) {
+      toast({ title: "Erreur", description: err.message, variant: "destructive" });
+    } finally {
+      setUpdatingOrder(null);
+    }
   };
 
   const isPending = gpProfile?.status === "pending";
   const w = data?.wallet;
   const currency = w?.currency || "XOF";
 
-  const filteredColis = useMemo(() => {
-    if (!data) return [];
-    if (colisFilter === "transit") return data.activeParcels.filter(c => ["collected", "in_transit"].includes(c.status));
-    if (colisFilter === "deliver") return data.activeParcels.filter(c => c.status === "arrived");
-    if (colisFilter === "manual") return data.manualParcels;
-    if (colisFilter === "dispute") return data.activeParcels.filter(c => c.status === "disputed");
-    return data?.activeParcels || [];
-  }, [colisFilter, data]);
-
   if (profileLoading || loading) return <PageLoader message="Chargement..." />;
   if (!gpProfile || !data) return null;
+
+  const urgentCount = data.pendingActions.pendingOrders + data.pendingActions.weightAlerts;
 
   return (
     <GPDashboardLayout
@@ -175,7 +185,6 @@ export default function GPApercuPage() {
       activeTab="aujourdhui"
       onNewVoyage={() => setShowVoyageForm(true)}
     >
-      {/* KYC banner — collé au header */}
       {!isPending && (
         <GPKYCProgressCard
           kycLevel={gpProfile.kyc_level ?? 0}
@@ -188,145 +197,25 @@ export default function GPApercuPage() {
       )}
 
       <div className="px-4 py-4 space-y-5">
-        {/* ─── SMART AUTO-VALIDATION BANNER ─── */}
-        {isPending && (() => {
-          const hasId = !!gpProfile.id_document_url;
-          const hasSelfie = !!gpProfile.selfie_url;
-          const hasRoute = !!gpProfile.base_origin_city && !!gpProfile.base_destination_city;
-          const hasPrice = (gpProfile.base_price_per_kg ?? 0) > 0;
-          const completedChecks = [hasId, hasSelfie, hasRoute, hasPrice].filter(Boolean).length;
-          const totalChecks = 4;
-          const progress = Math.round((completedChecks / totalChecks) * 100);
-          const allDone = completedChecks === totalChecks;
-
-          const allSteps: { label: string; done: boolean; action: string; route?: string; onClick?: () => void; icon?: React.ReactNode }[] = [
-            { label: "Passeport ou CNI", done: hasId, action: "📸 Photographier", onClick: () => setDocumentSheetOpen(true), icon: <FileText className="w-3.5 h-3.5 text-primary" /> },
-            { label: "Selfie de vérification", done: hasSelfie, action: "📸 Prendre", onClick: () => setSelfieSheetOpen(true), icon: <Camera className="w-3.5 h-3.5 text-primary" /> },
-            { label: "Navette définie", done: hasRoute, action: "Configurer", route: "/gp/parametres" },
-            { label: "Tarification", done: hasPrice, action: "Définir", route: "/gp/tarification" },
-          ];
-
-          return (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-              className={cn(
-                "p-4 rounded-2xl border-2 transition-colors",
-                allDone 
-                  ? "bg-emerald-500/10 border-emerald-500/30" 
-                  : "bg-primary/5 border-primary/20"
-              )}
-            >
-              <div className="flex items-start gap-3">
-                <div className={cn(
-                  "w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0",
-                  allDone ? "bg-emerald-500/20" : "bg-primary/10"
-                )}>
-                  <Shield className={cn("w-6 h-6", allDone ? "text-emerald-500" : "text-primary")} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-sm">
-                    {allDone ? "Validation automatique en cours ✨" : "Activez votre compte instantanément"}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {allDone 
-                      ? "Tous les critères sont remplis. Votre compte sera validé automatiquement sous quelques minutes."
-                      : `Complétez ${totalChecks - completedChecks} étape${totalChecks - completedChecks > 1 ? "s" : ""} pour une activation immédiate — sans attente admin.`
-                    }
-                  </p>
-
-                  {/* Progress bar */}
-                  <div className="mt-3 space-y-1">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-muted-foreground">Progression</span>
-                      <span className={cn("font-bold", allDone ? "text-emerald-500" : "text-primary")}>{progress}%</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-muted overflow-hidden">
-                      <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${progress}%` }}
-                        transition={{ duration: 0.8, ease: "easeOut" }}
-                        className={cn("h-full rounded-full", allDone ? "bg-emerald-500" : "bg-primary")}
-                      />
-                    </div>
-                  </div>
-
-                  {/* All steps — show validated or action needed */}
-                  <div className="mt-3 space-y-1.5">
-                    {allSteps.map((step, i) => (
-                      <button
-                        key={i}
-                        onClick={() => !step.done && (step.onClick ? step.onClick() : step.route && navigate(step.route))}
-                        disabled={step.done}
-                        className={cn(
-                          "w-full flex items-center justify-between p-2 rounded-lg border transition-colors",
-                          step.done
-                            ? "bg-emerald-500/5 border-emerald-500/20 cursor-default"
-                            : "bg-background/80 border-border/50 hover:border-primary/30 group"
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className={cn(
-                            "w-5 h-5 rounded-full flex items-center justify-center",
-                            step.done ? "bg-emerald-500/20" : "bg-muted"
-                          )}>
-                            {step.done 
-                              ? <Check className="w-3 h-3 text-emerald-500" />
-                              : step.icon || <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
-                            }
-                          </span>
-                          <span className={cn("text-xs", step.done && "text-emerald-600 dark:text-emerald-400")}>{step.label}</span>
-                          {step.done && <Badge className="text-[9px] h-4 bg-emerald-500/10 text-emerald-600 border-emerald-500/20">Validé ✓</Badge>}
-                        </div>
-                        {!step.done && (
-                          <span className="text-[11px] font-medium text-primary group-hover:underline flex items-center gap-0.5">
-                            {step.action} <ChevronRight className="w-3 h-3" />
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-
-                  {allDone && (
-                    <div className="mt-3 space-y-2">
-                      <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }}>
-                          <RefreshCw className="w-3.5 h-3.5" />
-                        </motion.div>
-                        <span className="text-xs font-medium">Activation automatique en cours...</span>
-                      </div>
-                      <Button 
-                        size="sm" 
-                        className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"
-                        onClick={async () => {
-                          try {
-                            const { error } = await supabase
-                              .from("gp_profiles")
-                              .update({ status: "verified" as any, kyc_status: "verified", kyc_level: 1, verified_at: new Date().toISOString() })
-                              .eq("id", gpProfile.id);
-                            if (error) throw error;
-                            toast({ title: "Compte activé ✅", description: "Vous avez maintenant accès à toutes les fonctionnalités." });
-                            window.location.reload();
-                          } catch (err: any) {
-                            toast({ title: "Erreur", description: err.message, variant: "destructive" });
-                          }
-                        }}
-                      >
-                        <Check className="w-4 h-4 mr-1.5" />
-                        Activer mon compte maintenant
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          );
-        })()}
+        {/* ── PENDING ACCOUNT BANNER ── */}
+        {isPending && <PendingAccountBanner gpProfile={gpProfile}
+          onDocumentClick={() => setDocumentSheetOpen(true)}
+          onSelfieClick={() => setSelfieSheetOpen(true)}
+          navigate={navigate}
+          onActivate={async () => {
+            const { error } = await supabase.from("gp_profiles")
+              .update({ status: "verified" as any, kyc_status: "verified", kyc_level: 1, verified_at: new Date().toISOString() })
+              .eq("id", gpProfile.id);
+            if (!error) { toast({ title: "Compte activé ✅" }); window.location.reload(); }
+          }}
+        />}
 
         {!isPending && (
           <>
-            {/* ─── HEADER — Route + Refresh ─── */}
+            {/* ── HEADER ── */}
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold">Aperçu</h2>
+                <h2 className="text-base font-bold">Bonjour 👋</h2>
                 {gpProfile.base_origin_city && gpProfile.base_destination_city && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                     <Plane className="w-3 h-3" />
@@ -339,37 +228,60 @@ export default function GPApercuPage() {
               </Button>
             </div>
 
-            {/* ACTIONS RAPIDES */}
+            {/* ── URGENT ALERTS BLOCK ── */}
+            {urgentCount > 0 && (
+              <div className="space-y-2">
+                {data.pendingActions.pendingOrders > 0 && (
+                  <motion.button
+                    initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => navigate("/gp/demandes")}
+                    className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-secondary/10 border border-secondary/30 text-left"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-secondary/20 flex items-center justify-center flex-shrink-0">
+                      <Bell className="w-4 h-4 text-secondary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-secondary">
+                        {data.pendingActions.pendingOrders} nouvelle{data.pendingActions.pendingOrders > 1 ? "s" : ""} demande{data.pendingActions.pendingOrders > 1 ? "s" : ""}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Répondez rapidement pour améliorer votre score</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-secondary/60 flex-shrink-0" />
+                  </motion.button>
+                )}
+                {data.pendingActions.weightAlerts > 0 && (
+                  <motion.button
+                    initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => navigate("/gp/colis?filter=pending_client_validation")}
+                    className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-destructive/8 border border-destructive/25 text-left"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-destructive/15 flex items-center justify-center flex-shrink-0">
+                      <Scale className="w-4.5 h-4.5 text-destructive" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-destructive">{data.pendingActions.weightAlerts} correction(s) de poids</p>
+                      <p className="text-xs text-muted-foreground">En attente de validation client</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-destructive/60 flex-shrink-0" />
+                  </motion.button>
+                )}
+              </div>
+            )}
+
+            {/* ── QUICK ACTIONS ── */}
             <div className="grid grid-cols-4 gap-2">
-              <QuickAction
-                icon={ScanLine}
-                label="Scanner"
-                primary
-                onClick={() => setScanSheetOpen(true)}
-              />
-              <QuickAction
-                icon={Package}
-                label="Demandes"
-                badge={pendingCount}
-                onClick={() => navigate("/gp/demandes")}
-              />
-              <QuickAction
-                icon={Plus}
-                label="Voyage"
-                onClick={() => setShowVoyageForm(true)}
-              />
-              <QuickAction
-                icon={History}
-                label="Historique"
-                onClick={() => navigate("/gp/historique")}
-              />
+              <QuickAction icon={ScanLine} label="Scanner" primary onClick={() => setScanSheetOpen(true)} />
+              <QuickAction icon={Package} label="Demandes" badge={pendingCount} onClick={() => navigate("/gp/demandes")} />
+              <QuickAction icon={Plus} label="Voyage" onClick={() => setShowVoyageForm(true)} />
+              <QuickAction icon={History} label="Historique" onClick={() => navigate("/gp/historique")} />
             </div>
 
-            {/* ─── Compact wallet shortcut ─── */}
+            {/* ── WALLET SHORTCUT ── */}
             {w && (
               <motion.button
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => navigate("/gp/wallet")}
                 className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-gradient-to-r from-primary/15 to-primary/5 border border-primary/20"
@@ -379,7 +291,14 @@ export default function GPApercuPage() {
                 </div>
                 <div className="flex-1 text-left min-w-0">
                   <p className="text-sm font-bold">{w.balance.toLocaleString()} {getCurrencySymbol(currency as any)}</p>
-                  <p className="text-[11px] text-muted-foreground">Solde disponible</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <p className="text-[11px] text-muted-foreground">Solde disponible</p>
+                    {w.pending > 0 && (
+                      <span className="text-[10px] bg-secondary/10 text-secondary px-1.5 py-0.5 rounded-full">
+                        +{w.pending.toLocaleString()} en attente
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {w.commissionDue > 0 && (
                   <Badge variant="destructive" className="text-[10px]">
@@ -390,113 +309,112 @@ export default function GPApercuPage() {
               </motion.button>
             )}
 
-
-            {/* ─── ALERTS ─── */}
-            {(data.pendingActions.weightAlerts > 0) && (
-              <AlertRow
-                icon={Scale} color="text-destructive" bg="bg-destructive/10 border-destructive/30"
-                text={`${data.pendingActions.weightAlerts} poids modifié(s) — validation client`}
-                onClick={() => navigate("/gp/colis?filter=pending_client_validation")}
-              />
-            )}
-
-            {/* ═══════════════════════════════════
-                4️⃣ COLIS ACTIFS
-            ═══════════════════════════════════ */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold">Colis actifs</h3>
-                <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate("/gp/colis")}>
-                  Voir tout <ChevronRight className="w-3 h-3 ml-0.5" />
-                </Button>
-              </div>
-
-              {/* Horizontal filters */}
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
-                {([
-                  { key: "transit" as const, label: "En transit", count: data.activeParcels.filter(c => ["collected", "in_transit"].includes(c.status)).length },
-                  { key: "deliver" as const, label: "À livrer", count: data.activeParcels.filter(c => c.status === "arrived").length },
-                  { key: "manual" as const, label: "Manuel", count: data.manualParcels.length },
-                  { key: "dispute" as const, label: "Litige", count: data.activeParcels.filter(c => c.status === "disputed").length },
-                ]).map(f => (
-                  <button key={f.key}
-                    onClick={() => setColisFilter(f.key)}
-                    className={cn(
-                      "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all",
-                      colisFilter === f.key
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "bg-muted/50 text-muted-foreground"
-                    )}>
-                    {f.label}
-                    {f.count > 0 && (
-                      <span className={cn("w-4 h-4 rounded-full text-[10px] flex items-center justify-center",
-                        colisFilter === f.key ? "bg-primary-foreground/20" : "bg-muted-foreground/20"
-                      )}>{f.count}</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-
-              {/* Parcel cards */}
-              {filteredColis.length === 0 ? (
-                <div className="py-6 text-center text-muted-foreground text-xs">
-                  <Package className="w-8 h-8 mx-auto mb-2 opacity-20" />
-                  Aucun colis dans cette catégorie
+            {/* ── PENDING PARCELS — Action requise ── */}
+            {data.pendingParcels.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold">Action requise</h3>
+                    <Badge variant="destructive" className="text-[10px] h-4">{data.pendingParcels.length}</Badge>
+                  </div>
+                  <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate("/gp/demandes")}>
+                    Voir tout <ChevronRight className="w-3 h-3 ml-0.5" />
+                  </Button>
                 </div>
-              ) : (
-                <AnimatePresence>
-                  {filteredColis.map((c: any, i: number) => {
-                    const isManual = colisFilter === "manual";
-                    return (
-                      <motion.div key={c.id}
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.03 }}>
-                        <Card
-                          className={cn(
-                            "cursor-pointer active:scale-[0.98] transition-all",
-                            isManual && "border-amber-500/30"
-                          )}
-                          onClick={() => !isManual && navigate(`/gp/order/${c.id}`)}
-                        >
-                          <CardContent className="p-3 flex items-center gap-3">
-                            <div className={cn(
-                              "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
-                              isManual ? "bg-amber-500/10" :
-                              c.status === "in_transit" ? "bg-blue-500/10" :
-                              c.status === "arrived" ? "bg-purple-500/10" :
-                              "bg-muted/50"
-                            )}>
-                              <Package className={cn("w-5 h-5",
-                                isManual ? "text-amber-500" :
-                                c.status === "in_transit" ? "text-blue-500" :
-                                c.status === "arrived" ? "text-purple-500" :
-                                "text-muted-foreground"
-                              )} />
+                <div className="space-y-2">
+                  {data.pendingParcels.map((c: any, i: number) => (
+                    <motion.div key={c.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+                      <Card className="border-secondary/30 bg-secondary/5 cursor-pointer active:scale-[0.99] transition-all"
+                        onClick={() => navigate(`/gp/order/${c.id}`)}>
+                        <CardContent className="p-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-secondary/15 flex items-center justify-center flex-shrink-0">
+                              <Package className="w-4 h-4 text-secondary" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <p className="text-sm font-semibold truncate">
-                                  {c.origin_city} → {c.destination_city}
-                                </p>
-                                {isManual && <ManualParcelBadge />}
-                              </div>
+                              <p className="text-sm font-semibold truncate">{c.origin_city} → {c.destination_city}</p>
                               <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-[11px] text-muted-foreground font-mono">
-                                  #{(c.order_number || "").slice(-6)}
-                                </span>
+                                <span className="text-[11px] text-muted-foreground font-mono">#{c.order_number?.slice(-6)}</span>
                                 <span className="text-[11px] text-muted-foreground">{c.weight} kg</span>
-                                {isManual && <span className="text-[11px] text-muted-foreground">{c.client_name}</span>}
+                                <span className="text-[11px] text-muted-foreground">
+                                  {formatDistanceToNow(new Date(c.created_at), { locale: fr, addSuffix: true })}
+                                </span>
                               </div>
                             </div>
-                            <div className="flex items-center gap-1.5 flex-shrink-0">
-                              <Badge className={cn("text-[10px]", getOrderStatusColor(c.status))}>
-                                {getOrderStatusLabel(c.status)}
-                              </Badge>
-                              {!isManual && (
-                                <Button variant="ghost" size="icon" className="h-8 w-8 bg-primary/10 hover:bg-primary/20"
-                                  onClick={(e) => { e.stopPropagation(); setCameraOpen(true); }}>
-                                  <ScanLine className="w-4 h-4 text-primary" />
+                            <div className="flex gap-1.5">
+                              <Button size="sm" variant="outline" className="h-7 text-xs px-2 border-destructive/40 text-destructive hover:bg-destructive/10"
+                                onClick={(e) => { e.stopPropagation(); handleQuickStatusUpdate(c.id, "refused" as any); }}
+                                disabled={updatingOrder === c.id}>
+                                Refuser
+                              </Button>
+                              <Button size="sm" className="h-7 text-xs px-2 bg-accent hover:bg-accent/90 text-accent-foreground"
+                                onClick={(e) => { e.stopPropagation(); handleQuickStatusUpdate(c.id, "accepted"); }}
+                                disabled={updatingOrder === c.id}>
+                                {updatingOrder === c.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : "Accepter ✓"}
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── ACTIVE PARCELS — Flux en cours ── */}
+            {data.activeParcels.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold">Colis actifs</h3>
+                    <span className="text-xs text-muted-foreground">({data.activeParcels.length})</span>
+                  </div>
+                  <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate("/gp/colis")}>
+                    Tout voir <ChevronRight className="w-3 h-3 ml-0.5" />
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {data.activeParcels.slice(0, 5).map((c: any, i: number) => {
+                    const flow = STATUS_FLOW[c.status as string];
+                    return (
+                      <motion.div key={c.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+                        <Card className="cursor-pointer active:scale-[0.99] transition-all hover:shadow-md"
+                          onClick={() => navigate(`/gp/order/${c.id}`)}>
+                          <CardContent className="p-3">
+                            <div className="flex items-center gap-3">
+                              <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0", flow?.bg || "bg-muted/50")}>
+                                <Truck className={cn("w-4 h-4", flow?.color || "text-muted-foreground")} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm font-semibold truncate">{c.origin_city} → {c.destination_city}</p>
+                                  <Badge className={cn("text-[9px] h-4 shrink-0", getOrderStatusColor(c.status))}>
+                                    {getOrderStatusLabel(c.status)}
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-[11px] text-muted-foreground font-mono">#{c.order_number?.slice(-6)}</span>
+                                  <span className="text-[11px] text-muted-foreground">{c.weight} kg</span>
+                                </div>
+                              </div>
+                              {flow?.next && (
+                                <Button size="sm" variant="outline"
+                                  className={cn("h-7 text-[10px] px-2 shrink-0 gap-1", 
+                                    c.status === "arrived" ? "border-accent/40 text-accent hover:bg-accent/10 font-bold" :
+                                    "border-primary/30 text-primary hover:bg-primary/10"
+                                  )}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (c.status === "arrived") navigate(`/gp/order/${c.id}`);
+                                    else handleQuickStatusUpdate(c.id, flow.next);
+                                  }}
+                                  disabled={updatingOrder === c.id}
+                                >
+                                  {updatingOrder === c.id
+                                    ? <RefreshCw className="w-3 h-3 animate-spin" />
+                                    : <><ArrowRight className="w-3 h-3" />{flow.nextLabel}</>
+                                  }
                                 </Button>
                               )}
                             </div>
@@ -505,32 +423,71 @@ export default function GPApercuPage() {
                       </motion.div>
                     );
                   })}
-                </AnimatePresence>
-              )}
-            </div>
+                </div>
+                {data.activeParcels.length > 5 && (
+                  <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => navigate("/gp/colis")}>
+                    Voir {data.activeParcels.length - 5} autre(s) colis
+                  </Button>
+                )}
+              </div>
+            )}
 
-            {/* ═══════════════════════════════════
-                5️⃣ PERFORMANCE
-            ═══════════════════════════════════ */}
+            {/* ── EMPTY STATE ── */}
+            {data.pendingParcels.length === 0 && data.activeParcels.length === 0 && (
+              <Card className="border-dashed">
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  <Package className="w-10 h-10 mx-auto mb-3 opacity-20" />
+                  <p className="text-sm font-medium">Aucun colis en cours</p>
+                  <p className="text-xs mt-1">Créez un voyage pour recevoir des réservations</p>
+                  <Button variant="outline" size="sm" className="mt-3" onClick={() => setShowVoyageForm(true)}>
+                    <Plus className="w-3.5 h-3.5 mr-1.5" /> Nouveau voyage
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ── MANUEL PARCELS ── */}
+            {data.manualParcels.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold">Hors plateforme</h3>
+                  <Badge variant="outline" className="text-[10px] h-4 border-secondary/40 text-secondary">{data.manualParcels.length}</Badge>
+                </div>
+                {data.manualParcels.slice(0, 3).map((m: any, i: number) => (
+                  <Card key={m.id} className="border-secondary/20 bg-secondary/5">
+                    <CardContent className="p-3 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-secondary/15 flex items-center justify-center flex-shrink-0">
+                        <Package className="w-4 h-4 text-secondary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{m.client_name}</p>
+                        <p className="text-[11px] text-muted-foreground">{m.origin_city} → {m.destination_city} · {m.weight} kg</p>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] border-secondary/30 text-secondary shrink-0">Manuel</Badge>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* ── PERFORMANCE ── */}
             <div className="space-y-2">
               <h3 className="text-sm font-bold">Performance du mois</h3>
-              <div className="grid grid-cols-2 gap-2">
-                <PerfCard label="Livraisons" value={String(data.stats.delivered)} icon={Send} />
-                <PerfCard label="Taux réussite" value={`${data.stats.successRate}%`} icon={TrendingUp} />
-                <PerfCard label="Litiges" value={String(data.stats.disputes)} icon={AlertTriangle} highlight={data.stats.disputes > 0} />
-                <PerfCard label="% Manuel" value={`${data.stats.manualPercent}%`} icon={Package} highlight={data.stats.manualPercent > 20} />
+              <div className="grid grid-cols-4 gap-2">
+                <MiniStat label="Livrés" value={String(data.stats.delivered)} icon={CheckCircle2} color="text-green-600" />
+                <MiniStat label="Réussite" value={`${data.stats.successRate}%`} icon={Activity} color="text-primary" />
+                <MiniStat label="Litiges" value={String(data.stats.disputes)} icon={AlertTriangle} color={data.stats.disputes > 0 ? "text-destructive" : "text-muted-foreground"} />
+                <MiniStat label="Manuel%" value={`${data.stats.manualPercent}%`} icon={UserCheck} color={data.stats.manualPercent > 20 ? "text-secondary" : "text-muted-foreground"} />
               </div>
               {data.stats.manualPercent > 20 && (
-                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-muted-foreground flex items-center gap-2">
-                  <Shield className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                <div className="p-2.5 rounded-xl bg-secondary/10 border border-secondary/20 text-xs text-muted-foreground flex items-center gap-2">
+                  <Zap className="w-3.5 h-3.5 text-secondary flex-shrink-0" />
                   Passez sous 20% de colis manuels pour booster votre score KTP.
                 </div>
               )}
             </div>
 
-            {/* ═══════════════════════════════════
-                PROCHAINS DÉPARTS
-            ═══════════════════════════════════ */}
+            {/* ── DEPARTURES ── */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold">Prochains départs</h3>
@@ -540,8 +497,8 @@ export default function GPApercuPage() {
               </div>
               {data.departures.length === 0 ? (
                 <Card className="border-dashed">
-                  <CardContent className="py-6 text-center text-muted-foreground">
-                    <Calendar className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                  <CardContent className="py-5 text-center text-muted-foreground">
+                    <Calendar className="w-7 h-7 mx-auto mb-2 opacity-20" />
                     <p className="text-xs">Aucun départ planifié</p>
                     <Button variant="link" size="sm" className="mt-1 text-xs" onClick={() => setShowVoyageForm(true)}>
                       Ajouter un voyage
@@ -550,10 +507,11 @@ export default function GPApercuPage() {
                 </Card>
               ) : (
                 data.departures.map((dep: any) => (
-                  <Card key={dep.id} className="cursor-pointer active:scale-[0.98] transition-all" onClick={() => navigate("/gp/calendrier")}>
+                  <Card key={dep.id} className="cursor-pointer active:scale-[0.98] transition-all"
+                    onClick={() => navigate("/gp/calendrier")}>
                     <CardContent className="p-3 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Plane className="w-5 h-5 text-primary" />
+                      <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Plane className="w-4 h-4 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold truncate">{dep.origin_city} → {dep.destination_city}</p>
@@ -562,89 +520,104 @@ export default function GPApercuPage() {
                           {dep.flight_number && ` · ${dep.flight_number}`}
                         </p>
                       </div>
-                      <Badge variant="outline" className="text-xs">{dep.available_capacity} kg</Badge>
+                      <Badge variant="outline" className="text-xs shrink-0">{dep.available_capacity} kg</Badge>
                     </CardContent>
                   </Card>
                 ))
               )}
             </div>
-
-            {/* KTP pedagogy */}
-            {data.manualParcels.length > 0 && (
-              <div className="p-3 rounded-xl bg-muted/30 border border-border/50 text-xs text-muted-foreground">
-                💡 Les réservations complètes Konnekt améliorent votre score KTP et votre visibilité.
-              </div>
-            )}
           </>
         )}
       </div>
 
-
-
-      {/* ═══════════════════════════════════
-          QR CAMERA SCANNER — DIRECT
-      ═══════════════════════════════════ */}
-      <QRCameraScanner
-        isOpen={cameraOpen}
-        onScan={handleScanFromCamera}
-        onClose={() => setCameraOpen(false)}
-      />
-
-      {/* GP Scan Sheet — opens from Scanner quick action */}
-      <GPScanSheet
-        open={scanSheetOpen}
-        onOpenChange={setScanSheetOpen}
-        gpId={gpProfile?.id}
-        isVerified={gpProfile?.status === "verified" || gpProfile?.status === "premium" || gpProfile?.status === "starter"}
-      />
-
-      {/* Selfie Verification Sheet */}
-      {gpProfile && (
-        <SelfieVerificationSheet
-          open={selfieSheetOpen}
-          onClose={() => setSelfieSheetOpen(false)}
-          gpId={gpProfile.id}
-          onSuccess={() => loadAll(true)}
-        />
-      )}
-
-      {/* Document Verification Sheet */}
-      {gpProfile && (
-        <DocumentVerificationSheet
-          open={documentSheetOpen}
-          onClose={() => setDocumentSheetOpen(false)}
-          gpId={gpProfile.id}
-          onSuccess={() => loadAll(true)}
-        />
-      )}
-
+      {/* ── DIALOGS ── */}
+      <QRCameraScanner isOpen={cameraOpen} onScan={(code) => { setCameraOpen(false); navigate("/gp/scan", { state: { scannedCode: code } }); }} onClose={() => setCameraOpen(false)} />
+      <GPScanSheet open={scanSheetOpen} onOpenChange={setScanSheetOpen} gpId={gpProfile?.id}
+        isVerified={gpProfile?.status === "verified" || gpProfile?.status === "premium" || gpProfile?.status === "starter"} />
       {gpProfile && (
         <>
-          <SmartVoyageForm open={showVoyageForm} onClose={() => setShowVoyageForm(false)}
-            gpId={gpProfile.id} onSuccess={() => { setShowVoyageForm(false); loadAll(); }} />
-          <CreateManualParcelDialog open={showManualForm} onClose={() => setShowManualForm(false)}
-            gpId={gpProfile.id} gpCurrency={gpProfile.default_currency || "XOF"} onSuccess={() => loadAll(true)} />
+          <SelfieVerificationSheet open={selfieSheetOpen} onClose={() => setSelfieSheetOpen(false)} gpId={gpProfile.id} onSuccess={() => loadAll(true)} />
+          <DocumentVerificationSheet open={documentSheetOpen} onClose={() => setDocumentSheetOpen(false)} gpId={gpProfile.id} onSuccess={() => loadAll(true)} />
+          <SmartVoyageForm open={showVoyageForm} onClose={() => setShowVoyageForm(false)} gpId={gpProfile.id} onSuccess={() => { setShowVoyageForm(false); loadAll(); }} />
+          <CreateManualParcelDialog open={showManualForm} onClose={() => setShowManualForm(false)} gpId={gpProfile.id} gpCurrency={gpProfile.default_currency || "XOF"} onSuccess={() => loadAll(true)} />
         </>
       )}
     </GPDashboardLayout>
   );
 }
 
-/* ─── Quick Action Button ─── */
-function QuickAction({ icon: Icon, label, primary, variant, badge, onClick }: {
-  icon: any; label: string; primary?: boolean; variant?: "amber"; badge?: number; onClick: () => void;
+/* ─── Sub-components ─── */
+
+function PendingAccountBanner({ gpProfile, onDocumentClick, onSelfieClick, navigate, onActivate }: any) {
+  const hasId = !!gpProfile.id_document_url;
+  const hasSelfie = !!gpProfile.selfie_url;
+  const hasRoute = !!gpProfile.base_origin_city && !!gpProfile.base_destination_city;
+  const hasPrice = (gpProfile.base_price_per_kg ?? 0) > 0;
+  const completedChecks = [hasId, hasSelfie, hasRoute, hasPrice].filter(Boolean).length;
+  const progress = Math.round((completedChecks / 4) * 100);
+  const allDone = completedChecks === 4;
+
+  const steps = [
+    { label: "Passeport ou CNI", done: hasId, action: "Photographier", onClick: onDocumentClick, icon: FileText },
+    { label: "Selfie de vérification", done: hasSelfie, action: "Prendre", onClick: onSelfieClick, icon: Camera },
+    { label: "Navette définie", done: hasRoute, action: "Configurer", onClick: () => navigate("/gp/parametres"), icon: Plane },
+    { label: "Tarification", done: hasPrice, action: "Définir", onClick: () => navigate("/gp/tarification"), icon: Scale },
+  ];
+
+  return (
+    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+      className={cn("p-4 rounded-2xl border-2", allDone ? "bg-accent/10 border-accent/40" : "bg-primary/5 border-primary/20")}
+    >
+      <div className="flex items-start gap-3">
+        <div className={cn("w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0", allDone ? "bg-accent/20" : "bg-primary/10")}>
+          <Shield className={cn("w-5 h-5", allDone ? "text-accent" : "text-primary")} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-sm">{allDone ? "Validation en cours ✨" : "Activez votre compte"}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {allDone ? "Vérification automatique sous quelques minutes." : `${4 - completedChecks} étape(s) restante(s)`}
+          </p>
+          <div className="mt-2.5 h-1.5 rounded-full bg-muted overflow-hidden">
+            <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.8 }}
+              className={cn("h-full rounded-full", allDone ? "bg-accent" : "bg-primary")} />
+          </div>
+          <div className="mt-3 space-y-1.5">
+            {steps.map((step, i) => (
+              <button key={i} onClick={() => !step.done && step.onClick?.()}
+                disabled={step.done}
+                className={cn("w-full flex items-center justify-between p-2 rounded-lg border transition-colors text-left",
+                  step.done ? "bg-accent/5 border-accent/20" : "bg-background/80 border-border/50 hover:border-primary/30"
+                )}>
+                <div className="flex items-center gap-2">
+                  <span className={cn("w-5 h-5 rounded-full flex items-center justify-center", step.done ? "bg-accent/20" : "bg-muted")}>
+                    {step.done ? <Check className="w-3 h-3 text-accent" /> : <step.icon className="w-3 h-3 text-muted-foreground" />}
+                  </span>
+                  <span className={cn("text-xs", step.done && "text-accent")}>{step.label}</span>
+                </div>
+                {!step.done && <span className="text-[11px] font-medium text-primary flex items-center gap-0.5">{step.action} <ChevronRight className="w-3 h-3" /></span>}
+              </button>
+            ))}
+          </div>
+          {allDone && (
+            <Button size="sm" className="w-full mt-3 bg-accent hover:bg-accent/90 text-accent-foreground" onClick={onActivate}>
+              <Check className="w-4 h-4 mr-1.5" /> Activer mon compte
+            </Button>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function QuickAction({ icon: Icon, label, primary, badge, onClick }: {
+  icon: any; label: string; primary?: boolean; badge?: number; onClick: () => void;
 }) {
   return (
-    <motion.button
-      whileTap={{ scale: 0.9 }}
-      onClick={onClick}
+    <motion.button whileTap={{ scale: 0.88 }} onClick={onClick}
       className={cn(
         "flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all relative",
-        primary ? "bg-primary text-primary-foreground shadow-lg" :
-        variant === "amber" ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" :
-        "bg-muted/60 text-foreground"
-      )}
-    >
+        primary ? "bg-primary text-primary-foreground shadow-lg" : "bg-muted/60 text-foreground"
+      )}>
       <div className="relative">
         <Icon className="w-5 h-5" />
         {!!badge && badge > 0 && (
@@ -658,36 +631,12 @@ function QuickAction({ icon: Icon, label, primary, variant, badge, onClick }: {
   );
 }
 
-/* ─── Alert Row ─── */
-function AlertRow({ icon: Icon, color, bg, text, onClick }: {
-  icon: any; color: string; bg: string; text: string; onClick: () => void;
-}) {
+function MiniStat({ label, value, icon: Icon, color }: { label: string; value: string; icon: any; color: string }) {
   return (
-    <motion.button initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-      whileTap={{ scale: 0.98 }} onClick={onClick}
-      className={cn("w-full p-3 rounded-xl border flex items-center gap-3 text-left", bg)}>
-      <Icon className={cn("w-5 h-5 flex-shrink-0", color)} />
-      <p className="text-sm font-medium flex-1">{text}</p>
-      <ChevronRight className="w-4 h-4 text-muted-foreground" />
-    </motion.button>
-  );
-}
-
-/* ─── Performance Card ─── */
-function PerfCard({ label, value, icon: Icon, highlight }: {
-  label: string; value: string; icon: any; highlight?: boolean;
-}) {
-  return (
-    <div className={cn(
-      "p-3 rounded-xl border bg-card",
-      highlight && "border-amber-500/30 bg-amber-500/5"
-    )}>
-      <div className="flex items-center gap-2 mb-1">
-        <Icon className={cn("w-3.5 h-3.5", highlight ? "text-amber-500" : "text-muted-foreground")} />
-        <span className="text-[11px] text-muted-foreground">{label}</span>
-      </div>
-      <p className={cn("text-xl font-bold", highlight ? "text-amber-600 dark:text-amber-400" : "text-foreground")}>{value}</p>
+    <div className="p-2.5 rounded-xl border bg-card text-center">
+      <Icon className={cn("w-4 h-4 mx-auto mb-1", color)} />
+      <p className={cn("text-base font-bold leading-tight", color)}>{value}</p>
+      <p className="text-[10px] text-muted-foreground mt-0.5">{label}</p>
     </div>
   );
 }
-
