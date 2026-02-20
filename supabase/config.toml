@@ -33,4 +33,7 @@ verify_jwt = false
 [functions.security-qr-verify]
 verify_jwt = false
 
+[functions.system-coherence-check]
+verify_jwt = false
+
 
