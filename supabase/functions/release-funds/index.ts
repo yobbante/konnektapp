@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     // Get order details
     const { data: order, error: orderErr } = await supabase
       .from("orders")
-      .select("id, gp_id, total_price, currency, status, client_id, order_number, commission_amount")
+      .select("id, gp_id, total_price, weight, price_per_kg, insurance_amount, has_insurance, currency, status, client_id, order_number, commission_amount")
       .eq("id", order_id)
       .single();
 
@@ -68,13 +68,15 @@ Deno.serve(async (req) => {
     }
 
     const totalFcfa = order.total_price || 0;
-    // Use the commission_amount stored at booking time (source of truth)
-    // Fall back to wallet rate calculation only if not stored
+    const transportPrice = (order.weight || 0) * (order.price_per_kg || 0);
+    const insuranceAmount = order.has_insurance ? (order.insurance_amount || 0) : 0;
+
+    // Commission on TRANSPORT only
     const commissionRate = wallet.commission_rate || 5;
     const commissionAmount = order.commission_amount != null && order.commission_amount > 0
       ? order.commission_amount
-      : Math.ceil(totalFcfa * commissionRate / 100);
-    const netGP = totalFcfa - commissionAmount;
+      : Math.ceil(transportPrice * commissionRate / 100);
+    const netGP = transportPrice - commissionAmount;
 
     // Get insurance amount from escrow if any
     const { data: escrow } = await supabase

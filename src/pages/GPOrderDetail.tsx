@@ -308,7 +308,12 @@ export default function GPOrderDetail() {
   const hasInternalLogistics = logisticsOptions?.pickup_enabled || logisticsOptions?.delivery_enabled;
   const isBlockedByLogistics = order.status === "in_transit" && logisticsOptions?.delivery_enabled && order.logistics_status === "awaiting_admin_delivery";
   const currencySymbol = getCurrencySymbol(order.currency);
-  const gpEarnings = order.total_price - order.commission_amount;
+  const transportPrice = order.weight * order.price_per_kg;
+  const gpEarnings = transportPrice - order.commission_amount;
+  const insuranceAmount = order.has_insurance ? (order.insurance_amount || 0) : 0;
+  const logisticsPrice = logisticsOptions ? 
+    ((logisticsOptions.pickup_enabled ? (logisticsOptions as any).pickup_price || 0 : 0) + 
+     (logisticsOptions.delivery_enabled ? (logisticsOptions as any).delivery_price || 0 : 0)) : 0;
 
   return (
     <div className="min-h-screen bg-background pb-safe">
@@ -584,16 +589,26 @@ export default function GPOrderDetail() {
               <CollapsibleContent>
                 <CardContent className="pt-0">
                   <div className="space-y-2 text-sm">
-                    <div className="flex justify-between"><span className="text-muted-foreground">Prix/kg</span><span>{order.price_per_kg.toLocaleString()} {currencySymbol}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Poids × Prix</span><span>{order.weight} kg × {order.price_per_kg} = {(order.weight * order.price_per_kg).toLocaleString()}</span></div>
-                    {order.has_insurance && order.insurance_amount && (
-                      <div className="flex justify-between text-amber-600"><span>Assurance (inclus)</span><span>{order.insurance_amount.toLocaleString()} {currencySymbol}</span></div>
-                    )}
-                    <Separator />
-                    <div className="flex justify-between"><span className="text-muted-foreground">Total client</span><span className="font-medium">{order.total_price.toLocaleString()} {currencySymbol}</span></div>
+                    {/* GP Revenue Section */}
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Vos revenus</p>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Transport ({order.weight} kg × {order.price_per_kg})</span><span>{transportPrice.toLocaleString()} {currencySymbol}</span></div>
                     <div className="flex justify-between text-destructive"><span>Commission Konnekt</span><span>-{order.commission_amount.toLocaleString()} {currencySymbol}</span></div>
                     <Separator />
-                    <div className="flex justify-between text-lg"><span className="font-bold">Vos gains</span><span className="font-bold text-success">{gpEarnings.toLocaleString()} {currencySymbol}</span></div>
+                    <div className="flex justify-between text-lg"><span className="font-bold">Vos gains nets</span><span className="font-bold text-success">{gpEarnings.toLocaleString()} {currencySymbol}</span></div>
+
+                    {/* Client total breakdown */}
+                    <div className="mt-4 p-3 bg-muted/30 rounded-lg space-y-1.5">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Facture client</p>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Transport</span><span>{transportPrice.toLocaleString()} {currencySymbol}</span></div>
+                      {insuranceAmount > 0 && (
+                        <div className="flex justify-between"><span className="text-muted-foreground">Assurance Konnekt</span><span>{insuranceAmount.toLocaleString()} {currencySymbol}</span></div>
+                      )}
+                      {logisticsPrice > 0 && (
+                        <div className="flex justify-between"><span className="text-muted-foreground">Logistique interne</span><span>{logisticsPrice.toLocaleString()} {currencySymbol}</span></div>
+                      )}
+                      <Separator />
+                      <div className="flex justify-between font-medium"><span>Total payé</span><span>{order.total_price.toLocaleString()} {currencySymbol}</span></div>
+                    </div>
                     
                     {escrow && (
                       <div className="mt-3 p-3 bg-muted/50 rounded-lg">
