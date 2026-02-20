@@ -68,7 +68,7 @@ export function ScanHeart({
   className,
   gpId,
 }: ScanHeartProps) {
-  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraActive, setCameraActive] = useState(true);
   const [manualCode, setManualCode] = useState("");
   const [showManualInput, setShowManualInput] = useState(false);
   const [engineMessage, setEngineMessage] = useState<string | null>(null);
@@ -187,15 +187,6 @@ export function ScanHeart({
                 </span>
               </div>
             </div>
-          </div>
-          <button onClick={() => setCameraActive(true)} className="absolute inset-0 w-full h-full z-10" />
-          <div className="absolute bottom-4 left-0 right-0 text-center">
-            <span className={cn(
-              "text-[10px] font-medium px-3 py-1 rounded-full",
-              darkMode ? "text-white/35 bg-black/20" : "text-muted-foreground bg-muted/50"
-            )}>
-              Appuyez pour activer la caméra
-            </span>
           </div>
           <AnimatePresence>
             {engineStatus !== "idle" && (
