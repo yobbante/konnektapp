@@ -36,9 +36,20 @@ interface PDFDownloadGateProps {
 export function PDFDownloadGate({ order, onUnlocked }: PDFDownloadGateProps) {
   const { toast } = useToast();
   const [generating, setGenerating] = useState(false);
-  const [downloaded, setDownloaded] = useState(false);
+  const storageKey = `konnekt_label_downloaded_${order.orderId}`;
+  const [downloaded, setDownloaded] = useState(() => {
+    // If already downloaded before, skip the gate immediately
+    return localStorage.getItem(storageKey) === "1";
+  });
   const qrRef = useRef<HTMLDivElement>(null);
   const barcodeCanvasRef = useRef<HTMLCanvasElement>(null);
+
+  // If already downloaded on mount, unlock immediately without rendering the gate
+  useEffect(() => {
+    if (localStorage.getItem(storageKey) === "1") {
+      onUnlocked();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (barcodeCanvasRef.current) {
@@ -254,6 +265,7 @@ export function PDFDownloadGate({ order, onUnlocked }: PDFDownloadGateProps) {
       );
 
       doc.save(`feuille-logistique-${order.orderNumber}.pdf`);
+      localStorage.setItem(storageKey, "1");
       setDownloaded(true);
       toast({ title: "✅ Feuille logistique téléchargée" });
     } catch (err) {
