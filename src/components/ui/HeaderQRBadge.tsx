@@ -1,61 +1,103 @@
 /**
- * HeaderQRBadge — Subtle interactive QR code badge for headers
+ * HeaderQRBadge V2 — Identity QR using Konnekt Scan Engine format
  * 
- * Displays a small, theme-matching QR icon in the header that expands
- * into a full card with the QR code when tapped (inspired by WeChat/Alipay style)
+ * Generates USER:{userId} or GP:{gpId} QR codes that are fully compatible
+ * with the scan-engine backend. Scannable by in-app camera, external cameras,
+ * and resolves correctly for GP, client, or external scanners.
+ * 
+ * Premium "bleu nuit" layout matching Konnekt's scan identity.
  */
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { QrCode, X, Download, Share2, ScanLine } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { QrCode, X, Download, Share2, ScanLine, ShieldCheck, Fingerprint, Copy, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import QRCode from "react-qr-code";
+import QRCodeDisplay from "react-qr-code";
 
 interface HeaderQRBadgeProps {
-  /** The data encoded in the QR code */
-  qrValue: string;
+  /** User ID for QR generation */
+  userId?: string;
+  /** GP ID (if transporter) */
+  gpId?: string;
   /** Display name shown on the card */
   label: string;
   /** Sub label (e.g. role or order number) */
   subLabel?: string;
   /** Visual variant */
   variant?: "client" | "transporter";
+  /** Is GP verified */
+  isVerified?: boolean;
   /** Custom class for the trigger button */
   className?: string;
+  /** Legacy prop — ignored, QR value is auto-generated */
+  qrValue?: string;
 }
 
 export function HeaderQRBadge({
-  qrValue,
+  userId,
+  gpId,
   label,
   subLabel,
   variant = "client",
+  isVerified,
   className,
 }: HeaderQRBadgeProps) {
   const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const qrRef = useRef<HTMLDivElement>(null);
 
   const isTransporter = variant === "transporter";
 
+  // Generate scan-engine compatible QR value
+  const qrValue = isTransporter && gpId
+    ? `GP:${gpId}`
+    : userId
+      ? `USER:${userId}`
+      : "";
+
+  const shortId = (isTransporter && gpId ? gpId : userId || "").substring(0, 8).toUpperCase();
+
   const handleDownload = () => {
-    const svg = document.getElementById("header-qr-svg");
+    const svg = document.getElementById("identity-qr-svg");
     if (!svg) return;
 
     const svgData = new XMLSerializer().serializeToString(svg);
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     const img = new Image();
-    
+
     img.onload = () => {
-      canvas.width = 512;
-      canvas.height = 512;
+      canvas.width = 600;
+      canvas.height = 600;
       if (ctx) {
+        // Dark background matching the card
+        ctx.fillStyle = "#0F1923";
+        ctx.fillRect(0, 0, 600, 600);
+        // White rounded rect for QR
         ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, 512, 512);
-        ctx.drawImage(img, 56, 56, 400, 400);
+        const m = 80;
+        const r = 20;
+        const w = 600 - m * 2;
+        ctx.beginPath();
+        ctx.moveTo(m + r, m);
+        ctx.lineTo(m + w - r, m);
+        ctx.quadraticCurveTo(m + w, m, m + w, m + r);
+        ctx.lineTo(m + w, m + w - r);
+        ctx.quadraticCurveTo(m + w, m + w, m + w - r, m + w);
+        ctx.lineTo(m + r, m + w);
+        ctx.quadraticCurveTo(m, m + w, m, m + w - r);
+        ctx.lineTo(m, m + r);
+        ctx.quadraticCurveTo(m, m, m + r, m);
+        ctx.fill();
+        ctx.drawImage(img, m + 20, m + 20, w - 40, w - 40);
+        // Branding
+        ctx.fillStyle = "rgba(255,255,255,0.5)";
+        ctx.font = "bold 18px system-ui";
+        ctx.textAlign = "center";
+        ctx.fillText(`KONNEKT · ${label}`, 300, 570);
       }
       const pngUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
-      link.download = `konnekt-qr-${label.replace(/\s/g, "-").toLowerCase()}.png`;
+      link.download = `konnekt-${isTransporter ? "gp" : "client"}-${shortId}.png`;
       link.href = pngUrl;
       link.click();
     };
@@ -67,18 +109,32 @@ export function HeaderQRBadge({
       try {
         await navigator.share({
           title: `QR Konnekt — ${label}`,
-          text: `Scannez ce code pour accéder au profil ${label} sur Konnekt`,
-          url: qrValue.startsWith("http") ? qrValue : undefined,
+          text: `Scannez ce QR pour me retrouver sur Konnekt`,
+          url: `${window.location.origin}/profile/${isTransporter ? "gp" : "user"}/${isTransporter ? gpId : userId}`,
         });
-      } catch {
-        // user cancelled
-      }
+        return;
+      } catch { /* cancelled */ }
     }
+    handleCopy();
   };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(isTransporter && gpId ? gpId : userId || "");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (!qrValue) return null;
+
+  const accentColor = isTransporter ? "amber" : "emerald";
+  const accentClass = isTransporter ? "text-amber-400" : "text-emerald-400";
+  const accentBg = isTransporter ? "bg-amber-400" : "bg-emerald-400";
+  const accentBgSoft = isTransporter ? "bg-amber-500/15" : "bg-emerald-500/15";
+  const glowColor = isTransporter ? "shadow-amber-500/20" : "shadow-emerald-500/20";
 
   return (
     <>
-      {/* Subtle QR trigger — matches header background */}
+      {/* Trigger Button */}
       <motion.button
         whileTap={{ scale: 0.9 }}
         whileHover={{ scale: 1.05 }}
@@ -92,107 +148,170 @@ export function HeaderQRBadge({
         )}
         title="Mon QR Konnekt"
       >
-        <QrCode className="w-4 h-4" />
-        {/* Subtle dot indicator */}
+        <Fingerprint className="w-4 h-4" />
         <span className={cn(
-          "absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full",
-          isTransporter ? "bg-green-400" : "bg-primary"
+          "absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full animate-pulse",
+          accentBg
         )} />
       </motion.button>
 
-      {/* Full QR Card Dialog */}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-sm p-0 overflow-hidden bg-transparent border-none shadow-none">
+      {/* Full Identity Card — Premium Bleu Nuit */}
+      <AnimatePresence>
+        {open && (
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.8, opacity: 0 }}
-            transition={{ type: "spring", duration: 0.5 }}
-            className="relative"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-6"
+            onClick={() => setOpen(false)}
           >
-            {/* Card background with pattern */}
-            <div className={cn(
-              "relative rounded-3xl overflow-hidden",
-              isTransporter
-                ? "bg-gradient-to-br from-primary via-primary/90 to-accent"
-                : "bg-gradient-to-br from-primary/80 via-primary to-primary/90"
-            )}>
-              {/* Decorative pattern overlay */}
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute inset-0" style={{
-                  backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, currentColor 10px, currentColor 11px),
-                    repeating-linear-gradient(-45deg, transparent, transparent 10px, currentColor 10px, currentColor 11px)`,
-                }} />
-              </div>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            />
 
-              {/* Close button */}
-              <button
-                onClick={() => setOpen(false)}
-                className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-black/20 hover:bg-black/30 flex items-center justify-center text-white transition-colors"
+            {/* Card */}
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0, y: 30 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.85, opacity: 0, y: 30 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-[340px] z-10"
+            >
+              <div
+                className={cn(
+                  "rounded-3xl overflow-hidden shadow-2xl",
+                  glowColor
+                )}
+                style={{ background: "linear-gradient(180deg, #0F1923 0%, #15232F 50%, #1A2B3A 100%)" }}
               >
-                <X className="w-4 h-4" />
-              </button>
-
-              {/* Content */}
-              <div className="relative z-10 p-8 pt-12 flex flex-col items-center">
-                {/* Label */}
-                <div className="text-center mb-6">
-                  <h3 className="text-white font-bold text-xl">{label}</h3>
-                  {subLabel && (
-                    <p className="text-white/70 text-sm mt-1">{subLabel}</p>
-                  )}
+                {/* Top bar */}
+                <div className="flex items-center justify-between px-5 pt-5 pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className={cn("w-2 h-2 rounded-full animate-pulse", accentBg)} />
+                    <span className="text-[10px] font-bold text-white/30 tracking-widest uppercase">
+                      Identité Konnekt
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setOpen(false)}
+                    className="w-7 h-7 rounded-full bg-white/[0.08] hover:bg-white/[0.15] flex items-center justify-center text-white/50 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 </div>
 
-                {/* QR Code Container */}
-                <div className="bg-white rounded-2xl p-5 shadow-xl">
-                  <QRCode
-                    id="header-qr-svg"
-                    value={qrValue}
-                    size={200}
-                    level="M"
-                    className="w-[200px] h-[200px]"
-                  />
+                {/* User Info */}
+                <div className="text-center px-5 pb-4">
+                  <h3 className="text-white font-bold text-lg leading-tight">{label}</h3>
+                  <div className="flex items-center justify-center gap-1.5 mt-1">
+                    {isTransporter && isVerified && (
+                      <ShieldCheck className="w-3 h-3 text-amber-400" />
+                    )}
+                    <p className={cn("text-[11px]", accentClass)}>
+                      {subLabel || (isTransporter ? "Transporteur GP" : "Client Konnekt")}
+                    </p>
+                  </div>
+                </div>
+
+                {/* QR Code */}
+                <div className="flex justify-center px-5 pb-4">
+                  <div
+                    ref={qrRef}
+                    className={cn(
+                      "bg-white rounded-2xl p-4 shadow-lg relative",
+                      `shadow-xl ${glowColor}`
+                    )}
+                  >
+                    <QRCodeDisplay
+                      id="identity-qr-svg"
+                      value={qrValue}
+                      size={180}
+                      level="M"
+                      className="w-[180px] h-[180px]"
+                    />
+                    {/* Center logo overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className={cn(
+                        "w-9 h-9 rounded-lg flex items-center justify-center",
+                        accentBgSoft
+                      )} style={{ background: "white" }}>
+                        <span className="text-[10px] font-black text-[#0F1923] tracking-tight">KKT</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Scan hint */}
-                <div className="flex items-center gap-2 mt-4 text-white/80 text-sm">
-                  <ScanLine className="w-4 h-4" />
-                  <span>Scannez pour identifier</span>
+                <div className="flex items-center justify-center gap-2 px-5 pb-2">
+                  <ScanLine className={cn("w-3.5 h-3.5", accentClass)} />
+                  <span className="text-[11px] text-white/40">
+                    {isTransporter
+                      ? "Les clients scannent ce QR pour déposer"
+                      : "Présentez au GP ou scannez avec une caméra"}
+                  </span>
                 </div>
 
-                {/* Konnekt branding */}
-                <div className="mt-4 flex items-center gap-1.5">
-                  <span className="text-white/60 text-xs font-semibold tracking-wider uppercase">Konnekt</span>
+                {/* Short ID */}
+                <div className="flex items-center justify-center gap-2 pb-4">
+                  <div className="px-3 py-1 rounded-full bg-white/[0.05] border border-white/[0.08]">
+                    <span className="text-[10px] font-mono text-white/30">
+                      ID: {shortId}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="mx-5 h-px bg-white/[0.06]" />
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 p-4">
+                  <button
+                    onClick={handleCopy}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all",
+                      "bg-white/[0.05] border border-white/[0.08] hover:bg-white/[0.1]",
+                      copied ? accentClass : "text-white/50"
+                    )}
+                  >
+                    {copied ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copied ? "Copié !" : "Copier ID"}
+                  </button>
+                  <button
+                    onClick={handleDownload}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all bg-white/[0.05] border border-white/[0.08] text-white/50 hover:bg-white/[0.1]"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Télécharger
+                  </button>
+                  <button
+                    onClick={handleShare}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all",
+                      accentBgSoft, accentClass,
+                      "border border-white/[0.08]"
+                    )}
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    Partager
+                  </button>
+                </div>
+
+                {/* Footer */}
+                <div className="text-center pb-4">
+                  <span className="text-[9px] text-white/20 font-medium tracking-wider uppercase">
+                    Powered by Konnekt Engine
+                  </span>
                 </div>
               </div>
-            </div>
-
-            {/* Bottom Actions */}
-            <div className="flex items-center justify-center gap-3 mt-4 px-4">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleDownload}
-                className="rounded-full gap-2 flex-1"
-              >
-                <Download className="w-4 h-4" />
-                Télécharger
-              </Button>
-              {typeof navigator.share !== 'undefined' && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleShare}
-                  className="rounded-full gap-2 flex-1"
-                >
-                  <Share2 className="w-4 h-4" />
-                  Partager
-                </Button>
-              )}
-            </div>
+            </motion.div>
           </motion.div>
-        </DialogContent>
-      </Dialog>
+        )}
+      </AnimatePresence>
     </>
   );
 }
