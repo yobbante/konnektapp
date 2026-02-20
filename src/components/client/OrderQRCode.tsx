@@ -82,7 +82,13 @@ export function OrderQRCode({ orderNumber, orderId, status, weight, originCity, 
   };
 
   // Only show QR after order is accepted
-  const canShowQR = ["accepted", "collected", "in_transit", "delivered"].includes(status);
+  // V2 state machine: show QR for all active states after acceptance
+  const canShowQR = [
+    "accepted", "paid_held", "checked_in", "collected",
+    "weight_pending_payment", "scheduled_departure",
+    "in_transit", "arrived_destination", "delivery_pending",
+    "delivery_confirmed", "delivered", "released"
+  ].includes(status);
 
   if (!canShowQR) {
     return (

@@ -97,13 +97,21 @@ function resolvePayload(response: ScanEngineResponse): ScannerGPPayload | null {
   if (!d?.order) return null;
 
   const order = d.order;
-  const allowed = d.allowed_actions || d.engine?.allowed_actions || [];
+  
+  // Derive allowed_actions from engine response
+  // The engine returns next_action as a string — convert to allowed_actions array
+  let allowed: string[] = d.allowed_actions || d.engine?.allowed_actions || [];
+  if (allowed.length === 0 && response.next_action && response.next_action !== "none" && response.next_action !== "view") {
+    allowed = [response.next_action];
+  }
+  // Always include "view"
+  if (!allowed.includes("view")) allowed = ["view", ...allowed];
 
   return {
     order_id: order.id,
     order_number: order.order_number,
     current_state: order.status,
-    financial_status: order.financial_status || "unknown",
+    financial_status: order.financial_status || d.financial_status || "unknown",
     allowed_actions: allowed,
     display_payload: {
       origin_city: order.origin_city,
