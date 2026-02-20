@@ -214,6 +214,16 @@ export default function GPDemandesPage() {
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="font-bold text-primary">{order.total_price.toLocaleString()} {getCurrencySymbol(order.currency)}</span>
+                              {!isExpanded && (
+                                <div className="flex items-center gap-1 ml-1">
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-full" onClick={(e) => { e.stopPropagation(); handleRefuse(order.id); }}>
+                                    <XCircle className="w-4 h-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-green-600/70 hover:text-green-600 hover:bg-green-600/10 rounded-full" onClick={(e) => { e.stopPropagation(); handleAccept(order.id, order); }}>
+                                    <CheckCircle className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              )}
                               <ChevronDown className={cn("w-5 h-5 text-muted-foreground transition-transform", isExpanded && "rotate-180")} />
                             </div>
                           </div>
