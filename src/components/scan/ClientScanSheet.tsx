@@ -193,10 +193,60 @@ function ConfirmReceptionMode({
   const [selected, setSelected] = useState<ContextOrder | null>(null);
   const [code, setCode] = useState("");
   const [confirming, setConfirming] = useState(false);
+  const [requesting, setRequesting] = useState(false);
+  const [requestSent, setRequestSent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { executeAction } = useScanEngine({ autoNavigate: false });
+
+  // Separate orders by status
+  const arrivedOrders = orders.filter(o => o.status === "arrived_destination");
+  const pendingDeliveryOrders = orders.filter(o => o.status === "delivery_pending");
+
+  // Request delivery: notify GP + create notification
+  const handleRequestDelivery = async (order: ContextOrder) => {
+    setRequesting(true);
+    setError(null);
+    try {
+      // Get GP user_id for this order
+      const { data: orderData } = await supabase
+        .from("orders")
+        .select("gp_id, order_number, gp_profiles!inner(user_id, business_name)")
+        .eq("id", order.id)
+        .single();
+
+      if (!orderData) {
+        setError("Commande introuvable.");
+        setRequesting(false);
+        return;
+      }
+
+      const gpUserId = (orderData as any).gp_profiles?.user_id;
+      if (!gpUserId) {
+        setError("Transporteur introuvable.");
+        setRequesting(false);
+        return;
+      }
+
+      // Send notification to GP requesting delivery initiation
+      await supabase.from("notifications").insert({
+        user_id: gpUserId,
+        title: "Demande de livraison",
+        message: `Le client demande la livraison de la commande ${order.order_number} (${order.destination_city}). Veuillez initier la livraison depuis votre espace.`,
+        type: "delivery_request",
+        related_id: order.id,
+        related_type: "order",
+      });
+
+      setRequestSent(order.id);
+      setRequesting(false);
+    } catch (err) {
+      console.error("Request delivery error:", err);
+      setError("Erreur lors de l'envoi de la demande.");
+      setRequesting(false);
+    }
+  };
 
   const handleConfirm = async () => {
     if (!selected || code.length !== 6) return;
@@ -231,45 +281,35 @@ function ConfirmReceptionMode({
         </button>
         <div>
           <h3 className="text-sm font-bold text-white">Confirmer réception</h3>
-          <p className="text-[10px] text-white/35">Code 6 chiffres reçu par SMS</p>
+          <p className="text-[10px] text-white/35">Gérez vos livraisons en attente</p>
         </div>
       </div>
 
       {orders.length === 0 && (
-        <div className="text-center py-10 text-white/30 text-sm">
-          Aucune commande en attente de réception
+        <div className="text-center py-10 space-y-2">
+          <PackageCheck className="w-10 h-10 text-white/15 mx-auto" />
+          <p className="text-white/30 text-sm">Aucune commande en attente de réception</p>
+          <p className="text-white/20 text-[10px]">Vos colis arrivés apparaîtront ici</p>
         </div>
       )}
 
-      {!selected && orders.map(o => (
-        <motion.button
-          key={o.id}
-          onClick={() => { setSelected(o); setTimeout(() => inputRef.current?.focus(), 200); }}
-          className="w-full text-left p-4 rounded-2xl border border-emerald-400/20 bg-emerald-500/8 flex items-center gap-3"
-          whileTap={{ scale: 0.97 }}
-        >
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
-            <PackageCheck className="w-5 h-5 text-emerald-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-white">{o.order_number}</p>
-            <p className="text-[10px] text-white/40">{o.destination_city}</p>
-          </div>
-          <ChevronRight className="w-4 h-4 text-white/25 flex-shrink-0" />
-        </motion.button>
-      ))}
-
+      {/* ─── Code entry mode (selected delivery_pending order) ─── */}
       {selected && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           className="flex flex-col gap-4">
           <div className="p-4 rounded-2xl border border-white/[0.08] bg-white/[0.03]">
-            <p className="text-[10px] text-white/35 uppercase tracking-wider mb-1">Commande arrivée</p>
+            <p className="text-[10px] text-white/35 uppercase tracking-wider mb-1">Livraison en cours</p>
             <p className="text-sm font-bold text-white">{selected.order_number}</p>
-            <p className="text-[10px] text-white/40 mt-0.5">{selected.destination_city}</p>
+            <p className="text-[10px] text-white/40 mt-0.5">→ {selected.destination_city}</p>
+          </div>
+
+          <div className="p-3 rounded-xl border border-emerald-400/15 bg-emerald-500/5">
+            <p className="text-[11px] text-emerald-400/80 font-medium mb-0.5">💬 Votre transporteur a initié la livraison</p>
+            <p className="text-[10px] text-white/35">Un code à 6 chiffres vous a été communiqué. Saisissez-le ci-dessous.</p>
           </div>
 
           <div className="flex flex-col gap-2">
-            <p className="text-xs text-white/50 font-medium">Code de livraison reçu par SMS :</p>
+            <p className="text-xs text-white/50 font-medium">Code de livraison :</p>
             <div className="flex gap-2">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i}
@@ -326,6 +366,100 @@ function ConfirmReceptionMode({
             Annuler
           </button>
         </motion.div>
+      )}
+
+      {/* ─── Order lists (not in code-entry mode) ─── */}
+      {!selected && (
+        <>
+          {/* Section 1: Orders ready for delivery request (arrived_destination) */}
+          {arrivedOrders.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[10px] text-white/30 uppercase tracking-wider font-semibold">
+                📦 Colis arrivés — Demander la livraison
+              </p>
+              {arrivedOrders.map(o => (
+                <motion.div
+                  key={o.id}
+                  className="w-full p-4 rounded-2xl border border-sky-400/20 bg-sky-500/8 space-y-3"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-sky-500/15 flex items-center justify-center flex-shrink-0">
+                      <Package className="w-5 h-5 text-sky-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-white">{o.order_number}</p>
+                      <p className="text-[10px] text-white/40">→ {o.destination_city} · {o.weight} kg</p>
+                    </div>
+                    <div className="px-2 py-0.5 rounded-full text-[9px] font-bold border border-sky-400/20 text-sky-400 bg-sky-500/10">
+                      Arrivé
+                    </div>
+                  </div>
+
+                  {requestSent === o.id ? (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="flex items-center gap-2 p-3 rounded-xl border border-emerald-400/20 bg-emerald-500/10"
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                      <div>
+                        <p className="text-[11px] font-bold text-emerald-400">Demande envoyée !</p>
+                        <p className="text-[10px] text-white/35">Votre transporteur va initier la livraison et vous recevrez un code.</p>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.button
+                      onClick={() => handleRequestDelivery(o)}
+                      disabled={requesting}
+                      className="w-full py-3 rounded-xl bg-sky-500/15 border border-sky-400/25 text-sky-400 font-bold text-xs flex items-center justify-center gap-2"
+                      whileTap={{ scale: 0.97 }}
+                    >
+                      {requesting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+                      {requesting ? "Envoi…" : "Demander la livraison"}
+                    </motion.button>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          )}
+
+          {/* Section 2: Orders with delivery initiated (delivery_pending — code ready) */}
+          {pendingDeliveryOrders.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[10px] text-white/30 uppercase tracking-wider font-semibold">
+                🔑 Code reçu — Confirmer la réception
+              </p>
+              {pendingDeliveryOrders.map(o => (
+                <motion.button
+                  key={o.id}
+                  onClick={() => { setSelected(o); setTimeout(() => inputRef.current?.focus(), 200); }}
+                  className="w-full text-left p-4 rounded-2xl border border-emerald-400/20 bg-emerald-500/8 flex items-center gap-3"
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+                    <PackageCheck className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-white">{o.order_number}</p>
+                    <p className="text-[10px] text-white/40">→ {o.destination_city}</p>
+                    <p className="text-[9px] text-emerald-400/60 mt-0.5">Code reçu · Prêt à confirmer</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-emerald-400/50 flex-shrink-0" />
+                </motion.button>
+              ))}
+            </div>
+          )}
+
+          {error && (
+            <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-2 p-3 rounded-xl border border-red-400/20 bg-red-500/10">
+              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+              <p className="text-xs text-red-400">{error}</p>
+            </motion.div>
+          )}
+        </>
       )}
     </div>
   );
