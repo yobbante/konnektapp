@@ -43,9 +43,9 @@ const transportOptions: TransportOption[] = [
     icon: Truck,
     title: "Transport routier",
     subtitle: "Professionnel",
-    description: "Camion, fourgon, benne, frigo, BTP",
+    description: "Bientôt disponible",
     path: "/routier/demande",
-    available: true,
+    available: false,
     color: "bg-transport-routier/10 text-transport-routier border-transport-routier/30",
   },
   {

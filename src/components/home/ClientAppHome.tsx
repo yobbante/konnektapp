@@ -278,39 +278,41 @@ export function ClientAppHome({
           </motion.div>
         </Link>
 
-        {/* Demande personnalisée */}
-        <Link to="/demande-personnalisee" className="block">
-          <motion.div whileTap={{
-          scale: 0.97
-        }} className="h-full bg-card border-2 border-border rounded-2xl p-4 flex flex-col justify-between hover:border-primary/30 transition-colors" style={{
+        {/* Demande personnalisée - LOCKED */}
+        <div className="block cursor-not-allowed">
+          <motion.div className="h-full bg-card border-2 border-muted rounded-2xl p-4 flex flex-col justify-between opacity-50 relative" style={{
           minHeight: '120px'
         }}>
+            <Badge className="absolute top-2 right-2 bg-muted text-muted-foreground border-0 text-[9px] px-1.5 py-0">
+              Bientôt
+            </Badge>
             <div className="w-11 h-11 rounded-xl bg-secondary/10 flex items-center justify-center">
-              <Package className="w-6 h-6 text-secondary" />
+              <Package className="w-6 h-6 text-muted-foreground" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground text-sm">Demande</h3>
+              <h3 className="font-semibold text-muted-foreground text-sm">Demande</h3>
               <p className="text-muted-foreground text-xs">Personnalisée</p>
             </div>
           </motion.div>
-        </Link>
+        </div>
 
-        {/* Déménagement */}
-        <Link to="/demenagement" className="block">
-          <motion.div whileTap={{
-          scale: 0.97
-        }} className="h-full bg-card border-2 border-border rounded-2xl p-4 flex flex-col justify-between hover:border-primary/30 transition-colors relative" style={{
+        {/* Déménagement - LOCKED */}
+        <div className="block cursor-not-allowed">
+          <motion.div className="h-full bg-card border-2 border-muted rounded-2xl p-4 flex flex-col justify-between opacity-50 relative" style={{
           minHeight: '120px'
         }}>
+            <Badge className="absolute top-2 right-2 bg-muted text-muted-foreground border-0 text-[9px] px-1.5 py-0">
+              Bientôt
+            </Badge>
             <div className="w-11 h-11 rounded-xl bg-amber-500/10 flex items-center justify-center">
-              <Truck className="w-6 h-6 text-amber-600" />
+              <Truck className="w-6 h-6 text-muted-foreground" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground text-sm">Déménagement</h3>
-              <p className="text-muted-foreground text-xs">Transport routier</p>
+              <h3 className="font-semibold text-muted-foreground text-sm">Déménagement</h3>
+              <p className="text-muted-foreground text-xs">Bientôt disponible</p>
             </div>
           </motion.div>
-        </Link>
+        </div>
 
         {/* Mes envois - Redirect to full history page */}
         <Link to="/historique" className="block">
