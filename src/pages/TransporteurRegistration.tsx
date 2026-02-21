@@ -5,7 +5,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plane, Truck, Ship, Package, ChevronRight, Shield, Star, Zap } from "lucide-react";
+import { Plane, Truck, Ship, Package, ChevronRight, Shield, Star, Zap, Lock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { MiniLoader } from "@/components/ui/MiniLoader";
 import { toast } from "@/hooks/use-toast";
@@ -18,13 +19,14 @@ interface TransportTypeOption {
   icon: React.ComponentType<any>;
   route: string;
   color: string;
+  available: boolean;
 }
 
 const transportTypes: TransportTypeOption[] = [
-  { id: "bagages", label: "GP Via Bagages", sub: "Colis par avion", icon: Plane, route: "/gp/bagages/inscription", color: "bg-primary text-primary-foreground" },
-  { id: "routier", label: "Routier", sub: "Local & national", icon: Truck, route: "/routier/inscription", color: "bg-secondary text-secondary-foreground" },
-  { id: "maritime", label: "Maritime", sub: "Fret & conteneurs", icon: Ship, route: "/gp/inscription", color: "bg-accent text-accent-foreground" },
-  { id: "express", label: "Express", sub: "Livraison rapide", icon: Package, route: "/gp/inscription", color: "bg-muted text-foreground" },
+  { id: "bagages", label: "GP Via Bagages", sub: "Colis par avion", icon: Plane, route: "/gp/bagages/inscription", color: "bg-primary text-primary-foreground", available: true },
+  { id: "routier", label: "Routier", sub: "Bientôt disponible", icon: Truck, route: "/routier/inscription", color: "bg-secondary text-secondary-foreground", available: false },
+  { id: "maritime", label: "Maritime", sub: "Bientôt disponible", icon: Ship, route: "/gp/inscription", color: "bg-accent text-accent-foreground", available: false },
+  { id: "express", label: "Coursier", sub: "Bientôt disponible", icon: Package, route: "/gp/inscription", color: "bg-muted text-foreground", available: false },
 ];
 
 export default function TransporteurRegistration() {
@@ -52,6 +54,7 @@ export default function TransporteurRegistration() {
   }, [navigate]);
 
   const handleSelectType = (type: TransportTypeOption) => {
+    if (!type.available) return;
     setSelectedType(type.id);
     setTimeout(() => navigate(type.route), 150);
   };
@@ -111,20 +114,28 @@ export default function TransporteurRegistration() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.1 + index * 0.04 }}
                   onClick={() => handleSelectType(type)}
-                  className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all active:scale-[0.96] ${
-                    isSelected
-                      ? "border-primary bg-primary/10 shadow-md shadow-primary/10"
-                      : "border-border bg-card hover:border-primary/30"
+                  disabled={!type.available}
+                  className={`relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
+                    !type.available
+                      ? "border-muted bg-muted/30 opacity-50 cursor-not-allowed"
+                      : isSelected
+                        ? "border-primary bg-primary/10 shadow-md shadow-primary/10 active:scale-[0.96]"
+                        : "border-border bg-card hover:border-primary/30 active:scale-[0.96]"
                   }`}
                 >
-                  <div className={`w-11 h-11 rounded-xl ${type.color} flex items-center justify-center shadow-sm`}>
+                  {!type.available && (
+                    <Badge className="absolute -top-2 right-2 bg-muted text-muted-foreground border-0 text-[9px] px-1.5 py-0">
+                      Bientôt
+                    </Badge>
+                  )}
+                  <div className={`w-11 h-11 rounded-xl ${type.available ? type.color : 'bg-muted text-muted-foreground'} flex items-center justify-center shadow-sm`}>
                     <Icon className="w-5 h-5" />
                   </div>
                   <div className="text-center">
-                    <p className="text-sm font-semibold leading-tight">{type.label}</p>
+                    <p className={`text-sm font-semibold leading-tight ${!type.available ? 'text-muted-foreground' : ''}`}>{type.label}</p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">{type.sub}</p>
                   </div>
-                  <ChevronRight className="absolute right-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground/40" />
+                  {type.available && <ChevronRight className="absolute right-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground/40" />}
                 </motion.button>
               );
             })}

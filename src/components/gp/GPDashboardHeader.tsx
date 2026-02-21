@@ -73,7 +73,7 @@ export function GPDashboardHeader({ gpProfile, onSignOut }: GPDashboardHeaderPro
                 <DropdownMenuContent align="end" className="w-56">
                   <div className="px-2 py-1.5">
                     <p className="font-medium text-sm">{gpProfile.business_name}</p>
-                    <p className="text-xs text-muted-foreground capitalize">{gpProfile.gp_type}</p>
+                    <p className="text-xs text-muted-foreground">{gpProfile.gp_type === "bagages_international" ? "GP Via Bagages" : gpProfile.gp_type === "routier" ? "Transport Routier" : gpProfile.gp_type}</p>
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setShowSendDialog(true)}>
