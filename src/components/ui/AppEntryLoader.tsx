@@ -12,8 +12,8 @@ interface AppEntryLoaderProps {
   minDuration?: number;
 }
 
-export function AppEntryLoader({ onComplete, minDuration = 2000 }: AppEntryLoaderProps) {
-  const [isComplete, setIsComplete] = useState(false);
+export function AppEntryLoader({ onComplete, minDuration = 1600 }: AppEntryLoaderProps) {
+  const [phase, setPhase] = useState<'loading' | 'expanding' | 'done'>('loading');
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -26,10 +26,11 @@ export function AppEntryLoader({ onComplete, minDuration = 2000 }: AppEntryLoade
 
       if (newProgress >= 100) {
         clearInterval(progressInterval);
+        setPhase('expanding');
         setTimeout(() => {
-          setIsComplete(true);
+          setPhase('done');
           onComplete?.();
-        }, 200);
+        }, 500);
       }
     }, 16);
 
@@ -38,46 +39,45 @@ export function AppEntryLoader({ onComplete, minDuration = 2000 }: AppEntryLoade
 
   return (
     <AnimatePresence>
-      {!isComplete && (
+      {phase !== 'done' && (
         <motion.div
           initial={{ opacity: 1 }}
-          exit={{ opacity: 0, scale: 1.02 }}
-          transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
           className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white"
         >
-          {/* Logo - matches PWA icon for seamless transition */}
+          {/* Logo — larger, with expand-out transition */}
           <motion.div
-            initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-            className="relative mb-8"
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={
+              phase === 'expanding'
+                ? { scale: 12, opacity: 0 }
+                : { scale: 1, opacity: 1 }
+            }
+            transition={
+              phase === 'expanding'
+                ? { duration: 0.45, ease: [0.4, 0, 0.2, 1] }
+                : { duration: 0.4, ease: [0.23, 1, 0.32, 1] }
+            }
+            className="relative mb-6"
           >
-            {/* Subtle pulse ring */}
-            <motion.div
-              className="absolute -inset-4 rounded-full"
-              style={{
-                background: 'radial-gradient(circle, hsla(168, 60%, 42%, 0.08) 0%, transparent 70%)',
-              }}
-              animate={{
-                scale: [1, 1.3, 1],
-                opacity: [0.5, 0.8, 0.5],
-              }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            />
-
             <img
               src={konnektLogo}
               alt="Konnekt"
-              className="w-24 h-24 object-contain relative z-10"
+              className="w-36 h-36 object-contain"
             />
           </motion.div>
 
           {/* Brand name */}
           <motion.h1
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.4 }}
-            className="text-2xl font-bold tracking-[0.12em] uppercase mb-2"
+            initial={{ opacity: 0, y: 8 }}
+            animate={
+              phase === 'expanding'
+                ? { opacity: 0, y: -10 }
+                : { opacity: 1, y: 0 }
+            }
+            transition={{ duration: 0.3, delay: phase === 'expanding' ? 0 : 0.2 }}
+            className="text-2xl font-bold tracking-[0.14em] uppercase mb-1.5"
             style={{ color: 'hsl(168, 60%, 42%)' }}
           >
             Konnekt
@@ -85,28 +85,36 @@ export function AppEntryLoader({ onComplete, minDuration = 2000 }: AppEntryLoade
 
           <motion.p
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.4 }}
-            className="text-sm tracking-wide mb-10"
-            style={{ color: 'hsl(220, 10%, 60%)' }}
+            animate={
+              phase === 'expanding'
+                ? { opacity: 0 }
+                : { opacity: 1 }
+            }
+            transition={{ duration: 0.3, delay: phase === 'expanding' ? 0 : 0.35 }}
+            className="text-xs tracking-widest uppercase mb-8"
+            style={{ color: 'hsl(220, 10%, 58%)' }}
           >
             Transport sécurisé par scan
           </motion.p>
 
-          {/* Minimal progress line */}
+          {/* Progress bar */}
           <motion.div
             initial={{ opacity: 0, scaleX: 0 }}
-            animate={{ opacity: 1, scaleX: 1 }}
-            transition={{ delay: 0.4, duration: 0.3 }}
-            className="w-32 h-0.5 rounded-full overflow-hidden"
-            style={{ backgroundColor: 'hsl(220, 14%, 93%)' }}
+            animate={
+              phase === 'expanding'
+                ? { opacity: 0, scaleX: 0.5 }
+                : { opacity: 1, scaleX: 1 }
+            }
+            transition={{ duration: 0.25, delay: phase === 'expanding' ? 0 : 0.3 }}
+            className="w-28 h-[2px] rounded-full overflow-hidden"
+            style={{ backgroundColor: 'hsl(220, 14%, 92%)' }}
           >
-            <motion.div
+            <div
               className="h-full rounded-full"
               style={{
                 width: `${progress}%`,
                 backgroundColor: 'hsl(168, 60%, 42%)',
-                transition: 'width 0.1s linear',
+                transition: 'width 0.08s linear',
               }}
             />
           </motion.div>
