@@ -266,7 +266,7 @@ function CityListContent({
           autoFocus
         />
       </div>
-      <ScrollArea className="max-h-[50vh]">
+      <ScrollArea className="max-h-[60vh]">
         {filteredCities.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-6 text-center text-sm text-muted-foreground">
             <Globe className="w-8 h-8 text-muted-foreground/50" />
@@ -355,19 +355,22 @@ export function SearchableCitySelect({
   }, [value, countryCode]);
 
   // Group cities: current country first, then popular, then rest
+  // All cities sorted: current country first, popular, then rest — always show all
+  const sortedCities = useMemo(() => {
+    const currentCountryCities = WORLD_CITIES.filter(c => c.country === countryCode);
+    const popularOther = WORLD_CITIES.filter(c => c.country !== countryCode && POPULAR_CITIES.includes(c.city));
+    const rest = WORLD_CITIES.filter(c => c.country !== countryCode && !POPULAR_CITIES.includes(c.city));
+    return [...currentCountryCities, ...popularOther, ...rest];
+  }, [countryCode]);
+
   const filteredCities = useMemo(() => {
-    if (!searchQuery) {
-      const currentCountryCities = WORLD_CITIES.filter(c => c.country === countryCode);
-      const popularOther = WORLD_CITIES.filter(c => c.country !== countryCode && POPULAR_CITIES.includes(c.city));
-      const rest = WORLD_CITIES.filter(c => c.country !== countryCode && !POPULAR_CITIES.includes(c.city));
-      return [...currentCountryCities, ...popularOther, ...rest];
-    }
+    if (!searchQuery) return sortedCities;
     const query = searchQuery.toLowerCase();
-    return WORLD_CITIES.filter(c =>
+    return sortedCities.filter(c =>
       c.city.toLowerCase().includes(query) ||
       c.flag.includes(searchQuery)
-    ).slice(0, 30);
-  }, [searchQuery, countryCode]);
+    );
+  }, [searchQuery, sortedCities]);
 
   const handleClose = () => {
     setOpen(false);
