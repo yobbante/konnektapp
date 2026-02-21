@@ -134,9 +134,9 @@ const App = () => (
             {/* Point d'entrée universel "Envoyer un colis" */}
             <Route path="/envoyer" element={<ShipmentTypeSelector />} />
             <Route path="/demande" element={<DemandeEnvoi />} />
-            <Route path="/demande-personnalisee" element={<CustomRequest />} />
-            <Route path="/demenagement" element={<MovingRequest />} />
-            <Route path="/demenagement/confirmation" element={<MovingConfirmation />} />
+            <Route path="/demande-personnalisee" element={<Navigate to="/" replace />} />
+            <Route path="/demenagement" element={<Navigate to="/" replace />} />
+            <Route path="/demenagement/confirmation" element={<Navigate to="/" replace />} />
             <Route path="/quote-confirmation" element={<QuoteConfirmation />} />
             <Route path="/reservation/gp/:gpId" element={<SmartBookingPage />} />
             <Route path="/messages" element={<Messages />} />
@@ -203,7 +203,7 @@ const App = () => (
             <Route path="/routier/vehicules" element={<RoutierVehiculesPage />} />
             <Route path="/routier/profil-public" element={<RoutierProfilPublicPage />} />
             {/* Client-facing routier booking form */}
-            <Route path="/routier/demande" element={<RoutierDemandePage />} />
+            <Route path="/routier/demande" element={<Navigate to="/" replace />} />
             {/* Legacy redirect - tarification removed for routier */}
             <Route path="/routier/tarification" element={<Navigate to="/routier/demandes" replace />} />
             

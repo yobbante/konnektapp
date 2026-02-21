@@ -20,7 +20,7 @@ export interface TransportConfig {
 export const transportConfig: Record<TransportType, TransportConfig> = {
   express: {
     type: "express",
-    title: "Express",
+    title: "Coursier",
     description: "Livraison rapide",
     longDescription: "Coursiers, livreurs d'entreprise, services de livraison rapide B2B/B2C",
     icon: Zap,

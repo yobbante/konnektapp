@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
-import { Bell, Check, Package, MessageCircle, Truck, AlertCircle, X } from "lucide-react";
+import { Bell, Check, Package, MessageCircle, Luggage, AlertCircle, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -21,8 +21,8 @@ const typeIcons: Record<string, React.ElementType> = {
   order: Package,
   order_status: Package,
   message: MessageCircle,
-  gp: Truck,
-  account_status: Truck,
+  gp: Luggage,
+  account_status: Luggage,
   alert: AlertCircle,
   info: Bell,
 };

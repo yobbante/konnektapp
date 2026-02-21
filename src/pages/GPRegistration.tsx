@@ -505,9 +505,10 @@ export default function GPRegistration() {
                   const Icon = transport.icon;
                   const isSelected = activityType === transport.type;
                   const isBagages = transport.type === "bagages_international";
+                  const isLocked = !isBagages; // Only bagages is available for MVP
                   const handleActivityClick = () => {
+                    if (isLocked) return;
                     setActivityType(transport.type);
-                    // Auto-advance after selection
                     setTimeout(() => {
                       if (transport.type === "bagages_international") {
                         navigate("/gp/bagages/inscription");
@@ -521,14 +522,22 @@ export default function GPRegistration() {
                     <button
                       key={transport.type}
                       onClick={handleActivityClick}
+                      disabled={isLocked}
                       className={`p-6 rounded-xl border-2 text-left transition-all relative ${
-                        isSelected
-                          ? "border-secondary bg-secondary/10 shadow-md"
-                          : isBagages
-                            ? "border-amber-500/50 bg-amber-500/5 hover:border-amber-500 hover:bg-amber-500/10"
-                            : "border-border hover:border-secondary/50 hover:bg-muted/50"
+                        isLocked
+                          ? "border-muted bg-muted/20 opacity-50 cursor-not-allowed"
+                          : isSelected
+                            ? "border-secondary bg-secondary/10 shadow-md"
+                            : isBagages
+                              ? "border-amber-500/50 bg-amber-500/5 hover:border-amber-500 hover:bg-amber-500/10"
+                              : "border-border hover:border-secondary/50 hover:bg-muted/50"
                       }`}
                     >
+                      {isLocked && (
+                        <Badge className="absolute -top-2 right-4 bg-muted text-muted-foreground border-0 text-[10px]">
+                          Bientôt disponible
+                        </Badge>
+                      )}
                       {isBagages && !isSelected && (
                         <Badge className="absolute -top-2 right-4 bg-amber-500 text-white text-xs">
                           Populaire
@@ -536,17 +545,19 @@ export default function GPRegistration() {
                       )}
                       <div className="flex items-start gap-4">
                         <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
-                          isSelected 
-                            ? "bg-secondary text-secondary-foreground" 
-                            : isBagages 
-                              ? "bg-amber-500/20 text-amber-600"
-                              : "bg-muted"
+                          isLocked
+                            ? "bg-muted text-muted-foreground"
+                            : isSelected 
+                              ? "bg-secondary text-secondary-foreground" 
+                              : isBagages 
+                                ? "bg-amber-500/20 text-amber-600"
+                                : "bg-muted"
                         }`}>
                           <Icon className="w-7 h-7" />
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-semibold text-foreground mb-1">{transport.title}</h3>
-                          <p className="text-sm text-muted-foreground">{transport.longDescription || transport.description}</p>
+                          <h3 className={`font-semibold mb-1 ${isLocked ? 'text-muted-foreground' : 'text-foreground'}`}>{transport.title}</h3>
+                          <p className="text-sm text-muted-foreground">{isLocked ? 'Bientôt disponible' : (transport.longDescription || transport.description)}</p>
                           {isBagages && (
                             <p className="text-xs text-amber-600 mt-2 font-medium">
                               ✈️ Inscription rapide en 2 min

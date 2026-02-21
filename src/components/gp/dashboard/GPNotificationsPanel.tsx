@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Bell, Check, Package, MessageCircle, Truck, AlertCircle } from "lucide-react";
+import { Bell, Check, Package, MessageCircle, Luggage, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,8 +25,8 @@ const typeIcons: Record<string, React.ElementType> = {
   order: Package,
   order_status: Package,
   message: MessageCircle,
-  gp: Truck,
-  account_status: Truck,
+  gp: Luggage,
+  account_status: Luggage,
   alert: AlertCircle,
   info: Bell,
 };
