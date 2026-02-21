@@ -54,14 +54,14 @@ export function AppLikeHome() {
 
   return (
     <div 
-      className="flex flex-col bg-background overflow-hidden relative"
+      className="flex flex-col bg-background overflow-hidden"
       style={{
-       height: 'calc(100vh - 60px - 64px)', // Adjust for header/nav
+       height: 'calc(100vh - 60px - 64px)',
        minHeight: '500px',
       }}
     >
-      {/* Main Content - Perfectly Centered */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center px-6 pb-16">
+      {/* Main Content - Centered with flex */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6">
         
         {/* Dynamic Tagline */}
         <motion.div 
@@ -153,12 +153,12 @@ export function AppLikeHome() {
         </motion.div>
       </div>
 
-      {/* Footer Link - Pinned to bottom */}
+      {/* Footer Link - In flow, not absolute */}
       <motion.div 
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }} 
         transition={{ duration: 0.4, delay: 0.3 }} 
-        className="absolute bottom-4 left-0 right-0 text-center pb-safe"
+        className="py-4 text-center pb-safe shrink-0"
       >
         <Link to="/offres" className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1">
           Explorer les offres disponibles <span className="text-lg">→</span>
