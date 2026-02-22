@@ -31,7 +31,13 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   pending: { label: "En attente", color: "bg-amber-500/20 text-amber-600" },
   accepted: { label: "Accepté", color: "bg-green-500/20 text-green-600" },
   collected: { label: "Collecté", color: "bg-blue-500/20 text-blue-600" },
+  paid_held: { label: "Paiement reçu", color: "bg-emerald-500/20 text-emerald-600" },
+  checked_in: { label: "Déposé", color: "bg-indigo-500/20 text-indigo-600" },
+  weight_pending_payment: { label: "Supplément requis", color: "bg-orange-500/20 text-orange-600" },
+  scheduled_departure: { label: "Départ programmé", color: "bg-violet-500/20 text-violet-600" },
   in_transit: { label: "En transit", color: "bg-blue-500/20 text-blue-600" },
+  arrived_destination: { label: "Arrivé", color: "bg-teal-500/20 text-teal-600" },
+  delivery_pending: { label: "Livraison en cours", color: "bg-cyan-500/20 text-cyan-600" },
   delivered: { label: "Livré", color: "bg-green-500/20 text-green-700" },
   open: { label: "Ouverte", color: "bg-amber-500/20 text-amber-600" },
   responded: { label: "Réponses reçues", color: "bg-purple-500/20 text-purple-600" },
@@ -65,7 +71,7 @@ export function ClientAppHome({
   } | null>(null);
 
   // Get ALL active orders
-  const activeOrders = recentOrders.filter(o => ['pending', 'accepted', 'collected', 'in_transit'].includes(o.status));
+  const activeOrders = recentOrders.filter(o => ['pending', 'accepted', 'collected', 'paid_held', 'checked_in', 'weight_pending_payment', 'scheduled_departure', 'in_transit', 'arrived_destination', 'delivery_pending'].includes(o.status));
   
   // Combine all active items for display
   const allActiveItems = [

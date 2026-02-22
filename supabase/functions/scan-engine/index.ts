@@ -951,7 +951,7 @@ async function resolveUserScenario(supabase: any, parsed: ParsedQR, role: UserRo
       const { data: orders } = await supabase.from("orders")
         .select("id, order_number, status, weight, total_price, currency, price_per_kg, origin_city, destination_city, origin_country, destination_country, description, client_id, gp_id, delivery_date, delivery_code, recipient_name, recipient_phone, recipient_user_id")
         .eq("gp_id", gpSelf.id).eq("client_id", scannedUserId)
-        .in("status", ["pending", "accepted", "collected", "in_transit"]).limit(10);
+        .in("status", ["pending", "accepted", "collected", "paid_held", "checked_in", "weight_pending_payment", "scheduled_departure", "in_transit", "arrived_destination", "delivery_pending"]).limit(10);
 
       return {
         status: "authorized", qr_type: "QR_USER",
