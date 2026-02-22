@@ -83,17 +83,31 @@ export function FloatingRecap({
   if (currentStep === 5 || !hasItems) return null;
 
   return (
-    <motion.div
-      initial={{ y: 100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: 100, opacity: 0 }}
-      className={cn(
-        "fixed left-0 right-0 z-40 transition-all",
-        "bottom-[76px]", // Above the navigation bar
-        className
-      )}
-      style={{ paddingBottom: 'var(--safe-bottom, 0px)' }}
-    >
+    <>
+      {/* Backdrop blur when expanded */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-background/40 backdrop-blur-sm z-[39]"
+            onClick={() => setExpanded(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      <motion.div
+        initial={{ y: 100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 100, opacity: 0 }}
+        className={cn(
+          "fixed left-0 right-0 z-40 transition-all",
+          "bottom-[76px]",
+          className
+        )}
+        style={{ paddingBottom: 'var(--safe-bottom, 0px)' }}
+      >
       <div className="max-w-lg mx-auto px-4">
         <div ref={containerRef} className="bg-card/95 backdrop-blur-md border border-border rounded-2xl shadow-lg overflow-hidden">
           {/* Collapsed header - always visible */}
@@ -144,7 +158,7 @@ export function FloatingRecap({
                     <div className="flex justify-between items-center text-xs pt-3">
                       <span className="text-muted-foreground">
                         {isTMA
-                          ? `Tarif minimum applicable (≤1kg)`
+                          ? `TMA (tarif min. applicable)`
                           : `Colis au kilo (${weight}kg × ${pricePerKg?.toLocaleString('fr-FR') ?? '—'} ${currencySymbol})`
                         }
                       </span>
@@ -248,5 +262,6 @@ export function FloatingRecap({
         </div>
       </div>
     </motion.div>
+    </>
   );
 }

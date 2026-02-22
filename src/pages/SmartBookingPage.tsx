@@ -23,7 +23,7 @@ import { convertFromFCFA, loadExchangeRates, type ExchangeRate } from "@/lib/cur
 import { createAutoConversationAfterBooking } from "@/lib/autoChat";
 import { normalizeDecimalInput, parseDecimalInput, roundTo2Decimals, formatDecimalDisplay, roundForDatabase } from "@/lib/decimalUtils";
 import { useSelfBookingGuard } from "@/hooks/useSelfBookingGuard";
-import { getRegressiveInfo } from "@/lib/gpPricingEngine";
+import { getRegressiveInfo, calculatePrice } from "@/lib/gpPricingEngine";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { RecipientField } from "@/components/booking/RecipientField";
@@ -352,10 +352,10 @@ export default function SmartBookingPage() {
       ? getRegressiveInfo(weight, basePricePerKg)
       : null;
 
-    // TMA: Pour <1kg, le tarif minimum applicable est basePricePerKg * 1.5 (forfait fixe, pas de multiplication par le poids)
-    const kiloTotal = (weight > 0 && weight <= 1 && basePricePerKg > 0)
-      ? Math.round(basePricePerKg * 1.5)
-      : roundTo2Decimals(weight * pricePerKg);
+    // Use the pricing engine (single source of truth) — handles TMA floor automatically
+    const kiloTotal = (weight > 0 && basePricePerKg > 0)
+      ? calculatePrice(weight, { basePricePerKg, forfaitValise23kg: offer?.price_per_kg ? Math.round(basePricePerKg * 23 * 0.85) : 0, currency })
+      : 0;
     const flatRateTotal = flatRateItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const flatRateCount = flatRateItems.reduce((sum, item) => sum + item.quantity, 0);
     const transportTotal = roundTo2Decimals(kiloTotal + flatRateTotal);
@@ -1208,7 +1208,7 @@ export default function SmartBookingPage() {
       )}
 
       {/* Floating Recap - Always visible except step 4 */}
-      {!showEscrow && <FloatingRecap weight={calculations.weight} flatRateCount={calculations.flatRateCount} transportTotal={calculations.transportTotal} insuranceTotal={displayInsuranceAmount} logisticsTotal={displayLogisticsAmount} grandTotal={displayGrandTotal} currency={currency} getFCFAEquivalent={getFCFAEquivalent} hasInsurance={insuranceChoice.hasInsurance} hasLogistics={calculations.hasLogistics} currentStep={step} pricePerKg={offer?.price_per_kg} flatRateItems={flatRateItems.filter(i => i.quantity > 0)} isTMA={calculations.weight > 0 && calculations.weight <= 1.5} />}
+      {!showEscrow && <FloatingRecap weight={calculations.weight} flatRateCount={calculations.flatRateCount} transportTotal={calculations.transportTotal} insuranceTotal={displayInsuranceAmount} logisticsTotal={displayLogisticsAmount} grandTotal={displayGrandTotal} currency={currency} getFCFAEquivalent={getFCFAEquivalent} hasInsurance={insuranceChoice.hasInsurance} hasLogistics={calculations.hasLogistics} currentStep={step} pricePerKg={offer?.price_per_kg} flatRateItems={flatRateItems.filter(i => i.quantity > 0)} isTMA={calculations.weight > 0 && calculations.basePricePerKg > 0 && calculations.kiloTotal === Math.round(calculations.basePricePerKg * 1.5)} />}
 
       {/* Bottom Navigation */}
       {!showEscrow && <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 z-50" style={{
