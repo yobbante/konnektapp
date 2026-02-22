@@ -1,21 +1,20 @@
 /**
- * GPColisPage — Onglet Colis V2
+ * GPColisPage — Onglet Colis V3
  * 
- * Améliorations:
- * - Actions contextuelles rapides par statut (flux collecte→livraison)
- * - Badge d'urgence sur les "À livrer"
- * - Regroupement par priorité
- * - Scan direct depuis la liste
+ * UI/UX amélioré:
+ * - Compteurs visuels en haut (mini dashboard)
+ * - Filtres simplifiés et épurés
+ * - Cartes plus lisibles avec prix affiché
+ * - Actions claires et visibles
  */
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, ScanLine, Scale, Search, Plus, RefreshCw,
-  ChevronRight, ArrowRight, Truck, Clock, CheckCircle2, AlertTriangle,
+  ArrowRight, Truck, Clock, CheckCircle2, AlertTriangle, MapPin,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +22,6 @@ import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { useGPProfile } from "@/hooks/useGPProfile";
 import { getOrderStatusLabel, getOrderStatusColor } from "@/lib/transportTypes";
-import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { CreateManualParcelDialog } from "@/components/gp/CreateManualParcelDialog";
 import { ManualParcelBadge } from "@/components/gp/ManualParcelBadge";
 import { GPScanSheet } from "@/components/scan/GPScanSheet";
@@ -45,27 +43,19 @@ interface Colis {
 }
 
 const STATUS_FILTERS = [
-  { value: "all", label: "Tous" },
-  { value: "pending", label: "⚡ En attente" },
-  { value: "active", label: "🔄 En cours" },
-  { value: "arrived", label: "🎯 Arrivé" },
-  { value: "delivered", label: "✓ Livré" },
+  { value: "all", label: "Tous", icon: Package },
+  { value: "pending", label: "En attente", icon: Clock },
+  { value: "active", label: "En cours", icon: Truck },
+  { value: "arrived", label: "Arrivé", icon: MapPin },
+  { value: "delivered", label: "Livré", icon: CheckCircle2 },
 ];
 
-// Only pending and arrived have GP actions, the rest is automated
-const STATUS_FLOW: Record<string, { next: string; label: string; urgent?: boolean }> = {
-  pending: { next: "accepted", label: "Accepter", urgent: true },
-  arrived: { next: "delivered", label: "Livrer", urgent: true },
+const STATUS_FLOW: Record<string, { next: string; label: string }> = {
+  pending: { next: "accepted", label: "Accepter" },
+  arrived: { next: "delivered", label: "Livrer" },
 };
 
-const STATUS_ICONS: Record<string, { icon: any; color: string; bg: string }> = {
-  pending: { icon: Clock, color: "text-amber-600", bg: "bg-amber-500/10" },
-  accepted: { icon: Package, color: "text-blue-600", bg: "bg-blue-500/10" },
-  collected: { icon: Truck, color: "text-indigo-600", bg: "bg-indigo-500/10" },
-  in_transit: { icon: Truck, color: "text-purple-600", bg: "bg-purple-500/10" },
-  arrived: { icon: AlertTriangle, color: "text-green-600", bg: "bg-green-500/10" },
-  delivered: { icon: CheckCircle2, color: "text-green-700", bg: "bg-green-500/10" },
-};
+const ACTIVE_STATUSES = ["accepted", "collected", "in_transit", "checked_in", "scheduled_departure"];
 
 export default function GPColisPage() {
   const navigate = useNavigate();
@@ -80,7 +70,6 @@ export default function GPColisPage() {
   const [statusFilter, setStatusFilter] = useState(searchParams.get("filter") || "all");
   const [sourceFilter, setSourceFilter] = useState<"all" | "konnekt" | "manual">("all");
   const [showManualForm, setShowManualForm] = useState(false);
-  const [scanningOrderId, setScanningOrderId] = useState<string | null>(null);
   const [updatingOrder, setUpdatingOrder] = useState<string | null>(null);
   const [showScanSheet, setShowScanSheet] = useState(false);
 
@@ -136,10 +125,8 @@ export default function GPColisPage() {
     ...(sourceFilter !== "konnekt" ? manualParcels : []),
   ];
 
-  const ACTIVE_STATUSES = ["accepted", "collected", "in_transit", "checked_in", "scheduled_departure"];
-
   const filtered = allColis.filter(c => {
-    const matchesStatus = statusFilter === "all" 
+    const matchesStatus = statusFilter === "all"
       || (statusFilter === "active" ? ACTIVE_STATUSES.includes(c.status) : c.status === statusFilter);
     const q = searchQuery.toLowerCase();
     const matchesSearch = !q ||
@@ -149,32 +136,33 @@ export default function GPColisPage() {
       (c.is_manual && c.client_name.toLowerCase().includes(q));
     return matchesStatus && matchesSearch;
   }).sort((a, b) => {
-    // Prioritize urgent statuses
-    const priority = { arrived: 0, pending: 1, accepted: 2, collected: 3, in_transit: 4, delivered: 5 };
-    const pa = (priority as any)[a.status] ?? 9;
-    const pb = (priority as any)[b.status] ?? 9;
+    const priority: Record<string, number> = { arrived: 0, pending: 1, accepted: 2, collected: 3, in_transit: 4, delivered: 5 };
+    const pa = priority[a.status] ?? 9;
+    const pb = priority[b.status] ?? 9;
     if (pa !== pb) return pa - pb;
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 
-  const pendingCount2 = allColis.filter(c => c.status === "pending").length;
-  const arrivedCount = allColis.filter(c => c.status === "arrived").length;
-  const urgentCount = pendingCount2 + arrivedCount;
+  const counts = {
+    all: allColis.length,
+    pending: allColis.filter(c => c.status === "pending").length,
+    active: allColis.filter(c => ACTIVE_STATUSES.includes(c.status)).length,
+    arrived: allColis.filter(c => c.status === "arrived").length,
+    delivered: allColis.filter(c => c.status === "delivered").length,
+  };
 
   return (
     <GPDashboardLayout gpProfile={gpProfile} pendingCount={pendingCount} activeOrdersCount={activeCount} activeTab="colis">
-      <div className="px-4 py-4 space-y-3">
-        {/* Header */}
+      <div className="px-4 pt-3 pb-6 space-y-4">
+
+        {/* Header compact */}
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold">Mes colis</h2>
-            <p className="text-xs text-muted-foreground">
-              {colis.length} Konnekt · {manualParcels.length} manuels
-              {urgentCount > 0 && <span className="ml-2 text-destructive font-semibold">· {urgentCount} urgents</span>}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={() => setShowManualForm(true)}>
+          <h2 className="text-lg font-bold text-foreground">Mes colis</h2>
+          <div className="flex items-center gap-1.5">
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 rounded-xl" onClick={() => setShowScanSheet(true)}>
+              <ScanLine className="w-3.5 h-3.5" /> Scan
+            </Button>
+            <Button size="sm" className="h-8 text-xs gap-1.5 rounded-xl" onClick={() => setShowManualForm(true)}>
               <Plus className="w-3.5 h-3.5" /> Manuel
             </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => loadColis(true)} disabled={refreshing}>
@@ -183,48 +171,56 @@ export default function GPColisPage() {
           </div>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="N° commande, ville, client..." value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 h-10 rounded-xl" />
-        </div>
-
-        {/* Source Filter */}
-        <div className="flex gap-2">
-          {([
-            { val: "all" as const, label: "Tous" },
-            { val: "konnekt" as const, label: "Konnekt" },
-            { val: "manual" as const, label: "🟡 Hors plateforme" },
-          ]).map(f => (
-            <button key={f.val} onClick={() => setSourceFilter(f.val)}
-              className={cn("px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all",
-                sourceFilter === f.val ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted/50 text-muted-foreground hover:bg-muted"
-              )}>
-              {f.label}
-            </button>
+        {/* Mini stat counters */}
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { label: "Attente", count: counts.pending, color: "text-amber-600", bg: "bg-amber-500/10", border: "border-amber-500/20" },
+            { label: "En cours", count: counts.active, color: "text-blue-600", bg: "bg-blue-500/10", border: "border-blue-500/20" },
+            { label: "Arrivé", count: counts.arrived, color: "text-emerald-600", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
+            { label: "Livré", count: counts.delivered, color: "text-green-700", bg: "bg-green-500/10", border: "border-green-500/20" },
+          ].map((s) => (
+            <motion.div
+              key={s.label}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className={cn("flex flex-col items-center py-2.5 rounded-xl border", s.bg, s.border)}
+            >
+              <span className={cn("text-xl font-bold leading-none", s.color)}>{s.count}</span>
+              <span className="text-[10px] text-muted-foreground mt-1">{s.label}</span>
+            </motion.div>
           ))}
         </div>
 
-        {/* Status Filter Pills */}
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder="Rechercher par n°, ville, client..." value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 h-10 rounded-xl bg-muted/30 border-border/50" />
+        </div>
+
+        {/* Status filter tabs */}
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
           {STATUS_FILTERS.map(f => {
-            const count = f.value === "all" ? allColis.length : f.value === "active" ? allColis.filter(c => ACTIVE_STATUSES.includes(c.status)).length : allColis.filter(c => c.status === f.value).length;
-            const isUrgent = (f.value === "pending" || f.value === "arrived") && count > 0;
+            const count = counts[f.value as keyof typeof counts] ?? 0;
+            const isActive = statusFilter === f.value;
+            const hasUrgent = (f.value === "pending" || f.value === "arrived") && count > 0;
+            const Icon = f.icon;
             return (
               <button key={f.value} onClick={() => setStatusFilter(f.value)}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all",
-                  statusFilter === f.value
+                  "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all",
+                  isActive
                     ? "bg-primary text-primary-foreground shadow-sm"
-                    : isUrgent
-                      ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30"
-                      : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                    : hasUrgent
+                      ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/25"
+                      : "bg-muted/40 text-muted-foreground hover:bg-muted"
                 )}>
+                <Icon className="w-3.5 h-3.5" />
                 {f.label}
                 {count > 0 && (
-                  <span className={cn("w-4 h-4 rounded-full text-[10px] flex items-center justify-center",
-                    statusFilter === f.value ? "bg-primary-foreground/20" : "bg-muted-foreground/20"
+                  <span className={cn(
+                    "min-w-[18px] h-[18px] rounded-full text-[10px] flex items-center justify-center px-1",
+                    isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted-foreground/15 text-muted-foreground"
                   )}>{count}</span>
                 )}
               </button>
@@ -232,119 +228,144 @@ export default function GPColisPage() {
           })}
         </div>
 
+        {/* Source toggle (compact) */}
+        <div className="flex gap-1 bg-muted/30 rounded-lg p-0.5">
+          {([
+            { val: "all" as const, label: "Tous" },
+            { val: "konnekt" as const, label: "Plateforme" },
+            { val: "manual" as const, label: "Hors plateforme" },
+          ]).map(f => (
+            <button key={f.val} onClick={() => setSourceFilter(f.val)}
+              className={cn("flex-1 py-1.5 rounded-md text-[11px] font-medium transition-all",
+                sourceFilter === f.val ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+              )}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+
         {/* Colis List */}
         {filtered.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="py-12 text-center text-muted-foreground">
-              <Package className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p className="text-sm font-medium">Aucun colis trouvé</p>
-              <Button variant="link" size="sm" className="mt-1" onClick={() => setShowManualForm(true)}>
-                Ajouter un colis manuel
-              </Button>
-            </CardContent>
-          </Card>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="flex flex-col items-center py-16 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mb-3">
+              <Package className="w-7 h-7 text-muted-foreground/40" />
+            </div>
+            <p className="text-sm font-medium text-muted-foreground">Aucun colis trouvé</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">Modifiez vos filtres ou ajoutez un colis</p>
+            <Button variant="outline" size="sm" className="mt-4 rounded-xl text-xs" onClick={() => setShowManualForm(true)}>
+              <Plus className="w-3.5 h-3.5 mr-1" /> Ajouter un colis manuel
+            </Button>
+          </motion.div>
         ) : (
           <div className="space-y-2">
             <AnimatePresence>
               {filtered.map((c, i) => {
                 const isManual = c.is_manual === true;
-                const flow = !isManual ? STATUS_FLOW[c.status as string] : null;
-                const si = STATUS_ICONS[c.status as string] || { icon: Package, color: "text-muted-foreground", bg: "bg-muted/50" };
-                const StatusIcon = si.icon;
+                const flow = !isManual ? STATUS_FLOW[c.status] : null;
+                const isPending = c.status === "pending";
                 const isArrived = c.status === "arrived";
+                const price = isManual ? (c as ManualParcel).amount_paid : (c as Colis).total_price;
+                const currency = c.currency || "XOF";
 
                 return (
-                  <motion.div key={c.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.025 }}>
-                    <Card
+                  <motion.div key={c.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ delay: i * 0.02 }}
+                  >
+                    <div
                       className={cn(
-                        "cursor-pointer active:scale-[0.99] transition-all",
-                        isManual ? "border-amber-500/30" : "",
-                        isArrived ? "border-green-500/40 bg-green-500/3" : "",
-                        c.status === "pending" ? "border-amber-500/40 bg-amber-500/3" : ""
+                        "bg-card rounded-xl border p-3 cursor-pointer active:scale-[0.99] transition-all",
+                        isPending && "border-amber-500/30 bg-amber-500/[0.02]",
+                        isArrived && "border-emerald-500/30 bg-emerald-500/[0.02]",
+                        isManual && "border-amber-400/20",
+                        !isPending && !isArrived && !isManual && "border-border/50"
                       )}
                       onClick={() => !isManual && navigate(`/gp/order/${c.id}`)}
                     >
-                      <CardContent className="p-3">
-                        <div className="flex items-center gap-3">
-                          {/* Icon */}
-                          <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0", isManual ? "bg-amber-500/10" : si.bg)}>
-                            <StatusIcon className={cn("w-4 h-4", isManual ? "text-amber-500" : si.color)} />
+                      {/* Main row */}
+                      <div className="flex items-start gap-3">
+                        {/* Route icon */}
+                        <div className={cn(
+                          "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5",
+                          isPending ? "bg-amber-500/10" : isArrived ? "bg-emerald-500/10" : "bg-primary/8"
+                        )}>
+                          {isPending ? <Clock className="w-4 h-4 text-amber-600" /> :
+                           isArrived ? <MapPin className="w-4 h-4 text-emerald-600" /> :
+                           <Package className="w-4 h-4 text-primary" />}
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="text-sm font-semibold truncate">{c.origin_city}</span>
+                              <ArrowRight className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                              <span className="text-sm font-semibold truncate">{c.destination_city}</span>
+                            </div>
+                            <span className="text-sm font-bold text-foreground whitespace-nowrap">
+                              {price?.toLocaleString()} <span className="text-[10px] text-muted-foreground font-normal">{currency}</span>
+                            </span>
                           </div>
 
-                          {/* Info */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <p className="text-sm font-semibold truncate">{c.origin_city} → {c.destination_city}</p>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <span className="text-[10px] text-muted-foreground font-mono">#{c.order_number.slice(-6)}</span>
+                            <span className="text-[10px] text-muted-foreground">•</span>
+                            <span className="text-[10px] text-muted-foreground">{c.weight} kg</span>
+                            {isManual && "client_name" in c && (
+                              <>
+                                <span className="text-[10px] text-muted-foreground">•</span>
+                                <span className="text-[10px] text-muted-foreground">{c.client_name}</span>
+                              </>
+                            )}
+                            <span className="text-[10px] text-muted-foreground">•</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {formatDistanceToNow(new Date(c.created_at), { locale: fr, addSuffix: true })}
+                            </span>
+                          </div>
+
+                          {/* Status + Action row */}
+                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/30">
+                            <div className="flex items-center gap-1.5">
                               {isManual && <ManualParcelBadge />}
-                            </div>
-                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                              <span className="text-[11px] text-muted-foreground font-mono">#{c.order_number.slice(-6)}</span>
-                              <span className="text-[11px] text-muted-foreground flex items-center gap-0.5">
-                                <Scale className="w-3 h-3" /> {c.weight} kg
-                              </span>
-                              {isManual && "client_name" in c && (
-                                <span className="text-[11px] text-muted-foreground">{c.client_name}</span>
-                              )}
-                              <span className="text-[11px] text-muted-foreground">
-                                {formatDistanceToNow(new Date(c.created_at), { locale: fr, addSuffix: true })}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex items-center gap-1.5 flex-shrink-0">
-                            {!isManual && flow ? (
-                              <div className="flex items-center gap-1.5">
-                                {c.status === "arrived" ? (
-                                  // Livraison — redirect to detail for delivery code
-                                  <Button size="sm"
-                                    className="h-7 text-[10px] px-2 bg-green-500 hover:bg-green-600 text-white font-bold gap-1"
-                                    onClick={(e) => { e.stopPropagation(); navigate(`/gp/order/${c.id}`); }}>
-                                    <ArrowRight className="w-3 h-3" /> Livrer
-                                  </Button>
-                                ) : c.status === "pending" ? (
-                                  // Accept / Refuse
-                                  <>
-                                    <Button size="sm" variant="outline"
-                                      className="h-7 text-[10px] px-2 border-destructive/40 text-destructive hover:bg-destructive/10"
-                                      onClick={(e) => handleQuickStatusUpdate(e, c.id, "refused" as any)}
-                                      disabled={updatingOrder === c.id}>
-                                      ✕
-                                    </Button>
-                                    <Button size="sm"
-                                      className="h-7 text-[10px] px-2 bg-green-500 hover:bg-green-600 text-white"
-                                      onClick={(e) => handleQuickStatusUpdate(e, c.id, "accepted")}
-                                      disabled={updatingOrder === c.id}>
-                                      {updatingOrder === c.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : "✓ Acc."}
-                                    </Button>
-                                  </>
-                                ) : (
-                                  // Default next action
-                                  <Button size="sm" variant="outline"
-                                    className="h-7 text-[10px] px-2 border-primary/30 text-primary hover:bg-primary/10 gap-1"
-                                    onClick={(e) => handleQuickStatusUpdate(e, c.id, flow.next)}
-                                    disabled={updatingOrder === c.id}>
-                                    {updatingOrder === c.id
-                                      ? <RefreshCw className="w-3 h-3 animate-spin" />
-                                      : <><ArrowRight className="w-3 h-3" />{flow.label}</>
-                                    }
-                                  </Button>
-                                )}
-                                {/* Scan icon */}
-                                <Button variant="ghost" size="icon" className="h-8 w-8 bg-primary/8 hover:bg-primary/15"
-                                  onClick={(e) => { e.stopPropagation(); setShowScanSheet(true); }}>
-                                  <ScanLine className="w-4 h-4 text-primary" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <Badge className={cn("text-[10px]", getOrderStatusColor(c.status as any))}>
+                              <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5", getOrderStatusColor(c.status as any))}>
                                 {getOrderStatusLabel(c.status as any)}
                               </Badge>
+                            </div>
+
+                            {!isManual && flow && (
+                              <div className="flex items-center gap-1.5">
+                                {isPending && (
+                                  <Button size="sm" variant="ghost"
+                                    className="h-7 text-[11px] px-2 text-destructive hover:bg-destructive/10"
+                                    onClick={(e) => handleQuickStatusUpdate(e, c.id, "refused" as any)}
+                                    disabled={updatingOrder === c.id}>
+                                    Refuser
+                                  </Button>
+                                )}
+                                <Button size="sm"
+                                  className={cn(
+                                    "h-7 text-[11px] px-3 gap-1 rounded-lg font-semibold",
+                                    isArrived ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-primary hover:bg-primary/90 text-primary-foreground"
+                                  )}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (isArrived) navigate(`/gp/order/${c.id}`);
+                                    else handleQuickStatusUpdate(e, c.id, flow.next);
+                                  }}
+                                  disabled={updatingOrder === c.id}>
+                                  {updatingOrder === c.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : (
+                                    <>{flow.label}<ArrowRight className="w-3 h-3" /></>
+                                  )}
+                                </Button>
+                              </div>
                             )}
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   </motion.div>
                 );
               })}
