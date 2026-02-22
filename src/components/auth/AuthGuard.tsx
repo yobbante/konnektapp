@@ -37,9 +37,44 @@ const AGENT_ROUTES = ["/agent"];
 
 const TRANSPORTER_ROUTES = [
   "/gp/dashboard",
+  "/gp/apercu",
+  "/gp/colis",
+  "/gp/demandes",
+  "/gp/en-cours",
+  "/gp/historique",
+  "/gp/calendrier",
+  "/gp/tarification",
+  "/gp/scan",
+  "/gp/messages",
+  "/gp/parametres",
+  "/gp/wallet",
+  "/gp/profil-public",
   "/gp/requests",
   "/gp/order",
+  "/gp/distribution",
+  "/gp/ktp-geotrack",
   "/transporter/profile",
+];
+
+// Routes EXCLUSIVEMENT client — un GP n'y a JAMAIS accès
+const CLIENT_ONLY_ROUTES = [
+  "/profil",
+  "/client",
+  "/favoris",
+  "/favorites",
+  "/saved-searches",
+  "/historique",
+  "/destinataires",
+  "/scan",
+  "/envoyer",
+  "/demande",
+  "/reservation",
+  "/booking",
+  "/order",
+  "/payer-supplement",
+  "/confirmer-reception",
+  "/assurance",
+  "/loyalty",
 ];
 
 const CLIENT_ROUTES = [
@@ -71,6 +106,14 @@ const isTransporterRoute = (pathname: string): boolean => {
 
 const isClientRoute = (pathname: string): boolean => {
   return CLIENT_ROUTES.some(route => pathname.startsWith(route));
+};
+
+const isClientOnlyRoute = (pathname: string): boolean => {
+  return CLIENT_ONLY_ROUTES.some(route => {
+    if (route === pathname) return true;
+    if (pathname.startsWith(route + "/")) return true;
+    return false;
+  });
 };
 
 export function AuthGuard({ children }: AuthGuardProps) {
@@ -111,6 +154,22 @@ export function AuthGuard({ children }: AuthGuardProps) {
         return;
       }
 
+      // Check if user is GP BEFORE public route early return
+      // GP users must be redirected even from public routes like "/"
+      const { data: gpProfileEarly } = await supabase
+        .from("gp_profiles")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      const isGPEarly = !!gpProfileEarly;
+
+      // ── GP on public client-facing routes → redirect to GP dashboard ──
+      if (isGPEarly && (pathname === "/" || pathname === "/offres" || isClientOnlyRoute(pathname))) {
+        navigate("/gp/apercu", { replace: true });
+        return;
+      }
+
       if (isPublicRoute(pathname)) return;
 
       // Check admin/moderator roles
@@ -132,14 +191,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
         return;
       }
 
-      // Check if user is GP
-      const { data: gpProfile } = await supabase
-        .from("gp_profiles")
-        .select("id")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      const isGP = !!gpProfile;
+      // Reuse GP profile from earlier check
+      const isGP = isGPEarly;
 
       // Enforce strict route access
       if (isAdminRoute(pathname) && !hasAdminAccess) {
@@ -166,6 +219,21 @@ export function AuthGuard({ children }: AuthGuardProps) {
         console.warn("Access denied: Transporter route requires GP profile");
         navigate("/client/dashboard", { replace: true });
         return;
+      }
+
+      // ── GP STRICT ISOLATION: GP users CANNOT access client-only routes ──
+      if (isGP && !hasAdminAccess) {
+        // Block access to client-only routes
+        if (isClientOnlyRoute(pathname) || isClientRoute(pathname)) {
+          console.warn("Access denied: GP users cannot access client routes");
+          navigate("/gp/apercu", { replace: true });
+          return;
+        }
+        // Also block "/" for authenticated GPs — redirect to GP dashboard
+        if (pathname === "/") {
+          navigate("/gp/apercu", { replace: true });
+          return;
+        }
       }
     } catch (error) {
       console.error("Role check error:", error);
