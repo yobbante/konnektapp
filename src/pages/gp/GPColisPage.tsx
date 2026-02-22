@@ -47,18 +47,14 @@ interface Colis {
 const STATUS_FILTERS = [
   { value: "all", label: "Tous" },
   { value: "pending", label: "⚡ En attente" },
-  { value: "accepted", label: "À collecter" },
-  { value: "collected", label: "Collecté" },
-  { value: "in_transit", label: "En transit" },
+  { value: "active", label: "🔄 En cours" },
   { value: "arrived", label: "🎯 Arrivé" },
   { value: "delivered", label: "✓ Livré" },
 ];
 
+// Only pending and arrived have GP actions, the rest is automated
 const STATUS_FLOW: Record<string, { next: string; label: string; urgent?: boolean }> = {
   pending: { next: "accepted", label: "Accepter", urgent: true },
-  accepted: { next: "collected", label: "Collecté ✓" },
-  collected: { next: "in_transit", label: "En transit" },
-  in_transit: { next: "arrived", label: "Arrivé" },
   arrived: { next: "delivered", label: "Livrer", urgent: true },
 };
 
@@ -140,8 +136,11 @@ export default function GPColisPage() {
     ...(sourceFilter !== "konnekt" ? manualParcels : []),
   ];
 
+  const ACTIVE_STATUSES = ["accepted", "collected", "in_transit", "checked_in", "scheduled_departure"];
+
   const filtered = allColis.filter(c => {
-    const matchesStatus = statusFilter === "all" || c.status === statusFilter;
+    const matchesStatus = statusFilter === "all" 
+      || (statusFilter === "active" ? ACTIVE_STATUSES.includes(c.status) : c.status === statusFilter);
     const q = searchQuery.toLowerCase();
     const matchesSearch = !q ||
       c.order_number.toLowerCase().includes(q) ||
@@ -210,7 +209,7 @@ export default function GPColisPage() {
         {/* Status Filter Pills */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
           {STATUS_FILTERS.map(f => {
-            const count = f.value === "all" ? allColis.length : allColis.filter(c => c.status === f.value).length;
+            const count = f.value === "all" ? allColis.length : f.value === "active" ? allColis.filter(c => ACTIVE_STATUSES.includes(c.status)).length : allColis.filter(c => c.status === f.value).length;
             const isUrgent = (f.value === "pending" || f.value === "arrived") && count > 0;
             return (
               <button key={f.value} onClick={() => setStatusFilter(f.value)}
