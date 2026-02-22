@@ -1,18 +1,19 @@
 /**
  * useGPGeolocation - Passive geolocation tracking for GP transporters
  * 
- * V2 Vision: Auto-detect country changes to trigger status updates:
- * - If GP leaves origin country → orders become "in_transit"
- * - If GP enters destination country → orders become "arrived"
+ * V3 — Aligned with State Machine V2:
+ * - After check-in (checked_in), system auto-detects departure → in_transit
+ * - When GP arrives at destination country → arrived_destination
+ * - GP only needs to scan at DEPOSIT and DELIVERY. Everything else is automatic.
  * 
- * Checks position every 60 minutes when tracking is active.
+ * Checks position every 30 minutes when tracking is active.
  * Uses reverse geocoding to detect country.
  */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-const CHECK_INTERVAL_MS = 60 * 60 * 1000; // 60 minutes
+const CHECK_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 const GEOCODING_API = "https://nominatim.openstreetmap.org/reverse";
 
 interface GeolocationState {
@@ -22,13 +23,6 @@ interface GeolocationState {
   lastCity: string | null;
   lastCheckAt: string | null;
   loading: boolean;
-}
-
-interface GeoPosition {
-  lat: number;
-  lng: number;
-  country: string;
-  city: string;
 }
 
 export function useGPGeolocation(gpId: string | null, userId: string | null) {
@@ -43,21 +37,16 @@ export function useGPGeolocation(gpId: string | null, userId: string | null) {
     loading: true,
   });
 
-  // Load consent state
   useEffect(() => {
     if (!gpId || !userId) return;
     loadConsent();
   }, [gpId, userId]);
 
-  // Start/stop interval based on tracking state
   useEffect(() => {
     if (state.trackingActive && state.consentGiven && gpId) {
-      // Initial check
       performGeoCheck();
-      // Set interval
       intervalRef.current = setInterval(performGeoCheck, CHECK_INTERVAL_MS);
     }
-
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -95,7 +84,6 @@ export function useGPGeolocation(gpId: string | null, userId: string | null) {
 
   const giveConsent = async () => {
     if (!gpId || !userId) return;
-
     try {
       const { error } = await supabase
         .from("gp_geolocation_consent")
@@ -108,14 +96,8 @@ export function useGPGeolocation(gpId: string | null, userId: string | null) {
         }, { onConflict: "gp_id" });
 
       if (error) throw error;
-
-      setState(s => ({
-        ...s,
-        consentGiven: true,
-        trackingActive: true,
-      }));
-
-      toast({ title: "✅ Géolocalisation activée", description: "Vos statuts seront mis à jour automatiquement" });
+      setState(s => ({ ...s, consentGiven: true, trackingActive: true }));
+      toast({ title: "✅ Géolocalisation activée", description: "Les statuts seront mis à jour automatiquement" });
     } catch (err) {
       console.error("Consent error:", err);
       toast({ title: "Erreur", variant: "destructive" });
@@ -124,17 +106,13 @@ export function useGPGeolocation(gpId: string | null, userId: string | null) {
 
   const toggleTracking = async (active: boolean) => {
     if (!gpId) return;
-
     try {
       await supabase
         .from("gp_geolocation_consent")
         .update({ tracking_active: active })
         .eq("gp_id", gpId);
-
       setState(s => ({ ...s, trackingActive: active }));
-      toast({ 
-        title: active ? "📍 Tracking activé" : "⏸️ Tracking en pause",
-      });
+      toast({ title: active ? "📍 Tracking activé" : "⏸️ Tracking en pause" });
     } catch (err) {
       console.error("Toggle error:", err);
     }
@@ -142,22 +120,12 @@ export function useGPGeolocation(gpId: string | null, userId: string | null) {
 
   const revokeConsent = async () => {
     if (!gpId) return;
-
     try {
       await supabase
         .from("gp_geolocation_consent")
-        .update({ 
-          consent_given: false, 
-          tracking_active: false,
-        })
+        .update({ consent_given: false, tracking_active: false })
         .eq("gp_id", gpId);
-
-      setState(s => ({
-        ...s,
-        consentGiven: false,
-        trackingActive: false,
-      }));
-
+      setState(s => ({ ...s, consentGiven: false, trackingActive: false }));
       toast({ title: "Géolocalisation désactivée" });
     } catch (err) {
       console.error("Revoke error:", err);
@@ -171,9 +139,9 @@ export function useGPGeolocation(gpId: string | null, userId: string | null) {
         return;
       }
       navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: false, // Low accuracy = less battery
+        enableHighAccuracy: false,
         timeout: 15000,
-        maximumAge: 300000, // 5 min cache OK
+        maximumAge: 300000,
       });
     });
   };
@@ -221,14 +189,22 @@ export function useGPGeolocation(gpId: string | null, userId: string | null) {
         lastCheckAt: new Date().toISOString(),
       }));
 
-      // Check if country changed and auto-update order statuses
+      // Auto-update order statuses based on V2 state machine
       await checkAndUpdateOrders(country, city, lat, lng);
-
     } catch (err) {
       console.error("Geo check error:", err);
     }
   }, [gpId, state.consentGiven]);
 
+  /**
+   * V3 — State Machine V2 aligned auto-transitions:
+   * 
+   * checked_in + GP left origin country → scheduled_departure → in_transit
+   * scheduled_departure + GP left origin → in_transit  
+   * in_transit + GP entered destination country → arrived_destination
+   * 
+   * GP only manually scans at: deposit (→ checked_in) and delivery (→ delivery_confirmed)
+   */
   const checkAndUpdateOrders = async (
     detectedCountry: string,
     detectedCity: string,
@@ -238,55 +214,94 @@ export function useGPGeolocation(gpId: string | null, userId: string | null) {
     if (!gpId) return;
 
     try {
-      // Get active orders for this GP
+      // Get active orders aligned with V2 state machine
       const { data: activeOrders } = await supabase
         .from("orders")
-        .select("id, status, origin_country, destination_country, order_number")
+        .select("id, status, origin_country, destination_country, order_number, client_id")
         .eq("gp_id", gpId)
-        .in("status", ["collected", "in_transit"]);
+        .in("status", [
+          "checked_in",           // After deposit scan → waiting for departure
+          "scheduled_departure",  // Departure scheduled → waiting for transit
+          "in_transit",           // In transit → waiting for arrival
+        ]);
 
       if (!activeOrders || activeOrders.length === 0) return;
 
+      const { data: { user } } = await supabase.auth.getUser();
+      const normalizedCountry = detectedCountry.toLowerCase().trim();
+
       const ordersToTransit: string[] = [];
       const ordersToArrived: string[] = [];
-      const normalizedCountry = detectedCountry.toLowerCase().trim();
 
       for (const order of activeOrders) {
         const originNorm = (order.origin_country || "").toLowerCase().trim();
         const destNorm = (order.destination_country || "").toLowerCase().trim();
 
-        // Rule 1: GP left origin country → "in_transit"
-        if (order.status === "collected" && normalizedCountry !== originNorm && originNorm) {
+        // Rule 1: checked_in/scheduled_departure + left origin → in_transit
+        if (
+          (order.status === "checked_in" || order.status === "scheduled_departure") &&
+          normalizedCountry !== originNorm &&
+          originNorm
+        ) {
           ordersToTransit.push(order.id);
         }
 
-        // Rule 2: GP entered destination country → "arrived" (keep in_transit → arrived)
-        if (order.status === "in_transit" && normalizedCountry === destNorm && destNorm) {
+        // Rule 2: in_transit + entered destination → arrived_destination
+        if (
+          order.status === "in_transit" &&
+          normalizedCountry === destNorm &&
+          destNorm
+        ) {
           ordersToArrived.push(order.id);
         }
       }
 
-      // Apply auto-status changes
-      const { data: { user } } = await supabase.auth.getUser();
+      // Execute auto-transitions
+      for (const orderId of ordersToTransit) {
+        // For checked_in, we need to go through scheduled_departure first if state machine requires
+        const order = activeOrders.find(o => o.id === orderId);
+        if (!order) continue;
 
-      if (ordersToTransit.length > 0) {
-        for (const orderId of ordersToTransit) {
+        if (order.status === "checked_in") {
+          // checked_in → scheduled_departure → in_transit (two steps)
+          await supabase.from("orders").update({ status: "scheduled_departure" }).eq("id", orderId);
+          // Small delay then transit
           await supabase.from("orders").update({ status: "in_transit" }).eq("id", orderId);
-          if (user) {
-            await supabase.from("order_status_history").insert({
-              order_id: orderId,
-              status: "in_transit",
-              changed_by: user.id,
-              changed_by_type: "system",
-              notes: `🌍 Auto-détection géolocalisation: GP a quitté le pays d'origine (${detectedCountry})`,
-            });
-          }
+        } else {
+          // scheduled_departure → in_transit
+          await supabase.from("orders").update({ status: "in_transit" }).eq("id", orderId);
+        }
+
+        if (user) {
+          await supabase.from("order_status_history").insert({
+            order_id: orderId,
+            status: "in_transit",
+            changed_by: user.id,
+            changed_by_type: "system",
+            notes: `🌍 Auto-GeoTrack: GP a quitté ${order?.origin_country} → Transit automatique (${detectedCountry})`,
+          });
+        }
+
+        // Notify client
+        if (order?.client_id) {
+          await supabase.from("notifications").insert({
+            user_id: order.client_id,
+            type: "order_status",
+            title: "🚚 Colis en transit !",
+            message: `Votre colis ${order.order_number} est en route vers sa destination.`,
+            related_type: "order",
+            related_id: orderId,
+          });
         }
       }
 
-      if (ordersToArrived.length > 0) {
-        for (const orderId of ordersToArrived) {
-          // Update logistics options to trigger admin delivery workflow
+      for (const orderId of ordersToArrived) {
+        const order = activeOrders.find(o => o.id === orderId);
+        if (!order) continue;
+
+        await supabase.from("orders").update({ status: "arrived_destination" }).eq("id", orderId);
+
+        try {
           await supabase
             .from("order_logistics_options")
             .update({
@@ -294,46 +309,36 @@ export function useGPGeolocation(gpId: string | null, userId: string | null) {
               gp_arrived_at: new Date().toISOString(),
             })
             .eq("order_id", orderId);
+        } catch { /* ignore if no logistics options */ }
 
-          // Log the arrival in order history
-          if (user) {
-            await supabase.from("order_status_history").insert({
-              order_id: orderId,
-              status: "in_transit" as any,
-              changed_by: user.id,
-              changed_by_type: "system",
-              notes: `🌍 GeoTrack™: GP arrivé au pays de destination (${detectedCountry}) — Mission dernier km créée`,
-            });
-          }
+        if (user) {
+          await supabase.from("order_status_history").insert({
+            order_id: orderId,
+            status: "arrived_destination",
+            changed_by: user.id,
+            changed_by_type: "system",
+            notes: `🌍 Auto-GeoTrack: GP arrivé au pays de destination (${detectedCountry}) — Mission dernier km créée`,
+          });
+        }
 
-          // Notify client
-          const order = activeOrders.find(o => o.id === orderId);
-          if (order) {
-            const { data: orderData } = await supabase
-              .from("orders")
-              .select("client_id")
-              .eq("id", orderId)
-              .single();
-            if (orderData) {
-              await supabase.from("notifications").insert({
-                user_id: orderData.client_id,
-                type: "order_status",
-                title: "🎉 Colis arrivé à destination !",
-                message: `Votre transporteur est arrivé au ${detectedCountry}. La livraison dernier km est en préparation. Commande ${order.order_number}`,
-                related_type: "order",
-                related_id: orderId,
-              });
-            }
-          }
+        if (order.client_id) {
+          await supabase.from("notifications").insert({
+            user_id: order.client_id,
+            type: "order_status",
+            title: "🎉 Colis arrivé à destination !",
+            message: `Votre transporteur est arrivé au ${detectedCountry}. Livraison en préparation. Commande ${order.order_number}`,
+            related_type: "order",
+            related_id: orderId,
+          });
         }
       }
 
       // Log the geo check
       const allAffected = [...ordersToTransit, ...ordersToArrived];
-      const actionTriggered = ordersToTransit.length > 0 
-        ? "status_in_transit" 
-        : ordersToArrived.length > 0 
-        ? "status_arrived" 
+      const actionTriggered = ordersToTransit.length > 0
+        ? "auto_transit"
+        : ordersToArrived.length > 0
+        ? "auto_arrived"
         : null;
 
       await supabase.from("gp_geolocation_logs").insert({
