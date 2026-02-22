@@ -513,9 +513,10 @@ export default function SmartBookingPage() {
     try {
       // Create order with insurance info
       const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}`;
-      // Calculate commission amount based on GP's rate
+      // Calculate commission amount based on GP's rate — minimum 1000 FCFA
       const totalForCommission = Math.round(displayGrandTotal);
-      const commissionAmount = Math.round(totalForCommission * gpCommissionRate / 100);
+      const rawCommission = Math.round(totalForCommission * gpCommissionRate / 100);
+      const commissionAmount = Math.max(rawCommission, 1000);
 
       const {
         data: orderData,

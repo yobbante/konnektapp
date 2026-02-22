@@ -246,7 +246,7 @@ Deno.serve(async (req) => {
 
       if (escrow) {
         const newEscrowAmount = escrow.amount + delta;
-        const newCommission = Math.ceil(newEscrowAmount * 0.05); // taux provisoire
+        const newCommission = Math.max(Math.ceil(newEscrowAmount * 0.05), 1000); // min 1000 FCFA
         const newNetGP = newEscrowAmount - newCommission;
 
         await supabase
@@ -328,7 +328,7 @@ Deno.serve(async (req) => {
 
       if (escrow) {
         const newEscrowAmount = Math.max(0, escrow.amount - credit);
-        const newCommission = Math.ceil(newEscrowAmount * 0.05);
+        const newCommission = Math.max(Math.ceil(newEscrowAmount * 0.05), 1000); // min 1000 FCFA
         const newNetGP = newEscrowAmount - newCommission;
 
         await supabase
