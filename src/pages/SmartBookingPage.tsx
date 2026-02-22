@@ -528,9 +528,9 @@ export default function SmartBookingPage() {
         origin_country: offer.origin_country,
         destination_city: offer.destination_city,
         destination_country: offer.destination_country,
-        price_per_kg: offer.price_per_kg,
-        weight: calculations.weight,
-        total_price: totalForCommission,
+        price_per_kg: Math.round(offer.price_per_kg),
+        weight: calculations.weight || 0,
+        total_price: Math.max(1, totalForCommission),
         currency: offer.currency,
         status: "pending" as const,
         logistics_status: "submitted",
@@ -623,10 +623,12 @@ export default function SmartBookingPage() {
 
       // Redirect to confirmation page instead of messages
       navigate(`/booking/confirmation/${orderData.id}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Booking error:", error);
+      const errorMessage = error?.message || error?.details || error?.hint || "Une erreur inattendue s'est produite";
       toast({
         title: "Erreur de réservation",
+        description: typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage),
         variant: "destructive"
       });
     } finally {
