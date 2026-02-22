@@ -337,7 +337,6 @@ async function execDepositConfirm(
   const hasWeightChange = Math.abs(actualWeight - order.weight) > 0.01;
 
   if (hasWeightChange) {
-    // Weight change detected → delegate to weight_modify
     return execWeightModify(supabase, order, userId, role, { actual_weight: actualWeight });
   }
 
@@ -347,24 +346,24 @@ async function execDepositConfirm(
     order_id: order.id, status: "checked_in", changed_by: userId, changed_by_type: role,
     notes: "Dépôt confirmé par scan — poids conforme — check-in effectué",
   });
+  // Notification client: colis ENREGISTRÉ (pas livré)
   await supabase.from("notifications").insert({
     user_id: order.client_id, type: "order_update",
-    title: "📦 Colis enregistré", message: `Votre colis ${order.order_number} a été enregistré par le transporteur. Départ automatique à l'heure prévue.`,
+    title: "📦 Colis enregistré au dépôt", message: `Votre colis ${order.order_number} a été déposé et enregistré par le transporteur. Le départ sera automatique à l'heure prévue.`,
     related_type: "order", related_id: order.id,
   });
 
   return {
     status: "executed", qr_type: "QR_COLIS", scenario: "deposit_confirmed",
-    next_action: "none", message: "✅ Dépôt confirmé. Colis enregistré (check-in).",
+    next_action: "none", message: "✅ Dépôt confirmé. Colis enregistré (check-in). Le client a été notifié.",
     data: { order: { ...order, status: "checked_in" } },
   };
-
 }
 
 async function execWeightModify(
   supabase: any, order: any, userId: string, role: string, actionData?: Record<string, any>
 ): Promise<ScanResponse> {
-  if (!["pending", "accepted"].includes(order.status)) {
+  if (!["pending", "accepted", "paid_held", "checked_in"].includes(order.status)) {
     return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_status", next_action: "none", message: "La modification de poids n'est possible qu'à l'étape de dépôt." };
   }
 
@@ -374,26 +373,56 @@ async function execWeightModify(
   }
 
   const weightDiff = actualWeight - order.weight;
-  const priceDiff = Math.round(weightDiff * order.price_per_kg);
+  const basePricePerKg = order.price_per_kg;
+  
+  // Calculate price difference using TMA logic
+  let oldPrice = order.total_price;
+  let newPrice: number;
+  
+  // TMA: for <1kg, tarif minimum = basePricePerKg * 1.5 (forfait fixe)
+  if (actualWeight > 0 && actualWeight <= 1) {
+    newPrice = Math.round(basePricePerKg * 1.5);
+  } else {
+    newPrice = Math.round(actualWeight * basePricePerKg);
+  }
+  
+  const priceDiff = newPrice - oldPrice;
 
-  // Update weight_tier_applied, don't change status (frozen for client validation)
-  await supabase.from("orders").update({ weight_tier_applied: actualWeight.toString() }).eq("id", order.id);
+  // Update order with new weight and set status to weight_pending_payment if supplement needed
+  const updateData: Record<string, any> = {
+    weight_tier_applied: actualWeight.toString(),
+  };
+  
+  if (priceDiff > 0) {
+    // Supplement required → block transit
+    updateData.status = "weight_pending_payment";
+    updateData.financial_status = "adjustment_required";
+  }
+  
+  await supabase.from("orders").update(updateData).eq("id", order.id);
+  
   await supabase.from("order_status_history").insert({
-    order_id: order.id, status: order.status, changed_by: userId, changed_by_type: role,
-    notes: `⚠️ POIDS MODIFIÉ — VALIDATION REQUISE: ${order.weight} kg → ${actualWeight} kg. Diff prix: ${priceDiff > 0 ? "+" : ""}${priceDiff} ${order.currency}`,
+    order_id: order.id, status: priceDiff > 0 ? "weight_pending_payment" : order.status, changed_by: userId, changed_by_type: role,
+    notes: `⚠️ POIDS MODIFIÉ: ${order.weight} kg → ${actualWeight} kg. Diff prix: ${priceDiff > 0 ? "+" : ""}${priceDiff} ${order.currency}`,
   });
+  
   await supabase.from("notifications").insert({
     user_id: order.client_id, type: "weight_validation_required",
-    title: "⚠️ Validation requise — Poids modifié",
-    message: `Poids modifié pour ${order.order_number}. Validez depuis votre espace.`,
+    title: priceDiff > 0 ? "⚠️ Supplément de poids requis" : "ℹ️ Poids modifié",
+    message: priceDiff > 0 
+      ? `Le poids de votre colis ${order.order_number} a été ajusté de ${order.weight}kg à ${actualWeight}kg. Un supplément de ${priceDiff.toLocaleString()} ${order.currency} est requis pour continuer.`
+      : `Le poids de votre colis ${order.order_number} a été ajusté de ${order.weight}kg à ${actualWeight}kg.`,
     related_type: "order", related_id: order.id,
   });
 
   return {
     status: "executed", qr_type: "QR_COLIS", scenario: "weight_modified",
-    next_action: "await_client_validation", message: "⚠️ Poids modifié — en attente validation client.",
-    data: { order, declared_weight: order.weight, actual_weight: actualWeight, price_diff: priceDiff },
-    financial_impact: { amount: Math.abs(priceDiff), currency: order.currency, type: "adjustment" },
+    next_action: priceDiff > 0 ? "await_client_payment" : "none", 
+    message: priceDiff > 0 
+      ? `⚠️ Poids modifié — supplément de ${priceDiff.toLocaleString()} ${order.currency} requis. Le client doit payer pour débloquer.`
+      : "✅ Poids modifié — aucun supplément requis.",
+    data: { order, declared_weight: order.weight, actual_weight: actualWeight, price_diff: priceDiff, new_total: newPrice },
+    financial_impact: priceDiff !== 0 ? { amount: Math.abs(priceDiff), currency: order.currency, type: "adjustment" } : null,
   };
 }
 

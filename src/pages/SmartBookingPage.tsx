@@ -339,13 +339,11 @@ export default function SmartBookingPage() {
         pricePerKg = tier.price_per_kg;
         appliedTier = tier;
       } else if (weight > 23) {
-        // 23kg+ packages: coefficient x0.80
-        pricePerKg = Math.round(basePricePerKg * 0.80);
+        pricePerKg = Math.round(basePricePerKg * 0.85);
         appliedTier = { min_weight: 23, max_weight: 999, price_per_kg: pricePerKg };
       }
     } else if (weight > 23 && basePricePerKg > 0) {
-      // Fallback: apply x0.80 coefficient for 23kg+
-      pricePerKg = Math.round(basePricePerKg * 0.80);
+      pricePerKg = Math.round(basePricePerKg * 0.85);
       appliedTier = { min_weight: 23, max_weight: 999, price_per_kg: pricePerKg };
     }
 
@@ -354,7 +352,10 @@ export default function SmartBookingPage() {
       ? getRegressiveInfo(weight, basePricePerKg)
       : null;
 
-    const kiloTotal = roundTo2Decimals(weight * pricePerKg);
+    // TMA: Pour <1kg, le tarif minimum applicable est basePricePerKg * 1.5 (forfait fixe, pas de multiplication par le poids)
+    const kiloTotal = (weight > 0 && weight <= 1 && basePricePerKg > 0)
+      ? Math.round(basePricePerKg * 1.5)
+      : roundTo2Decimals(weight * pricePerKg);
     const flatRateTotal = flatRateItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const flatRateCount = flatRateItems.reduce((sum, item) => sum + item.quantity, 0);
     const transportTotal = roundTo2Decimals(kiloTotal + flatRateTotal);
@@ -857,8 +858,17 @@ export default function SmartBookingPage() {
 
                   {calculations.hasKiloItems && kiloNatures.length > 0 && <div className="flex justify-between items-center pt-3 border-t text-sm">
                       <div>
-                        <span className="text-muted-foreground">{calculations.weight} kg × {offer.price_per_kg.toLocaleString()} {currencySymbol}</span>
-                        <p className="text-xs text-muted-foreground">{getKiloNatureLabels()}</p>
+                        {calculations.weight > 0 && calculations.weight <= 1 ? (
+                          <>
+                            <span className="text-muted-foreground">TMA (tarif min. applicable)</span>
+                            <p className="text-xs text-muted-foreground">{getKiloNatureLabels()} · {calculations.weight} kg → forfait ×1,5</p>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-muted-foreground">{calculations.weight} kg × {calculations.pricePerKg.toLocaleString()} {currencySymbol}</span>
+                            <p className="text-xs text-muted-foreground">{getKiloNatureLabels()}</p>
+                          </>
+                        )}
                       </div>
                       <DualCurrencyDisplay amount={calculations.kiloTotal} currency={currency} fcfaEquivalent={getFCFAEquivalent(calculations.kiloTotal)} size="md" variant="primary" />
                     </div>}
