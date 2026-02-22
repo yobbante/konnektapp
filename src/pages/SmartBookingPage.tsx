@@ -354,7 +354,7 @@ export default function SmartBookingPage() {
 
     // Use the pricing engine (single source of truth) — handles TMA floor automatically
     const kiloTotal = (weight > 0 && basePricePerKg > 0)
-      ? calculatePrice(weight, { basePricePerKg, forfaitValise23kg: offer?.price_per_kg ? Math.round(basePricePerKg * 23 * 0.85) : 0, currency })
+      ? calculatePrice(weight, { basePricePerKg, forfaitValise23kg: offer?.price_per_kg ? Math.round(basePricePerKg * 23 * 0.85) : 0, currency: '' })
       : 0;
     const flatRateTotal = flatRateItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const flatRateCount = flatRateItems.reduce((sum, item) => sum + item.quantity, 0);
