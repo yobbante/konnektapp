@@ -71,10 +71,10 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
   const [showDeliveryCode, setShowDeliveryCode] = useState(false);
   const [deliveryCodeInput, setDeliveryCodeInput] = useState("");
 
-  const isDepositMode = ["accepted", "pending"].includes(order.status);
-  const isTransitMode = order.status === "collected";
-  const isDeliveryMode = order.status === "in_transit";
-  const alreadyProcessed = ["delivered", "cancelled"].includes(order.status);
+  const isDepositMode = ["accepted", "pending", "paid_held", "collected"].includes(order.status);
+  const isTransitMode = false; // Transit is now automatic via geolocation
+  const isDeliveryMode = ["in_transit", "arrived_destination", "delivery_pending"].includes(order.status);
+  const alreadyProcessed = ["delivered", "cancelled", "released", "delivery_confirmed"].includes(order.status);
 
   useEffect(() => {
     const actual = parseFloat(actualWeight) || 0;

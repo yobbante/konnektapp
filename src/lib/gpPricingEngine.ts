@@ -75,8 +75,8 @@ export function calculatePrice(weight: number, config: GPPricingConfig): number 
     return config.forfaitValise23kg;
   }
 
-  // Sub-1kg: flat forfait = basePricePerKg × 1.50 (minimum charge)
-  if (weight > 0 && weight < 1) {
+  // Sub-1kg: TMA (Tarif Minimum Applicable) = basePricePerKg × 1.50 (forfait fixe, pas de multiplication par le poids)
+  if (weight > 0 && weight <= 1) {
     return Math.round(config.basePricePerKg * 1.50);
   }
 
