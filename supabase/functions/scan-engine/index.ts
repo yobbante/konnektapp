@@ -144,8 +144,8 @@ function detectQRType(scannedData: string): ParsedQR {
   const gpPrefixMatch = trimmed.match(/^GP:([a-f0-9-]{36})$/i);
   if (gpPrefixMatch) return { type: "QR_GP", reference_id: gpPrefixMatch[1], raw: trimmed };
 
-  // 3. CMD number
-  if (/^CMD-[\dA-Z-]+$/i.test(trimmed)) {
+  // 3. CMD or ORD number (support both prefixes)
+  if (/^(CMD|ORD)-[\dA-Za-z-]+$/i.test(trimmed)) {
     return { type: "QR_COLIS", raw: trimmed };
   }
   // 4. User URL
@@ -792,8 +792,10 @@ async function resolveColisScenario(supabase: any, parsed: ParsedQR, role: UserR
     "id, order_number, status, weight, total_price, currency, price_per_kg, origin_city, destination_city, origin_country, destination_country, description, client_id, gp_id, delivery_date, delivery_code, recipient_name, recipient_phone, recipient_user_id, financial_status"
   );
 
-  if (parsed.reference_id) {
+  if (parsed.reference_id && /^[a-f0-9-]{36}$/i.test(parsed.reference_id)) {
     orderQuery = orderQuery.eq("id", parsed.reference_id);
+  } else if (parsed.reference_id) {
+    orderQuery = orderQuery.eq("order_number", parsed.reference_id);
   } else {
     orderQuery = orderQuery.or(`order_number.eq.${parsed.raw},tracking_code.eq.${parsed.raw}`);
   }
