@@ -70,29 +70,34 @@ export function calculateTiers(config: GPPricingConfig): CalculatedTier[] {
  * Calculate total price for a given weight
  */
 export function calculatePrice(weight: number, config: GPPricingConfig): number {
+  const TMA = Math.round(config.basePricePerKg * 1.50);
+
   // Forfait valise 23kg exact
   if (weight === 23) {
     return config.forfaitValise23kg;
   }
 
-  // Sub-1kg: TMA (Tarif Minimum Applicable) = basePricePerKg × 1.50 (forfait fixe, pas de multiplication par le poids)
+  // Sub-1kg: TMA directement (forfait fixe, pas de multiplication par le poids)
   if (weight > 0 && weight <= 1) {
-    return Math.round(config.basePricePerKg * 1.50);
+    return TMA;
   }
+
+  let rawPrice: number;
 
   // 23kg+ packages: coefficient x0.85 (same as 15-23kg tier)
   if (weight > 23) {
-    const effectivePricePerKg = config.basePricePerKg * 0.85;
-    return Math.round(weight * effectivePricePerKg);
+    rawPrice = Math.round(weight * config.basePricePerKg * 0.85);
+  } else {
+    // Find the right tier (1kg+)
+    const tier = WEIGHT_TIER_COEFFICIENTS.find(
+      t => weight >= t.min && weight <= t.max
+    ) || WEIGHT_TIER_COEFFICIENTS[WEIGHT_TIER_COEFFICIENTS.length - 1];
+
+    rawPrice = Math.round(weight * config.basePricePerKg * tier.coefficient);
   }
 
-  // Find the right tier (1kg+)
-  const tier = WEIGHT_TIER_COEFFICIENTS.find(
-    t => weight >= t.min && weight <= t.max
-  ) || WEIGHT_TIER_COEFFICIENTS[WEIGHT_TIER_COEFFICIENTS.length - 1];
-
-  const effectivePricePerKg = config.basePricePerKg * tier.coefficient;
-  return Math.round(weight * effectivePricePerKg);
+  // TMA is the absolute floor — no parcel can cost less than the minimum tariff
+  return Math.max(rawPrice, TMA);
 }
 
 /**
