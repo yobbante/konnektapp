@@ -93,7 +93,7 @@ export function GPDropdownMenu({ onTabChange, activeTab, onCreateOffer }: GPDrop
         
         <DropdownMenuSeparator />
         
-        <DropdownMenuItem onClick={() => navigate("/transporter/profile")}>
+        <DropdownMenuItem onClick={() => navigate("/gp/parametres")}>
           <User className="w-4 h-4 mr-2" />
           Mon profil
         </DropdownMenuItem>

@@ -129,7 +129,7 @@ export function GPNotificationsPanel({ gpProfileId, onViewOrderDetail }: GPNotif
           break;
         case "gp":
         case "account_status":
-          navigate("/transporter/profile");
+          navigate("/gp/parametres");
           break;
         default:
           break;
