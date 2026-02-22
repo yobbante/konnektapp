@@ -300,7 +300,7 @@ export function ActiveOrderBar({ order, onRefresh }: ActiveOrderBarProps) {
                     <Button 
                       variant="default" 
                       className="flex-1"
-                      onClick={() => navigate(`/messages?client=${order.client_id}`)}
+                      onClick={() => navigate(`/gp/messages?client=${order.client_id}`)}
                     >
                       Contacter client
                     </Button>

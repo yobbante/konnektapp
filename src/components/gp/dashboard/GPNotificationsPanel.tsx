@@ -109,7 +109,7 @@ export function GPNotificationsPanel({ gpProfileId, onViewOrderDetail }: GPNotif
           break;
         case "message":
         case "conversation":
-          navigate("/messages");
+          navigate("/gp/messages");
           break;
         case "custom_request":
           navigate("/gp/demandes");
@@ -125,7 +125,7 @@ export function GPNotificationsPanel({ gpProfileId, onViewOrderDetail }: GPNotif
           // Stay in dashboard, show orders tab
           break;
         case "message":
-          navigate("/messages");
+          navigate("/gp/messages");
           break;
         case "gp":
         case "account_status":

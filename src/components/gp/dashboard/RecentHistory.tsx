@@ -145,7 +145,7 @@ export function RecentHistory({ orders, onViewAll, onRefresh }: RecentHistoryPro
   };
 
   const openContactClient = async (order: Order) => {
-    navigate(`/messages?client=${order.client_id}`);
+    navigate(`/gp/messages?client=${order.client_id}`);
   };
 
   if (recentOrders.length === 0) {
