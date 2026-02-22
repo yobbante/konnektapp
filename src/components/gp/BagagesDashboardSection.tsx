@@ -212,7 +212,7 @@ export function BagagesDashboardSection({
   };
 
   const handleContactClient = (clientId: string, orderId?: string) => {
-    navigate(`/messages?client=${clientId}${orderId ? `&order=${orderId}` : ""}`);
+    navigate(`/gp/messages?client=${clientId}${orderId ? `&order=${orderId}` : ""}`);
   };
 
   return (

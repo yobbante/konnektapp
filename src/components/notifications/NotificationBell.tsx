@@ -39,7 +39,7 @@ const typeIcons: Record<string, React.ElementType> = {
 
 export function NotificationBell() {
   const navigate = useNavigate();
-  const { hasAdminAccess } = useUserRole();
+  const { hasAdminAccess, isGP } = useUserRole();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
@@ -130,9 +130,11 @@ export function NotificationBell() {
           break;
         case "message":
         case "conversation":
-          // Admin goes to admin messages, others to regular messages
+          // Admin goes to admin messages, GP to GP messages, others to regular messages
           if (hasAdminAccess) {
             navigate(`/admin/messages?conversation=${notif.related_id}`);
+          } else if (isGP) {
+            navigate(`/gp/messages?conversation=${notif.related_id}`);
           } else {
             navigate("/messages");
           }
@@ -173,6 +175,8 @@ export function NotificationBell() {
           } else if (notif.type === "message") {
             if (hasAdminAccess) {
               navigate("/admin/messages");
+            } else if (isGP) {
+              navigate("/gp/messages");
             } else {
               navigate("/messages");
             }
@@ -192,6 +196,8 @@ export function NotificationBell() {
         case "message":
           if (hasAdminAccess) {
             navigate("/admin/messages");
+          } else if (isGP) {
+            navigate("/gp/messages");
           } else {
             navigate("/messages");
           }
