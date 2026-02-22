@@ -35,6 +35,7 @@ interface FloatingRecapProps {
     savingsPercent: number;
     tierLabel: string;
   } | null;
+  isTMA?: boolean;
 }
 
 export function FloatingRecap({
@@ -54,6 +55,7 @@ export function FloatingRecap({
   pricePerKg,
   flatRateItems,
   regressiveInfo,
+  isTMA,
 }: FloatingRecapProps) {
   const [expanded, setExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -140,8 +142,25 @@ export function FloatingRecap({
                   {/* Line items detail */}
                   {weight > 0 && (
                     <div className="flex justify-between items-center text-xs pt-3">
-                      <span className="text-muted-foreground">Colis au kilo ({weight}kg × {pricePerKg?.toLocaleString('fr-FR') ?? '—'} {currencySymbol})</span>
-                      <span className="text-sm">{(weight * (pricePerKg ?? 0)).toLocaleString('fr-FR')} {currencySymbol}</span>
+                      <span className="text-muted-foreground">
+                        {isTMA
+                          ? `Tarif minimum applicable (≤1kg)`
+                          : `Colis au kilo (${weight}kg × ${pricePerKg?.toLocaleString('fr-FR') ?? '—'} ${currencySymbol})`
+                        }
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {isTMA && (
+                          <span className="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full font-medium">
+                            forfait ×1,5
+                          </span>
+                        )}
+                        <span className="text-sm">
+                          {isTMA
+                            ? Math.round((pricePerKg ?? 0) * 1.5).toLocaleString('fr-FR')
+                            : (weight * (pricePerKg ?? 0)).toLocaleString('fr-FR')
+                          } {currencySymbol}
+                        </span>
+                      </div>
                     </div>
                   )}
                   {flatRateItems?.filter(i => i.quantity > 0).map(item => (
