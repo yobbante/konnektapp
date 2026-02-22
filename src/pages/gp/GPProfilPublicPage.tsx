@@ -199,7 +199,7 @@ export default function GPProfilPublicPage() {
             {/* Edit Button */}
             <Button
               className="w-full"
-              onClick={() => navigate("/transporter/profile")}
+              onClick={() => navigate("/gp/parametres")}
             >
               <Edit className="w-4 h-4 mr-2" />
               Modifier mon profil

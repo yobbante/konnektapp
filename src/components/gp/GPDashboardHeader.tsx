@@ -82,7 +82,7 @@ export function GPDashboardHeader({ gpProfile, onSignOut }: GPDashboardHeaderPro
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link to="/gp/settings" className="cursor-pointer">
+                    <Link to="/gp/parametres" className="cursor-pointer">
                       <Settings className="w-4 h-4 mr-2" />
                       Paramètres
                     </Link>
