@@ -1,7 +1,7 @@
 /**
  * CreateManualParcelDialog — Form for GP to register a manual (off-platform) parcel
  * 
- * Commission: 3% fixed, deducted from wallet or added to debt.
+ * Commission: 1000 FCFA fixed per parcel, deducted from wallet or added to debt.
  * No escrow, no insurance, no KTP bonus.
  * 
  * Route is locked to GP's existing scheduled departures (gp_offers).
@@ -77,7 +77,8 @@ export function CreateManualParcelDialog({
     [departures, selectedDepartureId]
   );
 
-  const commission = Math.round(parseFloat(amountPaid || "0") * 0.03);
+  const MANUAL_PARCEL_FEE = 1000; // Fixed fee in FCFA
+  const commission = MANUAL_PARCEL_FEE;
 
   // Fetch GP's upcoming departures
   useEffect(() => {
@@ -118,7 +119,7 @@ export function CreateManualParcelDialog({
     setLoading(true);
     try {
       const amount = parseFloat(amountPaid);
-      const commissionAmount = Math.round(amount * 0.03);
+      const commissionAmount = MANUAL_PARCEL_FEE;
 
       const { data: parcel, error: parcelError } = await supabase
         .from("manual_parcels")
@@ -151,7 +152,7 @@ export function CreateManualParcelDialog({
         amount_display: commissionAmount,
         currency_display: gpCurrency,
         status: "completed",
-        description: `Commission 3% colis manuel ${parcel.order_number}`,
+        description: `Frais fixe 1 000 FCFA colis manuel ${parcel.order_number}`,
         reference: parcel.id,
       });
 
@@ -200,7 +201,7 @@ export function CreateManualParcelDialog({
             Nouveau colis manuel
           </DialogTitle>
           <DialogDescription>
-            Enregistrez un colis pris hors plateforme. Commission 3% automatique.
+            Enregistrez un colis pris hors plateforme. Frais fixe : 1 000 FCFA par colis.
           </DialogDescription>
         </DialogHeader>
 
@@ -419,8 +420,8 @@ export function CreateManualParcelDialog({
                   animate={{ opacity: 1, y: 0 }}
                   className="flex items-center justify-between p-3 rounded-xl bg-muted/50 border"
                 >
-                  <span className="text-sm text-muted-foreground">Commission 3%</span>
-                  <span className="font-bold text-foreground">{commission.toLocaleString()} {gpCurrency}</span>
+                  <span className="text-sm text-muted-foreground">Frais Konnekt (fixe)</span>
+                  <span className="font-bold text-foreground">1 000 FCFA</span>
                 </motion.div>
               )}
             </div>
