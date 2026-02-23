@@ -11,6 +11,7 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import { GlobalNotificationProvider } from "@/components/notifications/GlobalNotificationProvider";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { RoleSwitchPopup } from "@/components/profile/RoleSwitchPopup";
+import { DeliveryCodePopup } from "@/components/notifications/DeliveryCodePopup";
 import { ThemeInitializer } from "@/components/ThemeInitializer";
 import { AppleNotificationContainer } from "@/components/ui/AppleNotification";
 import { SmartScrollTop } from "@/hooks/useSmartScrollTop";
@@ -111,6 +112,7 @@ const App = () => (
           <ScrollToTopButton />
           <AppleNotificationContainer />
           <RoleSwitchPopup />
+          <DeliveryCodePopup />
           <AuthGuard>
           <Routes>
             {/* ============================================
