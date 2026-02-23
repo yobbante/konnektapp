@@ -1,10 +1,9 @@
 /**
- * SettingsModule — Quick settings & support links
+ * SettingsModule — Quick settings & support links (refined)
  */
-import { Settings, HelpCircle, FileText, LogOut, ChevronRight, Edit2, Mail } from "lucide-react";
+import { Settings, HelpCircle, FileText, LogOut, ChevronRight, CreditCard, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { SwitchToTransporteurButton } from "@/components/profile/SwitchToTransporteurButton";
 
 interface SettingsModuleProps {
@@ -13,26 +12,24 @@ interface SettingsModuleProps {
 }
 
 export function SettingsModule({ onEditProfile, onSignOut }: SettingsModuleProps) {
+  const navigate = useNavigate();
+
   const links = [
-    { icon: Edit2, label: "Modifier mes informations", desc: "Nom, téléphone, adresse", onClick: onEditProfile },
-    { icon: Settings, label: "Paramètres", desc: "Notifications, sécurité", to: "/settings" },
-    { icon: HelpCircle, label: "Centre d'aide", desc: "FAQ, contact support", to: "/settings" },
-    { icon: FileText, label: "Documents légaux", desc: "CGU, politique de confidentialité", to: "/documents-legaux" },
+    { icon: Settings, label: "Paramètres", desc: "Notifications, sécurité, thème", to: "/settings" },
+    { icon: CreditCard, label: "Portefeuille", desc: "Solde et transactions", to: "/client/wallet" },
+    { icon: Heart, label: "Favoris", desc: "Transporteurs sauvegardés", to: "/favoris" },
+    { icon: HelpCircle, label: "Centre d'aide", desc: "FAQ, tutoriels", to: "/tutoriels" },
+    { icon: FileText, label: "Documents légaux", desc: "CGU, confidentialité", to: "/documents-legaux" },
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.25 }}
-      className="space-y-3"
-    >
+    <div className="space-y-3">
       <div className="bg-card rounded-2xl border border-border overflow-hidden">
         {links.map((link, i) => {
           const content = (
-            <div className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
+            <div className="flex items-center justify-between p-3.5 hover:bg-muted/50 transition-colors">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
                   <link.icon className="w-4 h-4 text-muted-foreground" />
                 </div>
                 <div>
@@ -49,7 +46,7 @@ export function SettingsModule({ onEditProfile, onSignOut }: SettingsModuleProps
               {link.to ? (
                 <Link to={link.to}>{content}</Link>
               ) : (
-                <button className="w-full text-left" onClick={link.onClick}>{content}</button>
+                <button className="w-full text-left">{content}</button>
               )}
               {i < links.length - 1 && <div className="h-px bg-border mx-4" />}
             </div>
@@ -67,6 +64,6 @@ export function SettingsModule({ onEditProfile, onSignOut }: SettingsModuleProps
         <LogOut className="w-4 h-4 mr-2" />
         Se déconnecter
       </Button>
-    </motion.div>
+    </div>
   );
 }
