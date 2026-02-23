@@ -39,10 +39,28 @@ export function GPKYCBadge({ status, kycLevel = 0, size = "md", showLabel = true
 }
 
 /** Helper to get the effective display status */
-export function getGPDisplayStatus(status: string, kycLevel: number): string {
+export function getGPDisplayStatus(
+  status: string, 
+  kycLevel: number,
+  documents?: {
+    id_document_url?: string | null;
+    selfie_url?: string | null;
+    business_registration_url?: string | null;
+    transport_license_url?: string | null;
+  }
+): string {
   if (status === "suspended" || status === "rejected") return status;
   if (kycLevel >= 2) return "premium";
-  if (status === "verified" || kycLevel >= 1) return "verified";
+  
+  // Verified requires: status=verified + all core docs uploaded
+  if (status === "verified") {
+    if (documents) {
+      const hasCoreDocs = !!(documents.id_document_url && documents.selfie_url);
+      if (!hasCoreDocs) return "pending"; // Docs missing → downgrade display
+    }
+    return "verified";
+  }
+  if (kycLevel >= 1) return "verified";
   if (status === "pending") return "pending";
   return "starter";
 }
