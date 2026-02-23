@@ -289,45 +289,57 @@ export function NotificationBell() {
           )}
         </div>
 
-        <div className="max-h-80 overflow-y-auto">
+        <div className="max-h-80 overflow-y-auto divide-y divide-border/50">
           {notifications.length === 0 ? (
             <div className="p-6 text-center">
               <Bell className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
               <p className="text-sm text-muted-foreground">Aucune notification</p>
             </div>
           ) : (
-            notifications.map((notif) => {
-              const Icon = typeIcons[notif.type] || Bell;
-              const isClickable = notif.related_id || ["order", "message", "gp"].includes(notif.type);
-              
-              return (
-                <button
-                  key={notif.id}
-                  onClick={() => handleNotificationClick(notif)}
-                  className={`w-full p-4 text-left border-b border-border last:border-0 transition-colors hover:bg-accent/50 ${
-                    notif.read_at ? "opacity-60" : "bg-primary/5"
-                  } ${isClickable ? "cursor-pointer" : ""}`}
-                >
-                  <div className="flex gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      notif.read_at ? "bg-muted" : "bg-primary/10"
-                    }`}>
-                      <Icon className={`w-4 h-4 ${notif.read_at ? "text-muted-foreground" : "text-primary"}`} />
+            <AnimatePresence initial={false}>
+              {notifications.map((notif, index) => {
+                const Icon = typeIcons[notif.type] || Bell;
+                const isClickable = notif.related_id || ["order", "message", "gp"].includes(notif.type);
+                
+                return (
+                  <motion.button
+                    key={notif.id}
+                    initial={{ opacity: 0, height: 0, y: -8 }}
+                    animate={{ opacity: 1, height: "auto", y: 0 }}
+                    exit={{ opacity: 0, height: 0, y: -8 }}
+                    transition={{ 
+                      duration: 0.35, 
+                      ease: [0.25, 0.46, 0.45, 0.94],
+                      delay: index * 0.03
+                    }}
+                    onClick={() => handleNotificationClick(notif)}
+                    className={`w-full px-4 py-3 text-left transition-colors hover:bg-accent/50 ${
+                      notif.read_at ? "opacity-60" : "bg-primary/5"
+                    } ${isClickable ? "cursor-pointer" : ""}`}
+                  >
+                    <div className="flex gap-3 items-start">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        notif.read_at ? "bg-muted" : "bg-primary/10"
+                      }`}>
+                        <Icon className={`w-4 h-4 ${notif.read_at ? "text-muted-foreground" : "text-primary"}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-medium truncate">{notif.title}</p>
+                          {!notif.read_at && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{notif.message}</p>
+                        <p className="text-[10px] text-muted-foreground/70 mt-1">
+                          {format(new Date(notif.created_at), "d MMM, HH:mm", { locale: fr })}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{notif.title}</p>
-                      <p className="text-xs text-muted-foreground line-clamp-2">{notif.message}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {format(new Date(notif.created_at), "d MMM, HH:mm", { locale: fr })}
-                      </p>
-                    </div>
-                    {!notif.read_at && (
-                      <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-2" />
-                    )}
-                  </div>
-                </button>
-              );
-            })
+                  </motion.button>
+                );
+              })}
+            </AnimatePresence>
           )}
         </div>
       </PopoverContent>

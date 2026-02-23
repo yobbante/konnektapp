@@ -90,9 +90,13 @@ export function EnhancedToast({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -50, scale: 0.9 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -30, scale: 0.9 }}
+      initial={{ opacity: 0, y: -20, scale: 0.95, filter: "blur(4px)" }}
+      animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+      exit={{ opacity: 0, y: -12, scale: 0.97, filter: "blur(2px)" }}
+      transition={{ 
+        duration: 0.4, 
+        ease: [0.25, 0.46, 0.45, 0.94],
+      }}
       className={`relative w-full max-w-sm overflow-hidden rounded-xl border backdrop-blur-xl shadow-2xl ${bgColorMap[type]} ${
         link || action ? "cursor-pointer hover:scale-[1.02] transition-transform" : ""
       }`}
@@ -182,7 +186,7 @@ export function EnhancedToastContainer() {
   }, []);
 
   return (
-    <div className="fixed top-4 right-4 left-4 md:left-auto md:w-96 z-[100] flex flex-col gap-2 pointer-events-none">
+    <div className="fixed top-4 right-4 left-4 md:left-auto md:w-96 z-[100] flex flex-col gap-3 pointer-events-none">
       <AnimatePresence>
         {toasts.map((toast) => (
           <div key={toast.id} className="pointer-events-auto">
