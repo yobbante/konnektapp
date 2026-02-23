@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Package, MessageCircle, MapPin, History, Bell, Heart, ArrowRight, Clock, ChevronDown, Phone, Navigation, User, ExternalLink, X, AlertTriangle, Truck, Calendar, FileText, Home as HomeIcon, Sparkles, Info, Eye, TruckIcon, QrCode } from "lucide-react";
+import { RecipientTrackingCard } from "@/components/client/RecipientTrackingCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -137,6 +138,9 @@ export function ClientAppHome({
           <WeightValidationAlert userId={userId} />
         </div>
       )}
+
+      {/* Recipient Tracking Card — parcels addressed to this user */}
+      {userId && <RecipientTrackingCard userId={userId} />}
 
       {/* Active Items List - Orders, Custom Requests, Moving Requests */}
       {allActiveItems.length > 0 && <motion.div initial={{

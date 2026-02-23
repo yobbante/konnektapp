@@ -261,6 +261,9 @@ export default function AdminOrderDetail() {
                 <div className="p-3 bg-success/5 rounded-lg text-center">
                   <p className="text-lg font-bold text-success">{order.commission_amount.toLocaleString()}</p>
                   <p className="text-xs text-muted-foreground">{order.currency} - Commission</p>
+                  <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+                    dont TVA 18%: {Math.round(order.commission_amount * 18 / 118).toLocaleString()} {order.currency}
+                  </p>
                 </div>
               </div>
               <Separator className="my-3" />

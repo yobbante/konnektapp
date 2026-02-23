@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, Shield, Truck, ChevronUp, ChevronDown, QrCode, MapPin, User, Star, Receipt } from "lucide-react";
+import { Package, Shield, Truck, ChevronUp, ChevronDown, QrCode, MapPin, User, Star, Receipt, FileText } from "lucide-react";
+import { extractTVA, TVA_RATE } from "@/lib/tvaUtils";
 import { useEffect, useRef, useState } from "react";
 import { DualCurrencyCompact } from "@/components/booking/DualCurrencyDisplay";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
@@ -45,6 +46,8 @@ interface FloatingRecapProps {
   } | null;
   isTMA?: boolean;
   gpInfo?: GPInfo | null;
+  commissionAmount?: number;
+  gpCommissionRate?: number;
 }
 
 export function FloatingRecap({
@@ -66,6 +69,8 @@ export function FloatingRecap({
   regressiveInfo,
   isTMA,
   gpInfo,
+  commissionAmount,
+  gpCommissionRate,
 }: FloatingRecapProps) {
   const [expanded, setExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -275,6 +280,17 @@ export function FloatingRecap({
                     <span className="flex items-center gap-1.5"><Receipt className="w-3 h-3" />Frais</span>
                     <span className="text-xs font-medium text-green-600 dark:text-green-400">0% jusqu'au 31/01/2027</span>
                   </div>
+
+                  {/* TVA info — extracted from platform commission */}
+                  {commissionAmount != null && commissionAmount > 0 && (
+                    <div className="flex justify-between items-center text-[11px] text-muted-foreground/70">
+                      <span className="flex items-center gap-1.5">
+                        <FileText className="w-2.5 h-2.5" />
+                        dont TVA {TVA_RATE}% (incluse)
+                      </span>
+                      <span>{extractTVA(commissionAmount).tva.toLocaleString('fr-FR')} {currencySymbol}</span>
+                    </div>
+                  )}
 
                   {/* Total line */}
                   <div className="flex justify-between items-center pt-2 border-t font-medium">
