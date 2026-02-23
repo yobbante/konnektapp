@@ -352,12 +352,12 @@ function ActionWeightPending({ orderId, payload, executing, execute, darkMode }:
   );
 }
 
-function ActionDelivery({ orderId, payload, executing, execute, darkMode }: {
+function ActionDelivery({ orderId, payload, executing, execute, darkMode, deliveryCodeSent }: {
   orderId: string; payload: ScannerGPPayload;
   executing: boolean; execute: (action: string, data?: Record<string, any>) => Promise<void>;
-  darkMode?: boolean;
+  darkMode?: boolean; deliveryCodeSent?: boolean;
 }) {
-  const [phase, setPhase] = useState<"init" | "code">("init");
+  const [phase, setPhase] = useState<"init" | "code">(deliveryCodeSent ? "code" : "init");
   const [code, setCode] = useState("");
   const textSub = darkMode ? "text-white/50" : "text-muted-foreground";
   const cardBg = darkMode ? "bg-white/[0.04] border-white/[0.07]" : "bg-card border-border/50";
@@ -603,6 +603,7 @@ export function ScannerGPView({ engineResponse, onActionComplete, darkMode = tru
               executing={executing}
               execute={execute}
               darkMode={darkMode}
+              deliveryCodeSent={engineResponse.data?.delivery_code_sent}
             />
           )}
 
