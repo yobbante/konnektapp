@@ -696,27 +696,41 @@ function FullScreenOrderDetails({
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Navigation className="w-4 h-4 text-primary" />
+                  /* Adresse de dépôt visible uniquement entre accepté et avant checked_in */
+                  !isCollected ? (
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Navigation className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide">Adresse de dépôt</p>
+                        <p className="font-medium text-sm text-foreground">
+                          {order.gp_deposit_address || "Adresse disponible après acceptation"}
+                        </p>
+                      </div>
+                      {order.gp_deposit_address && (
+                        <DepositAddressPopup
+                          depositAddress={order.gp_deposit_address}
+                          phone={order.gp_whatsapp}
+                          whatsapp={order.gp_whatsapp}
+                          gpName="Transporteur"
+                          isActive={order.status === "accepted"}
+                        />
+                      )}
                     </div>
-                    <div className="flex-1">
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Adresse de dépôt</p>
-                      <p className="font-medium text-sm text-foreground">
-                        {order.gp_deposit_address || "Adresse disponible après acceptation"}
-                      </p>
+                  ) : (
+                    <div className="flex items-start gap-3 bg-muted/30 p-3 rounded-xl">
+                      <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                        <Package className="w-4 h-4 text-green-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-green-600 uppercase tracking-wide font-medium">Colis déposé ✓</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Votre colis est entre les mains du transporteur
+                        </p>
+                      </div>
                     </div>
-                    {/* PRV §9: Deposit Address Popup with interactive icons */}
-                    {order.gp_deposit_address && (
-                      <DepositAddressPopup
-                        depositAddress={order.gp_deposit_address}
-                        phone={order.gp_whatsapp}
-                        whatsapp={order.gp_whatsapp}
-                        gpName="Transporteur"
-                        isActive={order.status === "accepted"}
-                      />
-                    )}
-                  </div>
+                  )
                 )}
 
                 {/* WhatsApp */}
@@ -863,35 +877,35 @@ function FullScreenOrderDetails({
 }
 function getStatusInfoFull(status: string) {
   switch (status) {
-    case 'in_transit':
-      return {
-        label: 'En transit',
-        color: 'bg-blue-500/20 text-blue-600',
-        icon: Truck
-      };
-    case 'collected':
-      return {
-        label: 'Collecté',
-        color: 'bg-amber-500/20 text-amber-600',
-        icon: Package
-      };
+    case 'pending':
+      return { label: 'En attente', color: 'bg-amber-500/20 text-amber-600', icon: Clock };
     case 'accepted':
-      return {
-        label: 'Accepté',
-        color: 'bg-green-500/20 text-green-600',
-        icon: User
-      };
+      return { label: 'Accepté', color: 'bg-green-500/20 text-green-600', icon: User };
+    case 'paid_held':
+      return { label: 'Paiement reçu', color: 'bg-emerald-500/20 text-emerald-600', icon: Package };
+    case 'checked_in':
+      return { label: 'Déposé', color: 'bg-indigo-500/20 text-indigo-600', icon: Package };
+    case 'weight_pending_payment':
+      return { label: 'Supplément requis', color: 'bg-orange-500/20 text-orange-600', icon: AlertTriangle };
+    case 'collected':
+      return { label: 'Collecté', color: 'bg-blue-500/20 text-blue-600', icon: Package };
+    case 'scheduled_departure':
+      return { label: 'Départ programmé', color: 'bg-violet-500/20 text-violet-600', icon: Calendar };
+    case 'in_transit':
+      return { label: 'En transit', color: 'bg-blue-500/20 text-blue-600', icon: Truck };
+    case 'arrived_destination':
+      return { label: 'Arrivé', color: 'bg-teal-500/20 text-teal-600', icon: MapPin };
+    case 'delivery_pending':
+      return { label: 'Livraison en cours', color: 'bg-cyan-500/20 text-cyan-600', icon: Truck };
+    case 'delivery_confirmed':
+      return { label: 'Livraison confirmée', color: 'bg-green-500/20 text-green-600', icon: Package };
     case 'delivered':
-      return {
-        label: 'Livré',
-        color: 'bg-green-500/20 text-green-700',
-        icon: Package
-      };
+      return { label: 'Livré', color: 'bg-green-500/20 text-green-700', icon: Package };
+    case 'released':
+      return { label: 'Finalisé', color: 'bg-green-600/20 text-green-700', icon: Sparkles };
+    case 'cancelled':
+      return { label: 'Annulé', color: 'bg-destructive/20 text-destructive', icon: X };
     default:
-      return {
-        label: 'En attente',
-        color: 'bg-primary/20 text-primary',
-        icon: Clock
-      };
+      return { label: status, color: 'bg-muted text-muted-foreground', icon: Clock };
   }
 }
