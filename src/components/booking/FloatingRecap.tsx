@@ -120,6 +120,25 @@ export function FloatingRecap({
       >
       <div className="max-w-lg mx-auto px-4">
         <div ref={containerRef} className="bg-card/95 backdrop-blur-md border border-border rounded-2xl shadow-lg overflow-hidden">
+          {/* GP Route Info - always visible at top */}
+          {gpInfo && (
+            <div className="flex items-center gap-2.5 px-3 pt-2.5 pb-1">
+              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <User className="w-3 h-3 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0 flex items-center gap-2">
+                <span className="text-xs font-medium truncate">{gpInfo.name}</span>
+                <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                  <Star className="w-2.5 h-2.5 text-warning fill-warning" />
+                  {gpInfo.rating || 0}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 text-[10px] text-muted-foreground shrink-0">
+                <MapPin className="w-2.5 h-2.5 text-primary" />
+                <span>{gpInfo.originCity} → {gpInfo.destinationCity}</span>
+              </div>
+            </div>
+          )}
           {/* Collapsed header - always visible */}
           <button
             onClick={() => setExpanded(!expanded)}
@@ -163,27 +182,6 @@ export function FloatingRecap({
                 className="overflow-hidden"
               >
                 <div className="px-4 pb-4 pt-0 space-y-2 border-t">
-                  {/* GP Route Info */}
-                  {gpInfo && (
-                    <div className="flex items-center gap-3 pt-3 pb-2">
-                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                        <User className="w-3.5 h-3.5 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-semibold truncate">{gpInfo.name}</span>
-                          <Star className="w-3 h-3 text-warning fill-warning shrink-0" />
-                          <span className="text-[10px] text-muted-foreground">{gpInfo.rating || 0}</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                          <MapPin className="w-2.5 h-2.5 text-primary" />
-                          <span>{gpInfo.originCity}</span>
-                          <span>→</span>
-                          <span>{gpInfo.destinationCity}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                   {weight > 0 && (
                     <div className="flex justify-between items-center text-xs pt-3">
                       <span className="text-muted-foreground">
