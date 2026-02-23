@@ -29,6 +29,8 @@ interface LabelData {
   orderId: string;
   clientName: string;
   gpName: string;
+  recipientName?: string;
+  recipientPhone?: string;
   originCity: string;
   destinationCity: string;
   originCountry: string;
@@ -105,7 +107,7 @@ export function LogisticsLabelGenerator({ order, onDownloaded, required = false 
       // ============ ORDER INFO BOX ============
       doc.setDrawColor(200, 200, 200);
       doc.setFillColor(248, 248, 248);
-      doc.roundedRect(margin, y, pageWidth - margin * 2, 45, 3, 3, "FD");
+      doc.roundedRect(margin, y, pageWidth - margin * 2, order.recipientName ? 60 : 45, 3, 3, "FD");
 
       doc.setTextColor(100, 100, 100);
       doc.setFontSize(7);
@@ -145,6 +147,21 @@ export function LogisticsLabelGenerator({ order, onDownloaded, required = false 
       doc.setFont("helvetica", "bold");
       infoY += 5;
       doc.text(order.gpName || "—", infoX, infoY);
+
+      // Recipient
+      if (order.recipientName) {
+        infoY += 7;
+        doc.setTextColor(100, 100, 100);
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "normal");
+        doc.text("DESTINATAIRE", infoX, infoY);
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        infoY += 5;
+        const recipientText = order.recipientName + (order.recipientPhone ? ` (${order.recipientPhone})` : "");
+        doc.text(recipientText, infoX, infoY);
+      }
 
       // Right column info
       const rightX = pageWidth / 2 + 5;
@@ -193,7 +210,7 @@ export function LogisticsLabelGenerator({ order, onDownloaded, required = false 
         doc.text(new Date(order.pickupDate).toLocaleDateString("fr-FR"), rightX, rightY);
       }
 
-      y += 50;
+      y += order.recipientName ? 65 : 50;
 
       // ============ QR CODE ============
       // Generate QR as image

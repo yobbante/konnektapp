@@ -409,10 +409,12 @@ export default function SmartBookingPage() {
   // Validation - Updated for 5 steps
   const canProceed = (currentStep: number): boolean => {
     if (currentStep === 1) {
-      // Must have items AND if kilo items, must have nature selected
+      // Must have items AND if kilo items, must have nature selected AND recipient filled
       if (!calculations.hasAnyItems) return false;
       if (calculations.hasKiloItems && kiloNatures.length === 0) return false;
       if (kiloNatures.includes("autres") && !autresNature.trim()) return false;
+      // Recipient is mandatory
+      if (!recipientData.name.trim() || recipientData.phone.trim().length < 8) return false;
       return true;
     }
     if (currentStep === 2) {
@@ -445,6 +447,8 @@ export default function SmartBookingPage() {
           toast({ title: "Nature requise", description: "Sélectionnez le type de contenu de vos colis au kilo", variant: "destructive" });
         } else if (kiloNatures.includes("autres") && !autresNature.trim()) {
           toast({ title: "Précision requise", description: "Veuillez préciser la nature de vos articles", variant: "destructive" });
+        } else if (!recipientData.name.trim() || recipientData.phone.trim().length < 8) {
+          toast({ title: "Destinataire requis", description: "Ajoutez le nom et téléphone du destinataire", variant: "destructive" });
         }
       } else if (step === 2) {
         toast({ title: "Conditions requises", description: "Vous devez accepter les conditions de Konnekt Logistique", variant: "destructive" });
@@ -978,6 +982,15 @@ export default function SmartBookingPage() {
                     <AlertTriangle className="w-4 h-4 text-destructive" />
                     <p className="text-sm text-destructive">Au moins une des deux sections doit être remplie</p>
                   </div>}
+
+                {/* Recipient Field — Mandatory */}
+                <RecipientField
+                  recipientName={recipientData.name}
+                  recipientPhone={recipientData.phone}
+                  recipientUserId={recipientData.userId}
+                  onRecipientChange={setRecipientData}
+                  required
+                />
               </motion.div>}
 
             {/* STEP 2: Logistique */}
@@ -1196,17 +1209,8 @@ export default function SmartBookingPage() {
           </AnimatePresence>}
       </div>
 
-      {/* Recipient Field - integrated in step 1 area */}
-      {!showEscrow && step === 1 && (
-        <div className="px-4 pb-2">
-          <RecipientField
-            recipientName={recipientData.name}
-            recipientPhone={recipientData.phone}
-            recipientUserId={recipientData.userId}
-            onRecipientChange={setRecipientData}
-          />
-        </div>
-      )}
+
+
 
       {/* Floating Recap - Always visible except step 4 */}
       {!showEscrow && <FloatingRecap weight={calculations.weight} flatRateCount={calculations.flatRateCount} transportTotal={calculations.transportTotal} insuranceTotal={displayInsuranceAmount} logisticsTotal={displayLogisticsAmount} grandTotal={displayGrandTotal} currency={currency} getFCFAEquivalent={getFCFAEquivalent} hasInsurance={insuranceChoice.hasInsurance} hasLogistics={calculations.hasLogistics} currentStep={step} pricePerKg={offer?.price_per_kg} flatRateItems={flatRateItems.filter(i => i.quantity > 0)} isTMA={calculations.weight > 0 && calculations.basePricePerKg > 0 && calculations.kiloTotal === Math.round(calculations.basePricePerKg * 1.5)} />}

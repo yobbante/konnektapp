@@ -1,15 +1,20 @@
 /**
- * RecipientField — Enhanced with saved recipients selector
- * Used in SmartBookingPage to link a recipient user
+ * RecipientField — MANDATORY recipient selector with Konnekt ID lookup & upsell
+ * Used in SmartBookingPage step 1 to link a recipient user
  */
 import { useState, useEffect } from "react";
-import { User, Search, CheckCircle, X, Users, ChevronDown, Star } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  User, Search, CheckCircle, X, Users, Star, 
+  Phone, Hash, Sparkles, ArrowRight, Eye, Package, TrendingUp
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 
 interface RecipientFieldProps {
@@ -21,6 +26,7 @@ interface RecipientFieldProps {
     phone: string;
     userId: string | null;
   }) => void;
+  required?: boolean;
 }
 
 interface SavedRecipient {
@@ -31,21 +37,34 @@ interface SavedRecipient {
   is_favorite: boolean;
 }
 
+type SearchMode = "phone" | "konnekt_id";
+
 export function RecipientField({
   recipientName,
   recipientPhone,
   recipientUserId,
   onRecipientChange,
+  required = true,
 }: RecipientFieldProps) {
   const [searching, setSearching] = useState(false);
-  const [searchResult, setSearchResult] = useState<{ id: string; name: string } | null>(null);
-  const [expanded, setExpanded] = useState(false);
+  const [searchResult, setSearchResult] = useState<{ id: string; name: string; totalOrders?: number } | null>(null);
   const [savedRecipients, setSavedRecipients] = useState<SavedRecipient[]>([]);
   const [showSaved, setShowSaved] = useState(false);
+  const [searchMode, setSearchMode] = useState<SearchMode>("phone");
+  const [konnektIdInput, setKonnektIdInput] = useState("");
+  const [showUpsell, setShowUpsell] = useState(false);
+  const [searchNotFound, setSearchNotFound] = useState(false);
 
   useEffect(() => {
     loadSavedRecipients();
   }, []);
+
+  // Auto-show upsell when recipient is set
+  useEffect(() => {
+    if (recipientName && recipientPhone) {
+      setShowUpsell(true);
+    }
+  }, [recipientName, recipientPhone]);
 
   const loadSavedRecipients = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -60,9 +79,10 @@ export function RecipientField({
     setSavedRecipients(data || []);
   };
 
-  const searchKonnektUser = async (phone: string) => {
+  const searchByPhone = async (phone: string) => {
     if (phone.length < 8) return;
     setSearching(true);
+    setSearchNotFound(false);
     try {
       const { data } = await supabase
         .from("profiles")
@@ -71,15 +91,59 @@ export function RecipientField({
         .maybeSingle();
 
       if (data) {
-        setSearchResult({ id: data.user_id, name: data.full_name || "Utilisateur Konnekt" });
+        // Get order count for upsell
+        const { count } = await supabase
+          .from("orders")
+          .select("id", { count: "exact", head: true })
+          .eq("client_id", data.user_id);
+          
+        setSearchResult({ id: data.user_id, name: data.full_name || "Utilisateur Konnekt", totalOrders: count || 0 });
         onRecipientChange({
           name: data.full_name || recipientName,
           phone,
           userId: data.user_id,
         });
+        setSearchNotFound(false);
       } else {
         setSearchResult(null);
+        setSearchNotFound(true);
         onRecipientChange({ name: recipientName, phone, userId: null });
+      }
+    } catch {
+      setSearchResult(null);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const searchByKonnektId = async (idInput: string) => {
+    if (idInput.length < 3) return;
+    setSearching(true);
+    setSearchNotFound(false);
+    try {
+      // Search by email (Konnekt ID = email) or user_id prefix
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, phone")
+        .or(`email.eq.${idInput.trim()},user_id.eq.${idInput.trim()}`)
+        .maybeSingle();
+
+      if (data) {
+        const { count } = await supabase
+          .from("orders")
+          .select("id", { count: "exact", head: true })
+          .eq("client_id", data.user_id);
+
+        setSearchResult({ id: data.user_id, name: data.full_name || "Utilisateur Konnekt", totalOrders: count || 0 });
+        onRecipientChange({
+          name: data.full_name || recipientName,
+          phone: data.phone || recipientPhone,
+          userId: data.user_id,
+        });
+        setSearchNotFound(false);
+      } else {
+        setSearchResult(null);
+        setSearchNotFound(true);
       }
     } catch {
       setSearchResult(null);
@@ -97,106 +161,240 @@ export function RecipientField({
     if (r.recipient_user_id) {
       setSearchResult({ id: r.recipient_user_id, name: r.full_name });
     }
-    setExpanded(true);
     setShowSaved(false);
+    setShowUpsell(true);
   };
 
   const clearRecipient = () => {
     onRecipientChange({ name: "", phone: "", userId: null });
     setSearchResult(null);
-    setExpanded(false);
+    setShowUpsell(false);
+    setSearchNotFound(false);
+    setKonnektIdInput("");
   };
 
-  if (!expanded) {
-    return (
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => setExpanded(true)}
-          className="flex-1 flex items-center gap-3 p-3 rounded-xl border border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-all"
-        >
-          <User className="w-4 h-4" />
-          <span className="text-sm">Ajouter un destinataire</span>
-        </button>
-        {savedRecipients.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setShowSaved(true)}
-            className="flex items-center gap-2 px-3 rounded-xl border border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-all"
-          >
-            <Users className="w-4 h-4" />
-            <span className="text-sm">{savedRecipients.length}</span>
-          </button>
-        )}
-      </div>
-    );
-  }
+  const isValid = recipientName.trim().length > 0 && recipientPhone.trim().length >= 8;
 
   return (
     <>
-      <Card className="border-primary/20">
-        <CardContent className="p-4 space-y-3">
+      <Card className={`border-2 transition-colors ${
+        isValid 
+          ? "border-green-500/30 bg-green-50/30 dark:bg-green-900/10" 
+          : required 
+            ? "border-amber-400/50 bg-amber-50/30 dark:bg-amber-900/10" 
+            : "border-border"
+      }`}>
+        <CardContent className="p-4 space-y-4">
+          {/* Header */}
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium flex items-center gap-2">
+            <Label className="text-sm font-semibold flex items-center gap-2">
               <User className="w-4 h-4 text-primary" />
               Destinataire
+              {required && <span className="text-destructive">*</span>}
             </Label>
             <div className="flex items-center gap-1">
               {savedRecipients.length > 0 && (
                 <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setShowSaved(true)}>
-                  <Users className="w-3.5 h-3.5" /> Carnet
+                  <Users className="w-3.5 h-3.5" /> Carnet ({savedRecipients.length})
                 </Button>
               )}
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={clearRecipient}>
-                <X className="w-3.5 h-3.5" />
-              </Button>
+              {isValid && (
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={clearRecipient}>
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+              )}
             </div>
           </div>
 
-          <Input
-            placeholder="Nom du destinataire"
-            value={recipientName}
-            onChange={(e) => onRecipientChange({ name: e.target.value, phone: recipientPhone, userId: recipientUserId })}
-            className="h-10 rounded-xl text-sm"
-          />
+          {/* Search Tabs */}
+          <Tabs value={searchMode} onValueChange={(v) => setSearchMode(v as SearchMode)} className="w-full">
+            <TabsList className="w-full grid grid-cols-2 h-9">
+              <TabsTrigger value="phone" className="text-xs gap-1.5">
+                <Phone className="w-3.5 h-3.5" /> Par téléphone
+              </TabsTrigger>
+              <TabsTrigger value="konnekt_id" className="text-xs gap-1.5">
+                <Hash className="w-3.5 h-3.5" /> ID Konnekt
+              </TabsTrigger>
+            </TabsList>
 
-          <div className="relative">
-            <Input
-              type="tel"
-              placeholder="Téléphone du destinataire"
-              value={recipientPhone}
-              onChange={(e) => {
-                onRecipientChange({ name: recipientName, phone: e.target.value, userId: null });
-                setSearchResult(null);
-              }}
-              onBlur={(e) => searchKonnektUser(e.target.value)}
-              className="h-10 rounded-xl text-sm pr-10"
-            />
-            {searching && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <TabsContent value="phone" className="mt-3 space-y-3">
+              <Input
+                placeholder="Nom du destinataire *"
+                value={recipientName}
+                onChange={(e) => onRecipientChange({ name: e.target.value, phone: recipientPhone, userId: recipientUserId })}
+                className="h-10 rounded-xl text-sm"
+              />
+              <div className="relative">
+                <Input
+                  type="tel"
+                  placeholder="Téléphone du destinataire *"
+                  value={recipientPhone}
+                  onChange={(e) => {
+                    onRecipientChange({ name: recipientName, phone: e.target.value, userId: null });
+                    setSearchResult(null);
+                    setSearchNotFound(false);
+                  }}
+                  onBlur={(e) => searchByPhone(e.target.value)}
+                  className="h-10 rounded-xl text-sm pr-10"
+                />
+                {searching && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
               </div>
+            </TabsContent>
+
+            <TabsContent value="konnekt_id" className="mt-3 space-y-3">
+              <div className="relative">
+                <Input
+                  placeholder="Email ou ID Konnekt du destinataire"
+                  value={konnektIdInput}
+                  onChange={(e) => {
+                    setKonnektIdInput(e.target.value);
+                    setSearchNotFound(false);
+                  }}
+                  className="h-10 rounded-xl text-sm pr-20"
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 text-xs gap-1"
+                  onClick={() => searchByKonnektId(konnektIdInput)}
+                  disabled={konnektIdInput.length < 3 || searching}
+                >
+                  {searching ? (
+                    <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Search className="w-3.5 h-3.5" /> Chercher
+                    </>
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                💡 Si votre destinataire a un compte Konnekt, il pourra suivre le colis en temps réel
+              </p>
+            </TabsContent>
+          </Tabs>
+
+          {/* Konnekt User Found */}
+          <AnimatePresence>
+            {searchResult && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, height: 0 }}
+                animate={{ opacity: 1, y: 0, height: "auto" }}
+                exit={{ opacity: 0, y: -8, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                  <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-800/40 flex items-center justify-center">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-green-800 dark:text-green-300">{searchResult.name}</p>
+                    <p className="text-xs text-green-600 dark:text-green-400">Utilisateur Konnekt — suivi automatique activé</p>
+                  </div>
+                  <Badge className="bg-primary/20 text-primary text-[10px] shrink-0">Konnekt ✓</Badge>
+                </div>
+              </motion.div>
             )}
-          </div>
+          </AnimatePresence>
 
-          {searchResult && (
-            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-              <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-green-800 dark:text-green-300">{searchResult.name}</p>
-                <p className="text-xs text-green-600 dark:text-green-400">Utilisateur Konnekt — suivi automatique</p>
-              </div>
-              <Badge className="bg-primary/20 text-primary text-[10px]">Konnekt</Badge>
-            </div>
+          {/* Not found + manual entry hint */}
+          {searchNotFound && !searchResult && (
+            <motion.div
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-3 rounded-xl bg-muted/50 border border-border"
+            >
+              <p className="text-xs text-muted-foreground">
+                📱 Aucun compte Konnekt trouvé. {searchMode === "konnekt_id" ? "Remplissez manuellement via l'onglet Téléphone." : "Le destinataire recevra un lien de confirmation à la remise."}
+              </p>
+            </motion.div>
           )}
 
-          {recipientPhone.length >= 8 && !searching && !searchResult && (
-            <p className="text-xs text-muted-foreground">
-              📱 Le destinataire recevra un lien de confirmation à la remise
+          {/* Validation indicator */}
+          {required && !isValid && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+              Nom et téléphone du destinataire obligatoires
             </p>
           )}
         </CardContent>
       </Card>
+
+      {/* ═══ UPSELL SECTION ═══ */}
+      <AnimatePresence>
+        {showUpsell && isValid && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, y: 10, height: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          >
+            {recipientUserId && searchResult ? (
+              /* ── Recipient HAS Konnekt account ── */
+              <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 overflow-hidden">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-semibold">Suivi activé pour {searchResult.name}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="text-center p-2 rounded-lg bg-background/60">
+                      <Eye className="w-4 h-4 text-primary mx-auto mb-1" />
+                      <p className="text-[10px] text-muted-foreground">Suivi en direct</p>
+                    </div>
+                    <div className="text-center p-2 rounded-lg bg-background/60">
+                      <Package className="w-4 h-4 text-primary mx-auto mb-1" />
+                      <p className="text-[10px] text-muted-foreground">Notifications</p>
+                    </div>
+                    <div className="text-center p-2 rounded-lg bg-background/60">
+                      <TrendingUp className="w-4 h-4 text-primary mx-auto mb-1" />
+                      <p className="text-[10px] text-muted-foreground">Historique</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Votre destinataire verra l'évolution du colis dans son espace Konnekt et recevra des notifications à chaque étape.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              /* ── Recipient does NOT have Konnekt account ── */
+              <Card className="border-accent/20 bg-gradient-to-br from-accent/5 to-accent/10 overflow-hidden">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-accent-foreground" />
+                    <span className="text-sm font-semibold">Votre destinataire n'est pas sur Konnekt</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    En créant un compte, <strong>{recipientName}</strong> pourra suivre le colis en temps réel, 
+                    recevoir des notifications de livraison et accéder à tout l'historique de ses réceptions.
+                  </p>
+                  <div className="flex items-center gap-2 p-2.5 rounded-lg bg-background/60 border border-border/50">
+                    <div className="flex -space-x-1">
+                      <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                        <Eye className="w-3 h-3 text-primary" />
+                      </div>
+                      <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                        <Package className="w-3 h-3 text-primary" />
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground flex-1">
+                      Suivi • Notifications • Historique
+                    </p>
+                    <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground text-center">
+                    Un lien d'inscription sera envoyé par SMS à la livraison
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Saved Recipients Sheet */}
       <Sheet open={showSaved} onOpenChange={setShowSaved}>
@@ -227,6 +425,11 @@ export function RecipientField({
                 </div>
               </button>
             ))}
+            {savedRecipients.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-6">
+                Aucun destinataire enregistré
+              </p>
+            )}
           </div>
         </SheetContent>
       </Sheet>
