@@ -34,6 +34,10 @@ interface OrderDetails {
   created_at: string;
   gp_id: string;
   offer_id: string | null;
+  recipient_name: string | null;
+  recipient_phone: string | null;
+  recipient_user_id: string | null;
+  client_id: string;
 }
 
 interface OfferDetails {
@@ -55,6 +59,8 @@ export default function BookingConfirmation() {
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [offer, setOffer] = useState<OfferDetails | null>(null);
   const [pdfGatePassed, setPdfGatePassed] = useState(false);
+  const [clientName, setClientName] = useState<string>("Client");
+  const [gpName, setGpName] = useState<string>("Transporteur");
 
   const {
     publicInfo,
@@ -86,6 +92,23 @@ export default function BookingConfirmation() {
         return;
       }
       setOrder(orderData);
+
+      // Fetch client name
+      const { data: clientProfile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (clientProfile?.full_name) setClientName(clientProfile.full_name);
+
+      // Fetch GP name
+      const { data: gpProfile } = await supabase
+        .from("gp_profiles")
+        .select("business_name")
+        .eq("id", orderData.gp_id)
+        .maybeSingle();
+      if (gpProfile?.business_name) setGpName(gpProfile.business_name);
+
       if (orderData.offer_id) {
         const { data: offerData } = await supabase
           .from("gp_offers")
@@ -137,8 +160,10 @@ export default function BookingConfirmation() {
         order={{
           orderNumber: order.order_number,
           orderId: order.id,
-          clientName: publicInfo?.business_name || "Client",
-          gpName: publicInfo?.business_name || "Transporteur",
+          clientName: clientName,
+          gpName: gpName,
+          recipientName: order.recipient_name || undefined,
+          recipientPhone: order.recipient_phone || undefined,
           originCity: order.origin_city,
           destinationCity: order.destination_city,
           originCountry: order.origin_country,
@@ -490,8 +515,10 @@ export default function BookingConfirmation() {
             order={{
               orderNumber: order.order_number,
               orderId: order.id,
-              clientName: publicInfo?.business_name || "Client",
-              gpName: publicInfo?.business_name || "Transporteur",
+              clientName: clientName,
+              gpName: gpName,
+              recipientName: order.recipient_name || undefined,
+              recipientPhone: order.recipient_phone || undefined,
               originCity: order.origin_city,
               destinationCity: order.destination_city,
               originCountry: order.origin_country,
