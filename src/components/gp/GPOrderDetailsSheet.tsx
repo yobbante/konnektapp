@@ -384,6 +384,10 @@ export function GPOrderDetailsSheet({
                   </span>
                   <span>-{order.commission_amount.toLocaleString()} {order.currency}</span>
                 </div>
+                <div className="flex justify-between text-[10px] text-muted-foreground/70 pl-4">
+                  <span>dont TVA 18% (incluse)</span>
+                  <span>{Math.round(order.commission_amount * 18 / 118).toLocaleString()} {order.currency}</span>
+                </div>
                 <div className="border-t pt-2 flex justify-between text-lg">
                   <span className="font-bold flex items-center gap-1">
                     <Wallet className="w-4 h-4" />

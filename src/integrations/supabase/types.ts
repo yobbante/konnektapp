@@ -3654,6 +3654,67 @@ export type Database = {
           },
         ]
       }
+      tva_records: {
+        Row: {
+          commission_amount_fcfa: number
+          commission_ht_display: number
+          commission_ht_fcfa: number
+          created_at: string
+          currency_display: string
+          id: string
+          order_id: string
+          tva_amount_display: number
+          tva_amount_fcfa: number
+          tva_rate: number
+        }
+        Insert: {
+          commission_amount_fcfa?: number
+          commission_ht_display?: number
+          commission_ht_fcfa?: number
+          created_at?: string
+          currency_display?: string
+          id?: string
+          order_id: string
+          tva_amount_display?: number
+          tva_amount_fcfa?: number
+          tva_rate?: number
+        }
+        Update: {
+          commission_amount_fcfa?: number
+          commission_ht_display?: number
+          commission_ht_fcfa?: number
+          created_at?: string
+          currency_display?: string
+          id?: string
+          order_id?: string
+          tva_amount_display?: number
+          tva_amount_fcfa?: number
+          tva_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tva_records_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "tva_records_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "mvp_coherence_dashboard"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "tva_records_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       typing_indicators: {
         Row: {
           conversation_id: string

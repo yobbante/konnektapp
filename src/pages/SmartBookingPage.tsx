@@ -521,9 +521,16 @@ export default function SmartBookingPage() {
       // Create order with insurance info
       const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}`;
       // Calculate commission amount based on GP's rate — minimum 1000 FCFA
+      // IMPORTANT: 1000 FCFA minimum must be converted to GP currency first
       const totalForCommission = Math.round(displayGrandTotal);
       const rawCommission = Math.round(totalForCommission * gpCommissionRate / 100);
-      const commissionAmount = Math.max(rawCommission, 1000);
+      const minCommissionInGPCurrency = isFCFA ? 1000 : Math.round(fromFCFA(1000) * 100) / 100;
+      const commissionAmount = Math.max(rawCommission, minCommissionInGPCurrency);
+      
+      // TVA calculation: TVA is INCLUDED in commission (18/118 extraction)
+      const tvaRate = 18;
+      const tvaAmountFCFA = Math.round(getFCFAEquivalent(commissionAmount) * tvaRate / (100 + tvaRate));
+      const commissionHTFCFA = Math.round(getFCFAEquivalent(commissionAmount)) - tvaAmountFCFA;
 
       const {
         data: orderData,
@@ -609,6 +616,18 @@ export default function SmartBookingPage() {
           // Don't fail the whole booking for this
         }
       }
+
+      // Insert TVA record
+      await supabase.from("tva_records").insert({
+        order_id: orderData.id,
+        commission_amount_fcfa: Math.round(getFCFAEquivalent(commissionAmount)),
+        tva_amount_fcfa: tvaAmountFCFA,
+        tva_rate: tvaRate,
+        commission_ht_fcfa: commissionHTFCFA,
+        currency_display: offer.currency,
+        tva_amount_display: isFCFA ? tvaAmountFCFA : Math.round(fromFCFA(tvaAmountFCFA) * 100) / 100,
+        commission_ht_display: isFCFA ? commissionHTFCFA : Math.round(fromFCFA(commissionHTFCFA) * 100) / 100,
+      }).then(({ error }) => { if (error) console.error("TVA insert error:", error); });
 
       // For bagages_international, show escrow payment after order creation
       if (gpProfile.gp_type === "bagages_international") {
@@ -1184,6 +1203,19 @@ export default function SmartBookingPage() {
                       </div>}
                   </div>
 
+                  {/* TVA info line */}
+                  <div className="flex justify-between items-center text-[11px] text-muted-foreground/70">
+                    <span>dont TVA 18% (incluse dans frais)</span>
+                    <span>
+                      {(() => {
+                        const raw = Math.round(displayGrandTotal * gpCommissionRate / 100);
+                        const min = isFCFA ? 1000 : Math.round(fromFCFA(1000) * 100) / 100;
+                        const comm = Math.max(raw, min);
+                        return Math.round(comm * 18 / 118).toLocaleString('fr-FR');
+                      })()} {currencySymbol}
+                    </span>
+                  </div>
+
                   {/* Total with dual currency */}
                   <div className="flex justify-between items-center pt-2 border-t">
                     <p className="font-semibold">Total à payer</p>
@@ -1207,7 +1239,7 @@ export default function SmartBookingPage() {
 
 
       {/* Floating Recap - Always visible except step 4 */}
-      {!showEscrow && <FloatingRecap weight={calculations.weight} flatRateCount={calculations.flatRateCount} transportTotal={calculations.transportTotal} insuranceTotal={displayInsuranceAmount} logisticsTotal={displayLogisticsAmount} grandTotal={displayGrandTotal} currency={currency} getFCFAEquivalent={getFCFAEquivalent} hasInsurance={insuranceChoice.hasInsurance} hasLogistics={calculations.hasLogistics} currentStep={step} pricePerKg={offer?.price_per_kg} flatRateItems={flatRateItems.filter(i => i.quantity > 0)} isTMA={calculations.weight > 0 && calculations.basePricePerKg > 0 && calculations.kiloTotal === Math.round(calculations.basePricePerKg * 1.5)} gpInfo={gpProfile && offer ? { name: gpProfile.business_name, rating: gpProfile.rating || 0, originCity: offer.origin_city, destinationCity: offer.destination_city, isVerified: !!gpProfile.verified_at } : null} />}
+      {!showEscrow && <FloatingRecap weight={calculations.weight} flatRateCount={calculations.flatRateCount} transportTotal={calculations.transportTotal} insuranceTotal={displayInsuranceAmount} logisticsTotal={displayLogisticsAmount} grandTotal={displayGrandTotal} currency={currency} getFCFAEquivalent={getFCFAEquivalent} hasInsurance={insuranceChoice.hasInsurance} hasLogistics={calculations.hasLogistics} currentStep={step} pricePerKg={offer?.price_per_kg} flatRateItems={flatRateItems.filter(i => i.quantity > 0)} isTMA={calculations.weight > 0 && calculations.basePricePerKg > 0 && calculations.kiloTotal === Math.round(calculations.basePricePerKg * 1.5)} gpInfo={gpProfile && offer ? { name: gpProfile.business_name, rating: gpProfile.rating || 0, originCity: offer.origin_city, destinationCity: offer.destination_city, isVerified: !!gpProfile.verified_at } : null} commissionAmount={(() => { const raw = Math.round(displayGrandTotal * gpCommissionRate / 100); const min = isFCFA ? 1000 : Math.round(fromFCFA(1000) * 100) / 100; return Math.max(raw, min); })()} gpCommissionRate={gpCommissionRate} />}
 
       {/* Bottom Navigation */}
       {!showEscrow && <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 z-50" style={{
