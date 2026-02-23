@@ -539,9 +539,9 @@ function FullScreenOrderDetails({
   const StatusIcon = statusInfo.icon;
 
   // Determine what info is released based on status
-  const isAccepted = ['accepted', 'collected', 'in_transit', 'delivered'].includes(order.status);
-  const isCollected = ['collected', 'in_transit', 'delivered'].includes(order.status);
-  const isDelivered = order.status === 'delivered';
+  const isAccepted = ['accepted', 'paid_held', 'checked_in', 'collected', 'weight_pending_payment', 'scheduled_departure', 'in_transit', 'arrived_destination', 'delivery_pending', 'delivery_confirmed', 'delivered', 'released'].includes(order.status);
+  const isCollected = ['checked_in', 'collected', 'weight_pending_payment', 'scheduled_departure', 'in_transit', 'arrived_destination', 'delivery_pending', 'delivery_confirmed', 'delivered', 'released'].includes(order.status);
+  const isDelivered = ['delivered', 'released'].includes(order.status);
   const hasInternalLogistics = order.has_internal_logistics || false;
   const hasPickup = order.logistics_options?.pickup_enabled || false;
   const hasDelivery = order.logistics_options?.delivery_enabled || false;
