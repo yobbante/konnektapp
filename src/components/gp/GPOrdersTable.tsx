@@ -52,9 +52,17 @@ interface GPOrdersTableProps {
 const statusConfig: Record<OrderStatus, { label: string; variant: "success" | "pending" | "secondary" | "destructive" | "available"; icon: any }> = {
   pending: { label: ORDER_STATUS_LABELS.pending, variant: "pending", icon: Package },
   accepted: { label: ORDER_STATUS_LABELS.accepted, variant: "available", icon: CheckCircle },
+  paid_held: { label: ORDER_STATUS_LABELS.paid_held, variant: "available", icon: CheckCircle },
+  checked_in: { label: ORDER_STATUS_LABELS.checked_in, variant: "secondary", icon: Package },
+  weight_pending_payment: { label: ORDER_STATUS_LABELS.weight_pending_payment, variant: "pending", icon: Package },
+  scheduled_departure: { label: ORDER_STATUS_LABELS.scheduled_departure, variant: "secondary", icon: Truck },
   collected: { label: ORDER_STATUS_LABELS.collected, variant: "secondary", icon: Package },
   in_transit: { label: ORDER_STATUS_LABELS.in_transit, variant: "secondary", icon: Truck },
+  arrived_destination: { label: ORDER_STATUS_LABELS.arrived_destination, variant: "available", icon: CheckCircle },
+  delivery_pending: { label: ORDER_STATUS_LABELS.delivery_pending, variant: "pending", icon: Package },
+  delivery_confirmed: { label: ORDER_STATUS_LABELS.delivery_confirmed, variant: "success", icon: CheckCircle },
   delivered: { label: ORDER_STATUS_LABELS.delivered, variant: "success", icon: CheckCircle },
+  released: { label: ORDER_STATUS_LABELS.released, variant: "success", icon: CheckCircle },
   cancelled: { label: ORDER_STATUS_LABELS.cancelled, variant: "destructive", icon: XCircle },
   disputed: { label: ORDER_STATUS_LABELS.disputed, variant: "destructive", icon: XCircle },
 };

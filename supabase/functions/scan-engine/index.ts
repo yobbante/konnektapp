@@ -429,8 +429,9 @@ async function execWeightModify(
 async function execMarkTransit(
   supabase: any, order: any, userId: string, role: string
 ): Promise<ScanResponse> {
-  if (order.status !== "collected") {
-    return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_status", next_action: "none", message: "Le colis doit être « Collecté » pour passer en transit." };
+  // Accept both checked_in and collected (legacy) for transit transition
+  if (!["checked_in", "collected", "scheduled_departure"].includes(order.status)) {
+    return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_status", next_action: "none", message: "Le colis doit être « Déposé/Collecté » pour passer en transit." };
   }
 
   await supabase.from("orders").update({ status: "in_transit" }).eq("id", order.id);

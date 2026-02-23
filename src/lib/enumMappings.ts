@@ -13,7 +13,9 @@
  * 5. NO FALLBACKS - invalid values must throw errors, not be silently converted
  * 
  * VALID PostgreSQL ENUM VALUES (from SELECT unnest(enum_range(NULL::order_status))):
- * - order_status: pending, accepted, collected, in_transit, delivered, cancelled, disputed
+ * - order_status: pending, accepted, collected, in_transit, delivered, cancelled, disputed,
+ *                 paid_held, checked_in, weight_pending_payment, scheduled_departure,
+ *                 arrived_destination, delivery_pending, delivery_confirmed, released
  * - gp_status: pending, verified, suspended, rejected
  * - offer_status: active, paused, expired, completed
  * - gp_type: express, routier, maritime, aerien, voyageur, agence
@@ -26,13 +28,21 @@
  * - app_role: admin, moderator, user
  */
 
-// ============= ORDER STATUS =============
+// ============= ORDER STATUS (V2 State Machine — 15 states) =============
 export const ORDER_STATUS = {
   pending: "pending",
   accepted: "accepted",
+  paid_held: "paid_held",
+  checked_in: "checked_in",
+  weight_pending_payment: "weight_pending_payment",
+  scheduled_departure: "scheduled_departure",
   collected: "collected",
   in_transit: "in_transit",
+  arrived_destination: "arrived_destination",
+  delivery_pending: "delivery_pending",
+  delivery_confirmed: "delivery_confirmed",
   delivered: "delivered",
+  released: "released",
   cancelled: "cancelled",
   disputed: "disputed",
 } as const;
@@ -43,9 +53,17 @@ export type OrderStatus = keyof typeof ORDER_STATUS;
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   pending: "En attente",
   accepted: "Acceptée",
+  paid_held: "Paiement reçu",
+  checked_in: "Déposé / Collecté",
+  weight_pending_payment: "Supplément requis",
+  scheduled_departure: "Départ programmé",
   collected: "Collectée",
   in_transit: "En transit",
+  arrived_destination: "Arrivé à destination",
+  delivery_pending: "Livraison en attente",
+  delivery_confirmed: "Livraison confirmée",
   delivered: "Livrée",
+  released: "Fonds libérés",
   cancelled: "Annulée",
   disputed: "En litige",
 };
@@ -53,18 +71,31 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
   pending: "warning",
   accepted: "default",
+  paid_held: "secondary",
+  checked_in: "secondary",
+  weight_pending_payment: "warning",
+  scheduled_departure: "secondary",
   collected: "secondary",
   in_transit: "secondary",
+  arrived_destination: "default",
+  delivery_pending: "warning",
+  delivery_confirmed: "success",
   delivered: "success",
+  released: "success",
   cancelled: "destructive",
   disputed: "destructive",
 };
 
 export const ORDER_STATUS_WORKFLOW: Partial<Record<OrderStatus, { nextStatus: OrderStatus; nextLabel: string }>> = {
   pending: { nextStatus: "accepted", nextLabel: "Accepter" },
-  accepted: { nextStatus: "collected", nextLabel: "Marquer collecté" },
-  collected: { nextStatus: "in_transit", nextLabel: "En livraison" },
-  in_transit: { nextStatus: "delivered", nextLabel: "Marquer livré" },
+  accepted: { nextStatus: "checked_in", nextLabel: "Confirmer dépôt" },
+  paid_held: { nextStatus: "checked_in", nextLabel: "Confirmer dépôt" },
+  checked_in: { nextStatus: "in_transit", nextLabel: "En transit (auto)" },
+  collected: { nextStatus: "checked_in", nextLabel: "Confirmer dépôt" },
+  in_transit: { nextStatus: "arrived_destination", nextLabel: "Arrivé (auto)" },
+  arrived_destination: { nextStatus: "delivery_pending", nextLabel: "Préparer livraison" },
+  delivery_pending: { nextStatus: "delivery_confirmed", nextLabel: "Confirmer livraison" },
+  delivery_confirmed: { nextStatus: "released", nextLabel: "Libérer fonds (auto)" },
 };
 
 // ============= GP STATUS =============
@@ -386,15 +417,28 @@ const FRENCH_TO_ENGLISH_ORDER_STATUS: Record<string, OrderStatus> = {
   "acceptée": "accepted",
   "Acceptée": "accepted",
   "ACCEPTÉE": "accepted",
-  "collectée": "collected",
-  "Collectée": "collected",
-  "COLLECTÉE": "collected",
+  "paiement reçu": "paid_held",
+  "Paiement reçu": "paid_held",
+  "déposé": "checked_in",
+  "Déposé": "checked_in",
+  "collectée": "checked_in",
+  "Collectée": "checked_in",
+  "COLLECTÉE": "checked_in",
+  "supplément requis": "weight_pending_payment",
+  "départ programmé": "scheduled_departure",
   "en transit": "in_transit",
   "En transit": "in_transit",
   "EN TRANSIT": "in_transit",
+  "arrivé": "arrived_destination",
+  "Arrivé": "arrived_destination",
+  "arrivé à destination": "arrived_destination",
+  "livraison en attente": "delivery_pending",
+  "livraison confirmée": "delivery_confirmed",
+  "Livraison confirmée": "delivery_confirmed",
   "livrée": "delivered",
   "Livrée": "delivered",
   "LIVRÉE": "delivered",
+  "fonds libérés": "released",
   "annulée": "cancelled",
   "Annulée": "cancelled",
   "ANNULÉE": "cancelled",
