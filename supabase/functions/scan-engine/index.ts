@@ -971,10 +971,34 @@ async function resolveUserScenario(supabase: any, parsed: ParsedQR, role: UserRo
   }
 
   const scannedUserId = parsed.reference_id;
-  const { data: profile } = await supabase.from("profiles").select("user_id, full_name, avatar_url, city").eq("user_id", scannedUserId).maybeSingle();
+  
+  // Try profiles table first
+  let { data: profile } = await supabase.from("profiles").select("user_id, full_name, avatar_url, city").eq("user_id", scannedUserId).maybeSingle();
 
+  // Fallback: if no profile row, fetch from auth.users via admin and auto-create profile
   if (!profile) {
-    return { status: "failed", qr_type: "QR_USER", scenario: "user_not_found", next_action: "none", message: "Utilisateur non trouvé." };
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const adminClient = createClient(supabaseUrl, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+    
+    const { data: authData } = await adminClient.auth.admin.getUserById(scannedUserId);
+    if (!authData?.user) {
+      return { status: "failed", qr_type: "QR_USER", scenario: "user_not_found", next_action: "none", message: "Utilisateur non trouvé." };
+    }
+    
+    const meta = authData.user.user_metadata || {};
+    const fullName = meta.full_name || meta.name || authData.user.email?.split("@")[0] || "Utilisateur";
+    
+    // Auto-create profile for future scans
+    try {
+      await supabase.from("profiles").upsert({
+        user_id: scannedUserId,
+        email: authData.user.email,
+        full_name: fullName,
+      }, { onConflict: "user_id" });
+    } catch { /* ignore */ }
+    
+    profile = { user_id: scannedUserId, full_name: fullName, avatar_url: null, city: null };
   }
 
   const { data: gpProfile } = await supabase.from("gp_profiles")
