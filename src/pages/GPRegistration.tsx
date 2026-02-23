@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { DocumentUpload } from "@/components/DocumentUpload";
+import { PhoneInputWithCode } from "@/components/ui/PhoneInputWithCode";
 import { ZoneCoverageManager, CoverageZone } from "@/components/gp/ZoneCoverageManager";
 import { transportTypes, TransportType, transportConfig } from "@/lib/transportTypes";
 import {
@@ -635,17 +636,11 @@ export default function GPRegistration() {
 
                 <div className="space-y-2">
                   <Label htmlFor="phone">Téléphone *</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="+221 77 123 45 67"
-                      className="pl-10"
-                      value={accountData.phone}
-                      onChange={(e) => setAccountData({ ...accountData, phone: e.target.value })}
-                    />
-                  </div>
+                  <PhoneInputWithCode
+                    value={accountData.phone}
+                    onChange={(v) => setAccountData({ ...accountData, phone: v })}
+                    size="md"
+                  />
                 </div>
 
                 {!existingUser && (

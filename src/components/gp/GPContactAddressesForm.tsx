@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { MapPin, Phone, MessageCircle, Check, AlertCircle, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PhoneInputWithCode } from "@/components/ui/PhoneInputWithCode";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -175,15 +176,9 @@ export function GPContactAddressesForm({
               </Label>
               <ValidationIcon isValid={isPhoneValid} />
             </div>
-            <Input
-              id="phone"
-              type="tel"
-              placeholder="+33 6 12 34 56 78"
+            <PhoneInputWithCode
               value={data.phone}
-              onChange={(e) => handleChange("phone", e.target.value)}
-              className={cn(
-                showValidation && !isPhoneValid && "border-destructive focus-visible:ring-destructive"
-              )}
+              onChange={(v) => handleChange("phone", v)}
             />
           </motion.div>
 
@@ -200,15 +195,9 @@ export function GPContactAddressesForm({
               </Label>
               <ValidationIcon isValid={isPhone2Valid} />
             </div>
-            <Input
-              id="phone_secondary"
-              type="tel"
-              placeholder="+221 77 123 45 67"
+            <PhoneInputWithCode
               value={data.phone_secondary}
-              onChange={(e) => handleChange("phone_secondary", e.target.value)}
-              className={cn(
-                showValidation && !isPhone2Valid && "border-destructive focus-visible:ring-destructive"
-              )}
+              onChange={(v) => handleChange("phone_secondary", v)}
             />
           </motion.div>
         </div>

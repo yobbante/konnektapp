@@ -15,6 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
+import { PhoneInputWithCode } from "@/components/ui/PhoneInputWithCode";
 
 interface Recipient {
   id: string;
@@ -269,25 +270,12 @@ export default function Recipients() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Téléphone</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type="tel"
-                  placeholder="Numéro de téléphone"
-                  className="pl-9 h-11"
-                  value={addPhone}
-                  onChange={(e) => {
-                    setAddPhone(e.target.value);
-                    setFoundUser(null);
-                  }}
-                  onBlur={(e) => searchByPhone(e.target.value)}
-                />
-                {searching && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  </div>
-                )}
-              </div>
+              <PhoneInputWithCode
+                value={addPhone}
+                onChange={(v) => { setAddPhone(v); setFoundUser(null); }}
+                onBlur={(v) => searchByPhone(v)}
+                suffix={searching ? <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : undefined}
+              />
             </div>
 
             {foundUser && (

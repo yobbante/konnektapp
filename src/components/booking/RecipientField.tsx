@@ -10,6 +10,7 @@ import {
   Globe
 } from "lucide-react";
 import { COUNTRY_PHONE_CODES } from "@/lib/phoneCountryCodes";
+import { PhoneInputWithCode } from "@/components/ui/PhoneInputWithCode";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -273,39 +274,19 @@ export function RecipientField({
                 onChange={(e) => onRecipientChange({ name: e.target.value, phone: recipientPhone, userId: recipientUserId })}
                 className="h-10 rounded-xl text-sm"
               />
-              <div className="flex gap-2">
-                <select
-                  value={phoneCountryCode}
-                  onChange={(e) => setPhoneCountryCode(e.target.value)}
-                  className="h-10 rounded-xl border border-input bg-background px-2 text-sm w-24 shrink-0"
-                >
-                  {phoneCodeOptions.map(({ code, prefix }) => (
-                    <option key={code} value={prefix}>{prefix} {code}</option>
-                  ))}
-                </select>
-                <div className="relative flex-1">
-                  <Input
-                    type="tel"
-                    placeholder="Numéro du destinataire *"
-                    value={recipientPhone}
-                    onChange={(e) => {
-                      onRecipientChange({ name: recipientName, phone: e.target.value, userId: null });
-                      setSearchResult(null);
-                      setSearchNotFound(false);
-                    }}
-                    onBlur={(e) => {
-                      const fullPhone = e.target.value.startsWith("+") ? e.target.value : `${phoneCountryCode}${e.target.value}`;
-                      searchByPhone(fullPhone);
-                    }}
-                    className="h-10 rounded-xl text-sm pr-10"
-                  />
-                  {searching && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                    </div>
-                  )}
-                </div>
-              </div>
+              <PhoneInputWithCode
+                value={recipientPhone}
+                onChange={(v) => {
+                  onRecipientChange({ name: recipientName, phone: v, userId: null });
+                  setSearchResult(null);
+                  setSearchNotFound(false);
+                }}
+                onBlur={(fullPhone) => searchByPhone(fullPhone)}
+                placeholder="Numéro du destinataire *"
+                size="md"
+                inputClassName="rounded-xl text-sm"
+                suffix={searching ? <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : undefined}
+              />
             </TabsContent>
 
             <TabsContent value="konnekt_id" className="mt-3 space-y-3">
