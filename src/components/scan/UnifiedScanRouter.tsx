@@ -265,43 +265,64 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
 
   // ─── ORDER SELECTED → Delegate to role-specific scan result ───
   if (selectedOrder) {
+    const backButton = (
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setSelectedOrder(null)}
+        className="gap-1.5 h-8 px-3 rounded-xl text-xs font-medium mb-3"
+      >
+        <ArrowRight className="w-3.5 h-3.5 rotate-180" />
+        Retour aux colis
+      </Button>
+    );
+
     if (scanRole === "gp" && scannerGpId) {
       return (
-        <ScanResultGP
-          order={{
-            ...selectedOrder,
-            client_name: scannedUser.name,
-            scan_history: [],
-          }}
-          gpId={scannerGpId}
-          logScan={logScan}
-          onComplete={onComplete}
-        />
+        <div>
+          {backButton}
+          <ScanResultGP
+            order={{
+              ...selectedOrder,
+              client_name: scannedUser.name,
+              scan_history: [],
+            }}
+            gpId={scannerGpId}
+            logScan={logScan}
+            onComplete={onComplete}
+          />
+        </div>
       );
     }
     if (scanRole === "client") {
       return (
-        <ScanResultClient
-          order={{
-            ...selectedOrder,
-            gp_name: scannedUser.name,
-            scan_history: [],
-          }}
-        />
+        <div>
+          {backButton}
+          <ScanResultClient
+            order={{
+              ...selectedOrder,
+              gp_name: scannedUser.name,
+              scan_history: [],
+            }}
+          />
+        </div>
       );
     }
     if (scanRole === "admin" || scanRole === "agent_logistique") {
       return (
-        <ScanResultAgent
-          order={{
-            ...selectedOrder,
-            gp_name: scannedUser.type === "gp" ? scannedUser.name : undefined,
-            scan_history: [],
-          }}
-          logScan={logScan}
-          onComplete={onComplete}
-          isAdmin={scanRole === "admin"}
-        />
+        <div>
+          {backButton}
+          <ScanResultAgent
+            order={{
+              ...selectedOrder,
+              gp_name: scannedUser.type === "gp" ? scannedUser.name : undefined,
+              scan_history: [],
+            }}
+            logScan={logScan}
+            onComplete={onComplete}
+            isAdmin={scanRole === "admin"}
+          />
+        </div>
       );
     }
   }

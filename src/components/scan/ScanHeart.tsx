@@ -139,7 +139,7 @@ export function ScanHeart({
 
       await scannerRef.current.start(
         cameraId,
-        { fps: 12, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 },
+        { fps: 15, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0, disableFlip: false },
         async (decodedText) => {
           if (processingRef.current) return;
           processingRef.current = true;
@@ -174,8 +174,8 @@ export function ScanHeart({
   }, []);
 
   useEffect(() => {
-    // Small delay to let DOM render the container div first
-    const timer = setTimeout(() => startCamera(), 120);
+    // Minimal delay — just enough for DOM to render the container
+    const timer = setTimeout(() => startCamera(), 50);
     return () => {
       clearTimeout(timer);
       stopCamera();
