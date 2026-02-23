@@ -51,10 +51,15 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
       <SheetContent
         side="bottom"
         className="h-[92vh] rounded-t-3xl p-0 border-0 overflow-hidden"
-        style={{ background: BG }}
+        style={{
+          background: BG,
+          transform: swipe.translateY > 0 ? `translateY(${swipe.translateY}px)` : undefined,
+          transition: swipe.isDragging ? "none" : "transform 0.3s ease-out",
+          opacity: swipe.translateY > 0 ? Math.max(0.5, 1 - swipe.translateY / 400) : 1,
+        }}
       >
         {/* Swipe handle */}
-        <div {...swipe} className="flex justify-center pt-3 pb-1">
+        <div {...{onTouchStart: swipe.onTouchStart, onTouchMove: swipe.onTouchMove, onTouchEnd: swipe.onTouchEnd}} className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing">
           <div className="w-10 h-1 rounded-full bg-white/20" />
         </div>
 
