@@ -584,10 +584,10 @@ function FullScreenOrderDetails({
               className="cursor-pointer"
               onClick={() => navigate(`/order/${order.id}/qrcode`)}
             >
-              <div className="w-12 h-12 bg-white rounded-lg p-1 shadow-sm border border-border">
+              <div className="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-xl p-1 shadow-md border border-primary/20 hover:shadow-lg hover:scale-110 transition-all duration-200 ring-2 ring-primary/10 hover:ring-primary/30">
                 <QRCode
                   value={order.order_number || order.id}
-                  size={40}
+                  size={28}
                   level="L"
                   style={{ height: "auto", maxWidth: "100%", width: "100%" }}
                 />
