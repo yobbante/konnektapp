@@ -54,6 +54,7 @@ export function RecipientField({
   const [konnektIdInput, setKonnektIdInput] = useState("");
   const [showUpsell, setShowUpsell] = useState(false);
   const [searchNotFound, setSearchNotFound] = useState(false);
+  const [isSelfSelection, setIsSelfSelection] = useState(false);
 
   useEffect(() => {
     loadSavedRecipients();
@@ -122,6 +123,7 @@ export function RecipientField({
     setSearchNotFound(false);
     try {
       const trimmed = idInput.trim();
+      setIsSelfSelection(false);
       // Check if input looks like a UUID
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed);
       
@@ -148,6 +150,16 @@ export function RecipientField({
       }
 
       if (data) {
+        // Prevent self-selection: recipient cannot be the sender
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser && data.user_id === currentUser.id) {
+          setSearchResult(null);
+          setSearchNotFound(true);
+          setIsSelfSelection(true);
+          setSearching(false);
+          return;
+        }
+
         const { count } = await supabase
           .from("orders")
           .select("id", { count: "exact", head: true })
@@ -325,10 +337,14 @@ export function RecipientField({
             <motion.div
               initial={{ opacity: 0, y: -5 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-3 rounded-xl bg-muted/50 border border-border"
+              className={`p-3 rounded-xl border ${isSelfSelection ? 'bg-destructive/10 border-destructive/30' : 'bg-muted/50 border-border'}`}
             >
               <p className="text-xs text-muted-foreground">
-                📱 Aucun compte Konnekt trouvé. {searchMode === "konnekt_id" ? "Remplissez manuellement via l'onglet Téléphone." : "Le destinataire recevra un lien de confirmation à la remise."}
+                {isSelfSelection 
+                  ? "⚠️ Vous ne pouvez pas vous sélectionner comme destinataire. Veuillez entrer un autre contact."
+                  : searchMode === "konnekt_id" 
+                    ? "📱 Aucun compte Konnekt trouvé. Remplissez manuellement via l'onglet Téléphone." 
+                    : "📱 Le destinataire recevra un lien de confirmation à la remise."}
               </p>
             </motion.div>
           )}
