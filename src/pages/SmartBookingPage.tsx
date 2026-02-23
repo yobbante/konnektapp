@@ -936,59 +936,7 @@ export default function SmartBookingPage() {
                       </div>}
                   </div>}
 
-                {/* Route Summary Card - Moved here, after articles forfaitaires */}
-                <motion.div initial={{
-            opacity: 0,
-            y: 10
-          }} animate={{
-            opacity: 1,
-            y: 0
-          }} className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl border border-primary/20">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <User className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">{gpProfile.business_name}</span>
-                        {gpProfile.verified_at && <Shield className="w-4 h-4 text-primary" />}
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Star className="w-3 h-3 text-warning fill-warning" />
-                        <span>{gpProfile.rating || 0}</span>
-                        <span>•</span>
-                        <span>{gpProfile.total_deliveries || 0} livraisons</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 text-sm">
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="w-4 h-4 text-primary" />
-                      <span className="font-medium">{offer.origin_city}</span>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="w-4 h-4 text-accent" />
-                      <span className="font-medium">{offer.destination_city}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-4 mt-3 pt-3 border-t border-primary/10 text-sm">
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="w-4 h-4 text-muted-foreground" />
-                      <span>Départ: {format(new Date(offer.departure_date), "d MMMM", {
-                    locale: fr
-                  })}</span>
-                    </div>
-                    {offer.arrival_date && <div className="flex items-center gap-1.5">
-                        <Plane className="w-4 h-4 text-muted-foreground" />
-                        <span>Arrivée: {format(new Date(offer.arrival_date), "d MMM", {
-                    locale: fr
-                  })}</span>
-                      </div>}
-                  </div>
-                </motion.div>
+                {/* GP info removed from step 1 — now in FloatingRecap */}
 
                 {!calculations.hasAnyItems && <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-destructive" />
@@ -1259,7 +1207,7 @@ export default function SmartBookingPage() {
 
 
       {/* Floating Recap - Always visible except step 4 */}
-      {!showEscrow && <FloatingRecap weight={calculations.weight} flatRateCount={calculations.flatRateCount} transportTotal={calculations.transportTotal} insuranceTotal={displayInsuranceAmount} logisticsTotal={displayLogisticsAmount} grandTotal={displayGrandTotal} currency={currency} getFCFAEquivalent={getFCFAEquivalent} hasInsurance={insuranceChoice.hasInsurance} hasLogistics={calculations.hasLogistics} currentStep={step} pricePerKg={offer?.price_per_kg} flatRateItems={flatRateItems.filter(i => i.quantity > 0)} isTMA={calculations.weight > 0 && calculations.basePricePerKg > 0 && calculations.kiloTotal === Math.round(calculations.basePricePerKg * 1.5)} />}
+      {!showEscrow && <FloatingRecap weight={calculations.weight} flatRateCount={calculations.flatRateCount} transportTotal={calculations.transportTotal} insuranceTotal={displayInsuranceAmount} logisticsTotal={displayLogisticsAmount} grandTotal={displayGrandTotal} currency={currency} getFCFAEquivalent={getFCFAEquivalent} hasInsurance={insuranceChoice.hasInsurance} hasLogistics={calculations.hasLogistics} currentStep={step} pricePerKg={offer?.price_per_kg} flatRateItems={flatRateItems.filter(i => i.quantity > 0)} isTMA={calculations.weight > 0 && calculations.basePricePerKg > 0 && calculations.kiloTotal === Math.round(calculations.basePricePerKg * 1.5)} gpInfo={gpProfile && offer ? { name: gpProfile.business_name, rating: gpProfile.rating || 0, originCity: offer.origin_city, destinationCity: offer.destination_city, isVerified: !!gpProfile.verified_at } : null} />}
 
       {/* Bottom Navigation */}
       {!showEscrow && <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 z-50" style={{
