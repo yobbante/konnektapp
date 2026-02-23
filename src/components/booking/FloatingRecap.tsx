@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, Shield, Truck, ChevronUp, ChevronDown, QrCode } from "lucide-react";
+import { Package, Shield, Truck, ChevronUp, ChevronDown, QrCode, MapPin, User, Star } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { DualCurrencyCompact } from "@/components/booking/DualCurrencyDisplay";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
@@ -11,6 +11,14 @@ interface LineItem {
   label: string;
   quantity: number;
   price: number;
+}
+
+interface GPInfo {
+  name: string;
+  rating: number;
+  originCity: string;
+  destinationCity: string;
+  isVerified: boolean;
 }
 
 interface FloatingRecapProps {
@@ -36,6 +44,7 @@ interface FloatingRecapProps {
     tierLabel: string;
   } | null;
   isTMA?: boolean;
+  gpInfo?: GPInfo | null;
 }
 
 export function FloatingRecap({
@@ -56,6 +65,7 @@ export function FloatingRecap({
   flatRateItems,
   regressiveInfo,
   isTMA,
+  gpInfo,
 }: FloatingRecapProps) {
   const [expanded, setExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -153,7 +163,27 @@ export function FloatingRecap({
                 className="overflow-hidden"
               >
                 <div className="px-4 pb-4 pt-0 space-y-2 border-t">
-                  {/* Line items detail */}
+                  {/* GP Route Info */}
+                  {gpInfo && (
+                    <div className="flex items-center gap-3 pt-3 pb-2">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <User className="w-3.5 h-3.5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-semibold truncate">{gpInfo.name}</span>
+                          <Star className="w-3 h-3 text-warning fill-warning shrink-0" />
+                          <span className="text-[10px] text-muted-foreground">{gpInfo.rating || 0}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <MapPin className="w-2.5 h-2.5 text-primary" />
+                          <span>{gpInfo.originCity}</span>
+                          <span>→</span>
+                          <span>{gpInfo.destinationCity}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   {weight > 0 && (
                     <div className="flex justify-between items-center text-xs pt-3">
                       <span className="text-muted-foreground">

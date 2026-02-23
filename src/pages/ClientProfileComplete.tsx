@@ -324,6 +324,34 @@ export default function ClientProfileComplete() {
                   <option value="BE">🇧🇪 Belgique</option>
                   <option value="CA">🇨🇦 Canada</option>
                   <option value="US">🇺🇸 États-Unis</option>
+                  <option value="GB">🇬🇧 Royaume-Uni</option>
+                  <option value="DE">🇩🇪 Allemagne</option>
+                  <option value="ES">🇪🇸 Espagne</option>
+                  <option value="IT">🇮🇹 Italie</option>
+                  <option value="CH">🇨🇭 Suisse</option>
+                  <option value="PT">🇵🇹 Portugal</option>
+                  <option value="NL">🇳🇱 Pays-Bas</option>
+                  <option value="BF">🇧🇫 Burkina Faso</option>
+                  <option value="TG">🇹🇬 Togo</option>
+                  <option value="BJ">🇧🇯 Bénin</option>
+                  <option value="GH">🇬🇭 Ghana</option>
+                  <option value="NG">🇳🇬 Nigeria</option>
+                  <option value="CD">🇨🇩 RD Congo</option>
+                  <option value="CG">🇨🇬 Congo</option>
+                  <option value="DZ">🇩🇿 Algérie</option>
+                  <option value="TN">🇹🇳 Tunisie</option>
+                  <option value="MA">🇲🇦 Maroc</option>
+                  <option value="MR">🇲🇷 Mauritanie</option>
+                  <option value="NE">🇳🇪 Niger</option>
+                  <option value="ZA">🇿🇦 Afrique du Sud</option>
+                  <option value="BR">🇧🇷 Brésil</option>
+                  <option value="AE">🇦🇪 Émirats arabes unis</option>
+                  <option value="SA">🇸🇦 Arabie saoudite</option>
+                  <option value="TR">🇹🇷 Turquie</option>
+                  <option value="CN">🇨🇳 Chine</option>
+                  <option value="JP">🇯🇵 Japon</option>
+                  <option value="IN">🇮🇳 Inde</option>
+                  <option value="AU">🇦🇺 Australie</option>
                 </select>
               </div>
             </div>
