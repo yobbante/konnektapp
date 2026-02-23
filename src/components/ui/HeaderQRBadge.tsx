@@ -130,7 +130,8 @@ export function HeaderQRBadge({
 
       {/* Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[340px] p-0 border-none bg-transparent shadow-none [&>button]:hidden">
+        <DialogContent className="sm:max-w-[340px] p-0 border-none bg-transparent shadow-none [&>button]:hidden" aria-describedby={undefined}>
+          <span className="sr-only">{label} - QR Konnekt</span>
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
