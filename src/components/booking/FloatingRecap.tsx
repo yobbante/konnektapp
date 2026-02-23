@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, Shield, Truck, ChevronUp, ChevronDown, QrCode, MapPin, User, Star } from "lucide-react";
+import { Package, Shield, Truck, ChevronUp, ChevronDown, QrCode, MapPin, User, Star, Receipt } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { DualCurrencyCompact } from "@/components/booking/DualCurrencyDisplay";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
@@ -272,7 +272,7 @@ export function FloatingRecap({
                   
                   {/* Client fee promo */}
                   <div className="flex justify-between items-center text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1.5"><Package className="w-3 h-3" />Frais</span>
+                    <span className="flex items-center gap-1.5"><Receipt className="w-3 h-3" />Frais</span>
                     <span className="text-xs font-medium text-green-600 dark:text-green-400">0% jusqu'au 31/01/2027</span>
                   </div>
 
