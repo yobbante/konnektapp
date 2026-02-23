@@ -379,6 +379,18 @@ Deno.serve(async (req) => {
       })
       .eq("id", order_id);
 
+    // ── 16b. Mettre à jour TVA record avec la commission finale ────
+    const tvaRate = 18;
+    const tvaAmountFinal = Math.round(commissionAmount * tvaRate / (100 + tvaRate));
+    const commissionHTFinal = commissionAmount - tvaAmountFinal;
+    await supabase.from("tva_records").update({
+      commission_amount_fcfa: commissionAmount,
+      tva_amount_fcfa: tvaAmountFinal,
+      commission_ht_fcfa: commissionHTFinal,
+      tva_amount_display: tvaAmountFinal,
+      commission_ht_display: commissionHTFinal,
+    }).eq("order_id", order_id);
+
     // ── 17. Notification GP ────────────────────────────────────────
     const { data: gpProfile } = await supabase
       .from("gp_profiles")

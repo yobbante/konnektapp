@@ -47,7 +47,8 @@ type ExecuteAction =
   | "confirm_delivery"
   | "pickup_confirm"
   | "stock_confirm"
-  | "confirm_reception";
+  | "confirm_reception"
+  | "prepare_delivery";
 
 interface ScanRequest {
   scanned_data?: string;
@@ -227,7 +228,7 @@ async function executeAction(
   // 2. Fetch order
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, order_number, status, weight, total_price, currency, price_per_kg, client_id, gp_id, origin_city, destination_city, delivery_code, recipient_name, recipient_phone, recipient_user_id, financial_status")
+    .select("id, order_number, status, weight, total_price, currency, price_per_kg, client_id, gp_id, origin_city, destination_city, delivery_code, recipient_name, recipient_phone, recipient_user_id, financial_status, insurance_amount, weight_adjustment_count, delivery_attempt_count, delivery_blocked_until")
     .eq("id", orderId)
     .maybeSingle();
 
@@ -297,6 +298,9 @@ async function executeAction(
       break;
     case "confirm_reception":
       result = await execConfirmReception(supabase, order, userId, role, actionData);
+      break;
+    case "prepare_delivery":
+      result = await execPrepareDelivery(supabase, order, userId, role);
       break;
     default:
       result = {
@@ -372,34 +376,128 @@ async function execWeightModify(
     return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_data", next_action: "none", message: "Poids réel invalide." };
   }
 
-  const weightDiff = actualWeight - order.weight;
+  // Anti-fraud: max 50% variation
+  const maxVariation = order.weight * 0.5;
+  if (Math.abs(actualWeight - order.weight) > maxVariation && order.weight > 0) {
+    return { status: "failed", qr_type: "QR_COLIS", scenario: "weight_abuse", next_action: "none", message: `Variation de poids trop importante (max ±50%). Contactez le support.` };
+  }
+
   const basePricePerKg = order.price_per_kg;
   
   // Calculate price difference using TMA logic
-  let oldPrice = order.total_price;
-  let newPrice: number;
+  const oldPrice = order.total_price;
+  let newTransportPrice: number;
   
   // TMA: for <1kg, tarif minimum = basePricePerKg * 1.5 (forfait fixe)
   if (actualWeight > 0 && actualWeight <= 1) {
-    newPrice = Math.round(basePricePerKg * 1.5);
+    newTransportPrice = Math.round(basePricePerKg * 1.5);
   } else {
-    newPrice = Math.round(actualWeight * basePricePerKg);
+    newTransportPrice = Math.round(actualWeight * basePricePerKg);
   }
-  
-  const priceDiff = newPrice - oldPrice;
 
-  // Update order with new weight and set status to weight_pending_payment if supplement needed
+  // Recalculate total: transport + insurance + logistics (insurance/logistics stay the same)
+  const insuranceAmount = order.insurance_amount || 0;
+  // Load logistics
+  const { data: logOpts } = await supabase
+    .from("order_logistics_options")
+    .select("pickup_price, delivery_price, pickup_enabled, delivery_enabled")
+    .eq("order_id", order.id)
+    .maybeSingle();
+  const logisticsTotal = logOpts
+    ? ((logOpts.pickup_enabled ? (logOpts.pickup_price || 0) : 0) + (logOpts.delivery_enabled ? (logOpts.delivery_price || 0) : 0))
+    : 0;
+
+  const newTotalPrice = newTransportPrice + insuranceAmount + logisticsTotal;
+  const priceDiff = newTotalPrice - oldPrice;
+
+  // Update order with ACTUAL weight, total_price, and status
   const updateData: Record<string, any> = {
+    weight: actualWeight,
+    declared_weight: actualWeight,
+    total_price: newTotalPrice,
     weight_tier_applied: actualWeight.toString(),
+    weight_adjustment_count: (order.weight_adjustment_count || 0) + 1,
   };
   
   if (priceDiff > 0) {
     // Supplement required → block transit
     updateData.status = "weight_pending_payment";
     updateData.financial_status = "adjustment_required";
+    updateData.adjustment_amount = priceDiff;
   }
   
   await supabase.from("orders").update(updateData).eq("id", order.id);
+
+  // Update escrow if exists
+  const { data: escrow } = await supabase
+    .from("escrow_transactions")
+    .select("id, amount, commission_amount")
+    .eq("order_id", order.id)
+    .eq("status", "held")
+    .maybeSingle();
+
+  if (escrow) {
+    const newEscrowAmount = priceDiff > 0 ? escrow.amount + priceDiff : Math.max(0, escrow.amount + priceDiff);
+    const MIN_COMMISSION_FCFA = 1000;
+    const newCommission = Math.max(Math.ceil(newTransportPrice * 0.05), MIN_COMMISSION_FCFA);
+    const newNetGP = newTransportPrice - newCommission;
+
+    await supabase.from("escrow_transactions").update({
+      amount: newEscrowAmount,
+      commission_amount: newCommission,
+      net_to_gp: newNetGP,
+      updated_at: new Date().toISOString(),
+    }).eq("id", escrow.id);
+
+    await supabase.from("escrow_logs").insert({
+      order_id: order.id,
+      action: "weight_adjusted",
+      previous_amount: escrow.amount,
+      new_amount: newEscrowAmount,
+      commission_amount: newCommission,
+      actor: `${role}:${userId}`,
+    });
+  }
+
+  // Update TVA record if exists
+  const newCommissionForTVA = Math.max(Math.ceil(newTransportPrice * 0.05), 1000);
+  const tvaRate = 18;
+  const tvaAmountFCFA = Math.round(newCommissionForTVA * tvaRate / (100 + tvaRate));
+  const commissionHTFCFA = newCommissionForTVA - tvaAmountFCFA;
+  await supabase.from("tva_records").update({
+    commission_amount_fcfa: newCommissionForTVA,
+    tva_amount_fcfa: tvaAmountFCFA,
+    commission_ht_fcfa: commissionHTFCFA,
+    tva_amount_display: tvaAmountFCFA,
+    commission_ht_display: commissionHTFCFA,
+  }).eq("order_id", order.id);
+
+  // Refund client if weight decreased
+  if (priceDiff < 0) {
+    const credit = Math.abs(priceDiff);
+    const { data: cw } = await supabase.from("client_wallets")
+      .select("available_balance, escrow_balance")
+      .eq("user_id", order.client_id)
+      .maybeSingle();
+    if (cw) {
+      await supabase.from("client_wallets").update({
+        available_balance: cw.available_balance + credit,
+        escrow_balance: Math.max(0, cw.escrow_balance - credit),
+        updated_at: new Date().toISOString(),
+      }).eq("user_id", order.client_id);
+    }
+  }
+
+  // Weight adjustment log
+  await supabase.from("weight_adjustment_log").insert({
+    order_id: order.id,
+    actor_id: userId,
+    actor_role: role,
+    original_weight: order.weight,
+    declared_weight: actualWeight,
+    delta_amount: priceDiff,
+    blocked: false,
+  }).catch(() => {});
   
   await supabase.from("order_status_history").insert({
     order_id: order.id, status: priceDiff > 0 ? "weight_pending_payment" : order.status, changed_by: userId, changed_by_type: role,
@@ -421,7 +519,7 @@ async function execWeightModify(
     message: priceDiff > 0 
       ? `⚠️ Poids modifié — supplément de ${priceDiff.toLocaleString()} ${order.currency} requis. Le client doit payer pour débloquer.`
       : "✅ Poids modifié — aucun supplément requis.",
-    data: { order, declared_weight: order.weight, actual_weight: actualWeight, price_diff: priceDiff, new_total: newPrice },
+    data: { order: { ...order, weight: actualWeight, total_price: newTotalPrice }, declared_weight: order.weight, actual_weight: actualWeight, price_diff: priceDiff, new_total: newTotalPrice },
     financial_impact: priceDiff !== 0 ? { amount: Math.abs(priceDiff), currency: order.currency, type: "adjustment" } : null,
   };
 }
@@ -449,6 +547,50 @@ async function execMarkTransit(
     status: "executed", qr_type: "QR_COLIS", scenario: "transit_confirmed",
     next_action: "none", message: "🚚 Colis en transit.",
     data: { order: { ...order, status: "in_transit" } },
+  };
+}
+
+async function execPrepareDelivery(
+  supabase: any, order: any, userId: string, role: string
+): Promise<ScanResponse> {
+  // prepare_delivery is a UI transition: arrived_destination → delivery_pending
+  const validStates = ["arrived_destination", "in_transit"];
+  if (!validStates.includes(order.status)) {
+    return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_status", next_action: "none", message: "Le colis doit être arrivé à destination pour préparer la livraison." };
+  }
+
+  // Generate delivery code if not exists
+  let deliveryCode = order.delivery_code;
+  if (!deliveryCode) {
+    deliveryCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    await supabase.from("orders").update({ delivery_code: deliveryCode, status: "delivery_pending" }).eq("id", order.id);
+  } else {
+    await supabase.from("orders").update({ status: "delivery_pending" }).eq("id", order.id);
+  }
+
+  // Notify client + recipient
+  await supabase.from("notifications").insert({
+    user_id: order.client_id, type: "delivery_code",
+    title: "🔑 Code de livraison", message: `Votre code pour ${order.order_number} : ${deliveryCode}. Communiquez-le au transporteur.`,
+    related_type: "order", related_id: order.id,
+  });
+  if (order.recipient_user_id && order.recipient_user_id !== order.client_id) {
+    await supabase.from("notifications").insert({
+      user_id: order.recipient_user_id, type: "delivery_code",
+      title: "🔑 Code de livraison", message: `Code pour ${order.order_number} : ${deliveryCode}. Donnez-le au livreur.`,
+      related_type: "order", related_id: order.id,
+    });
+  }
+
+  await supabase.from("order_status_history").insert({
+    order_id: order.id, status: "delivery_pending", changed_by: userId, changed_by_type: role,
+    notes: "📦 Livraison préparée — code envoyé au client/destinataire",
+  });
+
+  return {
+    status: "executed", qr_type: "QR_COLIS", scenario: "delivery_prepared",
+    next_action: "confirm_delivery", message: "✅ Code envoyé. Demandez-le au client pour confirmer.",
+    data: { order: { ...order, status: "delivery_pending", delivery_code: deliveryCode }, delivery_code_sent: true },
   };
 }
 

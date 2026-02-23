@@ -28,7 +28,7 @@ export type EngineStatus = "scanned" | "validated" | "authorized" | "executed" |
 export type ExecuteAction =
   | "deposit_confirm" | "weight_modify" | "mark_transit"
   | "confirm_delivery" | "pickup_confirm" | "stock_confirm"
-  | "confirm_reception";
+  | "confirm_reception" | "prepare_delivery";
 
 export type ScanScenario =
   | "gp_deposit" | "gp_transit" | "gp_delivery" | "gp_completed"
