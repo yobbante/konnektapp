@@ -84,6 +84,7 @@ export function RecipientField({
     if (phone.length < 8) return;
     setSearching(true);
     setSearchNotFound(false);
+    setIsSelfSelection(false);
     try {
       const { data } = await supabase
         .from("profiles")
@@ -92,7 +93,16 @@ export function RecipientField({
         .maybeSingle();
 
       if (data) {
-        // Get order count for upsell
+        // Prevent self-selection
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser && data.user_id === currentUser.id) {
+          setSearchResult(null);
+          setSearchNotFound(true);
+          setIsSelfSelection(true);
+          setSearching(false);
+          return;
+        }
+
         const { count } = await supabase
           .from("orders")
           .select("id", { count: "exact", head: true })
