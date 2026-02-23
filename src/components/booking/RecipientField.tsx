@@ -121,12 +121,31 @@ export function RecipientField({
     setSearching(true);
     setSearchNotFound(false);
     try {
-      // Search by email (Konnekt ID = email) or user_id prefix
-      const { data } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, phone")
-        .or(`email.eq.${idInput.trim()},user_id.eq.${idInput.trim()}`)
-        .maybeSingle();
+      const trimmed = idInput.trim();
+      // Check if input looks like a UUID
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed);
+      
+      let data = null;
+      
+      if (isUUID) {
+        // Search by user_id (UUID)
+        const { data: byId } = await supabase
+          .from("profiles")
+          .select("user_id, full_name, phone")
+          .eq("user_id", trimmed)
+          .maybeSingle();
+        data = byId;
+      }
+      
+      if (!data) {
+        // Search by email (case-insensitive)
+        const { data: byEmail } = await supabase
+          .from("profiles")
+          .select("user_id, full_name, phone")
+          .ilike("email", trimmed)
+          .maybeSingle();
+        data = byEmail;
+      }
 
       if (data) {
         const { count } = await supabase

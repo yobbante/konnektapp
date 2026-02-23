@@ -292,7 +292,7 @@ export default function Offres() {
   const handleBookNow = (e: React.MouseEvent, offer: Offer) => {
     e.preventDefault();
     e.stopPropagation();
-    navigate(`/offre/${offer.id}`);
+    navigate(`/offres/${offer.id}`);
   };
 
   // Helper to format price with GP currency
