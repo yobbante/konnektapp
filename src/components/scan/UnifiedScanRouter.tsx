@@ -148,7 +148,7 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
       }
 
       let activeOrders: ActiveOrder[] = [];
-      const nonTerminalStatuses: Array<"pending" | "accepted" | "collected" | "in_transit"> = ["pending", "accepted", "collected", "in_transit"];
+      const nonTerminalStatuses = ["pending", "accepted", "paid_held", "checked_in", "collected", "weight_pending_payment", "scheduled_departure", "in_transit", "arrived_destination", "delivery_pending", "delivery_confirmed", "delivered"] as const;
 
       if (scanRole === "gp" && scannerGpId) {
         const { data: orders } = await supabase
