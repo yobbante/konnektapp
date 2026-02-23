@@ -10,6 +10,7 @@ import {
   FileText, Upload, CheckCircle, Shield, Key, Eye, EyeOff,
   Loader2
 } from "lucide-react";
+import { PhoneInputWithCode } from "@/components/ui/PhoneInputWithCode";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -300,11 +301,12 @@ export default function ClientProfileComplete() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs text-muted-foreground">Téléphone *</Label>
-                <Input
+                <PhoneInputWithCode
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="+221 77..."
+                  onChange={(v) => setFormData({ ...formData, phone: v })}
+                  defaultCountry={formData.country_code || "SN"}
                   className="mt-1"
+                  size="md"
                 />
               </div>
               <div>

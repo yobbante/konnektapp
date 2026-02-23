@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PhoneInputWithCode } from "@/components/ui/PhoneInputWithCode";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
@@ -361,11 +362,9 @@ export default function ClientWallet() {
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Numéro de téléphone</Label>
-              <Input
-                type="tel"
+              <PhoneInputWithCode
                 value={withdrawPhone}
-                onChange={(e) => setWithdrawPhone(e.target.value)}
-                placeholder="+221 7X XXX XX XX"
+                onChange={setWithdrawPhone}
                 className="mt-1"
               />
             </div>

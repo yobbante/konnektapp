@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PhoneInputWithCode } from "@/components/ui/PhoneInputWithCode";
 
 type Step = "loading" | "confirm" | "success" | "signup" | "error" | "already_confirmed";
 
@@ -194,12 +195,11 @@ export default function DeliveryConfirmation() {
                 <Label className="text-sm flex items-center gap-2">
                   <Phone className="w-4 h-4 text-primary" /> Votre téléphone *
                 </Label>
-                <Input
-                  type="tel"
+                <PhoneInputWithCode
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+221 77 123 45 67"
-                  className="h-12 rounded-xl border-2"
+                  onChange={setPhone}
+                  size="lg"
+                  className="rounded-xl"
                 />
               </div>
 
