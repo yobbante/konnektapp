@@ -288,11 +288,11 @@ export default function Offres() {
     await toggleFavorite(offerId);
   };
 
-  // Handle book now button
+  // Handle book now button → go to offer detail page
   const handleBookNow = (e: React.MouseEvent, offer: Offer) => {
     e.preventDefault();
     e.stopPropagation();
-    navigate(`/reservation/gp/${offer.gp_id}?offer=${offer.id}`);
+    navigate(`/offre/${offer.id}`);
   };
 
   // Helper to format price with GP currency
@@ -491,8 +491,8 @@ export default function Offres() {
                             className="w-full bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary group/btn"
                             onClick={(e) => handleBookNow(e, offer)}
                           >
-                            Réserver
-                            <ChevronRight className="w-4 h-4 ml-1 group-hover/btn:translate-x-0.5 transition-transform" />
+                             Voir l'offre
+                             <ChevronRight className="w-4 h-4 ml-1 group-hover/btn:translate-x-0.5 transition-transform" />
                           </Button>
                         </motion.div>
                       </div>

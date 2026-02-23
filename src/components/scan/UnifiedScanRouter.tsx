@@ -90,9 +90,11 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
   useEffect(() => {
     if (!roleLoading) {
       if (!scanRole || !scannerId) {
+        console.warn("[UnifiedScanRouter] No scanRole or scannerId detected, role:", scanRole, "scannerId:", scannerId);
         redirectToPublicPage();
         return;
       }
+      console.log("[UnifiedScanRouter] Resolving scanned user:", scannedUserId, "as role:", scanRole, "gpId:", scannerGpId);
       resolveScannedUser();
     }
   }, [scannedUserId, scannerId, scannerGpId, roleLoading]);
@@ -119,13 +121,19 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
   const resolveScannedUser = async () => {
     setLoading(true);
     try {
-      const { data: profile } = await supabase
+      console.log("[UnifiedScanRouter] Looking up profile for:", scannedUserId);
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("user_id, full_name, avatar_url, city")
         .eq("user_id", scannedUserId)
         .maybeSingle();
 
+      if (profileError) {
+        console.error("[UnifiedScanRouter] Profile lookup error:", profileError);
+      }
+
       if (!profile) {
+        console.warn("[UnifiedScanRouter] No profile found for user:", scannedUserId);
         setScannedUser(null);
         setLoading(false);
         return;
