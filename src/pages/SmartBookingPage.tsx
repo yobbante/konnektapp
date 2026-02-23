@@ -406,15 +406,13 @@ export default function SmartBookingPage() {
     return types;
   };
 
-  // Validation - Updated for 5 steps
+  // Validation - Updated for 6 steps
   const canProceed = (currentStep: number): boolean => {
     if (currentStep === 1) {
-      // Must have items AND if kilo items, must have nature selected AND recipient filled
+      // Must have items AND if kilo items, must have nature selected
       if (!calculations.hasAnyItems) return false;
       if (calculations.hasKiloItems && kiloNatures.length === 0) return false;
       if (kiloNatures.includes("autres") && !autresNature.trim()) return false;
-      // Recipient is mandatory
-      if (!recipientData.name.trim() || recipientData.phone.trim().length < 8) return false;
       return true;
     }
     if (currentStep === 2) {
@@ -427,6 +425,11 @@ export default function SmartBookingPage() {
       return insuranceChoice.choiceMade;
     }
     if (currentStep === 4) {
+      // Recipient is mandatory
+      if (!recipientData.name.trim() || recipientData.phone.trim().length < 8) return false;
+      return true;
+    }
+    if (currentStep === 5) {
       return acceptedRestrictions;
     }
     return true;
@@ -437,7 +440,7 @@ export default function SmartBookingPage() {
     setKiloNatures(prev => prev.includes(nature) ? prev.filter(n => n !== nature) : [...prev, nature]);
   };
 
-  // Navigation - 5 steps
+  // Navigation - 6 steps
   const handleNext = () => {
     if (!canProceed(step)) {
       if (step === 1) {
@@ -447,19 +450,19 @@ export default function SmartBookingPage() {
           toast({ title: "Nature requise", description: "Sélectionnez le type de contenu de vos colis au kilo", variant: "destructive" });
         } else if (kiloNatures.includes("autres") && !autresNature.trim()) {
           toast({ title: "Précision requise", description: "Veuillez préciser la nature de vos articles", variant: "destructive" });
-        } else if (!recipientData.name.trim() || recipientData.phone.trim().length < 8) {
-          toast({ title: "Destinataire requis", description: "Ajoutez le nom et téléphone du destinataire", variant: "destructive" });
         }
       } else if (step === 2) {
         toast({ title: "Conditions requises", description: "Vous devez accepter les conditions de Konnekt Logistique", variant: "destructive" });
       } else if (step === 3) {
         toast({ title: "Choix d'assurance requis", description: "Vous devez faire un choix d'assurance pour continuer", variant: "destructive" });
       } else if (step === 4) {
+        toast({ title: "Destinataire requis", description: "Ajoutez le nom et téléphone du destinataire", variant: "destructive" });
+      } else if (step === 5) {
         toast({ title: "Acceptation requise", description: "Vous devez accepter les règles du transporteur", variant: "destructive" });
       }
       return;
     }
-    setStep(prev => Math.min(prev + 1, 5));
+    setStep(prev => Math.min(prev + 1, 6));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const handleBack = () => {
@@ -479,7 +482,7 @@ export default function SmartBookingPage() {
       return;
     }
 
-    if (!canProceed(4)) {
+    if (!canProceed(5)) {
       toast({ title: "Veuillez accepter les conditions", variant: "destructive" });
       return;
     }
@@ -749,7 +752,7 @@ export default function SmartBookingPage() {
       </div>;
   }
     return <div className="min-h-screen bg-background" style={{
-    paddingBottom: `calc(${step === 5 ? 100 : 220}px + var(--safe-bottom, 0px))`
+    paddingBottom: `calc(${step === 6 ? 100 : 220}px + var(--safe-bottom, 0px))`
   }}>
       <MobileHeader showScanButton={false} />
 
@@ -765,13 +768,13 @@ export default function SmartBookingPage() {
           </div>
         </div>
 
-        {/* Progress - 5 steps */}
+        {/* Progress - 6 steps */}
         <div className="flex items-center justify-center gap-1 mb-6">
-          {[1, 2, 3, 4, 5].map(s => <div key={s} className="flex items-center">
+          {[1, 2, 3, 4, 5, 6].map(s => <div key={s} className="flex items-center">
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${step >= s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
                 {step > s ? <CheckCircle className="w-3 h-3" /> : s}
               </div>
-              {s < 5 && <div className={`w-6 h-0.5 mx-0.5 rounded ${step > s ? "bg-primary" : "bg-muted"}`} />}
+              {s < 6 && <div className={`w-6 h-0.5 mx-0.5 rounded ${step > s ? "bg-primary" : "bg-muted"}`} />}
             </div>)}
         </div>
 
@@ -806,10 +809,16 @@ export default function SmartBookingPage() {
                 </div>
 
                 {/* Section A: Colis au kilo */}
-                <div className="p-4 bg-card border rounded-xl space-y-4">
+                <div className="p-4 bg-card border-2 border-primary/20 rounded-xl space-y-4 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-primary rounded-l-xl" />
                   <div className="flex items-center gap-2">
-                    <Scale className="w-5 h-5 text-primary" />
-                    <h3 className="font-medium">Colis au kilo</h3>
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Scale className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-sm">Colis au kilo</h3>
+                      <p className="text-[10px] text-muted-foreground">Tarification au poids</p>
+                    </div>
                     <Badge variant="outline" className="ml-auto text-xs">
                       {!isFCFA ? <DualCurrencyCompact amount={offer.price_per_kg} currency={currency} fcfaEquivalent={getFCFAEquivalent(offer.price_per_kg)} /> : <span>{offer.price_per_kg.toLocaleString()} FCFA/kg</span>}
                     </Badge>
@@ -882,15 +891,18 @@ export default function SmartBookingPage() {
                 </div>
 
                 {/* Section B: Articles forfaitaires */}
-                {flatRateItems.length > 0 && <div className="p-4 bg-card border rounded-xl space-y-3">
+                {flatRateItems.length > 0 && <div className="p-4 bg-card border-2 border-accent/20 rounded-xl space-y-3 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-accent rounded-l-xl" />
                     <div className="flex items-center gap-2">
-                      <Smartphone className="w-5 h-5 text-primary" />
-                      <h3 className="font-medium">Articles forfaitaires</h3>
+                      <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                        <Smartphone className="w-4 h-4 text-accent-foreground" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-sm">Articles forfaitaires</h3>
+                        <p className="text-[10px] text-muted-foreground">Prix fixe par unité — poids non comptabilisé</p>
+                      </div>
+                      <Badge className="ml-auto text-[10px] bg-accent/10 text-accent-foreground border-accent/30">Forfait</Badge>
                     </div>
-                    
-                    <p className="text-xs text-muted-foreground">
-                      Prix fixe par unité — le poids n'est pas pris en compte
-                    </p>
 
                     <div className="space-y-2">
                       {flatRateItems.map(item => {
@@ -982,8 +994,32 @@ export default function SmartBookingPage() {
                     <AlertTriangle className="w-4 h-4 text-destructive" />
                     <p className="text-sm text-destructive">Au moins une des deux sections doit être remplie</p>
                   </div>}
+              </motion.div>}
 
-                {/* Recipient Field — Mandatory */}
+            {/* STEP 4: Destinataire */}
+            {step === 4 && <motion.div key="step4" initial={{
+          opacity: 0,
+          x: 20
+        }} animate={{
+          opacity: 1,
+          x: 0
+        }} exit={{
+          opacity: 0,
+          x: -20
+        }} className="space-y-6">
+                <div className="flex items-center gap-2">
+                  <User className="w-5 h-5 text-primary" />
+                  <h2 className="font-semibold text-lg">Destinataire</h2>
+                  <Badge variant="outline" className="text-[10px] ml-auto">Obligatoire</Badge>
+                </div>
+
+                <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl flex items-start gap-2">
+                  <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-muted-foreground">
+                    Identifiez la personne qui recevra le colis. Si elle a un compte Konnekt, elle pourra suivre l'envoi en temps réel.
+                  </p>
+                </div>
+
                 <RecipientField
                   recipientName={recipientData.name}
                   recipientPhone={recipientData.phone}
@@ -1041,8 +1077,8 @@ export default function SmartBookingPage() {
                 <MandatoryInsuranceChoice selectedContentTypes={getAllContentTypes()} currency={currency as any} onChoiceChange={setInsuranceChoice} />
               </motion.div>}
 
-            {/* STEP 4: Restrictions & Validation */}
-            {step === 4 && <motion.div key="step4" initial={{
+            {/* STEP 5: Restrictions & Validation */}
+            {step === 5 && <motion.div key="step5" initial={{
           opacity: 0,
           x: 20
         }} animate={{
@@ -1106,8 +1142,8 @@ export default function SmartBookingPage() {
                 </div>
               </motion.div>}
 
-            {/* STEP 5: Recap */}
-            {step === 5 && <motion.div key="step5" initial={{
+            {/* STEP 6: Recap */}
+            {step === 6 && <motion.div key="step6" initial={{
           opacity: 0,
           x: 20
         }} animate={{
@@ -1151,6 +1187,16 @@ export default function SmartBookingPage() {
                       {flatRateItems.filter(i => i.quantity > 0).map(item => <p key={item.id} className="text-sm">• {item.quantity}× {item.label}</p>)}
                     </div>
                   </div>
+
+                  {/* Recipient */}
+                  {recipientData.name && <div className="flex items-center gap-3 pb-3 border-b">
+                      <div className="flex-1">
+                        <p className="text-sm text-muted-foreground">Destinataire</p>
+                        <p className="font-semibold">{recipientData.name}</p>
+                        <p className="text-xs text-muted-foreground">{recipientData.phone}</p>
+                      </div>
+                      <User className="w-5 h-5 text-primary" />
+                    </div>}
 
                   {/* Insurance status */}
                   <div className="pb-3 border-b">
@@ -1224,7 +1270,7 @@ export default function SmartBookingPage() {
                 Retour
               </Button>}
             
-            {step < 5 ? <Button onClick={handleNext} disabled={!canProceed(step)} className="flex-1 h-12">
+            {step < 6 ? <Button onClick={handleNext} disabled={!canProceed(step)} className="flex-1 h-12">
                 Continuer
               </Button> : <Button onClick={handleSubmit} disabled={submitting} className="flex-1 h-12">
                 {submitting ? "Réservation..." : "Confirmer la réservation"}

@@ -100,7 +100,7 @@ export function LogisticsLabelGenerator({ order, onDownloaded, required = false 
       doc.setFontSize(8);
       doc.setFont("helvetica", "normal");
       doc.text("Feuille logistique", pageWidth - margin, 10, { align: "right" });
-      doc.text("À coller sur le colis", pageWidth - margin, 15, { align: "right" });
+      doc.text("A coller sur le colis", pageWidth - margin, 15, { align: "right" });
       
       y = 28;
 
@@ -117,7 +117,7 @@ export function LogisticsLabelGenerator({ order, onDownloaded, required = false 
       let infoY = y + 7;
 
       // Order number
-      doc.text("N° COMMANDE", infoX, infoY);
+      doc.text("N. COMMANDE", infoX, infoY);
       doc.setTextColor(0, 0, 0);
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
@@ -176,20 +176,20 @@ export function LogisticsLabelGenerator({ order, onDownloaded, required = false 
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
       rightY += 6;
-      doc.text(`${order.originCity} → ${order.destinationCity}`, rightX, rightY);
+      doc.text(`${order.originCity} > ${order.destinationCity}`, rightX, rightY);
 
       // Countries
       doc.setTextColor(100, 100, 100);
       doc.setFontSize(7);
       doc.setFont("helvetica", "normal");
       rightY += 5;
-      doc.text(`${order.originCountry} → ${order.destinationCountry}`, rightX, rightY);
+      doc.text(`${order.originCountry} > ${order.destinationCountry}`, rightX, rightY);
 
       // Weight
       rightY += 8;
       doc.setTextColor(100, 100, 100);
       doc.setFontSize(7);
-      doc.text("POIDS DÉCLARÉ", rightX, rightY);
+      doc.text("POIDS DECLARE", rightX, rightY);
       doc.setTextColor(0, 0, 0);
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
@@ -202,7 +202,7 @@ export function LogisticsLabelGenerator({ order, onDownloaded, required = false 
         doc.setTextColor(100, 100, 100);
         doc.setFontSize(7);
         doc.setFont("helvetica", "normal");
-        doc.text("DATE DÉPÔT", rightX, rightY);
+        doc.text("DATE DEPOT", rightX, rightY);
         doc.setTextColor(0, 0, 0);
         doc.setFontSize(9);
         doc.setFont("helvetica", "bold");
@@ -242,7 +242,7 @@ export function LogisticsLabelGenerator({ order, onDownloaded, required = false 
         doc.setTextColor(0, 0, 0);
         doc.setFontSize(8);
         doc.setFont("helvetica", "bold");
-        doc.text("QR CODE — SCAN OBLIGATOIRE", pageWidth / 2, y + 3, { align: "center" });
+        doc.text("QR CODE - SCAN OBLIGATOIRE", pageWidth / 2, y + 3, { align: "center" });
         y += 6;
 
         doc.addImage(qrDataUrl, "PNG", qrX, y, qrSize, qrSize);
@@ -272,7 +272,7 @@ export function LogisticsLabelGenerator({ order, onDownloaded, required = false 
         doc.roundedRect(margin, y, pageWidth - margin * 2, 12, 2, 2, "FD");
         doc.setTextColor(100, 100, 100);
         doc.setFontSize(6);
-        doc.text("CONTENU DÉCLARÉ", margin + 3, y + 4);
+        doc.text("CONTENU DECLARE", margin + 3, y + 4);
         doc.setTextColor(0, 0, 0);
         doc.setFontSize(8);
         doc.text(order.description.substring(0, 80), margin + 3, y + 9);
@@ -287,16 +287,16 @@ export function LogisticsLabelGenerator({ order, onDownloaded, required = false 
       doc.setTextColor(180, 30, 30);
       doc.setFontSize(7);
       doc.setFont("helvetica", "bold");
-      doc.text("⚠ MENTION OBLIGATOIRE", margin + 3, y + 5);
+      doc.text("/!\\ MENTION OBLIGATOIRE", margin + 3, y + 5);
       
       doc.setFontSize(6);
       doc.setFont("helvetica", "normal");
       doc.text(
-        "Ce document doit être collé sur le colis. Sans scan valide,",
+        "Ce document doit etre colle sur le colis. Sans scan valide,",
         margin + 3, y + 10
       );
       doc.text(
-        "le colis n'est pas pris en charge. Tout porteur du QR est réputé mandaté.",
+        "le colis n'est pas pris en charge. Tout porteur du QR est repute mandate.",
         margin + 3, y + 14
       );
 
@@ -306,7 +306,7 @@ export function LogisticsLabelGenerator({ order, onDownloaded, required = false 
       doc.setTextColor(150, 150, 150);
       doc.setFontSize(6);
       doc.text(
-        `Généré le ${new Date().toLocaleDateString("fr-FR")} à ${new Date().toLocaleTimeString("fr-FR")} — KONNEKT © ${new Date().getFullYear()}`,
+        `Genere le ${new Date().toLocaleDateString("fr-FR")} a ${new Date().toLocaleTimeString("fr-FR")} - KONNEKT (c) ${new Date().getFullYear()}`,
         pageWidth / 2,
         y + 3,
         { align: "center" }
