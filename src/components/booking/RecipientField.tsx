@@ -382,30 +382,43 @@ export function RecipientField({
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
           >
             {recipientUserId && searchResult ? (
-              /* ── Recipient HAS Konnekt account ── */
-              <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 overflow-hidden">
+              /* ── Recipient HAS Konnekt account — Dedicated info card ── */
+              <Card className="border-primary/20 bg-card overflow-hidden">
+                <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
                 <CardContent className="p-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-semibold">Suivi activé pour {searchResult.name}</span>
+                  {/* Identity row */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                      <span className="text-sm font-bold text-primary">
+                        {searchResult.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate">{searchResult.name}</p>
+                      <p className="text-[11px] text-muted-foreground">Membre Konnekt</p>
+                    </div>
+                    <Badge className="bg-primary/15 text-primary border-primary/20 text-[10px] gap-1">
+                      <CheckCircle className="w-2.5 h-2.5" /> Vérifié
+                    </Badge>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="text-center p-2 rounded-lg bg-background/60">
-                      <Eye className="w-4 h-4 text-primary mx-auto mb-1" />
-                      <p className="text-[10px] text-muted-foreground">Suivi en direct</p>
+
+                  {/* Key benefits — compact row */}
+                  <div className="flex items-center gap-3 p-2.5 rounded-xl bg-muted/40 border border-border/50">
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                      <Eye className="w-3 h-3 text-primary" />
+                      <span>Suivi temps réel</span>
                     </div>
-                    <div className="text-center p-2 rounded-lg bg-background/60">
-                      <Package className="w-4 h-4 text-primary mx-auto mb-1" />
-                      <p className="text-[10px] text-muted-foreground">Notifications</p>
+                    <div className="w-px h-3 bg-border" />
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                      <Package className="w-3 h-3 text-primary" />
+                      <span>Notifications</span>
                     </div>
-                    <div className="text-center p-2 rounded-lg bg-background/60">
-                      <TrendingUp className="w-4 h-4 text-primary mx-auto mb-1" />
-                      <p className="text-[10px] text-muted-foreground">Historique</p>
+                    <div className="w-px h-3 bg-border" />
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                      <TrendingUp className="w-3 h-3 text-primary" />
+                      <span>Historique</span>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Votre destinataire verra l'évolution du colis dans son espace Konnekt et recevra des notifications à chaque étape.
-                  </p>
                 </CardContent>
               </Card>
             ) : (
