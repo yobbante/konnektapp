@@ -26,7 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScanHeart } from "./ScanHeart";
 import { ScanQRTab } from "./ScanQRTab";
 import { ScanColisTab } from "./ScanColisTab";
-import { BulkScanner } from "./BulkScanner";
+import { GPDistributionList } from "./GPDistributionList";
 import QRCode from "react-qr-code";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -427,7 +427,7 @@ export function UnifiedScanInterface({
             </motion.div>
           )}
 
-          {/* ═══ LOT TAB (GP only) ═══ */}
+          {/* ═══ LOT TAB (GP only) — Distribution list ═══ */}
           {activeTab === "lot" && isGP && gpContext && (
             <motion.div
               key="lot"
@@ -441,27 +441,11 @@ export function UnifiedScanInterface({
                   <ListChecks className="w-2.5 h-2.5 text-amber-400" />
                 </div>
                 <span className="text-[10px] font-bold text-amber-400/70 uppercase tracking-widest">
-                  Mode lot — Scan multiple
+                  Distribution — Mes colis
                 </span>
               </div>
 
-              <BulkScanner gpId={gpContext.gpId} onComplete={onRefresh || (() => {})} />
-
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4 space-y-3">
-                <h4 className="text-xs font-semibold text-white/60">Mode lot — Instructions</h4>
-                {[
-                  { n: "1", text: "Ajoutez les codes des colis un par un (scanner ou saisie)." },
-                  { n: "2", text: "Vérifiez la liste, puis confirmez le dépôt global." },
-                  { n: "3", text: "Idéal pour les enregistrements multiples à l'aéroport." },
-                ].map((item) => (
-                  <div key={item.n} className="flex items-start gap-2.5">
-                    <span className="w-5 h-5 rounded-full bg-amber-500/15 text-amber-400 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
-                      {item.n}
-                    </span>
-                    <span className="text-[11px] text-white/40 leading-relaxed">{item.text}</span>
-                  </div>
-                ))}
-              </div>
+              <GPDistributionList gpId={gpContext.gpId} />
             </motion.div>
           )}
 

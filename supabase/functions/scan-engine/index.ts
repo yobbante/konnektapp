@@ -854,6 +854,52 @@ async function resolveColisScenario(supabase: any, parsed: ParsedQR, role: UserR
       return { status: "failed", qr_type: "QR_COLIS", scenario: "unauthorized", next_action: "none", message: "Ce colis n'est pas associé à votre profil." };
     }
 
+    // ── Auto-send delivery code when GP scans a delivery-ready order ──
+    // If status is arrived/delivery_pending, auto-generate code and notify client+recipient
+    const deliveryReadyStatuses = ["arrived_destination", "delivery_pending", "in_transit"];
+    if (deliveryReadyStatuses.includes(order.status)) {
+      let deliveryCode = order.delivery_code;
+      
+      if (!deliveryCode) {
+        // Generate 6-char code
+        deliveryCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        await supabase.from("orders").update({ delivery_code: deliveryCode }).eq("id", order.id);
+        order.delivery_code = deliveryCode;
+      }
+
+      // Check if we already sent notification for this code (avoid spam on repeated scans)
+      const { count: alreadyNotified } = await supabase
+        .from("notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("related_id", order.id)
+        .eq("type", "delivery_code")
+        .gte("created_at", new Date(Date.now() - 3600000).toISOString()); // last hour
+
+      if (!alreadyNotified || alreadyNotified === 0) {
+        // Notify client
+        await supabase.from("notifications").insert({
+          user_id: order.client_id,
+          type: "delivery_code",
+          title: "🔑 Code de livraison",
+          message: `Votre code de livraison pour ${order.order_number} est : ${deliveryCode}. Communiquez-le au transporteur pour recevoir votre colis.`,
+          related_type: "order",
+          related_id: order.id,
+        });
+
+        // Notify recipient if different from client
+        if (order.recipient_user_id && order.recipient_user_id !== order.client_id) {
+          await supabase.from("notifications").insert({
+            user_id: order.recipient_user_id,
+            type: "delivery_code",
+            title: "🔑 Code de livraison",
+            message: `Code pour recevoir le colis ${order.order_number} : ${deliveryCode}. Donnez-le au livreur.`,
+            related_type: "order",
+            related_id: order.id,
+          });
+        }
+      }
+    }
+
     // Map état → action GP (aligné avec state machine V2)
     const gpActionMap: Record<string, { scenario: string; next_action: string; message: string }> = {
       pending:                { scenario: "gp_deposit",   next_action: "deposit_confirm",  message: "Vérifiez le poids et confirmez le dépôt." },
@@ -863,9 +909,9 @@ async function resolveColisScenario(supabase: any, parsed: ParsedQR, role: UserR
       weight_pending_payment: { scenario: "gp_blocked",   next_action: "none",             message: "⚠️ En attente du paiement supplément par le client." },
       scheduled_departure:    { scenario: "gp_departing", next_action: "none",             message: "🛫 Départ programmé. Transit automatique à l'heure prévue." },
       collected:              { scenario: "gp_deposit",   next_action: "deposit_confirm",  message: "Colis collecté. Vous pouvez confirmer le dépôt." },
-      in_transit:             { scenario: "gp_delivery",  next_action: "confirm_delivery", message: "🚚 En transit. Confirmez la livraison au destinataire avec son code." },
-      arrived_destination:    { scenario: "gp_delivery",  next_action: "confirm_delivery", message: "✈️ Arrivé à destination. Confirmez la livraison au destinataire." },
-      delivery_pending:       { scenario: "gp_delivery",  next_action: "confirm_delivery", message: "📦 Livraison en attente. Saisissez le code du client." },
+      in_transit:             { scenario: "gp_delivery",  next_action: "confirm_delivery", message: "🚚 En transit. Code de livraison envoyé au client. Saisissez-le pour confirmer." },
+      arrived_destination:    { scenario: "gp_delivery",  next_action: "confirm_delivery", message: "✈️ Arrivé. Code envoyé au client/destinataire. Demandez-le pour livrer." },
+      delivery_pending:       { scenario: "gp_delivery",  next_action: "confirm_delivery", message: "📦 Code envoyé. Saisissez le code du client pour confirmer la livraison." },
       delivery_confirmed:     { scenario: "gp_released",  next_action: "none",             message: "✅ Livraison confirmée. Paiement en cours de libération." },
       delivered:              { scenario: "gp_completed", next_action: "none",             message: "🎉 Colis livré. Aucune action disponible." },
       released:               { scenario: "gp_paid",      next_action: "none",             message: "💰 Paiement reçu sur votre wallet." },
@@ -877,7 +923,7 @@ async function resolveColisScenario(supabase: any, parsed: ParsedQR, role: UserR
 
     return {
       status: "authorized", qr_type: "QR_COLIS", ...action,
-      data: { order, financial_status: order.financial_status },
+      data: { order, financial_status: order.financial_status, delivery_code_sent: deliveryReadyStatuses.includes(order.status) },
       financial_impact: order.total_price ? { amount: order.total_price, currency: order.currency, type: "escrow" } : null,
     };
   }
