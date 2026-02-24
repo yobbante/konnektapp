@@ -264,9 +264,9 @@ export default function GPOrderDetail() {
   const regressiveInfo = getRegressiveInfo(order.weight, order.price_per_kg);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       {/* ─── Sticky Header ─── */}
-      <div className="sticky top-0 z-50 bg-card border-b pt-safe">
+      <div className="sticky top-0 z-50 bg-card border-b">
         <div className="px-4 py-3">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" className="shrink-0 -ml-2" onClick={() => navigate(-1)}>
@@ -298,7 +298,7 @@ export default function GPOrderDetail() {
       </div>
 
       {/* ─── Scrollable Content ─── */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 pb-safe" style={{ paddingBottom: nextStatus ? "calc(env(safe-area-inset-bottom, 0px) + 88px)" : "calc(env(safe-area-inset-bottom, 0px) + 16px)" }}>
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
 
         {/* Route Card — compact */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>

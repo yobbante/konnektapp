@@ -47,11 +47,12 @@ export function ScanQRTab({ role, accent = "emerald", darkMode = true, gpId, isV
       ? `${publishedDomain}/track/user/${userId}`
       : "";
 
+  const fullId = role === "gp" && gpId ? gpId : userId || "";
+
   const handleCopy = () => {
-    const text = role === "gp" && gpId ? gpId : userId || "";
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(fullId);
     setCopied(true);
-    toast({ title: "ID copié" });
+    toast({ title: "ID copié", description: fullId });
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -104,6 +105,9 @@ export function ScanQRTab({ role, accent = "emerald", darkMode = true, gpId, isV
         <div className="bg-white rounded-xl p-4 mb-3 shadow-sm">
           <QRCodeDisplay value={qrValue} size={170} />
         </div>
+        <p className={cn("text-[10px] font-mono mt-2 px-2 py-1 rounded bg-black/5 dark:bg-white/5 break-all select-all", textSub)}>
+          {fullId}
+        </p>
         <p className={cn("text-[11px] mt-1", textSub)}>
           {role === "gp" ? "Les clients scannent ce QR pour déposer" : "Présentez ce QR au transporteur"}
         </p>
