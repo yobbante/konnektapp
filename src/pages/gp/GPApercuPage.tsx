@@ -368,137 +368,46 @@ export default function GPApercuPage() {
               </div>
           }
 
-            {/* ── ACTIVE PARCELS — Interactive Pipeline ── */}
+            {/* ── ACTIVE PARCELS — Simple list ── */}
             {data.activeParcels.length > 0 &&
-          <div className="space-y-3">
+          <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Activity className="w-3.5 h-3.5 text-primary" />
-                    </div>
-                    <h3 className="text-sm font-bold">Colis actifs</h3>
-                    <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-bold">{data.activeParcels.length}</Badge>
-                  </div>
+                  <h3 className="text-sm font-bold">Colis actifs <span className="text-muted-foreground font-normal">({data.activeParcels.length})</span></h3>
                   <Button variant="ghost" size="sm" className="text-xs h-7 gap-1" onClick={() => navigate("/gp/colis")}>
                     Tout voir <ChevronRight className="w-3 h-3" />
                   </Button>
                 </div>
-
-                {/* Status pipeline summary */}
-                {(() => {
-                  const statusCounts: Record<string, number> = {};
-                  data.activeParcels.forEach((c: any) => {
-                    statusCounts[c.status] = (statusCounts[c.status] || 0) + 1;
-                  });
-                  const pipeline = [
-                    { key: "accepted", label: "À collecter", icon: Package, color: "text-blue-600", bg: "bg-blue-500/10", border: "border-blue-500/20" },
-                    { key: "collected", label: "Collectés", icon: Check, color: "text-indigo-600", bg: "bg-indigo-500/10", border: "border-indigo-500/20" },
-                    { key: "in_transit", label: "En transit", icon: Plane, color: "text-purple-600", bg: "bg-purple-500/10", border: "border-purple-500/20" },
-                    { key: "arrived", label: "Arrivés", icon: CheckCircle2, color: "text-green-600", bg: "bg-green-500/10", border: "border-green-500/20" },
-                  ].filter(s => statusCounts[s.key]);
-                  return pipeline.length > 0 ? (
-                    <div className="grid grid-cols-4 gap-1.5">
-                      {pipeline.map(s => (
-                        <motion.div key={s.key} whileTap={{ scale: 0.95 }}
-                          className={cn("rounded-xl border p-2 text-center cursor-pointer transition-all hover:shadow-sm", s.bg, s.border)}
-                          onClick={() => navigate("/gp/colis")}>
-                          <s.icon className={cn("w-4 h-4 mx-auto mb-1", s.color)} />
-                          <p className={cn("text-lg font-bold leading-none", s.color)}>{statusCounts[s.key]}</p>
-                          <p className="text-[9px] text-muted-foreground mt-0.5 leading-tight">{s.label}</p>
-                        </motion.div>
-                      ))}
-                    </div>
-                  ) : null;
-                })()}
-
-                {/* Parcel cards */}
-                <div className="space-y-2">
-                  {data.activeParcels.slice(0, 4).map((c: any, i: number) => {
+                <div className="space-y-1.5">
+                  {data.activeParcels.slice(0, 5).map((c: any, i: number) => {
                 const flow = STATUS_FLOW[c.status as string];
-                const progressSteps = ["accepted","collected","in_transit","arrived","delivered"];
-                const currentStep = progressSteps.indexOf(c.status);
-                const progressPercent = currentStep >= 0 ? ((currentStep + 1) / progressSteps.length) * 100 : 10;
                 return (
-                  <motion.div key={c.id} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06, type: "spring", stiffness: 300, damping: 30 }}>
-                        <Card className="cursor-pointer active:scale-[0.98] transition-all hover:shadow-md overflow-hidden border-l-2"
-                          style={{ borderLeftColor: flow?.color ? undefined : 'hsl(var(--muted))' }}
-                          onClick={() => navigate(`/gp/order/${c.id}`)}>
-                          {/* Progress bar at top */}
-                          <div className="h-1 bg-muted/30 w-full">
-                            <motion.div
-                              className={cn("h-full rounded-r-full",
-                                c.status === "arrived" ? "bg-green-500" :
-                                c.status === "in_transit" ? "bg-purple-500" :
-                                c.status === "collected" ? "bg-indigo-500" : "bg-blue-500"
-                              )}
-                              initial={{ width: 0 }}
-                              animate={{ width: `${progressPercent}%` }}
-                              transition={{ delay: i * 0.06 + 0.2, duration: 0.6, ease: "easeOut" }}
-                            />
-                          </div>
-                          <CardContent className="p-3">
-                            <div className="flex items-center gap-3">
-                              <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 relative", flow?.bg || "bg-muted/50")}>
-                                <Truck className={cn("w-4.5 h-4.5", flow?.color || "text-muted-foreground")} />
-                                {c.status === "arrived" && (
-                                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-card animate-pulse" />
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1.5">
-                                  <p className="text-sm font-bold truncate">{c.origin_city}</p>
-                                  <ArrowRight className="w-3 h-3 text-muted-foreground shrink-0" />
-                                  <p className="text-sm font-bold truncate">{c.destination_city}</p>
-                                </div>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <span className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 py-0.5 rounded">#{c.order_number?.slice(-6)}</span>
-                                  <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                                    <Scale className="w-2.5 h-2.5" />{c.weight}kg
-                                  </span>
-                                  <Badge className={cn("text-[8px] h-4 shrink-0", getOrderStatusColor(c.status))}>
-                                    {getOrderStatusLabel(c.status)}
-                                  </Badge>
-                                </div>
+                  <motion.div key={c.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
+                        <Card className="cursor-pointer active:scale-[0.99] transition-all" onClick={() => navigate(`/gp/order/${c.id}`)}>
+                          <CardContent className="p-3 flex items-center gap-3">
+                            <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", flow?.bg || "bg-muted/50")}>
+                              <Package className={cn("w-3.5 h-3.5", flow?.color || "text-muted-foreground")} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold truncate">{c.origin_city} → {c.destination_city}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-[10px] text-muted-foreground font-mono">#{c.order_number?.slice(-6)}</span>
+                                <span className="text-[10px] text-muted-foreground">{c.weight}kg</span>
                               </div>
                             </div>
-                            {/* Action button */}
-                            {flow?.next && (
-                              <div className="mt-2 pt-2 border-t border-border/50">
-                                <Button size="sm" 
-                                  className={cn("w-full h-8 text-xs gap-1.5 font-semibold",
-                                    c.status === "arrived" 
-                                      ? "bg-green-600 hover:bg-green-700 text-white shadow-sm" 
-                                      : "bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
-                                  )}
-                                  variant={c.status === "arrived" ? "default" : "outline"}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (c.status === "arrived") navigate(`/gp/order/${c.id}`);
-                                    else handleQuickStatusUpdate(c.id, flow.next);
-                                  }}
-                                  disabled={updatingOrder === c.id}>
-                                  {updatingOrder === c.id ? (
-                                    <RefreshCw className="w-3 h-3 animate-spin" />
-                                  ) : (
-                                    <>
-                                      {c.status === "arrived" ? <ScanLine className="w-3.5 h-3.5" /> : <ArrowRight className="w-3.5 h-3.5" />}
-                                      {c.status === "arrived" ? "Scanner pour livrer" : flow.nextLabel}
-                                    </>
-                                  )}
-                                </Button>
-                              </div>
-                            )}
+                            <Badge className={cn("text-[8px] h-4 shrink-0", getOrderStatusColor(c.status))}>
+                              {getOrderStatusLabel(c.status)}
+                            </Badge>
+                            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                           </CardContent>
                         </Card>
                       </motion.div>);
               })}
                 </div>
-                {data.activeParcels.length > 4 && (
-                  <Button variant="outline" size="sm" className="w-full text-xs gap-1.5 h-9" onClick={() => navigate("/gp/colis")}>
-                    <Package className="w-3.5 h-3.5" />
-                    Voir {data.activeParcels.length - 4} autre(s) colis
+                {data.activeParcels.length > 5 &&
+              <Button variant="ghost" size="sm" className="w-full text-xs text-muted-foreground" onClick={() => navigate("/gp/colis")}>
+                    +{data.activeParcels.length - 5} autre(s)
                   </Button>
-                )}
+            }
               </div>
           }
 
