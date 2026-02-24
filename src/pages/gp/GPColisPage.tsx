@@ -11,8 +11,8 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Package, ScanLine, Scale, Search, Plus, RefreshCw,
-  ArrowRight, Truck, Clock, CheckCircle2, AlertTriangle, MapPin,
+  Package, ScanLine, Search, Plus, RefreshCw,
+  ArrowRight, Truck, Clock, CheckCircle2, MapPin,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -21,11 +21,10 @@ import { Input } from "@/components/ui/input";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { useGPProfile } from "@/hooks/useGPProfile";
-import { getOrderStatusLabel, getOrderStatusColor } from "@/lib/transportTypes";
+import { getOrderStatusLabel } from "@/lib/transportTypes";
 import { CreateManualParcelDialog } from "@/components/gp/CreateManualParcelDialog";
 import { ManualParcelBadge } from "@/components/gp/ManualParcelBadge";
 import { GPScanSheet } from "@/components/scan/GPScanSheet";
-import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -50,9 +49,16 @@ const STATUS_FILTERS = [
   { value: "delivered", label: "Livré", icon: CheckCircle2 },
 ];
 
-const STATUS_FLOW: Record<string, { next: string; label: string }> = {
-  pending: { next: "accepted", label: "Accepter" },
-  arrived: { next: "delivered", label: "Livrer" },
+// Badge styles distincts par statut
+const STATUS_BADGE_STYLES: Record<string, string> = {
+  pending: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",
+  accepted: "bg-sky-500/15 text-sky-700 dark:text-sky-400 border-sky-500/30",
+  collected: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 border-indigo-500/30",
+  in_transit: "bg-violet-500/15 text-violet-700 dark:text-violet-400 border-violet-500/30",
+  arrived: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
+  delivered: "bg-green-600/15 text-green-700 dark:text-green-400 border-green-600/30",
+  refused: "bg-destructive/15 text-destructive border-destructive/30",
+  cancelled: "bg-muted text-muted-foreground border-border",
 };
 
 const ACTIVE_STATUSES = ["accepted", "collected", "in_transit", "checked_in", "scheduled_departure"];
@@ -60,7 +66,7 @@ const ACTIVE_STATUSES = ["accepted", "collected", "in_transit", "checked_in", "s
 export default function GPColisPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { toast } = useToast();
+  
   const { gpProfile, loading: profileLoading, pendingCount, activeCount } = useGPProfile();
   const [colis, setColis] = useState<Colis[]>([]);
   const [manualParcels, setManualParcels] = useState<ManualParcel[]>([]);
@@ -70,7 +76,6 @@ export default function GPColisPage() {
   const [statusFilter, setStatusFilter] = useState(searchParams.get("filter") || "all");
   const [sourceFilter, setSourceFilter] = useState<"all" | "konnekt" | "manual">("all");
   const [showManualForm, setShowManualForm] = useState(false);
-  const [updatingOrder, setUpdatingOrder] = useState<string | null>(null);
   const [showScanSheet, setShowScanSheet] = useState(false);
 
   useEffect(() => {
@@ -100,20 +105,7 @@ export default function GPColisPage() {
     }
   };
 
-  const handleQuickStatusUpdate = async (e: React.MouseEvent, orderId: string, newStatus: string) => {
-    e.stopPropagation();
-    setUpdatingOrder(orderId);
-    try {
-      const { error } = await supabase.from("orders").update({ status: newStatus as any }).eq("id", orderId);
-      if (error) throw error;
-      toast({ title: "Statut mis à jour ✓" });
-      loadColis(true);
-    } catch (err: any) {
-      toast({ title: "Erreur", description: err.message, variant: "destructive" });
-    } finally {
-      setUpdatingOrder(null);
-    }
-  };
+  // No manual status buttons — scan-first workflow
 
   if (profileLoading || loading) return <PageLoader message="Chargement des colis..." />;
   if (!gpProfile) return null;
@@ -262,11 +254,9 @@ export default function GPColisPage() {
             <AnimatePresence>
               {filtered.map((c, i) => {
                 const isManual = c.is_manual === true;
-                const flow = !isManual ? STATUS_FLOW[c.status] : null;
-                const isPending = c.status === "pending";
-                const isArrived = c.status === "arrived";
                 const price = isManual ? (c as ManualParcel).amount_paid : (c as Colis).total_price;
                 const currency = c.currency || "XOF";
+                const badgeStyle = STATUS_BADGE_STYLES[c.status] || "bg-muted text-muted-foreground border-border";
 
                 return (
                   <motion.div key={c.id}
@@ -276,95 +266,41 @@ export default function GPColisPage() {
                     transition={{ delay: i * 0.02 }}
                   >
                     <div
-                      className={cn(
-                        "bg-card rounded-xl border p-3 cursor-pointer active:scale-[0.99] transition-all",
-                        isPending && "border-amber-500/30 bg-amber-500/[0.02]",
-                        isArrived && "border-emerald-500/30 bg-emerald-500/[0.02]",
-                        isManual && "border-amber-400/20",
-                        !isPending && !isArrived && !isManual && "border-border/50"
-                      )}
+                      className="bg-card rounded-xl border border-border/50 p-3 cursor-pointer active:scale-[0.99] transition-all"
                       onClick={() => !isManual && navigate(`/gp/order/${c.id}`)}
                     >
-                      {/* Main row */}
-                      <div className="flex items-start gap-3">
-                        {/* Route icon */}
-                        <div className={cn(
-                          "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5",
-                          isPending ? "bg-amber-500/10" : isArrived ? "bg-emerald-500/10" : "bg-primary/8"
-                        )}>
-                          {isPending ? <Clock className="w-4 h-4 text-amber-600" /> :
-                           isArrived ? <MapPin className="w-4 h-4 text-emerald-600" /> :
-                           <Package className="w-4 h-4 text-primary" />}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="text-sm font-semibold truncate">{c.origin_city}</span>
+                          <ArrowRight className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                          <span className="text-sm font-semibold truncate">{c.destination_city}</span>
                         </div>
-
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <span className="text-sm font-semibold truncate">{c.origin_city}</span>
-                              <ArrowRight className="w-3 h-3 text-muted-foreground flex-shrink-0" />
-                              <span className="text-sm font-semibold truncate">{c.destination_city}</span>
-                            </div>
-                            <span className="text-sm font-bold text-foreground whitespace-nowrap">
-                              {price?.toLocaleString()} <span className="text-[10px] text-muted-foreground font-normal">{currency}</span>
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <span className="text-[10px] text-muted-foreground font-mono">#{c.order_number.slice(-6)}</span>
-                            <span className="text-[10px] text-muted-foreground">•</span>
-                            <span className="text-[10px] text-muted-foreground">{c.weight} kg</span>
-                            {isManual && "client_name" in c && (
-                              <>
-                                <span className="text-[10px] text-muted-foreground">•</span>
-                                <span className="text-[10px] text-muted-foreground">{c.client_name}</span>
-                              </>
-                            )}
-                            <span className="text-[10px] text-muted-foreground">•</span>
-                            <span className="text-[10px] text-muted-foreground">
-                              {formatDistanceToNow(new Date(c.created_at), { locale: fr, addSuffix: true })}
-                            </span>
-                          </div>
-
-                          {/* Status + Action row */}
-                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/30">
-                            <div className="flex items-center gap-1.5">
-                              {isManual && <ManualParcelBadge />}
-                              <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5", getOrderStatusColor(c.status as any))}>
-                                {getOrderStatusLabel(c.status as any)}
-                              </Badge>
-                            </div>
-
-                            {!isManual && flow && (
-                              <div className="flex items-center gap-1.5">
-                                {isPending && (
-                                  <Button size="sm" variant="ghost"
-                                    className="h-7 text-[11px] px-2 text-destructive hover:bg-destructive/10"
-                                    onClick={(e) => handleQuickStatusUpdate(e, c.id, "refused" as any)}
-                                    disabled={updatingOrder === c.id}>
-                                    Refuser
-                                  </Button>
-                                )}
-                                <Button size="sm"
-                                  className={cn(
-                                    "h-7 text-[11px] px-3 gap-1 rounded-lg font-semibold",
-                                    isArrived ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-primary hover:bg-primary/90 text-primary-foreground"
-                                  )}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (isArrived) navigate(`/gp/order/${c.id}`);
-                                    else handleQuickStatusUpdate(e, c.id, flow.next);
-                                  }}
-                                  disabled={updatingOrder === c.id}>
-                                  {updatingOrder === c.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : (
-                                    <>{flow.label}<ArrowRight className="w-3 h-3" /></>
-                                  )}
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                        <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5 border shrink-0", badgeStyle)}>
+                          {getOrderStatusLabel(c.status as any)}
+                        </Badge>
                       </div>
+
+                      <div className="flex items-center justify-between mt-1.5">
+                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                          <span className="font-mono">#{c.order_number.slice(-6)}</span>
+                          <span>•</span>
+                          <span>{c.weight} kg</span>
+                          {isManual && "client_name" in c && (
+                            <><span>•</span><span>{c.client_name}</span></>
+                          )}
+                          <span>•</span>
+                          <span>{formatDistanceToNow(new Date(c.created_at), { locale: fr, addSuffix: true })}</span>
+                        </div>
+                        <span className="text-xs font-bold text-foreground whitespace-nowrap">
+                          {price?.toLocaleString()} {currency}
+                        </span>
+                      </div>
+
+                      {isManual && (
+                        <div className="mt-1.5">
+                          <ManualParcelBadge />
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 );
