@@ -71,7 +71,7 @@ export default function TransporteurRegistration() {
     >
       {/* Header — compact */}
       <header className="flex items-center gap-3 px-4 h-12 border-b border-border shrink-0">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="-ml-2 text-xs h-8 px-2">
+        <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="-ml-2 text-xs h-8 px-2">
           ← Retour
         </Button>
         <p className="text-sm font-semibold flex-1 text-center pr-8">Devenir Transporteur</p>

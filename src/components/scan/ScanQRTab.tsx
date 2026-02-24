@@ -38,11 +38,13 @@ export function ScanQRTab({ role, accent = "emerald", darkMode = true, gpId, isV
     load();
   }, []);
 
-  // Simple, reliable QR formats that the engine detects instantly
+  // Full URLs so native cameras can redirect externally
+  // The scan-engine also parses these URLs in-app (lines 152-163)
+  const publishedDomain = "https://konnektapp.lovable.app";
   const qrValue = role === "gp" && gpId
-    ? `GP:${gpId}`
+    ? `${publishedDomain}/client/transporteurs/${gpId}`
     : userId
-      ? `USER:${userId}`
+      ? `${publishedDomain}/track/user/${userId}`
       : "";
 
   const handleCopy = () => {

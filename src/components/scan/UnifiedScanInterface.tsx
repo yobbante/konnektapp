@@ -183,13 +183,10 @@ export function UnifiedScanInterface({
 
   const subtitle = "Powered by Konnekt Engine";
 
-  // GP QR data
-  const gpQRData = gpContext ? JSON.stringify({
-    type: "gp_profile",
-    gp_id: gpContext.gpId,
-    name: gpContext.businessName,
-    v: 2,
-  }) : "";
+  // GP QR data — Full URL so native cameras redirect correctly
+  const gpQRData = gpContext
+    ? `https://konnektapp.lovable.app/client/transporteurs/${gpContext.gpId}`
+    : "";
 
   // Border accent
   const tabBorder = isGP ? "border-amber-400/20" : "border-emerald-400/20";
