@@ -597,28 +597,39 @@ export default function GPOrderDetail() {
           </motion.div>
         )}
 
-        {/* QR / Tracking */}
-        {order.status === "accepted" && (
+        {/* Scan guidance — GP must scan to progress */}
+        {order.status !== "delivered" && order.status !== "cancelled" && order.status !== "disputed" && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
-            <Button variant="outline" className="w-full gap-2 h-11" onClick={() => navigate("/gp/scan")}>
-              <QrCode className="w-4 h-4" /> Scanner QR de dépôt
-            </Button>
-          </motion.div>
-        )}
-        {order.tracking_code && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}>
-            <Card>
-              <CardContent className="p-3 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] text-muted-foreground">Code de suivi</p>
-                  <p className="font-mono font-bold">{order.tracking_code}</p>
-                </div>
-                <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => copyToClipboard(order.tracking_code!)}>
-                  <Copy className="w-4 h-4" />
+            <Card className="border-dashed border-primary/30 bg-primary/5">
+              <CardContent className="p-4 text-center space-y-2">
+                <QrCode className="w-8 h-8 mx-auto text-primary/60" />
+                <p className="text-xs font-medium text-foreground">
+                  {order.status === "pending" || order.status === "accepted"
+                    ? "Scannez le QR du client pour confirmer le dépôt"
+                    : order.status === "arrived_destination"
+                    ? "Scannez pour lancer la livraison"
+                    : "Le statut évolue automatiquement via le scan"}
+                </p>
+                <Button variant="default" size="sm" className="gap-2" onClick={() => navigate("/gp/scan")}>
+                  <QrCode className="w-4 h-4" /> Ouvrir le scanner
                 </Button>
               </CardContent>
             </Card>
           </motion.div>
+        )}
+
+        {order.tracking_code && (
+          <Card>
+            <CardContent className="p-3 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-muted-foreground">Code de suivi</p>
+                <p className="font-mono font-bold text-sm">{order.tracking_code}</p>
+              </div>
+              <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => copyToClipboard(order.tracking_code!)}>
+                <Copy className="w-4 h-4" />
+              </Button>
+            </CardContent>
+          </Card>
         )}
 
         {/* Delivered state */}
@@ -634,26 +645,6 @@ export default function GPOrderDetail() {
           </motion.div>
         )}
       </div>
-
-      {/* ─── Sticky Bottom Action ─── */}
-      {nextStatus && nextLabel && !isBlockedByLogistics && order.status !== "delivered" && (
-        <div className="sticky bottom-0 z-40 bg-card/95 backdrop-blur-sm border-t px-4 py-3 pb-safe">
-          <Button variant="default" size="lg" className="w-full h-12 text-sm font-semibold" disabled={updating} onClick={() => updateOrderStatus(nextStatus)}>
-            {updating ? (
-              <div className="w-5 h-5 rounded-full border-2 border-current border-t-transparent animate-spin" />
-            ) : (
-              <>
-                {nextStatus === "accepted" && <CheckCircle className="w-4 h-4 mr-2" />}
-                {nextStatus === "collected" && <Package className="w-4 h-4 mr-2" />}
-                {nextStatus === "in_transit" && <Truck className="w-4 h-4 mr-2" />}
-                {nextStatus === "delivered" && <CheckCircle className="w-4 h-4 mr-2" />}
-                {nextLabel}
-              </>
-            )}
-          </Button>
-          {order.status === "pending" && <p className="text-[10px] text-muted-foreground text-center mt-1.5">⏳ En attente de votre acceptation</p>}
-        </div>
-      )}
     </div>
   );
 }
