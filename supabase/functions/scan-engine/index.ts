@@ -161,12 +161,25 @@ function detectQRType(scannedData: string): ParsedQR {
   // 6. GP URL
   const gpUrlMatch = trimmed.match(/\/client\/transporteurs\/([a-f0-9-]{36})/i);
   if (gpUrlMatch) return { type: "QR_GP", reference_id: gpUrlMatch[1], raw: trimmed };
-  // 7. UUID
+  // 7. UUID (full)
   if (/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(trimmed)) {
     return { type: "QR_USER", reference_id: trimmed, raw: trimmed };
   }
-  // 8. URL
+  // 7b. Short UUID (first 8 chars) — lookup later in resolver
+  if (/^[a-f0-9]{8}$/i.test(trimmed)) {
+    return { type: "QR_USER", reference_id: trimmed, raw: trimmed, metadata: { short_id: true } };
+  }
+  // 8. URL — check if it's a Konnekt URL first
   if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    // Re-check Konnekt URLs that didn't match specific patterns above
+    // Some native cameras add trailing slashes or query params
+    const cleanUrl = trimmed.split("?")[0].replace(/\/$/, "");
+    const userMatch = cleanUrl.match(/\/track\/user\/([a-f0-9-]{36})/i);
+    if (userMatch) return { type: "QR_USER", reference_id: userMatch[1], raw: trimmed };
+    const gpMatch = cleanUrl.match(/\/client\/transporteurs\/([a-f0-9-]{36})/i);
+    if (gpMatch) return { type: "QR_GP", reference_id: gpMatch[1], raw: trimmed };
+    const trackMatch = cleanUrl.match(/\/track\/([a-f0-9-]{36})/i);
+    if (trackMatch) return { type: "QR_COLIS", reference_id: trackMatch[1], raw: trimmed };
     return { type: "QR_EXTERNAL", raw: trimmed, metadata: { is_url: true } };
   }
   // 9. Default
@@ -1113,7 +1126,25 @@ async function resolveUserScenario(supabase: any, parsed: ParsedQR, role: UserRo
     return { status: "failed", qr_type: "QR_USER", scenario: "invalid", next_action: "none", message: "QR utilisateur invalide." };
   }
 
-  const scannedUserId = parsed.reference_id;
+  let scannedUserId = parsed.reference_id;
+
+  // Short ID resolution: if 8 chars, lookup by prefix in profiles
+  if (parsed.metadata?.short_id || /^[a-f0-9]{8}$/i.test(scannedUserId)) {
+    const prefix = scannedUserId.toLowerCase();
+    const { data: matches } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .like("user_id", `${prefix}%`)
+      .limit(2);
+    
+    if (matches && matches.length === 1) {
+      scannedUserId = matches[0].user_id;
+    } else if (!matches || matches.length === 0) {
+      return { status: "failed", qr_type: "QR_USER", scenario: "user_not_found", next_action: "none", message: "Aucun utilisateur trouvé avec cet identifiant court." };
+    } else {
+      return { status: "failed", qr_type: "QR_USER", scenario: "invalid", next_action: "none", message: "ID ambigu. Utilisez l'identifiant complet." };
+    }
+  }
   
   // Try profiles table first
   let { data: profile } = await supabase.from("profiles").select("user_id, full_name, avatar_url, city").eq("user_id", scannedUserId).maybeSingle();
