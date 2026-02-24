@@ -42,11 +42,10 @@ interface Colis {
 }
 
 const STATUS_FILTERS = [
-  { value: "all", label: "Tous", icon: Package },
-  { value: "pending", label: "En attente", icon: Clock },
-  { value: "active", label: "En cours", icon: Truck },
-  { value: "arrived", label: "Arrivé", icon: MapPin },
-  { value: "delivered", label: "Livré", icon: CheckCircle2 },
+  { value: "all", label: "Tous", icon: Package, activeClass: "bg-muted text-foreground" },
+  { value: "pending", label: "En attente", icon: Clock, activeClass: "bg-amber-500 text-white" },
+  { value: "active", label: "En cours", icon: Truck, activeClass: "bg-indigo-500 text-white" },
+  { value: "delivered", label: "Livré", icon: CheckCircle2, activeClass: "bg-emerald-500 text-white" },
 ];
 
 // Badge styles distincts par statut
@@ -61,7 +60,7 @@ const STATUS_BADGE_STYLES: Record<string, string> = {
   cancelled: "bg-muted text-muted-foreground border-border",
 };
 
-const ACTIVE_STATUSES = ["accepted", "collected", "in_transit", "checked_in", "scheduled_departure"];
+const ACTIVE_STATUSES = ["accepted", "collected", "in_transit", "checked_in", "scheduled_departure", "arrived"];
 
 export default function GPColisPage() {
   const navigate = useNavigate();
@@ -195,24 +194,21 @@ export default function GPColisPage() {
           {STATUS_FILTERS.map(f => {
             const count = counts[f.value as keyof typeof counts] ?? 0;
             const isActive = statusFilter === f.value;
-            const hasUrgent = (f.value === "pending" || f.value === "arrived") && count > 0;
             const Icon = f.icon;
             return (
               <button key={f.value} onClick={() => setStatusFilter(f.value)}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all",
+                  "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all border",
                   isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : hasUrgent
-                      ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/25"
-                      : "bg-muted/40 text-muted-foreground hover:bg-muted"
+                    ? cn(f.activeClass, "shadow-sm border-transparent")
+                    : "bg-muted/40 text-muted-foreground hover:bg-muted border-transparent"
                 )}>
                 <Icon className="w-3.5 h-3.5" />
                 {f.label}
                 {count > 0 && (
                   <span className={cn(
                     "min-w-[18px] h-[18px] rounded-full text-[10px] flex items-center justify-center px-1",
-                    isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted-foreground/15 text-muted-foreground"
+                    isActive ? "bg-white/20 text-inherit" : "bg-muted-foreground/15 text-muted-foreground"
                   )}>{count}</span>
                 )}
               </button>
