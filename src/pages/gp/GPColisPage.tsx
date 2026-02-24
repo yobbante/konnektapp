@@ -74,7 +74,7 @@ export default function GPColisPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState(searchParams.get("filter") || "all");
-  const [sourceFilter, setSourceFilter] = useState<"all" | "konnekt" | "manual">("all");
+  
   const [showManualForm, setShowManualForm] = useState(false);
   const [showScanSheet, setShowScanSheet] = useState(false);
 
@@ -113,8 +113,8 @@ export default function GPColisPage() {
   type UnifiedColis = (Colis & { is_manual?: false }) | (ManualParcel & { is_manual: true });
 
   const allColis: UnifiedColis[] = [
-    ...(sourceFilter !== "manual" ? colis.map(c => ({ ...c, is_manual: false as const })) : []),
-    ...(sourceFilter !== "konnekt" ? manualParcels : []),
+    ...colis.map(c => ({ ...c, is_manual: false as const })),
+    ...manualParcels,
   ];
 
   const filtered = allColis.filter(c => {
@@ -163,77 +163,32 @@ export default function GPColisPage() {
           </div>
         </div>
 
-        {/* Mini stat counters */}
-        <div className="grid grid-cols-4 gap-2">
+        {/* Filter bar — tappable counters */}
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
           {[
-            { label: "Attente", count: counts.pending, color: "text-amber-600", bg: "bg-amber-500/10", border: "border-amber-500/20" },
-            { label: "En cours", count: counts.active, color: "text-blue-600", bg: "bg-blue-500/10", border: "border-blue-500/20" },
-            { label: "Arrivé", count: counts.arrived, color: "text-emerald-600", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
-            { label: "Livré", count: counts.delivered, color: "text-green-700", bg: "bg-green-500/10", border: "border-green-500/20" },
-          ].map((s) => (
-            <motion.div
-              key={s.label}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className={cn("flex flex-col items-center py-2.5 rounded-xl border", s.bg, s.border)}
-            >
-              <span className={cn("text-xl font-bold leading-none", s.color)}>{s.count}</span>
-              <span className="text-[10px] text-muted-foreground mt-1">{s.label}</span>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Rechercher par n°, ville, client..." value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 h-10 rounded-xl bg-muted/30 border-border/50" />
-        </div>
-
-        {/* Status filter tabs */}
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
-          {STATUS_FILTERS.map(f => {
-            const count = counts[f.value as keyof typeof counts] ?? 0;
+            { value: "all", label: "Tous", count: counts.all },
+            { value: "pending", label: "Attente", count: counts.pending },
+            { value: "active", label: "En cours", count: counts.active },
+            { value: "arrived", label: "Arrivé", count: counts.arrived },
+            { value: "delivered", label: "Livré", count: counts.delivered },
+          ].map((f) => {
             const isActive = statusFilter === f.value;
-            const hasUrgent = (f.value === "pending" || f.value === "arrived") && count > 0;
-            const Icon = f.icon;
             return (
               <button key={f.value} onClick={() => setStatusFilter(f.value)}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all",
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all border",
                   isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : hasUrgent
-                      ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/25"
-                      : "bg-muted/40 text-muted-foreground hover:bg-muted"
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "bg-muted/40 text-muted-foreground border-transparent hover:bg-muted"
                 )}>
-                <Icon className="w-3.5 h-3.5" />
                 {f.label}
-                {count > 0 && (
-                  <span className={cn(
-                    "min-w-[18px] h-[18px] rounded-full text-[10px] flex items-center justify-center px-1",
-                    isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted-foreground/15 text-muted-foreground"
-                  )}>{count}</span>
-                )}
+                <span className={cn(
+                  "min-w-[18px] h-[18px] rounded-full text-[10px] flex items-center justify-center px-1 font-bold",
+                  isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted-foreground/10 text-muted-foreground"
+                )}>{f.count}</span>
               </button>
             );
           })}
-        </div>
-
-        {/* Source toggle (compact) */}
-        <div className="flex gap-1 bg-muted/30 rounded-lg p-0.5">
-          {([
-            { val: "all" as const, label: "Tous" },
-            { val: "konnekt" as const, label: "Plateforme" },
-            { val: "manual" as const, label: "Hors plateforme" },
-          ]).map(f => (
-            <button key={f.val} onClick={() => setSourceFilter(f.val)}
-              className={cn("flex-1 py-1.5 rounded-md text-[11px] font-medium transition-all",
-                sourceFilter === f.val ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-              )}>
-              {f.label}
-            </button>
-          ))}
         </div>
 
         {/* Colis List */}
