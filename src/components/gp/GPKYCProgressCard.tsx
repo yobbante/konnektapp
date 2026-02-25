@@ -153,11 +153,11 @@ export function GPKYCProgressCard({
                 className="w-full text-xs h-8"
                 onClick={() => {
                   setExpanded(false);
-                  navigate("/gp/profil-public");
+                  navigate(isVerified ? "/gp/parametres" : "/gp/apercu");
                 }}
               >
                 <ShieldCheck className="w-3.5 h-3.5 mr-1.5" />
-                {isVerified ? "Passer Premium" : "Compléter mon profil"}
+                {isVerified ? "Gérer mon compte" : "Compléter mon profil"}
               </Button>
             </div>
           </motion.div>

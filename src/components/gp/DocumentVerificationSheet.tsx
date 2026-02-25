@@ -18,11 +18,12 @@ interface DocumentVerificationSheetProps {
   onClose: () => void;
   gpId: string;
   onSuccess?: (url: string) => void;
+  onAutoActivated?: () => void;
 }
 
 type Step = "instructions" | "camera" | "preview" | "uploading" | "done";
 
-export function DocumentVerificationSheet({ open, onClose, gpId, onSuccess }: DocumentVerificationSheetProps) {
+export function DocumentVerificationSheet({ open, onClose, gpId, onSuccess, onAutoActivated }: DocumentVerificationSheetProps) {
   const { toast } = useToast();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -155,6 +156,7 @@ export function DocumentVerificationSheet({ open, onClose, gpId, onSuccess }: Do
           verified_at: new Date().toISOString(),
         }).eq("id", gpId);
         toast({ title: "🎉 Compte activé automatiquement !", description: "Toutes les vérifications sont complètes." });
+        onAutoActivated?.();
       }
     } catch { /* silent */ }
   };
