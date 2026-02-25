@@ -80,14 +80,19 @@ export default function GPApercuPage() {
     const validated = searchParams.get("validated");
     if (validated === "restrictions") {
       setRestrictionsValidated(true);
-      setSearchParams({}, { replace: true });
+      // Remove param but keep other params
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("validated");
+      setSearchParams(newParams, { replace: true });
     } else if (validated === "tarifs") {
       setTarifsValidated(true);
-      setSearchParams({}, { replace: true });
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("validated");
+      setSearchParams(newParams, { replace: true });
     }
   }, [searchParams]);
 
-  // When both validations complete, sync first departure price and reload
+  // When both validations complete, sync first departure price and dismiss gate
   useEffect(() => {
     if (restrictionsValidated && tarifsValidated && gpProfile) {
       syncFirstDeparturePrice();
@@ -132,10 +137,10 @@ export default function GPApercuPage() {
       eq("gp_id", gpProfile.id).not("status", "eq", "cancelled").
       order("created_at", { ascending: false }),
       supabase.from("gp_offers").
-      select("id, departure_date, origin_city, destination_city, available_capacity, flight_number").
+      select("id, departure_date, origin_city, destination_city, available_capacity, flight_number, price_per_kg, status").
       eq("gp_id", gpProfile.id).eq("status", "active").
-      gte("departure_date", now.toISOString()).
-      order("departure_date", { ascending: true }).limit(3),
+      gte("departure_date", startOfDay(now).toISOString()).
+      order("departure_date", { ascending: true }).limit(5),
       supabase.from("gp_wallets").
       select("balance, pending_balance, currency, commission_rate, commission_due, total_earned, total_withdrawn, locked_balance").
       eq("gp_id", gpProfile.id).maybeSingle(),
@@ -175,7 +180,7 @@ export default function GPApercuPage() {
         activeParcels,
         pendingParcels,
         manualParcels: manuals.slice(0, 5),
-        departures: (offersRes.data || []).filter((o) => isAfter(new Date(o.departure_date), startOfDay(now))),
+        departures: (offersRes.data || []),
         stats: {
           delivered,
           successRate: total > 0 ? Math.round(delivered / total * 100) : 0,

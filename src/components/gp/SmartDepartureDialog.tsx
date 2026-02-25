@@ -12,6 +12,7 @@ import {
   ArrowRightLeft, Plane, Weight, Calendar, 
   Clock, MapPin, Info, CheckCircle
 } from "lucide-react";
+import { AirlineSelect } from "@/components/gp/AirlineSelect";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -216,11 +217,10 @@ export function SmartDepartureDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Compagnie</Label>
-              <Input
-                placeholder="Air France..."
+              <AirlineSelect
                 value={airline}
-                onChange={(e) => setAirline(e.target.value)}
-                className="h-10"
+                onChange={setAirline}
+                placeholder="Compagnie..."
               />
             </div>
             <div className="space-y-1.5">

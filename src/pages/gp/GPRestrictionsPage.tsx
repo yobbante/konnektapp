@@ -153,11 +153,12 @@ export default function GPRestrictionsPage() {
           </CardContent>
         </Card>
 
-        {/* Validate button when coming from gate */}
+        {/* Validate button when coming from gate — always visible at bottom */}
         {fromGate && (
-          <div className="fixed bottom-6 left-4 right-4 z-50">
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border px-4 py-3"
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)' }}>
             <Button
-              className="w-full h-14 text-base gap-2 shadow-lg"
+              className="w-full h-12 text-sm font-semibold gap-2 shadow-lg"
               disabled={restrictions.length === 0}
               onClick={() => navigate("/gp/apercu?validated=restrictions")}
             >

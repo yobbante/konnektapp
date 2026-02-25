@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
+import { AirlineSelect } from "@/components/gp/AirlineSelect";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -248,11 +249,10 @@ export function SmartVoyageForm({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Compagnie</Label>
-              <Input
-                placeholder="Air Sénégal..."
+              <AirlineSelect
                 value={form.airline}
-                onChange={(e) => setForm({ ...form, airline: e.target.value })}
-                className="h-11 rounded-xl"
+                onChange={(v) => setForm({ ...form, airline: v })}
+                placeholder="Compagnie..."
               />
             </div>
             <div className="space-y-1.5">
