@@ -58,9 +58,11 @@ export function RecipientTrackingCard({ userId }: RecipientTrackingCardProps) {
         .from("orders")
         .select("id, order_number, origin_city, destination_city, origin_country, destination_country, status, weight, created_at, client_id")
         .eq("recipient_user_id", userId)
-        .not("status", "in", '("cancelled","released")')
+        .not("status", "in", '("cancelled","released","delivered")')
         .order("created_at", { ascending: false })
         .limit(10);
+      
+      console.log("[RecipientTrackingCard] userId:", userId, "data:", data?.length, "error:", error?.message);
 
       if (error) {
         console.error("Error loading incoming parcels:", error);
