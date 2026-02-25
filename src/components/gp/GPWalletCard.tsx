@@ -67,7 +67,6 @@ interface WithdrawalRequest {
 export function GPWalletCard({ wallet, gpId, compact, withdrawalLimit = 0, kycLevel = 0, onActivateKYC }: GPWalletCardProps) {
   const { toast } = useToast();
   const balance = wallet?.balance || 0;
-  const pending = wallet?.pending_balance || 0;
   const totalEarned = wallet?.total_earned || 0;
   const locked = wallet?.locked_balance || 0;
   const commissionRate = wallet?.commission_rate || 5;
@@ -85,6 +84,24 @@ export function GPWalletCard({ wallet, gpId, compact, withdrawalLimit = 0, kycLe
   const [withdrawPhone, setWithdrawPhone] = useState("");
   const [withdrawing, setWithdrawing] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [escrowPending, setEscrowPending] = useState(0);
+
+  // Load real pending from escrow_transactions
+  useEffect(() => {
+    if (!gpId) return;
+    const loadEscrowPending = async () => {
+      const { data } = await supabase
+        .from("escrow_transactions")
+        .select("net_to_gp")
+        .eq("gp_id", gpId)
+        .eq("status", "held");
+      const total = (data || []).reduce((sum, e) => sum + (e.net_to_gp || 0), 0);
+      setEscrowPending(total);
+    };
+    loadEscrowPending();
+  }, [gpId]);
+
+  const pending = escrowPending || wallet?.pending_balance || 0;
 
   useEffect(() => {
     if (gpId && activeTab === "history") loadTransactions();
@@ -325,26 +342,25 @@ export function GPWalletCard({ wallet, gpId, compact, withdrawalLimit = 0, kycLe
         <TabsContent value="overview" className="mt-3 space-y-3">
           <Card>
             <CardContent className="p-4 space-y-3">
-              <h4 className="text-sm font-semibold text-foreground">Barème de commission</h4>
-              <div className="space-y-1.5">
-                {[
-                  { range: "0 — 49", rate: "5%" },
-                  { range: "50 — 149", rate: "6%" },
-                  { range: "150 — 299", rate: "7%" },
-                  { range: "300 — 599", rate: "8%" },
-                  { range: "600 — 999", rate: "9%" },
-                  { range: "1000+", rate: "10%" },
-                ].map((tier) => (
-                  <div key={tier.range} className={cn(
-                    "flex items-center justify-between py-1.5 px-3 rounded-lg text-xs",
-                    `${commissionRate}%` === tier.rate ? "bg-primary/10 font-bold text-primary" : "text-muted-foreground"
-                  )}>
-                    <span>{tier.range} livraisons</span>
-                    <span>{tier.rate}</span>
-                  </div>
-                ))}
+              <h4 className="text-sm font-semibold text-foreground">Résumé financier</h4>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Solde disponible</span>
+                  <span className="font-semibold text-foreground">{balance.toLocaleString()} {getCurrencySymbol(currency)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">En attente (escrow)</span>
+                  <span className="font-semibold text-secondary">{pending.toLocaleString()} {getCurrencySymbol(currency)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Total gagné</span>
+                  <span className="font-semibold text-success">{totalEarned.toLocaleString()} {getCurrencySymbol(currency)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Commission actuelle</span>
+                  <span className="font-semibold text-primary">{commissionRate}%</span>
+                </div>
               </div>
-              <p className="text-[10px] text-muted-foreground">Colis manuel: commission fixe 3%</p>
             </CardContent>
           </Card>
         </TabsContent>
