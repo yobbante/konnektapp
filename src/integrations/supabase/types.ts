@@ -1049,6 +1049,105 @@ export type Database = {
           },
         ]
       }
+      gp_price_adjustment_history: {
+        Row: {
+          action: string
+          created_at: string
+          gp_id: string
+          id: string
+          new_price: number
+          old_price: number
+          toggles_remaining: number
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          gp_id: string
+          id?: string
+          new_price: number
+          old_price: number
+          toggles_remaining: number
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          gp_id?: string
+          id?: string
+          new_price?: number
+          old_price?: number
+          toggles_remaining?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gp_price_adjustment_history_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_price_adjustment_history_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gp_price_adjustments: {
+        Row: {
+          base_price_per_kg: number
+          created_at: string
+          gp_id: string
+          haute_saison_price_per_kg: number
+          id: string
+          is_haute_saison: boolean
+          last_toggled_at: string | null
+          toggles_used_this_year: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          base_price_per_kg: number
+          created_at?: string
+          gp_id: string
+          haute_saison_price_per_kg: number
+          id?: string
+          is_haute_saison?: boolean
+          last_toggled_at?: string | null
+          toggles_used_this_year?: number
+          updated_at?: string
+          year?: number
+        }
+        Update: {
+          base_price_per_kg?: number
+          created_at?: string
+          gp_id?: string
+          haute_saison_price_per_kg?: number
+          id?: string
+          is_haute_saison?: boolean
+          last_toggled_at?: string | null
+          toggles_used_this_year?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gp_price_adjustments_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: true
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_price_adjustments_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: true
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gp_price_history: {
         Row: {
           currency: string
