@@ -301,7 +301,7 @@ async function executeAction(
       result = await execMarkTransit(supabase, order, userId, role);
       break;
     case "confirm_delivery":
-      result = await execConfirmDelivery(supabase, order, userId, role);
+      result = await execConfirmDelivery(supabase, order, userId, role, actionData);
       break;
     case "pickup_confirm":
       result = await execPickupConfirm(supabase, order, userId, role);
