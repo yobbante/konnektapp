@@ -1434,6 +1434,63 @@ export type Database = {
           },
         ]
       }
+      gp_routes: {
+        Row: {
+          created_at: string
+          currency: string | null
+          default_price_per_kg: number | null
+          destination_city: string
+          destination_country: string
+          gp_id: string
+          id: string
+          is_active: boolean
+          origin_city: string
+          origin_country: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string | null
+          default_price_per_kg?: number | null
+          destination_city: string
+          destination_country: string
+          gp_id: string
+          id?: string
+          is_active?: boolean
+          origin_city: string
+          origin_country: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string | null
+          default_price_per_kg?: number | null
+          destination_city?: string
+          destination_country?: string
+          gp_id?: string
+          id?: string
+          is_active?: boolean
+          origin_city?: string
+          origin_country?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gp_routes_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_routes_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gp_wallets: {
         Row: {
           balance: number
@@ -2857,6 +2914,8 @@ export type Database = {
           kyc_level: number
           kyc_verified_at: string | null
           phone: string | null
+          postal_code: string | null
+          residence_city: string | null
           selfie_url: string | null
           updated_at: string
           user_id: string
@@ -2876,6 +2935,8 @@ export type Database = {
           kyc_level?: number
           kyc_verified_at?: string | null
           phone?: string | null
+          postal_code?: string | null
+          residence_city?: string | null
           selfie_url?: string | null
           updated_at?: string
           user_id: string
@@ -2895,6 +2956,8 @@ export type Database = {
           kyc_level?: number
           kyc_verified_at?: string | null
           phone?: string | null
+          postal_code?: string | null
+          residence_city?: string | null
           selfie_url?: string | null
           updated_at?: string
           user_id?: string

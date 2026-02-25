@@ -19,21 +19,77 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Extended world cities list with countries
-export const WORLD_CITIES = [
-  // France
+// Featured cities (shown first by default)
+export const FEATURED_CITIES = [
+  // 🇸🇳 Sénégal
+  { city: "Dakar", country: "SN", flag: "🇸🇳" },
+  // 🇫🇷 France
   { city: "Paris", country: "FR", flag: "🇫🇷" },
-  { city: "Lyon", country: "FR", flag: "🇫🇷" },
   { city: "Marseille", country: "FR", flag: "🇫🇷" },
-  { city: "Toulouse", country: "FR", flag: "🇫🇷" },
-  { city: "Bordeaux", country: "FR", flag: "🇫🇷" },
+  { city: "Lyon", country: "FR", flag: "🇫🇷" },
   { city: "Lille", country: "FR", flag: "🇫🇷" },
+  { city: "Bordeaux", country: "FR", flag: "🇫🇷" },
+  { city: "Montpellier", country: "FR", flag: "🇫🇷" },
+  { city: "Rennes", country: "FR", flag: "🇫🇷" },
+  { city: "Rouen", country: "FR", flag: "🇫🇷" },
+  { city: "Nîmes", country: "FR", flag: "🇫🇷" },
+  // 🇺🇸 USA
+  { city: "New York", country: "US", flag: "🇺🇸" },
+  { city: "Washington", country: "US", flag: "🇺🇸" },
+  { city: "Providence", country: "US", flag: "🇺🇸" },
+  // 🇨🇦 Canada
+  { city: "Montréal", country: "CA", flag: "🇨🇦" },
+  { city: "Ottawa", country: "CA", flag: "🇨🇦" },
+  { city: "Gatineau", country: "CA", flag: "🇨🇦" },
+  // 🇲🇦 Maroc
+  { city: "Casablanca", country: "MA", flag: "🇲🇦" },
+  // 🇦🇪 UAE
+  { city: "Dubaï", country: "AE", flag: "🇦🇪" },
+  // 🇪🇸 Espagne
+  { city: "Madrid", country: "ES", flag: "🇪🇸" },
+  { city: "Barcelone", country: "ES", flag: "🇪🇸" },
+  { city: "Almería", country: "ES", flag: "🇪🇸" },
+  // 🇩🇪 Allemagne
+  { city: "Berlin", country: "DE", flag: "🇩🇪" },
+  { city: "Düsseldorf", country: "DE", flag: "🇩🇪" },
+  // 🇧🇪 Belgique
+  { city: "Bruxelles", country: "BE", flag: "🇧🇪" },
+  // 🇨🇭 Suisse
+  { city: "Genève", country: "CH", flag: "🇨🇭" },
+  // 🇹🇷 Turquie
+  { city: "Istanbul", country: "TR", flag: "🇹🇷" },
+  // 🇱🇧 Liban
+  { city: "Beyrouth", country: "LB", flag: "🇱🇧" },
+  // 🇨🇮 Côte d'Ivoire
+  { city: "Abidjan", country: "CI", flag: "🇨🇮" },
+  // 🇲🇱 Mali
+  { city: "Bamako", country: "ML", flag: "🇲🇱" },
+  // 🇬🇳 Guinée
+  { city: "Conakry", country: "GN", flag: "🇬🇳" },
+  // 🇨🇲 Cameroun
+  { city: "Douala", country: "CM", flag: "🇨🇲" },
+  { city: "Yaoundé", country: "CM", flag: "🇨🇲" },
+  // 🇨🇬 Congo
+  { city: "Brazzaville", country: "CG", flag: "🇨🇬" },
+  // 🇨🇩 RDC
+  { city: "Kinshasa", country: "CD", flag: "🇨🇩" },
+  // 🇬🇦 Gabon
+  { city: "Libreville", country: "GA", flag: "🇬🇦" },
+  // 🇬🇶 Guinée équatoriale
+  { city: "Malabo", country: "GQ", flag: "🇬🇶" },
+  // 🇹🇩 Tchad
+  { city: "N'Djamena", country: "TD", flag: "🇹🇩" },
+];
+
+// Full world cities list
+export const WORLD_CITIES = [
+  ...FEATURED_CITIES,
+  // Additional France
+  { city: "Toulouse", country: "FR", flag: "🇫🇷" },
   { city: "Nice", country: "FR", flag: "🇫🇷" },
   { city: "Nantes", country: "FR", flag: "🇫🇷" },
   { city: "Strasbourg", country: "FR", flag: "🇫🇷" },
-  { city: "Montpellier", country: "FR", flag: "🇫🇷" },
-  { city: "Rennes", country: "FR", flag: "🇫🇷" },
-  // Sénégal
-  { city: "Dakar", country: "SN", flag: "🇸🇳" },
+  // Additional Sénégal
   { city: "Thiès", country: "SN", flag: "🇸🇳" },
   { city: "Saint-Louis", country: "SN", flag: "🇸🇳" },
   { city: "Kaolack", country: "SN", flag: "🇸🇳" },
@@ -41,31 +97,26 @@ export const WORLD_CITIES = [
   { city: "Touba", country: "SN", flag: "🇸🇳" },
   { city: "Mbour", country: "SN", flag: "🇸🇳" },
   { city: "Rufisque", country: "SN", flag: "🇸🇳" },
-  // Côte d'Ivoire
-  { city: "Abidjan", country: "CI", flag: "🇨🇮" },
+  // Additional Côte d'Ivoire
   { city: "Bouaké", country: "CI", flag: "🇨🇮" },
   { city: "Yamoussoukro", country: "CI", flag: "🇨🇮" },
   { city: "San-Pédro", country: "CI", flag: "🇨🇮" },
   { city: "Daloa", country: "CI", flag: "🇨🇮" },
-  // USA
-  { city: "New York", country: "US", flag: "🇺🇸" },
+  // Additional USA
   { city: "Los Angeles", country: "US", flag: "🇺🇸" },
   { city: "Chicago", country: "US", flag: "🇺🇸" },
   { city: "Houston", country: "US", flag: "🇺🇸" },
   { city: "Miami", country: "US", flag: "🇺🇸" },
   { city: "Atlanta", country: "US", flag: "🇺🇸" },
-  { city: "Washington", country: "US", flag: "🇺🇸" },
   { city: "Dallas", country: "US", flag: "🇺🇸" },
   { city: "Boston", country: "US", flag: "🇺🇸" },
   { city: "San Francisco", country: "US", flag: "🇺🇸" },
   { city: "Seattle", country: "US", flag: "🇺🇸" },
   { city: "Denver", country: "US", flag: "🇺🇸" },
   { city: "Las Vegas", country: "US", flag: "🇺🇸" },
-  // Canada
-  { city: "Montréal", country: "CA", flag: "🇨🇦" },
+  // Additional Canada
   { city: "Toronto", country: "CA", flag: "🇨🇦" },
   { city: "Vancouver", country: "CA", flag: "🇨🇦" },
-  { city: "Ottawa", country: "CA", flag: "🇨🇦" },
   { city: "Calgary", country: "CA", flag: "🇨🇦" },
   { city: "Québec", country: "CA", flag: "🇨🇦" },
   { city: "Edmonton", country: "CA", flag: "🇨🇦" },
@@ -76,22 +127,17 @@ export const WORLD_CITIES = [
   { city: "Liverpool", country: "GB", flag: "🇬🇧" },
   { city: "Leeds", country: "GB", flag: "🇬🇧" },
   { city: "Glasgow", country: "GB", flag: "🇬🇧" },
-  // Belgique
-  { city: "Bruxelles", country: "BE", flag: "🇧🇪" },
+  // Additional Belgique
   { city: "Anvers", country: "BE", flag: "🇧🇪" },
   { city: "Liège", country: "BE", flag: "🇧🇪" },
   { city: "Gand", country: "BE", flag: "🇧🇪" },
   { city: "Charleroi", country: "BE", flag: "🇧🇪" },
-  // Allemagne
-  { city: "Berlin", country: "DE", flag: "🇩🇪" },
+  // Additional Allemagne
   { city: "Munich", country: "DE", flag: "🇩🇪" },
   { city: "Francfort", country: "DE", flag: "🇩🇪" },
   { city: "Hambourg", country: "DE", flag: "🇩🇪" },
   { city: "Cologne", country: "DE", flag: "🇩🇪" },
-  { city: "Düsseldorf", country: "DE", flag: "🇩🇪" },
-  // Espagne
-  { city: "Madrid", country: "ES", flag: "🇪🇸" },
-  { city: "Barcelone", country: "ES", flag: "🇪🇸" },
+  // Additional Espagne
   { city: "Valence", country: "ES", flag: "🇪🇸" },
   { city: "Séville", country: "ES", flag: "🇪🇸" },
   { city: "Malaga", country: "ES", flag: "🇪🇸" },
@@ -102,32 +148,26 @@ export const WORLD_CITIES = [
   { city: "Turin", country: "IT", flag: "🇮🇹" },
   { city: "Florence", country: "IT", flag: "🇮🇹" },
   { city: "Venise", country: "IT", flag: "🇮🇹" },
-  // Suisse
-  { city: "Genève", country: "CH", flag: "🇨🇭" },
+  // Additional Suisse
   { city: "Zurich", country: "CH", flag: "🇨🇭" },
   { city: "Berne", country: "CH", flag: "🇨🇭" },
   { city: "Lausanne", country: "CH", flag: "🇨🇭" },
   { city: "Bâle", country: "CH", flag: "🇨🇭" },
-  // Maroc
-  { city: "Casablanca", country: "MA", flag: "🇲🇦" },
+  // Additional Maroc
   { city: "Rabat", country: "MA", flag: "🇲🇦" },
   { city: "Marrakech", country: "MA", flag: "🇲🇦" },
   { city: "Fès", country: "MA", flag: "🇲🇦" },
   { city: "Tanger", country: "MA", flag: "🇲🇦" },
   { city: "Agadir", country: "MA", flag: "🇲🇦" },
-  // Mali
-  { city: "Bamako", country: "ML", flag: "🇲🇱" },
+  // Additional Mali
   { city: "Sikasso", country: "ML", flag: "🇲🇱" },
   { city: "Ségou", country: "ML", flag: "🇲🇱" },
   { city: "Mopti", country: "ML", flag: "🇲🇱" },
   { city: "Kayes", country: "ML", flag: "🇲🇱" },
-  // Cameroun
-  { city: "Douala", country: "CM", flag: "🇨🇲" },
-  { city: "Yaoundé", country: "CM", flag: "🇨🇲" },
+  // Additional Cameroun
   { city: "Bafoussam", country: "CM", flag: "🇨🇲" },
   { city: "Garoua", country: "CM", flag: "🇨🇲" },
-  // Guinée
-  { city: "Conakry", country: "GN", flag: "🇬🇳" },
+  // Additional Guinée
   { city: "Nzérékoré", country: "GN", flag: "🇬🇳" },
   { city: "Kankan", country: "GN", flag: "🇬🇳" },
   // Burkina Faso
@@ -147,14 +187,11 @@ export const WORLD_CITIES = [
   { city: "Abuja", country: "NG", flag: "🇳🇬" },
   { city: "Kano", country: "NG", flag: "🇳🇬" },
   { city: "Port Harcourt", country: "NG", flag: "🇳🇬" },
-  // Gabon
-  { city: "Libreville", country: "GA", flag: "🇬🇦" },
+  // Additional Gabon
   { city: "Port-Gentil", country: "GA", flag: "🇬🇦" },
-  // Congo
-  { city: "Brazzaville", country: "CG", flag: "🇨🇬" },
+  // Additional Congo
   { city: "Pointe-Noire", country: "CG", flag: "🇨🇬" },
-  // RD Congo
-  { city: "Kinshasa", country: "CD", flag: "🇨🇩" },
+  // Additional RD Congo
   { city: "Lubumbashi", country: "CD", flag: "🇨🇩" },
   // Algérie
   { city: "Alger", country: "DZ", flag: "🇩🇿" },
@@ -167,8 +204,7 @@ export const WORLD_CITIES = [
   // Égypte
   { city: "Le Caire", country: "EG", flag: "🇪🇬" },
   { city: "Alexandrie", country: "EG", flag: "🇪🇬" },
-  // Émirats
-  { city: "Dubaï", country: "AE", flag: "🇦🇪" },
+  // Additional UAE
   { city: "Abu Dhabi", country: "AE", flag: "🇦🇪" },
   { city: "Sharjah", country: "AE", flag: "🇦🇪" },
   // Arabie Saoudite
@@ -178,10 +214,11 @@ export const WORLD_CITIES = [
   { city: "Médine", country: "SA", flag: "🇸🇦" },
   // Qatar
   { city: "Doha", country: "QA", flag: "🇶🇦" },
-  // Turquie
-  { city: "Istanbul", country: "TR", flag: "🇹🇷" },
+  // Additional Turquie
   { city: "Ankara", country: "TR", flag: "🇹🇷" },
   { city: "Izmir", country: "TR", flag: "🇹🇷" },
+  // Liban
+  { city: "Tripoli", country: "LB", flag: "🇱🇧" },
   // Portugal
   { city: "Lisbonne", country: "PT", flag: "🇵🇹" },
   { city: "Porto", country: "PT", flag: "🇵🇹" },
@@ -231,7 +268,7 @@ export const WORLD_CITIES = [
   { city: "Monrovia", country: "LR", flag: "🇱🇷" },
 ];
 
-const POPULAR_CITIES = ["Dakar", "Paris", "New York", "Abidjan", "Montréal", "Bruxelles", "Londres", "Casablanca"];
+const POPULAR_CITIES = FEATURED_CITIES.map(c => c.city);
 
 interface CityListProps {
   searchQuery: string;
@@ -254,6 +291,16 @@ function CityListContent({
   onClose,
   placeholder,
 }: CityListProps) {
+  const [showAll, setShowAll] = useState(false);
+  const featuredSet = useMemo(() => new Set(FEATURED_CITIES.map(c => `${c.city}-${c.country}`)), []);
+
+  // When searching, show all results. Otherwise show featured first
+  const citiesToShow = useMemo(() => {
+    if (searchQuery) return filteredCities;
+    if (showAll) return filteredCities;
+    return filteredCities.filter(c => featuredSet.has(`${c.city}-${c.country}`));
+  }, [filteredCities, searchQuery, showAll, featuredSet]);
+
   return (
     <div className="flex flex-col">
       <div className="flex items-center border-b px-3 bg-background sticky top-0 z-10">
@@ -262,12 +309,12 @@ function CityListContent({
           className="flex h-12 w-full rounded-md bg-transparent py-3 text-base outline-none placeholder:text-muted-foreground"
           placeholder={placeholder}
           value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
+          onChange={(e) => { onSearchChange(e.target.value); setShowAll(true); }}
           autoFocus
         />
       </div>
       <ScrollArea className="max-h-[60vh]" style={{ touchAction: "pan-y", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
-        {filteredCities.length === 0 ? (
+        {citiesToShow.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-6 text-center text-sm text-muted-foreground">
             <Globe className="w-8 h-8 text-muted-foreground/50" />
             <span>Aucune ville trouvée</span>
@@ -289,7 +336,7 @@ function CityListContent({
           <div className="p-1">
             {(() => {
               let lastCountry = "";
-              return filteredCities.map((city, index) => {
+              return citiesToShow.map((city, index) => {
                 const isSelected = value === city.city && countryCode === city.country;
                 const showHeader = city.country !== lastCountry;
                 lastCountry = city.country;
@@ -321,6 +368,15 @@ function CityListContent({
                 );
               });
             })()}
+            {!searchQuery && !showAll && filteredCities.length > citiesToShow.length && (
+              <button
+                onClick={() => setShowAll(true)}
+                className="w-full py-3 text-sm text-primary font-medium hover:bg-muted/50 rounded-md mt-1 flex items-center justify-center gap-1"
+              >
+                <Globe className="w-4 h-4" />
+                Voir toutes les villes ({filteredCities.length - citiesToShow.length} de plus)
+              </button>
+            )}
           </div>
         )}
       </ScrollArea>

@@ -27,6 +27,9 @@ export const COUNTRY_PHONE_CODES: Record<string, string> = {
   SL: "+232",
   LR: "+231",
   ZA: "+27",
+  GQ: "+240",
+  TD: "+235",
+  LB: "+961",
   
   // Europe
   FR: "+33",
