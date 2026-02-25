@@ -3,6 +3,7 @@
  * No tabs — clean vertical flow for mobile
  */
 import { useState, useEffect, useCallback, useRef } from "react";
+import { ALL_COUNTRIES } from "@/components/gp/SearchableCountrySelect";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -11,6 +12,7 @@ import {
   Loader2
 } from "lucide-react";
 import { PhoneInputWithCode } from "@/components/ui/PhoneInputWithCode";
+import { SearchableCountrySelect } from "@/components/gp/SearchableCountrySelect";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -188,8 +190,16 @@ export default function ClientProfileComplete() {
       toast({ title: "Erreur", description: "Les mots de passe ne correspondent pas", variant: "destructive" });
       return;
     }
-    if (passwordForm.newPassword.length < 6) {
-      toast({ title: "Erreur", description: "Minimum 6 caractères", variant: "destructive" });
+    if (passwordForm.newPassword.length < 8) {
+      toast({ title: "Erreur", description: "Minimum 8 caractères", variant: "destructive" });
+      return;
+    }
+    if (!/\d/.test(passwordForm.newPassword)) {
+      toast({ title: "Erreur", description: "Au moins un chiffre requis", variant: "destructive" });
+      return;
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(passwordForm.newPassword)) {
+      toast({ title: "Erreur", description: "Au moins un caractère spécial requis", variant: "destructive" });
       return;
     }
     setPasswordLoading(true);
@@ -311,50 +321,11 @@ export default function ClientProfileComplete() {
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Pays</Label>
-                <select
-                  className="w-full mt-1 h-10 rounded-md border border-input bg-background px-3 text-sm"
+                <SearchableCountrySelect
                   value={formData.country_code}
-                  onChange={(e) => setFormData({ ...formData, country_code: e.target.value })}
-                >
-                  <option value="SN">🇸🇳 Sénégal</option>
-                  <option value="FR">🇫🇷 France</option>
-                  <option value="CI">🇨🇮 Côte d'Ivoire</option>
-                  <option value="ML">🇲🇱 Mali</option>
-                  <option value="GN">🇬🇳 Guinée</option>
-                  <option value="CM">🇨🇲 Cameroun</option>
-                  <option value="GA">🇬🇦 Gabon</option>
-                  <option value="BE">🇧🇪 Belgique</option>
-                  <option value="CA">🇨🇦 Canada</option>
-                  <option value="US">🇺🇸 États-Unis</option>
-                  <option value="GB">🇬🇧 Royaume-Uni</option>
-                  <option value="DE">🇩🇪 Allemagne</option>
-                  <option value="ES">🇪🇸 Espagne</option>
-                  <option value="IT">🇮🇹 Italie</option>
-                  <option value="CH">🇨🇭 Suisse</option>
-                  <option value="PT">🇵🇹 Portugal</option>
-                  <option value="NL">🇳🇱 Pays-Bas</option>
-                  <option value="BF">🇧🇫 Burkina Faso</option>
-                  <option value="TG">🇹🇬 Togo</option>
-                  <option value="BJ">🇧🇯 Bénin</option>
-                  <option value="GH">🇬🇭 Ghana</option>
-                  <option value="NG">🇳🇬 Nigeria</option>
-                  <option value="CD">🇨🇩 RD Congo</option>
-                  <option value="CG">🇨🇬 Congo</option>
-                  <option value="DZ">🇩🇿 Algérie</option>
-                  <option value="TN">🇹🇳 Tunisie</option>
-                  <option value="MA">🇲🇦 Maroc</option>
-                  <option value="MR">🇲🇷 Mauritanie</option>
-                  <option value="NE">🇳🇪 Niger</option>
-                  <option value="ZA">🇿🇦 Afrique du Sud</option>
-                  <option value="BR">🇧🇷 Brésil</option>
-                  <option value="AE">🇦🇪 Émirats arabes unis</option>
-                  <option value="SA">🇸🇦 Arabie saoudite</option>
-                  <option value="TR">🇹🇷 Turquie</option>
-                  <option value="CN">🇨🇳 Chine</option>
-                  <option value="JP">🇯🇵 Japon</option>
-                  <option value="IN">🇮🇳 Inde</option>
-                  <option value="AU">🇦🇺 Australie</option>
-                </select>
+                  onValueChange={(code) => setFormData({ ...formData, country_code: code })}
+                  className="mt-1 w-full"
+                />
               </div>
             </div>
           </div>

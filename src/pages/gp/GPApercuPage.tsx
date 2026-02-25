@@ -87,6 +87,33 @@ export default function GPApercuPage() {
     }
   }, [searchParams]);
 
+  // When both validations complete, sync first departure price and reload
+  useEffect(() => {
+    if (restrictionsValidated && tarifsValidated && gpProfile) {
+      syncFirstDeparturePrice();
+    }
+  }, [restrictionsValidated, tarifsValidated, gpProfile]);
+
+  const syncFirstDeparturePrice = async () => {
+    if (!gpProfile) return;
+    try {
+      // Sync all active offers' price with the GP's base_price_per_kg
+      const basePrice = gpProfile.base_price_per_kg;
+      if (basePrice && basePrice > 0) {
+        await supabase
+          .from("gp_offers")
+          .update({ price_per_kg: basePrice })
+          .eq("gp_id", gpProfile.id)
+          .eq("status", "active");
+      }
+      // Reload to show the departure as active
+      await reloadProfile();
+      await loadAll(true);
+    } catch (err) {
+      console.error("Error syncing departure price:", err);
+    }
+  };
+
   useEffect(() => {
     if (gpProfile) loadAll();
   }, [gpProfile]);

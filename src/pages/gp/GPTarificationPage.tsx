@@ -20,6 +20,7 @@ import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { PricingTiersDisplay } from "@/components/gp/PricingTiersDisplay";
 import { type GPPricingConfig } from "@/lib/gpPricingEngine";
+import { HauteSaisonToggle } from "@/components/gp/HauteSaisonToggle";
 
 interface FlatRateItem {
   id: string;
@@ -283,6 +284,16 @@ export default function GPTarificationPage() {
               <PricingTiersDisplay config={pricingConfig} locked={isLocked} />
             </CardContent>
           </Card>
+        )}
+
+        {/* Section: Haute Saison Toggle */}
+        {basePricePerKg > 0 && gpProfile && (
+          <HauteSaisonToggle
+            gpId={gpProfile.id}
+            basePricePerKg={basePricePerKg}
+            currency={currency}
+            onPriceChange={(newPrice) => setBasePricePerKg(newPrice)}
+          />
         )}
 
         {/* Section 3: Flat rate items */}
