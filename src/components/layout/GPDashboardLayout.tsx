@@ -1,13 +1,13 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
   Package, Bell, Menu, ScanLine, Luggage,
   Lock, Home, ListChecks, LayoutGrid,
   Shield, DollarSign, History, Calendar, Wallet,
   Settings, LogOut, MapPin, User, Plus,
-  MessageCircle, UserCircle
+  MessageCircle, UserCircle, ChevronRight, Eye, EyeOff
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { GPNotificationsDropdown } from "@/components/gp/dashboard/GPNotificationsDropdown";
@@ -52,6 +52,30 @@ export function GPDashboardLayout({
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showScanSheet, setShowScanSheet] = useState(false);
+  const [showWallet, setShowWallet] = useState(false);
+  const [walletData, setWalletData] = useState<{ balance: number; pending: number; currency: string } | null>(null);
+  const [showBalance, setShowBalance] = useState(true);
+
+  useEffect(() => {
+    if (showWallet && !walletData) {
+      (async () => {
+        try {
+          const [walletRes, escrowRes] = await Promise.all([
+            supabase.from("gp_wallets").select("balance, pending_balance, currency").eq("gp_id", gpProfile.id).maybeSingle(),
+            supabase.from("escrow_transactions").select("net_to_gp").eq("gp_id", gpProfile.id).eq("status", "held"),
+          ]);
+          const pendingEscrow = escrowRes.data?.reduce((sum: number, e: any) => sum + (e.net_to_gp || 0), 0) || 0;
+          setWalletData({
+            balance: walletRes.data?.balance || 0,
+            pending: pendingEscrow,
+            currency: walletRes.data?.currency || "XOF",
+          });
+        } catch (e) {
+          console.error("Wallet load error:", e);
+        }
+      })();
+    }
+  }, [showWallet, gpProfile.id]);
 
   const kycLevel = gpProfile.kyc_level ?? 0;
   const displayStatus = getGPDisplayStatus(gpProfile.status, kycLevel);
@@ -116,12 +140,15 @@ export function GPDashboardLayout({
               </Button>
             )}
 
-            {/* Wallet */}
+            {/* Wallet toggle */}
             {isVerified && (
               <Button
-                onClick={() => navigate("/gp/wallet")}
+                onClick={() => setShowWallet(prev => !prev)}
                 size="icon"
-                className="h-8 w-8 rounded-full bg-white/15 hover:bg-white/25 text-white border-none"
+                className={cn(
+                  "h-8 w-8 rounded-full border-none transition-all",
+                  showWallet ? "bg-white/30 text-white" : "bg-white/15 hover:bg-white/25 text-white"
+                )}
               >
                 <Wallet className="w-4 h-4" />
               </Button>
@@ -144,6 +171,64 @@ export function GPDashboardLayout({
           </div>
         </div>
       </header>
+
+      {/* WALLET DROPDOWN */}
+      <AnimatePresence>
+        {showWallet && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="sticky top-[calc(52px+var(--safe-top,0px))] z-40 overflow-hidden"
+          >
+            <div className="bg-gradient-to-b from-primary/95 to-primary/85 backdrop-blur-xl border-b border-white/10 px-4 py-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Wallet className="w-4 h-4 text-white/70" />
+                  <span className="text-xs text-white/70 font-medium">Mon portefeuille</span>
+                </div>
+                <button onClick={() => setShowBalance(b => !b)} className="text-white/50 hover:text-white/80 transition-colors">
+                  {showBalance ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+
+              {walletData ? (
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-2xl font-bold text-white tracking-tight">
+                      {showBalance ? `${walletData.balance.toLocaleString("fr-FR")} ${walletData.currency}` : "••••••"}
+                    </p>
+                    <p className="text-[11px] text-white/50 mt-0.5">Solde disponible</p>
+                  </div>
+
+                  {walletData.pending > 0 && (
+                    <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
+                      <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                      <span className="text-xs text-white/80 flex-1">En attente (escrow)</span>
+                      <span className="text-xs font-semibold text-white">
+                        {showBalance ? `${walletData.pending.toLocaleString("fr-FR")} ${walletData.currency}` : "••••"}
+                      </span>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => { setShowWallet(false); navigate("/gp/wallet"); }}
+                    className="w-full flex items-center justify-center gap-2 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold py-2.5 rounded-xl transition-all active:scale-[0.98]"
+                  >
+                    Voir le détail
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center py-3">
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ══════════════════════════════════════
           MAIN CONTENT
