@@ -62,8 +62,9 @@ export function GPDashboardLayout({
     const path = location.pathname;
     if (path.includes("/gp/colis") || path.includes("/gp/demandes") || path.includes("/gp/en-cours")) return "colis";
     if (path.includes("/gp/wallet")) return "wallet";
+    if (path.includes("/gp/messages")) return "messages";
     if (path.includes("/gp/scan")) return "scan";
-    if (path.includes("/gp/profil-public") || path.includes("/gp/parametres") || path.includes("/gp/messages") || path.includes("/gp/historique") || path.includes("/gp/calendrier") || path.includes("/gp/tarification") || path.includes("/gp/ktp-geotrack") || path.includes("/gp/distribution")) return "profil";
+    if (path.includes("/gp/profil-public") || path.includes("/gp/parametres") || path.includes("/gp/historique") || path.includes("/gp/calendrier") || path.includes("/gp/tarification") || path.includes("/gp/ktp-geotrack") || path.includes("/gp/distribution")) return "profil";
     if (path.includes("/gp/apercu")) return "apercu";
     return "apercu";
   };
@@ -112,6 +113,17 @@ export function GPDashboardLayout({
                 className="h-8 w-8 rounded-full bg-white/15 hover:bg-white/25 text-white border-none"
               >
                 <Plus className="w-4 h-4" />
+              </Button>
+            )}
+
+            {/* Wallet */}
+            {isVerified && (
+              <Button
+                onClick={() => navigate("/gp/wallet")}
+                size="icon"
+                className="h-8 w-8 rounded-full bg-white/15 hover:bg-white/25 text-white border-none"
+              >
+                <Wallet className="w-4 h-4" />
               </Button>
             )}
 
@@ -199,13 +211,12 @@ export function GPDashboardLayout({
             </span>
           </button>
 
-          {/* Wallet */}
+          {/* Messages */}
           <NavItem 
-            icon={Wallet} 
-            label="Wallet" 
-            active={currentTab === "wallet"}
-            locked={!isVerified}
-            onClick={() => isVerified && navigate("/gp/wallet")}
+            icon={MessageCircle} 
+            label="Messages" 
+            active={currentTab === "messages"}
+            onClick={() => navigate("/gp/messages")}
           />
 
           {/* Profil — opens menu sheet */}
@@ -227,7 +238,7 @@ export function GPDashboardLayout({
                 <MenuButton icon={MapPin} label="Profil public" onClick={() => { setShowMenu(false); navigate("/gp/profil-public"); }} />
                 <MenuButton icon={Package} label="Demandes" badge={pendingCount} locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/demandes"); }}} />
                 <MenuButton icon={Calendar} label="Départs" locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/calendrier"); }}} />
-                <MenuButton icon={MessageCircle} label="Messages" onClick={() => { setShowMenu(false); navigate("/gp/messages"); }} />
+                <MenuButton icon={Wallet} label="Wallet" locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/wallet"); }}} />
                 <MenuButton icon={DollarSign} label="Tarifs" onClick={() => { setShowMenu(false); navigate("/gp/tarification"); }} />
                 <MenuButton icon={ListChecks} label="Distribution" locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/distribution"); }}} />
                 <MenuButton icon={History} label="Historique" onClick={() => { setShowMenu(false); navigate("/gp/historique"); }} />
