@@ -12,7 +12,7 @@ import {
   Calendar, RefreshCw, Scale, Wallet, Plus, ScanLine,
   TrendingUp, Shield, History, Camera, FileText, Check,
   Bell, Zap, Star, ArrowRight, CheckCircle2, Truck, Activity,
-  UserCheck } from
+  UserCheck, AlertOctagon, ShieldAlert } from
 "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -69,6 +69,8 @@ export default function GPApercuPage() {
   const [scanSheetOpen, setScanSheetOpen] = useState(false);
   const [selfieSheetOpen, setSelfieSheetOpen] = useState(false);
   const [documentSheetOpen, setDocumentSheetOpen] = useState(false);
+  const [activationTransition, setActivationTransition] = useState(false);
+  const [showRestrictionGate, setShowRestrictionGate] = useState(false);
 
   useEffect(() => {
     if (gpProfile) loadAll();
@@ -172,6 +174,23 @@ export default function GPApercuPage() {
   const w = data?.wallet;
   const currency = w?.currency || "XOF";
 
+  // Check if restrictions are missing (force review after activation)
+  const hasRestrictions = (gpProfile?.explicit_restrictions?.length ?? 0) > 0;
+  const needsRestrictionReview = !isPending && gpProfile?.status === "verified" && !hasRestrictions;
+
+  const handleAutoActivated = () => {
+    setActivationTransition(true);
+    setSelfieSheetOpen(false);
+    setDocumentSheetOpen(false);
+    // Show celebration for 2.5s then reload
+    setTimeout(async () => {
+      await reloadProfile();
+      await loadAll(true);
+      setActivationTransition(false);
+      setShowRestrictionGate(true);
+    }, 2500);
+  };
+
   if (profileLoading || loading) return <PageLoader message="Chargement..." />;
   if (!gpProfile || !data) return null;
 
@@ -195,6 +214,111 @@ export default function GPApercuPage() {
         hasBusinessReg={!!gpProfile.business_registration_url} />
 
       }
+
+      {/* ── ACTIVATION TRANSITION OVERLAY ── */}
+      <AnimatePresence>
+        {activationTransition && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center gap-6"
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", bounce: 0.5, delay: 0.2 }}
+              className="w-24 h-24 rounded-full bg-accent/20 flex items-center justify-center"
+            >
+              <CheckCircle2 className="w-12 h-12 text-accent" />
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="text-center space-y-2"
+            >
+              <h2 className="text-xl font-bold">🎉 Compte activé !</h2>
+              <p className="text-sm text-muted-foreground">Bienvenue sur Konnekt, votre compte est prêt.</p>
+            </motion.div>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: "60%" }}
+              transition={{ duration: 2, delay: 0.3 }}
+              className="h-1 rounded-full bg-accent"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── RESTRICTION GATE OVERLAY ── */}
+      <AnimatePresence>
+        {(showRestrictionGate || needsRestrictionReview) && !activationTransition && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[90] bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center px-6"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="w-full max-w-sm space-y-6 text-center"
+            >
+              <div className="w-16 h-16 rounded-full bg-secondary/20 flex items-center justify-center mx-auto">
+                <ShieldAlert className="w-8 h-8 text-secondary" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-lg font-bold">Dernière étape obligatoire</h2>
+                <p className="text-sm text-muted-foreground">
+                  Avant de recevoir des commandes, vous devez définir vos <strong>restrictions</strong> (articles interdits) et vérifier vos <strong>tarifs</strong>.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <motion.div
+                  animate={{ x: [0, 8, 0] }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                >
+                  <Button
+                    className="w-full gap-2 h-12 text-sm"
+                    variant="default"
+                    onClick={() => {
+                      setShowRestrictionGate(false);
+                      navigate("/gp/parametres?focus=restrictions");
+                    }}
+                  >
+                    <ArrowRight className="w-4 h-4" />
+                    Définir mes restrictions (obligatoire)
+                  </Button>
+                </motion.div>
+
+                <motion.div
+                  animate={{ x: [0, 8, 0] }}
+                  transition={{ repeat: Infinity, duration: 1.5, delay: 0.3 }}
+                >
+                  <Button
+                    className="w-full gap-2 h-12 text-sm"
+                    variant="outline"
+                    onClick={() => {
+                      setShowRestrictionGate(false);
+                      navigate("/gp/tarification");
+                    }}
+                  >
+                    <Scale className="w-4 h-4" />
+                    Vérifier mes tarifs
+                  </Button>
+                </motion.div>
+              </div>
+
+              <p className="text-[11px] text-muted-foreground/60">
+                Vous devez ajouter au moins une restriction pour activer votre profil.
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="px-4 py-4 space-y-5">
         {/* ── PENDING ACCOUNT BANNER ── */}
@@ -515,8 +639,8 @@ export default function GPApercuPage() {
       isVerified={gpProfile?.status === "verified" || gpProfile?.status === "premium" || gpProfile?.status === "starter"} />
       {gpProfile &&
       <>
-          <SelfieVerificationSheet open={selfieSheetOpen} onClose={() => setSelfieSheetOpen(false)} gpId={gpProfile.id} onSuccess={() => { reloadProfile(); loadAll(true); }} />
-          <DocumentVerificationSheet open={documentSheetOpen} onClose={() => setDocumentSheetOpen(false)} gpId={gpProfile.id} onSuccess={() => { reloadProfile(); loadAll(true); }} />
+          <SelfieVerificationSheet open={selfieSheetOpen} onClose={() => setSelfieSheetOpen(false)} gpId={gpProfile.id} onSuccess={() => { reloadProfile(); loadAll(true); }} onAutoActivated={handleAutoActivated} />
+          <DocumentVerificationSheet open={documentSheetOpen} onClose={() => setDocumentSheetOpen(false)} gpId={gpProfile.id} onSuccess={() => { reloadProfile(); loadAll(true); }} onAutoActivated={handleAutoActivated} />
           <SmartVoyageForm open={showVoyageForm} onClose={() => setShowVoyageForm(false)} gpId={gpProfile.id} onSuccess={() => {setShowVoyageForm(false);loadAll();}} />
           <CreateManualParcelDialog open={showManualForm} onClose={() => setShowManualForm(false)} gpId={gpProfile.id} gpCurrency={gpProfile.default_currency || "XOF"} onSuccess={() => loadAll(true)} />
         </>

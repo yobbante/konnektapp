@@ -18,11 +18,12 @@ interface SelfieVerificationSheetProps {
   onClose: () => void;
   gpId: string;
   onSuccess?: (url: string) => void;
+  onAutoActivated?: () => void;
 }
 
 type Step = "instructions" | "camera" | "preview" | "uploading" | "done";
 
-export function SelfieVerificationSheet({ open, onClose, gpId, onSuccess }: SelfieVerificationSheetProps) {
+export function SelfieVerificationSheet({ open, onClose, gpId, onSuccess, onAutoActivated }: SelfieVerificationSheetProps) {
   const { toast } = useToast();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -165,6 +166,7 @@ export function SelfieVerificationSheet({ open, onClose, gpId, onSuccess }: Self
           verified_at: new Date().toISOString(),
         }).eq("id", gpId);
         toast({ title: "🎉 Compte activé automatiquement !", description: "Toutes les vérifications sont complètes." });
+        onAutoActivated?.();
       }
     } catch { /* silent */ }
   };
