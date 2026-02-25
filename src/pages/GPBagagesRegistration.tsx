@@ -259,6 +259,14 @@ export default function GPBagagesRegistration() {
     if (!existingUser) return;
     setLoading(true);
     try {
+      // Check phone uniqueness before creating GP profile
+      const { data: existingGP } = await supabase.from("gp_profiles").select("id").eq("phone", profileData.originPhone).maybeSingle();
+      if (existingGP) {
+        toast({ title: "Numéro déjà utilisé", description: "Ce numéro de téléphone est déjà associé à un transporteur.", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+
       await supabase.from("profiles").update({ phone: profileData.originPhone, full_name: profileData.fullName, is_gp: true }).eq("user_id", existingUser.id);
       const whatsappPhone = profileData.whatsappPhone === "origin" ? profileData.originPhone : profileData.destinationPhone;
       
@@ -576,7 +584,8 @@ export default function GPBagagesRegistration() {
                   </h2>
                   <p className="text-sm text-muted-foreground">Cliquez sur une date pour ajouter un départ</p>
                   <DepartureCalendarView departures={departures} onAddDeparture={handleAddDeparture}
-                    defaultRoute={{ originCity: profileData.originCity, originCountry: profileData.originCountry, destinationCity: profileData.destinationCity, destinationCountry: profileData.destinationCountry }} />
+                    defaultRoute={{ originCity: profileData.originCity, originCountry: profileData.originCountry, destinationCity: profileData.destinationCity, destinationCountry: profileData.destinationCountry }}
+                    hidePrice={true} />
                   {departures.length === 0 ? (
                     <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-sm text-amber-700 flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4" /> Ajoutez au moins un voyage
