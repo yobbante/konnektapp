@@ -158,14 +158,27 @@ export function AuthGuard({ children }: AuthGuardProps) {
       // GP users must be redirected even from public routes like "/"
       const { data: gpProfileEarly } = await supabase
         .from("gp_profiles")
-        .select("id")
+        .select("id, price_locked_at")
         .eq("user_id", userId)
         .maybeSingle();
 
       const isGPEarly = !!gpProfileEarly;
+      // GP registration is only complete when pricing is locked
+      const isGPRegistrationComplete = isGPEarly && !!gpProfileEarly?.price_locked_at;
 
-      // ── GP on public client-facing routes → redirect to GP dashboard ──
-      if (isGPEarly && (pathname === "/" || pathname === "/offres" || isClientOnlyRoute(pathname))) {
+      // ── GP with INCOMPLETE registration on public routes → let them stay (e.g. on /gp/bagages/inscription) ──
+      if (isGPEarly && !isGPRegistrationComplete) {
+        // If they're on the registration page, let them continue
+        if (pathname.startsWith("/gp/bagages/inscription") || pathname.startsWith("/gp/inscription") || pathname.startsWith("/transporteur/inscription")) {
+          return;
+        }
+        // Otherwise redirect them back to complete registration
+        navigate("/gp/bagages/inscription", { replace: true });
+        return;
+      }
+
+      // ── GP with COMPLETE registration on public client-facing routes → redirect to GP dashboard ──
+      if (isGPRegistrationComplete && (pathname === "/" || pathname === "/offres" || isClientOnlyRoute(pathname))) {
         navigate("/gp/apercu", { replace: true });
         return;
       }
@@ -191,8 +204,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
         return;
       }
 
-      // Reuse GP profile from earlier check
-      const isGP = isGPEarly;
+      // Reuse GP profile from earlier check — only treat as GP if registration is complete
+      const isGP = isGPRegistrationComplete;
 
       // Enforce strict route access
       if (isAdminRoute(pathname) && !hasAdminAccess) {
