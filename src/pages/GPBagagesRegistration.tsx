@@ -61,12 +61,29 @@ export default function GPBagagesRegistration() {
     const loadExistingProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: gpProfile } = await supabase.from("gp_profiles").select("id").eq("user_id", user.id).maybeSingle();
+        const { data: gpProfile } = await supabase
+          .from("gp_profiles")
+          .select("id, price_locked_at, status")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        
         if (gpProfile) {
-          toast({ title: "Vous êtes déjà transporteur", description: "Accédez à votre dashboard" });
-          navigate("/gp/dashboard", { replace: true });
+          // GP profile exists — check if registration is FULLY complete (pricing done)
+          if (gpProfile.price_locked_at) {
+            // Pricing done → registration complete, redirect to dashboard
+            toast({ title: "Vous êtes déjà transporteur", description: "Accédez à votre dashboard" });
+            navigate("/gp/dashboard", { replace: true });
+            return;
+          }
+          // GP profile exists but pricing NOT done → resume pricing gate
+          setPendingGpId(gpProfile.id);
+          setPhase("pricing_gate");
+          const { data: profile } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
+          setExistingUser({ id: user.id, email: user.email || "", fullName: profile?.full_name || "", phone: profile?.phone || "" });
           return;
         }
+        
+        // No GP profile yet — resume at step 2
         const { data: profile } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
         if (profile) {
           setExistingUser({ id: user.id, email: user.email || "", fullName: profile.full_name || "", phone: profile.phone || "" });
