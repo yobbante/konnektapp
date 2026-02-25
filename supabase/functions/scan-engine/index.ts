@@ -84,10 +84,10 @@ const STATUS_GP_ACTIONS: Record<string, string> = {
   pending:                "check_in",          // GP enregistre le dépôt
   accepted:               "check_in",
   paid_held:              "check_in",          // Escrow verrouillé → check-in possible
-  checked_in:             "none",              // En attente départ automatique
+  checked_in:             "confirm_delivery",  // TEST PHASE: GP peut livrer dès J+1
   weight_pending_payment: "none",              // Attente paiement supplément client
-  scheduled_departure:    "none",              // Départ programmé — automatique
-  collected:              "none",              // Ancien état → mappé
+  scheduled_departure:    "confirm_delivery",  // TEST PHASE: GP peut livrer dès départ programmé
+  collected:              "confirm_delivery",  // TEST PHASE: GP peut livrer
   in_transit:             "confirm_delivery",  // En transit → livraison
   arrived_destination:    "confirm_delivery",  // Arrivé → livraison
   delivery_pending:       "confirm_delivery",
@@ -566,10 +566,10 @@ async function execMarkTransit(
 async function execPrepareDelivery(
   supabase: any, order: any, userId: string, role: string
 ): Promise<ScanResponse> {
-  // prepare_delivery is a UI transition: arrived_destination → delivery_pending
-  const validStates = ["arrived_destination", "in_transit"];
+  // TEST PHASE: allow prepare_delivery from checked_in/scheduled_departure (J+1)
+  const validStates = ["arrived_destination", "in_transit", "checked_in", "scheduled_departure", "collected"];
   if (!validStates.includes(order.status)) {
-    return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_status", next_action: "none", message: "Le colis doit être arrivé à destination pour préparer la livraison." };
+    return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_status", next_action: "none", message: "Le colis doit être enregistré ou en transit pour préparer la livraison." };
   }
 
   // Generate delivery code if not exists
@@ -610,10 +610,10 @@ async function execPrepareDelivery(
 async function execConfirmDelivery(
   supabase: any, order: any, userId: string, role: string, actionData?: Record<string, any>
 ): Promise<ScanResponse> {
-  // États valides : V2 state machine
-  const validStates = ["in_transit", "arrived_destination", "delivery_pending", "collected", "arrived"];
+  // États valides : TEST PHASE — GP peut livrer dès checked_in (J+1 après dépôt)
+  const validStates = ["checked_in", "scheduled_departure", "in_transit", "arrived_destination", "delivery_pending", "collected", "arrived"];
   if (!validStates.includes(order.status)) {
-    return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_status", next_action: "none", message: "Le colis doit être « En transit » ou « Arrivé à destination » pour confirmer la livraison." };
+    return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_status", next_action: "none", message: "Le colis doit être au moins enregistré pour confirmer la livraison." };
   }
 
   // Vérifier supplément impayé — bloquer livraison
@@ -1012,7 +1012,8 @@ async function resolveColisScenario(supabase: any, parsed: ParsedQR, role: UserR
 
     // ── Auto-send delivery code when GP scans a delivery-ready order ──
     // If status is arrived/delivery_pending, auto-generate code and notify client+recipient
-    const deliveryReadyStatuses = ["arrived_destination", "delivery_pending", "in_transit"];
+    // TEST PHASE: auto-send delivery code from checked_in+ (J+1)
+    const deliveryReadyStatuses = ["checked_in", "scheduled_departure", "collected", "in_transit", "arrived_destination", "delivery_pending"];
     if (deliveryReadyStatuses.includes(order.status)) {
       let deliveryCode = order.delivery_code;
       
@@ -1057,15 +1058,16 @@ async function resolveColisScenario(supabase: any, parsed: ParsedQR, role: UserR
     }
 
     // Map état → action GP (aligné avec state machine V2)
+    // TEST PHASE: checked_in, scheduled_departure, collected → delivery possible (J+1)
     const gpActionMap: Record<string, { scenario: string; next_action: string; message: string }> = {
       pending:                { scenario: "gp_deposit",   next_action: "deposit_confirm",  message: "Vérifiez le poids et confirmez le dépôt." },
       accepted:               { scenario: "gp_deposit",   next_action: "deposit_confirm",  message: "Vérifiez le poids et confirmez le dépôt." },
       paid_held:              { scenario: "gp_deposit",   next_action: "deposit_confirm",  message: "Paiement reçu. Procédez au check-in." },
-      checked_in:             { scenario: "gp_waiting",   next_action: "none",             message: "⏳ Colis enregistré. Départ automatique à l'heure programmée." },
+      checked_in:             { scenario: "gp_delivery",  next_action: "confirm_delivery", message: "📦 Colis enregistré. Code envoyé — saisissez-le pour livrer." },
       weight_pending_payment: { scenario: "gp_blocked",   next_action: "none",             message: "⚠️ En attente du paiement supplément par le client." },
-      scheduled_departure:    { scenario: "gp_departing", next_action: "none",             message: "🛫 Départ programmé. Transit automatique à l'heure prévue." },
-      collected:              { scenario: "gp_deposit",   next_action: "deposit_confirm",  message: "Colis collecté. Vous pouvez confirmer le dépôt." },
-      in_transit:             { scenario: "gp_delivery",  next_action: "confirm_delivery", message: "🚚 En transit. Code de livraison envoyé au client. Saisissez-le pour confirmer." },
+      scheduled_departure:    { scenario: "gp_delivery",  next_action: "confirm_delivery", message: "🛫 Départ programmé. Code envoyé — saisissez-le pour livrer." },
+      collected:              { scenario: "gp_delivery",  next_action: "confirm_delivery", message: "📦 Colis collecté. Code envoyé — saisissez-le pour livrer." },
+      in_transit:             { scenario: "gp_delivery",  next_action: "confirm_delivery", message: "🚚 En transit. Code envoyé au client. Saisissez-le pour confirmer." },
       arrived_destination:    { scenario: "gp_delivery",  next_action: "confirm_delivery", message: "✈️ Arrivé. Code envoyé au client/destinataire. Demandez-le pour livrer." },
       delivery_pending:       { scenario: "gp_delivery",  next_action: "confirm_delivery", message: "📦 Code envoyé. Saisissez le code du client pour confirmer la livraison." },
       delivery_confirmed:     { scenario: "gp_released",  next_action: "none",             message: "✅ Livraison confirmée. Paiement en cours de libération." },
