@@ -55,7 +55,7 @@ export function GPKYCProgressCard({
     };
   }, [expanded]);
 
-  if (kycLevel >= 2 || status === "suspended") return null;
+  if (kycLevel >= 2 || status === "suspended" || (progress === 100 && !isVerified && !isVerifying)) return null;
 
   const label = isVerified
     ? "GP Vérifié — Passez Premium"
