@@ -362,56 +362,24 @@ export default function GPTarificationPage() {
           </CardContent>
         </Card>
 
-        {/* Section 4: Restrictions */}
-        <Collapsible open={restrictionsOpen} onOpenChange={setRestrictionsOpen}>
-          <Card>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="pb-3 cursor-pointer hover:bg-muted/30 transition-colors">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center">
-                      <ShieldX className="w-4 h-4 text-destructive" />
-                    </div>
-                    Restrictions
-                  </CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="destructive" className="text-xs">{restrictions.length} actives</Badge>
-                    {restrictionsOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-                  </div>
+        {/* Link to restrictions page */}
+        <Card className="cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => navigate("/gp/restrictions")}>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center">
+                  <ShieldX className="w-4 h-4 text-destructive" />
                 </div>
-                <p className="text-xs text-muted-foreground text-left">Articles que vous ne transportez pas</p>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="pt-0 space-y-2 max-h-[300px] overflow-y-auto">
-                {FULL_RESTRICTIONS_LIST.map((restriction) => {
-                  const Icon = restriction.icon;
-                  const isSelected = restrictions.includes(restriction.id);
-                  return (
-                    <div
-                      key={restriction.id}
-                      onClick={() => toggleRestriction(restriction.id)}
-                      className={`flex items-center gap-3 p-2.5 rounded-lg border transition-all cursor-pointer
-                        ${isSelected ? 'border-destructive/50 bg-destructive/5' : 'border-border hover:bg-muted/50'}`}
-                    >
-                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isSelected ? 'bg-destructive/10' : 'bg-muted'}`}>
-                        <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-destructive' : 'text-muted-foreground'}`} />
-                      </div>
-                      <p className={`font-medium text-sm flex-1 ${isSelected ? 'text-destructive' : ''}`}>
-                        {restriction.label}
-                      </p>
-                      <Switch
-                        checked={isSelected}
-                        onCheckedChange={() => toggleRestriction(restriction.id)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
+                Restrictions
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Badge variant="destructive" className="text-xs">{restrictions.length} actives</Badge>
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground text-left">Gérer les articles interdits →</p>
+          </CardHeader>
+        </Card>
 
         <div className="h-4" />
       </div>

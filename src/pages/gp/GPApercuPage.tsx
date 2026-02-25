@@ -286,7 +286,7 @@ export default function GPApercuPage() {
                     variant="default"
                     onClick={() => {
                       setShowRestrictionGate(false);
-                      navigate("/gp/parametres?focus=restrictions");
+                      navigate("/gp/restrictions");
                     }}
                   >
                     <ArrowRight className="w-4 h-4" />
