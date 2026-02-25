@@ -228,7 +228,12 @@ export function DocumentVerificationSheet({ open, onClose, gpId, onSuccess }: Do
             />
             {/* Document guide overlay */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-[85%] aspect-[1.6/1] rounded-xl border-[3px] border-white/50 border-dashed" />
+              <div className="relative w-[90%] aspect-[1.42/1] rounded-lg border-[3px] border-white/60 border-dashed shadow-[inset_0_0_30px_rgba(255,255,255,0.1)]">
+                <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-white/70 rounded-tl-md" />
+                <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-white/70 rounded-tr-md" />
+                <div className="absolute bottom-2 left-2 w-6 h-6 border-b-2 border-l-2 border-white/70 rounded-bl-md" />
+                <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-white/70 rounded-br-md" />
+              </div>
             </div>
             <div className="absolute top-12 left-0 right-0 text-center space-y-1">
               <p className="text-white/90 text-sm font-semibold">Photographiez votre Passeport ou CNI</p>
