@@ -47,6 +47,8 @@ interface DepartureCalendarViewProps {
     destinationCountry: string;
   };
   defaultPricePerKg?: number;
+  /** Hide the price display (e.g. during registration before pricing is set) */
+  hidePrice?: boolean;
 }
 
 const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -63,7 +65,8 @@ export function DepartureCalendarView({
   onAddDeparture,
   onDeleteDeparture,
   defaultRoute,
-  defaultPricePerKg = 8
+  defaultPricePerKg = 8,
+  hidePrice = false,
 }: DepartureCalendarViewProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -405,6 +408,7 @@ export function DepartureCalendarView({
           defaultRoute={defaultRoute}
           defaultPricePerKg={defaultPricePerKg}
           onAddDeparture={onAddDeparture}
+          hidePrice={hidePrice}
         />
       )}
     </div>
@@ -419,6 +423,7 @@ function SmartVoyageFormInline({
   defaultRoute,
   defaultPricePerKg,
   onAddDeparture,
+  hidePrice = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -426,6 +431,7 @@ function SmartVoyageFormInline({
   defaultRoute: { originCity: string; originCountry: string; destinationCity: string; destinationCountry: string };
   defaultPricePerKg: number;
   onAddDeparture: DepartureCalendarViewProps["onAddDeparture"];
+  hidePrice?: boolean;
 }) {
   const [loading, setLoading] = useState(false);
   const [tripType, setTripType] = useState<"aller" | "retour">("aller");
@@ -583,7 +589,7 @@ function SmartVoyageFormInline({
           </div>
 
           {/* Prix — affiché uniquement si déjà défini via la Pricing Gate */}
-          {defaultPricePerKg > 0 && (
+          {!hidePrice && defaultPricePerKg > 0 && (
             <div className="flex items-center justify-between p-3.5 rounded-xl bg-primary/5 border border-primary/20">
               <span className="text-sm text-muted-foreground flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-primary" /> Tarif défini
