@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   DollarSign, Weight, Package, Edit, Save, 
-  ShieldX, ChevronDown, ChevronUp, Check,
+  ShieldX, ChevronDown, ChevronUp, Check, CheckCircle2,
   Smartphone, Laptop, FileText, Gem, Tablet, Gamepad2, Wine, Car, Lock
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,6 +65,8 @@ const STANDARD_FLAT_RATE_ITEMS = [
 
 export default function GPTarificationPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const fromGate = searchParams.get("from") === "gate";
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -380,6 +382,19 @@ export default function GPTarificationPage() {
             <p className="text-xs text-muted-foreground text-left">Gérer les articles interdits →</p>
           </CardHeader>
         </Card>
+
+        {/* Validate button when coming from gate */}
+        {fromGate && (
+          <div className="fixed bottom-6 left-4 right-4 z-50">
+            <Button
+              className="w-full h-14 text-base gap-2 shadow-lg"
+              onClick={() => navigate("/gp/apercu?validated=tarifs")}
+            >
+              <CheckCircle2 className="w-5 h-5" />
+              Valider mes tarifs
+            </Button>
+          </div>
+        )}
 
         <div className="h-4" />
       </div>

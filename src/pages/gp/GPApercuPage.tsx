@@ -5,7 +5,7 @@
  * Clean design, contextual actions, smart flow colis
  */
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Plane, Send, AlertTriangle, Clock, ChevronRight,
@@ -56,6 +56,7 @@ const STATUS_FLOW: Record<string, {label: string;next: string;nextLabel: string;
 
 export default function GPApercuPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const { gpProfile, loading: profileLoading, pendingCount, activeCount, reload: reloadProfile } = useGPProfile();
   const [data, setData] = useState<DashboardData | null>(null);
@@ -71,6 +72,20 @@ export default function GPApercuPage() {
   const [documentSheetOpen, setDocumentSheetOpen] = useState(false);
   const [activationTransition, setActivationTransition] = useState(false);
   const [showRestrictionGate, setShowRestrictionGate] = useState(false);
+  const [restrictionsValidated, setRestrictionsValidated] = useState(false);
+  const [tarifsValidated, setTarifsValidated] = useState(false);
+
+  // Handle return from validation pages
+  useEffect(() => {
+    const validated = searchParams.get("validated");
+    if (validated === "restrictions") {
+      setRestrictionsValidated(true);
+      setSearchParams({}, { replace: true });
+    } else if (validated === "tarifs") {
+      setTarifsValidated(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (gpProfile) loadAll();
@@ -177,6 +192,7 @@ export default function GPApercuPage() {
   // Check if restrictions are missing (force review after activation)
   const hasRestrictions = (gpProfile?.explicit_restrictions?.length ?? 0) > 0;
   const needsRestrictionReview = !isPending && gpProfile?.status === "verified" && !hasRestrictions;
+  const gateActive = (showRestrictionGate || needsRestrictionReview) && !(restrictionsValidated && tarifsValidated);
 
   const handleAutoActivated = () => {
     setActivationTransition(true);
@@ -253,7 +269,7 @@ export default function GPApercuPage() {
 
       {/* ── RESTRICTION GATE OVERLAY ── */}
       <AnimatePresence>
-        {(showRestrictionGate || needsRestrictionReview) && !activationTransition && (
+        {gateActive && !activationTransition && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -272,48 +288,56 @@ export default function GPApercuPage() {
               <div className="space-y-2">
                 <h2 className="text-lg font-bold">Dernière étape obligatoire</h2>
                 <p className="text-sm text-muted-foreground">
-                  Avant de recevoir des commandes, vous devez définir vos <strong>restrictions</strong> (articles interdits) et vérifier vos <strong>tarifs</strong>.
+                  Avant de recevoir des commandes, validez ces 2 étapes :
                 </p>
               </div>
 
               <div className="space-y-3">
-                <motion.div
-                  animate={{ x: [0, 8, 0] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                >
-                  <Button
-                    className="w-full gap-2 h-12 text-sm"
-                    variant="default"
-                    onClick={() => {
-                      setShowRestrictionGate(false);
-                      navigate("/gp/restrictions");
-                    }}
+                {restrictionsValidated ? (
+                  <div className="w-full flex items-center gap-2 h-12 px-6 rounded-xl border-2 border-accent/50 bg-accent/10 text-accent justify-center text-sm font-semibold">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Restrictions validées ✓
+                  </div>
+                ) : (
+                  <motion.div
+                    animate={{ x: [0, 8, 0] }}
+                    transition={{ repeat: Infinity, duration: 1.5 }}
                   >
-                    <ArrowRight className="w-4 h-4" />
-                    Définir mes restrictions (obligatoire)
-                  </Button>
-                </motion.div>
+                    <Button
+                      className="w-full gap-2 h-12 text-sm"
+                      variant="default"
+                      onClick={() => navigate("/gp/restrictions?from=gate")}
+                    >
+                      <ArrowRight className="w-4 h-4" />
+                      Définir mes restrictions (obligatoire)
+                    </Button>
+                  </motion.div>
+                )}
 
-                <motion.div
-                  animate={{ x: [0, 8, 0] }}
-                  transition={{ repeat: Infinity, duration: 1.5, delay: 0.3 }}
-                >
-                  <Button
-                    className="w-full gap-2 h-12 text-sm"
-                    variant="outline"
-                    onClick={() => {
-                      setShowRestrictionGate(false);
-                      navigate("/gp/tarification");
-                    }}
+                {tarifsValidated ? (
+                  <div className="w-full flex items-center gap-2 h-12 px-6 rounded-xl border-2 border-accent/50 bg-accent/10 text-accent justify-center text-sm font-semibold">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Tarifs validés ✓
+                  </div>
+                ) : (
+                  <motion.div
+                    animate={{ x: [0, 8, 0] }}
+                    transition={{ repeat: Infinity, duration: 1.5, delay: 0.3 }}
                   >
-                    <Scale className="w-4 h-4" />
-                    Vérifier mes tarifs
-                  </Button>
-                </motion.div>
+                    <Button
+                      className="w-full gap-2 h-12 text-sm"
+                      variant="outline"
+                      onClick={() => navigate("/gp/tarification?from=gate")}
+                    >
+                      <Scale className="w-4 h-4" />
+                      Vérifier mes tarifs
+                    </Button>
+                  </motion.div>
+                )}
               </div>
 
               <p className="text-[11px] text-muted-foreground/60">
-                Vous devez ajouter au moins une restriction pour activer votre profil.
+                Validez les deux pour accéder à votre dashboard.
               </p>
             </motion.div>
           </motion.div>

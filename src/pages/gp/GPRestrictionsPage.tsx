@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { ShieldX } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { ShieldX, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
 import { PageLoader } from "@/components/ui/PageLoader";
@@ -12,6 +13,8 @@ import { FULL_RESTRICTIONS_LIST } from "@/components/gp/RestrictionsManager";
 
 export default function GPRestrictionsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const fromGate = searchParams.get("from") === "gate";
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [gpProfile, setGpProfile] = useState<any>(null);
@@ -117,7 +120,7 @@ export default function GPRestrictionsPage() {
 
         {/* Restrictions list */}
         <Card>
-          <CardContent className="p-3 space-y-2 max-h-[60vh] overflow-y-auto">
+          <CardContent className="p-3 space-y-2 max-h-[50vh] overflow-y-auto">
             {filteredRestrictions.map((restriction) => {
               const Icon = restriction.icon;
               const isSelected = restrictions.includes(restriction.id);
@@ -149,6 +152,20 @@ export default function GPRestrictionsPage() {
             })}
           </CardContent>
         </Card>
+
+        {/* Validate button when coming from gate */}
+        {fromGate && (
+          <div className="fixed bottom-6 left-4 right-4 z-50">
+            <Button
+              className="w-full h-14 text-base gap-2 shadow-lg"
+              disabled={restrictions.length === 0}
+              onClick={() => navigate("/gp/apercu?validated=restrictions")}
+            >
+              <CheckCircle2 className="w-5 h-5" />
+              {restrictions.length === 0 ? "Ajoutez au moins 1 restriction" : `Valider (${restrictions.length} restriction${restrictions.length > 1 ? 's' : ''})`}
+            </Button>
+          </div>
+        )}
       </div>
     </GPDashboardLayout>
   );
