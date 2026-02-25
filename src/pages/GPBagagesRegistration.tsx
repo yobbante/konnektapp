@@ -476,21 +476,7 @@ export default function GPBagagesRegistration() {
             <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <Card>
                 <CardContent className="p-5 space-y-4">
-                  {/* Identity - Name field */}
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-primary" />
-                      Nom & Prénom *
-                    </Label>
-                    <Input
-                      placeholder="Ex: Mamadou Diallo"
-                      value={profileData.fullName}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, fullName: e.target.value }))}
-                      className="h-12 text-base"
-                    />
-                  </div>
-
-                  <div className="pt-2 border-t border-border">
+                  <div className="pt-2">
                     <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
                       <Lock className="w-5 h-5 text-primary" />
                       {isLogin ? "Connexion" : "Créer un compte"}
@@ -501,7 +487,21 @@ export default function GPBagagesRegistration() {
                     </div>
                   ) : (
                     <>
+                      {/* Name field - first */}
                       <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-primary" />
+                          Nom & Prénom *
+                        </Label>
+                        <Input
+                          placeholder="Ex: Mamadou Diallo"
+                          value={profileData.fullName}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, fullName: e.target.value }))}
+                          className="h-12 text-base"
+                        />
+                      </div>
+
+                      <div className="space-y-2 mt-4">
                         <Label>Email *</Label>
                         <div className="relative">
                           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
