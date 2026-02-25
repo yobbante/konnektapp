@@ -57,7 +57,7 @@ const STATUS_FLOW: Record<string, {label: string;next: string;nextLabel: string;
 export default function GPApercuPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { gpProfile, loading: profileLoading, pendingCount, activeCount } = useGPProfile();
+  const { gpProfile, loading: profileLoading, pendingCount, activeCount, reload: reloadProfile } = useGPProfile();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -515,8 +515,8 @@ export default function GPApercuPage() {
       isVerified={gpProfile?.status === "verified" || gpProfile?.status === "premium" || gpProfile?.status === "starter"} />
       {gpProfile &&
       <>
-          <SelfieVerificationSheet open={selfieSheetOpen} onClose={() => setSelfieSheetOpen(false)} gpId={gpProfile.id} onSuccess={() => loadAll(true)} />
-          <DocumentVerificationSheet open={documentSheetOpen} onClose={() => setDocumentSheetOpen(false)} gpId={gpProfile.id} onSuccess={() => loadAll(true)} />
+          <SelfieVerificationSheet open={selfieSheetOpen} onClose={() => setSelfieSheetOpen(false)} gpId={gpProfile.id} onSuccess={() => { reloadProfile(); loadAll(true); }} />
+          <DocumentVerificationSheet open={documentSheetOpen} onClose={() => setDocumentSheetOpen(false)} gpId={gpProfile.id} onSuccess={() => { reloadProfile(); loadAll(true); }} />
           <SmartVoyageForm open={showVoyageForm} onClose={() => setShowVoyageForm(false)} gpId={gpProfile.id} onSuccess={() => {setShowVoyageForm(false);loadAll();}} />
           <CreateManualParcelDialog open={showManualForm} onClose={() => setShowManualForm(false)} gpId={gpProfile.id} gpCurrency={gpProfile.default_currency || "XOF"} onSuccess={() => loadAll(true)} />
         </>

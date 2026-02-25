@@ -57,7 +57,9 @@ export function SelfieVerificationSheet({ open, onClose, gpId, onSuccess }: Self
   }, [facingMode, stopCamera, toast]);
 
   useEffect(() => {
-    if (!open) {
+    if (open) {
+      startCamera();
+    } else {
       stopCamera();
       setStep("instructions");
       setCapturedImage(null);
@@ -224,53 +226,8 @@ export function SelfieVerificationSheet({ open, onClose, gpId, onSuccess }: Self
       <SheetContent side="bottom" className="h-[95dvh] rounded-t-3xl p-0 overflow-hidden">
         <canvas ref={canvasRef} className="hidden" />
 
-        {/* Instructions */}
-        {step === "instructions" && (
-          <div className="flex flex-col h-full">
-            <SheetHeader className="p-5 pb-0">
-              <SheetTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-primary" />
-                Vérification d'identité
-              </SheetTitle>
-            </SheetHeader>
-            <div className="flex-1 flex flex-col items-center justify-center px-6 gap-6">
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="w-32 h-32 rounded-full bg-primary/10 flex items-center justify-center"
-              >
-                <Smile className="w-16 h-16 text-primary" />
-              </motion.div>
-
-              <div className="text-center space-y-2">
-                <h3 className="text-lg font-bold">Prenez un selfie clair</h3>
-                <p className="text-sm text-muted-foreground max-w-xs">
-                  Nous comparons votre visage avec votre pièce d'identité pour valider votre compte.
-                </p>
-              </div>
-
-              <div className="space-y-2 w-full max-w-xs">
-                {[
-                  "Visage bien éclairé, de face",
-                  "Sans lunettes de soleil ni casquette",
-                  "Arrière-plan neutre",
-                ].map((tip, i) => (
-                  <div key={i} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-muted/50">
-                    <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                    <span className="text-xs">{tip}</span>
-                  </div>
-                ))}
-              </div>
-
-              <Button onClick={startCamera} size="lg" className="w-full max-w-xs gap-2">
-                <Camera className="w-5 h-5" /> Ouvrir la caméra
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Camera */}
-        {step === "camera" && (
+        {/* Camera — auto-opened */}
+        {(step === "instructions" || step === "camera") && (
           <div className="relative h-full bg-black flex flex-col">
             <video
               ref={videoRef}
