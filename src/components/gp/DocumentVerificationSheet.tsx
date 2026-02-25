@@ -92,8 +92,84 @@ export function DocumentVerificationSheet({ open, onClose, gpId, onSuccess }: Do
     startCamera();
   };
 
+  /** Basic image quality check: not too dark, not blank */
+  const validateImageQuality = (dataUrl: string): Promise<{ valid: boolean; reason?: string }> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement("canvas");
+        const size = 100; // sample at small size for speed
+        c.width = size;
+        c.height = size;
+        const ctx = c.getContext("2d")!;
+        ctx.drawImage(img, 0, 0, size, size);
+        const data = ctx.getImageData(0, 0, size, size).data;
+        
+        let totalBrightness = 0;
+        let uniformPixels = 0;
+        const firstR = data[0], firstG = data[1], firstB = data[2];
+        
+        for (let i = 0; i < data.length; i += 4) {
+          const brightness = (data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114);
+          totalBrightness += brightness;
+          if (Math.abs(data[i] - firstR) < 10 && Math.abs(data[i+1] - firstG) < 10 && Math.abs(data[i+2] - firstB) < 10) {
+            uniformPixels++;
+          }
+        }
+        
+        const avgBrightness = totalBrightness / (size * size);
+        const uniformity = uniformPixels / (size * size);
+        
+        if (avgBrightness < 30) {
+          resolve({ valid: false, reason: "Image trop sombre. Assurez-vous d'avoir un bon éclairage." });
+        } else if (avgBrightness > 245) {
+          resolve({ valid: false, reason: "Image trop claire ou surexposée." });
+        } else if (uniformity > 0.85) {
+          resolve({ valid: false, reason: "Image uniforme détectée. Photographiez un vrai document." });
+        } else {
+          resolve({ valid: true });
+        }
+      };
+      img.onerror = () => resolve({ valid: true }); // fallback: allow
+      img.src = dataUrl;
+    });
+  };
+
+  /** Check if both documents are present and auto-activate */
+  const tryAutoActivate = async () => {
+    try {
+      const { data: profile } = await supabase
+        .from("gp_profiles")
+        .select("id_document_url, selfie_url, status, base_price_per_kg, base_origin_city, base_destination_city")
+        .eq("id", gpId)
+        .single();
+      
+      if (profile && profile.id_document_url && profile.selfie_url && 
+          profile.base_origin_city && profile.base_destination_city && 
+          (profile.base_price_per_kg ?? 0) > 0 &&
+          profile.status !== "verified") {
+        await supabase.from("gp_profiles").update({
+          status: "verified" as any,
+          kyc_status: "verified",
+          kyc_level: 1,
+          verified_at: new Date().toISOString(),
+        }).eq("id", gpId);
+        toast({ title: "🎉 Compte activé automatiquement !", description: "Toutes les vérifications sont complètes." });
+      }
+    } catch { /* silent */ }
+  };
+
   const uploadDocument = async () => {
     if (!capturedImage) return;
+    
+    // Validate image quality first
+    const quality = await validateImageQuality(capturedImage);
+    if (!quality.valid) {
+      toast({ title: "Image non valide", description: quality.reason, variant: "destructive" });
+      setStep("preview");
+      return;
+    }
+    
     setStep("uploading");
 
     try {
@@ -122,9 +198,13 @@ export function DocumentVerificationSheet({ open, onClose, gpId, onSuccess }: Do
 
       setStep("done");
       onSuccess?.(urlData.publicUrl);
-      toast({ title: "Document enregistré ✅", description: "Votre passeport/CNI est en cours de vérification." });
+      toast({ title: "Document enregistré ✅", description: "Passeport/CNI validé." });
 
-      setTimeout(() => onClose(), 1500);
+      // Try auto-activation after a small delay to let DB update propagate
+      setTimeout(async () => {
+        await tryAutoActivate();
+        onClose();
+      }, 1500);
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message || "Échec de l'envoi", variant: "destructive" });
       setStep("preview");

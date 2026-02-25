@@ -552,9 +552,9 @@ function PendingAccountBanner({ gpProfile, onDocumentClick, onSelfieClick, navig
           <Shield className={cn("w-5 h-5", allDone ? "text-accent" : "text-primary")} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-sm">{allDone ? "Validation en cours ✨" : "Activez votre compte"}</p>
+          <p className="font-bold text-sm">{allDone ? "Activation en cours... ✨" : "Activez votre compte"}</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {allDone ? "Vérification automatique sous quelques minutes." : `${4 - completedChecks} étape(s) restante(s)`}
+            {allDone ? "Votre compte sera activé automatiquement." : `${4 - completedChecks} étape(s) restante(s)`}
           </p>
           <div className="mt-2.5 h-1.5 rounded-full bg-muted overflow-hidden">
             <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.8 }}
@@ -578,9 +578,11 @@ function PendingAccountBanner({ gpProfile, onDocumentClick, onSelfieClick, navig
             )}
           </div>
           {allDone &&
-          <Button size="sm" className="w-full mt-3 bg-accent hover:bg-accent/90 text-accent-foreground" onClick={onActivate}>
-              <Check className="w-4 h-4 mr-1.5" /> Activer mon compte
-            </Button>
+          <div className="mt-3 p-2.5 rounded-lg bg-accent/10 border border-accent/20 text-center">
+              <p className="text-xs text-accent font-medium flex items-center justify-center gap-1.5">
+                <Check className="w-3.5 h-3.5" /> Activation automatique en cours...
+              </p>
+            </div>
           }
         </div>
       </div>

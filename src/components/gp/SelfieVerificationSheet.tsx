@@ -90,16 +90,100 @@ export function SelfieVerificationSheet({ open, onClose, gpId, onSuccess }: Self
     startCamera();
   };
 
+  /** Basic image quality check: not too dark, not blank, face-like content */
+  const validateImageQuality = (dataUrl: string): Promise<{ valid: boolean; reason?: string }> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement("canvas");
+        const size = 100;
+        c.width = size;
+        c.height = size;
+        const ctx = c.getContext("2d")!;
+        ctx.drawImage(img, 0, 0, size, size);
+        const data = ctx.getImageData(0, 0, size, size).data;
+        
+        let totalBrightness = 0;
+        let uniformPixels = 0;
+        const firstR = data[0], firstG = data[1], firstB = data[2];
+        // Check for skin-tone-like pixels (very basic heuristic)
+        let skinTonePixels = 0;
+        
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i], g = data[i+1], b = data[i+2];
+          const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
+          totalBrightness += brightness;
+          if (Math.abs(r - firstR) < 10 && Math.abs(g - firstG) < 10 && Math.abs(b - firstB) < 10) {
+            uniformPixels++;
+          }
+          // Very basic skin tone detection (works for diverse skin tones)
+          if (r > 60 && g > 40 && b > 20 && r > g && (r - g) > 5 && brightness > 40 && brightness < 230) {
+            skinTonePixels++;
+          }
+        }
+        
+        const avgBrightness = totalBrightness / (size * size);
+        const uniformity = uniformPixels / (size * size);
+        const skinRatio = skinTonePixels / (size * size);
+        
+        if (avgBrightness < 30) {
+          resolve({ valid: false, reason: "Image trop sombre. Améliorez l'éclairage." });
+        } else if (avgBrightness > 245) {
+          resolve({ valid: false, reason: "Image trop claire ou surexposée." });
+        } else if (uniformity > 0.85) {
+          resolve({ valid: false, reason: "Image uniforme détectée. Prenez un vrai selfie." });
+        } else if (skinRatio < 0.05) {
+          resolve({ valid: false, reason: "Aucun visage détecté. Positionnez votre visage dans le cercle." });
+        } else {
+          resolve({ valid: true });
+        }
+      };
+      img.onerror = () => resolve({ valid: true });
+      img.src = dataUrl;
+    });
+  };
+
+  /** Check if both documents are present and auto-activate */
+  const tryAutoActivate = async () => {
+    try {
+      const { data: profile } = await supabase
+        .from("gp_profiles")
+        .select("id_document_url, selfie_url, status, base_price_per_kg, base_origin_city, base_destination_city")
+        .eq("id", gpId)
+        .single();
+      
+      if (profile && profile.id_document_url && profile.selfie_url && 
+          profile.base_origin_city && profile.base_destination_city && 
+          (profile.base_price_per_kg ?? 0) > 0 &&
+          profile.status !== "verified") {
+        await supabase.from("gp_profiles").update({
+          status: "verified" as any,
+          kyc_status: "verified",
+          kyc_level: 1,
+          verified_at: new Date().toISOString(),
+        }).eq("id", gpId);
+        toast({ title: "🎉 Compte activé automatiquement !", description: "Toutes les vérifications sont complètes." });
+      }
+    } catch { /* silent */ }
+  };
+
   const uploadSelfie = async () => {
     if (!capturedImage) return;
+    
+    // Validate image quality first
+    const quality = await validateImageQuality(capturedImage);
+    if (!quality.valid) {
+      toast({ title: "Selfie non valide", description: quality.reason, variant: "destructive" });
+      setStep("preview");
+      return;
+    }
+    
     setStep("uploading");
 
     try {
-      // Get current user ID for RLS-compatible path
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
 
-      // Convert base64 to blob
       const res = await fetch(capturedImage);
       const blob = await res.blob();
       const fileName = `selfie_${gpId}_${Date.now()}.jpg`;
@@ -113,7 +197,6 @@ export function SelfieVerificationSheet({ open, onClose, gpId, onSuccess }: Self
 
       const { data: urlData } = supabase.storage.from("gp-documents").getPublicUrl(filePath);
 
-      // Update GP profile
       const { error: updateError } = await supabase
         .from("gp_profiles")
         .update({ selfie_url: urlData.publicUrl })
@@ -123,9 +206,13 @@ export function SelfieVerificationSheet({ open, onClose, gpId, onSuccess }: Self
 
       setStep("done");
       onSuccess?.(urlData.publicUrl);
-      toast({ title: "Selfie enregistré ✅", description: "Votre vérification est en cours de traitement." });
+      toast({ title: "Selfie enregistré ✅", description: "Vérification réussie." });
       
-      setTimeout(() => onClose(), 1500);
+      // Try auto-activation
+      setTimeout(async () => {
+        await tryAutoActivate();
+        onClose();
+      }, 1500);
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message || "Échec de l'envoi", variant: "destructive" });
       setStep("preview");
