@@ -12,7 +12,7 @@ interface GPKYCBadgeProps {
 const CONFIG: Record<string, { icon: typeof Shield; label: string; color: string; bg: string }> = {
   starter: { icon: Shield, label: "Starter", color: "text-muted-foreground", bg: "bg-muted/60 border-border" },
   pending: { icon: Clock, label: "En attente", color: "text-amber-600", bg: "bg-amber-500/10 border-amber-500/30" },
-  verified: { icon: ShieldCheck, label: "Vérifié", color: "text-emerald-600", bg: "bg-emerald-500/10 border-emerald-500/30" },
+  verified: { icon: ShieldCheck, label: "Vérifié", color: "text-white", bg: "bg-emerald-600 border-emerald-700 shadow-sm" },
   premium: { icon: Star, label: "Premium", color: "text-amber-500", bg: "bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border-amber-400/40" },
   suspended: { icon: Ban, label: "Suspendu", color: "text-destructive", bg: "bg-destructive/10 border-destructive/30" },
   rejected: { icon: Ban, label: "Rejeté", color: "text-destructive", bg: "bg-destructive/10 border-destructive/30" },
