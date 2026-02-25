@@ -161,7 +161,9 @@ export default function GPBagagesRegistration() {
         if (existingUser) return true;
         if (!authData.email) { toast({ title: "Email requis", variant: "destructive" }); return false; }
         if (!isLogin) {
-          if (!authData.password || authData.password.length < 6) { toast({ title: "Mot de passe min. 6 caractères", variant: "destructive" }); return false; }
+          if (!authData.password || authData.password.length < 8) { toast({ title: "Mot de passe min. 8 caractères", variant: "destructive" }); return false; }
+          if (!/\d/.test(authData.password)) { toast({ title: "Le mot de passe doit contenir au moins un chiffre", variant: "destructive" }); return false; }
+          if (!/[^a-zA-Z0-9]/.test(authData.password)) { toast({ title: "Le mot de passe doit contenir un caractère spécial (!@#$...)", variant: "destructive" }); return false; }
           if (authData.password !== authData.confirmPassword) { toast({ title: "Mots de passe différents", variant: "destructive" }); return false; }
         } else if (!authData.password) { toast({ title: "Mot de passe requis", variant: "destructive" }); return false; }
         return true;
@@ -518,10 +520,21 @@ export default function GPBagagesRegistration() {
                           </button>
                         </div>
                       </div>
+                      {/* Password strength hints */}
+                      {!isLogin && authData.password.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2 px-1">
+                          <PasswordRule ok={authData.password.length >= 8} label="8+ caractères" />
+                          <PasswordRule ok={/\d/.test(authData.password)} label="1 chiffre" />
+                          <PasswordRule ok={/[^a-zA-Z0-9]/.test(authData.password)} label="1 spécial (!@#$)" />
+                        </div>
+                      )}
                       {!isLogin && (
                         <div className="space-y-2 mt-4">
                           <Label>Confirmer *</Label>
-                          <Input type={showPassword ? "text" : "password"} placeholder="••••••••" className="h-12" value={authData.confirmPassword} onChange={(e) => setAuthData({ ...authData, confirmPassword: e.target.value })} />
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input type={showPassword ? "text" : "password"} placeholder="••••••••" className="pl-10 h-12" value={authData.confirmPassword} onChange={(e) => setAuthData({ ...authData, confirmPassword: e.target.value })} />
+                          </div>
                         </div>
                       )}
                       <button type="button" onClick={() => setIsLogin(!isLogin)} className="text-sm text-primary hover:underline w-full text-center mt-4">
@@ -588,5 +601,14 @@ export default function GPBagagesRegistration() {
         </AnimatePresence>
       </main>
     </div>
+  );
+}
+
+function PasswordRule({ ok, label }: { ok: boolean; label: string }) {
+  return (
+    <span className={`text-[11px] flex items-center gap-1 ${ok ? "text-emerald-600" : "text-muted-foreground"}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${ok ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
+      {label}
+    </span>
   );
 }
