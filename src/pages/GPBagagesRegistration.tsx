@@ -373,40 +373,37 @@ export default function GPBagagesRegistration() {
   // Pricing Gate Phase
   if (phase === "pricing_gate") {
     return (
-      <div className="min-h-screen bg-background pb-safe">
+      <div className="min-h-[100dvh] bg-background flex flex-col">
         <header 
-          className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border"
+          className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border flex-shrink-0"
           style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
         >
-          <div className="flex items-center gap-3 px-4 h-14">
-            <div className="w-9" /> {/* spacer - no back on pricing gate */}
+          <div className="flex items-center gap-3 px-4 h-12">
+            <div className="w-8" />
             <div className="flex-1 min-w-0 text-center">
               <p className="text-sm font-semibold">Définir vos tarifs</p>
-              <p className="text-[10px] text-muted-foreground">Étape obligatoire</p>
             </div>
             <Badge variant="destructive" className="text-[10px]">Requis</Badge>
           </div>
         </header>
 
-        <main className="px-4 py-6 max-w-lg mx-auto">
+        <main className="flex-1 overflow-y-auto px-4 py-4 max-w-lg mx-auto w-full pb-24">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            {/* Mandatory alert */}
-            <div className="p-4 mb-6 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div className="p-3 mb-4 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-sm">Tarification obligatoire</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Votre profil est en attente de confirmation. Définissez vos tarifs pour finaliser votre inscription et activer vos voyages.
+                <p className="font-semibold text-xs">Tarification obligatoire</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Définissez vos tarifs pour finaliser votre inscription.
                 </p>
               </div>
             </div>
 
             <Card>
-              <CardContent className="p-5 space-y-4">
-                <h2 className="text-lg font-semibold flex items-center gap-2">
-                  <Euro className="w-5 h-5 text-primary" /> Vos tarifs
+              <CardContent className="p-4 space-y-3">
+                <h2 className="text-base font-semibold flex items-center gap-2">
+                  <Euro className="w-4 h-4 text-primary" /> Vos tarifs
                 </h2>
-                <p className="text-sm text-muted-foreground">2 prix de référence. Paliers calculés automatiquement.</p>
                 <PricingInputForm 
                   pricePerKg={pricePerKg} 
                   forfaitValise={forfaitValise} 
@@ -440,192 +437,163 @@ export default function GPBagagesRegistration() {
                     });
                   }}
                 />
-
-                <div className="pt-4">
-                  <Button onClick={handleFinalizePricing} disabled={loading} className="w-full h-12 gap-2">
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Finaliser l'inscription <CheckCircle className="w-4 h-4" /></>}
-                  </Button>
-                </div>
               </CardContent>
             </Card>
           </motion.div>
         </main>
+
+        {/* Fixed CTA footer */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border px-4 py-3"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)' }}>
+          <div className="max-w-lg mx-auto">
+            <Button onClick={handleFinalizePricing} disabled={loading} className="w-full h-12 gap-2 text-sm font-semibold">
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Finaliser l'inscription <CheckCircle className="w-4 h-4" /></>}
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-safe">
+    <div className="min-h-[100dvh] bg-background flex flex-col">
       {/* Header with back */}
       <header 
-        className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border"
+        className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border flex-shrink-0"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
-        <div className="flex items-center gap-3 px-4 h-14">
-          <Button variant="ghost" size="icon" onClick={handleBack} className="h-9 w-9 -ml-2">
+        <div className="flex items-center gap-3 px-4 h-12">
+          <Button variant="ghost" size="icon" onClick={handleBack} className="h-8 w-8 -ml-2">
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold truncate">GP Via Bagages</p>
-            <p className="text-[10px] text-muted-foreground">Étape {step}/3</p>
           </div>
-          <Badge variant="secondary" className="text-xs">{steps[step - 1]?.label}</Badge>
+          <div className="flex items-center gap-1.5">
+            {steps.map((s) => (
+              <div key={s.num} className={`w-6 h-1.5 rounded-full transition-all ${step >= s.num ? "bg-primary" : "bg-muted"}`} />
+            ))}
+          </div>
         </div>
       </header>
       
-      <main className="px-4 py-6 max-w-lg mx-auto">
-        {/* Icon */}
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center mb-6">
-          <div className="w-14 h-14 mx-auto bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center mb-3 shadow-lg">
-            <Luggage className="w-7 h-7 text-white" />
-          </div>
-          <h1 className="text-xl font-bold">Devenir GP Via Bagages</h1>
-        </motion.div>
-
-        {/* Progress - 3 steps */}
-        <div className="flex items-center justify-center gap-1 mb-6">
-          {steps.map((s, i) => (
-            <div key={s.num} className="flex items-center">
-              <div className="flex flex-col items-center">
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${step >= s.num ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
-                  {step > s.num ? <CheckCircle className="w-4 h-4" /> : <s.icon className="w-4 h-4" />}
-                </div>
-                <span className={`text-[9px] mt-1 ${step >= s.num ? "text-foreground font-medium" : "text-muted-foreground"}`}>{s.label}</span>
-              </div>
-              {i < steps.length - 1 && <div className={`w-8 h-0.5 mx-1 rounded ${step > s.num ? "bg-primary" : "bg-muted"}`} />}
-            </div>
-          ))}
-        </div>
-
+      <main className="flex-1 overflow-y-auto px-4 py-4 max-w-lg mx-auto w-full pb-24">
         <AnimatePresence mode="wait">
           {/* Step 1: Auth */}
           {step === 1 && (
-            <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <Card>
-                <CardContent className="p-5 space-y-4">
-                  <div className="pt-2">
-                    <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
-                      <Lock className="w-5 h-5 text-primary" />
+            <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-3">
+              <div className="text-center mb-2">
+                <div className="w-10 h-10 mx-auto bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center mb-2">
+                  <Luggage className="w-5 h-5 text-white" />
+                </div>
+                <h1 className="text-lg font-bold">Devenir GP Via Bagages</h1>
+              </div>
+
+              {existingUser ? (
+                <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-sm text-green-700 flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4" /> Connecté: {existingUser.fullName || existingUser.email}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="p-4 space-y-3">
+                    <h2 className="text-base font-semibold flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-primary" />
                       {isLogin ? "Connexion" : "Créer un compte"}
                     </h2>
-                  {existingUser ? (
-                    <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-sm text-green-700 flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4" /> Connecté: {existingUser.fullName || existingUser.email}
+                    {/* Name */}
+                    <div className="space-y-1">
+                      <Label className="text-xs">Nom & Prénom *</Label>
+                      <Input placeholder="Ex: Mamadou Diallo" value={profileData.fullName} onChange={(e) => setProfileData(prev => ({ ...prev, fullName: e.target.value }))} className="h-10" />
                     </div>
-                  ) : (
-                    <>
-                      {/* Name field - first */}
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-primary" />
-                          Nom & Prénom *
-                        </Label>
-                        <Input
-                          placeholder="Ex: Mamadou Diallo"
-                          value={profileData.fullName}
-                          onChange={(e) => setProfileData(prev => ({ ...prev, fullName: e.target.value }))}
-                          className="h-12 text-base"
-                        />
+                    {/* Email */}
+                    <div className="space-y-1">
+                      <Label className="text-xs">Email *</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input type="email" placeholder="votre@email.com" className="pl-10 h-10" value={authData.email} onChange={(e) => setAuthData({ ...authData, email: e.target.value })} />
                       </div>
-
-                      <div className="space-y-2 mt-4">
-                        <Label>Email *</Label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input type="email" placeholder="votre@email.com" className="pl-10 h-12" value={authData.email} onChange={(e) => setAuthData({ ...authData, email: e.target.value })} />
-                        </div>
+                    </div>
+                    {/* Password */}
+                    <div className="space-y-1">
+                      <Label className="text-xs">Mot de passe *</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input type={showPassword ? "text" : "password"} placeholder="••••••••" className="pl-10 pr-10 h-10" value={authData.password} onChange={(e) => setAuthData({ ...authData, password: e.target.value })} />
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
                       </div>
-                      <div className="space-y-2 mt-4">
-                        <Label>Mot de passe *</Label>
+                    </div>
+                    {!isLogin && authData.password.length > 0 && (
+                      <div className="flex flex-wrap gap-2 px-1">
+                        <PasswordRule ok={authData.password.length >= 8} label="8+ car." />
+                        <PasswordRule ok={/\d/.test(authData.password)} label="1 chiffre" />
+                        <PasswordRule ok={/[^a-zA-Z0-9]/.test(authData.password)} label="1 spécial" />
+                      </div>
+                    )}
+                    {!isLogin && (
+                      <div className="space-y-1">
+                        <Label className="text-xs">Confirmer *</Label>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input type={showPassword ? "text" : "password"} placeholder="••••••••" className="pl-10 pr-10 h-12" value={authData.password} onChange={(e) => setAuthData({ ...authData, password: e.target.value })} />
-                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </button>
+                          <Input type={showPassword ? "text" : "password"} placeholder="••••••••" className="pl-10 h-10" value={authData.confirmPassword} onChange={(e) => setAuthData({ ...authData, confirmPassword: e.target.value })} />
                         </div>
                       </div>
-                      {/* Password strength hints */}
-                      {!isLogin && authData.password.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2 px-1">
-                          <PasswordRule ok={authData.password.length >= 8} label="8+ caractères" />
-                          <PasswordRule ok={/\d/.test(authData.password)} label="1 chiffre" />
-                          <PasswordRule ok={/[^a-zA-Z0-9]/.test(authData.password)} label="1 spécial (!@#$)" />
-                        </div>
-                      )}
-                      {!isLogin && (
-                        <div className="space-y-2 mt-4">
-                          <Label>Confirmer *</Label>
-                          <div className="relative">
-                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <Input type={showPassword ? "text" : "password"} placeholder="••••••••" className="pl-10 h-12" value={authData.confirmPassword} onChange={(e) => setAuthData({ ...authData, confirmPassword: e.target.value })} />
-                          </div>
-                        </div>
-                      )}
-                      <button type="button" onClick={() => setIsLogin(!isLogin)} className="text-sm text-primary hover:underline w-full text-center mt-4">
-                        {isLogin ? "Pas de compte ? S'inscrire" : "Déjà un compte ? Se connecter"}
-                      </button>
-                    </>
-                  )}
-                  </div>
-
-                  <div className="flex justify-end pt-2">
-                    <Button onClick={handleNext} disabled={loading} className="gap-2">
-                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Continuer <ArrowRight className="w-4 h-4" /></>}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                    )}
+                    <button type="button" onClick={() => setIsLogin(!isLogin)} className="text-xs text-primary hover:underline w-full text-center mt-2">
+                      {isLogin ? "Pas de compte ? S'inscrire" : "Déjà un compte ? Se connecter"}
+                    </button>
+                  </CardContent>
+                </Card>
+              )}
             </motion.div>
           )}
 
           {/* Step 2: Profile */}
           {step === 2 && (
             <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <div className="space-y-4">
-                <RouteLinkedProfileForm initialData={profileData} onChange={(data, isValid) => { setProfileData(data); setProfileValid(isValid); }} showValidation />
-                <div className="flex justify-end">
-                  <Button onClick={handleNext} className="gap-2">Continuer <ArrowRight className="w-4 h-4" /></Button>
-                </div>
-              </div>
+              <RouteLinkedProfileForm initialData={profileData} onChange={(data, isValid) => { setProfileData(data); setProfileValid(isValid); }} showValidation />
             </motion.div>
           )}
 
           {/* Step 3: Voyages */}
           {step === 3 && (
-            <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <Card>
-                <CardContent className="p-5 space-y-4">
-                  <h2 className="text-lg font-semibold flex items-center gap-2">
-                    <Plane className="w-5 h-5 text-primary" /> Vos voyages
-                  </h2>
-                  <p className="text-sm text-muted-foreground">Cliquez sur une date pour ajouter un départ</p>
-                  <DepartureCalendarView departures={departures} onAddDeparture={handleAddDeparture}
-                    defaultRoute={{ originCity: profileData.originCity, originCountry: profileData.originCountry, destinationCity: profileData.destinationCity, destinationCountry: profileData.destinationCountry }}
-                    hidePrice={true} />
-                  {departures.length === 0 ? (
-                    <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-sm text-amber-700 flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4" /> Ajoutez au moins un voyage
-                    </div>
-                  ) : (
-                    <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-sm text-green-700 flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4" /> {departures.length} voyage(s) programmé(s)
-                    </div>
-                  )}
-                  <div className="pt-2">
-                    <Button onClick={handleNext} disabled={loading} className="w-full h-12 gap-2">
-                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Valider et définir mes tarifs <ArrowRight className="w-4 h-4" /></>}
-                    </Button>
-                    <p className="text-[11px] text-muted-foreground text-center mt-2">
-                      Vous devrez obligatoirement définir vos tarifs à l'étape suivante
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+            <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Plane className="w-5 h-5 text-primary" />
+                <h2 className="text-base font-semibold">Vos voyages</h2>
+              </div>
+              <p className="text-xs text-muted-foreground">Cliquez sur une date pour ajouter un départ</p>
+              <DepartureCalendarView departures={departures} onAddDeparture={handleAddDeparture}
+                defaultRoute={{ originCity: profileData.originCity, originCountry: profileData.originCountry, destinationCity: profileData.destinationCity, destinationCountry: profileData.destinationCountry }}
+                hidePrice={true} />
+              {departures.length === 0 ? (
+                <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs text-amber-700 flex items-center gap-2">
+                  <AlertTriangle className="w-3.5 h-3.5" /> Ajoutez au moins un voyage
+                </div>
+              ) : (
+                <div className="p-2.5 bg-green-500/10 border border-green-500/30 rounded-lg text-xs text-green-700 flex items-center gap-2">
+                  <CheckCircle className="w-3.5 h-3.5" /> {departures.length} voyage(s) programmé(s)
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
       </main>
+
+      {/* ── FIXED CTA FOOTER ── */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border px-4 py-3"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)' }}>
+        <div className="max-w-lg mx-auto">
+          <Button onClick={handleNext} disabled={loading} className="w-full h-12 gap-2 text-sm font-semibold">
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+              step === 3 
+                ? <>Valider et définir mes tarifs <ArrowRight className="w-4 h-4" /></>
+                : <>Continuer <ArrowRight className="w-4 h-4" /></>
+            )}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
