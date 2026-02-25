@@ -23,6 +23,7 @@ export default function GPKTPGeoTrackPage() {
   const [geoData, setGeoData] = useState<any>(null);
   const [geoLogs, setGeoLogs] = useState<any[]>([]);
   const [activeSection, setActiveSection] = useState<"ktp" | "geo">("ktp");
+  const [togglingGeo, setTogglingGeo] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -60,6 +61,31 @@ export default function GPKTPGeoTrackPage() {
   if (!gpProfile) return null;
 
   const isGeoActive = geoData?.tracking_active ?? false;
+
+  const handleToggleGeo = async (checked: boolean) => {
+    if (!gpProfile) return;
+    setTogglingGeo(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      if (geoData) {
+        await supabase
+          .from("gp_geolocation_consent")
+          .update({ tracking_active: checked, consent_given: checked, consent_given_at: checked ? new Date().toISOString() : geoData.consent_given_at })
+          .eq("gp_id", gpProfile.id);
+      } else {
+        await supabase
+          .from("gp_geolocation_consent")
+          .insert({ gp_id: gpProfile.id, user_id: user.id, tracking_active: checked, consent_given: checked, consent_given_at: new Date().toISOString() });
+      }
+      setGeoData((prev: any) => ({ ...prev, tracking_active: checked, consent_given: checked }));
+    } catch (e) {
+      console.error("Toggle geo error:", e);
+    } finally {
+      setTogglingGeo(false);
+    }
+  };
 
   return (
     <GPDashboardLayout gpProfile={gpProfile} activeTab="ktp-geotrack">
@@ -178,14 +204,12 @@ export default function GPKTPGeoTrackPage() {
                       </p>
                     </div>
                   </div>
-                  <Badge className={cn(
-                    "text-xs font-bold px-3 py-1",
-                    isGeoActive
-                      ? "bg-white/20 text-white border-white/30"
-                      : "bg-muted text-muted-foreground"
-                  )}>
-                    {isGeoActive ? "ACTIF" : "OFF"}
-                  </Badge>
+                  <Switch
+                    checked={isGeoActive}
+                    onCheckedChange={handleToggleGeo}
+                    disabled={togglingGeo}
+                    className="data-[state=checked]:bg-white/30"
+                  />
                 </div>
 
                 {/* Decorative wave */}
