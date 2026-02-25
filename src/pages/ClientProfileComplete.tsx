@@ -3,6 +3,7 @@
  * No tabs — clean vertical flow for mobile
  */
 import { useState, useEffect, useCallback, useRef } from "react";
+import { SearchableCitySelect } from "@/components/gp/SearchableCitySelect";
 import { ALL_COUNTRIES } from "@/components/gp/SearchableCountrySelect";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -64,6 +65,7 @@ export default function ClientProfileComplete() {
     country_code: "SN",
     id_type: "",
     id_number: "",
+    postal_code: "",
   });
 
   const loadProfile = useCallback(async () => {
@@ -88,11 +90,12 @@ export default function ClientProfileComplete() {
         setFormData({
           full_name: data.full_name || "",
           phone: data.phone || "",
-          city: data.city || "",
+          city: data.city || data.residence_city || "",
           address: data.address || "",
           country_code: data.country_code || "SN",
           id_type: "",
           id_number: "",
+          postal_code: data.postal_code || "",
         });
       }
     } catch (error) {
@@ -158,8 +161,10 @@ export default function ClientProfileComplete() {
         full_name: formData.full_name,
         phone: formData.phone,
         city: formData.city,
+        residence_city: formData.city,
         address: formData.address,
         country_code: formData.country_code,
+        postal_code: formData.postal_code,
         updated_at: new Date().toISOString(),
       };
       if (avatarUrl) updateData.avatar_url = avatarUrl;
@@ -337,11 +342,22 @@ export default function ClientProfileComplete() {
               Adresse
             </h3>
             <div>
-              <Label className="text-xs text-muted-foreground">Ville *</Label>
-              <Input
+              <Label className="text-xs text-muted-foreground">Ville de résidence *</Label>
+              <SearchableCitySelect
                 value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                placeholder="Votre ville"
+                countryCode={formData.country_code}
+                onSelect={(city, country) => setFormData({ ...formData, city, country_code: country })}
+                label="Ville de résidence"
+                placeholder="Rechercher votre ville..."
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Code postal</Label>
+              <Input
+                value={formData.postal_code}
+                onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
+                placeholder="Ex: 75001"
                 className="mt-1"
               />
             </div>
