@@ -6,8 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { 
   Settings, User, DollarSign, Bell, ScanLine, Shield, 
   Globe, ChevronRight, LogOut, Palette, MapPin, Phone,
-  Mail, Edit3, Save, X, MessageCircle, FileCheck, Camera,
-  ShieldX, Upload, BadgeCheck, CreditCard, Wallet, UserCheck
+  Edit3, Save, X, MessageCircle, FileCheck,
+  ShieldX, Upload, BadgeCheck, Wallet
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
@@ -53,25 +53,28 @@ export default function GPParametresPage() {
 
       const { data: profile } = await supabase
         .from("gp_profiles")
-        .select("id, business_name, gp_type, status, base_price_per_kg, default_currency, deposit_address, reception_address, phone, whatsapp_phone, description, kyc_level, kyc_status, id_document_url, selfie_url, insurance_document_url, transport_license_url, explicit_restrictions")
+        .select("id, business_name, gp_type, status, base_price_per_kg, default_currency, deposit_address, reception_address, phone, whatsapp_phone, description, kyc_level, kyc_status, id_document_url, selfie_url, explicit_restrictions, base_origin_city, base_origin_country, base_destination_city, base_destination_country")
         .eq("user_id", user.id)
         .maybeSingle();
 
       if (!profile) { navigate("/gp/inscription"); return; }
       setGpProfile(profile);
+
+      // Auto-fill addresses based on GP route
+      const originLabel = [profile.base_origin_city, profile.base_origin_country].filter(Boolean).join(", ");
+      const destLabel = [profile.base_destination_city, profile.base_destination_country].filter(Boolean).join(", ");
+
       setProfileForm({
         business_name: profile.business_name || "",
         phone: profile.phone || "",
         whatsapp_phone: profile.whatsapp_phone || "",
-        deposit_address: profile.deposit_address || "",
-        reception_address: profile.reception_address || "",
+        deposit_address: profile.deposit_address || originLabel || "",
+        reception_address: profile.reception_address || destLabel || "",
         description: profile.description || "",
       });
 
       const { data: orders } = await supabase
-        .from("orders")
-        .select("status")
-        .eq("gp_id", profile.id);
+        .from("orders").select("status").eq("gp_id", profile.id);
       setPendingCount(orders?.filter(o => o.status === "pending").length || 0);
       setActiveCount(orders?.filter(o => ["accepted", "collected", "in_transit"].includes(o.status)).length || 0);
 
@@ -149,18 +152,14 @@ export default function GPParametresPage() {
   const kycStatus = gpProfile.kyc_status || "pending";
   const hasId = !!gpProfile.id_document_url;
   const hasSelfie = !!gpProfile.selfie_url;
-  const hasInsurance = !!gpProfile.insurance_document_url;
-  const hasLicense = !!gpProfile.transport_license_url;
   const kycProgress = [hasId, hasSelfie].filter(Boolean).length;
 
+  const originCountryLabel = gpProfile.base_origin_country || "départ";
+  const destCountryLabel = gpProfile.base_destination_country || "destination";
+
   return (
-    <GPDashboardLayout
-      gpProfile={gpProfile}
-      pendingCount={pendingCount}
-      activeOrdersCount={activeCount}
-      activeTab="parametres"
-    >
-      <div className="px-4 py-3 space-y-4 pb-24">
+    <GPDashboardLayout gpProfile={gpProfile} pendingCount={pendingCount} activeOrdersCount={activeCount} activeTab="parametres">
+      <div className="px-4 py-3 space-y-3 pb-24">
         <div className="flex items-center gap-2">
           <Settings className="w-5 h-5 text-primary" />
           <h1 className="text-lg font-bold">Paramètres</h1>
@@ -169,38 +168,38 @@ export default function GPParametresPage() {
         {/* ═══ 1. IDENTITÉ & PROFIL ═══ */}
         <Section title="Identité & Profil">
           {editingProfile ? (
-            <div className="p-3 space-y-3">
+            <div className="p-3 space-y-2.5">
               <div>
-                <Label className="text-xs">Nom commercial</Label>
-                <Input className="h-10" value={profileForm.business_name} onChange={e => setProfileForm(p => ({ ...p, business_name: e.target.value }))} />
+                <Label className="text-[10px] text-muted-foreground">Nom commercial</Label>
+                <Input className="h-9" value={profileForm.business_name} onChange={e => setProfileForm(p => ({ ...p, business_name: e.target.value }))} />
               </div>
               <div>
-                <Label className="text-xs">Description</Label>
+                <Label className="text-[10px] text-muted-foreground">Description</Label>
                 <Textarea value={profileForm.description} onChange={e => setProfileForm(p => ({ ...p, description: e.target.value }))} placeholder="Décrivez votre activité..." rows={2} />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label className="text-xs">Téléphone</Label>
-                  <Input className="h-10" value={profileForm.phone} onChange={e => setProfileForm(p => ({ ...p, phone: e.target.value }))} />
+                  <Label className="text-[10px] text-muted-foreground">Téléphone</Label>
+                  <Input className="h-9" value={profileForm.phone} onChange={e => setProfileForm(p => ({ ...p, phone: e.target.value }))} />
                 </div>
                 <div>
-                  <Label className="text-xs">WhatsApp</Label>
-                  <Input className="h-10" value={profileForm.whatsapp_phone} onChange={e => setProfileForm(p => ({ ...p, whatsapp_phone: e.target.value }))} />
+                  <Label className="text-[10px] text-muted-foreground">WhatsApp</Label>
+                  <Input className="h-9" value={profileForm.whatsapp_phone} onChange={e => setProfileForm(p => ({ ...p, whatsapp_phone: e.target.value }))} />
                 </div>
               </div>
               <div>
-                <Label className="text-xs">Adresse de dépôt</Label>
-                <Input className="h-10" value={profileForm.deposit_address} onChange={e => setProfileForm(p => ({ ...p, deposit_address: e.target.value }))} />
+                <Label className="text-[10px] text-muted-foreground">📍 Adresse pays {originCountryLabel}</Label>
+                <Input className="h-9" value={profileForm.deposit_address} onChange={e => setProfileForm(p => ({ ...p, deposit_address: e.target.value }))} placeholder={`Adresse à ${gpProfile.base_origin_city || originCountryLabel}`} />
               </div>
               <div>
-                <Label className="text-xs">Adresse de réception</Label>
-                <Input className="h-10" value={profileForm.reception_address} onChange={e => setProfileForm(p => ({ ...p, reception_address: e.target.value }))} />
+                <Label className="text-[10px] text-muted-foreground">📍 Adresse pays {destCountryLabel}</Label>
+                <Input className="h-9" value={profileForm.reception_address} onChange={e => setProfileForm(p => ({ ...p, reception_address: e.target.value }))} placeholder={`Adresse à ${gpProfile.base_destination_city || destCountryLabel}`} />
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleSaveProfile} disabled={saving} size="sm" className="flex-1 gap-1">
+                <Button onClick={handleSaveProfile} disabled={saving} size="sm" className="flex-1 gap-1 h-9">
                   <Save className="w-3.5 h-3.5" /> {saving ? "..." : "Enregistrer"}
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setEditingProfile(false)}>
+                <Button variant="outline" size="sm" className="h-9" onClick={() => setEditingProfile(false)}>
                   <X className="w-3.5 h-3.5" />
                 </Button>
               </div>
@@ -209,12 +208,12 @@ export default function GPParametresPage() {
             <>
               <div className="p-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="w-5 h-5 text-primary" />
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="w-4 h-4 text-primary" />
                   </div>
                   <div>
                     <p className="font-semibold text-sm">{gpProfile.business_name}</p>
-                    <p className="text-xs text-muted-foreground line-clamp-1">{gpProfile.description || "Aucune description"}</p>
+                    <p className="text-[11px] text-muted-foreground line-clamp-1">{gpProfile.description || "Aucune description"}</p>
                   </div>
                 </div>
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingProfile(true)}>
@@ -226,45 +225,37 @@ export default function GPParametresPage() {
               <Separator />
               <CompactInfoRow icon={MessageCircle} label="WhatsApp" value={gpProfile.whatsapp_phone || "—"} />
               <Separator />
-              <CompactInfoRow icon={MapPin} label="Dépôt" value={gpProfile.deposit_address || "—"} />
+              <CompactInfoRow icon={MapPin} label={originCountryLabel} value={gpProfile.deposit_address || "—"} />
               <Separator />
-              <CompactInfoRow icon={MapPin} label="Réception" value={gpProfile.reception_address || "—"} />
+              <CompactInfoRow icon={MapPin} label={destCountryLabel} value={gpProfile.reception_address || "—"} />
             </>
           )}
         </Section>
 
         {/* ═══ 2. KYC & VÉRIFICATION ═══ */}
         <Section title="KYC & Vérification">
-          <div className="p-3 space-y-3">
-            {/* KYC Status */}
+          <div className="p-3 space-y-2.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <BadgeCheck className={`w-5 h-5 ${kycStatus === 'verified' ? 'text-emerald-500' : 'text-muted-foreground'}`} />
+                <BadgeCheck className={`w-4 h-4 ${kycStatus === 'verified' ? 'text-emerald-500' : 'text-muted-foreground'}`} />
                 <div>
                   <p className="text-sm font-medium">Statut KYC</p>
-                  <p className="text-xs text-muted-foreground">Niveau {kycLevel}</p>
+                  <p className="text-[10px] text-muted-foreground">Niveau {kycLevel}</p>
                 </div>
               </div>
-              <Badge variant={kycStatus === 'verified' ? 'default' : 'secondary'} className="text-xs">
+              <Badge variant={kycStatus === 'verified' ? 'default' : 'secondary'} className="text-[10px]">
                 {kycStatus === 'verified' ? '✓ Vérifié' : kycStatus === 'pending' ? 'En attente' : kycStatus}
               </Badge>
             </div>
-
             <Separator />
-
-            {/* Document checklist */}
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Documents</p>
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Documents requis</p>
               <DocRow label="Pièce d'identité" done={hasId} onClick={() => navigate("/gp/profil-public")} />
               <DocRow label="Selfie de vérification" done={hasSelfie} onClick={() => navigate("/gp/profil-public")} />
-              <DocRow label="Assurance transport" done={hasInsurance} onClick={() => navigate("/gp/profil-public")} />
-              <DocRow label="Licence transport" done={hasLicense} onClick={() => navigate("/gp/profil-public")} />
             </div>
-
             {kycProgress < 2 && (
-              <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs" onClick={() => navigate("/gp/profil-public")}>
-                <Upload className="w-3.5 h-3.5" />
-                Compléter mes documents
+              <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs h-8" onClick={() => navigate("/gp/profil-public")}>
+                <Upload className="w-3 h-3" /> Compléter mes documents
               </Button>
             )}
           </div>
@@ -278,9 +269,9 @@ export default function GPParametresPage() {
           <Separator />
           <CompactNavRow icon={ShieldX} label="Restrictions" desc={`${(gpProfile.explicit_restrictions || []).length} actives`} onClick={() => navigate("/gp/restrictions")} />
           <Separator />
-          <CompactNavRow icon={Globe} label="Devise par défaut" desc={gpProfile.default_currency || "XOF"} onClick={() => navigate("/gp/tarification")} />
+          <CompactNavRow icon={Globe} label="Devise" desc={gpProfile.default_currency || "XOF"} onClick={() => navigate("/gp/tarification")} />
           <Separator />
-          <CompactNavRow icon={ScanLine} label="Scanner QR" desc="Ouvrir la caméra" onClick={() => navigate("/gp/scan")} />
+          <CompactNavRow icon={ScanLine} label="Scanner QR" desc="Caméra" onClick={() => navigate("/gp/scan")} />
         </Section>
 
         {/* ═══ 4. SÉCURITÉ & CONFIANCE ═══ */}
@@ -292,7 +283,7 @@ export default function GPParametresPage() {
 
         {/* ═══ 5. NOTIFICATIONS ═══ */}
         <Section title="Notifications">
-          <CompactToggleRow icon={Bell} label="Push notifications" checked={notifPrefs.push_notifications} onChange={v => handleToggle("push_notifications", v)} />
+          <CompactToggleRow icon={Bell} label="Push" checked={notifPrefs.push_notifications} onChange={v => handleToggle("push_notifications", v)} />
           <Separator />
           <CompactToggleRow icon={Bell} label="Messages clients" checked={notifPrefs.new_message_alerts} onChange={v => handleToggle("new_message_alerts", v)} />
           <Separator />
@@ -310,11 +301,7 @@ export default function GPParametresPage() {
           </div>
         </Section>
 
-        {/* Déconnexion */}
-        <button
-          onClick={handleSignOut}
-          className="w-full bg-destructive/10 rounded-xl p-3 flex items-center gap-3 hover:bg-destructive/15 transition-colors active:scale-[0.98]"
-        >
+        <button onClick={handleSignOut} className="w-full bg-destructive/10 rounded-xl p-3 flex items-center gap-3 hover:bg-destructive/15 transition-colors active:scale-[0.98]">
           <LogOut className="w-4 h-4 text-destructive" />
           <span className="font-medium text-sm text-destructive">Déconnexion</span>
         </button>
@@ -327,7 +314,7 @@ export default function GPParametresPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 px-1">{title}</h2>
+      <h2 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 px-1">{title}</h2>
       <div className="bg-card rounded-xl border border-border overflow-hidden">{children}</div>
     </section>
   );
@@ -335,25 +322,25 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function CompactInfoRow({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-3 px-3 py-2.5">
-      <Icon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-      <span className="text-xs text-muted-foreground w-16 flex-shrink-0">{label}</span>
-      <span className="text-sm font-medium truncate">{value}</span>
+    <div className="flex items-center gap-3 px-3 py-2">
+      <Icon className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+      <span className="text-[10px] text-muted-foreground w-14 flex-shrink-0">{label}</span>
+      <span className="text-xs font-medium truncate">{value}</span>
     </div>
   );
 }
 
 function CompactNavRow({ icon: Icon, label, desc, onClick }: { icon: any; label: string; desc: string; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-muted/50 transition-colors">
+    <button onClick={onClick} className="w-full flex items-center justify-between px-3 py-2 hover:bg-muted/50 transition-colors">
       <div className="flex items-center gap-3">
-        <Icon className="w-4 h-4 text-primary flex-shrink-0" />
+        <Icon className="w-3.5 h-3.5 text-primary flex-shrink-0" />
         <div className="text-left">
-          <p className="font-medium text-sm">{label}</p>
-          <p className="text-[11px] text-muted-foreground">{desc}</p>
+          <p className="font-medium text-xs">{label}</p>
+          <p className="text-[10px] text-muted-foreground">{desc}</p>
         </div>
       </div>
-      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
     </button>
   );
 }
@@ -362,10 +349,10 @@ function CompactToggleRow({ icon: Icon, label, checked, onChange }: {
   icon: any; label: string; checked: boolean; onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between px-3 py-2.5">
+    <div className="flex items-center justify-between px-3 py-2">
       <div className="flex items-center gap-3">
-        <Icon className="w-4 h-4 text-primary flex-shrink-0" />
-        <span className="text-sm font-medium">{label}</span>
+        <Icon className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+        <span className="text-xs font-medium">{label}</span>
       </div>
       <Switch checked={checked} onCheckedChange={onChange} />
     </div>
@@ -374,20 +361,20 @@ function CompactToggleRow({ icon: Icon, label, checked, onChange }: {
 
 function DocRow({ label, done, onClick }: { label: string; done: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="w-full flex items-center justify-between py-1.5 hover:opacity-80 transition-opacity">
+    <button onClick={onClick} className="w-full flex items-center justify-between py-1 hover:opacity-80 transition-opacity">
       <div className="flex items-center gap-2">
         {done ? (
-          <div className="w-5 h-5 rounded-full bg-emerald-500/10 flex items-center justify-center">
-            <FileCheck className="w-3 h-3 text-emerald-500" />
+          <div className="w-4 h-4 rounded-full bg-emerald-500/10 flex items-center justify-center">
+            <FileCheck className="w-2.5 h-2.5 text-emerald-500" />
           </div>
         ) : (
-          <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
-            <Upload className="w-3 h-3 text-muted-foreground" />
+          <div className="w-4 h-4 rounded-full bg-muted flex items-center justify-center">
+            <Upload className="w-2.5 h-2.5 text-muted-foreground" />
           </div>
         )}
-        <span className={`text-sm ${done ? 'text-foreground' : 'text-muted-foreground'}`}>{label}</span>
+        <span className={`text-xs ${done ? 'text-foreground' : 'text-muted-foreground'}`}>{label}</span>
       </div>
-      {!done && <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
+      {!done && <ChevronRight className="w-3 h-3 text-muted-foreground" />}
     </button>
   );
 }

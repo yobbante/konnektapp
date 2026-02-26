@@ -50,7 +50,7 @@ export function ClientScanSheet({ open, onOpenChange }: ClientScanSheetProps) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="h-[92vh] rounded-t-3xl p-0 border-0 overflow-hidden"
+        className="h-[75vh] rounded-t-3xl p-0 border-0 overflow-hidden"
         style={{
           background: BG,
           transform: swipe.translateY > 0 ? `translateY(${swipe.translateY}px)` : undefined,

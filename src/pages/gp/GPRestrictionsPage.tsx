@@ -88,7 +88,7 @@ export default function GPRestrictionsPage() {
 
   return (
     <GPDashboardLayout gpProfile={gpProfile} pendingCount={pendingCount} activeTab="restrictions">
-      <div className="px-4 py-4 space-y-5 pb-24">
+      <div className="px-4 py-3 space-y-4 pb-32">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -155,14 +155,14 @@ export default function GPRestrictionsPage() {
 
         {/* Validate button when coming from gate — always visible at bottom */}
         {fromGate && (
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border px-4 py-3"
-            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)' }}>
+          <div className="fixed bottom-16 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border px-4 py-3"
+            style={{ paddingBottom: '4px' }}>
             <Button
-              className="w-full h-12 text-sm font-semibold gap-2 shadow-lg"
+              className="w-full h-11 text-sm font-semibold gap-2 shadow-lg"
               disabled={restrictions.length === 0}
               onClick={() => navigate("/gp/apercu?validated=restrictions")}
             >
-              <CheckCircle2 className="w-5 h-5" />
+              <CheckCircle2 className="w-4 h-4" />
               {restrictions.length === 0 ? "Ajoutez au moins 1 restriction" : `Valider (${restrictions.length} restriction${restrictions.length > 1 ? 's' : ''})`}
             </Button>
           </div>

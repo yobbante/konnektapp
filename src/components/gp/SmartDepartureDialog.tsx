@@ -134,144 +134,74 @@ export function SmartDepartureDialog({
     <Dialog open={open} onOpenChange={() => !loading && onClose()}>
       <DialogContent className="max-w-md p-0 overflow-hidden">
         {/* Colored header */}
-        <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-5">
-          <DialogTitle className="flex items-center gap-2 text-lg">
-            <Plane className="w-5 h-5" />
+        {/* Compact header */}
+        <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-4 py-3">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <Plane className="w-4 h-4" />
             Nouveau départ
+            {selectedDate && (
+              <span className="text-xs opacity-80 ml-auto">
+                {format(selectedDate, "d MMM yyyy", { locale: fr })}
+              </span>
+            )}
           </DialogTitle>
-          {selectedDate && (
-            <p className="text-sm opacity-90 mt-1">
-              {format(selectedDate, "EEEE d MMMM yyyy", { locale: fr })}
-            </p>
-          )}
         </div>
 
-        <div className="p-5 space-y-5">
-          {/* Route visual — LOCKED */}
-          <Card className="border-2 border-primary/20 bg-primary/5">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-center gap-4">
-                <div className="text-center">
-                  <span className="text-3xl">{getFlag(currentRoute.origin.country)}</span>
-                  <p className="text-sm font-bold mt-1">{currentRoute.origin.city}</p>
-                </div>
-                <motion.div
-                  animate={{ x: [0, 4, 0] }}
-                  transition={{ repeat: Infinity, duration: 2 }}
-                >
-                  <Plane className={`w-6 h-6 text-primary ${tripType === "retour" ? "rotate-180" : ""}`} />
-                </motion.div>
-                <div className="text-center">
-                  <span className="text-3xl">{getFlag(currentRoute.destination.country)}</span>
-                  <p className="text-sm font-bold mt-1">{currentRoute.destination.city}</p>
-                </div>
-              </div>
-              <div className="flex items-center justify-center gap-2 mt-3">
-                <Badge variant="secondary" className="text-[10px] gap-1">
-                  <MapPin className="w-3 h-3" /> Navette verrouillée
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="p-4 space-y-3">
+          {/* Route inline compact */}
+          <div className="flex items-center justify-center gap-3 py-2 rounded-lg bg-primary/5 border border-primary/20">
+            <span className="text-xl">{getFlag(currentRoute.origin.country)}</span>
+            <span className="text-xs font-bold">{currentRoute.origin.city}</span>
+            <Plane className={`w-4 h-4 text-primary ${tripType === "retour" ? "rotate-180" : ""}`} />
+            <span className="text-xs font-bold">{currentRoute.destination.city}</span>
+            <span className="text-xl">{getFlag(currentRoute.destination.country)}</span>
+          </div>
 
-          {/* Trip type selector */}
+          {/* Trip type + capacity on same row */}
+          <div className="grid grid-cols-3 gap-2">
+            <Button type="button" variant={tripType === "aller" ? "default" : "outline"} className="h-9 text-xs" onClick={() => setTripType("aller")}>
+              <Plane className="w-3 h-3 mr-1" /> Aller
+            </Button>
+            <Button type="button" variant={tripType === "retour" ? "default" : "outline"} className="h-9 text-xs" onClick={() => setTripType("retour")}>
+              <Plane className="w-3 h-3 mr-1 rotate-180" /> Retour
+            </Button>
+            <div>
+              <Input type="number" inputMode="numeric" placeholder="kg" className="h-9 text-sm" value={capacity} onChange={(e) => setCapacity(e.target.value)} autoFocus />
+            </div>
+          </div>
+
+          {/* Flight details — 2 cols */}
           <div className="grid grid-cols-2 gap-2">
-            <Button
-              type="button"
-              variant={tripType === "aller" ? "default" : "outline"}
-              className="h-12 text-sm"
-              onClick={() => setTripType("aller")}
-            >
-              <Plane className="w-4 h-4 mr-2" />
-              Aller
-            </Button>
-            <Button
-              type="button"
-              variant={tripType === "retour" ? "default" : "outline"}
-              className="h-12 text-sm"
-              onClick={() => setTripType("retour")}
-            >
-              <Plane className="w-4 h-4 mr-2 rotate-180" />
-              Retour
-            </Button>
-          </div>
-
-          {/* Capacity */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium flex items-center gap-2">
-              <Weight className="w-4 h-4" />
-              Capacité disponible (kg) *
-            </Label>
-            <Input
-              type="number"
-              inputMode="numeric"
-              placeholder="Ex: 30"
-              className="h-12 text-lg"
-              value={capacity}
-              onChange={(e) => setCapacity(e.target.value)}
-              autoFocus
-            />
-          </div>
-
-          {/* Flight details (optional) */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Compagnie</Label>
-              <AirlineSelect
-                value={airline}
-                onChange={setAirline}
-                placeholder="Compagnie..."
-              />
+            <div>
+              <Label className="text-[10px] text-muted-foreground">Compagnie</Label>
+              <AirlineSelect value={airline} onChange={setAirline} placeholder="Compagnie..." />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">N° Vol</Label>
-              <Input
-                placeholder="AF123"
-                value={flightNumber}
-                onChange={(e) => setFlightNumber(e.target.value)}
-                className="h-10"
-              />
+            <div>
+              <Label className="text-[10px] text-muted-foreground">N° Vol</Label>
+              <Input placeholder="AF123" value={flightNumber} onChange={(e) => setFlightNumber(e.target.value)} className="h-9 text-sm" />
             </div>
           </div>
 
-          {/* Arrival date */}
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground flex items-center gap-1">
-              <Clock className="w-3 h-3" /> Date d'arrivée estimée
-            </Label>
-            <Input
-              type="datetime-local"
-              value={arrivalDate}
-              min={selectedDate ? format(selectedDate, "yyyy-MM-dd'T'HH:mm") : undefined}
-              onChange={(e) => setArrivalDate(e.target.value)}
-              className="h-10"
-            />
-          </div>
-
-          {/* Price info — READ ONLY */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Info className="w-4 h-4" />
-              Prix appliqué
+          {/* Arrival date + price inline */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-[10px] text-muted-foreground">Arrivée estimée</Label>
+              <Input type="datetime-local" value={arrivalDate} min={selectedDate ? format(selectedDate, "yyyy-MM-dd'T'HH:mm") : undefined} onChange={(e) => setArrivalDate(e.target.value)} className="h-9 text-xs" />
             </div>
-            <span className="font-bold text-sm">
-              {gpPricing.basePricePerKg.toLocaleString()} {currencySymbol}/kg
-            </span>
+            <div className="flex items-end">
+              <div className="w-full flex items-center justify-between p-2 rounded-lg bg-muted/50 border h-9">
+                <span className="text-[10px] text-muted-foreground">Prix</span>
+                <span className="font-bold text-xs">{gpPricing.basePricePerKg.toLocaleString()} {currencySymbol}/kg</span>
+              </div>
+            </div>
           </div>
 
           {/* Submit */}
-          <Button
-            onClick={handleSubmit}
-            disabled={loading || !capacity || parseFloat(capacity) <= 0}
-            className="w-full h-12 text-base"
-          >
+          <Button onClick={handleSubmit} disabled={loading || !capacity || parseFloat(capacity) <= 0} className="w-full h-10 text-sm">
             {loading ? (
-              <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             ) : (
-              <>
-                <CheckCircle className="w-5 h-5 mr-2" />
-                Ajouter le départ
-              </>
+              <><CheckCircle className="w-4 h-4 mr-1.5" /> Ajouter le départ</>
             )}
           </Button>
         </div>
