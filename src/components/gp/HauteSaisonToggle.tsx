@@ -125,10 +125,11 @@ export function HauteSaisonToggle({ gpId, basePricePerKg, currency, onPriceChang
     const togglesUsed = adjustment.toggles_used_this_year;
     const isActivating = !adjustment.is_haute_saison;
 
-    if (togglesUsed >= MAX_TOGGLES_PER_YEAR) {
+    // Only activating haute saison counts as a toggle, returning to base is free
+    if (isActivating && togglesUsed >= MAX_TOGGLES_PER_YEAR) {
       toast({
         title: "Limite atteinte",
-        description: `Vous avez utilisé vos ${MAX_TOGGLES_PER_YEAR} modifications de tarif pour cette année.`,
+        description: `Vous avez utilisé vos ${MAX_TOGGLES_PER_YEAR} activations haute saison pour cette année.`,
         variant: "destructive",
       });
       return;
@@ -138,7 +139,8 @@ export function HauteSaisonToggle({ gpId, basePricePerKg, currency, onPriceChang
     try {
       const oldPrice = adjustment.is_haute_saison ? adjustment.haute_saison_price_per_kg : adjustment.base_price_per_kg;
       const newPrice = isActivating ? adjustment.haute_saison_price_per_kg : adjustment.base_price_per_kg;
-      const newToggles = togglesUsed + 1;
+      // Only increment counter when ACTIVATING haute saison
+      const newToggles = isActivating ? togglesUsed + 1 : togglesUsed;
 
       // Update adjustment
       await supabase.from("gp_price_adjustments").update({
