@@ -2,7 +2,7 @@ import { ReactNode, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
   Package, Bell, Menu, ScanLine, Luggage,
-  Lock, Home, ListChecks, LayoutGrid,
+  Lock, Home, ListChecks, LayoutGrid, ShieldX,
   Shield, DollarSign, History, Calendar, Wallet,
   Settings, LogOut, MapPin, User, Plus,
   MessageCircle, UserCircle, ChevronRight, Eye, EyeOff
@@ -88,7 +88,7 @@ export function GPDashboardLayout({
     if (path.includes("/gp/wallet")) return "wallet";
     if (path.includes("/gp/messages")) return "messages";
     if (path.includes("/gp/scan")) return "scan";
-    if (path.includes("/gp/profil-public") || path.includes("/gp/parametres") || path.includes("/gp/historique") || path.includes("/gp/calendrier") || path.includes("/gp/tarification") || path.includes("/gp/ktp-geotrack") || path.includes("/gp/distribution")) return "profil";
+    if (path.includes("/gp/profil-public") || path.includes("/gp/parametres") || path.includes("/gp/historique") || path.includes("/gp/calendrier") || path.includes("/gp/tarification") || path.includes("/gp/restrictions") || path.includes("/gp/ktp-geotrack") || path.includes("/gp/distribution")) return "profil";
     if (path.includes("/gp/apercu")) return "apercu";
     return "apercu";
   };
@@ -325,6 +325,7 @@ export function GPDashboardLayout({
                 <MenuButton icon={Calendar} label="Départs" locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/calendrier"); }}} />
                 <MenuButton icon={Wallet} label="Wallet" locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/wallet"); }}} />
                 <MenuButton icon={DollarSign} label="Tarifs" onClick={() => { setShowMenu(false); navigate("/gp/tarification"); }} />
+                <MenuButton icon={ShieldX} label="Restrictions" onClick={() => { setShowMenu(false); navigate("/gp/restrictions"); }} />
                 <MenuButton icon={ListChecks} label="Distribution" locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/distribution"); }}} />
                 <MenuButton icon={History} label="Historique" onClick={() => { setShowMenu(false); navigate("/gp/historique"); }} />
                 <MenuButton icon={Shield} label="KTP & Geo" onClick={() => { setShowMenu(false); navigate("/gp/ktp-geotrack"); }} />
