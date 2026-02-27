@@ -21,6 +21,8 @@ interface InteractiveAuthFormProps {
   onSubmit: (data: AuthFormData) => Promise<void>;
   onTransporterSelect: () => void;
   loading?: boolean;
+  prefillPhone?: string;
+  prefillCountry?: string;
 }
 
 export interface AuthFormData {
@@ -42,16 +44,21 @@ export function InteractiveAuthForm({
   onSubmit,
   onTransporterSelect,
   loading = false,
+  prefillPhone = "",
+  prefillCountry = "SN",
 }: InteractiveAuthFormProps) {
-  const [registerStep, setRegisterStep] = useState<RegisterStep>("type");
+  // If phone is pre-filled from entry flow, skip to credentials for register
+  const hasEntryPhone = !!prefillPhone;
+  
+  const [registerStep, setRegisterStep] = useState<RegisterStep>(hasEntryPhone ? "credentials" : "type");
   const [loginStep, setLoginStep] = useState<LoginStep>("phone");
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<AuthFormData>({
     email: "",
     password: "",
     fullName: "",
-    phone: "",
-    country: "SN",
+    phone: prefillPhone || "",
+    country: prefillCountry,
   });
 
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -60,9 +67,9 @@ export function InteractiveAuthForm({
   const [phoneLoginLookup, setPhoneLoginLookup] = useState<string | null>(null);
   const [loginPhone, setLoginPhone] = useState("");
 
-  const [selectedCountry, setSelectedCountry] = useState("SN");
+  const [selectedCountry, setSelectedCountry] = useState(prefillCountry);
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
-  const [loginSelectedCountry, setLoginSelectedCountry] = useState("SN");
+  const [loginSelectedCountry, setLoginSelectedCountry] = useState(prefillCountry);
   const [showLoginCountryDropdown, setShowLoginCountryDropdown] = useState(false);
 
   const selectedDialCode = COUNTRY_PHONE_CODES[selectedCountry] || "+221";

@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -10,22 +12,42 @@ import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh";
 import { AppLikeHome } from "@/components/home/AppLikeHome";
 import { AppEntryLoader } from "@/components/ui/AppEntryLoader";
-import { OnboardingDialog } from "@/components/onboarding/OnboardingDialog";
-import { useOnboarding } from "@/hooks/useOnboarding";
+import { CountrySelectionScreen } from "@/components/entry/CountrySelectionScreen";
+import { PhoneVerificationScreen } from "@/components/entry/PhoneVerificationScreen";
+import { EntryOnboardingSlides } from "@/components/entry/EntryOnboardingSlides";
+import { RoleSelectionScreen } from "@/components/entry/RoleSelectionScreen";
+
+const ENTRY_FLOW_KEY = "konnekt_entry_completed";
+
+type EntryStep = "splash" | "country" | "phone" | "onboarding" | "role" | "done";
+
+interface EntryData {
+  country?: { code: string; name: string; flag: string; dialCode: string; currency: string };
+  phone?: string;
+  role?: "client" | "transporteur";
+}
 
 function IndexContent() {
+  const navigate = useNavigate();
   const { isGP, isAuthenticated, userId, loading: roleLoading } = useUserRole();
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [customRequests, setCustomRequests] = useState<any[]>([]);
   const [movingRequests, setMovingRequests] = useState<any[]>([]);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [activeOrdersCount, setActiveOrdersCount] = useState(0);
-  const [showEntryLoader, setShowEntryLoader] = useState(true);
   const [dataLoading, setDataLoading] = useState(true);
   const [userName, setUserName] = useState<string>("");
 
-  // Onboarding for client role
-  const { showOnboarding, completeOnboarding, skipOnboarding } = useOnboarding("client");
+  // Entry flow state
+  const isFirstVisit = !sessionStorage.getItem("app_loaded");
+  const entryCompleted = !!localStorage.getItem(ENTRY_FLOW_KEY);
+  
+  const [entryStep, setEntryStep] = useState<EntryStep>(() => {
+    if (!isFirstVisit) return "done";
+    if (entryCompleted) return "splash"; // Just show splash then done
+    return "splash";
+  });
+  const [entryData, setEntryData] = useState<EntryData>({});
 
   // Pull to refresh
   const handleRefresh = useCallback(async () => {
@@ -39,6 +61,7 @@ function IndexContent() {
   });
 
   useEffect(() => {
+    if (entryStep !== "done") return;
     if (!roleLoading) {
       if (isAuthenticated && userId) {
         loadUserData();
@@ -46,7 +69,7 @@ function IndexContent() {
         setDataLoading(false);
       }
     }
-  }, [isAuthenticated, userId, roleLoading]);
+  }, [isAuthenticated, userId, roleLoading, entryStep]);
 
   const loadUserData = async () => {
     if (!userId) {
@@ -99,9 +122,7 @@ function IndexContent() {
         .order("created_at", { ascending: false })
         .limit(5);
       
-      if (customReqs) {
-        setCustomRequests(customReqs);
-      }
+      if (customReqs) setCustomRequests(customReqs);
 
       const { data: movingReqs } = await supabase
         .from("custom_requests")
@@ -112,9 +133,7 @@ function IndexContent() {
         .order("created_at", { ascending: false })
         .limit(3);
       
-      if (movingReqs) {
-        setMovingRequests(movingReqs);
-      }
+      if (movingReqs) setMovingRequests(movingReqs);
 
       const { count } = await supabase
         .from("messages")
@@ -129,22 +148,104 @@ function IndexContent() {
     }
   };
 
-  // Check if this is first visit in session
-  const isFirstVisit = !sessionStorage.getItem('app_loaded');
-  
-  // Show entry loader only on first visit
-  if (showEntryLoader && isFirstVisit) {
+  // ─── Entry Flow Handlers ───
+  const handleSplashComplete = () => {
+    sessionStorage.setItem("app_loaded", "true");
+    if (entryCompleted) {
+      setEntryStep("done");
+    } else {
+      setEntryStep("country");
+    }
+  };
+
+  const handleCountrySelect = (country: EntryData["country"]) => {
+    setEntryData(prev => ({ ...prev, country: country! }));
+    sessionStorage.setItem("entry_country", JSON.stringify(country));
+    setEntryStep("phone");
+  };
+
+  const handlePhoneVerified = (phone: string) => {
+    setEntryData(prev => ({ ...prev, phone }));
+    sessionStorage.setItem("entry_phone", phone);
+    setEntryStep("onboarding");
+  };
+
+  const handleOnboardingComplete = () => {
+    setEntryStep("role");
+  };
+
+  const handleRoleSelect = (role: "client" | "transporteur") => {
+    setEntryData(prev => ({ ...prev, role }));
+    // Mark entry flow as completed
+    localStorage.setItem(ENTRY_FLOW_KEY, "true");
+    
+    // Store entry data for auth page
+    sessionStorage.setItem("entry_role", role);
+    if (entryData.country) {
+      sessionStorage.setItem("entry_country", JSON.stringify(entryData.country));
+    }
+    if (entryData.phone) {
+      sessionStorage.setItem("entry_phone", entryData.phone);
+    }
+    
+    setEntryStep("done");
+    
+    // Navigate to auth with pre-filled data
+    if (role === "transporteur") {
+      navigate("/transporteur/inscription");
+    } else {
+      navigate("/auth?mode=signup");
+    }
+  };
+
+  // ─── Entry Flow Screens ───
+  if (entryStep === "splash" && isFirstVisit) {
+    return <AppEntryLoader onComplete={handleSplashComplete} minDuration={1800} />;
+  }
+
+  if (entryStep === "country") {
     return (
-      <AppEntryLoader 
-        onComplete={() => {
-          setShowEntryLoader(false);
-          sessionStorage.setItem('app_loaded', 'true');
-        }} 
-        minDuration={1800} 
-      />
+      <AnimatePresence mode="wait">
+        <CountrySelectionScreen onSelect={handleCountrySelect} />
+      </AnimatePresence>
     );
   }
 
+  if (entryStep === "phone" && entryData.country) {
+    return (
+      <AnimatePresence mode="wait">
+        <PhoneVerificationScreen
+          country={entryData.country}
+          onVerified={handlePhoneVerified}
+          onBack={() => setEntryStep("country")}
+        />
+      </AnimatePresence>
+    );
+  }
+
+  if (entryStep === "onboarding" && entryData.country) {
+    return (
+      <AnimatePresence mode="wait">
+        <EntryOnboardingSlides
+          country={entryData.country}
+          onComplete={handleOnboardingComplete}
+        />
+      </AnimatePresence>
+    );
+  }
+
+  if (entryStep === "role" && entryData.country) {
+    return (
+      <AnimatePresence mode="wait">
+        <RoleSelectionScreen
+          country={entryData.country}
+          onSelect={handleRoleSelect}
+        />
+      </AnimatePresence>
+    );
+  }
+
+  // ─── Main App Content ───
   if (roleLoading || (isAuthenticated && dataLoading)) {
     return null;
   }
@@ -161,25 +262,15 @@ function IndexContent() {
       )}
 
       {isAuthenticated && !isGP && (
-        <>
-          <ClientAppHome
-            userName={userName}
-            recentOrders={recentOrders}
-            customRequests={customRequests}
-            movingRequests={movingRequests}
-            unreadMessages={unreadMessages}
-            activeOrdersCount={activeOrdersCount}
-            userId={userId || undefined}
-          />
-          {/* Onboarding dialog - shows once after first login */}
-          <OnboardingDialog
-            open={showOnboarding && !isGP}
-            onComplete={completeOnboarding}
-            onSkip={skipOnboarding}
-            role="client"
-            userName={userName}
-          />
-        </>
+        <ClientAppHome
+          userName={userName}
+          recentOrders={recentOrders}
+          customRequests={customRequests}
+          movingRequests={movingRequests}
+          unreadMessages={unreadMessages}
+          activeOrdersCount={activeOrdersCount}
+          userId={userId || undefined}
+        />
       )}
 
       <MobileNav />
