@@ -237,6 +237,7 @@ const App = () => (
             <Route path="/client/profil" element={<Navigate to="/profil" replace />} />
             <Route path="/demande/personnalisee" element={<Navigate to="/demande-personnalisee" replace />} />
             {/* Legacy redirects for old GP inscription route */}
+            <Route path="/gp/inscription" element={<Navigate to="/transporteur/inscription" replace />} />
             
             {/* 404 - Catch-all */}
             <Route path="*" element={<NotFound />} />
