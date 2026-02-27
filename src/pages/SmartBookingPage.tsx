@@ -560,7 +560,7 @@ export default function SmartBookingPage() {
         recipient_name: recipientData?.name || null,
         recipient_phone: recipientData?.phone || null,
         recipient_user_id: recipientData?.userId || null,
-        commission_amount: commissionAmount,
+        commission_amount: Math.round(commissionAmount),
       }).select("id").single();
       if (orderError) throw orderError;
 
