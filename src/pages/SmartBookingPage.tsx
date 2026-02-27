@@ -557,6 +557,12 @@ export default function SmartBookingPage() {
         declared_value: insuranceChoice.declaredValue ? Math.round(insuranceChoice.declaredValue) : null,
         content_nature: kiloNatures,
         content_nature_other: kiloNatures.includes("autres") ? autresNature : null,
+        flat_rate_items: flatRateItems.filter(i => i.quantity > 0).map(i => ({
+          name: i.name,
+          label: i.label,
+          quantity: i.quantity,
+          price: i.price,
+        })),
         recipient_name: recipientData?.name || null,
         recipient_phone: recipientData?.phone || null,
         recipient_user_id: recipientData?.userId || null,
