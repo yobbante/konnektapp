@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Package } from "lucide-react";
@@ -10,6 +10,18 @@ import { MobileNav } from "@/components/layout/MobileNav";
 import { InteractiveAuthForm, AuthFormData } from "@/components/auth/InteractiveAuthForm";
 import { TransportPageLoader } from "@/components/ui/TransportLoader";
 
+// Read entry flow data from session
+function getEntryFlowData() {
+  const phone = sessionStorage.getItem("entry_phone") || "";
+  const role = sessionStorage.getItem("entry_role") || "";
+  let country: { code: string; name: string; flag: string; dialCode: string; currency: string } | null = null;
+  try {
+    const raw = sessionStorage.getItem("entry_country");
+    if (raw) country = JSON.parse(raw);
+  } catch {}
+  return { phone, role, country };
+}
+
 export default function AuthPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -18,6 +30,9 @@ export default function AuthPage() {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
+  
+  // Get pre-filled data from entry flow
+  const entryFlow = useMemo(() => getEntryFlowData(), []);
 
   // Set mode from URL param
   useEffect(() => {
@@ -127,9 +142,13 @@ export default function AuthPage() {
         if (error) throw error;
 
         if (authData.user) {
+          const profileUpdate: Record<string, any> = { phone: data.phone };
+          if (entryFlow.country) {
+            profileUpdate.country_code = entryFlow.country.code;
+          }
           await supabase
             .from("profiles")
-            .update({ phone: data.phone })
+            .update(profileUpdate)
             .eq("user_id", authData.user.id);
         }
 
@@ -193,6 +212,8 @@ export default function AuthPage() {
             onSubmit={handleSubmit}
             onTransporterSelect={handleTransporterSelect}
             loading={loading}
+            prefillPhone={entryFlow.phone}
+            prefillCountry={entryFlow.country?.code || "SN"}
           />
         </motion.div>
       </main>
