@@ -10,6 +10,8 @@ import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh";
 import { AppLikeHome } from "@/components/home/AppLikeHome";
 import { AppEntryLoader } from "@/components/ui/AppEntryLoader";
+import { OnboardingDialog } from "@/components/onboarding/OnboardingDialog";
+import { useOnboarding } from "@/hooks/useOnboarding";
 
 function IndexContent() {
   const { isGP, isAuthenticated, userId, loading: roleLoading } = useUserRole();
@@ -21,6 +23,9 @@ function IndexContent() {
   const [showEntryLoader, setShowEntryLoader] = useState(true);
   const [dataLoading, setDataLoading] = useState(true);
   const [userName, setUserName] = useState<string>("");
+
+  // Onboarding for client role
+  const { showOnboarding, completeOnboarding, skipOnboarding } = useOnboarding("client");
 
   // Pull to refresh
   const handleRefresh = useCallback(async () => {
@@ -49,7 +54,6 @@ function IndexContent() {
       return;
     }
     try {
-      // Load user profile for name
       const { data: profile } = await supabase
         .from("profiles")
         .select("full_name")
@@ -60,7 +64,6 @@ function IndexContent() {
         setUserName(profile.full_name);
       }
 
-      // Load recent orders with logistics options
       const { data: orders } = await supabase
         .from("orders")
         .select(`
@@ -75,22 +78,18 @@ function IndexContent() {
         .order("created_at", { ascending: false })
         .limit(5);
       if (orders) {
-        // Flatten logistics_options for easier access
         const ordersWithLogistics = orders.map(o => ({
           ...o,
           logistics_options: o.order_logistics_options || null,
           has_internal_logistics: !!(o.order_logistics_options?.pickup_enabled || o.order_logistics_options?.delivery_enabled)
         }));
         setRecentOrders(ordersWithLogistics);
-        // Count active orders
         const active = ordersWithLogistics.filter(o => 
           ['pending', 'accepted', 'collected', 'in_transit'].includes(o.status)
         ).length;
         setActiveOrdersCount(active);
       }
 
-      // Load custom requests (non-moving)
-      // V1.3 FIX: Exclude demenagement shipment_type to avoid duplicates with movingRequests
       const { data: customReqs } = await supabase
         .from("custom_requests")
         .select("id, request_number, origin_city, destination_city, status, shipment_type, created_at, transport_type")
@@ -104,9 +103,6 @@ function IndexContent() {
         setCustomRequests(customReqs);
       }
 
-      // Load moving requests (internal)
-      // V1.3 FIX: Use shipment_type = 'demenagement' instead of transport_type = 'interne'
-      // because some moving requests may have different transport_type values
       const { data: movingReqs } = await supabase
         .from("custom_requests")
         .select("id, request_number, origin_city, destination_city, status, created_at, volume_estimate")
@@ -120,7 +116,6 @@ function IndexContent() {
         setMovingRequests(movingReqs);
       }
 
-      // Load unread messages count
       const { count } = await supabase
         .from("messages")
         .select("*", { count: "exact", head: true })
@@ -150,10 +145,7 @@ function IndexContent() {
     );
   }
 
-  // Don't show intermediate loader - go straight to content after entry loader
-  // The AppEntryLoader handles the initial loading, so we just skip any "flash" of loading state
   if (roleLoading || (isAuthenticated && dataLoading)) {
-    // Return null to avoid showing a generic loader - AppEntryLoader handles this
     return null;
   }
 
@@ -162,26 +154,32 @@ function IndexContent() {
       <PullToRefreshIndicator isRefreshing={isRefreshing} progress={progress} pullDistance={pullDistance} />
       <AppHeader />
       
-      {/* RÈGLE NOTIF-01: Bande persistante juste en dessous du header */}
       {isAuthenticated && !isGP && <ActiveReservationBanner />}
 
-      {/* APP-LIKE HOME: 1 écran, pas de scroll, conversion first */}
-      {/* Show for guests OR GPs - single screen app-like experience */}
       {(!isAuthenticated || isGP) && (
         <AppLikeHome />
       )}
 
-      {/* Logged-in Client Home - NO SCROLL, app-like */}
       {isAuthenticated && !isGP && (
-        <ClientAppHome
-          userName={userName}
-          recentOrders={recentOrders}
-          customRequests={customRequests}
-          movingRequests={movingRequests}
-          unreadMessages={unreadMessages}
-          activeOrdersCount={activeOrdersCount}
-          userId={userId || undefined}
-        />
+        <>
+          <ClientAppHome
+            userName={userName}
+            recentOrders={recentOrders}
+            customRequests={customRequests}
+            movingRequests={movingRequests}
+            unreadMessages={unreadMessages}
+            activeOrdersCount={activeOrdersCount}
+            userId={userId || undefined}
+          />
+          {/* Onboarding dialog - shows once after first login */}
+          <OnboardingDialog
+            open={showOnboarding && !isGP}
+            onComplete={completeOnboarding}
+            onSkip={skipOnboarding}
+            role="client"
+            userName={userName}
+          />
+        </>
       )}
 
       <MobileNav />

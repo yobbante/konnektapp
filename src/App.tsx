@@ -9,7 +9,7 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { GlobalNotificationProvider } from "@/components/notifications/GlobalNotificationProvider";
-import { OfflineIndicator } from "@/components/OfflineIndicator";
+// OfflineIndicator removed — app-like experience, no PWA indicators
 import { RoleSwitchPopup } from "@/components/profile/RoleSwitchPopup";
 import { DeliveryCodePopup } from "@/components/notifications/DeliveryCodePopup";
 import { ThemeInitializer } from "@/components/ThemeInitializer";
@@ -103,7 +103,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <GlobalNotificationProvider>
-        <OfflineIndicator />
+        {/* OfflineIndicator removed for app-like feel */}
         <AppleToaster />
         <Sonner />
         <BrowserRouter>
@@ -126,7 +126,7 @@ const App = () => (
             <Route path="/gp/:gpId" element={<GPProfile />} />
             <Route path="/client/transporteurs/:gpId" element={<ClientTransporterProfile />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/install" element={<Install />} />
+            <Route path="/install" element={<Navigate to="/" replace />} />
             <Route path="/track/:orderId" element={<PublicTracking />} />
             <Route path="/track/user/:userId" element={<PublicUserProfile />} />
             <Route path="/deliver/:orderId" element={<DeliveryConfirmation />} />
