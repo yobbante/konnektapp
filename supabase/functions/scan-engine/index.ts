@@ -277,14 +277,17 @@ async function executeAction(
     };
   }
 
-  // 5. Idempotency
-  const idempKey = generateIdempotencyKey(userId, "ACTION", orderId, action);
-  const canProceed = await checkIdempotency(supabase, idempKey);
-  if (!canProceed) {
-    return {
-      status: "failed", qr_type: "QR_COLIS", scenario: "duplicate_action",
-      next_action: "none", message: "Cette action a déjà été effectuée sur cette commande.",
-    };
+  // 5. Idempotency — Skip for actions that have their own guards (weight_modify has count limit, confirm_delivery has code check, prepare_delivery is idempotent by design)
+  const skipIdempotency = ["weight_modify", "confirm_delivery", "prepare_delivery", "confirm_reception"].includes(action);
+  if (!skipIdempotency) {
+    const idempKey = generateIdempotencyKey(userId, "ACTION", orderId, action);
+    const canProceed = await checkIdempotency(supabase, idempKey);
+    if (!canProceed) {
+      return {
+        status: "failed", qr_type: "QR_COLIS", scenario: "duplicate_action",
+        next_action: "none", message: "Cette action a déjà été effectuée sur cette commande.",
+      };
+    }
   }
 
   // 6. Execute by action type
@@ -324,15 +327,19 @@ async function executeAction(
 
   // 7. Mark idempotency + log
   if (result.status === "executed") {
-    await markIdempotency(supabase, idempKey, { action, orderId, at: new Date().toISOString() });
+    if (!skipIdempotency) {
+      const idempKey = generateIdempotencyKey(userId, "ACTION", orderId, action);
+      await markIdempotency(supabase, idempKey, { action, orderId, at: new Date().toISOString() });
+    }
 
     try {
+      const logIdempKey = skipIdempotency ? `${userId}:${action}:${orderId}:${Date.now()}` : generateIdempotencyKey(userId, "ACTION", orderId, action);
       await supabase.from("scan_logs").insert({
         user_id: userId, user_role: role, action,
         scan_type: "engine_action", qr_type: "QR_COLIS",
         order_id: orderId, engine_status: "executed",
         financial_impact: result.financial_impact || null,
-        idempotency_key: idempKey,
+        idempotency_key: logIdempKey,
         metadata: { scenario: result.scenario, action_data: actionData },
       });
     } catch { /* non-blocking log */ }
