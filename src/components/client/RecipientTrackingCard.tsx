@@ -1,16 +1,18 @@
 /**
- * RecipientTrackingCard — Stat card shown on the home page for recipients
- * 
- * When a user is the recipient of a parcel, they see a dedicated tracking card
- * that shows incoming parcels addressed to them.
+ * RecipientTrackingCard — Interactive card for recipients with QR, address & messaging
  */
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, ArrowRight, MapPin, Clock, Truck, CheckCircle, X, User, Eye } from "lucide-react";
+import {
+  Package, ArrowRight, MapPin, Clock, Truck, CheckCircle, X,
+  User, Eye, MessageCircle, QrCode, Navigation, Copy, ExternalLink
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import QRCode from "react-qr-code";
+import { notify } from "@/components/ui/AppleNotification";
 
 interface IncomingParcel {
   id: string;
@@ -23,6 +25,11 @@ interface IncomingParcel {
   weight: number;
   sender_name: string;
   created_at: string;
+  gp_id: string;
+  deposit_address?: string;
+  reception_address?: string;
+  gp_business_name?: string;
+  gp_phone?: string;
 }
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
@@ -31,11 +38,16 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = 
   paid_held: { label: "Paiement reçu", color: "bg-emerald-500/20 text-emerald-600", icon: CheckCircle },
   checked_in: { label: "Déposé", color: "bg-indigo-500/20 text-indigo-600", icon: Package },
   collected: { label: "Collecté", color: "bg-blue-500/20 text-blue-600", icon: Package },
+  scheduled_departure: { label: "Départ programmé", color: "bg-sky-500/20 text-sky-600", icon: Clock },
   in_transit: { label: "En route vers vous", color: "bg-blue-500/20 text-blue-600", icon: Truck },
   arrived_destination: { label: "Arrivé !", color: "bg-teal-500/20 text-teal-600", icon: MapPin },
   delivery_pending: { label: "Livraison en cours", color: "bg-cyan-500/20 text-cyan-600", icon: Truck },
+  delivery_confirmed: { label: "Livré ✓", color: "bg-green-500/20 text-green-700", icon: CheckCircle },
   delivered: { label: "Livré", color: "bg-green-500/20 text-green-700", icon: CheckCircle },
+  released: { label: "Terminé", color: "bg-green-500/20 text-green-700", icon: CheckCircle },
 };
+
+const TERMINAL_STATUSES = ["delivered", "released", "cancelled", "delivery_confirmed"];
 
 interface RecipientTrackingCardProps {
   userId: string;
@@ -53,40 +65,42 @@ export function RecipientTrackingCard({ userId }: RecipientTrackingCardProps) {
 
   const loadIncomingParcels = async () => {
     try {
-      // Find orders where this user is the recipient
       const { data, error } = await supabase
         .from("orders")
-        .select("id, order_number, origin_city, destination_city, origin_country, destination_country, status, weight, created_at, client_id")
+        .select("id, order_number, origin_city, destination_city, origin_country, destination_country, status, weight, created_at, client_id, gp_id")
         .eq("recipient_user_id", userId)
-        .not("status", "in", '("cancelled","released","delivered")')
+        .not("status", "in", '("cancelled","released")')
         .order("created_at", { ascending: false })
         .limit(10);
-      
-      console.log("[RecipientTrackingCard] userId:", userId, "data:", data?.length, "error:", error?.message);
 
-      if (error) {
-        console.error("Error loading incoming parcels:", error);
-        return;
-      }
-
-      if (!data || data.length === 0) {
+      if (error || !data || data.length === 0) {
         setParcels([]);
         return;
       }
 
       // Get sender names
       const clientIds = [...new Set(data.map(o => o.client_id))];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, full_name")
-        .in("user_id", clientIds);
+      const gpIds = [...new Set(data.map(o => o.gp_id))];
 
-      const profileMap = new Map(profiles?.map(p => [p.user_id, p.full_name]) || []);
+      const [profilesRes, gpRes] = await Promise.all([
+        supabase.from("profiles").select("user_id, full_name").in("user_id", clientIds),
+        supabase.from("gp_profiles").select("id, business_name, phone, deposit_address, reception_address").in("id", gpIds),
+      ]);
 
-      setParcels(data.map(o => ({
-        ...o,
-        sender_name: profileMap.get(o.client_id) || "Expéditeur",
-      })));
+      const profileMap = new Map(profilesRes.data?.map(p => [p.user_id, p.full_name]) || []);
+      const gpMap = new Map(gpRes.data?.map(g => [g.id, g]) || []);
+
+      setParcels(data.map(o => {
+        const gp = gpMap.get(o.gp_id);
+        return {
+          ...o,
+          sender_name: profileMap.get(o.client_id) || "Expéditeur",
+          gp_business_name: gp?.business_name,
+          gp_phone: gp?.phone,
+          deposit_address: gp?.deposit_address,
+          reception_address: gp?.reception_address,
+        };
+      }));
     } catch (err) {
       console.error("Error:", err);
     } finally {
@@ -96,11 +110,12 @@ export function RecipientTrackingCard({ userId }: RecipientTrackingCardProps) {
 
   if (loading || parcels.length === 0) return null;
 
-  const activeCount = parcels.filter(p => !["delivered", "released"].includes(p.status)).length;
+  const activeCount = parcels.filter(p => !TERMINAL_STATUSES.includes(p.status)).length;
+
+  if (activeCount === 0) return null;
 
   return (
     <>
-      {/* Main Stat Card */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -111,7 +126,6 @@ export function RecipientTrackingCard({ userId }: RecipientTrackingCardProps) {
           className="relative overflow-hidden bg-gradient-to-r from-violet-500/10 via-purple-500/5 to-violet-500/10 border border-violet-500/20 rounded-2xl shadow-md cursor-pointer active:scale-[0.98] transition-transform"
         >
           <motion.div whileTap={{ scale: 0.99 }} className="p-3 flex items-center gap-3">
-            {/* Icon */}
             <div className="relative">
               <motion.div
                 className="w-11 h-11 rounded-xl flex items-center justify-center shadow-sm bg-gradient-to-br from-violet-500 to-purple-600"
@@ -129,7 +143,6 @@ export function RecipientTrackingCard({ userId }: RecipientTrackingCardProps) {
               )}
             </div>
 
-            {/* Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 mb-0.5">
                 <Badge variant="secondary" className="text-[10px] py-0 px-1.5 bg-violet-500/20 text-violet-600">
@@ -146,7 +159,6 @@ export function RecipientTrackingCard({ userId }: RecipientTrackingCardProps) {
               </div>
             </div>
 
-            {/* Arrow */}
             <motion.div className="w-8 h-8 rounded-full bg-violet-500/10 flex items-center justify-center">
               <Eye className="w-4 h-4 text-violet-600" />
             </motion.div>
@@ -154,7 +166,6 @@ export function RecipientTrackingCard({ userId }: RecipientTrackingCardProps) {
         </div>
       </motion.div>
 
-      {/* Detail Sheet */}
       <AnimatePresence>
         {selectedParcel && (
           <motion.div
@@ -186,6 +197,19 @@ function RecipientParcelDetails({
   onClose: () => void;
   navigate: (path: string) => void;
 }) {
+  const [expandedQR, setExpandedQR] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    notify.success("Copié !");
+  };
+
+  const openGPMessage = async (parcel: IncomingParcel) => {
+    // Navigate to messages with this GP context
+    onClose();
+    navigate(`/messages?gp=${parcel.gp_id}&order=${parcel.id}`);
+  };
+
   return (
     <motion.div
       initial={{ y: "100%" }}
@@ -215,71 +239,151 @@ function RecipientParcelDetails({
         {parcels.map((parcel, i) => {
           const statusInfo = STATUS_MAP[parcel.status] || { label: parcel.status, color: "bg-muted text-muted-foreground", icon: Clock };
           const StatusIcon = statusInfo.icon;
-          
+          const isDelivered = TERMINAL_STATUSES.includes(parcel.status);
+          const showQR = expandedQR === parcel.id;
+          const pickupAddress = parcel.reception_address || parcel.deposit_address;
+
           return (
             <motion.div
               key={parcel.id}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="bg-card border border-border rounded-2xl p-4 space-y-3"
+              className="bg-card border border-border rounded-2xl overflow-hidden"
             >
-              {/* Route */}
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                  <StatusIcon className="w-4 h-4 text-violet-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-bold">{parcel.origin_city}</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-violet-500" />
-                    <span className="text-sm font-bold">{parcel.destination_city}</span>
+              {/* Main content */}
+              <div className="p-3.5 space-y-2.5">
+                {/* Route + Status */}
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-violet-500/10 flex items-center justify-center flex-shrink-0">
+                    <StatusIcon className="w-4 h-4 text-violet-600" />
                   </div>
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${statusInfo.color}`}>
-                    <motion.span
-                      className="w-1.5 h-1.5 rounded-full bg-current"
-                      animate={{ opacity: [1, 0.5, 1] }}
-                      transition={{ duration: 1, repeat: Infinity }}
-                    />
-                    {statusInfo.label}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-bold">{parcel.origin_city}</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-violet-500" />
+                      <span className="text-sm font-bold">{parcel.destination_city}</span>
+                    </div>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${statusInfo.color}`}>
+                      {!isDelivered && (
+                        <motion.span
+                          className="w-1.5 h-1.5 rounded-full bg-current"
+                          animate={{ opacity: [1, 0.5, 1] }}
+                          transition={{ duration: 1, repeat: Infinity }}
+                        />
+                      )}
+                      {statusInfo.label}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Details grid */}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-muted/30 rounded-lg p-2">
+                    <p className="text-muted-foreground">Expéditeur</p>
+                    <p className="font-medium flex items-center gap-1">
+                      <User className="w-3 h-3" />
+                      {parcel.sender_name}
+                    </p>
+                  </div>
+                  <div className="bg-muted/30 rounded-lg p-2">
+                    <p className="text-muted-foreground">Poids</p>
+                    <p className="font-medium">{parcel.weight || '—'} kg</p>
+                  </div>
+                </div>
+
+                {/* Pickup address */}
+                {pickupAddress && !isDelivered && (
+                  <div className="bg-violet-500/5 border border-violet-500/15 rounded-xl p-2.5">
+                    <div className="flex items-start gap-2">
+                      <Navigation className="w-3.5 h-3.5 text-violet-500 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] text-muted-foreground font-medium mb-0.5">Adresse de récupération</p>
+                        <p className="text-xs font-medium text-foreground">{pickupAddress}</p>
+                      </div>
+                      <button
+                        onClick={() => copyToClipboard(pickupAddress)}
+                        className="p-1 rounded-md hover:bg-muted/50 transition-colors"
+                      >
+                        <Copy className="w-3 h-3 text-muted-foreground" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* GP info + transporter name */}
+                {parcel.gp_business_name && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Truck className="w-3 h-3" />
+                    <span>Transporteur : <strong className="text-foreground">{parcel.gp_business_name}</strong></span>
+                  </div>
+                )}
+
+                {/* Order number */}
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>#{parcel.order_number?.slice(-8)}</span>
+                  <span>{new Date(parcel.created_at).toLocaleDateString('fr-FR')}</span>
                 </div>
               </div>
 
-              {/* Details */}
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="bg-muted/30 rounded-lg p-2">
-                  <p className="text-muted-foreground">Expéditeur</p>
-                  <p className="font-medium flex items-center gap-1">
-                    <User className="w-3 h-3" />
-                    {parcel.sender_name}
-                  </p>
-                </div>
-                <div className="bg-muted/30 rounded-lg p-2">
-                  <p className="text-muted-foreground">Poids</p>
-                  <p className="font-medium">{parcel.weight || '—'} kg</p>
-                </div>
+              {/* Action buttons */}
+              <div className="border-t border-border bg-muted/20 px-3 py-2 flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 text-xs h-8"
+                  onClick={() => {
+                    onClose();
+                    navigate(`/tracking?order=${parcel.id}`);
+                  }}
+                >
+                  <MapPin className="w-3 h-3 mr-1" />
+                  Suivre
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={() => setExpandedQR(showQR ? null : parcel.id)}
+                >
+                  <QrCode className="w-3 h-3 mr-1" />
+                  QR
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={() => openGPMessage(parcel)}
+                >
+                  <MessageCircle className="w-3 h-3 mr-1" />
+                  Message
+                </Button>
               </div>
 
-              {/* Order number */}
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>#{parcel.order_number?.slice(-8)}</span>
-                <span>{new Date(parcel.created_at).toLocaleDateString('fr-FR')}</span>
-              </div>
-
-              {/* Track button */}
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-xs"
-                onClick={() => {
-                  onClose();
-                  navigate(`/tracking?order=${parcel.id}`);
-                }}
-              >
-                <MapPin className="w-3 h-3 mr-1.5" />
-                Suivre ce colis
-              </Button>
+              {/* Expandable QR */}
+              <AnimatePresence>
+                {showQR && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden border-t border-border"
+                  >
+                    <div className="p-4 flex flex-col items-center gap-2 bg-white dark:bg-card">
+                      <p className="text-xs text-muted-foreground font-medium">QR de suivi — Montrez-le au livreur</p>
+                      <div className="bg-white p-3 rounded-xl">
+                        <QRCode
+                          value={`https://konnektapp.lovable.app/tracking?order=${parcel.id}`}
+                          size={140}
+                          level="M"
+                        />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">{parcel.order_number}</p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           );
         })}
