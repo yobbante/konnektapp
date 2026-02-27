@@ -71,9 +71,9 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
   const [showDeliveryCode, setShowDeliveryCode] = useState(false);
   const [deliveryCodeInput, setDeliveryCodeInput] = useState("");
 
-  const isDepositMode = ["accepted", "pending", "paid_held", "collected"].includes(order.status);
+  const isDepositMode = ["accepted", "pending", "paid_held"].includes(order.status);
   const isTransitMode = false; // Transit is now automatic via geolocation
-  const isDeliveryMode = ["in_transit", "arrived_destination", "delivery_pending"].includes(order.status);
+  const isDeliveryMode = ["checked_in", "collected", "scheduled_departure", "in_transit", "arrived_destination", "delivery_pending"].includes(order.status);
   const alreadyProcessed = ["delivered", "cancelled", "released", "delivery_confirmed"].includes(order.status);
 
   useEffect(() => {
@@ -109,13 +109,16 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
     if (result?.status === "executed") onComplete();
   };
 
-  const initiateDelivery = () => {
-    // Show delivery code input — the code was sent to the client
-    setShowDeliveryCode(true);
-    toast({
-      title: "📱 Code envoyé au client",
-      description: `Le code de livraison a été envoyé à ${order.recipient_name || order.client_name || "le client"}. Demandez-lui le code pour confirmer.`,
-    });
+  const initiateDelivery = async () => {
+    // Call prepare_delivery to generate code and notify client+recipient
+    const result = await executeAction("prepare_delivery", order.id);
+    if (result?.status === "executed") {
+      setShowDeliveryCode(true);
+      toast({
+        title: "📱 Code envoyé",
+        description: `Le code de livraison a été envoyé à ${order.recipient_name || order.client_name || "le client"}. Demandez-lui le code.`,
+      });
+    }
   };
 
   const confirmDelivery = async () => {
