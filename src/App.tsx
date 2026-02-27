@@ -130,6 +130,8 @@ const App = () => (
             <Route path="/track/:orderId" element={<PublicTracking />} />
             <Route path="/track/user/:userId" element={<PublicUserProfile />} />
             <Route path="/deliver/:orderId" element={<DeliveryConfirmation />} />
+            {/* Legacy redirect for old public-tracking URLs */}
+            <Route path="/public-tracking/:orderId" element={<PublicTracking />} />
             
             {/* ============================================
                 CLIENT ROUTES - Dashboard client unifié
