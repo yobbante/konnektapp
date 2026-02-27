@@ -16,7 +16,7 @@ import { motion } from "framer-motion";
 import { 
   Package, Truck, Scale, CheckCircle, AlertTriangle,
   User, History, ArrowRight, ShieldAlert, Smartphone,
-  KeyRound, Send
+  KeyRound, Send, Smartphone as PhoneIcon, Laptop, Gem, Gamepad2, FileText, Wine, Car, Tablet, Box
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,13 @@ import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { ScanStatusBadge } from "./ScanStatusBadge";
 import { ExternalHandoverCard } from "@/components/gp/ExternalHandoverCard";
 import { useScanEngine } from "@/hooks/useScanEngine";
+
+interface FlatRateOrderItem {
+  name: string;
+  label: string;
+  quantity: number;
+  price: number;
+}
 
 interface ScanResultGPProps {
   order: {
@@ -49,6 +56,8 @@ interface ScanResultGPProps {
     recipient_name?: string | null;
     recipient_phone?: string | null;
     recipient_user_id?: string | null;
+    flat_rate_items?: FlatRateOrderItem[] | null;
+    content_nature?: string[] | null;
   };
   gpId: string;
   logScan: (orderId: string, action: string, scanType?: string, prevStatus?: string, newStatus?: string, meta?: Record<string, any>) => Promise<void>;
@@ -164,6 +173,11 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
           )}
         </CardContent>
       </Card>
+
+      {/* Inventory List — Deposit overview */}
+      {isDepositMode && (
+        <DepositInventoryCard order={order} />
+      )}
 
       {/* Already processed warning */}
       {alreadyProcessed && (
@@ -381,5 +395,100 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
         </Card>
       )}
     </motion.div>
+  );
+}
+
+// Icon mapping for flat-rate items
+const FLAT_RATE_ICONS: Record<string, any> = {
+  telephone: Smartphone,
+  ordinateur: Laptop,
+  bijoux: Gem,
+  console: Gamepad2,
+  document: FileText,
+  parfum: Wine,
+  piece_auto: Car,
+  tablette: Tablet,
+};
+
+const NATURE_LABELS: Record<string, string> = {
+  alimentaire: "Alimentaire",
+  vestimentaire: "Vestimentaire",
+  cosmetique: "Cosmétique",
+  electronique: "Électronique",
+  medicament: "Médicament",
+  document: "Document",
+  autres: "Autres",
+};
+
+function DepositInventoryCard({ order }: { order: ScanResultGPProps["order"] }) {
+  const flatRateItems = (order.flat_rate_items || []) as FlatRateOrderItem[];
+  const contentNature = order.content_nature || [];
+  const hasKilo = order.weight > 0;
+  const hasFlatRate = flatRateItems.length > 0;
+
+  if (!hasKilo && !hasFlatRate) return null;
+
+  return (
+    <Card className="border-accent/30 bg-accent/5">
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Box className="w-4 h-4 text-accent-foreground" />
+          <h4 className="text-sm font-semibold">Inventaire du colis</h4>
+          <Badge variant="outline" className="ml-auto text-[10px]">
+            {(hasKilo ? 1 : 0) + flatRateItems.length} article{((hasKilo ? 1 : 0) + flatRateItems.length) > 1 ? 's' : ''}
+          </Badge>
+        </div>
+
+        <div className="space-y-1.5">
+          {/* Kilo items */}
+          {hasKilo && (
+            <div className="flex items-center gap-3 p-2.5 rounded-lg bg-background border border-border">
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Scale className="w-4 h-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">Colis au kilo</p>
+                <p className="text-xs text-muted-foreground">
+                  {contentNature.length > 0
+                    ? contentNature.map(n => NATURE_LABELS[n] || n).join(", ")
+                    : "Contenu déclaré"}
+                </p>
+              </div>
+              <span className="text-sm font-bold text-primary">{order.weight} kg</span>
+            </div>
+          )}
+
+          {/* Flat rate items */}
+          {flatRateItems.map((item, i) => {
+            const Icon = FLAT_RATE_ICONS[item.name] || Package;
+            return (
+              <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg bg-background border border-accent/30">
+                <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center">
+                  <Icon className="w-4 h-4 text-accent-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{item.label}</p>
+                  <Badge variant="secondary" className="text-[10px] mt-0.5">Forfaitaire</Badge>
+                </div>
+                <div className="text-right">
+                  <span className="text-sm font-bold">×{item.quantity}</span>
+                  <p className="text-[10px] text-muted-foreground">
+                    {(item.price * item.quantity).toLocaleString()} {getCurrencySymbol(order.currency)}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Total */}
+        <div className="flex items-center justify-between pt-2 border-t border-border">
+          <span className="text-xs text-muted-foreground">Total déclaré</span>
+          <span className="text-sm font-bold">
+            {order.total_price.toLocaleString()} {getCurrencySymbol(order.currency)}
+          </span>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

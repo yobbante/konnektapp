@@ -77,6 +77,8 @@ interface ActiveOrder {
   recipient_name?: string | null;
   recipient_phone?: string | null;
   recipient_user_id?: string | null;
+  flat_rate_items?: any[] | null;
+  content_nature?: string[] | null;
 }
 
 export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRouterProps) {
@@ -161,7 +163,7 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
       if (scanRole === "gp" && scannerGpId) {
         const { data: orders } = await supabase
           .from("orders")
-          .select("id, order_number, status, weight, total_price, currency, price_per_kg, origin_city, destination_city, origin_country, destination_country, description, client_id, gp_id, delivery_date, delivery_code, recipient_name, recipient_phone, recipient_user_id")
+          .select("id, order_number, status, weight, total_price, currency, price_per_kg, origin_city, destination_city, origin_country, destination_country, description, client_id, gp_id, delivery_date, delivery_code, recipient_name, recipient_phone, recipient_user_id, flat_rate_items, content_nature")
           .eq("gp_id", scannerGpId)
           .eq("client_id", scannedUserId)
           .in("status", nonTerminalStatuses);
@@ -170,7 +172,7 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
         if (activeOrders.length === 0) {
           const { data: recipientOrders } = await supabase
             .from("orders")
-            .select("id, order_number, status, weight, total_price, currency, price_per_kg, origin_city, destination_city, origin_country, destination_country, description, client_id, gp_id, delivery_date, delivery_code, recipient_name, recipient_phone, recipient_user_id")
+            .select("id, order_number, status, weight, total_price, currency, price_per_kg, origin_city, destination_city, origin_country, destination_country, description, client_id, gp_id, delivery_date, delivery_code, recipient_name, recipient_phone, recipient_user_id, flat_rate_items, content_nature")
             .eq("gp_id", scannerGpId)
             .eq("recipient_user_id", scannedUserId)
             .in("status", nonTerminalStatuses);
@@ -179,7 +181,7 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
       } else if (scanRole === "client" && scannerId && gpProfile) {
         const { data: orders } = await supabase
           .from("orders")
-          .select("id, order_number, status, weight, total_price, currency, price_per_kg, origin_city, destination_city, origin_country, destination_country, description, client_id, gp_id, delivery_date, delivery_code, recipient_name, recipient_phone, recipient_user_id")
+          .select("id, order_number, status, weight, total_price, currency, price_per_kg, origin_city, destination_city, origin_country, destination_country, description, client_id, gp_id, delivery_date, delivery_code, recipient_name, recipient_phone, recipient_user_id, flat_rate_items, content_nature")
           .eq("client_id", scannerId)
           .eq("gp_id", gpProfile.id)
           .in("status", nonTerminalStatuses);
@@ -187,7 +189,7 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
       } else if (scanRole === "client" && scannerId && !gpProfile) {
         const { data: orders } = await supabase
           .from("orders")
-          .select("id, order_number, status, weight, total_price, currency, price_per_kg, origin_city, destination_city, origin_country, destination_country, description, client_id, gp_id, delivery_date, delivery_code, recipient_name, recipient_phone, recipient_user_id")
+          .select("id, order_number, status, weight, total_price, currency, price_per_kg, origin_city, destination_city, origin_country, destination_country, description, client_id, gp_id, delivery_date, delivery_code, recipient_name, recipient_phone, recipient_user_id, flat_rate_items, content_nature")
           .eq("client_id", scannerId)
           .eq("recipient_user_id", scannedUserId)
           .in("status", nonTerminalStatuses);
@@ -197,7 +199,7 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
         if (gpIdFilter) {
           const { data: orders } = await supabase
             .from("orders")
-            .select("id, order_number, status, weight, total_price, currency, price_per_kg, origin_city, destination_city, origin_country, destination_country, description, client_id, gp_id, delivery_date, delivery_code, recipient_name, recipient_phone, recipient_user_id")
+            .select("id, order_number, status, weight, total_price, currency, price_per_kg, origin_city, destination_city, origin_country, destination_country, description, client_id, gp_id, delivery_date, delivery_code, recipient_name, recipient_phone, recipient_user_id, flat_rate_items, content_nature")
             .eq("gp_id", gpIdFilter)
             .in("status", nonTerminalStatuses)
             .limit(20);
@@ -205,7 +207,7 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
         } else {
           const { data: orders } = await supabase
             .from("orders")
-            .select("id, order_number, status, weight, total_price, currency, price_per_kg, origin_city, destination_city, origin_country, destination_country, description, client_id, gp_id, delivery_date, delivery_code, recipient_name, recipient_phone, recipient_user_id")
+            .select("id, order_number, status, weight, total_price, currency, price_per_kg, origin_city, destination_city, origin_country, destination_country, description, client_id, gp_id, delivery_date, delivery_code, recipient_name, recipient_phone, recipient_user_id, flat_rate_items, content_nature")
             .eq("client_id", scannedUserId)
             .in("status", nonTerminalStatuses)
             .limit(20);
