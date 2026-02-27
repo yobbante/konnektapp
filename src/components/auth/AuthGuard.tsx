@@ -20,6 +20,9 @@ const PUBLIC_ROUTES = [
   "/install",
   "/",
   "/client/transporteurs",
+  "/track",
+  "/deliver",
+  "/public-tracking",
 ];
 
 // Routes réservées aux admins
