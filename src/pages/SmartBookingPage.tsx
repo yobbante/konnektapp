@@ -629,6 +629,18 @@ export default function SmartBookingPage() {
         commission_ht_display: isFCFA ? commissionHTFCFA : Math.round(fromFCFA(commissionHTFCFA) * 100) / 100,
       }).then(({ error }) => { if (error) console.error("TVA insert error:", error); });
 
+      // Notify recipient if linked
+      if (recipientData?.userId) {
+        await supabase.from("notifications").insert({
+          user_id: recipientData.userId,
+          title: "📦 Un colis est en route pour vous",
+          message: `${recipientData.name || "Vous"} avez un colis de ${offer.origin_city} → ${offer.destination_city} via ${gpProfile.business_name}. Suivez-le dans l'app.`,
+          type: "order",
+          related_id: orderData.id,
+          related_type: "order",
+        }).then(({ error }) => { if (error) console.error("Recipient notification error:", error); });
+      }
+
       // For bagages_international, show escrow payment after order creation
       if (gpProfile.gp_type === "bagages_international") {
         setShowEscrow(true);
