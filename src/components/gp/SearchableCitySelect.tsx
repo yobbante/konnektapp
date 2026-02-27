@@ -313,7 +313,14 @@ function CityListContent({
           autoFocus
         />
       </div>
-      <ScrollArea className="max-h-[60vh]" style={{ touchAction: "pan-y", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
+      <div 
+        className="overflow-y-auto overscroll-contain" 
+        style={{ 
+          maxHeight: "55vh", 
+          WebkitOverflowScrolling: "touch", 
+          touchAction: "pan-y",
+        } as React.CSSProperties}
+      >
         {citiesToShow.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-6 text-center text-sm text-muted-foreground">
             <Globe className="w-8 h-8 text-muted-foreground/50" />
@@ -379,7 +386,7 @@ function CityListContent({
             )}
           </div>
         )}
-      </ScrollArea>
+      </div>
     </div>
   );
 }
