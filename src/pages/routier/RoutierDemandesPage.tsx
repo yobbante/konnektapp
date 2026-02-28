@@ -10,8 +10,10 @@ import { RoutierDashboardLayout } from "@/components/layout/RoutierDashboardLayo
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TransportPageLoader } from "@/components/ui/TransportLoader";
 import { RoutierQuickStats } from "@/components/routier/dashboard/RoutierQuickStats";
+import { RoutierMissionsTab } from "@/components/routier/RoutierMissionsTab";
 import { useToast } from "@/hooks/use-toast";
 import { RefusalReasonDialog, RefusalReason } from "@/components/routier/RefusalReasonDialog";
 import { format } from "date-fns";
@@ -235,25 +237,35 @@ export default function RoutierDemandesPage() {
           vehiculesActifs={vehicleCount}
         />
 
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold">Missions disponibles</h2>
-            <p className="text-xs text-muted-foreground">
-              Premier arrivé, premier servi
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => loadData(true)}
-            disabled={refreshing}
-          >
-            <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
-          </Button>
-        </div>
+        {/* Tabs: Classic Orders + Missions Marketplace */}
+        <Tabs defaultValue="missions" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="missions" className="gap-1">
+              🚛 Missions
+            </TabsTrigger>
+            <TabsTrigger value="classic" className="gap-1">
+              📦 Commandes
+              {requests.length > 0 && (
+                <Badge variant="destructive" className="ml-1 h-4 min-w-4 px-1 text-[10px]">{requests.length}</Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Mission Cards */}
+          <TabsContent value="missions" className="mt-4">
+            <RoutierMissionsTab gpId={gpProfile.id} />
+          </TabsContent>
+
+          <TabsContent value="classic" className="mt-4">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-bold">Commandes classiques</h2>
+                <p className="text-xs text-muted-foreground">Commandes directes</p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => loadData(true)} disabled={refreshing}>
+                <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
+              </Button>
+            </div>
         {requests.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="py-16 text-center">
@@ -418,6 +430,8 @@ export default function RoutierDemandesPage() {
             </AnimatePresence>
           </div>
         )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Refusal Dialog */}
