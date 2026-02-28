@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Package, Truck, User, Shield, LogOut, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CountrySelector } from "@/components/CountrySelector";
+
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePageTheme } from "@/hooks/usePageTheme";
 import { supabase } from "@/integrations/supabase/client";
@@ -115,9 +115,6 @@ export function Header() {
 
           {/* Right Section */}
           <div className="flex items-center gap-3">
-            <div className="hidden md:block">
-              <CountrySelector />
-            </div>
             
             {!loading && (
               <>
@@ -259,7 +256,7 @@ export function Header() {
                 )}
                 
                 <div className="pt-4 space-y-2 border-t border-border/50">
-                  <CountrySelector />
+                  
                   {isAuthenticated ? (
                     <Button variant="outline" className="w-full" onClick={handleSignOut}>
                       <LogOut className="w-4 h-4" />

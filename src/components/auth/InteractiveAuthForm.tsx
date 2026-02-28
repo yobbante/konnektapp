@@ -721,46 +721,17 @@ export function InteractiveAuthForm({
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm">Pays de résidence</Label>
-                <div className="relative">
-                  <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Rechercher un pays..."
-                      value={countrySearch}
-                      onChange={(e) => { setCountrySearch(e.target.value); setShowCountryDropdown(true); }}
-                      onFocus={() => setShowCountryDropdown(true)}
-                      className="w-full h-12 pl-11 pr-4 rounded-lg border border-input bg-background text-sm"
-                    />
-                    {!showCountryDropdown && formData.country && (
-                      <button
-                        type="button"
-                        onClick={() => setShowCountryDropdown(true)}
-                        className="absolute inset-0 flex items-center pl-11 text-sm bg-background rounded-lg border border-input"
-                      >
-                        {COUNTRY_OPTIONS.find(c => c.code === formData.country)?.flag} {COUNTRY_OPTIONS.find(c => c.code === formData.country)?.name}
-                      </button>
-                    )}
-                    {showCountryDropdown && (
-                      <div className="absolute top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-popover border border-border rounded-xl shadow-lg z-50">
-                        {COUNTRY_OPTIONS.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase()) || c.code.toLowerCase().includes(countrySearch.toLowerCase())).map((c) => (
-                          <button
-                            key={c.code}
-                            type="button"
-                            onClick={() => { setFormData({ ...formData, country: c.code }); setShowCountryDropdown(false); setCountrySearch(""); }}
-                            className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors ${formData.country === c.code ? "bg-primary/10 font-medium" : ""}`}
-                          >
-                            <span>{c.flag}</span>
-                            <span>{c.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+              {/* Country is pre-filled from entry flow — show read-only badge */}
+              {formData.country && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border">
+                  <Globe className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm">
+                    {COUNTRY_OPTIONS.find(c => c.code === formData.country)?.flag}{" "}
+                    {COUNTRY_OPTIONS.find(c => c.code === formData.country)?.name || formData.country}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground ml-auto">Pays de résidence</span>
                 </div>
-              </div>
+              )}
 
               <div className="space-y-2">
                 <Label className="text-sm">Email</Label>
