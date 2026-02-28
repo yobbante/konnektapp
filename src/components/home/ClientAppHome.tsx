@@ -5,7 +5,7 @@ import {
   Package, MessageCircle, MapPin, History, Heart, ArrowRight,
   Clock, ChevronRight, FileText, Home as HomeIcon, Truck, Calendar,
   Search, Plane, Ship, Car, Luggage, Globe, Shield, Zap, Award,
-  TrendingUp, Users
+  TrendingUp, Users, ArrowUpDown
 } from "lucide-react";
 import { RecipientTrackingCard } from "@/components/client/RecipientTrackingCard";
 import { WeightValidationAlert } from "@/components/client/WeightValidationAlert";
@@ -92,14 +92,27 @@ export function ClientAppHome({
   const [requestPopup, setRequestPopup] = useState<{ type: 'custom' | 'moving'; item: any } | null>(null);
   const [activeTab, setActiveTab] = useState("all");
 
-  // Search
-  const [searchOrigin, setSearchOrigin] = useState(userCity || "");
-  const [searchDest, setSearchDest] = useState("");
+  // Search — restore last successful search from localStorage
+  const lastSearch = useMemo(() => {
+    try {
+      const saved = localStorage.getItem("kkt_last_search");
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  }, []);
+
+  const [searchOrigin, setSearchOrigin] = useState(lastSearch?.origin || userCity || "");
+  const [searchDest, setSearchDest] = useState(lastSearch?.destination || "");
   const [searchDate, setSearchDate] = useState("");
   const [activePicker, setActivePicker] = useState<"origin" | "dest" | null>(null);
   const [cityQuery, setCityQuery] = useState("");
 
   useEffect(() => { if (userCity && !searchOrigin) setSearchOrigin(userCity); }, [userCity]);
+
+  const swapOriginDest = () => {
+    const o = searchOrigin;
+    setSearchOrigin(searchDest);
+    setSearchDest(o);
+  };
 
   // Post-delivery detection
   const { deliveredOrder, role: deliveryRole, dismiss: dismissDelivery } = usePostDeliveryDetection(userId);
@@ -126,6 +139,10 @@ export function ClientAppHome({
 
   const goToOffres = () => {
     const params = buildSearchParams();
+    // Save last successful search
+    if (searchOrigin || searchDest) {
+      localStorage.setItem("kkt_last_search", JSON.stringify({ origin: searchOrigin, destination: searchDest }));
+    }
     navigate(`/offres${params.toString() ? `?${params}` : ""}`);
   };
 
@@ -252,23 +269,42 @@ export function ClientAppHome({
 
         {/* ── SEARCH ENGINE ── */}
         <div className="px-4 pb-2">
-          <div className="bg-card border-2 border-primary/30 rounded-2xl overflow-hidden shadow-sm">
-            {[
-              { picker: "origin" as const, icon: MapPin, value: searchOrigin, placeholder: "Ville de départ", iconClass: "text-primary" },
-              { picker: "dest" as const, icon: Search, value: searchDest, placeholder: "Ville de destination", iconClass: "text-muted-foreground" },
-            ].map((field, i) => (
+          <div className="bg-card border-2 border-primary/30 rounded-2xl overflow-hidden shadow-sm relative">
+            {/* Origin */}
+            <button
+              onClick={() => { setCityQuery(""); setActivePicker("origin"); }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-left border-b border-border/40"
+            >
+              <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+              <span className={`flex-1 text-sm ${searchOrigin ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+                {searchOrigin || "Ville de départ"}
+              </span>
+              {searchOrigin && <span className="text-[10px] text-muted-foreground">Modifier</span>}
+            </button>
+
+            {/* Swap button — centered on the border between origin & dest */}
+            {(searchOrigin || searchDest) && (
               <button
-                key={field.picker}
-                onClick={() => { setCityQuery(""); setActivePicker(field.picker); }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left ${i === 0 ? "border-b border-border/40" : "border-b border-border/40"}`}
+                onClick={swapOriginDest}
+                className="absolute right-3 top-[40px] -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center hover:bg-accent transition-colors"
+                aria-label="Interchanger"
               >
-                <field.icon className={`w-4 h-4 ${field.iconClass} flex-shrink-0`} />
-                <span className={`flex-1 text-sm ${field.value ? "text-foreground font-medium" : "text-muted-foreground"}`}>
-                  {field.value || field.placeholder}
-                </span>
-                {field.value && <span className="text-[10px] text-muted-foreground">Modifier</span>}
+                <ArrowUpDown className="w-3 h-3 text-muted-foreground" />
               </button>
-            ))}
+            )}
+
+            {/* Destination */}
+            <button
+              onClick={() => { setCityQuery(""); setActivePicker("dest"); }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-left border-b border-border/40"
+            >
+              <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <span className={`flex-1 text-sm ${searchDest ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+                {searchDest || "Ville de destination"}
+              </span>
+              {searchDest && <span className="text-[10px] text-muted-foreground">Modifier</span>}
+            </button>
+
             <div className="flex items-center gap-3 px-3 py-2.5">
               <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <input
