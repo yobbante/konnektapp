@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Bell, Settings, LogOut, Package, Send, ShieldCheck, Star, ScanLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -63,13 +64,22 @@ export function GPDashboardHeader({ gpProfile, onSignOut }: GPDashboardHeaderPro
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border/60">
-        <div className="container">
-          <div className="flex items-center justify-between h-14">
+      <motion.header
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border/50"
+        style={{
+          paddingTop: 'calc(6px + env(safe-area-inset-top, 0px))',
+          paddingBottom: '6px',
+          paddingLeft: 'calc(12px + env(safe-area-inset-left, 0px))',
+          paddingRight: 'calc(12px + env(safe-area-inset-right, 0px))'
+        }}
+      >
+        <div className="flex items-center justify-between h-10">
             {/* Logo + Name + Badge */}
             <Link to="/" className="flex items-center gap-2.5 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-sm flex-shrink-0">
-                <Package className="w-4.5 h-4.5 text-white" />
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-sm flex-shrink-0">
+                <Package className="w-4 h-4 text-white" />
               </div>
               <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-1.5">
@@ -166,8 +176,7 @@ export function GPDashboardHeader({ gpProfile, onSignOut }: GPDashboardHeaderPro
               </DropdownMenu>
             </div>
           </div>
-        </div>
-      </header>
+      </motion.header>
 
       <GPSendParcelDialog 
         open={showSendDialog} 
