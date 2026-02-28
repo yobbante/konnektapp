@@ -521,12 +521,9 @@ function ActionPrepareDelivery({ orderId, executing, execute, darkMode }: {
 }
 
 function TerminalBlock({ state, darkMode }: { state: string; darkMode?: boolean }) {
-  const isReleased = state === "released";
-  const isDisputed = state === "disputed";
-  const isCancelled = state === "cancelled";
   const textSub = darkMode ? "text-white/40" : "text-muted-foreground";
 
-  if (isReleased) return (
+  if (state === "released") return (
     <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-5 text-center space-y-2">
       <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto">
         <Zap className="w-6 h-6 text-emerald-400" />
@@ -536,7 +533,23 @@ function TerminalBlock({ state, darkMode }: { state: string; darkMode?: boolean 
     </div>
   );
 
-  if (isDisputed) return (
+  if (state === "delivery_confirmed" || state === "delivered") return (
+    <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-5 text-center space-y-2">
+      <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto">
+        <CheckCircle className="w-6 h-6 text-emerald-400" />
+      </div>
+      <p className="font-bold text-emerald-400">
+        {state === "delivery_confirmed" ? "Livraison confirmée" : "Colis livré"}
+      </p>
+      <p className={cn("text-xs", textSub)}>
+        {state === "delivery_confirmed" 
+          ? "Le code a été validé. Fonds en cours de libération vers votre wallet."
+          : "Aucune action disponible. Le paiement sera libéré automatiquement."}
+      </p>
+    </div>
+  );
+
+  if (state === "disputed") return (
     <div className="rounded-2xl border border-red-400/30 bg-red-500/10 p-5 text-center space-y-2">
       <Shield className="w-8 h-8 text-red-400 mx-auto" />
       <p className="font-bold text-red-400">Litige en cours</p>
@@ -544,7 +557,7 @@ function TerminalBlock({ state, darkMode }: { state: string; darkMode?: boolean 
     </div>
   );
 
-  if (isCancelled) return (
+  if (state === "cancelled") return (
     <div className={cn("rounded-2xl border p-5 text-center space-y-2",
       darkMode ? "border-white/10 bg-white/[0.03]" : "border-border/50 bg-muted/30")}>
       <AlertTriangle className={cn("w-8 h-8 mx-auto", textSub)} />
@@ -582,7 +595,7 @@ export function ScannerGPView({ engineResponse, onActionComplete, darkMode = tru
   }
 
   const { current_state, allowed_actions } = payload;
-  const isTerminal = ["released", "cancelled", "disputed"].includes(current_state);
+  const isTerminal = ["released", "cancelled", "disputed", "delivery_confirmed", "delivered"].includes(current_state);
 
   return (
     <motion.div
