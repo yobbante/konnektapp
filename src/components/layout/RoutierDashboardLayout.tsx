@@ -42,6 +42,7 @@ export function RoutierDashboardLayout({
   const [showHubMenu, setShowHubMenu] = useState(false);
 
   const navTabs: NavTab[] = [
+    { id: "apercu", label: "Accueil", icon: Truck, path: "/routier/apercu" },
     { id: "demandes", label: "Missions", icon: Package, path: "/routier/demandes", badge: pendingCount },
     { id: "en-cours", label: "En cours", icon: Clock, path: "/routier/en-cours", badge: activeOrdersCount },
     { id: "historique", label: "Historique", icon: History, path: "/routier/historique" },
@@ -51,11 +52,12 @@ export function RoutierDashboardLayout({
 
   const currentPath = location.pathname;
   const getActiveTab = () => {
+    if (currentPath.includes("demandes")) return "demandes";
     if (currentPath.includes("en-cours")) return "en-cours";
     if (currentPath.includes("historique")) return "historique";
     if (currentPath.includes("vehicules")) return "vehicules";
     if (currentPath.includes("wallet")) return "wallet";
-    return "demandes";
+    return "apercu";
   };
   const activeTab = getActiveTab();
   const isAvailable = gpProfile.status === "verified";

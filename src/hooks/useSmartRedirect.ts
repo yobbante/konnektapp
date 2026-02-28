@@ -203,7 +203,7 @@ export function useEnforceDashboardRole(expectedType: "gp" | "routier") {
 
       // Enforce strict routing
       if (expectedType === "gp" && gpProfile.gp_type === "routier") {
-        navigate("/routier/demandes", { replace: true });
+        navigate("/routier/apercu", { replace: true });
       } else if (expectedType === "routier" && gpProfile.gp_type !== "routier") {
         navigate("/gp/demandes", { replace: true });
       }
