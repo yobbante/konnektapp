@@ -3096,6 +3096,11 @@ export type Database = {
           client_id: string
           comment: string | null
           created_at: string
+          criteria_communication: boolean | null
+          criteria_condition: boolean | null
+          criteria_packaging: boolean | null
+          criteria_professionalism: boolean | null
+          criteria_punctuality: boolean | null
           gp_id: string
           id: string
           order_id: string
@@ -3105,6 +3110,11 @@ export type Database = {
           client_id: string
           comment?: string | null
           created_at?: string
+          criteria_communication?: boolean | null
+          criteria_condition?: boolean | null
+          criteria_packaging?: boolean | null
+          criteria_professionalism?: boolean | null
+          criteria_punctuality?: boolean | null
           gp_id: string
           id?: string
           order_id: string
@@ -3114,6 +3124,11 @@ export type Database = {
           client_id?: string
           comment?: string | null
           created_at?: string
+          criteria_communication?: boolean | null
+          criteria_condition?: boolean | null
+          criteria_packaging?: boolean | null
+          criteria_professionalism?: boolean | null
+          criteria_punctuality?: boolean | null
           gp_id?: string
           id?: string
           order_id?: string

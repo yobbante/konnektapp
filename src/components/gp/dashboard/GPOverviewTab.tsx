@@ -62,13 +62,24 @@ export function GPOverviewTab({ gpId, gpProfile }: GPOverviewTabProps) {
 
   useEffect(() => { loadOverview(); }, [gpId]);
 
+  // Realtime auto-refresh
+  useEffect(() => {
+    const channel = supabase
+      .channel("gp-overview-rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => loadOverview())
+      .on("postgres_changes", { event: "*", schema: "public", table: "custom_request_responses" }, () => loadOverview())
+      .on("postgres_changes", { event: "*", schema: "public", table: "gp_offers" }, () => loadOverview())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [gpId]);
+
   const loadOverview = async () => {
     try {
       const [ordersRes, offersRes, ktpRes, customReqRes, gpRes, tiersRes] = await Promise.all([
         supabase.from("orders").select("status, total_price, currency").eq("gp_id", gpId),
         supabase.from("gp_offers").select("*").eq("gp_id", gpId).eq("status", "active").order("departure_date", { ascending: true }).limit(5),
         supabase.from("ktp_status").select("ktp_level, trust_score").eq("gp_id", gpId).maybeSingle(),
-        supabase.from("custom_request_responses").select("id").eq("gp_id", gpId).eq("status", "pending"),
+        supabase.from("custom_requests").select("id").in("status", ["open", "has_responses"]),
         supabase.from("gp_profiles").select("default_currency, base_price_per_kg, base_origin_city, base_origin_country, base_destination_city, base_destination_country").eq("id", gpId).single(),
         supabase.from("gp_weight_tiers").select("price_per_kg").eq("gp_id", gpId).eq("min_weight", 23).eq("max_weight", 23).maybeSingle(),
       ]);
