@@ -10,7 +10,7 @@ import { ActiveReservationBanner } from "@/components/client/ActiveReservationBa
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh";
-import { AppLikeHome } from "@/components/home/AppLikeHome";
+
 import { AppEntryLoader } from "@/components/ui/AppEntryLoader";
 import { CountrySelectionScreen } from "@/components/entry/CountrySelectionScreen";
 import { PhoneVerificationScreen } from "@/components/entry/PhoneVerificationScreen";
@@ -63,16 +63,17 @@ function IndexContent() {
   useEffect(() => {
     if (entryStep !== "done") return;
     if (!roleLoading) {
-      if (isAuthenticated && userId) {
-        loadUserData();
-      } else if (!isAuthenticated) {
-        // Redirect unauthenticated users to auth
+      if (!isAuthenticated) {
         navigate("/auth");
+      } else if (isGP) {
+        navigate("/gp/apercu");
+      } else if (userId) {
+        loadUserData();
       } else {
         setDataLoading(false);
       }
     }
-  }, [isAuthenticated, userId, roleLoading, entryStep]);
+  }, [isAuthenticated, userId, roleLoading, entryStep, isGP]);
 
   const loadUserData = async () => {
     if (!userId) {
@@ -253,8 +254,7 @@ function IndexContent() {
     return null;
   }
 
-  // Non-authenticated users are redirected via useEffect above
-  if (!isAuthenticated) {
+  if (!isAuthenticated || isGP) {
     return null;
   }
 
@@ -262,25 +262,16 @@ function IndexContent() {
     <div className="h-screen bg-background overflow-hidden fixed inset-0">
       <PullToRefreshIndicator isRefreshing={isRefreshing} progress={progress} pullDistance={pullDistance} />
       <AppHeader />
-      
-      {!isGP && <ActiveReservationBanner />}
-
-      {isGP && (
-        <AppLikeHome />
-      )}
-
-      {!isGP && (
-        <ClientAppHome
-          userName={userName}
-          recentOrders={recentOrders}
-          customRequests={customRequests}
-          movingRequests={movingRequests}
-          unreadMessages={unreadMessages}
-          activeOrdersCount={activeOrdersCount}
-          userId={userId || undefined}
-        />
-      )}
-
+      <ActiveReservationBanner />
+      <ClientAppHome
+        userName={userName}
+        recentOrders={recentOrders}
+        customRequests={customRequests}
+        movingRequests={movingRequests}
+        unreadMessages={unreadMessages}
+        activeOrdersCount={activeOrdersCount}
+        userId={userId || undefined}
+      />
       <MobileNav />
     </div>
   );
