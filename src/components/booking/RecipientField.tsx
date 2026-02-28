@@ -1,13 +1,14 @@
 /**
  * RecipientField — Unified smart recipient search
- * Single search bar that accepts: phone number, email, name, or Konnekt ID
- * Auto-detects input type and searches accordingly
+ * Single search bar that accepts: phone number, email, name, or Konnekt ID (KKT-...)
+ * Auto-detects input type and searches accordingly.
+ * Handles duplicate names by showing multiple results with disambiguation.
  */
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User, Search, CheckCircle, X, Users, Star,
-  Sparkles, ArrowRight, Eye, Package, TrendingUp, Loader2
+  Sparkles, ArrowRight, Eye, Package, TrendingUp, Loader2, MapPin
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
+import { getKonnektId, isKonnektId, parseKonnektId } from "@/lib/konnektId";
 
 interface RecipientFieldProps {
   recipientName: string;
@@ -37,11 +39,19 @@ interface SavedRecipient {
   is_favorite: boolean;
 }
 
-type DetectedType = "phone" | "email" | "uuid" | "name";
+interface ProfileResult {
+  user_id: string;
+  full_name: string;
+  phone: string | null;
+  city: string | null;
+}
+
+type DetectedType = "phone" | "email" | "uuid" | "konnekt_id" | "name";
 
 function detectInputType(input: string): DetectedType {
   const trimmed = input.trim();
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed)) return "uuid";
+  if (isKonnektId(trimmed)) return "konnekt_id";
   if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return "email";
   if (/^[+\d][\d\s\-()]{6,}$/.test(trimmed.replace(/\s/g, ""))) return "phone";
   return "name";
@@ -51,7 +61,8 @@ function getPlaceholderHint(type: DetectedType): string {
   switch (type) {
     case "phone": return "📱 Recherche par téléphone...";
     case "email": return "📧 Recherche par email...";
-    case "uuid": return "🔑 Recherche par ID Konnekt...";
+    case "uuid": return "🔑 Recherche par UUID...";
+    case "konnekt_id": return "🆔 Recherche par ID Konnekt...";
     case "name": return "👤 Recherche par nom...";
   }
 }
@@ -65,7 +76,8 @@ export function RecipientField({
 }: RecipientFieldProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
-  const [searchResult, setSearchResult] = useState<{ id: string; name: string; phone?: string; totalOrders?: number } | null>(null);
+  const [searchResult, setSearchResult] = useState<{ id: string; name: string; phone?: string; city?: string; totalOrders?: number } | null>(null);
+  const [multipleResults, setMultipleResults] = useState<ProfileResult[]>([]);
   const [savedRecipients, setSavedRecipients] = useState<SavedRecipient[]>([]);
   const [showSaved, setShowSaved] = useState(false);
   const [showUpsell, setShowUpsell] = useState(false);
@@ -96,6 +108,29 @@ export function RecipientField({
     setSavedRecipients(data || []);
   };
 
+  const selectProfile = async (profile: ProfileResult) => {
+    const { count } = await supabase
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("client_id", profile.user_id);
+
+    const result = {
+      id: profile.user_id,
+      name: profile.full_name || "Utilisateur Konnekt",
+      phone: profile.phone || undefined,
+      city: profile.city || undefined,
+      totalOrders: count || 0,
+    };
+    setSearchResult(result);
+    setMultipleResults([]);
+    onRecipientChange({
+      name: result.name,
+      phone: result.phone || recipientPhone,
+      userId: result.id,
+    });
+    setShowManualFields(false);
+  };
+
   const smartSearch = useCallback(async (query: string) => {
     const trimmed = query.trim();
     if (trimmed.length < 3) return;
@@ -103,87 +138,88 @@ export function RecipientField({
     setSearching(true);
     setSearchNotFound(false);
     setIsSelfSelection(false);
+    setMultipleResults([]);
 
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       const type = detectInputType(trimmed);
-      let foundProfile: { user_id: string; full_name: string; phone: string | null } | null = null;
+      let results: ProfileResult[] = [];
 
       if (type === "phone") {
-        // Normalize: strip spaces/dashes, try with and without +
         const normalized = trimmed.replace(/[\s\-()]/g, "");
         const { data } = await supabase
           .from("profiles")
-          .select("user_id, full_name, phone")
+          .select("user_id, full_name, phone, city")
           .eq("phone", normalized)
-          .maybeSingle();
-        foundProfile = data;
+          .limit(1);
+        results = data || [];
 
-        // If not found with exact, try partial match
-        if (!foundProfile && normalized.length >= 8) {
+        if (results.length === 0 && normalized.length >= 8) {
           const { data: partial } = await supabase
             .from("profiles")
-            .select("user_id, full_name, phone")
+            .select("user_id, full_name, phone, city")
             .ilike("phone", `%${normalized.slice(-8)}`)
-            .maybeSingle();
-          foundProfile = partial;
+            .limit(1);
+          results = partial || [];
         }
       } else if (type === "email") {
         const { data } = await supabase
           .from("profiles")
-          .select("user_id, full_name, phone")
+          .select("user_id, full_name, phone, city")
           .ilike("email", trimmed)
-          .maybeSingle();
-        foundProfile = data;
+          .limit(1);
+        results = data || [];
       } else if (type === "uuid") {
         const { data } = await supabase
           .from("profiles")
-          .select("user_id, full_name, phone")
+          .select("user_id, full_name, phone, city")
           .eq("user_id", trimmed)
-          .maybeSingle();
-        foundProfile = data;
+          .limit(1);
+        results = data || [];
+      } else if (type === "konnekt_id") {
+        // Parse KKT-XXXXXXXX → prefix search on user_id
+        const prefix = parseKonnektId(trimmed);
+        if (prefix) {
+          const { data } = await supabase
+            .from("profiles")
+            .select("user_id, full_name, phone, city")
+            .ilike("user_id", `${prefix}%`)
+            .limit(5);
+          results = data || [];
+        }
       } else {
-        // Name search — search in profiles and saved recipients
+        // Name search — return MULTIPLE results for disambiguation
         const { data } = await supabase
           .from("profiles")
-          .select("user_id, full_name, phone")
+          .select("user_id, full_name, phone, city")
           .ilike("full_name", `%${trimmed}%`)
-          .limit(1)
-          .maybeSingle();
-        foundProfile = data;
+          .limit(10);
+        results = data || [];
       }
 
-      if (foundProfile) {
-        // Self-selection guard
-        if (currentUser && foundProfile.user_id === currentUser.id) {
+      // Filter out self
+      if (currentUser) {
+        const selfResults = results.filter(r => r.user_id === currentUser.id);
+        results = results.filter(r => r.user_id !== currentUser.id);
+
+        if (results.length === 0 && selfResults.length > 0) {
           setSearchResult(null);
           setSearchNotFound(true);
           setIsSelfSelection(true);
           return;
         }
+      }
 
-        const { count } = await supabase
-          .from("orders")
-          .select("id", { count: "exact", head: true })
-          .eq("client_id", foundProfile.user_id);
-
-        const result = {
-          id: foundProfile.user_id,
-          name: foundProfile.full_name || "Utilisateur Konnekt",
-          phone: foundProfile.phone || undefined,
-          totalOrders: count || 0,
-        };
-        setSearchResult(result);
-        onRecipientChange({
-          name: result.name,
-          phone: result.phone || recipientPhone,
-          userId: result.id,
-        });
-        setShowManualFields(false);
+      if (results.length === 1) {
+        // Single result → auto-select
+        await selectProfile(results[0]);
+      } else if (results.length > 1) {
+        // Multiple results → show disambiguation list
+        setMultipleResults(results);
+        setSearchResult(null);
       } else {
         setSearchResult(null);
         setSearchNotFound(true);
-        // If phone detected, pre-fill manual phone
         if (type === "phone") {
           setManualPhone(trimmed.replace(/[\s\-()]/g, ""));
           setShowManualFields(true);
@@ -232,6 +268,7 @@ export function RecipientField({
   const clearRecipient = () => {
     onRecipientChange({ name: "", phone: "", userId: null });
     setSearchResult(null);
+    setMultipleResults([]);
     setSearchQuery("");
     setShowUpsell(false);
     setSearchNotFound(false);
@@ -330,6 +367,49 @@ export function RecipientField({
                     </button>
                   ))}
                 </div>
+              )}
+
+              {/* ═══ MULTIPLE RESULTS DISAMBIGUATION ═══ */}
+              {multipleResults.length > 1 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="space-y-1.5"
+                >
+                  <p className="text-[11px] text-muted-foreground font-medium px-1">
+                    {multipleResults.length} résultats — sélectionnez le bon :
+                  </p>
+                  <div className="max-h-48 overflow-y-auto rounded-xl border border-border divide-y divide-border">
+                    {multipleResults.map((p) => (
+                      <button
+                        key={p.user_id}
+                        onClick={() => selectProfile(p)}
+                        className="w-full flex items-center gap-3 p-3 hover:bg-muted/60 transition-all text-left"
+                      >
+                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <span className="text-sm font-bold text-primary">
+                            {(p.full_name || "?").charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{p.full_name || "Utilisateur"}</p>
+                          <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                            {p.city && (
+                              <span className="flex items-center gap-0.5">
+                                <MapPin className="w-2.5 h-2.5" /> {p.city}
+                              </span>
+                            )}
+                            {p.phone && (
+                              <span>···{p.phone.slice(-4)}</span>
+                            )}
+                            <span className="font-mono text-primary/70">{getKonnektId(p.user_id)}</span>
+                          </div>
+                        </div>
+                        <ArrowRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
               )}
             </div>
           ) : (

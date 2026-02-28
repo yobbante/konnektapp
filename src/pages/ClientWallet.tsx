@@ -16,6 +16,7 @@ import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { MiniLoader } from "@/components/ui/MiniLoader";
 import { Badge } from "@/components/ui/badge";
+import { getKonnektId } from "@/lib/konnektId";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from "@/components/ui/dialog";
@@ -75,7 +76,7 @@ export default function ClientWallet() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { navigate("/auth"); return; }
 
-      setShortId(`KN-${session.user.id.slice(0, 6).toUpperCase()}`);
+      setShortId(getKonnektId(session.user.id));
 
       const { data, error } = await supabase.functions.invoke("wallet-ledger", {
         method: "GET",
