@@ -130,11 +130,11 @@ export function InteractiveAuthForm({
     try {
       const { data } = await supabase
         .from("profiles")
-        .select("email, user_id")
+        .select("email, user_id, full_name")
         .eq("phone", fullPhone)
         .maybeSingle();
       if (data?.email) {
-        setPhoneLoginLookup(data.email);
+        setPhoneLoginLookup(data.full_name || "Utilisateur");
         setFormData(prev => ({ ...prev, email: data.email || "" }));
         setLoginStep("password");
       } else {
