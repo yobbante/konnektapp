@@ -508,16 +508,18 @@ async function execWeightModify(
     }
   }
 
-  // Weight adjustment log
-  await supabase.from("weight_adjustment_log").insert({
-    order_id: order.id,
-    actor_id: userId,
-    actor_role: role,
-    original_weight: order.weight,
-    declared_weight: actualWeight,
-    delta_amount: priceDiff,
-    blocked: false,
-  }).catch(() => {});
+  // Weight adjustment log (best-effort, ignore errors if table doesn't exist)
+  try {
+    await supabase.from("weight_adjustment_log").insert({
+      order_id: order.id,
+      actor_id: userId,
+      actor_role: role,
+      original_weight: order.weight,
+      declared_weight: actualWeight,
+      delta_amount: priceDiff,
+      blocked: false,
+    });
+  } catch (_e) { /* ignore */ }
   
   await supabase.from("order_status_history").insert({
     order_id: order.id, status: priceDiff > 0 ? "weight_pending_payment" : order.status, changed_by: userId, changed_by_type: role,
