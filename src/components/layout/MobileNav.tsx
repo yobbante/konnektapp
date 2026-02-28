@@ -106,6 +106,9 @@ export function MobileNav() {
     }
   }, [location.pathname, isAuthenticated, navigate]);
 
+  // Hide footer nav until user is authenticated
+  if (!isAuthenticated) return null;
+
   return (
     <>
       <nav 

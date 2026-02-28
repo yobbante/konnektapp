@@ -105,12 +105,22 @@ export function ClientAppHome({
     return WORLD_CITIES.filter(c => c.city.toLowerCase().includes(q));
   }, [cityQuery]);
 
-  const handleSearch = () => {
+  const buildSearchParams = () => {
     const params = new URLSearchParams();
     if (searchOrigin) params.set("origin", searchOrigin);
     if (searchDest) params.set("destination", searchDest);
     if (searchDate) params.set("date", searchDate);
     if (activeTab !== "all") params.set("type", activeTab);
+    return params;
+  };
+
+  const handleSearch = () => {
+    // Filter offers in-place instead of navigating
+    // User can click "Tout voir" to go to /offres
+  };
+
+  const goToOffres = () => {
+    const params = buildSearchParams();
     navigate(`/offres${params.toString() ? `?${params}` : ""}`);
   };
 
@@ -127,9 +137,21 @@ export function ClientAppHome({
   }, []);
 
   const filteredOffers = useMemo(() => {
-    if (activeTab === "all") return offers;
-    return offers.filter(o => (TYPE_MAP[activeTab] || []).includes(o.transport_type));
-  }, [offers, activeTab]);
+    let result = offers;
+    // Filter by transport type tab
+    if (activeTab !== "all") {
+      result = result.filter(o => (TYPE_MAP[activeTab] || []).includes(o.transport_type));
+    }
+    // Filter by search origin
+    if (searchOrigin) {
+      result = result.filter(o => o.origin_city?.toLowerCase().includes(searchOrigin.toLowerCase()));
+    }
+    // Filter by search destination
+    if (searchDest) {
+      result = result.filter(o => o.destination_city?.toLowerCase().includes(searchDest.toLowerCase()));
+    }
+    return result;
+  }, [offers, activeTab, searchOrigin, searchDest]);
 
   // Active items
   const activeOrders = recentOrders.filter(o => ACTIVE_STATUSES.includes(o.status));
@@ -243,7 +265,7 @@ export function ClientAppHome({
           </div>
           <motion.button
             whileTap={{ scale: 0.98 }}
-            onClick={handleSearch}
+            onClick={goToOffres}
             className="w-full bg-primary text-primary-foreground font-bold text-center py-3 rounded-xl shadow-lg mt-2 text-sm"
           >
             Rechercher un transporteur
@@ -331,9 +353,9 @@ export function ClientAppHome({
         <div className="px-4 pb-2">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-base font-bold text-foreground">Offres disponibles</h2>
-            <Link to="/offres" className="text-xs text-primary font-medium flex items-center gap-0.5">
+            <button onClick={goToOffres} className="text-xs text-primary font-medium flex items-center gap-0.5">
               Tout voir <ChevronRight className="w-3 h-3" />
-            </Link>
+            </button>
           </div>
         </div>
 
