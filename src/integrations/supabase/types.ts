@@ -1246,6 +1246,7 @@ export type Database = {
           price_locked_at: string | null
           rating: number | null
           reception_address: string | null
+          road_type: Database["public"]["Enums"]["road_type"] | null
           selfie_url: string | null
           status: Database["public"]["Enums"]["gp_status"]
           subscription: Database["public"]["Enums"]["gp_subscription"]
@@ -1297,6 +1298,7 @@ export type Database = {
           price_locked_at?: string | null
           rating?: number | null
           reception_address?: string | null
+          road_type?: Database["public"]["Enums"]["road_type"] | null
           selfie_url?: string | null
           status?: Database["public"]["Enums"]["gp_status"]
           subscription?: Database["public"]["Enums"]["gp_subscription"]
@@ -1348,6 +1350,7 @@ export type Database = {
           price_locked_at?: string | null
           rating?: number | null
           reception_address?: string | null
+          road_type?: Database["public"]["Enums"]["road_type"] | null
           selfie_url?: string | null
           status?: Database["public"]["Enums"]["gp_status"]
           subscription?: Database["public"]["Enums"]["gp_subscription"]
@@ -2281,6 +2284,95 @@ export type Database = {
           },
         ]
       }
+      mission_negotiations: {
+        Row: {
+          agreed_price: number | null
+          client_final_price: number | null
+          client_message: string | null
+          client_responded_at: string | null
+          created_at: string
+          deadline_at: string | null
+          estimated_delivery: string | null
+          gp_counter_price: number | null
+          gp_id: string
+          gp_message: string | null
+          gp_responded_at: string | null
+          id: string
+          initial_client_price: number
+          mission_id: string
+          status: Database["public"]["Enums"]["negotiation_status"] | null
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          agreed_price?: number | null
+          client_final_price?: number | null
+          client_message?: string | null
+          client_responded_at?: string | null
+          created_at?: string
+          deadline_at?: string | null
+          estimated_delivery?: string | null
+          gp_counter_price?: number | null
+          gp_id: string
+          gp_message?: string | null
+          gp_responded_at?: string | null
+          id?: string
+          initial_client_price: number
+          mission_id: string
+          status?: Database["public"]["Enums"]["negotiation_status"] | null
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          agreed_price?: number | null
+          client_final_price?: number | null
+          client_message?: string | null
+          client_responded_at?: string | null
+          created_at?: string
+          deadline_at?: string | null
+          estimated_delivery?: string | null
+          gp_counter_price?: number | null
+          gp_id?: string
+          gp_message?: string | null
+          gp_responded_at?: string | null
+          id?: string
+          initial_client_price?: number
+          mission_id?: string
+          status?: Database["public"]["Enums"]["negotiation_status"] | null
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mission_negotiations_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_negotiations_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_negotiations_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "routier_missions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_negotiations_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_preferences: {
         Row: {
           created_at: string
@@ -3197,6 +3289,124 @@ export type Database = {
             columns: ["permission_id"]
             isOneToOne: false
             referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      routier_missions: {
+        Row: {
+          accepted_negotiation_id: string | null
+          client_budget: number | null
+          client_id: string
+          constraints: string[] | null
+          created_at: string
+          currency: string | null
+          delivery_to_door: boolean | null
+          destination_address: string | null
+          destination_city: string
+          destination_country: string
+          estimated_distance_km: number | null
+          estimated_price: number | null
+          expires_at: string | null
+          freight_type: string
+          id: string
+          matched_gp_id: string | null
+          merchandise_description: string | null
+          mission_number: string
+          origin_address: string | null
+          origin_city: string
+          origin_country: string
+          pickup_date_end: string | null
+          pickup_date_start: string
+          status: string
+          updated_at: string
+          urgency: Database["public"]["Enums"]["mission_urgency"] | null
+          vehicle_type_required: string | null
+          volume_estimate: string | null
+          weight_kg: number
+        }
+        Insert: {
+          accepted_negotiation_id?: string | null
+          client_budget?: number | null
+          client_id: string
+          constraints?: string[] | null
+          created_at?: string
+          currency?: string | null
+          delivery_to_door?: boolean | null
+          destination_address?: string | null
+          destination_city: string
+          destination_country?: string
+          estimated_distance_km?: number | null
+          estimated_price?: number | null
+          expires_at?: string | null
+          freight_type: string
+          id?: string
+          matched_gp_id?: string | null
+          merchandise_description?: string | null
+          mission_number: string
+          origin_address?: string | null
+          origin_city: string
+          origin_country?: string
+          pickup_date_end?: string | null
+          pickup_date_start: string
+          status?: string
+          updated_at?: string
+          urgency?: Database["public"]["Enums"]["mission_urgency"] | null
+          vehicle_type_required?: string | null
+          volume_estimate?: string | null
+          weight_kg?: number
+        }
+        Update: {
+          accepted_negotiation_id?: string | null
+          client_budget?: number | null
+          client_id?: string
+          constraints?: string[] | null
+          created_at?: string
+          currency?: string | null
+          delivery_to_door?: boolean | null
+          destination_address?: string | null
+          destination_city?: string
+          destination_country?: string
+          estimated_distance_km?: number | null
+          estimated_price?: number | null
+          expires_at?: string | null
+          freight_type?: string
+          id?: string
+          matched_gp_id?: string | null
+          merchandise_description?: string | null
+          mission_number?: string
+          origin_address?: string | null
+          origin_city?: string
+          origin_country?: string
+          pickup_date_end?: string | null
+          pickup_date_start?: string
+          status?: string
+          updated_at?: string
+          urgency?: Database["public"]["Enums"]["mission_urgency"] | null
+          vehicle_type_required?: string | null
+          volume_estimate?: string | null
+          weight_kg?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_accepted_negotiation"
+            columns: ["accepted_negotiation_id"]
+            isOneToOne: false
+            referencedRelation: "mission_negotiations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routier_missions_matched_gp_id_fkey"
+            columns: ["matched_gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routier_missions_matched_gp_id_fkey"
+            columns: ["matched_gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -4439,6 +4649,13 @@ export type Database = {
         | "voyageur"
         | "agence"
         | "bagages_international"
+      mission_urgency: "standard" | "express" | "immediate"
+      negotiation_status:
+        | "pending"
+        | "counter_proposed"
+        | "accepted"
+        | "rejected"
+        | "expired"
       offer_status: "active" | "paused" | "expired" | "completed"
       order_status:
         | "pending"
@@ -4461,6 +4678,7 @@ export type Database = {
         | "under_observation"
         | "suspended"
         | "excluded"
+      road_type: "shuttle" | "mission"
       sanction_type:
         | "warning"
         | "financial_compensation"
@@ -4656,6 +4874,14 @@ export const Constants = {
         "agence",
         "bagages_international",
       ],
+      mission_urgency: ["standard", "express", "immediate"],
+      negotiation_status: [
+        "pending",
+        "counter_proposed",
+        "accepted",
+        "rejected",
+        "expired",
+      ],
       offer_status: ["active", "paused", "expired", "completed"],
       order_status: [
         "pending",
@@ -4680,6 +4906,7 @@ export const Constants = {
         "suspended",
         "excluded",
       ],
+      road_type: ["shuttle", "mission"],
       sanction_type: [
         "warning",
         "financial_compensation",

@@ -69,6 +69,7 @@ import RoutierVehiculesPage from "./pages/routier/RoutierVehiculesPage";
 import RoutierTarificationPage from "./pages/routier/RoutierTarificationPage";
 import RoutierProfilPublicPage from "./pages/routier/RoutierProfilPublicPage";
 import RoutierDemandePage from "./pages/routier/RoutierDemandePage";
+import RoutierMissionRequestPage from "./pages/routier/RoutierMissionRequestPage";
 // Universal shipment entry
 import ShipmentTypeSelector from "./pages/ShipmentTypeSelector";
 // Tutorials and History pages
@@ -208,8 +209,9 @@ const App = () => (
             <Route path="/routier/historique" element={<RoutierHistoriquePage />} />
             <Route path="/routier/vehicules" element={<RoutierVehiculesPage />} />
             <Route path="/routier/profil-public" element={<RoutierProfilPublicPage />} />
-            {/* Client-facing routier booking form */}
-            <Route path="/routier/demande" element={<Navigate to="/" replace />} />
+            {/* Client-facing routier mission request */}
+            <Route path="/routier/mission" element={<RoutierMissionRequestPage />} />
+            <Route path="/routier/demande" element={<Navigate to="/routier/mission" replace />} />
             {/* Legacy redirect - tarification removed for routier */}
             <Route path="/routier/tarification" element={<Navigate to="/routier/demandes" replace />} />
             
