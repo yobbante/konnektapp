@@ -2,6 +2,7 @@
  * ProfileHeader — Identity & KYC badge
  */
 import { User, Camera } from "lucide-react";
+import { getKonnektId } from "@/lib/konnektId";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
@@ -27,7 +28,7 @@ export function ProfileHeader({
   fullName, email, avatarUrl, memberSince, kycLevel, protectionScore, userId
 }: ProfileHeaderProps) {
   const cfg = KYC_CONFIG[kycLevel];
-  const shortId = userId ? `KN-${userId.slice(0, 4).toUpperCase()}` : "";
+  const shortId = getKonnektId(userId);
 
   return (
     <div className="bg-card rounded-2xl border border-border p-4">

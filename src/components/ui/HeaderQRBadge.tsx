@@ -7,6 +7,7 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { X, Download, Share2, ScanLine, ShieldCheck, Fingerprint, Copy, CheckCircle } from "lucide-react";
+import { getKonnektId } from "@/lib/konnektId";
 import { cn } from "@/lib/utils";
 import QRCodeDisplay from "react-qr-code";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -43,7 +44,7 @@ export function HeaderQRBadge({
       ? `USER:${userId}`
       : "";
 
-  const shortId = (isTransporter && gpId ? gpId : userId || "").substring(0, 8).toUpperCase();
+  const shortId = getKonnektId(isTransporter && gpId ? gpId : userId);
 
   const handleDownload = () => {
     const svg = document.getElementById("identity-qr-svg");
@@ -199,7 +200,7 @@ export function HeaderQRBadge({
             {/* Short ID */}
             <div className="flex items-center justify-center pb-3">
               <div className="px-3 py-1 rounded-full bg-white/[0.05] border border-white/[0.08]">
-                <span className="text-[10px] font-mono text-white/30">ID: {shortId}</span>
+                <span className="text-[10px] font-mono text-white/30">{shortId}</span>
               </div>
             </div>
 

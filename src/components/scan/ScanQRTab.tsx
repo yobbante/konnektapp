@@ -7,6 +7,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { QrCode, ShieldCheck, Copy, Share2, CheckCircle, Loader2 } from "lucide-react";
+import { getKonnektId } from "@/lib/konnektId";
 import QRCodeDisplay from "react-qr-code";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -105,8 +106,8 @@ export function ScanQRTab({ role, accent = "emerald", darkMode = true, gpId, isV
         <div className="bg-white rounded-xl p-4 mb-3 shadow-sm">
           <QRCodeDisplay value={qrValue} size={170} />
         </div>
-        <p className={cn("text-[10px] font-mono mt-2 px-2 py-1 rounded bg-black/5 dark:bg-white/5 break-all select-all", textSub)}>
-          {fullId}
+        <p className={cn("text-[10px] font-mono mt-2 px-2 py-1 rounded bg-black/5 dark:bg-white/5 select-all", textSub)}>
+          {getKonnektId(fullId)}
         </p>
         <p className={cn("text-[11px] mt-1", textSub)}>
           {role === "gp" ? "Les clients scannent ce QR pour déposer" : "Présentez ce QR au transporteur"}
