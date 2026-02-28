@@ -65,6 +65,9 @@ function IndexContent() {
     if (!roleLoading) {
       if (isAuthenticated && userId) {
         loadUserData();
+      } else if (!isAuthenticated) {
+        // Redirect unauthenticated users to auth
+        navigate("/auth");
       } else {
         setDataLoading(false);
       }
@@ -250,18 +253,23 @@ function IndexContent() {
     return null;
   }
 
+  // Non-authenticated users are redirected via useEffect above
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <div className="h-screen bg-background overflow-hidden fixed inset-0">
       <PullToRefreshIndicator isRefreshing={isRefreshing} progress={progress} pullDistance={pullDistance} />
       <AppHeader />
       
-      {isAuthenticated && !isGP && <ActiveReservationBanner />}
+      {!isGP && <ActiveReservationBanner />}
 
-      {(!isAuthenticated || isGP) && (
+      {isGP && (
         <AppLikeHome />
       )}
 
-      {isAuthenticated && !isGP && (
+      {!isGP && (
         <ClientAppHome
           userName={userName}
           recentOrders={recentOrders}
