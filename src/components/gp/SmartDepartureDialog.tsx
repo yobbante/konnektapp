@@ -166,7 +166,8 @@ export function SmartDepartureDialog({
               <Plane className="w-3 h-3 mr-1 rotate-180" /> Retour
             </Button>
             <div>
-              <Input type="number" inputMode="numeric" placeholder="kg" className="h-9 text-sm" value={capacity} onChange={(e) => setCapacity(e.target.value)} autoFocus />
+              <Label className="text-[10px] text-muted-foreground">Capacité totale (kg)</Label>
+              <Input type="number" inputMode="decimal" step="0.5" placeholder="Ex: 61" className="h-9 text-sm" value={capacity} onChange={(e) => setCapacity(e.target.value)} autoFocus />
             </div>
           </div>
 

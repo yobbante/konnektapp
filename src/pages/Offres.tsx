@@ -36,6 +36,7 @@ interface Offer {
   currency: string;
   transport_type: TransportType;
   available_capacity: number;
+  total_capacity: number;
   status: string;
   gp_profile: {
     business_name: string;
@@ -159,11 +160,13 @@ export default function Offres() {
           currency,
           transport_type,
           available_capacity,
+          total_capacity,
           status,
           gp_id
         `)
         .eq("status", "active")
-        .gte("departure_date", new Date().toISOString())
+        .gte("departure_date", new Date().toISOString().split("T")[0])
+        .gt("available_capacity", 0)
         .order("departure_date", { ascending: true })
         .range(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE - 1);
 
@@ -534,9 +537,20 @@ export default function Offres() {
                                 </>
                               );
                             })()}
-                            <p className="text-xs text-muted-foreground">
-                              {offer.available_capacity} kg dispo
-                            </p>
+                            <div className="space-y-1 mt-1">
+                              <div className="flex items-center justify-between text-[10px]">
+                                <span className="text-muted-foreground">{offer.available_capacity} kg dispo</span>
+                              </div>
+                              <div className="h-1 bg-muted rounded-full overflow-hidden w-16">
+                                <div
+                                  className={`h-full rounded-full ${
+                                    offer.available_capacity <= 0 ? "bg-destructive" : 
+                                    offer.available_capacity / offer.total_capacity < 0.2 ? "bg-amber-500" : "bg-primary"
+                                  }`}
+                                  style={{ width: `${Math.max(5, (offer.available_capacity / offer.total_capacity) * 100)}%` }}
+                                />
+                              </div>
+                            </div>
                           </div>
                         </div>
 

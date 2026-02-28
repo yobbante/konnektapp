@@ -53,7 +53,7 @@ export function SmartVoyageForm({
   const [form, setForm] = useState({
     departureDate: "",
     arrivalDate: "",
-    capacity: "23",
+    capacity: "",
     flightNumber: "",
     airline: "",
   });
@@ -67,7 +67,7 @@ export function SmartVoyageForm({
       setForm({
         departureDate: selectedDate ? format(selectedDate, "yyyy-MM-dd'T'HH:mm") : "",
         arrivalDate: "",
-        capacity: "23",
+        capacity: "",
         flightNumber: "",
         airline: "",
       });
@@ -151,7 +151,13 @@ export function SmartVoyageForm({
         airline: form.airline || null,
         status: "active",
       });
-      if (error) throw error;
+      if (error) {
+        if (error.code === "23505") {
+          toast({ title: "Doublon détecté", description: "Vous avez déjà un départ actif à cette date sur cette route", variant: "destructive" });
+          return;
+        }
+        throw error;
+      }
       toast({ title: "✈️ Voyage créé !", description: `${currentRoute.origin.city} → ${currentRoute.destination.city}` });
       onSuccess();
       onClose();
@@ -233,16 +239,20 @@ export function SmartVoyageForm({
           {/* Capacité */}
           <div className="space-y-2">
             <Label className="text-sm font-medium flex items-center gap-1.5">
-              <Luggage className="w-4 h-4" /> Capacité (kg) *
+              <Luggage className="w-4 h-4" /> Capacité totale (kg) *
             </Label>
             <Input
               type="number"
-              inputMode="numeric"
-              placeholder="23"
+              inputMode="decimal"
+              step="0.5"
+              placeholder="Ex: 46 (2×23kg) ou 61 (2×23+15)"
               className="h-12 text-lg rounded-xl border-2 border-primary/30 focus:border-primary"
               value={form.capacity}
               onChange={(e) => setForm({ ...form, capacity: e.target.value })}
             />
+            <p className="text-[11px] text-muted-foreground">
+              💡 Indiquez le total de tous vos bagages (ex: 2 valises de 23kg + 1 de 15kg = 61 kg)
+            </p>
           </div>
 
           {/* Compagnie + N° Vol */}

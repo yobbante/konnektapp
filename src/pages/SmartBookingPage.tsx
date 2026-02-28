@@ -51,6 +51,7 @@ interface GPOffer {
   price_per_kg: number;
   currency: string;
   available_capacity: number;
+  total_capacity: number;
   conditions: string | null;
   explicit_restrictions: string[] | null;
   baggage_restrictions: string | null;
@@ -511,6 +512,16 @@ export default function SmartBookingPage() {
       return;
     }
 
+    // Capacity check before booking
+    if (offer && calculations.weight > 0 && calculations.weight > offer.available_capacity) {
+      toast({
+        title: "Capacité insuffisante",
+        description: `Ce transporteur n'a que ${offer.available_capacity} kg disponibles. Réduisez votre poids.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Complete booking first, then show escrow if needed
     await completeBooking();
   };
@@ -867,6 +878,44 @@ export default function SmartBookingPage() {
                     <p className="text-xs text-muted-foreground mt-1">
                       Accepte virgule (5,5) ou point (5.5) comme séparateur décimal
                     </p>
+                    {/* Capacity gauge */}
+                    {offer && (
+                      <div className="mt-3 space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Capacité disponible</span>
+                          <span className={`font-semibold ${offer.available_capacity <= 0 ? "text-destructive" : offer.available_capacity < 5 ? "text-amber-600" : "text-primary"}`}>
+                            {offer.available_capacity} kg / {offer.total_capacity} kg
+                          </span>
+                        </div>
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <motion.div
+                            className={`h-full rounded-full transition-all ${
+                              calculations.weight > offer.available_capacity ? "bg-destructive" :
+                              (offer.available_capacity - calculations.weight) < 3 ? "bg-amber-500" : "bg-primary"
+                            }`}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${Math.min(100, ((offer.total_capacity - offer.available_capacity + calculations.weight) / offer.total_capacity) * 100)}%` }}
+                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                          />
+                        </div>
+                        {calculations.weight > offer.available_capacity && (
+                          <p className="text-[11px] text-destructive font-medium flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            Poids supérieur à la capacité disponible ({offer.available_capacity} kg restants)
+                          </p>
+                        )}
+                        {calculations.weight > 0 && calculations.weight <= offer.available_capacity && (
+                          <p className="text-[11px] text-muted-foreground">
+                            Après réservation : {(offer.available_capacity - calculations.weight).toFixed(1)} kg restants
+                          </p>
+                        )}
+                        {offer.available_capacity <= 0 && (
+                          <p className="text-[11px] text-destructive font-bold">
+                            ⛔ Ce transporteur est complet pour ce départ
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Nature selection - Only show when weight is entered */}
