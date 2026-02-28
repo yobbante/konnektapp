@@ -241,7 +241,7 @@ export function ClientAppHome({
 
         {/* Alerts */}
         {userId && <div className="px-4"><WeightValidationAlert userId={userId} /></div>}
-        {userId && <RecipientTrackingCard userId={userId} />}
+        {/* RecipientTrackingCard removed — incoming parcels now shown in SmartActionBar */}
 
         {/* ── TRANSPORT TYPE TABS (compact, above search) ── */}
         <div className="px-4 pt-1 pb-2">
