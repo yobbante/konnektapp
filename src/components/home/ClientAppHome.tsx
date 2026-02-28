@@ -109,7 +109,20 @@ export function ClientAppHome({
     { id: "aerien", label: "Aérien", icon: Plane, active: false },
   ];
 
-  // Mock featured offers
+  // Interactive search state
+  const [searchDest, setSearchDest] = useState("");
+  const [searchDate, setSearchDate] = useState("");
+  const [searchWeight, setSearchWeight] = useState("");
+
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    if (searchDest) params.set("destination", searchDest);
+    if (searchDate) params.set("date", searchDate);
+    if (searchWeight) params.set("weight", searchWeight);
+    navigate(`/offres${params.toString() ? `?${params}` : ""}`);
+  };
+
+  // Featured offers
   const [offers, setOffers] = useState<any[]>([]);
   useEffect(() => {
     const loadOffers = async () => {
@@ -201,35 +214,54 @@ export function ClientAppHome({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="px-4 py-3"
+          className="px-4 py-2"
         >
-          <button
-            onClick={() => navigate("/offres")}
-            className="w-full bg-card border-2 border-primary/30 rounded-2xl p-4 text-left shadow-sm hover:border-primary/50 hover:shadow-md transition-all duration-200 active:scale-[0.99]"
-          >
-            <div className="flex items-center gap-3 pb-3 border-b border-border/50">
-              <Search className="w-5 h-5 text-primary" />
-              <span className="text-muted-foreground text-sm">Où envoyez-vous votre colis ?</span>
+          <div className="bg-card border-2 border-primary/30 rounded-2xl overflow-hidden shadow-sm">
+            {/* Destination */}
+            <div className="flex items-center gap-3 px-3 py-2.5 border-b border-border/40">
+              <Search className="w-4 h-4 text-primary flex-shrink-0" />
+              <input
+                type="text"
+                placeholder="Ville de destination"
+                value={searchDest}
+                onChange={(e) => setSearchDest(e.target.value)}
+                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+              />
             </div>
-            <div className="flex items-center gap-3 py-3 border-b border-border/50">
-              <Calendar className="w-5 h-5 text-muted-foreground" />
-              <span className="text-muted-foreground text-sm">Choisir une date de départ</span>
+            {/* Date */}
+            <div className="flex items-center gap-3 px-3 py-2.5 border-b border-border/40">
+              <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <input
+                type="date"
+                value={searchDate}
+                onChange={(e) => setSearchDate(e.target.value)}
+                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+                style={{ colorScheme: 'dark' }}
+              />
             </div>
-            <div className="flex items-center gap-3 pt-3">
-              <Package className="w-5 h-5 text-muted-foreground" />
-              <span className="text-muted-foreground text-sm">Poids estimé (kg)</span>
+            {/* Weight */}
+            <div className="flex items-center gap-3 px-3 py-2.5">
+              <Package className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <input
+                type="number"
+                placeholder="Poids estimé (kg)"
+                value={searchWeight}
+                onChange={(e) => setSearchWeight(e.target.value)}
+                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+                min="0"
+                step="0.5"
+              />
             </div>
-          </button>
+          </div>
 
           {/* Search CTA */}
-          <Link to="/offres" className="block mt-3">
-            <motion.div
-              whileTap={{ scale: 0.98 }}
-              className="w-full bg-primary text-primary-foreground font-bold text-center py-3.5 rounded-xl shadow-lg"
-            >
-              Rechercher
-            </motion.div>
-          </Link>
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={handleSearch}
+            className="w-full bg-primary text-primary-foreground font-bold text-center py-3 rounded-xl shadow-lg mt-2 text-sm"
+          >
+            Rechercher
+          </motion.button>
         </motion.div>
 
         {/* === QUICK ACTION BUTTONS — uniform dark cards === */}
@@ -341,47 +373,66 @@ export function ClientAppHome({
 
           {offers.length > 0 ? (
             <div className="space-y-2">
-              {offers.slice(0, 5).map((offer) => (
-                <Link key={offer.id} to={`/offre/${offer.id}`} className="block">
-                  <motion.div
-                    whileTap={{ scale: 0.98 }}
-                    className="bg-card border border-border rounded-xl p-3 flex items-center gap-3 hover:border-primary/30 transition-all duration-200"
-                  >
-                    {/* Route info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <span className="text-sm font-semibold text-foreground truncate">{offer.origin_city}</span>
-                        <ArrowRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                        <span className="text-sm font-semibold text-foreground truncate">{offer.destination_city}</span>
+              {offers.slice(0, 5).map((offer) => {
+                const departDate = offer.departure_date ? new Date(offer.departure_date) : null;
+                return (
+                  <Link key={offer.id} to={`/offre/${offer.id}`} className="block">
+                    <motion.div
+                      whileTap={{ scale: 0.98 }}
+                      className="bg-card border border-border rounded-2xl p-3 flex items-center gap-3 hover:border-primary/20 transition-all"
+                    >
+                      {/* Left: avatar/icon */}
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Luggage className="w-5 h-5 text-primary" />
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] text-muted-foreground truncate">
-                          {offer.gp_profiles?.business_name || "Transporteur"}
-                        </span>
-                        {offer.gp_profiles?.rating && (
-                          <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground">
-                            <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                            {offer.gp_profiles.rating.toFixed(1)}
+
+                      {/* Center: route + meta */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1 mb-0.5">
+                          <span className="text-sm font-bold text-foreground truncate">{offer.origin_city}</span>
+                          <ArrowRight className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                          <span className="text-sm font-bold text-foreground truncate">{offer.destination_city}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[11px] text-muted-foreground truncate max-w-[100px]">
+                            {offer.gp_profiles?.business_name || "GP"}
                           </span>
-                        )}
+                          {offer.gp_profiles?.rating && (
+                            <span className="flex items-center gap-0.5 text-[11px] text-amber-500">
+                              <Star className="w-2.5 h-2.5 fill-amber-500" />
+                              {offer.gp_profiles.rating.toFixed(1)}
+                            </span>
+                          )}
+                          {departDate && (
+                            <span className="text-[10px] text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded-full">
+                              {departDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                            </span>
+                          )}
+                          {offer.available_capacity > 0 && (
+                            <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded-full font-medium">
+                              {offer.available_capacity} kg dispo
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    {/* Price */}
-                    <div className="text-right flex-shrink-0">
-                      <span className="text-base font-bold text-primary">{offer.price_per_kg}€</span>
-                      <span className="text-[10px] text-muted-foreground block">/kg</span>
-                    </div>
-                  </motion.div>
-                </Link>
-              ))}
+
+                      {/* Right: price */}
+                      <div className="text-right flex-shrink-0 pl-1">
+                        <span className="text-lg font-extrabold text-primary leading-none">{offer.price_per_kg}€</span>
+                        <span className="text-[10px] text-muted-foreground block leading-tight">/kg</span>
+                      </div>
+                    </motion.div>
+                  </Link>
+                );
+              })}
             </div>
           ) : (
             <div className="bg-muted/30 border border-border rounded-xl p-4 text-center">
               <Package className="w-6 h-6 text-muted-foreground mx-auto mb-1" />
-              <p className="text-xs text-muted-foreground">Aucune offre disponible</p>
-              <Link to="/offres" className="text-[11px] text-primary font-medium mt-1 inline-block">
-                Rechercher des offres
-              </Link>
+              <p className="text-xs text-muted-foreground">Aucune offre pour le moment</p>
+              <button onClick={handleSearch} className="text-[11px] text-primary font-medium mt-1">
+                Lancer une recherche
+              </button>
             </div>
           )}
         </motion.div>
