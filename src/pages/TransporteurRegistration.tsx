@@ -24,7 +24,7 @@ interface TransportTypeOption {
 
 const transportTypes: TransportTypeOption[] = [
   { id: "bagages", label: "GP Via Bagages", sub: "Colis par avion", icon: Plane, route: "/gp/bagages/inscription", color: "bg-primary text-primary-foreground", available: true },
-  { id: "routier", label: "Routier", sub: "Bientôt disponible", icon: Truck, route: "/routier/inscription", color: "bg-secondary text-secondary-foreground", available: false },
+  { id: "routier", label: "Routier", sub: "Fret & transport routier", icon: Truck, route: "/routier/inscription", color: "bg-secondary text-secondary-foreground", available: true },
   { id: "maritime", label: "Maritime", sub: "Bientôt disponible", icon: Ship, route: "/gp/inscription", color: "bg-accent text-accent-foreground", available: false },
   { id: "express", label: "Coursier", sub: "Bientôt disponible", icon: Package, route: "/gp/inscription", color: "bg-muted text-foreground", available: false },
 ];
