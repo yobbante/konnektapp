@@ -621,6 +621,16 @@ async function execConfirmDelivery(
 ): Promise<ScanResponse> {
   // États valides : TEST PHASE — GP peut livrer dès checked_in (J+1 après dépôt)
   const validStates = ["checked_in", "scheduled_departure", "in_transit", "arrived_destination", "delivery_pending", "collected", "arrived"];
+  
+  // Si déjà confirmé, retourner succès (idempotent)
+  if (order.status === "delivery_confirmed" || order.status === "delivered" || order.status === "released") {
+    return {
+      status: "executed", qr_type: "QR_COLIS", scenario: "delivery_already_confirmed",
+      next_action: "none", message: "🎉 Livraison déjà confirmée. Fonds en cours de libération.",
+      data: { order },
+    };
+  }
+  
   if (!validStates.includes(order.status)) {
     return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_status", next_action: "none", message: "Le colis doit être au moins enregistré pour confirmer la livraison." };
   }
