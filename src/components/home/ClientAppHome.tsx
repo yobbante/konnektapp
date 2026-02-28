@@ -5,7 +5,7 @@ import {
   Package, MessageCircle, MapPin, History, Heart, ArrowRight,
   Clock, ChevronRight, FileText, Home as HomeIcon, Truck, Calendar,
   Search, Plane, Ship, Car, Luggage, Globe, Shield, Zap, Award,
-  TrendingUp, Users, ArrowUpDown
+  TrendingUp, Users, ArrowUpDown, Weight, Route
 } from "lucide-react";
 import { RecipientTrackingCard } from "@/components/client/RecipientTrackingCard";
 import { WeightValidationAlert } from "@/components/client/WeightValidationAlert";
@@ -53,17 +53,111 @@ const TRANSPORT_TABS = [
   { id: "bagages", label: "GP", icon: Luggage, soon: false },
   { id: "aerien", label: "Aérien", icon: Plane, soon: true },
   { id: "maritime", label: "Maritime", icon: Ship, soon: true },
-  { id: "routier", label: "Routier", icon: Car, soon: true },
+  { id: "routier", label: "Routier", icon: Car, soon: false },
 ];
 
-const POPULAR_ROUTES = [
-  { from: "Paris", to: "Dakar", flag: "🇫🇷→🇸🇳", hot: true },
-  { from: "Dakar", to: "Marseille", flag: "🇸🇳→🇫🇷" },
-  { from: "Abidjan", to: "Paris", flag: "🇨🇮→🇫🇷", hot: true },
-  { from: "Dakar", to: "Montréal", flag: "🇸🇳→🇨🇦" },
-  { from: "Abidjan", to: "Bamako", flag: "🇨🇮→🇲🇱" },
-  { from: "Casablanca", to: "Paris", flag: "🇲🇦→🇫🇷" },
-];
+// Mode-specific configuration
+const MODE_CONFIG: Record<string, {
+  subtitle: string;
+  searchPlaceholderOrigin: string;
+  searchPlaceholderDest: string;
+  searchButtonLabel: string;
+  offersTitle: string;
+  emptyLabel: string;
+  accentColor: string;
+  icon: typeof Package;
+}> = {
+  all: {
+    subtitle: "Envoyez vos colis partout dans le monde",
+    searchPlaceholderOrigin: "Ville de départ",
+    searchPlaceholderDest: "Ville de destination",
+    searchButtonLabel: "Rechercher un transporteur",
+    offersTitle: "Offres disponibles",
+    emptyLabel: "Aucune offre pour le moment",
+    accentColor: "primary",
+    icon: Package,
+  },
+  bagages: {
+    subtitle: "Trouvez un GP pour vos bagages accompagnés",
+    searchPlaceholderOrigin: "Ville d'envoi",
+    searchPlaceholderDest: "Ville de réception",
+    searchButtonLabel: "Trouver un GP",
+    offersTitle: "GP disponibles",
+    emptyLabel: "Aucun GP disponible",
+    accentColor: "primary",
+    icon: Luggage,
+  },
+  aerien: {
+    subtitle: "Fret aérien — bientôt disponible",
+    searchPlaceholderOrigin: "Aéroport départ",
+    searchPlaceholderDest: "Aéroport arrivée",
+    searchButtonLabel: "Rechercher un vol cargo",
+    offersTitle: "Offres aériennes",
+    emptyLabel: "Aucune offre aérienne",
+    accentColor: "primary",
+    icon: Plane,
+  },
+  maritime: {
+    subtitle: "Transport maritime — bientôt disponible",
+    searchPlaceholderOrigin: "Port de départ",
+    searchPlaceholderDest: "Port d'arrivée",
+    searchButtonLabel: "Rechercher un cargo",
+    offersTitle: "Offres maritimes",
+    emptyLabel: "Aucune offre maritime",
+    accentColor: "primary",
+    icon: Ship,
+  },
+  routier: {
+    subtitle: "Fret routier — missions sur mesure",
+    searchPlaceholderOrigin: "Point de collecte",
+    searchPlaceholderDest: "Point de livraison",
+    searchButtonLabel: "Trouver un transporteur routier",
+    offersTitle: "Missions routières disponibles",
+    emptyLabel: "Aucune mission routière",
+    accentColor: "primary",
+    icon: Truck,
+  },
+};
+
+const POPULAR_ROUTES_BY_MODE: Record<string, { from: string; to: string; flag: string; hot?: boolean }[]> = {
+  all: [
+    { from: "Paris", to: "Dakar", flag: "🇫🇷→🇸🇳", hot: true },
+    { from: "Dakar", to: "Marseille", flag: "🇸🇳→🇫🇷" },
+    { from: "Abidjan", to: "Paris", flag: "🇨🇮→🇫🇷", hot: true },
+    { from: "Dakar", to: "Montréal", flag: "🇸🇳→🇨🇦" },
+    { from: "Abidjan", to: "Bamako", flag: "🇨🇮→🇲🇱" },
+    { from: "Casablanca", to: "Paris", flag: "🇲🇦→🇫🇷" },
+  ],
+  bagages: [
+    { from: "Paris", to: "Dakar", flag: "🇫🇷→🇸🇳", hot: true },
+    { from: "Abidjan", to: "Paris", flag: "🇨🇮→🇫🇷", hot: true },
+    { from: "Dakar", to: "Marseille", flag: "🇸🇳→🇫🇷" },
+    { from: "Casablanca", to: "Paris", flag: "🇲🇦→🇫🇷" },
+  ],
+  routier: [
+    { from: "Dakar", to: "Bamako", flag: "🇸🇳→🇲🇱", hot: true },
+    { from: "Abidjan", to: "Ouagadougou", flag: "🇨🇮→🇧🇫", hot: true },
+    { from: "Lomé", to: "Cotonou", flag: "🇹🇬→🇧🇯" },
+    { from: "Douala", to: "Libreville", flag: "🇨🇲→🇬🇦" },
+    { from: "Accra", to: "Lomé", flag: "🇬🇭→🇹🇬" },
+    { from: "Abidjan", to: "Dakar", flag: "🇨🇮→🇸🇳" },
+  ],
+};
+
+const TRUST_ITEMS_BY_MODE: Record<string, { icon: typeof Shield; title: string; desc: string; color: string }[]> = {
+  default: [
+    { icon: Shield, title: "Paiement sécurisé", desc: "Escrow protégé", color: "text-emerald-500 bg-emerald-500/10" },
+    { icon: Globe, title: "Multi-corridors", desc: "Afrique, Europe, Amériques", color: "text-blue-500 bg-blue-500/10" },
+    { icon: Zap, title: "Suivi temps réel", desc: "QR + notifications", color: "text-amber-500 bg-amber-500/10" },
+    { icon: Award, title: "GP vérifiés", desc: "KYC + avis", color: "text-purple-500 bg-purple-500/10" },
+  ],
+  routier: [
+    { icon: Shield, title: "Escrow sécurisé", desc: "Paiement garanti à la livraison", color: "text-emerald-500 bg-emerald-500/10" },
+    { icon: Truck, title: "Flotte vérifiée", desc: "Véhicules certifiés", color: "text-blue-500 bg-blue-500/10" },
+    { icon: Zap, title: "Négociation directe", desc: "Prix en temps réel", color: "text-amber-500 bg-amber-500/10" },
+    { icon: Route, title: "Corridors routiers", desc: "Afrique de l'Ouest & Centrale", color: "text-purple-500 bg-purple-500/10" },
+  ],
+};
 
 const ACTIVE_STATUSES = ['pending', 'accepted', 'collected', 'paid_held', 'checked_in', 'weight_pending_payment', 'scheduled_departure', 'in_transit', 'arrived_destination', 'delivery_pending'];
 
@@ -73,13 +167,6 @@ const TYPE_MAP: Record<string, string[]> = {
   routier: ["routier"],
   bagages: ["bagages_accompagnes", "navette"],
 };
-
-const TRUST_ITEMS = [
-  { icon: Shield, title: "Paiement sécurisé", desc: "Escrow protégé", color: "text-emerald-500 bg-emerald-500/10" },
-  { icon: Globe, title: "Multi-corridors", desc: "Afrique, Europe, Amériques", color: "text-blue-500 bg-blue-500/10" },
-  { icon: Zap, title: "Suivi temps réel", desc: "QR + notifications", color: "text-amber-500 bg-amber-500/10" },
-  { icon: Award, title: "GP vérifiés", desc: "KYC + avis", color: "text-purple-500 bg-purple-500/10" },
-];
 
 export function ClientAppHome({
   userName, recentOrders = [], customRequests = [], movingRequests = [],
@@ -92,6 +179,9 @@ export function ClientAppHome({
   const [fullScreenOrderId, setFullScreenOrderId] = useState<string | null>(null);
   const [requestPopup, setRequestPopup] = useState<{ type: 'custom' | 'moving'; item: any } | null>(null);
   const [activeTab, setActiveTab] = useState("all");
+
+  const modeConfig = MODE_CONFIG[activeTab] || MODE_CONFIG.all;
+  const isRoutier = activeTab === "routier";
 
   // Search — restore last successful search from localStorage
   const lastSearch = useMemo(() => {
@@ -106,6 +196,8 @@ export function ClientAppHome({
   const [searchDate, setSearchDate] = useState("");
   const [activePicker, setActivePicker] = useState<"origin" | "dest" | null>(null);
   const [cityQuery, setCityQuery] = useState("");
+  // Routier-specific fields
+  const [routierWeight, setRoutierWeight] = useState("");
 
   useEffect(() => { if (userCity && !searchOrigin) setSearchOrigin(userCity); }, [userCity]);
 
@@ -133,21 +225,29 @@ export function ClientAppHome({
     return params;
   };
 
-  const handleSearch = () => {
-    // Filter offers in-place instead of navigating
-    // User can click "Tout voir" to go to /offres
+  const handleMainAction = () => {
+    if (isRoutier) {
+      // Navigate to routier mission request page with pre-filled data
+      const params = new URLSearchParams();
+      if (searchOrigin) params.set("origin", searchOrigin);
+      if (searchDest) params.set("destination", searchDest);
+      if (searchDate) params.set("date", searchDate);
+      if (routierWeight) params.set("weight", routierWeight);
+      navigate(`/routier/mission?${params.toString()}`);
+    } else {
+      goToOffres();
+    }
   };
 
   const goToOffres = () => {
     const params = buildSearchParams();
-    // Save last successful search
     if (searchOrigin || searchDest) {
       localStorage.setItem("kkt_last_search", JSON.stringify({ origin: searchOrigin, destination: searchDest }));
     }
     navigate(`/offres${params.toString() ? `?${params}` : ""}`);
   };
 
-  // Offers
+  // Offers (GP)
   const [offers, setOffers] = useState<any[]>([]);
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
@@ -161,6 +261,19 @@ export function ClientAppHome({
       .then(({ data }) => { if (data) setOffers(data); });
   }, []);
 
+  // Routier missions
+  const [routierMissions, setRoutierMissions] = useState<any[]>([]);
+  useEffect(() => {
+    if (!isRoutier) return;
+    supabase
+      .from("routier_missions")
+      .select("*")
+      .eq("status", "open")
+      .order("created_at", { ascending: false })
+      .limit(6)
+      .then(({ data }) => { if (data) setRoutierMissions(data); });
+  }, [isRoutier]);
+
   const filteredOffers = useMemo(() => {
     let result = offers;
     if (activeTab !== "all") {
@@ -172,7 +285,6 @@ export function ClientAppHome({
     if (searchDest) {
       result = result.filter(o => o.destination_city?.toLowerCase().includes(searchDest.toLowerCase()));
     }
-    // Sort: highest GP rating first, then earliest departure
     return result.sort((a, b) => {
       const ratingA = a.gp_profiles?.rating || 0;
       const ratingB = b.gp_profiles?.rating || 0;
@@ -203,6 +315,9 @@ export function ClientAppHome({
     setActivePicker(null);
     setCityQuery("");
   };
+
+  const popularRoutes = POPULAR_ROUTES_BY_MODE[activeTab] || POPULAR_ROUTES_BY_MODE.all;
+  const trustItems = TRUST_ITEMS_BY_MODE[activeTab] || TRUST_ITEMS_BY_MODE.default;
 
   return (
     <div className="flex flex-col relative bg-background" style={{
@@ -236,14 +351,13 @@ export function ClientAppHome({
           <h1 className="text-xl font-bold text-foreground">
             {greeting}{userName ? `, ${firstName}` : ''} 👋
           </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Envoyez vos colis partout dans le monde</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{modeConfig.subtitle}</p>
         </div>
 
         {/* Alerts */}
         {userId && <div className="px-4"><WeightValidationAlert userId={userId} /></div>}
-        {/* RecipientTrackingCard removed — incoming parcels now shown in SmartActionBar */}
 
-        {/* ── TRANSPORT TYPE TABS (compact, above search) ── */}
+        {/* ── TRANSPORT TYPE TABS ── */}
         <div className="px-4 pt-1 pb-2">
           <div className="flex gap-1.5">
             {TRANSPORT_TABS.map((tab) => {
@@ -273,22 +387,24 @@ export function ClientAppHome({
           </div>
         </div>
 
-        {/* ── SEARCH ENGINE ── */}
+        {/* ── SEARCH ENGINE (adaptive per mode) ── */}
         <div className="px-4 pb-2">
-          <div className="bg-card border-2 border-primary/30 rounded-2xl overflow-hidden shadow-sm relative">
+          <div className={`bg-card border-2 rounded-2xl overflow-hidden shadow-sm relative ${
+            isRoutier ? "border-blue-500/40" : "border-primary/30"
+          }`}>
             {/* Origin */}
             <button
               onClick={() => { setCityQuery(""); setActivePicker("origin"); }}
               className="w-full flex items-center gap-3 px-3 py-2.5 text-left border-b border-border/40"
             >
-              <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+              <MapPin className={`w-4 h-4 flex-shrink-0 ${isRoutier ? "text-blue-500" : "text-primary"}`} />
               <span className={`flex-1 text-sm ${searchOrigin ? "text-foreground font-medium" : "text-muted-foreground"}`}>
-                {searchOrigin || "Ville de départ"}
+                {searchOrigin || modeConfig.searchPlaceholderOrigin}
               </span>
               {searchOrigin && <span className="text-[10px] text-muted-foreground">Modifier</span>}
             </button>
 
-            {/* Swap button — centered on the border between origin & dest */}
+            {/* Swap button */}
             {(searchOrigin || searchDest) && (
               <button
                 onClick={swapOriginDest}
@@ -306,10 +422,25 @@ export function ClientAppHome({
             >
               <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <span className={`flex-1 text-sm ${searchDest ? "text-foreground font-medium" : "text-muted-foreground"}`}>
-                {searchDest || "Ville de destination"}
+                {searchDest || modeConfig.searchPlaceholderDest}
               </span>
               {searchDest && <span className="text-[10px] text-muted-foreground">Modifier</span>}
             </button>
+
+            {/* Routier: weight field */}
+            {isRoutier && (
+              <div className="flex items-center gap-3 px-3 py-2.5 border-b border-border/40">
+                <Weight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <input
+                  type="number"
+                  placeholder="Poids estimé (kg)"
+                  value={routierWeight}
+                  onChange={(e) => setRoutierWeight(e.target.value)}
+                  className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                  min="1"
+                />
+              </div>
+            )}
 
             <div className="flex items-center gap-3 px-3 py-2.5">
               <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
@@ -318,17 +449,34 @@ export function ClientAppHome({
                 value={searchDate}
                 onChange={(e) => setSearchDate(e.target.value)}
                 className="flex-1 bg-transparent text-sm text-foreground outline-none"
+                placeholder={isRoutier ? "Date de collecte souhaitée" : undefined}
                 style={{ colorScheme: 'dark' }}
               />
             </div>
           </div>
+
           <motion.button
             whileTap={{ scale: 0.98 }}
-            onClick={goToOffres}
-            className="w-full bg-primary text-primary-foreground font-bold text-center py-3 rounded-xl shadow-lg mt-2 text-sm"
+            onClick={handleMainAction}
+            className={`w-full font-bold text-center py-3 rounded-xl shadow-lg mt-2 text-sm ${
+              isRoutier
+                ? "bg-blue-600 text-white"
+                : "bg-primary text-primary-foreground"
+            }`}
           >
-            Rechercher un transporteur
+            {modeConfig.searchButtonLabel}
           </motion.button>
+
+          {/* Routier: quick action to create custom mission */}
+          {isRoutier && (
+            <button
+              onClick={() => navigate("/routier/mission")}
+              className="w-full mt-2 py-2.5 rounded-xl border-2 border-dashed border-blue-500/40 text-blue-500 text-sm font-semibold flex items-center justify-center gap-2 hover:bg-blue-500/5 transition-colors"
+            >
+              <FileText className="w-4 h-4" />
+              Créer une mission personnalisée
+            </button>
+          )}
         </div>
 
         {/* ── SMART ACTION BAR ── */}
@@ -385,46 +533,100 @@ export function ClientAppHome({
           </div>
         )}
 
-        {/* ── OFFERS ── */}
+        {/* ── OFFERS / MISSIONS (adaptive) ── */}
         <div className="px-4 pb-2">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-base font-bold text-foreground">Offres disponibles</h2>
-            <button onClick={goToOffres} className="text-xs text-primary font-medium flex items-center gap-0.5">
-              Tout voir <ChevronRight className="w-3 h-3" />
-            </button>
+            <h2 className="text-base font-bold text-foreground">{modeConfig.offersTitle}</h2>
+            {!isRoutier && (
+              <button onClick={goToOffres} className="text-xs text-primary font-medium flex items-center gap-0.5">
+                Tout voir <ChevronRight className="w-3 h-3" />
+              </button>
+            )}
           </div>
         </div>
 
         <div className="px-4 pb-4">
-          {filteredOffers.length > 0 ? (
-            <div className="space-y-2">
-              {filteredOffers.slice(0, 6).map((offer, idx) => (
-                <HomeOfferCard key={offer.id} offer={offer} index={idx} />
-              ))}
-            </div>
-          ) : (
-            <div className="bg-muted/30 border border-border rounded-xl p-6 text-center">
-              <Package className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground font-medium">
-                {activeTab === "all" ? "Aucune offre pour le moment" : `Aucune offre ${TRANSPORT_TABS.find(t => t.id === activeTab)?.label}`}
-              </p>
-              {activeTab !== "all" && (
-                <button onClick={() => setActiveTab("all")} className="text-xs text-primary font-medium mt-1.5">
-                  Voir toutes les offres
+          {isRoutier ? (
+            // Routier missions list
+            routierMissions.length > 0 ? (
+              <div className="space-y-2">
+                {routierMissions.map((mission) => (
+                  <div
+                    key={mission.id}
+                    className="bg-card border border-border rounded-xl p-3 space-y-1.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Truck className="w-4 h-4 text-blue-500" />
+                        <span className="text-sm font-semibold text-foreground">
+                          {mission.origin_city} → {mission.destination_city}
+                        </span>
+                      </div>
+                      <span className="text-[10px] bg-blue-500/10 text-blue-600 px-2 py-0.5 rounded-full font-medium">
+                        {mission.status === "open" ? "Ouvert" : mission.status}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>{mission.total_weight_kg} kg</span>
+                      <span>•</span>
+                      <span>{mission.vehicle_type_required || "Tout véhicule"}</span>
+                      {mission.budget_max && (
+                        <>
+                          <span>•</span>
+                          <span className="font-medium text-foreground">{mission.budget_max?.toLocaleString()} FCFA</span>
+                        </>
+                      )}
+                    </div>
+                    {mission.description && (
+                      <p className="text-xs text-muted-foreground line-clamp-1">{mission.description}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-muted/30 border border-border rounded-xl p-6 text-center">
+                <Truck className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground font-medium">{modeConfig.emptyLabel}</p>
+                <button
+                  onClick={() => navigate("/routier/mission")}
+                  className="text-xs text-blue-500 font-medium mt-1.5"
+                >
+                  Créer votre première mission
                 </button>
-              )}
-            </div>
+              </div>
+            )
+          ) : (
+            // GP / Other offers
+            filteredOffers.length > 0 ? (
+              <div className="space-y-2">
+                {filteredOffers.slice(0, 6).map((offer, idx) => (
+                  <HomeOfferCard key={offer.id} offer={offer} index={idx} />
+                ))}
+              </div>
+            ) : (
+              <div className="bg-muted/30 border border-border rounded-xl p-6 text-center">
+                <Package className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground font-medium">{modeConfig.emptyLabel}</p>
+                {activeTab !== "all" && (
+                  <button onClick={() => setActiveTab("all")} className="text-xs text-primary font-medium mt-1.5">
+                    Voir toutes les offres
+                  </button>
+                )}
+              </div>
+            )
           )}
         </div>
 
-        {/* ── ROUTES POPULAIRES ── */}
+        {/* ── ROUTES POPULAIRES (adaptive) ── */}
         <div className="px-4 pb-4">
-          <h2 className="text-base font-bold text-foreground mb-2">Routes populaires</h2>
+          <h2 className="text-base font-bold text-foreground mb-2">
+            {isRoutier ? "Corridors routiers populaires" : "Routes populaires"}
+          </h2>
           <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
-            {POPULAR_ROUTES.map((route, idx) => (
+            {popularRoutes.map((route, idx) => (
               <button
                 key={idx}
-                onClick={() => { setSearchOrigin(route.from); setSearchDest(route.to); handleSearch(); }}
+                onClick={() => { setSearchOrigin(route.from); setSearchDest(route.to); }}
                 className="flex-shrink-0 w-[120px] bg-card border border-border rounded-2xl p-3 text-left hover:border-primary/30 transition-all relative"
               >
                 {route.hot && (
@@ -440,11 +642,13 @@ export function ClientAppHome({
           </div>
         </div>
 
-        {/* ── POURQUOI KONNEKT ── */}
+        {/* ── POURQUOI KONNEKT (adaptive) ── */}
         <div className="px-4 pb-8">
-          <h2 className="text-base font-bold text-foreground mb-2">Pourquoi Konnekt ?</h2>
+          <h2 className="text-base font-bold text-foreground mb-2">
+            {isRoutier ? "Pourquoi Konnekt Routier ?" : "Pourquoi Konnekt ?"}
+          </h2>
           <div className="grid grid-cols-2 gap-2">
-            {TRUST_ITEMS.map((item, idx) => (
+            {trustItems.map((item, idx) => (
               <div key={idx} className="bg-card border border-border rounded-2xl p-3">
                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-2 ${item.color}`}>
                   <item.icon className="w-4 h-4" />
@@ -466,11 +670,13 @@ export function ClientAppHome({
         navigate={navigate}
       />
 
-      {/* City Picker Drawer (shared for origin & dest) */}
+      {/* City Picker Drawer */}
       <Drawer open={!!activePicker} onOpenChange={(open) => { if (!open) setActivePicker(null); }}>
         <DrawerContent className="max-h-[85vh]">
           <DrawerHeader className="pb-2">
-            <DrawerTitle>{activePicker === "origin" ? "Ville de départ" : "Ville de destination"}</DrawerTitle>
+            <DrawerTitle>
+              {activePicker === "origin" ? modeConfig.searchPlaceholderOrigin : modeConfig.searchPlaceholderDest}
+            </DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-2">
             <div className="relative">
