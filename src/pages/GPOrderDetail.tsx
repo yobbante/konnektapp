@@ -134,7 +134,7 @@ const STATUS_PROGRESS: Record<string, number> = {
   pending: 5, accepted: 20, paid_held: 30, checked_in: 35,
   collected: 40, scheduled_departure: 50, in_transit: 60,
   arrived_destination: 75, delivery_pending: 85,
-  delivery_confirmed: 95, delivered: 100, released: 100,
+  delivery_confirmed: 100, delivered: 100, released: 100,
   cancelled: 0, disputed: 0,
 };
 
