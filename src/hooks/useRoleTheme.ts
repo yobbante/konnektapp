@@ -20,6 +20,8 @@ export function useRoleTheme(): RoleTheme {
     // Apply role-based theme class
     if (path.startsWith("/admin")) {
       root.classList.add("theme-admin");
+    } else if (path.startsWith("/routier")) {
+      root.classList.add("theme-transporter");
     } else if (path.startsWith("/gp") || path.startsWith("/transporter")) {
       root.classList.add("theme-transporter");
     } else {
@@ -29,6 +31,7 @@ export function useRoleTheme(): RoleTheme {
 
   const path = location.pathname;
   if (path.startsWith("/admin")) return "admin";
+  if (path.startsWith("/routier")) return "transporter";
   if (path.startsWith("/gp") || path.startsWith("/transporter")) return "transporter";
   return "client";
 }
