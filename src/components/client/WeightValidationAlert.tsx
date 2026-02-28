@@ -265,7 +265,7 @@ export function WeightValidationAlert({
           user_id: gpProfile.user_id,
           type: "weight_validation_refused",
           title: "❌ ENVOI ANNULÉ - Client a refusé",
-          message: `Le client a refusé la modification de poids pour ${selectedValidation.order_number}. ⛔ NE PAS PRENDRE EN CHARGE CE COLIS. Restituez-le immédiatement.`,
+          message: `Le client a refusé la modification de poids pour ${selectedValidation.order_number}. ⛔ NE CHARGEZ PAS CE COLIS. Konnekt Logistique viendra le récupérer chez vous.`,
           related_type: "order",
           related_id: selectedValidation.order_id
         });
@@ -276,7 +276,7 @@ export function WeightValidationAlert({
 
       toast({
         title: "❌ Envoi annulé",
-        description: "Vous avez refusé la modification de poids. Le colis n'a pas été pris en charge.",
+        description: "Vous serez remboursé intégralement. Konnekt Logistique vous ramènera votre colis.",
         variant: "destructive"
       });
       setSelectedValidation(null);

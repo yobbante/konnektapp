@@ -159,10 +159,20 @@ export function WeightValidationCard({
               </div>
 
               {/* Info disclaimer */}
-              <p className="text-[10px] text-muted-foreground mb-3 flex items-start gap-1">
+              <p className="text-[10px] text-muted-foreground mb-2 flex items-start gap-1">
                 <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
                 L'assurance et la logistique restent inchangées. Seul le prix du transport est ajusté.
               </p>
+
+              {/* Consequences info */}
+              <div className="p-2.5 bg-amber-50 dark:bg-amber-500/10 rounded-lg mb-3 border border-amber-200 dark:border-amber-400/20">
+                <div className="text-[10px] text-amber-800 dark:text-amber-300 space-y-1">
+                  <span className="font-semibold block">⚠️ En cas de refus ou d'inaction :</span>
+                  <span className="block">• L'envoi sera annulé et vous serez <strong>intégralement remboursé</strong>.</span>
+                  <span className="block">• <strong>Konnekt Logistique</strong> vous ramènera votre colis.</span>
+                  <span className="block">• Si vous ne répondez pas avant le départ du transporteur, l'envoi sera automatiquement annulé.</span>
+                </div>
+              </div>
 
               {/* PRV: ONLY 2 ACTIONS */}
               <div className="flex flex-col sm:flex-row gap-2">
@@ -172,11 +182,11 @@ export function WeightValidationCard({
                   onClick={onRefuse}
                 >
                   <X className="w-4 h-4" />
-                  Refuser et annuler l’envoi
+                  Refuser et annuler l'envoi
                 </Button>
                 <Button className="w-full sm:flex-1 gap-2" onClick={onAccept}>
                   <Check className="w-4 h-4" />
-                  Accepter et continuer
+                  Accepter et payer le supplément
                 </Button>
               </div>
             </div>

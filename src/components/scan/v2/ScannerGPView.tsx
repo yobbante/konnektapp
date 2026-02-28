@@ -328,25 +328,52 @@ function ActionWeightPending({ orderId, payload, executing, execute, darkMode }:
   executing: boolean; execute: (action: string, data?: Record<string, any>) => Promise<void>;
   darkMode?: boolean;
 }) {
+  const textSub = darkMode ? "text-white/50" : "text-muted-foreground";
   return (
-    <div className="rounded-2xl border-2 border-red-400/40 bg-red-500/10 p-4 space-y-3">
+    <div className="rounded-2xl border-2 border-red-400/40 bg-red-500/10 p-4 space-y-4">
       <div className="flex items-center gap-2">
         <AlertTriangle className="w-5 h-5 text-red-400" />
         <div>
           <p className="text-sm font-bold text-red-400">Supplément requis</p>
-          <p className="text-[11px] text-red-300/70">Transport bloqué jusqu'au paiement client</p>
+          <p className="text-[11px] text-red-300/70">En attente de la décision du client</p>
         </div>
       </div>
       {payload.display_payload.supplement_amount != null && (
         <div className="bg-red-500/15 rounded-xl p-3 text-center">
-          <p className="text-[10px] text-red-300/70 uppercase tracking-wider">Montant dû</p>
+          <p className="text-[10px] text-red-300/70 uppercase tracking-wider">Montant dû par le client</p>
           <p className="text-2xl font-bold text-red-400 mt-0.5">
             {payload.display_payload.supplement_amount.toLocaleString()} {payload.display_payload.currency}
           </p>
         </div>
       )}
-      <p className="text-[11px] text-red-300/60 text-center">
-        Le client a été notifié. Aucune action GP possible jusqu'au paiement.
+
+      {/* INSTRUCTIONS GP */}
+      <div className={cn("rounded-xl p-3 space-y-2.5 border", darkMode ? "bg-white/[0.03] border-white/10" : "bg-muted/40 border-border/50")}>
+        <p className={cn("text-xs font-semibold flex items-center gap-1.5", darkMode ? "text-white/80" : "text-foreground")}>
+          📋 Vos instructions
+        </p>
+        <div className={cn("text-[11px] space-y-2", textSub)}>
+          <div className="flex items-start gap-2">
+            <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">1</span>
+            <p><strong className={darkMode ? "text-white/70" : "text-foreground"}>Gardez le colis avec vous.</strong> Ne le rendez pas au client et ne le chargez pas encore.</p>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">2</span>
+            <p><strong className={darkMode ? "text-white/70" : "text-foreground"}>Si le client accepte et paie</strong>, le flux reprend automatiquement. Vous pourrez continuer le transport.</p>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="w-5 h-5 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">3</span>
+            <p><strong className={darkMode ? "text-white/70" : "text-foreground"}>Si le client refuse</strong>, l'envoi est annulé. <strong>Konnekt Logistique viendra récupérer le colis</strong> chez vous. Vous n'avez rien à faire.</p>
+          </div>
+          <div className="flex items-start gap-2">
+            <span className="w-5 h-5 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">4</span>
+            <p><strong className={darkMode ? "text-white/70" : "text-foreground"}>Si le client ne répond pas avant votre départ</strong>, l'envoi sera automatiquement annulé. Konnekt Logistique récupérera le colis.</p>
+          </div>
+        </div>
+      </div>
+
+      <p className="text-[10px] text-red-300/50 text-center">
+        ⏳ Le client a été notifié. Aucune action GP requise — attendez sa décision.
       </p>
     </div>
   );
