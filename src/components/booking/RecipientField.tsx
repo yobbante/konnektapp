@@ -1,23 +1,20 @@
 /**
- * RecipientField — MANDATORY recipient selector with Konnekt ID lookup & upsell
- * Used in SmartBookingPage step 1 to link a recipient user
+ * RecipientField — Unified smart recipient search
+ * Single search bar that accepts: phone number, email, name, or Konnekt ID
+ * Auto-detects input type and searches accordingly
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  User, Search, CheckCircle, X, Users, Star, 
-  Phone, Hash, Sparkles, ArrowRight, Eye, Package, TrendingUp,
-  Globe
+import {
+  User, Search, CheckCircle, X, Users, Star,
+  Sparkles, ArrowRight, Eye, Package, TrendingUp, Loader2
 } from "lucide-react";
-import { COUNTRY_PHONE_CODES } from "@/lib/phoneCountryCodes";
-import { PhoneInputWithCode } from "@/components/ui/PhoneInputWithCode";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 
 interface RecipientFieldProps {
@@ -40,7 +37,24 @@ interface SavedRecipient {
   is_favorite: boolean;
 }
 
-type SearchMode = "phone" | "konnekt_id";
+type DetectedType = "phone" | "email" | "uuid" | "name";
+
+function detectInputType(input: string): DetectedType {
+  const trimmed = input.trim();
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed)) return "uuid";
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return "email";
+  if (/^[+\d][\d\s\-()]{6,}$/.test(trimmed.replace(/\s/g, ""))) return "phone";
+  return "name";
+}
+
+function getPlaceholderHint(type: DetectedType): string {
+  switch (type) {
+    case "phone": return "📱 Recherche par téléphone...";
+    case "email": return "📧 Recherche par email...";
+    case "uuid": return "🔑 Recherche par ID Konnekt...";
+    case "name": return "👤 Recherche par nom...";
+  }
+}
 
 export function RecipientField({
   recipientName,
@@ -49,31 +63,24 @@ export function RecipientField({
   onRecipientChange,
   required = true,
 }: RecipientFieldProps) {
+  const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
-  const [searchResult, setSearchResult] = useState<{ id: string; name: string; totalOrders?: number } | null>(null);
+  const [searchResult, setSearchResult] = useState<{ id: string; name: string; phone?: string; totalOrders?: number } | null>(null);
   const [savedRecipients, setSavedRecipients] = useState<SavedRecipient[]>([]);
   const [showSaved, setShowSaved] = useState(false);
-  const [searchMode, setSearchMode] = useState<SearchMode>("phone");
-  const [konnektIdInput, setKonnektIdInput] = useState("");
   const [showUpsell, setShowUpsell] = useState(false);
   const [searchNotFound, setSearchNotFound] = useState(false);
   const [isSelfSelection, setIsSelfSelection] = useState(false);
-  const [phoneCountryCode, setPhoneCountryCode] = useState("+221");
+  const [detectedType, setDetectedType] = useState<DetectedType>("name");
+  const [manualName, setManualName] = useState("");
+  const [manualPhone, setManualPhone] = useState("");
+  const [showManualFields, setShowManualFields] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  const phoneCodeOptions = Object.entries(COUNTRY_PHONE_CODES)
-    .filter(([code]) => code !== "XX")
-    .map(([code, prefix]) => ({ code, prefix }))
-    .sort((a, b) => a.prefix.localeCompare(b.prefix));
+  useEffect(() => { loadSavedRecipients(); }, []);
 
   useEffect(() => {
-    loadSavedRecipients();
-  }, []);
-
-  // Auto-show upsell when recipient is set
-  useEffect(() => {
-    if (recipientName && recipientPhone) {
-      setShowUpsell(true);
-    }
+    if (recipientName && recipientPhone) setShowUpsell(true);
   }, [recipientName, recipientPhone]);
 
   const loadSavedRecipients = async () => {
@@ -89,152 +96,168 @@ export function RecipientField({
     setSavedRecipients(data || []);
   };
 
-  const searchByPhone = async (phone: string) => {
-    if (phone.length < 8) return;
+  const smartSearch = useCallback(async (query: string) => {
+    const trimmed = query.trim();
+    if (trimmed.length < 3) return;
+
     setSearching(true);
     setSearchNotFound(false);
     setIsSelfSelection(false);
+
     try {
-      const { data } = await supabase
-        .from("profiles")
-        .select("user_id, full_name")
-        .eq("phone", phone.trim())
-        .maybeSingle();
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const type = detectInputType(trimmed);
+      let foundProfile: { user_id: string; full_name: string; phone: string | null } | null = null;
 
-      if (data) {
-        // Prevent self-selection
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        if (currentUser && data.user_id === currentUser.id) {
-          setSearchResult(null);
-          setSearchNotFound(true);
-          setIsSelfSelection(true);
-          setSearching(false);
-          return;
-        }
-
-        const { count } = await supabase
-          .from("orders")
-          .select("id", { count: "exact", head: true })
-          .eq("client_id", data.user_id);
-          
-        setSearchResult({ id: data.user_id, name: data.full_name || "Utilisateur Konnekt", totalOrders: count || 0 });
-        onRecipientChange({
-          name: data.full_name || recipientName,
-          phone,
-          userId: data.user_id,
-        });
-        setSearchNotFound(false);
-      } else {
-        setSearchResult(null);
-        setSearchNotFound(true);
-        onRecipientChange({ name: recipientName, phone, userId: null });
-      }
-    } catch {
-      setSearchResult(null);
-    } finally {
-      setSearching(false);
-    }
-  };
-
-  const searchByKonnektId = async (idInput: string) => {
-    if (idInput.length < 3) return;
-    setSearching(true);
-    setSearchNotFound(false);
-    try {
-      const trimmed = idInput.trim();
-      setIsSelfSelection(false);
-      // Check if input looks like a UUID
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed);
-      
-      let data = null;
-      
-      if (isUUID) {
-        // Search by user_id (UUID)
-        const { data: byId } = await supabase
+      if (type === "phone") {
+        // Normalize: strip spaces/dashes, try with and without +
+        const normalized = trimmed.replace(/[\s\-()]/g, "");
+        const { data } = await supabase
           .from("profiles")
           .select("user_id, full_name, phone")
-          .eq("user_id", trimmed)
+          .eq("phone", normalized)
           .maybeSingle();
-        data = byId;
-      }
-      
-      if (!data) {
-        // Search by email (case-insensitive)
-        const { data: byEmail } = await supabase
+        foundProfile = data;
+
+        // If not found with exact, try partial match
+        if (!foundProfile && normalized.length >= 8) {
+          const { data: partial } = await supabase
+            .from("profiles")
+            .select("user_id, full_name, phone")
+            .ilike("phone", `%${normalized.slice(-8)}`)
+            .maybeSingle();
+          foundProfile = partial;
+        }
+      } else if (type === "email") {
+        const { data } = await supabase
           .from("profiles")
           .select("user_id, full_name, phone")
           .ilike("email", trimmed)
           .maybeSingle();
-        data = byEmail;
+        foundProfile = data;
+      } else if (type === "uuid") {
+        const { data } = await supabase
+          .from("profiles")
+          .select("user_id, full_name, phone")
+          .eq("user_id", trimmed)
+          .maybeSingle();
+        foundProfile = data;
+      } else {
+        // Name search — search in profiles and saved recipients
+        const { data } = await supabase
+          .from("profiles")
+          .select("user_id, full_name, phone")
+          .ilike("full_name", `%${trimmed}%`)
+          .limit(1)
+          .maybeSingle();
+        foundProfile = data;
       }
 
-      if (data) {
-        // Prevent self-selection: recipient cannot be the sender
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        if (currentUser && data.user_id === currentUser.id) {
+      if (foundProfile) {
+        // Self-selection guard
+        if (currentUser && foundProfile.user_id === currentUser.id) {
           setSearchResult(null);
           setSearchNotFound(true);
           setIsSelfSelection(true);
-          setSearching(false);
           return;
         }
 
         const { count } = await supabase
           .from("orders")
           .select("id", { count: "exact", head: true })
-          .eq("client_id", data.user_id);
+          .eq("client_id", foundProfile.user_id);
 
-        setSearchResult({ id: data.user_id, name: data.full_name || "Utilisateur Konnekt", totalOrders: count || 0 });
+        const result = {
+          id: foundProfile.user_id,
+          name: foundProfile.full_name || "Utilisateur Konnekt",
+          phone: foundProfile.phone || undefined,
+          totalOrders: count || 0,
+        };
+        setSearchResult(result);
         onRecipientChange({
-          name: data.full_name || recipientName,
-          phone: data.phone || recipientPhone,
-          userId: data.user_id,
+          name: result.name,
+          phone: result.phone || recipientPhone,
+          userId: result.id,
         });
-        setSearchNotFound(false);
+        setShowManualFields(false);
       } else {
         setSearchResult(null);
         setSearchNotFound(true);
+        // If phone detected, pre-fill manual phone
+        if (type === "phone") {
+          setManualPhone(trimmed.replace(/[\s\-()]/g, ""));
+          setShowManualFields(true);
+        } else if (type === "name") {
+          setManualName(trimmed);
+          setShowManualFields(true);
+        } else {
+          setShowManualFields(true);
+        }
       }
     } catch {
       setSearchResult(null);
+      setSearchNotFound(true);
+      setShowManualFields(true);
     } finally {
       setSearching(false);
+    }
+  }, [onRecipientChange, recipientPhone]);
+
+  const handleQueryChange = (value: string) => {
+    setSearchQuery(value);
+    const type = detectInputType(value);
+    setDetectedType(type);
+
+    // Debounced search
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (value.trim().length >= 3) {
+      debounceRef.current = setTimeout(() => smartSearch(value), 600);
+    } else {
+      setSearchResult(null);
+      setSearchNotFound(false);
     }
   };
 
   const selectSavedRecipient = (r: SavedRecipient) => {
-    onRecipientChange({
-      name: r.full_name,
-      phone: r.phone || "",
-      userId: r.recipient_user_id,
-    });
+    onRecipientChange({ name: r.full_name, phone: r.phone || "", userId: r.recipient_user_id });
     if (r.recipient_user_id) {
       setSearchResult({ id: r.recipient_user_id, name: r.full_name });
     }
+    setSearchQuery(r.full_name);
     setShowSaved(false);
     setShowUpsell(true);
+    setShowManualFields(false);
   };
 
   const clearRecipient = () => {
     onRecipientChange({ name: "", phone: "", userId: null });
     setSearchResult(null);
+    setSearchQuery("");
     setShowUpsell(false);
     setSearchNotFound(false);
-    setKonnektIdInput("");
+    setManualName("");
+    setManualPhone("");
+    setShowManualFields(false);
+  };
+
+  const handleManualChange = (name: string, phone: string) => {
+    setManualName(name);
+    setManualPhone(phone);
+    onRecipientChange({ name, phone, userId: null });
   };
 
   const isValid = recipientName.trim().length > 0 && recipientPhone.trim().length >= 8;
 
   return (
     <>
-      <Card className={`border-2 transition-colors ${
-        isValid 
-          ? "border-green-500/30 bg-green-50/30 dark:bg-green-900/10" 
-          : required 
-            ? "border-amber-400/50 bg-amber-50/30 dark:bg-amber-900/10" 
+      <Card className={`border-2 transition-all duration-300 ${
+        isValid
+          ? "border-green-500/30 bg-green-50/30 dark:bg-green-900/10"
+          : required
+            ? "border-primary/30"
             : "border-border"
       }`}>
-        <CardContent className="p-4 space-y-4">
+        <CardContent className="p-4 space-y-3">
           {/* Header */}
           <div className="flex items-center justify-between">
             <Label className="text-sm font-semibold flex items-center gap-2">
@@ -243,12 +266,12 @@ export function RecipientField({
               {required && <span className="text-destructive">*</span>}
             </Label>
             <div className="flex items-center gap-1">
-              {savedRecipients.length > 0 && (
-                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setShowSaved(true)}>
-                  <Users className="w-3.5 h-3.5" /> Carnet ({savedRecipients.length})
+              {savedRecipients.length > 0 && !searchResult && (
+                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-primary" onClick={() => setShowSaved(true)}>
+                  <Users className="w-3.5 h-3.5" /> Carnet
                 </Button>
               )}
-              {isValid && (
+              {(isValid || searchResult) && (
                 <Button variant="ghost" size="icon" className="h-6 w-6" onClick={clearRecipient}>
                   <X className="w-3.5 h-3.5" />
                 </Button>
@@ -256,123 +279,139 @@ export function RecipientField({
             </div>
           </div>
 
-          {/* Search Tabs */}
-          <Tabs value={searchMode} onValueChange={(v) => setSearchMode(v as SearchMode)} className="w-full">
-            <TabsList className="w-full grid grid-cols-2 h-9">
-              <TabsTrigger value="phone" className="text-xs gap-1.5">
-                <Phone className="w-3.5 h-3.5" /> Par téléphone
-              </TabsTrigger>
-              <TabsTrigger value="konnekt_id" className="text-xs gap-1.5">
-                <Hash className="w-3.5 h-3.5" /> ID Konnekt
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="phone" className="mt-3 space-y-3">
-              <Input
-                placeholder="Nom du destinataire *"
-                value={recipientName}
-                onChange={(e) => onRecipientChange({ name: e.target.value, phone: recipientPhone, userId: recipientUserId })}
-                className="h-10 rounded-xl text-sm"
-              />
-              <PhoneInputWithCode
-                value={recipientPhone}
-                onChange={(v) => {
-                  onRecipientChange({ name: recipientName, phone: v, userId: null });
-                  setSearchResult(null);
-                  setSearchNotFound(false);
-                }}
-                onBlur={(fullPhone) => searchByPhone(fullPhone)}
-                placeholder="Numéro du destinataire *"
-                size="md"
-                inputClassName="rounded-xl text-sm"
-                suffix={searching ? <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : undefined}
-              />
-            </TabsContent>
-
-            <TabsContent value="konnekt_id" className="mt-3 space-y-3">
+          {/* ═══ SMART SEARCH BAR ═══ */}
+          {!searchResult ? (
+            <div className="space-y-3">
               <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
                 <Input
-                  placeholder="Email ou ID Konnekt du destinataire"
-                  value={konnektIdInput}
-                  onChange={(e) => {
-                    setKonnektIdInput(e.target.value);
-                    setSearchNotFound(false);
-                  }}
-                  className="h-10 rounded-xl text-sm pr-20"
+                  placeholder="Téléphone, email, nom ou ID Konnekt..."
+                  value={searchQuery}
+                  onChange={(e) => handleQueryChange(e.target.value)}
+                  className="pl-10 pr-12 h-12 rounded-xl text-sm bg-muted/40 border-0 focus-visible:ring-primary"
                 />
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 text-xs gap-1"
-                  onClick={() => searchByKonnektId(konnektIdInput)}
-                  disabled={konnektIdInput.length < 3 || searching}
-                >
-                  {searching ? (
-                    <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <Search className="w-3.5 h-3.5" /> Chercher
-                    </>
-                  )}
-                </Button>
+                {searching && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                  </div>
+                )}
               </div>
-              <p className="text-xs text-muted-foreground">
-                💡 Si votre destinataire a un compte Konnekt, il pourra suivre le colis en temps réel
-              </p>
-            </TabsContent>
-          </Tabs>
 
-          {/* Konnekt User Found */}
+              {/* Type detection hint */}
+              {searchQuery.length >= 2 && !searching && !searchNotFound && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-[11px] text-muted-foreground pl-1"
+                >
+                  {getPlaceholderHint(detectedType)}
+                </motion.p>
+              )}
+
+              {/* Quick saved recipients (horizontal) */}
+              {!searchQuery && savedRecipients.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+                  {savedRecipients.slice(0, 5).map(r => (
+                    <button
+                      key={r.id}
+                      onClick={() => selectSavedRecipient(r)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/60 border border-border hover:border-primary/30 transition-all flex-shrink-0"
+                    >
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-xs font-bold text-primary">{r.full_name.charAt(0)}</span>
+                      </div>
+                      <div className="text-left">
+                        <p className="text-xs font-medium truncate max-w-[80px]">{r.full_name}</p>
+                        {r.recipient_user_id && (
+                          <p className="text-[9px] text-primary">Konnekt ✓</p>
+                        )}
+                      </div>
+                      {r.is_favorite && <Star className="w-2.5 h-2.5 text-amber-500 fill-amber-500 flex-shrink-0" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            /* ═══ FOUND RESULT ═══ */
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex items-center gap-3 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
+            >
+              <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-800/40 flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-green-800 dark:text-green-300 truncate">{searchResult.name}</p>
+                <p className="text-[11px] text-green-600 dark:text-green-400">
+                  Membre Konnekt · Suivi automatique activé
+                </p>
+              </div>
+              <Badge className="bg-primary/20 text-primary text-[10px] shrink-0">Konnekt ✓</Badge>
+            </motion.div>
+          )}
+
+          {/* Self-selection error */}
           <AnimatePresence>
-            {searchResult && (
+            {isSelfSelection && (
               <motion.div
-                initial={{ opacity: 0, y: -8, height: 0 }}
-                animate={{ opacity: 1, y: 0, height: "auto" }}
-                exit={{ opacity: 0, y: -8, height: 0 }}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
                 className="overflow-hidden"
               >
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-                  <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-800/40 flex items-center justify-center">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-green-800 dark:text-green-300">{searchResult.name}</p>
-                    <p className="text-xs text-green-600 dark:text-green-400">Utilisateur Konnekt — suivi automatique activé</p>
-                  </div>
-                  <Badge className="bg-primary/20 text-primary text-[10px] shrink-0">Konnekt ✓</Badge>
+                <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/30">
+                  <p className="text-xs text-destructive font-medium">
+                    ⚠️ Vous ne pouvez pas vous sélectionner comme destinataire
+                  </p>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Not found + manual entry hint */}
-          {searchNotFound && !searchResult && (
-            <motion.div
-              initial={{ opacity: 0, y: -5 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`p-3 rounded-xl border ${isSelfSelection ? 'bg-destructive/10 border-destructive/30' : 'bg-muted/50 border-border'}`}
-            >
-              <p className="text-xs text-muted-foreground">
-                {isSelfSelection 
-                  ? "⚠️ Vous ne pouvez pas vous sélectionner comme destinataire. Veuillez entrer un autre contact."
-                  : searchMode === "konnekt_id" 
-                    ? "📱 Aucun compte Konnekt trouvé. Remplissez manuellement via l'onglet Téléphone." 
-                    : "📱 Le destinataire recevra un lien de confirmation à la remise."}
-              </p>
-            </motion.div>
-          )}
+          {/* Not found → manual fields */}
+          <AnimatePresence>
+            {searchNotFound && !isSelfSelection && showManualFields && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden space-y-3"
+              >
+                <div className="p-2.5 rounded-xl bg-muted/50 border border-border">
+                  <p className="text-xs text-muted-foreground">
+                    Aucun compte trouvé — remplissez manuellement :
+                  </p>
+                </div>
+                <Input
+                  placeholder="Nom du destinataire *"
+                  value={manualName}
+                  onChange={(e) => handleManualChange(e.target.value, manualPhone)}
+                  className="h-10 rounded-xl text-sm"
+                />
+                <Input
+                  placeholder="Téléphone avec indicatif (ex: +221...)"
+                  value={manualPhone}
+                  onChange={(e) => handleManualChange(manualName, e.target.value)}
+                  className="h-10 rounded-xl text-sm"
+                  type="tel"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          {/* Validation indicator */}
-          {required && !isValid && (
-            <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-              Nom et téléphone du destinataire obligatoires
+          {/* Validation */}
+          {required && !isValid && !searchQuery && (
+            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary/50" />
+              Cherchez ou saisissez votre destinataire
             </p>
           )}
         </CardContent>
       </Card>
 
-      {/* ═══ UPSELL SECTION ═══ */}
+      {/* ═══ UPSELL / INFO SECTION ═══ */}
       <AnimatePresence>
         {showUpsell && isValid && (
           <motion.div
@@ -382,11 +421,9 @@ export function RecipientField({
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
           >
             {recipientUserId && searchResult ? (
-              /* ── Recipient HAS Konnekt account — Dedicated info card ── */
               <Card className="border-primary/20 bg-card overflow-hidden">
                 <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
                 <CardContent className="p-4 space-y-3">
-                  {/* Identity row */}
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
                       <span className="text-sm font-bold text-primary">
@@ -401,8 +438,6 @@ export function RecipientField({
                       <CheckCircle className="w-2.5 h-2.5" /> Vérifié
                     </Badge>
                   </div>
-
-                  {/* Key benefits — compact row */}
                   <div className="flex items-center gap-3 p-2.5 rounded-xl bg-muted/40 border border-border/50">
                     <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                       <Eye className="w-3 h-3 text-primary" />
@@ -422,16 +457,15 @@ export function RecipientField({
                 </CardContent>
               </Card>
             ) : (
-              /* ── Recipient does NOT have Konnekt account ── */
               <Card className="border-accent/20 bg-gradient-to-br from-accent/5 to-accent/10 overflow-hidden">
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-accent-foreground" />
-                    <span className="text-sm font-semibold">Votre destinataire n'est pas sur Konnekt</span>
+                    <span className="text-sm font-semibold">Destinataire sans compte Konnekt</span>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    En créant un compte, <strong>{recipientName}</strong> pourra suivre le colis en temps réel, 
-                    recevoir des notifications de livraison et accéder à tout l'historique de ses réceptions.
+                    En créant un compte, <strong>{recipientName}</strong> pourra suivre le colis en temps réel
+                    et recevoir des notifications de livraison.
                   </p>
                   <div className="flex items-center gap-2 p-2.5 rounded-lg bg-background/60 border border-border/50">
                     <div className="flex -space-x-1">
