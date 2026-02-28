@@ -311,21 +311,23 @@ export default function RoutierRegistration() {
         })
         .eq("user_id", existingUser.id);
 
-      // Create GP profile for routier
+      // Create GP profile for routier - set verified for prototype
       const { data: gpProfile, error: gpError } = await supabase
         .from("gp_profiles")
         .insert({
           user_id: existingUser.id,
           business_name: businessName,
           gp_type: "routier",
+          road_type: "mission",
           phone: phone,
           whatsapp: sameAsPhone ? phone : whatsapp,
           whatsapp_phone: sameAsPhone ? phone : whatsapp,
           city: currentVehicle.zones[0] || "Dakar",
           country_code: "SN",
-          status: "pending",
+          status: "verified",
           default_currency: currency,
           zones_covered: vehicles.flatMap(v => v.zones),
+          base_price_per_kg: minPrice ? parseFloat(minPrice) : null,
         })
         .select()
         .single();
@@ -353,10 +355,10 @@ export default function RoutierRegistration() {
 
       toast({
         title: "🚛 Inscription réussie !",
-        description: "Bienvenue dans l'espace Transporteur Routier",
+        description: "Votre compte est actif. Bienvenue !",
       });
 
-      navigate("/routier/dashboard");
+      navigate("/routier/demandes");
     } catch (error: any) {
       console.error("Registration error:", error);
       toast({

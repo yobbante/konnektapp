@@ -2,7 +2,7 @@ import { ReactNode, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
   Truck, Bell, Package, Clock, 
-  User, History, Menu, Car 
+  User, History, Menu, Car, Wallet 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -65,6 +65,7 @@ export function RoutierDashboardLayout({
     { id: "en-cours", label: "En cours", icon: Clock, path: "/routier/en-cours", badge: activeOrdersCount },
     { id: "historique", label: "Historique", icon: History, path: "/routier/historique" },
     { id: "vehicules", label: "Flotte", icon: Car, path: "/routier/vehicules" },
+    { id: "wallet", label: "Wallet", icon: Wallet, path: "/routier/wallet" },
     { id: "profil", label: "Profil", icon: User, path: "/routier/profil-public" },
   ];
 
@@ -75,6 +76,7 @@ export function RoutierDashboardLayout({
     if (currentPath.includes("en-cours")) return "en-cours";
     if (currentPath.includes("historique")) return "historique";
     if (currentPath.includes("vehicules")) return "vehicules";
+    if (currentPath.includes("wallet")) return "wallet";
     if (currentPath.includes("profil-public")) return "profil";
     return activeTab;
   };
