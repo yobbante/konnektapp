@@ -141,6 +141,27 @@ export function MissionNegotiationSheet({
       }
 
       toast({ title: action === "accept" ? "✅ Mission acceptée !" : "💬 Contre-proposition envoyée" });
+
+      // If accepted, convert mission to order + escrow
+      if (action === "accept") {
+        try {
+          const agreedPrice = negotiation
+            ? (negotiation.client_final_price || negotiation.initial_client_price)
+            : mission.client_budget;
+
+          const missionId = mission.id;
+          const { data: orderId, error: convErr } = await supabase.rpc("convert_mission_to_order", {
+            p_mission_id: missionId,
+            p_gp_id: gpId,
+            p_agreed_price: agreedPrice,
+          });
+          if (convErr) console.warn("[Routier] Mission conversion warning:", convErr.message);
+          else console.log("[Routier] Order created:", orderId);
+        } catch (convErr) {
+          console.warn("[Routier] Conversion non-blocking error:", convErr);
+        }
+      }
+
       onSuccess?.();
       onOpenChange(false);
     } catch (err: any) {
@@ -186,6 +207,22 @@ export function MissionNegotiationSheet({
       toast({
         title: action === "accept" ? "✅ Offre acceptée !" : action === "counter" ? "💬 Réponse envoyée" : "Offre refusée",
       });
+
+      // If client accepts, convert mission to order + escrow
+      if (action === "accept" && negotiation) {
+        try {
+          const { data: orderId, error: convErr } = await supabase.rpc("convert_mission_to_order", {
+            p_mission_id: negotiation.mission_id,
+            p_gp_id: negotiation.gp_id,
+            p_agreed_price: negotiation.gp_counter_price,
+          });
+          if (convErr) console.warn("[Routier] Mission conversion warning:", convErr.message);
+          else console.log("[Routier] Order created from client accept:", orderId);
+        } catch (convErr) {
+          console.warn("[Routier] Conversion non-blocking error:", convErr);
+        }
+      }
+
       onSuccess?.();
       onOpenChange(false);
     } catch (err: any) {

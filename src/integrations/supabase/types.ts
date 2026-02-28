@@ -541,6 +541,7 @@ export type Database = {
           gp_id: string
           held_at: string | null
           id: string
+          mission_id: string | null
           net_to_gp: number
           order_id: string
           payment_method: string | null
@@ -561,6 +562,7 @@ export type Database = {
           gp_id: string
           held_at?: string | null
           id?: string
+          mission_id?: string | null
           net_to_gp?: number
           order_id: string
           payment_method?: string | null
@@ -581,6 +583,7 @@ export type Database = {
           gp_id?: string
           held_at?: string | null
           id?: string
+          mission_id?: string | null
           net_to_gp?: number
           order_id?: string
           payment_method?: string | null
@@ -2785,6 +2788,7 @@ export type Database = {
           recipient_name: string | null
           recipient_phone: string | null
           recipient_user_id: string | null
+          routier_mission_id: string | null
           security_flags: string[] | null
           status: Database["public"]["Enums"]["order_status"]
           total_price: number
@@ -2840,6 +2844,7 @@ export type Database = {
           recipient_name?: string | null
           recipient_phone?: string | null
           recipient_user_id?: string | null
+          routier_mission_id?: string | null
           security_flags?: string[] | null
           status?: Database["public"]["Enums"]["order_status"]
           total_price: number
@@ -2895,6 +2900,7 @@ export type Database = {
           recipient_name?: string | null
           recipient_phone?: string | null
           recipient_user_id?: string | null
+          routier_mission_id?: string | null
           security_flags?: string[] | null
           status?: Database["public"]["Enums"]["order_status"]
           total_price?: number
@@ -3296,6 +3302,7 @@ export type Database = {
       routier_missions: {
         Row: {
           accepted_negotiation_id: string | null
+          accepted_order_id: string | null
           client_budget: number | null
           client_id: string
           constraints: string[] | null
@@ -3327,6 +3334,7 @@ export type Database = {
         }
         Insert: {
           accepted_negotiation_id?: string | null
+          accepted_order_id?: string | null
           client_budget?: number | null
           client_id: string
           constraints?: string[] | null
@@ -3358,6 +3366,7 @@ export type Database = {
         }
         Update: {
           accepted_negotiation_id?: string | null
+          accepted_order_id?: string | null
           client_budget?: number | null
           client_id?: string
           constraints?: string[] | null
@@ -3393,6 +3402,27 @@ export type Database = {
             columns: ["accepted_negotiation_id"]
             isOneToOne: false
             referencedRelation: "mission_negotiations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routier_missions_accepted_order_id_fkey"
+            columns: ["accepted_order_id"]
+            isOneToOne: false
+            referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "routier_missions_accepted_order_id_fkey"
+            columns: ["accepted_order_id"]
+            isOneToOne: false
+            referencedRelation: "mvp_coherence_dashboard"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "routier_missions_accepted_order_id_fkey"
+            columns: ["accepted_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
           {
@@ -4539,6 +4569,10 @@ export type Database = {
           progress_percent: number
           tier_name: string
         }[]
+      }
+      convert_mission_to_order: {
+        Args: { p_agreed_price: number; p_gp_id: string; p_mission_id: string }
+        Returns: string
       }
       create_default_weight_tiers: {
         Args: { p_currency?: string; p_gp_id: string }

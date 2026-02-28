@@ -7,6 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ClientMissionsView } from "@/components/routier/ClientMissionsView";
 
 interface LoggedInHomeDashboardProps {
   userName?: string;
@@ -91,6 +92,18 @@ export function LoggedInHomeDashboard({
           </Card>
         </Link>
 
+        <Link to="/routier/mission" className="block">
+          <Card className="hover:border-primary/50 transition-all hover:shadow-lg active:scale-[0.98] border-blue-200 bg-gradient-to-br from-blue-50 to-background dark:from-blue-950/20">
+            <CardContent className="p-4 flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-3">
+                <Truck className="w-6 h-6 text-blue-600" />
+              </div>
+              <h3 className="font-semibold text-sm">Mission routier</h3>
+              <p className="text-xs text-muted-foreground mt-1">Transport dédié</p>
+            </CardContent>
+          </Card>
+        </Link>
+
         <Link to="/client/dashboard" className="block">
           <Card className="hover:border-primary/50 transition-all hover:shadow-lg active:scale-[0.98]">
             <CardContent className="p-4 flex flex-col items-center text-center">
@@ -102,6 +115,15 @@ export function LoggedInHomeDashboard({
             </CardContent>
           </Card>
         </Link>
+      </motion.div>
+
+      {/* Client Routier Missions */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+      >
+        <ClientMissionsView />
       </motion.div>
 
       {/* Recent Orders Preview */}
