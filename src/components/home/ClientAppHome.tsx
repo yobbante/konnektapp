@@ -232,37 +232,36 @@ export function ClientAppHome({
           </Link>
         </motion.div>
 
-        {/* === DARK QUICK ACTION BUTTONS (style from screenshot) === */}
+        {/* === QUICK ACTION BUTTONS — uniform dark cards === */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
           className="px-4 pb-3"
         >
-          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+          <div className="grid grid-cols-4 gap-2">
             {[
-              { icon: Package, label: "Envoyer", sub: "Nouveau colis", to: "/envoyer", primary: true },
-              { icon: MessageCircle, label: "Messages", sub: `${unreadMessages} nouveaux`, to: "/messages", badge: unreadMessages },
-              { icon: History, label: "Mes envois", sub: `${activeOrdersCount} actifs`, to: "/historique", badge: activeOrdersCount },
-              { icon: Heart, label: "Favoris", sub: "Transporteurs", to: "/favoris" },
-            ].map((action, i) => (
-              <Link key={action.to} to={action.to} className="flex-shrink-0" style={{ minWidth: '110px' }}>
+              { icon: Package, label: "Envoyer", to: "/envoyer", primary: true },
+              { icon: MessageCircle, label: "Messages", to: "/messages", badge: unreadMessages },
+              { icon: History, label: "Historique", to: "/historique", badge: activeOrdersCount },
+              { icon: Heart, label: "Favoris", to: "/favoris" },
+            ].map((action) => (
+              <Link key={action.to} to={action.to}>
                 <motion.div
-                  whileTap={{ scale: 0.95 }}
-                  className={`relative rounded-2xl p-4 flex flex-col items-center gap-2 text-center transition-all duration-200 ${
+                  whileTap={{ scale: 0.93 }}
+                  className={`relative rounded-2xl py-3 px-2 flex flex-col items-center gap-1.5 transition-all duration-200 ${
                     action.primary
                       ? "bg-primary text-primary-foreground shadow-lg"
-                      : "bg-card border border-border shadow-sm hover:border-primary/30"
+                      : "bg-muted/60 border border-border"
                   }`}
-                  style={{ minHeight: '90px' }}
                 >
-                  {action.badge && action.badge > 0 && (
-                    <span className="absolute top-1.5 right-1.5 w-5 h-5 bg-destructive text-destructive-foreground rounded-full text-[10px] flex items-center justify-center font-bold">
+                  {action.badge != null && action.badge > 0 && (
+                    <span className="absolute -top-1 -right-1 w-[18px] h-[18px] bg-destructive text-destructive-foreground rounded-full text-[9px] flex items-center justify-center font-bold shadow-sm">
                       {action.badge}
                     </span>
                   )}
-                  <action.icon className={`w-6 h-6 ${action.primary ? "text-primary-foreground" : "text-foreground"}`} />
-                  <span className={`text-xs font-semibold ${action.primary ? "text-primary-foreground" : "text-foreground"}`}>
+                  <action.icon className={`w-5 h-5 ${action.primary ? "text-primary-foreground" : "text-foreground"}`} />
+                  <span className={`text-[11px] font-semibold leading-tight ${action.primary ? "text-primary-foreground" : "text-foreground"}`}>
                     {action.label}
                   </span>
                 </motion.div>
@@ -277,21 +276,21 @@ export function ClientAppHome({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="px-4 pb-3"
+            className="px-4 pb-2"
           >
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-1.5">
               <h2 className="text-sm font-bold text-foreground">Envois actifs</h2>
-              <Link to="/historique" className="text-xs text-primary font-medium flex items-center gap-1">
-                Tout voir <ChevronRight className="w-3 h-3" />
+              <Link to="/historique" className="text-xs text-primary font-medium flex items-center gap-0.5">
+                Voir tout <ChevronRight className="w-3 h-3" />
               </Link>
             </div>
-            <div className="space-y-2">
-              {allActiveItems.slice(0, 3).map((item, index) => {
+            <div className="space-y-1.5">
+              {allActiveItems.slice(0, 2).map((item, index) => {
                 const statusInfo = getStatusInfo(item.status, item.type);
                 return (
                   <motion.div
                     key={`${item.type}-${item.id}`}
-                    initial={{ opacity: 0, x: -20 }}
+                    initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
                     onClick={
@@ -299,26 +298,26 @@ export function ClientAppHome({
                       item.type === 'custom' ? () => setRequestPopup({ type: 'custom', item }) :
                       () => setRequestPopup({ type: 'moving', item })
                     }
-                    className="bg-card border border-border rounded-xl p-3 flex items-center gap-3 active:scale-[0.98] transition-transform cursor-pointer"
+                    className="bg-card border border-border rounded-xl p-2.5 flex items-center gap-2.5 active:scale-[0.98] transition-transform cursor-pointer"
                   >
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
                       item.type === 'moving' ? 'bg-amber-500/10' :
                       item.type === 'custom' ? 'bg-purple-500/10' :
                       'bg-primary/10'
                     }`}>
-                      {item.type === 'moving' ? <HomeIcon className="w-5 h-5 text-amber-600" /> :
-                       item.type === 'custom' ? <FileText className="w-5 h-5 text-purple-600" /> :
-                       <Package className="w-5 h-5 text-primary" />}
+                      {item.type === 'moving' ? <HomeIcon className="w-4 h-4 text-amber-600" /> :
+                       item.type === 'custom' ? <FileText className="w-4 h-4 text-purple-600" /> :
+                       <Package className="w-4 h-4 text-primary" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">
+                      <p className="text-xs font-semibold text-foreground truncate">
                         {item.origin_city} → {item.destination_city}
                       </p>
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${statusInfo.color}`}>
+                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${statusInfo.color}`}>
                         {statusInfo.label}
                       </span>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                   </motion.div>
                 );
               })}
@@ -326,57 +325,61 @@ export function ClientAppHome({
           </motion.div>
         )}
 
-        {/* === FEATURED OFFERS (Booking-style) === */}
+        {/* === FEATURED OFFERS — linear mobile-optimized list === */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
           className="px-4 pb-6"
         >
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-2">
             <h2 className="text-sm font-bold text-foreground">Offres disponibles</h2>
-            <Link to="/offres" className="text-xs text-primary font-medium flex items-center gap-1">
-              Tout voir <ChevronRight className="w-3 h-3" />
+            <Link to="/offres" className="text-xs text-primary font-medium flex items-center gap-0.5">
+              Voir tout <ChevronRight className="w-3 h-3" />
             </Link>
           </div>
 
           {offers.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3">
-              {offers.slice(0, 4).map((offer) => (
+            <div className="space-y-2">
+              {offers.slice(0, 5).map((offer) => (
                 <Link key={offer.id} to={`/offre/${offer.id}`} className="block">
                   <motion.div
-                    whileTap={{ scale: 0.97 }}
-                    className="bg-card border border-border rounded-2xl p-3 hover:border-primary/30 hover:shadow-md transition-all duration-200"
+                    whileTap={{ scale: 0.98 }}
+                    className="bg-card border border-border rounded-xl p-3 flex items-center gap-3 hover:border-primary/30 transition-all duration-200"
                   >
-                    <div className="flex items-center gap-1 mb-2">
-                      <MapPin className="w-3 h-3 text-primary" />
-                      <span className="text-[11px] font-medium text-foreground truncate">{offer.origin_city}</span>
-                    </div>
-                    <div className="flex items-center gap-1 mb-3">
-                      <ArrowRight className="w-3 h-3 text-muted-foreground" />
-                      <span className="text-[11px] font-medium text-foreground truncate">{offer.destination_city}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-base font-bold text-primary">{offer.price_per_kg}€<span className="text-[10px] font-normal text-muted-foreground">/kg</span></span>
-                      {offer.gp_profiles?.rating && (
-                        <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground">
-                          <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                          {offer.gp_profiles.rating.toFixed(1)}
+                    {/* Route info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-sm font-semibold text-foreground truncate">{offer.origin_city}</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                        <span className="text-sm font-semibold text-foreground truncate">{offer.destination_city}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-muted-foreground truncate">
+                          {offer.gp_profiles?.business_name || "Transporteur"}
                         </span>
-                      )}
+                        {offer.gp_profiles?.rating && (
+                          <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground">
+                            <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                            {offer.gp_profiles.rating.toFixed(1)}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-[10px] text-muted-foreground mt-1 truncate">
-                      {offer.gp_profiles?.business_name || "Transporteur"}
-                    </p>
+                    {/* Price */}
+                    <div className="text-right flex-shrink-0">
+                      <span className="text-base font-bold text-primary">{offer.price_per_kg}€</span>
+                      <span className="text-[10px] text-muted-foreground block">/kg</span>
+                    </div>
                   </motion.div>
                 </Link>
               ))}
             </div>
           ) : (
-            <div className="bg-muted/30 border border-border rounded-2xl p-6 text-center">
-              <Package className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">Aucune offre disponible</p>
-              <Link to="/offres" className="text-xs text-primary font-medium mt-1 inline-block">
+            <div className="bg-muted/30 border border-border rounded-xl p-4 text-center">
+              <Package className="w-6 h-6 text-muted-foreground mx-auto mb-1" />
+              <p className="text-xs text-muted-foreground">Aucune offre disponible</p>
+              <Link to="/offres" className="text-[11px] text-primary font-medium mt-1 inline-block">
                 Rechercher des offres
               </Link>
             </div>
