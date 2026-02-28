@@ -36,7 +36,7 @@ export function FullScreenOrderDetails({ order, onClose, navigate }: FullScreenO
   const StatusIcon = statusInfo.icon;
   const isAccepted = ['accepted', 'paid_held', 'checked_in', 'collected', 'weight_pending_payment', 'scheduled_departure', 'in_transit', 'arrived_destination', 'delivery_pending', 'delivery_confirmed', 'delivered', 'released'].includes(order.status);
   const isCollected = ['checked_in', 'collected', 'weight_pending_payment', 'scheduled_departure', 'in_transit', 'arrived_destination', 'delivery_pending', 'delivery_confirmed', 'delivered', 'released'].includes(order.status);
-  const isDelivered = ['delivered', 'released'].includes(order.status);
+  const isDelivered = ['delivery_confirmed', 'delivered', 'released'].includes(order.status);
   const hasPickup = order.logistics_options?.pickup_enabled || false;
   const hasDelivery = order.logistics_options?.delivery_enabled || false;
 

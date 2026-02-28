@@ -14,6 +14,7 @@ import { WORLD_CITIES, FEATURED_CITIES } from "@/components/gp/SearchableCitySel
 import { FullScreenOrderDetails } from "./FullScreenOrderDetails";
 import { RequestDetailsPopup } from "./RequestDetailsPopup";
 import { HomeOfferCard } from "./HomeOfferCard";
+import { PostDeliveryFlow, usePostDeliveryDetection } from "@/components/delivery/PostDeliveryFlow";
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle,
 } from "@/components/ui/drawer";
@@ -41,6 +42,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   arrived_destination: { label: "Arrivé", color: "bg-teal-500/20 text-teal-600" },
   delivery_pending: { label: "Livraison en cours", color: "bg-cyan-500/20 text-cyan-600" },
   delivered: { label: "Livré", color: "bg-green-500/20 text-green-700" },
+  delivery_confirmed: { label: "Livré ✓", color: "bg-emerald-500/20 text-emerald-700" },
   open: { label: "Ouverte", color: "bg-amber-500/20 text-amber-600" },
   responded: { label: "Réponses reçues", color: "bg-purple-500/20 text-purple-600" },
 };
@@ -98,6 +100,9 @@ export function ClientAppHome({
   const [cityQuery, setCityQuery] = useState("");
 
   useEffect(() => { if (userCity && !searchOrigin) setSearchOrigin(userCity); }, [userCity]);
+
+  // Post-delivery detection
+  const { deliveredOrder, role: deliveryRole, dismiss: dismissDelivery } = usePostDeliveryDetection(userId);
 
   const filteredCities = useMemo(() => {
     if (!cityQuery) return FEATURED_CITIES;
@@ -181,6 +186,18 @@ export function ClientAppHome({
       height: 'calc(100vh - 60px - 64px - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
       minHeight: '400px'
     }}>
+      {/* Post-Delivery Flow */}
+      <AnimatePresence>
+        {deliveredOrder && (
+          <PostDeliveryFlow
+            order={deliveredOrder}
+            role={deliveryRole}
+            onClose={() => dismissDelivery(deliveredOrder.id)}
+            onNavigate={navigate}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Full-Screen Order Overlay */}
       <AnimatePresence>
         {selectedOrder && (
