@@ -146,6 +146,11 @@ export default function AuthPage() {
           if (entryFlow.country) {
             profileUpdate.country_code = entryFlow.country.code;
           }
+          // Save city from entry flow
+          const entryCity = sessionStorage.getItem("entry_city");
+          if (entryCity) {
+            profileUpdate.residence_city = entryCity;
+          }
           await supabase
             .from("profiles")
             .update(profileUpdate)

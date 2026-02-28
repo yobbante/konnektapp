@@ -22,7 +22,7 @@ const ENTRY_FLOW_KEY = "konnekt_entry_completed";
 type EntryStep = "splash" | "country" | "phone" | "onboarding" | "role" | "done";
 
 interface EntryData {
-  country?: { code: string; name: string; flag: string; dialCode: string; currency: string };
+  country?: { code: string; name: string; flag: string; dialCode: string; currency: string; city?: string };
   phone?: string;
   role?: "client" | "transporteur";
 }
@@ -37,6 +37,7 @@ function IndexContent() {
   const [activeOrdersCount, setActiveOrdersCount] = useState(0);
   const [dataLoading, setDataLoading] = useState(true);
   const [userName, setUserName] = useState<string>("");
+  const [userCity, setUserCity] = useState<string>("");
 
   // Entry flow state
   const isFirstVisit = !sessionStorage.getItem("app_loaded");
@@ -83,13 +84,12 @@ function IndexContent() {
     try {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name")
+        .select("full_name, residence_city")
         .eq("user_id", userId)
         .single();
       
-      if (profile?.full_name) {
-        setUserName(profile.full_name);
-      }
+      if (profile?.full_name) setUserName(profile.full_name);
+      if (profile?.residence_city) setUserCity(profile.residence_city);
 
       const { data: orders } = await supabase
         .from("orders")
@@ -165,6 +165,9 @@ function IndexContent() {
   const handleCountrySelect = (country: EntryData["country"]) => {
     setEntryData(prev => ({ ...prev, country: country! }));
     sessionStorage.setItem("entry_country", JSON.stringify(country));
+    if (country?.city) {
+      sessionStorage.setItem("entry_city", country.city);
+    }
     setEntryStep("phone");
   };
 
@@ -271,6 +274,7 @@ function IndexContent() {
         unreadMessages={unreadMessages}
         activeOrdersCount={activeOrdersCount}
         userId={userId || undefined}
+        userCity={userCity}
       />
       <MobileNav />
     </div>

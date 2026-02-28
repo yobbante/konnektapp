@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Package, MessageCircle, MapPin, History, Bell, Heart, ArrowRight, Clock, ChevronDown, Phone, Navigation, User, ExternalLink, X, AlertTriangle, Truck, Calendar, FileText, Home as HomeIcon, Sparkles, Info, Eye, TruckIcon, QrCode, Search, Plane, Ship, Car, Luggage, Star, ChevronRight } from "lucide-react";
@@ -12,9 +12,16 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { WeightValidationAlert } from "@/components/client/WeightValidationAlert";
 import { DepositAddressPopup } from "@/components/client/DepositAddressPopup";
 import { supabase } from "@/integrations/supabase/client";
+import { WORLD_CITIES, FEATURED_CITIES } from "@/components/gp/SearchableCitySelect";
 import QRCode from "react-qr-code";
 
 interface ClientAppHomeProps {
@@ -25,6 +32,7 @@ interface ClientAppHomeProps {
   unreadMessages?: number;
   activeOrdersCount?: number;
   userId?: string;
+  userCity?: string;
 }
 
 // Status config for all types
@@ -56,7 +64,8 @@ export function ClientAppHome({
   movingRequests = [],
   unreadMessages = 0,
   activeOrdersCount = 0,
-  userId
+  userId,
+  userCity
 }: ClientAppHomeProps) {
   const navigate = useNavigate();
   const firstName = userName?.split(' ')[0] || 'Bienvenue';
@@ -110,15 +119,29 @@ export function ClientAppHome({
   ];
 
   // Interactive search state
+  const [searchOrigin, setSearchOrigin] = useState(userCity || "");
   const [searchDest, setSearchDest] = useState("");
   const [searchDate, setSearchDate] = useState("");
-  const [searchWeight, setSearchWeight] = useState("");
+  const [originDrawerOpen, setOriginDrawerOpen] = useState(false);
+  const [destDrawerOpen, setDestDrawerOpen] = useState(false);
+  const [cityQuery, setCityQuery] = useState("");
+
+  // Sync userCity when it loads
+  useEffect(() => {
+    if (userCity && !searchOrigin) setSearchOrigin(userCity);
+  }, [userCity]);
+
+  const filteredCityList = useMemo(() => {
+    if (!cityQuery) return FEATURED_CITIES;
+    const q = cityQuery.toLowerCase();
+    return WORLD_CITIES.filter(c => c.city.toLowerCase().includes(q));
+  }, [cityQuery]);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
+    if (searchOrigin) params.set("origin", searchOrigin);
     if (searchDest) params.set("destination", searchDest);
     if (searchDate) params.set("date", searchDate);
-    if (searchWeight) params.set("weight", searchWeight);
     navigate(`/offres${params.toString() ? `?${params}` : ""}`);
   };
 
@@ -217,19 +240,30 @@ export function ClientAppHome({
           className="px-4 py-2"
         >
           <div className="bg-card border-2 border-primary/30 rounded-2xl overflow-hidden shadow-sm">
-            {/* Destination */}
-            <div className="flex items-center gap-3 px-3 py-2.5 border-b border-border/40">
-              <Search className="w-4 h-4 text-primary flex-shrink-0" />
-              <input
-                type="text"
-                placeholder="Ville de destination"
-                value={searchDest}
-                onChange={(e) => setSearchDest(e.target.value)}
-                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
-              />
-            </div>
+            {/* Origin city - interactive */}
+            <button
+              onClick={() => { setCityQuery(""); setOriginDrawerOpen(true); }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 border-b border-border/40 text-left"
+            >
+              <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+              <span className={`flex-1 text-sm ${searchOrigin ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+                {searchOrigin || "Ville de départ"}
+              </span>
+              {searchOrigin && <span className="text-[10px] text-muted-foreground">Modifier</span>}
+            </button>
+            {/* Destination city - interactive */}
+            <button
+              onClick={() => { setCityQuery(""); setDestDrawerOpen(true); }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 border-b border-border/40 text-left"
+            >
+              <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <span className={`flex-1 text-sm ${searchDest ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+                {searchDest || "Ville de destination"}
+              </span>
+              {searchDest && <span className="text-[10px] text-muted-foreground">Modifier</span>}
+            </button>
             {/* Date */}
-            <div className="flex items-center gap-3 px-3 py-2.5 border-b border-border/40">
+            <div className="flex items-center gap-3 px-3 py-2.5">
               <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <input
                 type="date"
@@ -237,19 +271,6 @@ export function ClientAppHome({
                 onChange={(e) => setSearchDate(e.target.value)}
                 className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
                 style={{ colorScheme: 'dark' }}
-              />
-            </div>
-            {/* Weight */}
-            <div className="flex items-center gap-3 px-3 py-2.5">
-              <Package className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              <input
-                type="number"
-                placeholder="Poids estimé (kg)"
-                value={searchWeight}
-                onChange={(e) => setSearchWeight(e.target.value)}
-                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
-                min="0"
-                step="0.5"
               />
             </div>
           </div>
@@ -446,6 +467,61 @@ export function ClientAppHome({
         item={requestPopup?.item}
         navigate={navigate}
       />
+
+      {/* === CITY PICKER DRAWERS === */}
+      {[
+        { open: originDrawerOpen, setOpen: setOriginDrawerOpen, title: "Ville de départ", onSelect: setSearchOrigin },
+        { open: destDrawerOpen, setOpen: setDestDrawerOpen, title: "Ville de destination", onSelect: setSearchDest },
+      ].map((drawer) => (
+        <Drawer key={drawer.title} open={drawer.open} onOpenChange={drawer.setOpen}>
+          <DrawerContent className="max-h-[85vh]">
+            <DrawerHeader className="pb-2">
+              <DrawerTitle>{drawer.title}</DrawerTitle>
+            </DrawerHeader>
+            <div className="px-4 pb-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Rechercher une ville..."
+                  value={cityQuery}
+                  onChange={(e) => setCityQuery(e.target.value)}
+                  className="w-full h-11 pl-10 pr-4 rounded-xl border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="overflow-y-auto overscroll-contain px-2 pb-6" style={{ maxHeight: "55vh", WebkitOverflowScrolling: "touch", touchAction: "pan-y" } as React.CSSProperties}>
+              {filteredCityList.slice(0, 30).map((city) => (
+                <button
+                  key={`${city.city}-${city.country}`}
+                  onClick={() => {
+                    drawer.onSelect(city.city);
+                    drawer.setOpen(false);
+                    setCityQuery("");
+                  }}
+                  className="w-full flex items-center gap-3 py-2.5 px-3 rounded-lg text-left hover:bg-muted/60 active:bg-muted transition-colors"
+                >
+                  <span className="text-lg">{city.flag}</span>
+                  <span className="text-sm font-medium flex-1">{city.city}</span>
+                </button>
+              ))}
+              {filteredCityList.length === 0 && cityQuery && (
+                <button
+                  onClick={() => {
+                    drawer.onSelect(cityQuery);
+                    drawer.setOpen(false);
+                    setCityQuery("");
+                  }}
+                  className="w-full py-3 text-sm text-primary font-medium text-center"
+                >
+                  Utiliser "{cityQuery}"
+                </button>
+              )}
+            </div>
+          </DrawerContent>
+        </Drawer>
+      ))}
     </div>;
 }
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { 
   Package, ArrowRight, Star, Loader2, Heart, Calendar,
   Zap, Truck, Ship, Plane, Briefcase, Luggage, Building2, ChevronRight, Shield
@@ -73,9 +73,10 @@ export default function Offres() {
   const { toast } = useToast();
   const navigate = useNavigate();
   // activeFilter removed - only GP offers for now
+  const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchOrigin, setSearchOrigin] = useState<string | undefined>();
-  const [searchDestination, setSearchDestination] = useState<string | undefined>();
+  const [searchOrigin, setSearchOrigin] = useState<string | undefined>(searchParams.get("origin") || undefined);
+  const [searchDestination, setSearchDestination] = useState<string | undefined>(searchParams.get("destination") || undefined);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
