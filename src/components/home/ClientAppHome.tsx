@@ -46,11 +46,11 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
 };
 
 const TRANSPORT_TABS = [
-  { id: "all", label: "Tout", icon: Globe },
-  { id: "aerien", label: "Aérien", icon: Plane },
-  { id: "maritime", label: "Maritime", icon: Ship },
-  { id: "routier", label: "Routier", icon: Car },
-  { id: "bagages", label: "GP", icon: Luggage },
+  { id: "all", label: "Tout", icon: Globe, soon: false },
+  { id: "bagages", label: "GP", icon: Luggage, soon: false },
+  { id: "aerien", label: "Aérien", icon: Plane, soon: true },
+  { id: "maritime", label: "Maritime", icon: Ship, soon: true },
+  { id: "routier", label: "Routier", icon: Car, soon: true },
 ];
 
 const POPULAR_ROUTES = [
@@ -181,8 +181,38 @@ export function ClientAppHome({
         {userId && <div className="px-4"><WeightValidationAlert userId={userId} /></div>}
         {userId && <RecipientTrackingCard userId={userId} />}
 
+        {/* ── TRANSPORT TYPE TABS (compact, above search) ── */}
+        <div className="px-4 pt-1 pb-2">
+          <div className="flex gap-1.5">
+            {TRANSPORT_TABS.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => !tab.soon && setActiveTab(tab.id)}
+                  className={`relative flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl text-[10px] font-semibold transition-all border ${
+                    tab.soon
+                      ? "opacity-50 cursor-default bg-muted/30 border-border/50 text-muted-foreground"
+                      : isActive
+                      ? "bg-primary text-primary-foreground border-primary shadow-md"
+                      : "bg-card text-muted-foreground border-border hover:border-primary/30"
+                  }`}
+                >
+                  <tab.icon className="w-4 h-4" />
+                  <span>{tab.label}</span>
+                  {tab.soon && (
+                    <span className="absolute -top-1.5 right-0.5 text-[7px] bg-amber-500/20 text-amber-600 px-1 rounded-full font-bold leading-tight">
+                      Bientôt
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* ── SEARCH ENGINE ── */}
-        <div className="px-4 py-2">
+        <div className="px-4 pb-2">
           <div className="bg-card border-2 border-primary/30 rounded-2xl overflow-hidden shadow-sm">
             {[
               { picker: "origin" as const, icon: MapPin, value: searchOrigin, placeholder: "Ville de départ", iconClass: "text-primary" },
@@ -297,39 +327,13 @@ export function ClientAppHome({
           </div>
         )}
 
-        {/* ── TRANSPORT FILTER TABS + OFFERS ── */}
+        {/* ── OFFERS ── */}
         <div className="px-4 pb-2">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-base font-bold text-foreground">Offres disponibles</h2>
             <Link to="/offres" className="text-xs text-primary font-medium flex items-center gap-0.5">
               Tout voir <ChevronRight className="w-3 h-3" />
             </Link>
-          </div>
-          <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-2">
-            {TRANSPORT_TABS.map((tab) => {
-              const isActive = activeTab === tab.id;
-              const count = tab.id === "all" ? offers.length :
-                offers.filter(o => (TYPE_MAP[tab.id] || []).includes(o.transport_type)).length;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold whitespace-nowrap transition-all border ${
-                    isActive
-                      ? "bg-primary text-primary-foreground border-primary shadow-md"
-                      : "bg-card text-muted-foreground border-border hover:border-primary/30"
-                  }`}
-                >
-                  <tab.icon className="w-3 h-3" />
-                  {tab.label}
-                  {count > 0 && (
-                    <span className={`text-[9px] px-1 py-0.5 rounded-full font-bold ${
-                      isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
-                    }`}>{count}</span>
-                  )}
-                </button>
-              );
-            })}
           </div>
         </div>
 
