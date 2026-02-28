@@ -85,18 +85,42 @@ export function GPWalletCard({ wallet, gpId, compact, withdrawalLimit = 0, kycLe
   const [withdrawing, setWithdrawing] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [escrowPending, setEscrowPending] = useState(0);
+  const [escrowDetails, setEscrowDetails] = useState<Array<{
+    id: string; order_id: string; net_to_gp: number; amount: number;
+    commission_amount: number; created_at: string; order_number?: string;
+  }>>([]);
 
-  // Load real pending from escrow_transactions
+  // Load real pending from escrow_transactions with order details
   useEffect(() => {
     if (!gpId) return;
     const loadEscrowPending = async () => {
       const { data } = await supabase
         .from("escrow_transactions")
-        .select("net_to_gp")
+        .select("id, order_id, net_to_gp, amount, commission_amount, created_at")
         .eq("gp_id", gpId)
-        .eq("status", "held");
-      const total = (data || []).reduce((sum, e) => sum + (e.net_to_gp || 0), 0);
+        .eq("status", "held")
+        .order("created_at", { ascending: false });
+      
+      const entries = data || [];
+      const total = entries.reduce((sum, e) => sum + (e.net_to_gp || 0), 0);
       setEscrowPending(total);
+
+      // Load order numbers
+      if (entries.length > 0) {
+        const orderIds = entries.map(e => e.order_id);
+        const { data: orders } = await supabase
+          .from("orders")
+          .select("id, order_number")
+          .in("id", orderIds);
+        
+        const orderMap = new Map((orders || []).map(o => [o.id, o.order_number]));
+        setEscrowDetails(entries.map(e => ({
+          ...e,
+          order_number: orderMap.get(e.order_id) || e.order_id.slice(0, 8),
+        })));
+      } else {
+        setEscrowDetails([]);
+      }
     };
     loadEscrowPending();
   }, [gpId]);
@@ -352,6 +376,24 @@ export function GPWalletCard({ wallet, gpId, compact, withdrawalLimit = 0, kycLe
                   <span className="text-muted-foreground">En attente (escrow)</span>
                   <span className="font-semibold text-secondary">{pending.toLocaleString()} {getCurrencySymbol(currency)}</span>
                 </div>
+
+                {/* Détail des colis en escrow */}
+                {escrowDetails.length > 0 && (
+                  <div className="ml-2 pl-3 border-l-2 border-secondary/20 space-y-1.5">
+                    {escrowDetails.map((esc) => (
+                      <div key={esc.id} className="flex justify-between items-center text-xs">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <Clock className="w-3 h-3 text-secondary flex-shrink-0" />
+                          <span className="text-muted-foreground truncate">#{esc.order_number}</span>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <span className="font-medium text-foreground">{esc.net_to_gp.toLocaleString()} {getCurrencySymbol(currency)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Total gagné</span>
                   <span className="font-semibold text-success">{totalEarned.toLocaleString()} {getCurrencySymbol(currency)}</span>
