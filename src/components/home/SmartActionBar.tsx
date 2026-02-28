@@ -84,9 +84,10 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
 
     const { data: incoming } = await supabase
       .from("orders")
-      .select("id, order_number, origin_city, status")
+      .select("id, order_number, origin_city, destination_city, status, gp_id")
       .eq("recipient_user_id", userId)
-      .in("status", ["in_transit", "arrived_destination", "delivery_pending"] as any[])
+      .not("status", "in", '("cancelled","released","delivery_confirmed","delivered")')
+      .order("created_at", { ascending: false })
       .limit(5);
     setIncomingParcels(incoming || []);
 
@@ -129,14 +130,19 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
 
     // CRITICAL: Incoming parcels (highest priority)
     incomingParcels.forEach(p => {
-      const statusLabel = p.status === "delivery_pending" ? "Livraison en cours" : p.status === "arrived_destination" ? "Arrivé" : "En transit";
+      const statusLabels: Record<string, string> = {
+        pending: "En attente", accepted: "Accepté", registered: "Enregistré",
+        collected: "Collecté", in_transit: "En transit", arrived_destination: "Arrivé",
+        delivery_pending: "Livraison en cours", weight_pending_payment: "Supplément poids",
+      };
+      const statusLabel = statusLabels[p.status] || p.status;
       items.push({
         id: `incoming-${p.id}`, priority: "critical", icon: Package,
         label: "📦 Colis pour vous",
-        description: `${p.order_number} depuis ${p.origin_city} · ${statusLabel}`,
+        description: `${p.order_number} · ${p.origin_city} → ${p.destination_city || ""} · ${statusLabel}`,
         onClick: () => navigate(`/tracking?order=${p.id}`),
         color: "text-primary", bgColor: "bg-primary/10", borderColor: "border-primary/30",
-        pulse: p.status === "delivery_pending",
+        pulse: ["delivery_pending", "in_transit"].includes(p.status),
       });
     });
 
