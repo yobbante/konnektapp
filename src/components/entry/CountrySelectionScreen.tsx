@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Globe, ArrowRight, MapPin, ChevronLeft } from "lucide-react";
+import { Search, Globe, ArrowRight, MapPin, ChevronLeft, ChevronDown, LogIn } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ALL_COUNTRIES } from "@/components/gp/SearchableCountrySelect";
@@ -33,6 +33,7 @@ export function CountrySelectionScreen({ onSelect }: CountrySelectionScreenProps
   const [step, setStep] = useState<"country" | "city">("country");
   const [citySearch, setCitySearch] = useState("");
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [showPicker, setShowPicker] = useState(false);
 
   const popular = useMemo(() => 
     POPULAR_CODES.map(code => ALL_COUNTRIES.find(c => c.code === code)!).filter(Boolean),
@@ -181,141 +182,213 @@ export function CountrySelectionScreen({ onSelect }: CountrySelectionScreenProps
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-background flex flex-col"
+      className="fixed inset-0 z-50 bg-background flex flex-col items-center justify-center"
       style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      {/* Header */}
-      <div className="px-5 pt-8 pb-4">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Globe className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold">Votre pays</h1>
-            <p className="text-xs text-muted-foreground">Ce choix définit votre devise et indicatif</p>
-          </div>
-        </div>
-      </div>
+      {/* Centered content */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 w-full max-w-sm">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6"
+        >
+          <Globe className="w-8 h-8 text-primary" />
+        </motion.div>
 
-      {/* Search */}
-      <div className="px-5 pb-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher un pays..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 h-11 rounded-xl"
-          />
-        </div>
-      </div>
+        <h1 className="text-2xl font-bold text-center mb-2">Bienvenue sur Konnekt</h1>
+        <p className="text-sm text-muted-foreground text-center mb-8">
+          Sélectionnez votre pays de résidence pour commencer
+        </p>
 
-      {/* Country list */}
-      <div className="flex-1 overflow-y-auto px-5 pb-4" style={{ WebkitOverflowScrolling: "touch" }}>
-        {!search && (
-          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
-            Pays populaires
-          </p>
-        )}
-        
-        <div className="space-y-1">
-          <AnimatePresence mode="popLayout">
-            {displayList.map((country, i) => (
-              <motion.button
-                key={country.code}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ delay: i * 0.02 }}
-                onClick={() => setSelected(country.code)}
-                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
-                  selected === country.code
-                    ? "bg-primary/10 ring-2 ring-primary/30"
-                    : "hover:bg-muted/60"
-                }`}
-              >
-                <span className="text-2xl">{country.flag}</span>
-                <div className="flex-1 text-left">
-                  <p className="text-sm font-medium">{country.name}</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {COUNTRY_PHONE_CODES[country.code]} · {COUNTRY_CURRENCY[country.code] || "—"}
+        {/* Country selector tab */}
+        <button
+          onClick={() => setShowPicker(true)}
+          className="w-full flex items-center justify-between gap-3 p-4 rounded-2xl border-2 border-border bg-card hover:border-primary/50 transition-all active:scale-[0.98]"
+        >
+          <div className="flex items-center gap-3">
+            {selectedCountry ? (
+              <>
+                <span className="text-3xl">{selectedCountry.flag}</span>
+                <div className="text-left">
+                  <p className="font-semibold">{selectedCountry.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {COUNTRY_PHONE_CODES[selectedCountry.code]} · {COUNTRY_CURRENCY[selectedCountry.code] || "—"}
                   </p>
                 </div>
-                {selected === country.code && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="w-5 h-5 rounded-full bg-primary flex items-center justify-center"
-                  >
-                    <div className="w-2 h-2 rounded-full bg-white" />
-                  </motion.div>
-                )}
-              </motion.button>
-            ))}
-          </AnimatePresence>
+              </>
+            ) : (
+              <>
+                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+                  <Globe className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <span className="text-muted-foreground font-medium">Choisir votre pays</span>
+              </>
+            )}
+          </div>
+          <ChevronDown className="w-5 h-5 text-muted-foreground" />
+        </button>
 
-          {search && filtered.length === 0 && (
-            <p className="text-center text-sm text-muted-foreground py-8">
-              Aucun pays trouvé pour "{search}"
-            </p>
-          )}
-        </div>
-
-        {!search && (
-          <>
-            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mt-5 mb-2">
-              Tous les pays
-            </p>
-            <div className="space-y-1">
-              {ALL_COUNTRIES
-                .filter(c => !POPULAR_CODES.includes(c.code))
-                .map((country) => (
-                  <button
-                    key={country.code}
-                    onClick={() => setSelected(country.code)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
-                      selected === country.code
-                        ? "bg-primary/10 ring-2 ring-primary/30"
-                        : "hover:bg-muted/60"
-                    }`}
-                  >
-                    <span className="text-2xl">{country.flag}</span>
-                    <div className="flex-1 text-left">
-                      <p className="text-sm font-medium">{country.name}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {COUNTRY_PHONE_CODES[country.code]} · {COUNTRY_CURRENCY[country.code] || "—"}
-                      </p>
-                    </div>
-                    {selected === country.code && (
-                      <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                        <div className="w-2 h-2 rounded-full bg-white" />
-                      </div>
-                    )}
-                  </button>
-                ))}
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Confirm button */}
-      <div className="px-5 py-4 border-t border-border bg-background">
-        <Button
-          className="w-full h-12 rounded-xl text-base"
-          disabled={!selected}
-          onClick={handleCountryNext}
+        {/* Continue button */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: selected ? 1 : 0.4 }}
+          className="w-full mt-6"
         >
-          {selectedCountry ? (
-            <>
-              <span className="mr-2">{selectedCountry.flag}</span>
-              Continuer avec {selectedCountry.name}
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </>
-          ) : (
-            "Sélectionnez votre pays"
-          )}
-        </Button>
+          <Button
+            className="w-full h-12 rounded-xl text-base"
+            disabled={!selected}
+            onClick={handleCountryNext}
+          >
+            Continuer
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        </motion.div>
       </div>
+
+      {/* Login link at bottom */}
+      <div className="px-6 pb-6 w-full max-w-sm">
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground mb-2">Vous avez déjà un compte ?</p>
+          <Button
+            variant="outline"
+            className="w-full h-11 rounded-xl"
+            onClick={() => {
+              window.location.href = "/auth?mode=login";
+            }}
+          >
+            <LogIn className="w-4 h-4 mr-2" />
+            Se connecter
+          </Button>
+        </div>
+      </div>
+
+      {/* Country picker popup */}
+      <AnimatePresence>
+        {showPicker && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/40 flex items-end sm:items-center justify-center"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowPicker(false); }}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="w-full sm:max-w-md bg-background rounded-t-3xl sm:rounded-3xl max-h-[85vh] flex flex-col overflow-hidden"
+            >
+              {/* Drag handle */}
+              <div className="flex justify-center py-3">
+                <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+              </div>
+
+              <div className="px-5 pb-3">
+                <h2 className="text-lg font-bold mb-3">Sélectionner un pays</h2>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Rechercher un pays..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-10 h-11 rounded-xl"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-5 pb-4" style={{ WebkitOverflowScrolling: "touch" }}>
+                {!search && (
+                  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                    Pays populaires
+                  </p>
+                )}
+
+                <div className="space-y-1">
+                  {displayList.map((country, i) => (
+                    <motion.button
+                      key={country.code}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.015 }}
+                      onClick={() => {
+                        setSelected(country.code);
+                        setSearch("");
+                        setShowPicker(false);
+                      }}
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
+                        selected === country.code
+                          ? "bg-primary/10 ring-2 ring-primary/30"
+                          : "hover:bg-muted/60"
+                      }`}
+                    >
+                      <span className="text-2xl">{country.flag}</span>
+                      <div className="flex-1 text-left">
+                        <p className="text-sm font-medium">{country.name}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {COUNTRY_PHONE_CODES[country.code]} · {COUNTRY_CURRENCY[country.code] || "—"}
+                        </p>
+                      </div>
+                      {selected === country.code && (
+                        <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                          <div className="w-2 h-2 rounded-full bg-primary-foreground" />
+                        </div>
+                      )}
+                    </motion.button>
+                  ))}
+
+                  {search && filtered.length === 0 && (
+                    <p className="text-center text-sm text-muted-foreground py-8">
+                      Aucun pays trouvé pour "{search}"
+                    </p>
+                  )}
+                </div>
+
+                {!search && (
+                  <>
+                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mt-5 mb-2">
+                      Tous les pays
+                    </p>
+                    <div className="space-y-1">
+                      {ALL_COUNTRIES
+                        .filter(c => !POPULAR_CODES.includes(c.code))
+                        .map((country) => (
+                          <button
+                            key={country.code}
+                            onClick={() => {
+                              setSelected(country.code);
+                              setSearch("");
+                              setShowPicker(false);
+                            }}
+                            className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
+                              selected === country.code
+                                ? "bg-primary/10 ring-2 ring-primary/30"
+                                : "hover:bg-muted/60"
+                            }`}
+                          >
+                            <span className="text-2xl">{country.flag}</span>
+                            <div className="flex-1 text-left">
+                              <p className="text-sm font-medium">{country.name}</p>
+                              <p className="text-[11px] text-muted-foreground">
+                                {COUNTRY_PHONE_CODES[country.code]} · {COUNTRY_CURRENCY[country.code] || "—"}
+                              </p>
+                            </div>
+                            {selected === country.code && (
+                              <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                                <div className="w-2 h-2 rounded-full bg-primary-foreground" />
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
