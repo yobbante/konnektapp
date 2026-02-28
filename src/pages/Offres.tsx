@@ -77,6 +77,7 @@ export default function Offres() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOrigin, setSearchOrigin] = useState<string | undefined>(searchParams.get("origin") || undefined);
   const [searchDestination, setSearchDestination] = useState<string | undefined>(searchParams.get("destination") || undefined);
+  const [activeType, setActiveType] = useState<string>(searchParams.get("type") || "all");
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -226,29 +227,48 @@ export default function Offres() {
     setSearchDestination(destination);
   };
 
-  // Apply search filters + KTP-based sorting (Pro > Verified > Basic)
+  const TYPE_MAP: Record<string, string[]> = {
+    aerien: ["aerien"],
+    maritime: ["maritime"],
+    routier: ["routier"],
+    bagages: ["bagages_accompagnes", "navette", "bagages_international", "voyageur"],
+  };
+
+  const FILTER_TABS = [
+    { id: "all", label: "Tout", icon: Package },
+    { id: "bagages", label: "GP", icon: Luggage },
+    { id: "aerien", label: "Aérien", icon: Plane },
+    { id: "maritime", label: "Maritime", icon: Ship },
+    { id: "routier", label: "Routier", icon: Truck },
+  ];
+
+  // Apply search filters + type filter + KTP-based sorting
   const filteredOffers = useMemo(() => {
     const filtered = offers.filter((offer) => {
+      // Type filter
+      if (activeType !== "all") {
+        const allowed = TYPE_MAP[activeType] || [];
+        if (!allowed.includes(offer.transport_type)) return false;
+      }
+
       // Route-based search (origin)
       if (searchOrigin) {
-        const originMatch = offer.origin_city.toLowerCase().includes(searchOrigin.toLowerCase());
-        if (!originMatch) return false;
+        if (!offer.origin_city.toLowerCase().includes(searchOrigin.toLowerCase())) return false;
       }
 
       // Route-based search (destination)
       if (searchDestination) {
-        const destMatch = offer.destination_city.toLowerCase().includes(searchDestination.toLowerCase());
-        if (!destMatch) return false;
+        if (!offer.destination_city.toLowerCase().includes(searchDestination.toLowerCase())) return false;
       }
 
       // General text search
       if (searchQuery && !searchOrigin && !searchDestination) {
         const query = searchQuery.toLowerCase();
-        const matchesSearch = 
-          offer.origin_city.toLowerCase().includes(query) ||
-          offer.destination_city.toLowerCase().includes(query) ||
-          (offer.gp_profile?.business_name || "").toLowerCase().includes(query);
-        if (!matchesSearch) return false;
+        if (
+          !offer.origin_city.toLowerCase().includes(query) &&
+          !offer.destination_city.toLowerCase().includes(query) &&
+          !(offer.gp_profile?.business_name || "").toLowerCase().includes(query)
+        ) return false;
       }
 
       return true;
@@ -263,7 +283,7 @@ export default function Offres() {
       // Secondary sort by trust score
       return (b.ktp?.trust_score || 0) - (a.ktp?.trust_score || 0);
     });
-  }, [offers, searchQuery, searchOrigin, searchDestination]);
+  }, [offers, searchQuery, searchOrigin, searchDestination, activeType]);
 
   const formatDate = (dateStr: string) => {
     try {
@@ -322,13 +342,37 @@ export default function Offres() {
       <AppHeader title="Offres" />
 
       {/* Smart Search */}
-      <div className="sticky top-14 z-40 bg-background/95 backdrop-blur-sm px-4 py-3 border-b border-border">
-        <SmartRouteSearch onSearch={handleSearch} />
+      <div className="sticky top-14 z-40 bg-background/95 backdrop-blur-sm px-4 pt-3 pb-2 border-b border-border space-y-2">
+        <SmartRouteSearch
+          onSearch={handleSearch}
+          initialOrigin={searchParams.get("origin") || undefined}
+          initialDestination={searchParams.get("destination") || undefined}
+        />
+        {/* Type filter tabs */}
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+          {FILTER_TABS.map((tab) => {
+            const isActive = activeType === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveType(tab.id)}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-semibold whitespace-nowrap transition-all border ${
+                  isActive
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "bg-card text-muted-foreground border-border"
+                }`}
+              >
+                <tab.icon className="w-3 h-3" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Results Count */}
-      <div className="px-4 py-3">
-        <p className="text-sm text-muted-foreground">
+      <div className="px-4 py-2">
+        <p className="text-xs text-muted-foreground">
           {loading ? "Chargement..." : `${filteredOffers.length} offre${filteredOffers.length > 1 ? "s" : ""} trouvée${filteredOffers.length > 1 ? "s" : ""}`}
         </p>
       </div>

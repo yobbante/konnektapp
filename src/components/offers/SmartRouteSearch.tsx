@@ -9,6 +9,8 @@ import { Link } from "react-router-dom";
 
 interface SmartRouteSearchProps {
   onSearch: (query: string, origin?: string, destination?: string) => void;
+  initialOrigin?: string;
+  initialDestination?: string;
 }
 
 /**
@@ -19,10 +21,13 @@ interface SmartRouteSearchProps {
  * - Sélection interactive origine → destination
  * - Mode route directe (ex: "Dakar → Abidjan")
  */
-export function SmartRouteSearch({ onSearch }: SmartRouteSearchProps) {
-  const [query, setQuery] = useState("");
-  const [origin, setOrigin] = useState("");
-  const [destination, setDestination] = useState("");
+export function SmartRouteSearch({ onSearch, initialOrigin, initialDestination }: SmartRouteSearchProps) {
+  const [query, setQuery] = useState(
+    initialOrigin && initialDestination ? `${initialOrigin} → ${initialDestination}` :
+    initialOrigin ? initialOrigin : ""
+  );
+  const [origin, setOrigin] = useState(initialOrigin || "");
+  const [destination, setDestination] = useState(initialDestination || "");
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Popular cities for quick selection
