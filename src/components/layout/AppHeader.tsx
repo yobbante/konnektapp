@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, Menu, ChevronLeft, LogIn, ScanLine } from "lucide-react";
+import { Package, Menu, ChevronLeft, LogIn, ScanLine, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -33,6 +33,7 @@ export function AppHeader({
   const [menuOpen, setMenuOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("Mon profil");
+  const [countryFlag, setCountryFlag] = useState<string>("");
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -41,14 +42,20 @@ export function AppHeader({
         setUserId(session.user.id);
         const { data: profile } = await supabase
           .from("profiles")
-          .select("full_name")
+          .select("full_name, country_code")
           .eq("user_id", session.user.id)
           .maybeSingle();
         if (profile?.full_name) setUserName(profile.full_name);
+        // Try to get flag from session storage or profile
+        const entryCountry = sessionStorage.getItem("entry_country");
+        if (entryCountry) {
+          try { setCountryFlag(JSON.parse(entryCountry).flag || ""); } catch {}
+        }
       }
     };
     fetchUser();
   }, []);
+
   const isHome = location.pathname === "/";
 
   const headerStyles = {
@@ -63,64 +70,67 @@ export function AppHeader({
       animate={{ y: 0, opacity: 1 }}
       className={`sticky top-0 z-40 ${headerStyles[variant]}`}
       style={{ 
-        paddingTop: 'calc(8px + env(safe-area-inset-top, 0px))',
-        paddingBottom: '8px',
+        paddingTop: 'calc(6px + env(safe-area-inset-top, 0px))',
+        paddingBottom: '6px',
         paddingLeft: 'calc(12px + env(safe-area-inset-left, 0px))',
         paddingRight: 'calc(12px + env(safe-area-inset-right, 0px))'
       }}
     >
-      <div className="flex items-center justify-between h-12">
-        {/* Left Side */}
+      <div className="flex items-center justify-between h-10">
+        {/* Left Side — Logo or Back */}
         <div className="flex items-center gap-2">
           {showBack ? (
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={() => navigate(-1)}
-              className="rounded-full w-9 h-9"
+              className="rounded-full w-8 h-8"
             >
               <ChevronLeft className="w-5 h-5" />
             </Button>
           ) : (
-            <Link to="/" className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-1.5">
               <motion.div 
                 whileTap={{ scale: 0.95 }}
-                className={`w-9 h-9 rounded-xl ${logoBackground} flex items-center justify-center shadow-sm`}
+                className={`w-8 h-8 rounded-lg ${logoBackground} flex items-center justify-center shadow-sm`}
               >
-                <Package className={`w-5 h-5 ${logoColor}`} />
+                <Package className={`w-4 h-4 ${logoColor}`} />
               </motion.div>
+              {!title && (
+                <div className="flex items-center gap-1">
+                  <span className="font-bold text-foreground text-sm tracking-tight">Konnekt</span>
+                  {countryFlag && <span className="text-xs">{countryFlag}</span>}
+                </div>
+              )}
             </Link>
           )}
           
-          {/* Title or Logo Text */}
-          <AnimatePresence mode="wait">
-            {title ? (
-              <motion.h1
-                key="title"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                className="font-semibold text-foreground text-base truncate max-w-[180px]"
-              >
-                {title}
-              </motion.h1>
-            ) : !showBack && (
-              <motion.div
-                key="logo"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex flex-col leading-none"
-              >
-                <span className="font-bold text-foreground text-sm tracking-tight">Konnekt</span>
-                <span className="text-[10px] font-semibold text-primary">Transport</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {title && (
+            <motion.h1
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="font-semibold text-foreground text-sm truncate max-w-[160px]"
+            >
+              {title}
+            </motion.h1>
+          )}
         </div>
 
-        {/* Right Side */}
-        <div className="flex items-center gap-1.5">
-          {/* Interactive QR Badge — Client identity */}
+        {/* Right Side — Compact action cluster */}
+        <div className="flex items-center gap-1">
+          {/* Wallet shortcut */}
+          {isAuthenticated && isHome && (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => navigate("/wallet")}
+              className="rounded-full w-8 h-8"
+            >
+              <Wallet className="w-4 h-4 text-muted-foreground" />
+            </Button>
+          )}
+
+          {/* QR Badge */}
           {isAuthenticated && userId && (
             <HeaderQRBadge
               userId={userId}
@@ -130,55 +140,41 @@ export function AppHeader({
             />
           )}
 
-          {/* Desktop Scan Button — Sticky top-right CTA */}
+          {/* Scan — desktop */}
           {isAuthenticated && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="hidden md:block"
-            >
+            <div className="hidden md:block">
               <Button 
                 variant="ghost" 
-                size="sm"
+                size="icon"
                 onClick={() => navigate(location.pathname.startsWith("/gp") ? "/gp/scan" : "/tracking")}
-                className="rounded-full h-8 px-3 gap-1.5 text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20"
+                className="rounded-full w-8 h-8"
               >
-                <ScanLine className="w-3.5 h-3.5" />
-                <span>Scan</span>
+                <ScanLine className="w-4 h-4 text-muted-foreground" />
               </Button>
-            </motion.div>
+            </div>
           )}
           
-          {/* Login Button for non-authenticated users */}
+          {/* Login */}
           {!isAuthenticated && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate("/auth")}
+              className="rounded-full h-8 px-3 gap-1.5 text-xs font-medium bg-primary/10 text-primary"
             >
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => navigate("/auth")}
-                className="rounded-full h-8 px-3 gap-1.5 text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                <span className="hidden xs:inline">Connexion</span>
-              </Button>
-            </motion.div>
+              <LogIn className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline">Connexion</span>
+            </Button>
           )}
           
-          {/* Role Switch */}
           <HeaderRoleSwitch />
-          
           {rightAction}
           
-          {showNotifications && isAuthenticated && (
-            <NotificationBell />
-          )}
+          {showNotifications && isAuthenticated && <NotificationBell />}
           
           <CentralMenuSheet open={menuOpen} onOpenChange={setMenuOpen}>
-            <Button variant="ghost" size="icon" className="rounded-full w-9 h-9">
-              <Menu className="w-5 h-5" />
+            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8">
+              <Menu className="w-4 h-4" />
             </Button>
           </CentralMenuSheet>
         </div>
