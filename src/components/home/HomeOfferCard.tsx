@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Plane, Ship, Car, Luggage, Star } from "lucide-react";
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
-  EUR: "€", USD: "$", GBP: "£", XOF: "FCFA", XAF: "FCFA", MAD: "DH", CAD: "$CA", GNF: "FG",
+  EUR: "€", USD: "$", GBP: "£", XOF: " CFA", XAF: " CFA", MAD: " DH", CAD: "$CA", GNF: " FG",
 };
 
 interface HomeOfferCardProps {
