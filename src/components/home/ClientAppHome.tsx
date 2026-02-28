@@ -14,6 +14,7 @@ import { WORLD_CITIES, FEATURED_CITIES } from "@/components/gp/SearchableCitySel
 import { FullScreenOrderDetails } from "./FullScreenOrderDetails";
 import { RequestDetailsPopup } from "./RequestDetailsPopup";
 import { HomeOfferCard } from "./HomeOfferCard";
+import { SmartActionBar } from "./SmartActionBar";
 import { PostDeliveryFlow, usePostDeliveryDetection } from "@/components/delivery/PostDeliveryFlow";
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle,
@@ -330,36 +331,13 @@ export function ClientAppHome({
           </motion.button>
         </div>
 
-        {/* ── QUICK ACTIONS ── */}
-        <div className="px-4 pb-3">
-          <div className="grid grid-cols-4 gap-2">
-            {[
-              { icon: Package, label: "Envoyer", to: "/envoyer", primary: true },
-              { icon: MessageCircle, label: "Messages", to: "/messages", badge: unreadMessages },
-              { icon: History, label: "Historique", to: "/historique", badge: activeOrdersCount },
-              { icon: Heart, label: "Favoris", to: "/favoris" },
-            ].map((action) => (
-              <Link key={action.to} to={action.to}>
-                <motion.div
-                  whileTap={{ scale: 0.93 }}
-                  className={`relative rounded-2xl py-3 px-2 flex flex-col items-center gap-1.5 transition-all ${
-                    action.primary ? "bg-primary text-primary-foreground shadow-lg" : "bg-muted/60 border border-border"
-                  }`}
-                >
-                  {action.badge != null && action.badge > 0 && (
-                    <span className="absolute -top-1 -right-1 w-[18px] h-[18px] bg-destructive text-destructive-foreground rounded-full text-[9px] flex items-center justify-center font-bold">
-                      {action.badge}
-                    </span>
-                  )}
-                  <action.icon className={`w-5 h-5 ${action.primary ? "text-primary-foreground" : "text-foreground"}`} />
-                  <span className={`text-[11px] font-semibold leading-tight ${action.primary ? "text-primary-foreground" : "text-foreground"}`}>
-                    {action.label}
-                  </span>
-                </motion.div>
-              </Link>
-            ))}
-          </div>
-        </div>
+        {/* ── SMART ACTION BAR ── */}
+        <SmartActionBar
+          userId={userId}
+          recentOrders={recentOrders}
+          unreadMessages={unreadMessages}
+          activeOrdersCount={activeOrdersCount}
+        />
 
         {/* ── ACTIVE ORDERS (compact) ── */}
         {allActiveItems.length > 0 && (
