@@ -17,8 +17,6 @@ interface GPScanSheetProps {
   isVerified?: boolean;
 }
 
-const BG = "linear-gradient(180deg, #0F1923 0%, #15232F 55%, #1A2B3A 100%)";
-
 export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanSheetProps) {
   const [gpContext, setGpContext] = useState<{
     gpId: string;
@@ -64,17 +62,24 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="h-[75vh] rounded-t-3xl p-0 border-0 overflow-hidden"
+        className="h-[85vh] rounded-t-3xl p-0 border-0 overflow-hidden"
         style={{
-          background: BG,
+          background: "linear-gradient(180deg, #0B1218 0%, #0F1923 40%, #15232F 100%)",
           transform: swipe.translateY > 0 ? `translateY(${swipe.translateY}px)` : undefined,
           transition: swipe.isDragging ? "none" : "transform 0.3s ease-out",
           opacity: swipe.translateY > 0 ? Math.max(0.5, 1 - swipe.translateY / 400) : 1,
+          touchAction: "none",
         }}
       >
-        {/* Swipe handle */}
-        <div {...{onTouchStart: swipe.onTouchStart, onTouchMove: swipe.onTouchMove, onTouchEnd: swipe.onTouchEnd}} className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing">
-          <div className="w-10 h-1 rounded-full bg-white/20" />
+        {/* Swipe handle — larger touch target */}
+        <div
+          onTouchStart={swipe.onTouchStart}
+          onTouchMove={swipe.onTouchMove}
+          onTouchEnd={swipe.onTouchEnd}
+          className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
+          style={{ touchAction: "none" }}
+        >
+          <div className="w-12 h-1.5 rounded-full bg-white/25" />
         </div>
 
         {gpContext ? (

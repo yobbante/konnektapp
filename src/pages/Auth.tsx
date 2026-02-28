@@ -146,10 +146,15 @@ export default function AuthPage() {
           if (entryFlow.country) {
             profileUpdate.country_code = entryFlow.country.code;
           }
-          // Save city from entry flow
+          // Save city from entry flow — sync both city and residence_city
           const entryCity = sessionStorage.getItem("entry_city");
           if (entryCity) {
             profileUpdate.residence_city = entryCity;
+            profileUpdate.city = entryCity;
+          }
+          // Save full name redundantly for consistency
+          if (data.fullName) {
+            profileUpdate.full_name = data.fullName;
           }
           await supabase
             .from("profiles")
