@@ -1,18 +1,17 @@
 /**
- * GPParametresPage — Paramètres GP complets, organisés par famille
+ * GPParametresPage — Paramètres GP factorisés avec composants partagés
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  Settings, User, DollarSign, Bell, ScanLine, Shield, 
-  Globe, ChevronRight, LogOut, Palette, MapPin, Phone,
+import {
+  Settings, User, DollarSign, Bell, ScanLine, Shield,
+  Globe, LogOut, Palette, MapPin, Phone,
   Edit3, Save, X, MessageCircle, FileCheck,
-  ShieldX, Upload, BadgeCheck, Wallet
+  ShieldX, Upload, BadgeCheck, Wallet, Key, Lock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
 import { PageLoader } from "@/components/ui/PageLoader";
-import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +20,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/settings/ThemeToggle";
 import { toast } from "@/components/ui/use-toast";
+import {
+  SettingsSection, SettingsRow, ToggleRow,
+  PasswordChangeDialog, ForgotPasswordDialog,
+  loadNotificationPrefs, saveNotificationPref,
+  type NotificationPrefs, defaultNotificationPrefs,
+} from "@/components/settings/SharedSettingsComponents";
 
 export default function GPParametresPage() {
   const navigate = useNavigate();
@@ -30,19 +35,14 @@ export default function GPParametresPage() {
   const [activeCount, setActiveCount] = useState(0);
   const [editingProfile, setEditingProfile] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+  const [showPwdDialog, setShowPwdDialog] = useState(false);
+  const [showForgotPwd, setShowForgotPwd] = useState(false);
   const [profileForm, setProfileForm] = useState({
-    business_name: "",
-    phone: "",
-    whatsapp_phone: "",
-    deposit_address: "",
-    reception_address: "",
-    description: "",
+    business_name: "", phone: "", whatsapp_phone: "",
+    deposit_address: "", reception_address: "", description: "",
   });
-  const [notifPrefs, setNotifPrefs] = useState({
-    push_notifications: true,
-    new_message_alerts: true,
-    order_status_alerts: true,
-  });
+  const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs>(defaultNotificationPrefs);
 
   useEffect(() => { loadData(); }, []);
 
@@ -50,17 +50,21 @@ export default function GPParametresPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/auth"); return; }
+      setUserEmail(user.email || "");
 
-      const { data: profile } = await supabase
-        .from("gp_profiles")
-        .select("id, business_name, gp_type, status, base_price_per_kg, default_currency, deposit_address, reception_address, phone, whatsapp_phone, description, kyc_level, kyc_status, id_document_url, selfie_url, explicit_restrictions, base_origin_city, base_origin_country, base_destination_city, base_destination_country")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const [profileRes, prefsData] = await Promise.all([
+        supabase.from("gp_profiles")
+          .select("id, business_name, gp_type, status, base_price_per_kg, default_currency, deposit_address, reception_address, phone, whatsapp_phone, description, kyc_level, kyc_status, id_document_url, selfie_url, explicit_restrictions, base_origin_city, base_origin_country, base_destination_city, base_destination_country")
+          .eq("user_id", user.id).maybeSingle(),
+        loadNotificationPrefs(user.id),
+      ]);
 
+      const profile = profileRes.data;
       if (!profile) { navigate("/gp/inscription"); return; }
       setGpProfile(profile);
+      setNotifPrefs(prefsData);
 
-      // Auto-fill addresses based on GP route
+      // Auto-fill addresses from route
       const originLabel = [profile.base_origin_city, profile.base_origin_country].filter(Boolean).join(", ");
       const destLabel = [profile.base_destination_city, profile.base_destination_country].filter(Boolean).join(", ");
 
@@ -73,24 +77,9 @@ export default function GPParametresPage() {
         description: profile.description || "",
       });
 
-      const { data: orders } = await supabase
-        .from("orders").select("status").eq("gp_id", profile.id);
+      const { data: orders } = await supabase.from("orders").select("status").eq("gp_id", profile.id);
       setPendingCount(orders?.filter(o => o.status === "pending").length || 0);
       setActiveCount(orders?.filter(o => ["accepted", "collected", "in_transit"].includes(o.status)).length || 0);
-
-      const { data: prefs } = await supabase
-        .from("notification_preferences")
-        .select("push_notifications, new_message_alerts, order_status_alerts")
-        .eq("user_id", user.id)
-        .single();
-
-      if (prefs) {
-        setNotifPrefs({
-          push_notifications: prefs.push_notifications ?? true,
-          new_message_alerts: prefs.new_message_alerts ?? true,
-          order_status_alerts: prefs.order_status_alerts ?? true,
-        });
-      }
     } catch (error) {
       console.error("Error:", error);
     } finally {
@@ -101,19 +90,9 @@ export default function GPParametresPage() {
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("gp_profiles")
-        .update({
-          business_name: profileForm.business_name,
-          phone: profileForm.phone,
-          whatsapp_phone: profileForm.whatsapp_phone,
-          deposit_address: profileForm.deposit_address,
-          reception_address: profileForm.reception_address,
-          description: profileForm.description,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", gpProfile.id);
-
+      const { error } = await supabase.from("gp_profiles").update({
+        ...profileForm, updated_at: new Date().toISOString(),
+      }).eq("id", gpProfile.id);
       if (error) throw error;
       setGpProfile((prev: any) => ({ ...prev, ...profileForm }));
       setEditingProfile(false);
@@ -125,24 +104,11 @@ export default function GPParametresPage() {
     }
   };
 
-  const handleToggle = async (key: string, value: boolean) => {
-    setNotifPrefs(prev => ({ ...prev, [key]: value }));
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      await supabase.from("notification_preferences").upsert({
-        user_id: user.id,
-        [key]: value,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: "user_id" });
-    } catch (e) {
-      console.error("Error saving preference:", e);
-    }
-  };
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
+  const handleToggle = async (key: keyof NotificationPrefs) => {
+    const newVal = !notifPrefs[key];
+    setNotifPrefs(p => ({ ...p, [key]: newVal }));
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) await saveNotificationPref(user.id, key, newVal);
   };
 
   if (loading) return <PageLoader message="Chargement..." />;
@@ -152,21 +118,19 @@ export default function GPParametresPage() {
   const kycStatus = gpProfile.kyc_status || "pending";
   const hasId = !!gpProfile.id_document_url;
   const hasSelfie = !!gpProfile.selfie_url;
-  const kycProgress = [hasId, hasSelfie].filter(Boolean).length;
-
-  const originCountryLabel = gpProfile.base_origin_country || "départ";
-  const destCountryLabel = gpProfile.base_destination_country || "destination";
+  const originLabel = gpProfile.base_origin_country || "départ";
+  const destLabel = gpProfile.base_destination_country || "destination";
 
   return (
     <GPDashboardLayout gpProfile={gpProfile} pendingCount={pendingCount} activeOrdersCount={activeCount} activeTab="parametres">
-      <div className="px-4 py-3 space-y-3 pb-24">
+      <div className="px-4 py-3 space-y-4 pb-24">
         <div className="flex items-center gap-2">
           <Settings className="w-5 h-5 text-primary" />
           <h1 className="text-lg font-bold">Paramètres</h1>
         </div>
 
-        {/* ═══ 1. IDENTITÉ & PROFIL ═══ */}
-        <Section title="Identité & Profil">
+        {/* ═══ IDENTITÉ & PROFIL ═══ */}
+        <SettingsSection title="Identité & Profil">
           {editingProfile ? (
             <div className="p-3 space-y-2.5">
               <div>
@@ -188,12 +152,12 @@ export default function GPParametresPage() {
                 </div>
               </div>
               <div>
-                <Label className="text-[10px] text-muted-foreground">📍 Adresse pays {originCountryLabel}</Label>
-                <Input className="h-9" value={profileForm.deposit_address} onChange={e => setProfileForm(p => ({ ...p, deposit_address: e.target.value }))} placeholder={`Adresse à ${gpProfile.base_origin_city || originCountryLabel}`} />
+                <Label className="text-[10px] text-muted-foreground">📍 Adresse pays {originLabel}</Label>
+                <Input className="h-9" value={profileForm.deposit_address} onChange={e => setProfileForm(p => ({ ...p, deposit_address: e.target.value }))} placeholder={`Adresse à ${gpProfile.base_origin_city || originLabel}`} />
               </div>
               <div>
-                <Label className="text-[10px] text-muted-foreground">📍 Adresse pays {destCountryLabel}</Label>
-                <Input className="h-9" value={profileForm.reception_address} onChange={e => setProfileForm(p => ({ ...p, reception_address: e.target.value }))} placeholder={`Adresse à ${gpProfile.base_destination_city || destCountryLabel}`} />
+                <Label className="text-[10px] text-muted-foreground">📍 Adresse pays {destLabel}</Label>
+                <Input className="h-9" value={profileForm.reception_address} onChange={e => setProfileForm(p => ({ ...p, reception_address: e.target.value }))} placeholder={`Adresse à ${gpProfile.base_destination_city || destLabel}`} />
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleSaveProfile} disabled={saving} size="sm" className="flex-1 gap-1 h-9">
@@ -225,26 +189,26 @@ export default function GPParametresPage() {
               <Separator />
               <CompactInfoRow icon={MessageCircle} label="WhatsApp" value={gpProfile.whatsapp_phone || "—"} />
               <Separator />
-              <CompactInfoRow icon={MapPin} label={originCountryLabel} value={gpProfile.deposit_address || "—"} />
+              <CompactInfoRow icon={MapPin} label={originLabel} value={gpProfile.deposit_address || "—"} />
               <Separator />
-              <CompactInfoRow icon={MapPin} label={destCountryLabel} value={gpProfile.reception_address || "—"} />
+              <CompactInfoRow icon={MapPin} label={destLabel} value={gpProfile.reception_address || "—"} />
             </>
           )}
-        </Section>
+        </SettingsSection>
 
-        {/* ═══ 2. KYC & VÉRIFICATION ═══ */}
-        <Section title="KYC & Vérification">
+        {/* ═══ KYC & VÉRIFICATION ═══ */}
+        <SettingsSection title="KYC & Vérification">
           <div className="p-3 space-y-2.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <BadgeCheck className={`w-4 h-4 ${kycStatus === 'verified' ? 'text-emerald-500' : 'text-muted-foreground'}`} />
+                <BadgeCheck className={`w-4 h-4 ${kycStatus === "verified" ? "text-emerald-500" : "text-muted-foreground"}`} />
                 <div>
                   <p className="text-sm font-medium">Statut KYC</p>
                   <p className="text-[10px] text-muted-foreground">Niveau {kycLevel}</p>
                 </div>
               </div>
-              <Badge variant={kycStatus === 'verified' ? 'default' : 'secondary'} className="text-[10px]">
-                {kycStatus === 'verified' ? '✓ Vérifié' : kycStatus === 'pending' ? 'En attente' : kycStatus}
+              <Badge variant={kycStatus === "verified" ? "default" : "secondary"} className="text-[10px]">
+                {kycStatus === "verified" ? "✓ Vérifié" : kycStatus === "pending" ? "En attente" : kycStatus}
               </Badge>
             </div>
             <Separator />
@@ -253,45 +217,49 @@ export default function GPParametresPage() {
               <DocRow label="Pièce d'identité" done={hasId} onClick={() => navigate("/gp/profil-public")} />
               <DocRow label="Selfie de vérification" done={hasSelfie} onClick={() => navigate("/gp/profil-public")} />
             </div>
-            {kycProgress < 2 && (
+            {(!hasId || !hasSelfie) && (
               <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs h-8" onClick={() => navigate("/gp/profil-public")}>
                 <Upload className="w-3 h-3" /> Compléter mes documents
               </Button>
             )}
           </div>
-        </Section>
+        </SettingsSection>
 
-        {/* ═══ 3. OPÉRATIONS ═══ */}
-        <Section title="Opérations">
-          <CompactNavRow icon={User} label="Profil public" desc="Aperçu client" onClick={() => navigate("/gp/profil-public")} />
+        {/* ═══ OPÉRATIONS ═══ */}
+        <SettingsSection title="Opérations">
+          <SettingsRow icon={User} label="Profil public" desc="Aperçu client" onClick={() => navigate("/gp/profil-public")} />
           <Separator />
-          <CompactNavRow icon={DollarSign} label="Grille tarifaire" desc={`${gpProfile.base_price_per_kg || 0} ${gpProfile.default_currency || "XOF"}/kg`} onClick={() => navigate("/gp/tarification")} />
+          <SettingsRow icon={DollarSign} iconColor="text-emerald-500" iconBg="bg-emerald-500/10" label="Grille tarifaire" desc={`${gpProfile.base_price_per_kg || 0} ${gpProfile.default_currency || "XOF"}/kg`} onClick={() => navigate("/gp/tarification")} />
           <Separator />
-          <CompactNavRow icon={ShieldX} label="Restrictions" desc={`${(gpProfile.explicit_restrictions || []).length} actives`} onClick={() => navigate("/gp/restrictions")} />
+          <SettingsRow icon={ShieldX} iconColor="text-orange-500" iconBg="bg-orange-500/10" label="Restrictions" desc={`${(gpProfile.explicit_restrictions || []).length} actives`} onClick={() => navigate("/gp/restrictions")} />
           <Separator />
-          <CompactNavRow icon={Globe} label="Devise" desc={gpProfile.default_currency || "XOF"} onClick={() => navigate("/gp/tarification")} />
+          <SettingsRow icon={Globe} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Devise" desc={gpProfile.default_currency || "XOF"} onClick={() => navigate("/gp/tarification")} />
           <Separator />
-          <CompactNavRow icon={ScanLine} label="Scanner QR" desc="Caméra" onClick={() => navigate("/gp/scan")} />
-        </Section>
+          <SettingsRow icon={ScanLine} iconColor="text-purple-500" iconBg="bg-purple-500/10" label="Scanner QR" desc="Caméra" onClick={() => navigate("/gp/scan")} />
+        </SettingsSection>
 
-        {/* ═══ 4. SÉCURITÉ & CONFIANCE ═══ */}
-        <Section title="Sécurité & Confiance">
-          <CompactNavRow icon={Shield} label="KTP & GeoTrack" desc="Score de confiance" onClick={() => navigate("/gp/ktp-geotrack")} />
+        {/* ═══ SÉCURITÉ ═══ */}
+        <SettingsSection title="Sécurité & Confiance">
+          <SettingsRow icon={Shield} label="KTP & GeoTrack" desc="Score de confiance" onClick={() => navigate("/gp/ktp-geotrack")} />
           <Separator />
-          <CompactNavRow icon={Wallet} label="Portefeuille" desc="Solde et retraits" onClick={() => navigate("/gp/wallet")} />
-        </Section>
+          <SettingsRow icon={Wallet} iconColor="text-emerald-500" iconBg="bg-emerald-500/10" label="Portefeuille" desc="Solde et retraits" onClick={() => navigate("/gp/wallet")} />
+          <Separator />
+          <SettingsRow icon={Key} iconColor="text-amber-500" iconBg="bg-amber-500/10" label="Mot de passe" desc="Modifier l'accès" onClick={() => setShowPwdDialog(true)} />
+          <Separator />
+          <SettingsRow icon={Lock} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Mot de passe oublié" desc="Réinitialiser" onClick={() => setShowForgotPwd(true)} />
+        </SettingsSection>
 
-        {/* ═══ 5. NOTIFICATIONS ═══ */}
-        <Section title="Notifications">
-          <CompactToggleRow icon={Bell} label="Push" checked={notifPrefs.push_notifications} onChange={v => handleToggle("push_notifications", v)} />
+        {/* ═══ NOTIFICATIONS ═══ */}
+        <SettingsSection title="Notifications">
+          <ToggleRow icon={Bell} label="Push" desc="Notifications en temps réel" checked={notifPrefs.push_notifications} onToggle={() => handleToggle("push_notifications")} />
           <Separator />
-          <CompactToggleRow icon={Bell} label="Messages clients" checked={notifPrefs.new_message_alerts} onChange={v => handleToggle("new_message_alerts", v)} />
+          <ToggleRow icon={Bell} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Messages clients" desc="Nouveaux messages" checked={notifPrefs.new_message_alerts} onToggle={() => handleToggle("new_message_alerts")} />
           <Separator />
-          <CompactToggleRow icon={Bell} label="Statuts commandes" checked={notifPrefs.order_status_alerts} onChange={v => handleToggle("order_status_alerts", v)} />
-        </Section>
+          <ToggleRow icon={Bell} iconColor="text-orange-500" iconBg="bg-orange-500/10" label="Statuts commandes" desc="Mises à jour" checked={notifPrefs.order_status_alerts} onToggle={() => handleToggle("order_status_alerts")} />
+        </SettingsSection>
 
-        {/* ═══ 6. APPARENCE ═══ */}
-        <Section title="Apparence">
+        {/* ═══ APPARENCE ═══ */}
+        <SettingsSection title="Apparence">
           <div className="p-3">
             <div className="flex items-center gap-3 mb-2">
               <Palette className="w-4 h-4 text-primary" />
@@ -299,62 +267,27 @@ export default function GPParametresPage() {
             </div>
             <ThemeToggle />
           </div>
-        </Section>
+        </SettingsSection>
 
-        <button onClick={handleSignOut} className="w-full bg-destructive/10 rounded-xl p-3 flex items-center gap-3 hover:bg-destructive/15 transition-colors active:scale-[0.98]">
+        <button onClick={async () => { await supabase.auth.signOut(); navigate("/"); }} className="w-full bg-destructive/10 rounded-xl p-3 flex items-center gap-3 hover:bg-destructive/15 transition-colors active:scale-[0.98]">
           <LogOut className="w-4 h-4 text-destructive" />
           <span className="font-medium text-sm text-destructive">Déconnexion</span>
         </button>
       </div>
+
+      <PasswordChangeDialog open={showPwdDialog} onOpenChange={setShowPwdDialog} userEmail={userEmail} />
+      <ForgotPasswordDialog open={showForgotPwd} onOpenChange={setShowForgotPwd} userEmail={userEmail} />
     </GPDashboardLayout>
   );
 }
 
-/* ─── Helpers ─── */
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section>
-      <h2 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 px-1">{title}</h2>
-      <div className="bg-card rounded-xl border border-border overflow-hidden">{children}</div>
-    </section>
-  );
-}
-
+/* ─── Local helpers ─── */
 function CompactInfoRow({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
   return (
     <div className="flex items-center gap-3 px-3 py-2">
       <Icon className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
       <span className="text-[10px] text-muted-foreground w-14 flex-shrink-0">{label}</span>
       <span className="text-xs font-medium truncate">{value}</span>
-    </div>
-  );
-}
-
-function CompactNavRow({ icon: Icon, label, desc, onClick }: { icon: any; label: string; desc: string; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="w-full flex items-center justify-between px-3 py-2 hover:bg-muted/50 transition-colors">
-      <div className="flex items-center gap-3">
-        <Icon className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-        <div className="text-left">
-          <p className="font-medium text-xs">{label}</p>
-          <p className="text-[10px] text-muted-foreground">{desc}</p>
-        </div>
-      </div>
-      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-    </button>
-  );
-}
-
-function CompactToggleRow({ icon: Icon, label, checked, onChange }: {
-  icon: any; label: string; checked: boolean; onChange: (v: boolean) => void;
-}) {
-  return (
-    <div className="flex items-center justify-between px-3 py-2">
-      <div className="flex items-center gap-3">
-        <Icon className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-        <span className="text-xs font-medium">{label}</span>
-      </div>
-      <Switch checked={checked} onCheckedChange={onChange} />
     </div>
   );
 }
@@ -372,9 +305,8 @@ function DocRow({ label, done, onClick }: { label: string; done: boolean; onClic
             <Upload className="w-2.5 h-2.5 text-muted-foreground" />
           </div>
         )}
-        <span className={`text-xs ${done ? 'text-foreground' : 'text-muted-foreground'}`}>{label}</span>
+        <span className={`text-xs ${done ? "text-foreground" : "text-muted-foreground"}`}>{label}</span>
       </div>
-      {!done && <ChevronRight className="w-3 h-3 text-muted-foreground" />}
     </button>
   );
 }
