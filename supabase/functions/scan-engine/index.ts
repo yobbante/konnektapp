@@ -644,9 +644,11 @@ async function execConfirmDelivery(
           ? new Date(Date.now() + 30 * 60 * 1000).toISOString()
           : null,
       }).eq("id", order.id);
-      await supabase.rpc("log_delivery_attempt_failed", {
-        p_order_id: order.id, p_actor_id: userId, p_attempt_count: (order.delivery_attempt_count || 0) + 1,
-      }).catch(() => {});
+      try {
+        await supabase.rpc("log_delivery_attempt_failed", {
+          p_order_id: order.id, p_actor_id: userId, p_attempt_count: (order.delivery_attempt_count || 0) + 1,
+        });
+      } catch (_e) { /* ignore */ }
       return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_code", next_action: "retry_code", message: "Code de livraison incorrect. Vérifiez et réessayez." };
     }
     // Code correct → réinitialiser compteur
@@ -658,9 +660,11 @@ async function execConfirmDelivery(
   await supabase.from("orders").update({ status: "delivery_confirmed", actual_delivery_date: now }).eq("id", order.id);
 
   // Update logistics if exists
-  await supabase.from("order_logistics_options").update({
-    delivery_status: "delivered", delivery_completed_at: now, logistics_status: "completed",
-  }).eq("order_id", order.id).catch(() => {});
+  try {
+    await supabase.from("order_logistics_options").update({
+      delivery_status: "delivered", delivery_completed_at: now, logistics_status: "completed",
+    }).eq("order_id", order.id);
+  } catch (_e) { /* ignore */ }
 
   await supabase.from("order_status_history").insert({
     order_id: order.id, status: "delivery_confirmed", changed_by: userId, changed_by_type: role,
@@ -770,12 +774,14 @@ async function execConfirmReception(
   }
 
   // Enregistrer confirmation physique
-  await supabase.from("delivery_confirmations").insert({
-    order_id: order.id,
-    confirmed_by_phone: actionData?.phone || "app",
-    confirmed_by_name: actionData?.name || null,
-    created_user_id: userId,
-  }).catch(() => {});
+  try {
+    await supabase.from("delivery_confirmations").insert({
+      order_id: order.id,
+      confirmed_by_phone: actionData?.phone || "app",
+      confirmed_by_name: actionData?.name || null,
+      created_user_id: userId,
+    });
+  } catch (_e) { /* ignore */ }
 
   await supabase.from("order_status_history").insert({
     order_id: order.id, status: "delivery_confirmed", changed_by: userId, changed_by_type: "client",
@@ -942,14 +948,16 @@ async function validateCrossModuleCoherence(
   // ── LOG des violations critiques dans security_audit_log ─────────
   const criticals = violations.filter((v) => v.severity === "critical");
   if (criticals.length > 0) {
-    await supabase.from("security_audit_log").insert(
-      criticals.map((v) => ({
-        event_type: "coherence_violation",
-        order_id: orderId,
-        details: { code: v.code, message: v.message, ...v.details },
-        severity: "critical",
-      }))
-    ).catch(() => {});
+    try {
+      await supabase.from("security_audit_log").insert(
+        criticals.map((v) => ({
+          event_type: "coherence_violation",
+          order_id: orderId,
+          details: { code: v.code, message: v.message, ...v.details },
+          severity: "critical",
+        }))
+      );
+    } catch (_e) { /* ignore */ }
   }
 
   return violations;
