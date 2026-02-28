@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { Package, MessageCircle, MapPin, History, Bell, Heart, ArrowRight, Clock, ChevronDown, Phone, Navigation, User, ExternalLink, X, AlertTriangle, Truck, Calendar, FileText, Home as HomeIcon, Sparkles, Info, Eye, TruckIcon, QrCode } from "lucide-react";
+import { Package, MessageCircle, MapPin, History, Bell, Heart, ArrowRight, Clock, ChevronDown, Phone, Navigation, User, ExternalLink, X, AlertTriangle, Truck, Calendar, FileText, Home as HomeIcon, Sparkles, Info, Eye, TruckIcon, QrCode, Search, Plane, Ship, Car, Luggage, Star, ChevronRight } from "lucide-react";
 import { RecipientTrackingCard } from "@/components/client/RecipientTrackingCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -100,7 +100,31 @@ export function ClientAppHome({
     return { ...config, icon };
   };
   const selectedOrder = fullScreenOrderId ? activeOrders.find(o => o.id === fullScreenOrderId) : null;
-  return <div className="flex flex-col overflow-hidden relative" style={{
+  // Transport categories
+  const [activeCategory, setActiveCategory] = useState("bagages");
+  const categories = [
+    { id: "bagages", label: "GP Bagages", icon: Luggage, active: true },
+    { id: "routier", label: "Routier", icon: Car, active: false },
+    { id: "maritime", label: "Maritime", icon: Ship, active: false },
+    { id: "aerien", label: "Aérien", icon: Plane, active: false },
+  ];
+
+  // Mock featured offers
+  const [offers, setOffers] = useState<any[]>([]);
+  useEffect(() => {
+    const loadOffers = async () => {
+      const { data } = await supabase
+        .from("gp_offers")
+        .select("*, gp_profiles(business_name, rating, total_reviews)")
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(6);
+      if (data) setOffers(data);
+    };
+    loadOffers();
+  }, []);
+
+  return <div className="flex flex-col relative bg-background" style={{
     height: 'calc(100vh - 60px - 64px - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
     minHeight: '400px'
   }}>
@@ -119,138 +143,246 @@ export function ClientAppHome({
           </motion.div>}
       </AnimatePresence>
 
-      {/* Greeting Section - Compact */}
-      <motion.div initial={{
-      opacity: 0,
-      y: -10
-    }} animate={{
-      opacity: 1,
-      y: 0
-    }} className="px-4 pt-3 pb-2">
-        <h1 className="text-lg font-bold text-foreground">
-          {greeting}{userName ? `, ${firstName}` : ''} <span className="text-primary">👋</span>
-        </h1>
-      </motion.div>
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Greeting */}
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="px-4 pt-3 pb-1">
+          <h1 className="text-xl font-bold text-foreground">
+            {greeting}{userName ? `, ${firstName}` : ''} <span>👋</span>
+          </h1>
+        </motion.div>
 
-      {/* Weight Validation Alerts - PRV Compliant, Non-dismissible */}
-      {userId && (
-        <div className="px-4">
-          <WeightValidationAlert userId={userId} />
-        </div>
-      )}
+        {/* Weight Validation Alerts */}
+        {userId && (
+          <div className="px-4">
+            <WeightValidationAlert userId={userId} />
+          </div>
+        )}
 
-      {/* Recipient Tracking Card — parcels addressed to this user */}
-      {userId && <RecipientTrackingCard userId={userId} />}
+        {/* Recipient Tracking Card */}
+        {userId && <RecipientTrackingCard userId={userId} />}
 
-      {/* Active Items List - Orders, Custom Requests, Moving Requests */}
-      {allActiveItems.length > 0 && <motion.div initial={{
-      opacity: 0,
-      y: -10
-    }} animate={{
-      opacity: 1,
-      y: 0
-    }} transition={{
-      delay: 0.1
-    }} className="mx-4 mb-3 space-y-2 max-h-[35vh] overflow-y-auto">
-          {allActiveItems.map((item, index) => {
-        const statusInfo = getStatusInfo(item.status, item.type);
-        const StatusIcon = statusInfo.icon;
-        
-        // Determine display info based on type
-        const displayInfo = {
-          order: {
-            gradient: "from-primary/10 via-secondary/5 to-primary/10",
-            borderColor: "border-primary/20",
-            badgeType: null,
-            onClick: () => openFullScreen(item.id),
-          },
-          custom: {
-            gradient: "from-purple-500/10 via-purple-500/5 to-purple-500/10",
-            borderColor: "border-purple-500/20",
-            badgeType: "Demande",
-            onClick: () => setRequestPopup({ type: 'custom', item }),
-          },
-          moving: {
-            gradient: "from-amber-500/10 via-amber-500/5 to-amber-500/10",
-            borderColor: "border-amber-500/20",
-            badgeType: "Déménagement",
-            onClick: () => setRequestPopup({ type: 'moving', item }),
-          },
-        }[item.type];
-        
-        return <motion.div key={`${item.type}-${item.id}`} initial={{
-          opacity: 0,
-          x: -20
-        }} animate={{
-          opacity: 1,
-          x: 0
-        }} transition={{
-          delay: index * 0.05
-        }} onClick={displayInfo.onClick} className={`relative overflow-hidden bg-gradient-to-r ${displayInfo.gradient} border ${displayInfo.borderColor} rounded-2xl shadow-md cursor-pointer active:scale-[0.98] transition-transform`}>
-                <motion.div whileTap={{
-            scale: 0.99
-          }} className="p-3 flex items-center gap-3">
-                  {/* Status Icon */}
-                  <div className="relative">
-                    <motion.div className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-sm ${
-                      item.type === 'moving' ? 'bg-gradient-to-br from-amber-500 to-amber-600' :
-                      item.type === 'custom' ? 'bg-gradient-to-br from-purple-500 to-purple-600' :
-                      'bg-gradient-to-br from-primary to-primary/70'
-                    }`} animate={{
-                boxShadow: ["0 0 0 0 rgba(var(--primary), 0.3)", "0 0 0 6px rgba(var(--primary), 0)"]
-              }} transition={{
-                duration: 1.5,
-                repeat: Infinity
-              }}>
-                      <StatusIcon className="w-5 h-5 text-white" />
-                    </motion.div>
-                    <motion.div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-background" animate={{
-                scale: [1, 1.2, 1]
-              }} transition={{
-                duration: 1,
-                repeat: Infinity
-              }} />
-                  </div>
-                  
-                  {/* Item Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      {displayInfo.badgeType && (
-                        <Badge variant="secondary" className="text-[10px] py-0 px-1.5 mr-1">
-                          {displayInfo.badgeType}
-                        </Badge>
-                      )}
-                      <p className="text-sm font-bold text-foreground truncate">
-                        {item.origin_city}
-                      </p>
-                      <ArrowRight className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                      <p className="text-sm font-bold text-foreground truncate">
-                        {item.destination_city}
-                      </p>
+        {/* === BOOKING-STYLE CATEGORY TABS === */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="px-4 pt-2 pb-1"
+        >
+          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+            {categories.map((cat) => {
+              const CatIcon = cat.icon;
+              const isActive = activeCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => cat.active && setActiveCategory(cat.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 ${
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : cat.active
+                        ? "bg-muted text-muted-foreground hover:bg-muted/80"
+                        : "bg-muted/50 text-muted-foreground/50 cursor-not-allowed"
+                  }`}
+                >
+                  <CatIcon className="w-4 h-4" />
+                  {cat.label}
+                  {!cat.active && (
+                    <span className="text-[9px] bg-muted-foreground/20 px-1.5 py-0.5 rounded-full">Bientôt</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </motion.div>
+
+        {/* === BOOKING-STYLE SEARCH BAR === */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="px-4 py-3"
+        >
+          <button
+            onClick={() => navigate("/offres")}
+            className="w-full bg-card border-2 border-primary/30 rounded-2xl p-4 text-left shadow-sm hover:border-primary/50 hover:shadow-md transition-all duration-200 active:scale-[0.99]"
+          >
+            <div className="flex items-center gap-3 pb-3 border-b border-border/50">
+              <Search className="w-5 h-5 text-primary" />
+              <span className="text-muted-foreground text-sm">Où envoyez-vous votre colis ?</span>
+            </div>
+            <div className="flex items-center gap-3 py-3 border-b border-border/50">
+              <Calendar className="w-5 h-5 text-muted-foreground" />
+              <span className="text-muted-foreground text-sm">Choisir une date de départ</span>
+            </div>
+            <div className="flex items-center gap-3 pt-3">
+              <Package className="w-5 h-5 text-muted-foreground" />
+              <span className="text-muted-foreground text-sm">Poids estimé (kg)</span>
+            </div>
+          </button>
+
+          {/* Search CTA */}
+          <Link to="/offres" className="block mt-3">
+            <motion.div
+              whileTap={{ scale: 0.98 }}
+              className="w-full bg-primary text-primary-foreground font-bold text-center py-3.5 rounded-xl shadow-lg"
+            >
+              Rechercher
+            </motion.div>
+          </Link>
+        </motion.div>
+
+        {/* === DARK QUICK ACTION BUTTONS (style from screenshot) === */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="px-4 pb-3"
+        >
+          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+            {[
+              { icon: Package, label: "Envoyer", sub: "Nouveau colis", to: "/envoyer", primary: true },
+              { icon: MessageCircle, label: "Messages", sub: `${unreadMessages} nouveaux`, to: "/messages", badge: unreadMessages },
+              { icon: History, label: "Mes envois", sub: `${activeOrdersCount} actifs`, to: "/historique", badge: activeOrdersCount },
+              { icon: Heart, label: "Favoris", sub: "Transporteurs", to: "/favoris" },
+            ].map((action, i) => (
+              <Link key={action.to} to={action.to} className="flex-shrink-0" style={{ minWidth: '110px' }}>
+                <motion.div
+                  whileTap={{ scale: 0.95 }}
+                  className={`relative rounded-2xl p-4 flex flex-col items-center gap-2 text-center transition-all duration-200 ${
+                    action.primary
+                      ? "bg-primary text-primary-foreground shadow-lg"
+                      : "bg-card border border-border shadow-sm hover:border-primary/30"
+                  }`}
+                  style={{ minHeight: '90px' }}
+                >
+                  {action.badge && action.badge > 0 && (
+                    <span className="absolute top-1.5 right-1.5 w-5 h-5 bg-destructive text-destructive-foreground rounded-full text-[10px] flex items-center justify-center font-bold">
+                      {action.badge}
+                    </span>
+                  )}
+                  <action.icon className={`w-6 h-6 ${action.primary ? "text-primary-foreground" : "text-foreground"}`} />
+                  <span className={`text-xs font-semibold ${action.primary ? "text-primary-foreground" : "text-foreground"}`}>
+                    {action.label}
+                  </span>
+                </motion.div>
+              </Link>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* === ACTIVE ORDERS (compact) === */}
+        {allActiveItems.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="px-4 pb-3"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-bold text-foreground">Envois actifs</h2>
+              <Link to="/historique" className="text-xs text-primary font-medium flex items-center gap-1">
+                Tout voir <ChevronRight className="w-3 h-3" />
+              </Link>
+            </div>
+            <div className="space-y-2">
+              {allActiveItems.slice(0, 3).map((item, index) => {
+                const statusInfo = getStatusInfo(item.status, item.type);
+                return (
+                  <motion.div
+                    key={`${item.type}-${item.id}`}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    onClick={
+                      item.type === 'order' ? () => openFullScreen(item.id) :
+                      item.type === 'custom' ? () => setRequestPopup({ type: 'custom', item }) :
+                      () => setRequestPopup({ type: 'moving', item })
+                    }
+                    className="bg-card border border-border rounded-xl p-3 flex items-center gap-3 active:scale-[0.98] transition-transform cursor-pointer"
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                      item.type === 'moving' ? 'bg-amber-500/10' :
+                      item.type === 'custom' ? 'bg-purple-500/10' :
+                      'bg-primary/10'
+                    }`}>
+                      {item.type === 'moving' ? <HomeIcon className="w-5 h-5 text-amber-600" /> :
+                       item.type === 'custom' ? <FileText className="w-5 h-5 text-purple-600" /> :
+                       <Package className="w-5 h-5 text-primary" />}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusInfo.color}`}>
-                        <motion.span className="w-1.5 h-1.5 rounded-full bg-current" animate={{
-                    opacity: [1, 0.5, 1]
-                  }} transition={{
-                    duration: 1,
-                    repeat: Infinity
-                  }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {item.origin_city} → {item.destination_city}
+                      </p>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${statusInfo.color}`}>
                         {statusInfo.label}
                       </span>
-                      {item.weight && <span className="text-xs text-muted-foreground">{item.weight} kg</span>}
-                      {item.volume_estimate && <span className="text-xs text-muted-foreground">{item.volume_estimate}</span>}
                     </div>
-                  </div>
-                  
-                  {/* Tap indicator */}
-                  <motion.div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <ChevronDown className="w-4 h-4 text-primary" />
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
                   </motion.div>
-                </motion.div>
-              </motion.div>;
-      })}
-        </motion.div>}
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+
+        {/* === FEATURED OFFERS (Booking-style) === */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="px-4 pb-6"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-bold text-foreground">Offres disponibles</h2>
+            <Link to="/offres" className="text-xs text-primary font-medium flex items-center gap-1">
+              Tout voir <ChevronRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          {offers.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3">
+              {offers.slice(0, 4).map((offer) => (
+                <Link key={offer.id} to={`/offre/${offer.id}`} className="block">
+                  <motion.div
+                    whileTap={{ scale: 0.97 }}
+                    className="bg-card border border-border rounded-2xl p-3 hover:border-primary/30 hover:shadow-md transition-all duration-200"
+                  >
+                    <div className="flex items-center gap-1 mb-2">
+                      <MapPin className="w-3 h-3 text-primary" />
+                      <span className="text-[11px] font-medium text-foreground truncate">{offer.origin_city}</span>
+                    </div>
+                    <div className="flex items-center gap-1 mb-3">
+                      <ArrowRight className="w-3 h-3 text-muted-foreground" />
+                      <span className="text-[11px] font-medium text-foreground truncate">{offer.destination_city}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-base font-bold text-primary">{offer.price_per_kg}€<span className="text-[10px] font-normal text-muted-foreground">/kg</span></span>
+                      {offer.gp_profiles?.rating && (
+                        <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground">
+                          <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                          {offer.gp_profiles.rating.toFixed(1)}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1 truncate">
+                      {offer.gp_profiles?.business_name || "Transporteur"}
+                    </p>
+                  </motion.div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-muted/30 border border-border rounded-2xl p-6 text-center">
+              <Package className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Aucune offre disponible</p>
+              <Link to="/offres" className="text-xs text-primary font-medium mt-1 inline-block">
+                Rechercher des offres
+              </Link>
+            </div>
+          )}
+        </motion.div>
+      </div>
 
       {/* Request Details Popup */}
       <RequestDetailsPopup
@@ -260,110 +392,6 @@ export function ClientAppHome({
         item={requestPopup?.item}
         navigate={navigate}
       />
-
-      {/* Primary Actions - 2x2 Grid */}
-      <motion.div initial={{
-      opacity: 0,
-      y: 10
-    }} animate={{
-      opacity: 1,
-      y: 0
-    }} transition={{
-      delay: 0.15
-    }} className="grid grid-cols-2 gap-3 px-4 flex-1">
-        {/* Envoyer un colis - Primary CTA → Universal selector */}
-        <Link to="/envoyer" className="block">
-          <motion.div whileTap={{
-          scale: 0.97
-        }} className="h-full bg-gradient-to-br from-primary to-primary/80 rounded-2xl p-4 flex flex-col justify-between shadow-lg" style={{
-          minHeight: '120px'
-        }}>
-            <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center">
-              <Package className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-white text-sm">Envoyer</h3>
-              <p className="text-white/70 text-xs">Nouveau colis</p>
-            </div>
-          </motion.div>
-        </Link>
-
-        {/* Messages - Quick access */}
-        <Link to="/messages" className="block">
-          <motion.div whileTap={{
-          scale: 0.97
-        }} className="h-full bg-card border-2 border-border rounded-2xl p-4 flex flex-col justify-between hover:border-primary/30 transition-colors relative" style={{
-          minHeight: '120px'
-        }}>
-            {unreadMessages > 0 && <Badge className="absolute top-2 right-2 h-5 min-w-[20px] bg-primary text-primary-foreground border-0 text-[10px]">
-                {unreadMessages}
-              </Badge>}
-            <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
-              <MessageCircle className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-foreground text-sm">Messages</h3>
-              <p className="text-muted-foreground text-xs">Conversations</p>
-            </div>
-          </motion.div>
-        </Link>
-
-        {/* Mes envois - Redirect to full history page */}
-        <Link to="/historique" className="block">
-          <motion.div whileTap={{
-          scale: 0.97
-        }} className="h-full bg-card border-2 border-border rounded-2xl p-4 flex flex-col justify-between hover:border-primary/30 transition-colors relative" style={{
-          minHeight: '120px'
-        }}>
-            {activeOrdersCount > 0 && <Badge className="absolute top-2 right-2 h-5 min-w-[20px] bg-amber-500 text-white border-0 text-[10px]">
-                {activeOrdersCount}
-              </Badge>}
-            <div className="w-11 h-11 rounded-xl bg-amber-500/10 flex items-center justify-center">
-              <History className="w-6 h-6 text-amber-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-foreground text-sm">Mes envois</h3>
-              <p className="text-muted-foreground text-xs">Suivi & historique</p>
-            </div>
-          </motion.div>
-        </Link>
-      </motion.div>
-
-      {/* Quick Links Row */}
-      <motion.div initial={{
-      opacity: 0,
-      y: 10
-    }} animate={{
-      opacity: 1,
-      y: 0
-    }} transition={{
-      delay: 0.25
-    }} className="flex gap-2 px-4 py-3 mt-auto">
-        <Link to="/favoris" className="flex-1">
-          <motion.div whileTap={{
-          scale: 0.97
-        }} className="bg-muted/50 rounded-xl p-3 flex items-center justify-center gap-2">
-            <Heart className="w-4 h-4 text-red-500" />
-            <span className="text-xs font-medium text-foreground">Favoris</span>
-          </motion.div>
-        </Link>
-        <Link to="/alerts" className="flex-1">
-          <motion.div whileTap={{
-          scale: 0.97
-        }} className="bg-muted/50 rounded-xl p-3 flex items-center justify-center gap-2">
-            <Bell className="w-4 h-4 text-primary" />
-            <span className="text-xs font-medium text-foreground">Alertes</span>
-          </motion.div>
-        </Link>
-        <Link to="/tracking" className="flex-1">
-          <motion.div whileTap={{
-          scale: 0.97
-        }} className="bg-muted/50 rounded-xl p-3 flex items-center justify-center gap-2">
-            <MapPin className="w-4 h-4 text-secondary" />
-            <span className="text-xs font-medium text-foreground">Suivi</span>
-          </motion.div>
-        </Link>
-      </motion.div>
     </div>;
 }
 
