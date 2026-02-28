@@ -162,19 +162,22 @@ export function ClientAppHome({
 
   const filteredOffers = useMemo(() => {
     let result = offers;
-    // Filter by transport type tab
     if (activeTab !== "all") {
       result = result.filter(o => (TYPE_MAP[activeTab] || []).includes(o.transport_type));
     }
-    // Filter by search origin
     if (searchOrigin) {
       result = result.filter(o => o.origin_city?.toLowerCase().includes(searchOrigin.toLowerCase()));
     }
-    // Filter by search destination
     if (searchDest) {
       result = result.filter(o => o.destination_city?.toLowerCase().includes(searchDest.toLowerCase()));
     }
-    return result;
+    // Sort: highest GP rating first, then earliest departure
+    return result.sort((a, b) => {
+      const ratingA = a.gp_profiles?.rating || 0;
+      const ratingB = b.gp_profiles?.rating || 0;
+      if (ratingB !== ratingA) return ratingB - ratingA;
+      return new Date(a.departure_date).getTime() - new Date(b.departure_date).getTime();
+    });
   }, [offers, activeTab, searchOrigin, searchDest]);
 
   // Active items
