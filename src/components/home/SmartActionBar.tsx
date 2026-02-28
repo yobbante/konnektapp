@@ -132,8 +132,9 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
     incomingParcels.forEach(p => {
       const statusLabels: Record<string, string> = {
         pending: "En attente", accepted: "Accepté", registered: "Enregistré",
-        collected: "Collecté", in_transit: "En transit", arrived_destination: "Arrivé",
-        delivery_pending: "Livraison en cours", weight_pending_payment: "Supplément poids",
+        collected: "Collecté", checked_in: "Déposé", in_transit: "En transit",
+        arrived_destination: "Arrivé", delivery_pending: "Livraison en cours",
+        weight_pending_payment: "Supplément poids",
       };
       const statusLabel = statusLabels[p.status] || p.status;
       items.push({
