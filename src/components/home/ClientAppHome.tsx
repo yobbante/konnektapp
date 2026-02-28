@@ -149,11 +149,13 @@ export function ClientAppHome({
   // Offers
   const [offers, setOffers] = useState<any[]>([]);
   useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
     supabase
       .from("gp_offers")
       .select("*, gp_profiles(business_name, rating, total_reviews)")
       .eq("status", "active")
-      .order("created_at", { ascending: false })
+      .gte("departure_date", today)
+      .order("departure_date", { ascending: true })
       .limit(12)
       .then(({ data }) => { if (data) setOffers(data); });
   }, []);
