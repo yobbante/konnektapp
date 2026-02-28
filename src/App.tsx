@@ -72,6 +72,7 @@ import RoutierProfilPublicPage from "./pages/routier/RoutierProfilPublicPage";
 import RoutierDemandePage from "./pages/routier/RoutierDemandePage";
 import RoutierMissionRequestPage from "./pages/routier/RoutierMissionRequestPage";
 import RoutierWalletPage from "./pages/routier/RoutierWalletPage";
+import RoutierParametresPage from "./pages/routier/RoutierParametresPage";
 // Universal shipment entry
 import ShipmentTypeSelector from "./pages/ShipmentTypeSelector";
 // Tutorials and History pages
@@ -213,6 +214,8 @@ const App = () => (
             <Route path="/routier/vehicules" element={<RoutierVehiculesPage />} />
             <Route path="/routier/profil-public" element={<RoutierProfilPublicPage />} />
             <Route path="/routier/wallet" element={<RoutierWalletPage />} />
+            <Route path="/routier/parametres" element={<RoutierParametresPage />} />
+            <Route path="/routier/messages" element={<Navigate to="/messages" replace />} />
             {/* Client-facing routier mission request */}
             <Route path="/routier/mission" element={<RoutierMissionRequestPage />} />
             <Route path="/routier/demande" element={<Navigate to="/routier/mission" replace />} />
