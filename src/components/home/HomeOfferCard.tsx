@@ -2,6 +2,10 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowRight, Plane, Ship, Car, Luggage, Star } from "lucide-react";
 
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  EUR: "€", USD: "$", GBP: "£", XOF: "F", XAF: "F", MAD: "DH", CAD: "$CA", GNF: "FG",
+};
+
 interface HomeOfferCardProps {
   offer: any;
   index: number;
@@ -19,7 +23,7 @@ export function HomeOfferCard({ offer, index }: HomeOfferCardProps) {
   const OfferIcon = getOfferIcon(offer.transport_type);
 
   return (
-    <Link to={`/offre/${offer.id}`} className="block">
+    <Link to={`/offres/${offer.id}`} className="block">
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -59,7 +63,9 @@ export function HomeOfferCard({ offer, index }: HomeOfferCardProps) {
           </div>
         </div>
         <div className="text-right flex-shrink-0 pl-1">
-          <span className="text-lg font-extrabold text-primary leading-none">{offer.price_per_kg}€</span>
+          <span className="text-lg font-extrabold text-primary leading-none">
+            {offer.price_per_kg?.toLocaleString()}{CURRENCY_SYMBOLS[offer.currency] || offer.currency || "F"}
+          </span>
           <span className="text-[10px] text-muted-foreground block leading-tight">/kg</span>
         </div>
       </motion.div>
