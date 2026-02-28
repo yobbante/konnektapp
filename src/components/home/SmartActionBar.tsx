@@ -1,18 +1,13 @@
 /**
- * SmartActionBar — Contextual intelligence zone
- * 
- * Dynamically prioritizes and displays the most important actions/alerts
- * based on the user's current state: pending reviews, incoming parcels,
- * price changes, unread messages, weight supplements, etc.
- * 
- * Priority system: CRITICAL > URGENT > IMPORTANT
- * No default items — only contextual actions.
+ * SmartActionBar — Single-action carousel
+ * Shows ONE action at a time by priority. When completed, auto-advances to next.
+ * Subscribes to realtime for auto-refresh.
  */
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Star, MessageCircle, Package, Scale, Bell, ChevronRight, Sparkles
+  Star, MessageCircle, Package, Scale, Bell, ChevronRight, Sparkles, ChevronLeft
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { RateOrderDialog } from "@/components/RateOrderDialog";
@@ -30,7 +25,6 @@ interface SmartAction {
   bgColor: string;
   borderColor: string;
   pulse?: boolean;
-  // For review actions
   reviewData?: { orderId: string; gpId: string; gpName: string };
 }
 
@@ -55,14 +49,12 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
   const [incomingParcels, setIncomingParcels] = useState<any[]>([]);
   const [supplementOrders, setSupplementOrders] = useState<any[]>([]);
   const [priceChanges, setPriceChanges] = useState<any[]>([]);
-
-  // Rating dialog state
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [ratingOrder, setRatingOrder] = useState<PendingReview | null>(null);
 
   const fetchContextualData = useCallback(async () => {
     if (!userId) return;
 
-    // 1. Orders delivered but not reviewed — fetch ALL with GP names
     const { data: unreviewed } = await supabase
       .from("orders")
       .select("id, order_number, gp_id, destination_city")
@@ -74,42 +66,32 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
     if (unreviewed && unreviewed.length > 0) {
       const orderIds = unreviewed.map(o => o.id);
       const gpIds = [...new Set(unreviewed.map(o => o.gp_id))];
-
-      // Fetch existing reviews and GP names in parallel
       const [reviewsRes, gpRes] = await Promise.all([
         supabase.from("reviews").select("order_id").in("order_id", orderIds),
         supabase.from("gp_profiles").select("id, business_name").in("id", gpIds),
       ]);
-
       const reviewedIds = new Set((reviewsRes.data || []).map(r => r.order_id));
       const gpNames: Record<string, string> = {};
       (gpRes.data || []).forEach(gp => { gpNames[gp.id] = gp.business_name; });
-
       setPendingReviews(
         unreviewed
           .filter(o => !reviewedIds.has(o.id))
-          .map(o => ({
-            ...o,
-            gp_name: gpNames[o.gp_id] || "Transporteur",
-          }))
+          .map(o => ({ ...o, gp_name: gpNames[o.gp_id] || "Transporteur" }))
       );
     } else {
       setPendingReviews([]);
     }
 
-    // 2. Parcels where user is recipient
     const { data: incoming } = await supabase
       .from("orders")
       .select("id, order_number, origin_city, status")
       .eq("recipient_user_id", userId)
       .in("status", ["in_transit", "arrived_destination", "delivery_pending"] as any[])
-      .limit(3);
+      .limit(5);
     setIncomingParcels(incoming || []);
 
-    // 3. Weight supplement required
     setSupplementOrders(recentOrders.filter(o => o.status === "weight_pending_payment"));
 
-    // 4. Price match notifications
     const { data: priceNotifs } = await (supabase
       .from("notifications")
       .select("id, title, message, related_id, created_at") as any)
@@ -121,12 +103,21 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
     setPriceChanges(priceNotifs || []);
   }, [userId, recentOrders]);
 
+  useEffect(() => { fetchContextualData(); }, [fetchContextualData]);
+
+  // Realtime: auto-refresh on order/notification changes
   useEffect(() => {
-    fetchContextualData();
-  }, [fetchContextualData]);
+    if (!userId) return;
+    const channel = supabase
+      .channel("smart-action-bar-rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => fetchContextualData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () => fetchContextualData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "reviews" }, () => fetchContextualData())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [userId, fetchContextualData]);
 
   const handleReviewSuccess = useCallback(() => {
-    // Remove the reviewed order from pending list
     if (ratingOrder) {
       setPendingReviews(prev => prev.filter(r => r.id !== ratingOrder.id));
       setRatingOrder(null);
@@ -136,180 +127,187 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
   const actions = useMemo<SmartAction[]>(() => {
     const items: SmartAction[] = [];
 
-    // ─── CRITICAL: Weight supplement required
-    supplementOrders.forEach(o => {
-      items.push({
-        id: `supplement-${o.id}`,
-        priority: "critical",
-        icon: Scale,
-        label: "Supplément requis",
-        description: `${o.order_number} — Payez le supplément poids`,
-        to: `/supplement/${o.id}`,
-        color: "text-destructive",
-        bgColor: "bg-destructive/10",
-        borderColor: "border-destructive/30",
-        pulse: true,
-      });
-    });
-
-    // ─── CRITICAL: Incoming parcels
+    // CRITICAL: Incoming parcels (highest priority)
     incomingParcels.forEach(p => {
       const statusLabel = p.status === "delivery_pending" ? "Livraison en cours" : p.status === "arrived_destination" ? "Arrivé" : "En transit";
       items.push({
-        id: `incoming-${p.id}`,
-        priority: "critical",
-        icon: Package,
+        id: `incoming-${p.id}`, priority: "critical", icon: Package,
         label: "📦 Colis pour vous",
         description: `${p.order_number} depuis ${p.origin_city} · ${statusLabel}`,
         onClick: () => navigate(`/tracking?order=${p.id}`),
-        color: "text-primary",
-        bgColor: "bg-primary/10",
-        borderColor: "border-primary/30",
+        color: "text-primary", bgColor: "bg-primary/10", borderColor: "border-primary/30",
         pulse: p.status === "delivery_pending",
       });
     });
 
-    // ─── URGENT: ALL pending reviews — each GP separately
+    // CRITICAL: Weight supplement
+    supplementOrders.forEach(o => {
+      items.push({
+        id: `supplement-${o.id}`, priority: "critical", icon: Scale,
+        label: "Supplément requis",
+        description: `${o.order_number} — Payez le supplément poids`,
+        to: `/supplement/${o.id}`,
+        color: "text-destructive", bgColor: "bg-destructive/10", borderColor: "border-destructive/30",
+        pulse: true,
+      });
+    });
+
+    // URGENT: Pending reviews
     pendingReviews.forEach(o => {
       items.push({
-        id: `review-${o.id}`,
-        priority: "urgent",
-        icon: Star,
+        id: `review-${o.id}`, priority: "urgent", icon: Star,
         label: `Notez ${o.gp_name}`,
         description: `${o.order_number} → ${o.destination_city}`,
         onClick: () => setRatingOrder(o),
-        color: "text-amber-600 dark:text-amber-400",
-        bgColor: "bg-amber-500/10",
-        borderColor: "border-amber-500/30",
+        color: "text-amber-600 dark:text-amber-400", bgColor: "bg-amber-500/10", borderColor: "border-amber-500/30",
         badge: "⭐",
         reviewData: { orderId: o.id, gpId: o.gp_id, gpName: o.gp_name },
       });
     });
 
-    // ─── IMPORTANT: Unread messages
+    // IMPORTANT: Unread messages
     if (unreadMessages > 0) {
       items.push({
-        id: "messages",
-        priority: "important",
-        icon: MessageCircle,
+        id: "messages", priority: "important", icon: MessageCircle,
         label: `${unreadMessages} message${unreadMessages > 1 ? "s" : ""} non lu${unreadMessages > 1 ? "s" : ""}`,
         description: "Répondez à vos transporteurs",
-        to: "/messages",
-        badge: unreadMessages,
-        color: "text-blue-600 dark:text-blue-400",
-        bgColor: "bg-blue-500/10",
-        borderColor: "border-blue-500/30",
+        to: "/messages", badge: unreadMessages,
+        color: "text-blue-600 dark:text-blue-400", bgColor: "bg-blue-500/10", borderColor: "border-blue-500/30",
       });
     }
 
-    // ─── IMPORTANT: Price match notifications
+    // IMPORTANT: Price notifications
     priceChanges.slice(0, 1).forEach(n => {
       items.push({
-        id: `price-${n.id}`,
-        priority: "important",
-        icon: Bell,
+        id: `price-${n.id}`, priority: "important", icon: Bell,
         label: "Nouvelle offre !",
         description: n.message?.slice(0, 60) || "Une offre correspond à vos critères",
         to: n.related_id ? `/offres/${n.related_id}` : "/offres",
-        color: "text-emerald-600 dark:text-emerald-400",
-        bgColor: "bg-emerald-500/10",
-        borderColor: "border-emerald-500/30",
+        color: "text-emerald-600 dark:text-emerald-400", bgColor: "bg-emerald-500/10", borderColor: "border-emerald-500/30",
         badge: "Nouveau",
       });
     });
 
-    // Sort by priority
     const priorityOrder = { critical: 0, urgent: 1, important: 2 };
     return items.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
   }, [supplementOrders, incomingParcels, pendingReviews, unreadMessages, priceChanges, navigate]);
 
+  // Reset index when actions change
+  useEffect(() => {
+    if (currentIndex >= actions.length) setCurrentIndex(0);
+  }, [actions.length, currentIndex]);
+
   if (actions.length === 0) return null;
 
-  // Show review count header if multiple
+  const action = actions[currentIndex] || actions[0];
+  const total = actions.length;
   const reviewCount = pendingReviews.length;
+
+  const goNext = () => setCurrentIndex(i => (i + 1) % total);
+  const goPrev = () => setCurrentIndex(i => (i - 1 + total) % total);
+
+  const Wrapper = action.to ? Link : "button" as any;
+  const wrapperProps = action.to ? { to: action.to } : { onClick: action.onClick };
+  const isCritical = action.priority === "critical" || action.priority === "urgent";
 
   return (
     <>
       <div className="px-4 pb-3">
-        {/* Review count indicator */}
-        {reviewCount > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-2 mb-2 px-1"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">
-              {reviewCount} avis en attente — vos notes améliorent le score des transporteurs
+        {/* Counter + review hint */}
+        {total > 1 && (
+          <div className="flex items-center justify-between mb-1.5 px-1">
+            <div className="flex items-center gap-1.5">
+              {reviewCount > 0 && (
+                <>
+                  <Sparkles className="w-3 h-3 text-amber-500" />
+                  <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                    {reviewCount} avis en attente
+                  </span>
+                </>
+              )}
+            </div>
+            <span className="text-[10px] text-muted-foreground font-medium">
+              {currentIndex + 1}/{total}
             </span>
-          </motion.div>
+          </div>
         )}
 
-        <div className="space-y-2">
-          <AnimatePresence mode="popLayout">
-            {actions.map((action, i) => {
-              const Wrapper = action.to ? Link : "button" as any;
-              const wrapperProps = action.to
-                ? { to: action.to }
-                : { onClick: action.onClick };
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={action.id}
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -30 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          >
+            <div className="flex items-center gap-1.5">
+              {/* Prev button */}
+              {total > 1 && (
+                <button onClick={goPrev} className="w-6 h-6 rounded-full flex items-center justify-center bg-muted/50 flex-shrink-0">
+                  <ChevronLeft className="w-3 h-3 text-muted-foreground" />
+                </button>
+              )}
 
-              const isCriticalItem = action.priority === "critical" || action.priority === "urgent";
+              <Wrapper
+                {...wrapperProps}
+                className={`flex-1 flex items-center gap-3 p-3 rounded-2xl border transition-all ${action.bgColor} ${action.borderColor} ${
+                  isCritical ? "shadow-sm" : ""
+                } active:scale-[0.98]`}
+              >
+                <div className={`relative w-10 h-10 rounded-xl ${action.bgColor} flex items-center justify-center flex-shrink-0`}>
+                  <action.icon className={`w-5 h-5 ${action.color}`} />
+                  {action.pulse && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-destructive animate-pulse" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0 text-left">
+                  <p className={`text-sm font-semibold leading-tight ${isCritical ? action.color : "text-foreground"}`}>
+                    {action.label}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
+                    {action.description}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  {action.badge && typeof action.badge === "number" ? (
+                    <span className="w-6 h-6 rounded-full bg-destructive text-destructive-foreground text-[11px] font-bold flex items-center justify-center">
+                      {action.badge}
+                    </span>
+                  ) : action.badge ? (
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${action.bgColor} ${action.color}`}>
+                      {action.badge}
+                    </span>
+                  ) : null}
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                </div>
+              </Wrapper>
 
-              return (
-                <motion.div
-                  key={action.id}
-                  layout
-                  initial={{ opacity: 0, y: 12, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95, y: -8 }}
-                  transition={{ delay: i * 0.05, type: "spring", stiffness: 400, damping: 30 }}
-                >
-                  <Wrapper
-                    {...wrapperProps}
-                    className={`w-full flex items-center gap-3 p-3 rounded-2xl border transition-all ${action.bgColor} ${action.borderColor} ${
-                      isCriticalItem ? "shadow-sm" : ""
-                    } active:scale-[0.98]`}
-                  >
-                    {/* Icon */}
-                    <div className={`relative w-10 h-10 rounded-xl ${action.bgColor} flex items-center justify-center flex-shrink-0`}>
-                      <action.icon className={`w-5 h-5 ${action.color}`} />
-                      {action.pulse && (
-                        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-destructive animate-pulse" />
-                      )}
-                    </div>
+              {/* Next button */}
+              {total > 1 && (
+                <button onClick={goNext} className="w-6 h-6 rounded-full flex items-center justify-center bg-muted/50 flex-shrink-0">
+                  <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                </button>
+              )}
+            </div>
+          </motion.div>
+        </AnimatePresence>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0 text-left">
-                      <p className={`text-sm font-semibold leading-tight ${isCriticalItem ? action.color : "text-foreground"}`}>
-                        {action.label}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
-                        {action.description}
-                      </p>
-                    </div>
-
-                    {/* Badge / Arrow */}
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      {action.badge && typeof action.badge === "number" ? (
-                        <span className="w-6 h-6 rounded-full bg-destructive text-destructive-foreground text-[11px] font-bold flex items-center justify-center">
-                          {action.badge}
-                        </span>
-                      ) : action.badge ? (
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${action.bgColor} ${action.color}`}>
-                          {action.badge}
-                        </span>
-                      ) : null}
-                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                    </div>
-                  </Wrapper>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </div>
+        {/* Dots indicator */}
+        {total > 1 && (
+          <div className="flex items-center justify-center gap-1 mt-2">
+            {actions.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentIndex(i)}
+                className={`w-1.5 h-1.5 rounded-full transition-all ${
+                  i === currentIndex ? "w-4 bg-primary" : "bg-muted-foreground/30"
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Rating dialog — triggered from any review action */}
       {ratingOrder && (
         <RateOrderDialog
           open={!!ratingOrder}

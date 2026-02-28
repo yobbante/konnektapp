@@ -55,7 +55,7 @@ export function ActiveReservationBanner() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
-      // Only show for "accepted" status — disappears once collected
+      // Show for "accepted" only — disappears once checked_in (deposit confirmed) or beyond
       const { data: orders, error } = await supabase
         .from("orders")
         .select("id, order_number, status, origin_city, destination_city, gp_id, created_at, total_price, currency")
