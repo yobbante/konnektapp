@@ -5,7 +5,7 @@ import {
   Package, MessageCircle, MapPin, History, Heart, ArrowRight,
   Clock, ChevronRight, FileText, Home as HomeIcon, Truck, Calendar,
   Search, Plane, Ship, Car, Luggage, Globe, Shield, Zap, Award,
-  TrendingUp, Users, Briefcase, Star as StarIcon, Compass, Send
+  TrendingUp, Users
 } from "lucide-react";
 import { RecipientTrackingCard } from "@/components/client/RecipientTrackingCard";
 import { WeightValidationAlert } from "@/components/client/WeightValidationAlert";
@@ -15,10 +15,7 @@ import { FullScreenOrderDetails } from "./FullScreenOrderDetails";
 import { RequestDetailsPopup } from "./RequestDetailsPopup";
 import { HomeOfferCard } from "./HomeOfferCard";
 import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
+  Drawer, DrawerContent, DrawerHeader, DrawerTitle,
 } from "@/components/ui/drawer";
 
 interface ClientAppHomeProps {
@@ -48,16 +45,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   responded: { label: "Réponses reçues", color: "bg-purple-500/20 text-purple-600" },
 };
 
-// ─── BOOKING-STYLE MAIN TABS ───
-const HOME_TABS = [
-  { id: "envoyer", label: "Envoyer", icon: Send, emoji: "📦" },
-  { id: "gp", label: "GP disponibles", icon: Users, emoji: "✈️" },
-  { id: "routes", label: "Routes", icon: Compass, emoji: "🛫" },
-  { id: "opportunites", label: "Opportunités", icon: Briefcase, emoji: "💼", gpOnly: true },
-];
-
-// ─── TRANSPORT FILTER TABS ───
-const TRANSPORT_FILTER_TABS = [
+const TRANSPORT_TABS = [
   { id: "all", label: "Tout", icon: Globe },
   { id: "aerien", label: "Aérien", icon: Plane },
   { id: "maritime", label: "Maritime", icon: Ship },
@@ -66,49 +54,52 @@ const TRANSPORT_FILTER_TABS = [
 ];
 
 const POPULAR_ROUTES = [
-  { from: "Paris", to: "Dakar", flag: "🇫🇷→🇸🇳", type: "aerien", hot: true },
-  { from: "Dakar", to: "Marseille", flag: "🇸🇳→🇫🇷", type: "maritime" },
-  { from: "Abidjan", to: "Paris", flag: "🇨🇮→🇫🇷", type: "aerien", hot: true },
-  { from: "Dakar", to: "Montréal", flag: "🇸🇳→🇨🇦", type: "aerien" },
-  { from: "Abidjan", to: "Bamako", flag: "🇨🇮→🇲🇱", type: "routier" },
-  { from: "Casablanca", to: "Paris", flag: "🇲🇦→🇫🇷", type: "aerien" },
-  { from: "Conakry", to: "Paris", flag: "🇬🇳→🇫🇷", type: "aerien" },
-  { from: "Douala", to: "Bruxelles", flag: "🇨🇲→🇧🇪", type: "aerien" },
+  { from: "Paris", to: "Dakar", flag: "🇫🇷→🇸🇳", hot: true },
+  { from: "Dakar", to: "Marseille", flag: "🇸🇳→🇫🇷" },
+  { from: "Abidjan", to: "Paris", flag: "🇨🇮→🇫🇷", hot: true },
+  { from: "Dakar", to: "Montréal", flag: "🇸🇳→🇨🇦" },
+  { from: "Abidjan", to: "Bamako", flag: "🇨🇮→🇲🇱" },
+  { from: "Casablanca", to: "Paris", flag: "🇲🇦→🇫🇷" },
+];
+
+const ACTIVE_STATUSES = ['pending', 'accepted', 'collected', 'paid_held', 'checked_in', 'weight_pending_payment', 'scheduled_departure', 'in_transit', 'arrived_destination', 'delivery_pending'];
+
+const TYPE_MAP: Record<string, string[]> = {
+  aerien: ["aerien"],
+  maritime: ["maritime"],
+  routier: ["routier"],
+  bagages: ["bagages_accompagnes", "navette"],
+};
+
+const TRUST_ITEMS = [
+  { icon: Shield, title: "Paiement sécurisé", desc: "Escrow protégé", color: "text-emerald-500 bg-emerald-500/10" },
+  { icon: Globe, title: "Multi-corridors", desc: "Afrique, Europe, Amériques", color: "text-blue-500 bg-blue-500/10" },
+  { icon: Zap, title: "Suivi temps réel", desc: "QR + notifications", color: "text-amber-500 bg-amber-500/10" },
+  { icon: Award, title: "GP vérifiés", desc: "KYC + avis", color: "text-purple-500 bg-purple-500/10" },
 ];
 
 export function ClientAppHome({
-  userName,
-  recentOrders = [],
-  customRequests = [],
-  movingRequests = [],
-  unreadMessages = 0,
-  activeOrdersCount = 0,
-  userId,
-  userCity
+  userName, recentOrders = [], customRequests = [], movingRequests = [],
+  unreadMessages = 0, activeOrdersCount = 0, userId, userCity
 }: ClientAppHomeProps) {
   const navigate = useNavigate();
   const firstName = userName?.split(' ')[0] || 'Bienvenue';
-  const currentHour = new Date().getHours();
-  const greeting = currentHour < 12 ? 'Bonjour' : currentHour < 18 ? 'Bon après-midi' : 'Bonsoir';
+  const greeting = new Date().getHours() < 12 ? 'Bonjour' : new Date().getHours() < 18 ? 'Bon après-midi' : 'Bonsoir';
 
   const [fullScreenOrderId, setFullScreenOrderId] = useState<string | null>(null);
-  const [requestPopup, setRequestPopup] = useState<{ type: 'custom' | 'moving'; item: any; } | null>(null);
-  const [activeMainTab, setActiveMainTab] = useState("envoyer");
-  const [activeFilterTab, setActiveFilterTab] = useState("all");
+  const [requestPopup, setRequestPopup] = useState<{ type: 'custom' | 'moving'; item: any } | null>(null);
+  const [activeTab, setActiveTab] = useState("all");
 
-  // Search state
+  // Search
   const [searchOrigin, setSearchOrigin] = useState(userCity || "");
   const [searchDest, setSearchDest] = useState("");
   const [searchDate, setSearchDate] = useState("");
-  const [originDrawerOpen, setOriginDrawerOpen] = useState(false);
-  const [destDrawerOpen, setDestDrawerOpen] = useState(false);
+  const [activePicker, setActivePicker] = useState<"origin" | "dest" | null>(null);
   const [cityQuery, setCityQuery] = useState("");
 
-  useEffect(() => {
-    if (userCity && !searchOrigin) setSearchOrigin(userCity);
-  }, [userCity]);
+  useEffect(() => { if (userCity && !searchOrigin) setSearchOrigin(userCity); }, [userCity]);
 
-  const filteredCityList = useMemo(() => {
+  const filteredCities = useMemo(() => {
     if (!cityQuery) return FEATURED_CITIES;
     const q = cityQuery.toLowerCase();
     return WORLD_CITIES.filter(c => c.city.toLowerCase().includes(q));
@@ -119,54 +110,48 @@ export function ClientAppHome({
     if (searchOrigin) params.set("origin", searchOrigin);
     if (searchDest) params.set("destination", searchDest);
     if (searchDate) params.set("date", searchDate);
-    if (activeFilterTab !== "all") params.set("type", activeFilterTab);
+    if (activeTab !== "all") params.set("type", activeTab);
     navigate(`/offres${params.toString() ? `?${params}` : ""}`);
   };
 
   // Offers
   const [offers, setOffers] = useState<any[]>([]);
   useEffect(() => {
-    const loadOffers = async () => {
-      const { data } = await supabase
-        .from("gp_offers")
-        .select("*, gp_profiles(business_name, rating, total_reviews)")
-        .eq("status", "active")
-        .order("created_at", { ascending: false })
-        .limit(12);
-      if (data) setOffers(data);
-    };
-    loadOffers();
+    supabase
+      .from("gp_offers")
+      .select("*, gp_profiles(business_name, rating, total_reviews)")
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(12)
+      .then(({ data }) => { if (data) setOffers(data); });
   }, []);
 
   const filteredOffers = useMemo(() => {
-    if (activeFilterTab === "all") return offers;
-    const typeMap: Record<string, string[]> = {
-      aerien: ["aerien"],
-      maritime: ["maritime"],
-      routier: ["routier"],
-      bagages: ["bagages_accompagnes", "navette"],
-    };
-    return offers.filter(o => (typeMap[activeFilterTab] || []).includes(o.transport_type));
-  }, [offers, activeFilterTab]);
+    if (activeTab === "all") return offers;
+    return offers.filter(o => (TYPE_MAP[activeTab] || []).includes(o.transport_type));
+  }, [offers, activeTab]);
 
   // Active items
-  const activeOrders = recentOrders.filter(o => ['pending', 'accepted', 'collected', 'paid_held', 'checked_in', 'weight_pending_payment', 'scheduled_departure', 'in_transit', 'arrived_destination', 'delivery_pending'].includes(o.status));
+  const activeOrders = recentOrders.filter(o => ACTIVE_STATUSES.includes(o.status));
   const allActiveItems = [
     ...activeOrders.map(o => ({ ...o, type: 'order' as const })),
     ...customRequests.map(r => ({ ...r, type: 'custom' as const })),
     ...movingRequests.map(m => ({ ...m, type: 'moving' as const })),
   ];
-
   const selectedOrder = fullScreenOrderId ? activeOrders.find(o => o.id === fullScreenOrderId) : null;
 
-  const getStatusInfo = (status: string, type: 'order' | 'custom' | 'moving') => {
-    const config = STATUS_CONFIG[status] || { label: status, color: "bg-muted text-muted-foreground" };
-    let icon = Clock;
-    if (status === 'in_transit') icon = Truck;
-    else if (status === 'collected') icon = Package;
-    else if (type === 'custom') icon = FileText;
-    else if (type === 'moving') icon = HomeIcon;
-    return { ...config, icon };
+  const getStatusIcon = (status: string, type: string) => {
+    if (status === 'in_transit') return Truck;
+    if (type === 'custom') return FileText;
+    if (type === 'moving') return HomeIcon;
+    return Package;
+  };
+
+  const handleCitySelect = (city: string) => {
+    if (activePicker === "origin") setSearchOrigin(city);
+    else setSearchDest(city);
+    setActivePicker(null);
+    setCityQuery("");
   };
 
   return (
@@ -183,403 +168,234 @@ export function ClientAppHome({
         )}
       </AnimatePresence>
 
-      {/* ─── SCROLLABLE CONTENT ─── */}
       <div className="flex-1 overflow-y-auto">
-
-        {/* ═══ GREETING ═══ */}
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="px-4 pt-3 pb-1">
+        {/* ── GREETING ── */}
+        <div className="px-4 pt-3 pb-1">
           <h1 className="text-xl font-bold text-foreground">
-            {greeting}{userName ? `, ${firstName}` : ''} <span>👋</span>
+            {greeting}{userName ? `, ${firstName}` : ''} 👋
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">Envoyez vos colis partout dans le monde</p>
-        </motion.div>
+        </div>
 
         {/* Alerts */}
         {userId && <div className="px-4"><WeightValidationAlert userId={userId} /></div>}
         {userId && <RecipientTrackingCard userId={userId} />}
 
-        {/* ═══ BOOKING-STYLE HORIZONTAL TABS (main categories) ═══ */}
-        <motion.div
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="px-4 pt-2 pb-1"
-        >
-          <div className="flex gap-1 overflow-x-auto no-scrollbar -mx-1 px-1 pb-1">
-            {HOME_TABS.filter(t => !t.gpOnly).map((tab) => {
-              const isActive = activeMainTab === tab.id;
-              const TabIcon = tab.icon;
-              return (
-                <motion.button
-                  key={tab.id}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setActiveMainTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${
-                    isActive
-                      ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20"
-                      : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
+        {/* ── SEARCH ENGINE ── */}
+        <div className="px-4 py-2">
+          <div className="bg-card border-2 border-primary/30 rounded-2xl overflow-hidden shadow-sm">
+            {[
+              { picker: "origin" as const, icon: MapPin, value: searchOrigin, placeholder: "Ville de départ", iconClass: "text-primary" },
+              { picker: "dest" as const, icon: Search, value: searchDest, placeholder: "Ville de destination", iconClass: "text-muted-foreground" },
+            ].map((field, i) => (
+              <button
+                key={field.picker}
+                onClick={() => { setCityQuery(""); setActivePicker(field.picker); }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left ${i === 0 ? "border-b border-border/40" : "border-b border-border/40"}`}
+              >
+                <field.icon className={`w-4 h-4 ${field.iconClass} flex-shrink-0`} />
+                <span className={`flex-1 text-sm ${field.value ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+                  {field.value || field.placeholder}
+                </span>
+                {field.value && <span className="text-[10px] text-muted-foreground">Modifier</span>}
+              </button>
+            ))}
+            <div className="flex items-center gap-3 px-3 py-2.5">
+              <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <input
+                type="date"
+                value={searchDate}
+                onChange={(e) => setSearchDate(e.target.value)}
+                className="flex-1 bg-transparent text-sm text-foreground outline-none"
+                style={{ colorScheme: 'dark' }}
+              />
+            </div>
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={handleSearch}
+            className="w-full bg-primary text-primary-foreground font-bold text-center py-3 rounded-xl shadow-lg mt-2 text-sm"
+          >
+            Rechercher un transporteur
+          </motion.button>
+        </div>
+
+        {/* ── QUICK ACTIONS ── */}
+        <div className="px-4 pb-3">
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { icon: Package, label: "Envoyer", to: "/envoyer", primary: true },
+              { icon: MessageCircle, label: "Messages", to: "/messages", badge: unreadMessages },
+              { icon: History, label: "Historique", to: "/historique", badge: activeOrdersCount },
+              { icon: Heart, label: "Favoris", to: "/favoris" },
+            ].map((action) => (
+              <Link key={action.to} to={action.to}>
+                <motion.div
+                  whileTap={{ scale: 0.93 }}
+                  className={`relative rounded-2xl py-3 px-2 flex flex-col items-center gap-1.5 transition-all ${
+                    action.primary ? "bg-primary text-primary-foreground shadow-lg" : "bg-muted/60 border border-border"
                   }`}
                 >
-                  <span className="text-sm">{tab.emoji}</span>
+                  {action.badge != null && action.badge > 0 && (
+                    <span className="absolute -top-1 -right-1 w-[18px] h-[18px] bg-destructive text-destructive-foreground rounded-full text-[9px] flex items-center justify-center font-bold">
+                      {action.badge}
+                    </span>
+                  )}
+                  <action.icon className={`w-5 h-5 ${action.primary ? "text-primary-foreground" : "text-foreground"}`} />
+                  <span className={`text-[11px] font-semibold leading-tight ${action.primary ? "text-primary-foreground" : "text-foreground"}`}>
+                    {action.label}
+                  </span>
+                </motion.div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* ── ACTIVE ORDERS (compact) ── */}
+        {allActiveItems.length > 0 && (
+          <div className="px-4 pb-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <h2 className="text-sm font-bold text-foreground">Envois actifs</h2>
+              <Link to="/historique" className="text-xs text-primary font-medium flex items-center gap-0.5">
+                Voir tout <ChevronRight className="w-3 h-3" />
+              </Link>
+            </div>
+            <div className="space-y-1.5">
+              {allActiveItems.slice(0, 2).map((item, i) => {
+                const cfg = STATUS_CONFIG[item.status] || { label: item.status, color: "bg-muted text-muted-foreground" };
+                const Icon = getStatusIcon(item.status, item.type);
+                return (
+                  <motion.div
+                    key={`${item.type}-${item.id}`}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    onClick={() =>
+                      item.type === 'order' ? setFullScreenOrderId(item.id) :
+                      setRequestPopup({ type: item.type as 'custom' | 'moving', item })
+                    }
+                    className="bg-card border border-border rounded-xl p-2.5 flex items-center gap-2.5 active:scale-[0.98] transition-transform cursor-pointer"
+                  >
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                      item.type === 'moving' ? 'bg-amber-500/10' : item.type === 'custom' ? 'bg-purple-500/10' : 'bg-primary/10'
+                    }`}>
+                      <Icon className={`w-4 h-4 ${
+                        item.type === 'moving' ? 'text-amber-600' : item.type === 'custom' ? 'text-purple-600' : 'text-primary'
+                      }`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-foreground truncate">{item.origin_city} → {item.destination_city}</p>
+                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${cfg.color}`}>
+                        {cfg.label}
+                      </span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── TRANSPORT FILTER TABS + OFFERS ── */}
+        <div className="px-4 pb-2">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-base font-bold text-foreground">Offres disponibles</h2>
+            <Link to="/offres" className="text-xs text-primary font-medium flex items-center gap-0.5">
+              Tout voir <ChevronRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-2">
+            {TRANSPORT_TABS.map((tab) => {
+              const isActive = activeTab === tab.id;
+              const count = tab.id === "all" ? offers.length :
+                offers.filter(o => (TYPE_MAP[tab.id] || []).includes(o.transport_type)).length;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold whitespace-nowrap transition-all border ${
+                    isActive
+                      ? "bg-primary text-primary-foreground border-primary shadow-md"
+                      : "bg-card text-muted-foreground border-border hover:border-primary/30"
+                  }`}
+                >
+                  <tab.icon className="w-3 h-3" />
                   {tab.label}
-                </motion.button>
+                  {count > 0 && (
+                    <span className={`text-[9px] px-1 py-0.5 rounded-full font-bold ${
+                      isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
+                    }`}>{count}</span>
+                  )}
+                </button>
               );
             })}
           </div>
-        </motion.div>
+        </div>
 
-        {/* ═══ TAB CONTENT: ENVOYER ═══ */}
-        <AnimatePresence mode="wait">
-          {activeMainTab === "envoyer" && (
-            <motion.div
-              key="envoyer"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              transition={{ duration: 0.15 }}
-            >
-              {/* ── SEARCH ENGINE ── */}
-              <div className="px-4 py-2">
-                <div className="bg-card border-2 border-primary/30 rounded-2xl overflow-hidden shadow-sm">
-                  <button
-                    onClick={() => { setCityQuery(""); setOriginDrawerOpen(true); }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 border-b border-border/40 text-left"
-                  >
-                    <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-                    <span className={`flex-1 text-sm ${searchOrigin ? "text-foreground font-medium" : "text-muted-foreground"}`}>
-                      {searchOrigin || "Ville de départ"}
-                    </span>
-                    {searchOrigin && <span className="text-[10px] text-muted-foreground">Modifier</span>}
-                  </button>
-                  <button
-                    onClick={() => { setCityQuery(""); setDestDrawerOpen(true); }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 border-b border-border/40 text-left"
-                  >
-                    <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                    <span className={`flex-1 text-sm ${searchDest ? "text-foreground font-medium" : "text-muted-foreground"}`}>
-                      {searchDest || "Ville de destination"}
-                    </span>
-                    {searchDest && <span className="text-[10px] text-muted-foreground">Modifier</span>}
-                  </button>
-                  <div className="flex items-center gap-3 px-3 py-2.5">
-                    <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                    <input
-                      type="date"
-                      value={searchDate}
-                      onChange={(e) => setSearchDate(e.target.value)}
-                      className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
-                      style={{ colorScheme: 'dark' }}
-                    />
-                  </div>
-                </div>
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleSearch}
-                  className="w-full bg-primary text-primary-foreground font-bold text-center py-3 rounded-xl shadow-lg mt-2 text-sm"
-                >
-                  Rechercher un transporteur
-                </motion.button>
-              </div>
-
-              {/* ── QUICK ACTIONS ── */}
-              <div className="px-4 pb-3">
-                <div className="grid grid-cols-4 gap-2">
-                  {[
-                    { icon: Package, label: "Envoyer", to: "/envoyer", primary: true },
-                    { icon: MessageCircle, label: "Messages", to: "/messages", badge: unreadMessages },
-                    { icon: History, label: "Historique", to: "/historique", badge: activeOrdersCount },
-                    { icon: Heart, label: "Favoris", to: "/favoris" },
-                  ].map((action) => (
-                    <Link key={action.to} to={action.to}>
-                      <motion.div
-                        whileTap={{ scale: 0.93 }}
-                        className={`relative rounded-2xl py-3 px-2 flex flex-col items-center gap-1.5 transition-all duration-200 ${
-                          action.primary
-                            ? "bg-primary text-primary-foreground shadow-lg"
-                            : "bg-muted/60 border border-border"
-                        }`}
-                      >
-                        {action.badge != null && action.badge > 0 && (
-                          <span className="absolute -top-1 -right-1 w-[18px] h-[18px] bg-destructive text-destructive-foreground rounded-full text-[9px] flex items-center justify-center font-bold shadow-sm">
-                            {action.badge}
-                          </span>
-                        )}
-                        <action.icon className={`w-5 h-5 ${action.primary ? "text-primary-foreground" : "text-foreground"}`} />
-                        <span className={`text-[11px] font-semibold leading-tight ${action.primary ? "text-primary-foreground" : "text-foreground"}`}>
-                          {action.label}
-                        </span>
-                      </motion.div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              {/* ── ACTIVE ORDERS ── */}
-              {allActiveItems.length > 0 && (
-                <div className="px-4 pb-3">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <h2 className="text-sm font-bold text-foreground">Envois actifs</h2>
-                    <Link to="/historique" className="text-xs text-primary font-medium flex items-center gap-0.5">
-                      Voir tout <ChevronRight className="w-3 h-3" />
-                    </Link>
-                  </div>
-                  <div className="space-y-1.5">
-                    {allActiveItems.slice(0, 2).map((item, index) => {
-                      const statusInfo = getStatusInfo(item.status, item.type);
-                      return (
-                        <motion.div
-                          key={`${item.type}-${item.id}`}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                          onClick={
-                            item.type === 'order' ? () => setFullScreenOrderId(item.id) :
-                            item.type === 'custom' ? () => setRequestPopup({ type: 'custom', item }) :
-                            () => setRequestPopup({ type: 'moving', item })
-                          }
-                          className="bg-card border border-border rounded-xl p-2.5 flex items-center gap-2.5 active:scale-[0.98] transition-transform cursor-pointer"
-                        >
-                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                            item.type === 'moving' ? 'bg-amber-500/10' :
-                            item.type === 'custom' ? 'bg-purple-500/10' : 'bg-primary/10'
-                          }`}>
-                            {item.type === 'moving' ? <HomeIcon className="w-4 h-4 text-amber-600" /> :
-                             item.type === 'custom' ? <FileText className="w-4 h-4 text-purple-600" /> :
-                             <Package className="w-4 h-4 text-primary" />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-foreground truncate">
-                              {item.origin_city} → {item.destination_city}
-                            </p>
-                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${statusInfo.color}`}>
-                              {statusInfo.label}
-                            </span>
-                          </div>
-                          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </div>
+        <div className="px-4 pb-4">
+          {filteredOffers.length > 0 ? (
+            <div className="space-y-2">
+              {filteredOffers.slice(0, 6).map((offer, idx) => (
+                <HomeOfferCard key={offer.id} offer={offer} index={idx} />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-muted/30 border border-border rounded-xl p-6 text-center">
+              <Package className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground font-medium">
+                {activeTab === "all" ? "Aucune offre pour le moment" : `Aucune offre ${TRANSPORT_TABS.find(t => t.id === activeTab)?.label}`}
+              </p>
+              {activeTab !== "all" && (
+                <button onClick={() => setActiveTab("all")} className="text-xs text-primary font-medium mt-1.5">
+                  Voir toutes les offres
+                </button>
               )}
+            </div>
+          )}
+        </div>
 
-              {/* ── OFFRES DISPONIBLES + TRANSPORT FILTERS ── */}
-              <div className="px-4 pb-2">
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-base font-bold text-foreground">Offres disponibles</h2>
-                  <Link to="/offres" className="text-xs text-primary font-medium flex items-center gap-0.5">
-                    Voir tout <ChevronRight className="w-3 h-3" />
-                  </Link>
-                </div>
-                <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-2 -mx-1 px-1">
-                  {TRANSPORT_FILTER_TABS.map((tab) => {
-                    const TabIcon = tab.icon;
-                    const isActive = activeFilterTab === tab.id;
-                    const count = tab.id === "all" ? offers.length :
-                      offers.filter(o => {
-                        const typeMap: Record<string, string[]> = {
-                          aerien: ["aerien"],
-                          maritime: ["maritime"],
-                          routier: ["routier"],
-                          bagages: ["bagages_accompagnes", "navette"],
-                        };
-                        return (typeMap[tab.id] || []).includes(o.transport_type);
-                      }).length;
-                    return (
-                      <motion.button
-                        key={tab.id}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => setActiveFilterTab(tab.id)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold whitespace-nowrap transition-all border ${
-                          isActive
-                            ? "bg-primary text-primary-foreground border-primary shadow-md"
-                            : "bg-card text-muted-foreground border-border hover:border-primary/30"
-                        }`}
-                      >
-                        <TabIcon className="w-3 h-3" />
-                        {tab.label}
-                        {count > 0 && (
-                          <span className={`text-[9px] px-1 py-0.5 rounded-full font-bold ${
-                            isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
-                          }`}>
-                            {count}
-                          </span>
-                        )}
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Offers List */}
-              <div className="px-4 pb-4">
-                {filteredOffers.length > 0 ? (
-                  <div className="space-y-2">
-                    {filteredOffers.slice(0, 6).map((offer, idx) => (
-                      <HomeOfferCard key={offer.id} offer={offer} index={idx} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="bg-muted/30 border border-border rounded-xl p-6 text-center">
-                    <Package className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground font-medium">
-                      {activeFilterTab === "all" ? "Aucune offre pour le moment" : `Aucune offre ${TRANSPORT_FILTER_TABS.find(t => t.id === activeFilterTab)?.label || ""}`}
-                    </p>
-                    <button onClick={() => setActiveFilterTab("all")} className="text-xs text-primary font-medium mt-1.5">
-                      {activeFilterTab !== "all" ? "Voir toutes les offres" : "Lancer une recherche"}
-                    </button>
-                  </div>
+        {/* ── ROUTES POPULAIRES ── */}
+        <div className="px-4 pb-4">
+          <h2 className="text-base font-bold text-foreground mb-2">Routes populaires</h2>
+          <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
+            {POPULAR_ROUTES.map((route, idx) => (
+              <button
+                key={idx}
+                onClick={() => { setSearchOrigin(route.from); setSearchDest(route.to); handleSearch(); }}
+                className="flex-shrink-0 w-[120px] bg-card border border-border rounded-2xl p-3 text-left hover:border-primary/30 transition-all relative"
+              >
+                {route.hot && (
+                  <span className="absolute top-2 right-2 text-[9px] bg-destructive/90 text-destructive-foreground px-1.5 py-0.5 rounded-full font-bold flex items-center gap-0.5">
+                    <TrendingUp className="w-2.5 h-2.5" /> Hot
+                  </span>
                 )}
-              </div>
-            </motion.div>
-          )}
+                <span className="text-lg block mb-1">{route.flag}</span>
+                <p className="text-sm font-bold text-foreground leading-tight">{route.from}</p>
+                <p className="text-[10px] text-muted-foreground">→ {route.to}</p>
+              </button>
+            ))}
+          </div>
+        </div>
 
-          {/* ═══ TAB CONTENT: GP DISPONIBLES ═══ */}
-          {activeMainTab === "gp" && (
-            <motion.div
-              key="gp"
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.15 }}
-              className="px-4 py-3"
-            >
-              <h2 className="text-base font-bold text-foreground mb-1">Transporteurs actifs</h2>
-              <p className="text-xs text-muted-foreground mb-3">Trouvez un GP sur votre corridor</p>
-
-              {/* GP active offers grouped */}
-              {offers.length > 0 ? (
-                <div className="space-y-2">
-                  {offers.slice(0, 8).map((offer, idx) => (
-                    <HomeOfferCard key={offer.id} offer={offer} index={idx} />
-                  ))}
-                  <Link to="/offres" className="block">
-                    <motion.div whileTap={{ scale: 0.98 }} className="bg-primary/5 border border-primary/20 rounded-2xl p-3 text-center">
-                      <span className="text-sm font-bold text-primary">Voir tous les GP →</span>
-                    </motion.div>
-                  </Link>
+        {/* ── POURQUOI KONNEKT ── */}
+        <div className="px-4 pb-8">
+          <h2 className="text-base font-bold text-foreground mb-2">Pourquoi Konnekt ?</h2>
+          <div className="grid grid-cols-2 gap-2">
+            {TRUST_ITEMS.map((item, idx) => (
+              <div key={idx} className="bg-card border border-border rounded-2xl p-3">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-2 ${item.color}`}>
+                  <item.icon className="w-4 h-4" />
                 </div>
-              ) : (
-                <div className="bg-muted/30 border border-border rounded-xl p-8 text-center">
-                  <Users className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-sm font-medium text-muted-foreground">Aucun GP actif pour le moment</p>
-                  <p className="text-xs text-muted-foreground mt-1">Revenez bientôt ou lancez une demande</p>
-                </div>
-              )}
-            </motion.div>
-          )}
-
-          {/* ═══ TAB CONTENT: ROUTES ═══ */}
-          {activeMainTab === "routes" && (
-            <motion.div
-              key="routes"
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.15 }}
-              className="px-4 py-3"
-            >
-              <h2 className="text-base font-bold text-foreground mb-1">Routes actives</h2>
-              <p className="text-xs text-muted-foreground mb-3">Explorez les corridors les plus populaires</p>
-
-              <div className="grid grid-cols-2 gap-2">
-                {POPULAR_ROUTES.map((route, idx) => (
-                  <motion.button
-                    key={idx}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: idx * 0.04 }}
-                    whileTap={{ scale: 0.96 }}
-                    onClick={() => {
-                      setActiveMainTab("envoyer");
-                      setSearchOrigin(route.from);
-                      setSearchDest(route.to);
-                      setTimeout(handleSearch, 100);
-                    }}
-                    className="bg-card border border-border rounded-2xl p-3 text-left hover:border-primary/30 transition-all relative overflow-hidden"
-                  >
-                    {route.hot && (
-                      <span className="absolute top-2 right-2 text-[9px] bg-destructive/90 text-destructive-foreground px-1.5 py-0.5 rounded-full font-bold flex items-center gap-0.5">
-                        <TrendingUp className="w-2.5 h-2.5" /> Hot
-                      </span>
-                    )}
-                    <span className="text-lg block mb-1">{route.flag}</span>
-                    <p className="text-sm font-bold text-foreground leading-tight">{route.from}</p>
-                    <p className="text-[10px] text-muted-foreground">→ {route.to}</p>
-                    <div className="mt-2 flex items-center gap-1">
-                      {route.type === "aerien" && <Plane className="w-3 h-3 text-primary" />}
-                      {route.type === "maritime" && <Ship className="w-3 h-3 text-primary" />}
-                      {route.type === "routier" && <Car className="w-3 h-3 text-primary" />}
-                      <span className="text-[10px] text-primary font-medium capitalize">{route.type}</span>
-                    </div>
-                  </motion.button>
-                ))}
+                <p className="text-xs font-bold text-foreground leading-tight">{item.title}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{item.desc}</p>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ═══ SECTION: ROUTES POPULAIRES (always visible in "envoyer") ═══ */}
-        {activeMainTab === "envoyer" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="px-4 pb-4">
-            <h2 className="text-base font-bold text-foreground mb-2">Routes populaires</h2>
-            <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
-              {POPULAR_ROUTES.slice(0, 6).map((route, idx) => (
-                <motion.button
-                  key={idx}
-                  whileTap={{ scale: 0.96 }}
-                  onClick={() => {
-                    setSearchOrigin(route.from);
-                    setSearchDest(route.to);
-                    handleSearch();
-                  }}
-                  className="flex-shrink-0 w-[130px] bg-card border border-border rounded-2xl p-3 text-left hover:border-primary/30 transition-all relative overflow-hidden"
-                >
-                  {route.hot && (
-                    <span className="absolute top-2 right-2 text-[9px] bg-destructive/90 text-destructive-foreground px-1.5 py-0.5 rounded-full font-bold flex items-center gap-0.5">
-                      <TrendingUp className="w-2.5 h-2.5" /> Hot
-                    </span>
-                  )}
-                  <span className="text-lg block mb-1">{route.flag}</span>
-                  <p className="text-sm font-bold text-foreground leading-tight">{route.from}</p>
-                  <p className="text-[10px] text-muted-foreground">→ {route.to}</p>
-                </motion.button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-
-        {/* ═══ SECTION: POURQUOI KONNEKT ═══ */}
-        {activeMainTab === "envoyer" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="px-4 pb-8">
-            <h2 className="text-base font-bold text-foreground mb-2">Pourquoi Konnekt ?</h2>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { icon: Shield, title: "Paiement sécurisé", desc: "Escrow protégé", color: "text-emerald-500 bg-emerald-500/10" },
-                { icon: Globe, title: "Multi-corridors", desc: "Afrique, Europe, Amériques", color: "text-blue-500 bg-blue-500/10" },
-                { icon: Zap, title: "Suivi en temps réel", desc: "Scan QR + notifications", color: "text-amber-500 bg-amber-500/10" },
-                { icon: Award, title: "Transporteurs vérifiés", desc: "KYC + avis clients", color: "text-purple-500 bg-purple-500/10" },
-              ].map((item, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.35 + idx * 0.05 }}
-                  className="bg-card border border-border rounded-2xl p-3"
-                >
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-2 ${item.color}`}>
-                    <item.icon className="w-4 h-4" />
-                  </div>
-                  <p className="text-xs font-bold text-foreground leading-tight">{item.title}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{item.desc}</p>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        )}
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Request Details Popup */}
+      {/* Request Popup */}
       <RequestDetailsPopup
         open={!!requestPopup}
         onClose={() => setRequestPopup(null)}
@@ -588,60 +404,47 @@ export function ClientAppHome({
         navigate={navigate}
       />
 
-      {/* === CITY PICKER DRAWERS === */}
-      {[
-        { open: originDrawerOpen, setOpen: setOriginDrawerOpen, title: "Ville de départ", onSelect: setSearchOrigin },
-        { open: destDrawerOpen, setOpen: setDestDrawerOpen, title: "Ville de destination", onSelect: setSearchDest },
-      ].map((drawer) => (
-        <Drawer key={drawer.title} open={drawer.open} onOpenChange={drawer.setOpen}>
-          <DrawerContent className="max-h-[85vh]">
-            <DrawerHeader className="pb-2">
-              <DrawerTitle>{drawer.title}</DrawerTitle>
-            </DrawerHeader>
-            <div className="px-4 pb-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Rechercher une ville..."
-                  value={cityQuery}
-                  onChange={(e) => setCityQuery(e.target.value)}
-                  className="w-full h-11 pl-10 pr-4 rounded-xl border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30"
-                  autoFocus
-                />
-              </div>
+      {/* City Picker Drawer (shared for origin & dest) */}
+      <Drawer open={!!activePicker} onOpenChange={(open) => { if (!open) setActivePicker(null); }}>
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerHeader className="pb-2">
+            <DrawerTitle>{activePicker === "origin" ? "Ville de départ" : "Ville de destination"}</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Rechercher une ville..."
+                value={cityQuery}
+                onChange={(e) => setCityQuery(e.target.value)}
+                className="w-full h-11 pl-10 pr-4 rounded-xl border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                autoFocus
+              />
             </div>
-            <div className="overflow-y-auto overscroll-contain px-2 pb-6" style={{ maxHeight: "55vh", WebkitOverflowScrolling: "touch", touchAction: "pan-y" } as React.CSSProperties}>
-              {filteredCityList.slice(0, 30).map((city) => (
-                <button
-                  key={`${city.city}-${city.country}`}
-                  onClick={() => {
-                    drawer.onSelect(city.city);
-                    drawer.setOpen(false);
-                    setCityQuery("");
-                  }}
-                  className="w-full flex items-center gap-3 py-2.5 px-3 rounded-lg text-left hover:bg-muted/60 active:bg-muted transition-colors"
-                >
-                  <span className="text-lg">{city.flag}</span>
-                  <span className="text-sm font-medium flex-1">{city.city}</span>
-                </button>
-              ))}
-              {filteredCityList.length === 0 && cityQuery && (
-                <button
-                  onClick={() => {
-                    drawer.onSelect(cityQuery);
-                    drawer.setOpen(false);
-                    setCityQuery("");
-                  }}
-                  className="w-full py-3 text-sm text-primary font-medium text-center"
-                >
-                  Utiliser "{cityQuery}"
-                </button>
-              )}
-            </div>
-          </DrawerContent>
-        </Drawer>
-      ))}
+          </div>
+          <div className="overflow-y-auto overscroll-contain px-2 pb-6" style={{ maxHeight: "55vh", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
+            {filteredCities.slice(0, 30).map((city) => (
+              <button
+                key={`${city.city}-${city.country}`}
+                onClick={() => handleCitySelect(city.city)}
+                className="w-full flex items-center gap-3 py-2.5 px-3 rounded-lg text-left hover:bg-muted/60 active:bg-muted transition-colors"
+              >
+                <span className="text-lg">{city.flag}</span>
+                <span className="text-sm font-medium flex-1">{city.city}</span>
+              </button>
+            ))}
+            {filteredCities.length === 0 && cityQuery && (
+              <button
+                onClick={() => handleCitySelect(cityQuery)}
+                className="w-full py-3 text-sm text-primary font-medium text-center"
+              >
+                Utiliser "{cityQuery}"
+              </button>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }
