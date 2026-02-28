@@ -721,6 +721,16 @@ export function InteractiveAuthForm({
                 </div>
               </div>
 
+              {/* Phone — read-only badge from entry flow */}
+              {formData.phone && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border">
+                  <Phone className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">{formData.phone}</span>
+                  <span className="text-[10px] text-muted-foreground ml-auto">Numéro vérifié</span>
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                </div>
+              )}
+
               {/* Country is pre-filled from entry flow — show read-only badge */}
               {formData.country && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border">

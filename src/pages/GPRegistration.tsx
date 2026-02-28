@@ -338,7 +338,14 @@ export default function GPRegistration() {
             .map(z => z.country),
         });
 
-      if (gpError) throw gpError;
+      if (gpError) {
+        if (gpError.message?.includes("idx_gp_profiles_phone_unique")) {
+          toast({ title: "Numéro déjà utilisé", description: "Ce numéro de téléphone est déjà associé à un autre transporteur.", variant: "destructive" });
+          setLoading(false);
+          return;
+        }
+        throw gpError;
+      }
 
       toast({
         title: "Inscription réussie !",
@@ -636,11 +643,19 @@ export default function GPRegistration() {
 
                 <div className="space-y-2">
                   <Label htmlFor="phone">Téléphone *</Label>
-                  <PhoneInputWithCode
-                    value={accountData.phone}
-                    onChange={(v) => setAccountData({ ...accountData, phone: v })}
-                    size="md"
-                  />
+                  {existingUser?.phone ? (
+                    <div className="flex items-center gap-2 px-3 py-2.5 bg-muted/50 rounded-lg border border-input h-10">
+                      <Phone className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-medium flex-1">{existingUser.phone}</span>
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                    </div>
+                  ) : (
+                    <PhoneInputWithCode
+                      value={accountData.phone}
+                      onChange={(v) => setAccountData({ ...accountData, phone: v })}
+                      size="md"
+                    />
+                  )}
                 </div>
 
                 {!existingUser && (

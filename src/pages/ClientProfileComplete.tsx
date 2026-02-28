@@ -119,6 +119,21 @@ export default function ClientProfileComplete() {
     if (!profileId) return;
     setSaving(true);
     try {
+      // Check phone uniqueness before saving (if phone changed)
+      if (formData.phone) {
+        const { data: existingPhone } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("phone", formData.phone)
+          .neq("user_id", userId)
+          .maybeSingle();
+        if (existingPhone) {
+          toast({ title: "Numéro déjà utilisé", description: "Ce numéro de téléphone est associé à un autre compte.", variant: "destructive" });
+          setSaving(false);
+          return;
+        }
+      }
+
       const updateData: Record<string, any> = {
         full_name: formData.full_name,
         phone: formData.phone,
@@ -140,7 +155,14 @@ export default function ClientProfileComplete() {
       updateData.kyc_level = kycLevel;
 
       const { error } = await supabase.from("profiles").update(updateData).eq("id", profileId);
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes("idx_profiles_phone_unique")) {
+          toast({ title: "Numéro déjà utilisé", description: "Ce numéro de téléphone est associé à un autre compte.", variant: "destructive" });
+          setSaving(false);
+          return;
+        }
+        throw error;
+      }
 
       toast({ title: "Profil mis à jour ✓", description: kycLevel > 0 ? "Vérification améliorée" : undefined });
       navigate("/profil");
@@ -218,7 +240,14 @@ export default function ClientProfileComplete() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs text-muted-foreground">Téléphone *</Label>
-                <PhoneInputWithCode value={formData.phone} onChange={v => setFormData(p => ({ ...p, phone: v }))} defaultCountry={formData.country_code || "SN"} className="mt-1" size="md" />
+                {formData.phone ? (
+                  <div className="flex items-center gap-2 px-3 py-2 mt-1 bg-muted/50 rounded-lg border border-input h-10">
+                    <span className="text-sm font-medium flex-1 truncate">{formData.phone}</span>
+                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                  </div>
+                ) : (
+                  <PhoneInputWithCode value={formData.phone} onChange={v => setFormData(p => ({ ...p, phone: v }))} defaultCountry={formData.country_code || "SN"} className="mt-1" size="md" />
+                )}
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Pays</Label>
