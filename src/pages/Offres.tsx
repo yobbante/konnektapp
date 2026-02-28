@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { 
-  Package, ArrowRight, Star, Loader2, Heart, Calendar,
+  Package, ArrowRight, Star, Loader2, Heart, Calendar, MapPin, Search,
   Zap, Truck, Ship, Plane, Briefcase, Luggage, Building2, ChevronRight, Shield
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { SmartRouteSearch } from "@/components/offers/SmartRouteSearch";
+
 import { useFavorites } from "@/hooks/useFavorites";
 import { useToast } from "@/hooks/use-toast";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
@@ -341,13 +341,30 @@ export default function Offres() {
       <PullToRefreshIndicator isRefreshing={isRefreshing} progress={progress} pullDistance={pullDistance} />
       <AppHeader title="Offres" />
 
-      {/* Smart Search */}
+      {/* Search - card style matching home */}
       <div className="sticky top-14 z-40 bg-background/95 backdrop-blur-sm px-4 pt-3 pb-2 border-b border-border space-y-2">
-        <SmartRouteSearch
-          onSearch={handleSearch}
-          initialOrigin={searchParams.get("origin") || undefined}
-          initialDestination={searchParams.get("destination") || undefined}
-        />
+        <div className="bg-card border border-border/60 rounded-2xl overflow-hidden shadow-sm">
+          <div className="flex items-center gap-3 px-3 py-2.5 border-b border-border/40">
+            <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+            <input
+              type="text"
+              placeholder="Ville de départ"
+              value={searchOrigin || ""}
+              onChange={(e) => { setSearchOrigin(e.target.value || undefined); handleSearch(searchQuery, e.target.value || undefined, searchDestination); }}
+              className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+            />
+          </div>
+          <div className="flex items-center gap-3 px-3 py-2.5">
+            <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            <input
+              type="text"
+              placeholder="Ville de destination"
+              value={searchDestination || ""}
+              onChange={(e) => { setSearchDestination(e.target.value || undefined); handleSearch(searchQuery, searchOrigin, e.target.value || undefined); }}
+              className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+            />
+          </div>
+        </div>
         {/* Type filter tabs */}
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
           {FILTER_TABS.map((tab) => {
