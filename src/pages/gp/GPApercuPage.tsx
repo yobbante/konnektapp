@@ -131,7 +131,7 @@ export default function GPApercuPage() {
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-      const [ordersRes, offersRes, walletRes, manualRes, monthLedger] = await Promise.all([
+      const [ordersRes, offersRes, walletRes, manualRes, monthLedger, customReqRes] = await Promise.all([
       supabase.from("orders").
       select("id, order_number, origin_city, destination_city, weight, status, total_price, currency, created_at, client_id, description").
       eq("gp_id", gpProfile.id).not("status", "eq", "cancelled").
@@ -150,8 +150,11 @@ export default function GPApercuPage() {
       supabase.from("konnekt_ledger").
       select("amount_fcfa").
       eq("gp_id", gpProfile.id).eq("type", "release").
-      gte("created_at", monthStart)]
-      );
+      gte("created_at", monthStart),
+      supabase.from("custom_requests").
+      select("id, status").
+      eq("status", "open")
+      ]);
 
       const orders = ordersRes.data || [];
       const manuals = manualRes.data || [];
@@ -190,7 +193,7 @@ export default function GPApercuPage() {
         pendingActions: {
           weightAlerts: statuses.filter((s) => s === "pending_client_validation").length,
           pendingOrders: pendingCount,
-          customRequests: 0
+          customRequests: (customReqRes.data || []).length
         }
       });
     } catch (err) {
@@ -242,7 +245,7 @@ export default function GPApercuPage() {
   if (profileLoading || loading) return <PageLoader message="Chargement..." />;
   if (!gpProfile || !data) return null;
 
-  const urgentCount = data.pendingActions.pendingOrders + data.pendingActions.weightAlerts;
+  const urgentCount = data.pendingActions.pendingOrders + data.pendingActions.weightAlerts + data.pendingActions.customRequests;
 
   return (
     <GPDashboardLayout
@@ -428,6 +431,24 @@ export default function GPApercuPage() {
                       <p className="text-xs text-muted-foreground">Répondez rapidement pour améliorer votre score</p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-secondary/60 flex-shrink-0" />
+                  </motion.button>
+            }
+                {data.pendingActions.customRequests > 0 &&
+            <motion.button
+              initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.03 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate("/gp/demandes?tab=custom")}
+              className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-primary/10 border border-primary/30 text-left">
+                    <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                      <Package className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-primary">
+                        {data.pendingActions.customRequests} demande{data.pendingActions.customRequests > 1 ? "s" : ""} personnalisée{data.pendingActions.customRequests > 1 ? "s" : ""}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Proposez un devis pour gagner la mission</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-primary/60 flex-shrink-0" />
                   </motion.button>
             }
                 {data.pendingActions.weightAlerts > 0 &&
