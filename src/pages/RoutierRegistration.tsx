@@ -110,7 +110,7 @@ export default function RoutierRegistration() {
           .maybeSingle();
 
         if (gpProfile?.gp_type === "routier") {
-          navigate("/routier/demandes", { replace: true });
+          navigate("/routier/apercu", { replace: true });
           return;
         }
 
@@ -261,7 +261,7 @@ export default function RoutierRegistration() {
       }
 
       toast({ title: "🚛 Inscription réussie !", description: "Votre compte routier est actif." });
-      navigate("/routier/demandes");
+      navigate("/routier/apercu");
     } catch (error: any) {
       console.error(error);
       toast({ title: "Erreur", description: error.message, variant: "destructive" });

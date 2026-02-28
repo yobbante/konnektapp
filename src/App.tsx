@@ -62,6 +62,7 @@ import NotFound from "./pages/NotFound";
 import Recipients from "./pages/Recipients";
 import ClientScanPage from "./pages/ClientScanPage";
 // Routier pages
+import RoutierApercuPage from "./pages/routier/RoutierApercuPage";
 import RoutierDemandesPage from "./pages/routier/RoutierDemandesPage";
 import RoutierEnCoursPage from "./pages/routier/RoutierEnCoursPage";
 import RoutierHistoriquePage from "./pages/routier/RoutierHistoriquePage";
@@ -204,7 +205,8 @@ const App = () => (
                 Note: Tarification exclue (prix calculé par système)
             ============================================ */}
             <Route path="/routier/inscription" element={<RoutierRegistration />} />
-            <Route path="/routier/dashboard" element={<Navigate to="/routier/demandes" replace />} />
+            <Route path="/routier/dashboard" element={<Navigate to="/routier/apercu" replace />} />
+            <Route path="/routier/apercu" element={<RoutierApercuPage />} />
             <Route path="/routier/demandes" element={<RoutierDemandesPage />} />
             <Route path="/routier/en-cours" element={<RoutierEnCoursPage />} />
             <Route path="/routier/historique" element={<RoutierHistoriquePage />} />
@@ -214,8 +216,7 @@ const App = () => (
             {/* Client-facing routier mission request */}
             <Route path="/routier/mission" element={<RoutierMissionRequestPage />} />
             <Route path="/routier/demande" element={<Navigate to="/routier/mission" replace />} />
-            {/* Legacy redirect - tarification removed for routier */}
-            <Route path="/routier/tarification" element={<Navigate to="/routier/demandes" replace />} />
+            <Route path="/routier/tarification" element={<Navigate to="/routier/apercu" replace />} />
             
             {/* ============================================
                 ADMIN ROUTES - Dashboard admin
