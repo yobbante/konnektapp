@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Route, Calendar, Weight, MapPin, Truck,
-  ChevronLeft, Check, Car, Clock, ArrowRight
+  ChevronLeft, Check, Car, Clock
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { RoutierDashboardLayout } from "@/components/layout/RoutierDashboardLayout";
