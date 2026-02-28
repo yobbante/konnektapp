@@ -185,56 +185,12 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
       });
     });
 
-    // ─── DEFAULT: Always-present quick actions (only show if < 2 contextual items)
-    if (items.length < 2) {
-      items.push({
-        id: "send",
-        priority: "default",
-        icon: Send,
-        label: "Envoyer un colis",
-        description: "Réservez un transport",
-        to: "/envoyer",
-        color: "text-primary",
-        bgColor: "bg-primary/10",
-        borderColor: "border-primary/20",
-      });
-    }
-
-    if (items.length < 3 && activeOrdersCount > 0) {
-      items.push({
-        id: "active",
-        priority: "default",
-        icon: Truck,
-        label: `${activeOrdersCount} envoi${activeOrdersCount > 1 ? "s" : ""} actif${activeOrdersCount > 1 ? "s" : ""}`,
-        description: "Suivez vos colis",
-        to: "/historique",
-        badge: activeOrdersCount,
-        color: "text-foreground",
-        bgColor: "bg-muted/60",
-        borderColor: "border-border",
-      });
-    }
-
-    if (items.length < 3) {
-      items.push({
-        id: "favorites",
-        priority: "default",
-        icon: Heart,
-        label: "Favoris",
-        description: "Vos transporteurs préférés",
-        to: "/favoris",
-        color: "text-foreground",
-        bgColor: "bg-muted/60",
-        borderColor: "border-border",
-      });
-    }
-
     // Sort by priority
     const priorityOrder = { critical: 0, urgent: 1, important: 2, default: 3 };
     return items.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]).slice(0, 4);
   }, [supplementOrders, incomingParcels, pendingReviews, unreadMessages, priceChanges, activeOrdersCount, navigate]);
 
-  const hasCritical = actions.some(a => a.priority === "critical" || a.priority === "urgent");
+  if (actions.length === 0) return null;
 
   return (
     <div className="px-4 pb-3">
