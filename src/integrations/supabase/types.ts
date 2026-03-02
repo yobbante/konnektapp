@@ -693,6 +693,264 @@ export type Database = {
         }
         Relationships: []
       }
+      freight_proposals: {
+        Row: {
+          available_pickup_date: string | null
+          created_at: string
+          currency: string | null
+          estimated_transit_days: number | null
+          id: string
+          includes_customs: boolean | null
+          includes_insurance: boolean | null
+          includes_last_mile: boolean | null
+          message: string | null
+          price_proposed: number
+          provider_gp_id: string
+          request_id: string
+          routing_description: string | null
+          status: string
+        }
+        Insert: {
+          available_pickup_date?: string | null
+          created_at?: string
+          currency?: string | null
+          estimated_transit_days?: number | null
+          id?: string
+          includes_customs?: boolean | null
+          includes_insurance?: boolean | null
+          includes_last_mile?: boolean | null
+          message?: string | null
+          price_proposed: number
+          provider_gp_id: string
+          request_id: string
+          routing_description?: string | null
+          status?: string
+        }
+        Update: {
+          available_pickup_date?: string | null
+          created_at?: string
+          currency?: string | null
+          estimated_transit_days?: number | null
+          id?: string
+          includes_customs?: boolean | null
+          includes_insurance?: boolean | null
+          includes_last_mile?: boolean | null
+          message?: string | null
+          price_proposed?: number
+          provider_gp_id?: string
+          request_id?: string
+          routing_description?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "freight_proposals_provider_gp_id_fkey"
+            columns: ["provider_gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "freight_proposals_provider_gp_id_fkey"
+            columns: ["provider_gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "freight_proposals_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "freight_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      freight_requests: {
+        Row: {
+          accepted_proposal_id: string | null
+          client_id: string
+          created_at: string
+          currency: string | null
+          customs_required: boolean | null
+          declared_value: number | null
+          destination_city: string
+          destination_country: string
+          destination_port_or_airport: string | null
+          dimensions_cm: string | null
+          final_delivery_mode: string | null
+          freight_mode: string
+          id: string
+          incoterm: string | null
+          insurance_required: boolean | null
+          is_fragile: boolean | null
+          is_urgent: boolean | null
+          is_vehicle: boolean | null
+          merchandise_description: string | null
+          merchandise_type: string | null
+          notes: string | null
+          origin_city: string
+          origin_country: string
+          origin_port_or_airport: string | null
+          pickup_date_from: string | null
+          pickup_date_to: string | null
+          request_number: string
+          status: string
+          updated_at: string
+          urgency_level: string | null
+          vehicle_make: string | null
+          vehicle_model: string | null
+          vehicle_running: boolean | null
+          vehicle_vin: string | null
+          vehicle_year: number | null
+          volume_m3: number | null
+          weight_kg: number | null
+        }
+        Insert: {
+          accepted_proposal_id?: string | null
+          client_id: string
+          created_at?: string
+          currency?: string | null
+          customs_required?: boolean | null
+          declared_value?: number | null
+          destination_city: string
+          destination_country?: string
+          destination_port_or_airport?: string | null
+          dimensions_cm?: string | null
+          final_delivery_mode?: string | null
+          freight_mode?: string
+          id?: string
+          incoterm?: string | null
+          insurance_required?: boolean | null
+          is_fragile?: boolean | null
+          is_urgent?: boolean | null
+          is_vehicle?: boolean | null
+          merchandise_description?: string | null
+          merchandise_type?: string | null
+          notes?: string | null
+          origin_city: string
+          origin_country?: string
+          origin_port_or_airport?: string | null
+          pickup_date_from?: string | null
+          pickup_date_to?: string | null
+          request_number: string
+          status?: string
+          updated_at?: string
+          urgency_level?: string | null
+          vehicle_make?: string | null
+          vehicle_model?: string | null
+          vehicle_running?: boolean | null
+          vehicle_vin?: string | null
+          vehicle_year?: number | null
+          volume_m3?: number | null
+          weight_kg?: number | null
+        }
+        Update: {
+          accepted_proposal_id?: string | null
+          client_id?: string
+          created_at?: string
+          currency?: string | null
+          customs_required?: boolean | null
+          declared_value?: number | null
+          destination_city?: string
+          destination_country?: string
+          destination_port_or_airport?: string | null
+          dimensions_cm?: string | null
+          final_delivery_mode?: string | null
+          freight_mode?: string
+          id?: string
+          incoterm?: string | null
+          insurance_required?: boolean | null
+          is_fragile?: boolean | null
+          is_urgent?: boolean | null
+          is_vehicle?: boolean | null
+          merchandise_description?: string | null
+          merchandise_type?: string | null
+          notes?: string | null
+          origin_city?: string
+          origin_country?: string
+          origin_port_or_airport?: string | null
+          pickup_date_from?: string | null
+          pickup_date_to?: string | null
+          request_number?: string
+          status?: string
+          updated_at?: string
+          urgency_level?: string | null
+          vehicle_make?: string | null
+          vehicle_model?: string | null
+          vehicle_running?: boolean | null
+          vehicle_vin?: string | null
+          vehicle_year?: number | null
+          volume_m3?: number | null
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
+      freight_tracking_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          event_label: string
+          event_type: string
+          freight_request_id: string | null
+          id: string
+          location: string | null
+          notes: string | null
+          order_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          event_label: string
+          event_type: string
+          freight_request_id?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          order_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          event_label?: string
+          event_type?: string
+          freight_request_id?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "freight_tracking_events_freight_request_id_fkey"
+            columns: ["freight_request_id"]
+            isOneToOne: false
+            referencedRelation: "freight_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "freight_tracking_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "freight_tracking_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "mvp_coherence_dashboard"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "freight_tracking_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gp_flat_rate_pricing: {
         Row: {
           created_at: string

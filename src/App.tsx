@@ -78,6 +78,10 @@ import RoutierPublierPage from "./pages/routier/RoutierPublierPage";
 import MaritimeApercuPage from "./pages/maritime/MaritimeApercuPage";
 import MaritimePublierPage from "./pages/maritime/MaritimePublierPage";
 import MaritimeParametresPage from "./pages/maritime/MaritimeParametresPage";
+// Aérien pages
+import AerienApercuPage from "./pages/aerien/AerienApercuPage";
+import AerienPublierPage from "./pages/aerien/AerienPublierPage";
+import AerienDemandeFretPage from "./pages/aerien/AerienDemandeFretPage";
 // Universal shipment entry
 import ShipmentTypeSelector from "./pages/ShipmentTypeSelector";
 // Tutorials and History pages
@@ -241,6 +245,23 @@ const App = () => (
             <Route path="/maritime/profil-public" element={<MaritimeApercuPage />} />
             <Route path="/maritime/messages" element={<Navigate to="/messages" replace />} />
             <Route path="/maritime/demande" element={<MaritimeApercuPage />} />
+            
+            {/* ============================================
+                AÉRIEN ROUTES - Dashboard fret aérien
+            ============================================ */}
+            <Route path="/aerien/dashboard" element={<Navigate to="/aerien/apercu" replace />} />
+            <Route path="/aerien/apercu" element={<AerienApercuPage />} />
+            <Route path="/aerien/publier" element={<AerienPublierPage />} />
+            <Route path="/aerien/demande-fret" element={<AerienDemandeFretPage />} />
+            <Route path="/aerien/demande" element={<AerienApercuPage />} />
+            <Route path="/aerien/demandes" element={<AerienApercuPage />} />
+            <Route path="/aerien/en-cours" element={<AerienApercuPage />} />
+            <Route path="/aerien/historique" element={<AerienApercuPage />} />
+            <Route path="/aerien/wallet" element={<AerienApercuPage />} />
+            <Route path="/aerien/profil-public" element={<AerienApercuPage />} />
+            <Route path="/aerien/marketplace" element={<AerienApercuPage />} />
+            <Route path="/aerien/parametres" element={<AerienApercuPage />} />
+            <Route path="/aerien/messages" element={<Navigate to="/messages" replace />} />
             
             {/* ============================================
                 ADMIN ROUTES - Dashboard admin

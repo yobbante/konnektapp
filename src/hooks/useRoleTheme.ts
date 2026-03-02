@@ -15,11 +15,13 @@ export function useRoleTheme(): RoleTheme {
     const path = location.pathname;
     
     // Remove existing role theme classes
-    root.classList.remove("theme-admin", "theme-transporter", "theme-client", "theme-routier", "theme-maritime");
+    root.classList.remove("theme-admin", "theme-transporter", "theme-client", "theme-routier", "theme-maritime", "theme-aerien");
     
     // Apply role-based theme class
     if (path.startsWith("/admin")) {
       root.classList.add("theme-admin");
+    } else if (path.startsWith("/aerien")) {
+      root.classList.add("theme-aerien");
     } else if (path.startsWith("/maritime")) {
       root.classList.add("theme-maritime");
     } else if (path.startsWith("/routier")) {
@@ -33,6 +35,7 @@ export function useRoleTheme(): RoleTheme {
 
   const path = location.pathname;
   if (path.startsWith("/admin")) return "admin";
+  if (path.startsWith("/aerien")) return "maritime"; // reuses maritime role type
   if (path.startsWith("/maritime")) return "maritime";
   if (path.startsWith("/routier")) return "routier";
   if (path.startsWith("/gp") || path.startsWith("/transporter")) return "transporter";

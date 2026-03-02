@@ -181,6 +181,13 @@
     --ring: 200 80% 50%;
   }
 
+  .dark.theme-aerien {
+    --primary: 280 70% 55%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 280 60% 48%;
+    --ring: 280 70% 55%;
+  }
+
   .dark.theme-client {
     --primary: 168 60% 50%;
     --primary-foreground: 0 0% 100%;
@@ -204,6 +211,15 @@
     --accent: 200 75% 35%;
     --accent-foreground: 0 0% 100%;
     --ring: 200 80% 44%;
+  }
+
+  /* Light mode aérien theme — Violet Cargo */
+  .theme-aerien {
+    --primary: 280 70% 50%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 280 65% 40%;
+    --accent-foreground: 0 0% 100%;
+    --ring: 280 70% 50%;
   }
 }
 
