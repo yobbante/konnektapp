@@ -1,6 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, Menu, ChevronLeft, LogIn, ScanLine, Wallet } from "lucide-react";
+import { Menu, ChevronLeft, LogIn, ScanLine, Wallet } from "lucide-react";
+import { KonnektLogo } from "@/components/ui/KonnektLogo";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -94,7 +95,7 @@ export function AppHeader({
                 whileTap={{ scale: 0.95 }}
                 className={`w-8 h-8 rounded-lg ${logoBackground} flex items-center justify-center shadow-sm`}
               >
-                <Package className={`w-4 h-4 ${logoColor}`} />
+                <KonnektLogo size={20} color={logoColor === "text-white" ? "white" : "hsl(168, 60%, 42%)"} />
               </motion.div>
               {!title && (
                 <div className="flex items-center gap-1">
