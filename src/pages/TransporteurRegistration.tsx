@@ -5,7 +5,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plane, Truck, Ship, Package, ChevronRight, Shield, Star, Zap, Lock } from "lucide-react";
+import { Plane, Truck, Ship, Package, ChevronRight, Shield, Star, Zap, Lock, Building } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { MiniLoader } from "@/components/ui/MiniLoader";
@@ -25,8 +25,10 @@ interface TransportTypeOption {
 const transportTypes: TransportTypeOption[] = [
   { id: "bagages", label: "GP Via Bagages", sub: "Colis par avion", icon: Plane, route: "/gp/bagages/inscription", color: "bg-primary text-primary-foreground", available: true },
   { id: "routier", label: "Routier", sub: "Fret & transport routier", icon: Truck, route: "/routier/inscription", color: "bg-secondary text-secondary-foreground", available: true },
-  { id: "maritime", label: "Maritime", sub: "Bientôt disponible", icon: Ship, route: "/gp/inscription", color: "bg-accent text-accent-foreground", available: false },
-  { id: "express", label: "Coursier", sub: "Bientôt disponible", icon: Package, route: "/gp/inscription", color: "bg-muted text-foreground", available: false },
+  { id: "aerien", label: "Aérien Cargo", sub: "Fret aérien express", icon: Plane, route: "/aerien/inscription", color: "bg-violet-600 text-white", available: true },
+  { id: "maritime", label: "Maritime", sub: "Conteneurs & groupage", icon: Ship, route: "/maritime/inscription", color: "bg-blue-600 text-white", available: true },
+  { id: "express", label: "Coursier", sub: "Livraison express locale", icon: Package, route: "/coursier/inscription", color: "bg-orange-500 text-white", available: true },
+  { id: "agence", label: "Agence", sub: "Transitaire & logistique", icon: Building, route: "/agence/inscription", color: "bg-emerald-600 text-white", available: true },
 ];
 
 export default function TransporteurRegistration() {
