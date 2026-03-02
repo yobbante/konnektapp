@@ -95,7 +95,7 @@ export function AppHeader({
                 whileTap={{ scale: 0.95 }}
                 className={`w-8 h-8 rounded-lg ${logoBackground} flex items-center justify-center shadow-sm`}
               >
-                <Package className={`w-5 h-5 ${logoColor === "text-white" ? "text-white" : "text-primary"}`} />
+                <Package className={`w-5 h-5 ${logoColor}`} />
               </motion.div>
               {!title && (
                 <div className="flex items-center gap-1">
