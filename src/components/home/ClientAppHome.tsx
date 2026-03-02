@@ -51,8 +51,8 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
 const TRANSPORT_TABS = [
   { id: "all", label: "Tout", icon: Globe, soon: false },
   { id: "bagages", label: "GP", icon: Luggage, soon: false },
-  { id: "aerien", label: "Aérien", icon: Plane, soon: true },
-  { id: "maritime", label: "Maritime", icon: Ship, soon: true },
+  { id: "aerien", label: "Aérien", icon: Plane, soon: false },
+  { id: "maritime", label: "Maritime", icon: Ship, soon: false },
   { id: "routier", label: "Routier", icon: Car, soon: false },
 ];
 
