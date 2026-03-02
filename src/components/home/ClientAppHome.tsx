@@ -51,10 +51,10 @@ const STATUS_CONFIG: Record<string, {label: string;color: string;}> = {
 
 const TRANSPORT_TABS = [
 { id: "all", label: "Tout", icon: Globe, soon: false },
-{ id: "bagages", label: "GP", icon: Luggage, soon: false },
-{ id: "aerien", label: "Aérien", icon: Plane, soon: false },
+{ id: "routier", label: "Routier", icon: Car, soon: false },
 { id: "maritime", label: "Maritime", icon: Ship, soon: false },
-{ id: "routier", label: "Routier", icon: Car, soon: false }];
+{ id: "aerien", label: "Aérien", icon: Plane, soon: false },
+{ id: "bagages", label: "GP", icon: Luggage, soon: false }];
 
 
 // Mode-specific configuration
@@ -359,7 +359,7 @@ export function ClientAppHome({
         {userId && <div className="px-4"><WeightValidationAlert userId={userId} /></div>}
 
         {/* ── TRANSPORT TABS + SEARCH (unified block like Booking.com) ── */}
-        <div className="sticky top-0 z-30 bg-background">
+        <div className="z-30 bg-background">
           {/* Transport tabs row */}
           <div className="px-4 pt-1 pb-0">
             <div className="flex gap-0">
