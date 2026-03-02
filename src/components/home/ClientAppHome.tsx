@@ -51,10 +51,10 @@ const STATUS_CONFIG: Record<string, {label: string;color: string;}> = {
 
 const TRANSPORT_TABS = [
 { id: "all", label: "Tout", icon: Globe, soon: false },
-{ id: "routier", label: "Routier", icon: Car, soon: false },
 { id: "bagages", label: "GP", icon: Luggage, soon: false },
 { id: "aerien", label: "Aérien", icon: Plane, soon: false },
-{ id: "maritime", label: "Maritime", icon: Ship, soon: false }];
+{ id: "maritime", label: "Maritime", icon: Ship, soon: false },
+{ id: "routier", label: "Routier", icon: Car, soon: false }];
 
 
 // Mode-specific configuration
@@ -321,7 +321,10 @@ export function ClientAppHome({
   const trustItems = TRUST_ITEMS_BY_MODE[activeTab] || TRUST_ITEMS_BY_MODE.default;
 
   return (
-    <div className="flex flex-col relative bg-background min-h-screen pb-safe">
+    <div className="flex flex-col relative bg-background" style={{
+      height: 'calc(100vh - 60px - 64px - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
+      minHeight: '400px'
+    }}>
       {/* Post-Delivery Flow */}
       <AnimatePresence>
         {deliveredOrder &&
@@ -343,131 +346,138 @@ export function ClientAppHome({
         }
       </AnimatePresence>
 
-      {/* ── FIXED HEADER BLOCK (tabs + search) ── */}
-      <div className="fixed top-[40px] left-0 right-0 z-30 bg-primary">
-        {/* Transport tabs row - pill style like Booking.com */}
-        <div className="px-3 pt-2 pb-1">
-          <div className="flex gap-1">
-            {TRANSPORT_TABS.map((tab) => {
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => !tab.soon && setActiveTab(tab.id)}
-                  className={`relative flex items-center justify-center gap-1 py-1.5 px-3 text-xs font-semibold transition-all rounded-full ${
-                  tab.soon ?
-                  "opacity-50 cursor-default text-primary-foreground/50" :
-                  isActive ?
-                  "bg-primary-foreground/20 text-primary-foreground border border-primary-foreground/60" :
-                  "text-primary-foreground/80 hover:text-primary-foreground"}`
-                  }>
-                  
-                  <tab.icon className="w-3.5 h-3.5" />
-                  <span>{tab.label}</span>
-                  {tab.soon &&
-                  <span className="absolute -top-1 -right-1 text-[6px] bg-primary-foreground/20 text-primary-foreground px-1 rounded-full font-bold leading-tight">
-                      Bientôt
-                    </span>
-                  }
-                </button>);
-
-            })}
-          </div>
-        </div>
-
-        {/* ── SEARCH ENGINE (unified box with secondary border like Booking.com) ── */}
-        <div className="px-4 pt-1 pb-3">
-          <div className={`bg-card border-2 border-secondary overflow-hidden rounded-lg relative`}>
-          {/* Origin */}
-          <button
-            onClick={() => {setCityQuery("");setActivePicker("origin");}}
-            className="w-full flex items-center gap-3 px-3 py-3 text-left border-b border-border/40">
-            
-            <MapPin className="w-4 h-4 flex-shrink-0 text-foreground" />
-            <span className={`flex-1 text-sm ${searchOrigin ? "text-foreground font-medium" : "text-muted-foreground"}`}>
-              {searchOrigin || modeConfig.searchPlaceholderOrigin}
-            </span>
-            {searchOrigin && <span className="text-[10px] text-muted-foreground">Modifier</span>}
-          </button>
-
-          {/* Swap button */}
-          {(searchOrigin || searchDest) &&
-          <button
-            onClick={swapOriginDest}
-            className="absolute right-3 top-[48px] -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center hover:bg-accent transition-colors"
-            aria-label="Interchanger">
-            
-              <ArrowUpDown className="w-3 h-3 text-muted-foreground" />
-            </button>
-          }
-
-          {/* Destination */}
-          <button
-            onClick={() => {setCityQuery("");setActivePicker("dest");}}
-            className="w-full flex items-center gap-3 px-3 py-3 text-left border-b border-border/40">
-            
-            <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-            <span className={`flex-1 text-sm ${searchDest ? "text-foreground font-medium" : "text-muted-foreground"}`}>
-              {searchDest || modeConfig.searchPlaceholderDest}
-            </span>
-            {searchDest && <span className="text-[10px] text-muted-foreground">Modifier</span>}
-          </button>
-
-          {/* Routier: weight field */}
-          {isRoutier &&
-          <div className="flex items-center gap-3 px-3 py-3 border-b border-border/40">
-              <Weight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              <input
-              type="number"
-              placeholder="Poids estimé (kg)"
-              value={routierWeight}
-              onChange={(e) => setRoutierWeight(e.target.value)}
-              className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-              min="1" />
-            
-            </div>
-          }
-
-          <div className="flex items-center gap-3 px-3 py-3">
-            <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-            <input
-              type="date"
-              value={searchDate}
-              onChange={(e) => setSearchDate(e.target.value)}
-              className="flex-1 bg-transparent text-sm text-foreground outline-none"
-              placeholder={isRoutier ? "Date de collecte souhaitée" : undefined}
-              style={{ colorScheme: 'dark' }} />
-            
-          </div>
-
-          {/* Search button inside the box */}
-          <motion.button
-            whileTap={{ scale: 0.98 }}
-            onClick={handleMainAction}
-            className="w-full font-bold text-center py-3 text-sm bg-secondary text-secondary-foreground">
-            {modeConfig.searchButtonLabel}
-          </motion.button>
-        </div>
-
-        {/* Routier: quick action to create custom mission */}
-        {isRoutier &&
-        <button
-          onClick={() => navigate("/routier/mission")}
-          className="w-full mt-2 py-2.5 border-2 border-dashed border-secondary/60 text-secondary-foreground text-sm font-semibold flex items-center justify-center gap-2 rounded-lg hover:bg-secondary/10 transition-colors">
-          
-            <FileText className="w-4 h-4" />
-            Créer une mission personnalisée
-          </button>
-        }
-      </div>
-      </div>{/* end fixed header */}
-
-      {/* Spacer to push content below fixed header */}
-      <div className={`${isRoutier ? "h-[310px]" : "h-[270px]"} flex-shrink-0`} />
-
       <div className="flex-1 overflow-y-auto">
+        {/* ── GREETING ── */}
+        
+
+
+
+
+        
+
         {/* Alerts */}
         {userId && <div className="px-4"><WeightValidationAlert userId={userId} /></div>}
+
+        {/* ── TRANSPORT TABS + SEARCH (unified block like Booking.com) ── */}
+        <div className="sticky top-0 z-30 bg-background">
+          {/* Transport tabs row */}
+          <div className="px-4 pt-1 pb-0">
+            <div className="flex gap-0">
+              {TRANSPORT_TABS.map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => !tab.soon && setActiveTab(tab.id)}
+                    className={`relative flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-all border-b-2 ${
+                    tab.soon ?
+                    "opacity-50 cursor-default text-muted-foreground border-transparent" :
+                    isActive ?
+                    "text-primary border-primary" :
+                    "text-muted-foreground border-transparent hover:text-foreground hover:border-border"}`
+                    }>
+                    
+                    <tab.icon className="w-4 h-4" />
+                    <span>{tab.label}</span>
+                    {tab.soon &&
+                    <span className="absolute -top-0.5 right-0.5 text-[7px] bg-amber-500/20 text-amber-600 px-1 rounded-full font-bold leading-tight">
+                        Bientôt
+                      </span>
+                    }
+                  </button>);
+
+              })}
+            </div>
+          </div>
+
+          {/* ── SEARCH ENGINE (unified box) ── */}
+          <div className="px-4 pt-2 pb-3">
+            <div className={`bg-card border border-border overflow-hidden shadow-md relative rounded-none ${
+            isRoutier ? "border-primary/40" : "border-border"}`
+            }>
+            {/* Origin */}
+            <button
+              onClick={() => {setCityQuery("");setActivePicker("origin");}}
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-left border-b border-border/40">
+              
+              <MapPin className={`w-4 h-4 flex-shrink-0 text-primary`} />
+              <span className={`flex-1 text-sm ${searchOrigin ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+                {searchOrigin || modeConfig.searchPlaceholderOrigin}
+              </span>
+              {searchOrigin && <span className="text-[10px] text-muted-foreground">Modifier</span>}
+            </button>
+
+            {/* Swap button */}
+            {(searchOrigin || searchDest) &&
+            <button
+              onClick={swapOriginDest}
+              className="absolute right-3 top-[40px] -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center hover:bg-accent transition-colors"
+              aria-label="Interchanger">
+              
+                <ArrowUpDown className="w-3 h-3 text-muted-foreground" />
+              </button>
+            }
+
+            {/* Destination */}
+            <button
+              onClick={() => {setCityQuery("");setActivePicker("dest");}}
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-left border-b border-border/40">
+              
+              <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <span className={`flex-1 text-sm ${searchDest ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+                {searchDest || modeConfig.searchPlaceholderDest}
+              </span>
+              {searchDest && <span className="text-[10px] text-muted-foreground">Modifier</span>}
+            </button>
+
+            {/* Routier: weight field */}
+            {isRoutier &&
+            <div className="flex items-center gap-3 px-3 py-2.5 border-b border-border/40">
+                <Weight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <input
+                type="number"
+                placeholder="Poids estimé (kg)"
+                value={routierWeight}
+                onChange={(e) => setRoutierWeight(e.target.value)}
+                className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                min="1" />
+              
+              </div>
+            }
+
+            <div className="flex items-center gap-3 px-3 py-2.5">
+              <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <input
+                type="date"
+                value={searchDate}
+                onChange={(e) => setSearchDate(e.target.value)}
+                className="flex-1 bg-transparent text-sm text-foreground outline-none"
+                placeholder={isRoutier ? "Date de collecte souhaitée" : undefined}
+                style={{ colorScheme: 'dark' }} />
+              
+            </div>
+
+            {/* Search button inside the box */}
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={handleMainAction}
+              className="w-full font-bold text-center py-3 text-sm bg-primary text-primary-foreground">
+              {modeConfig.searchButtonLabel}
+            </motion.button>
+          </div>
+
+          {/* Routier: quick action to create custom mission */}
+          {isRoutier &&
+          <button
+            onClick={() => navigate("/routier/mission")}
+            className="w-full mt-2 py-2.5 border-2 border-dashed border-primary/40 text-primary text-sm font-semibold flex items-center justify-center gap-2 hover:bg-primary/5 transition-colors">
+            
+              <FileText className="w-4 h-4" />
+              Créer une mission personnalisée
+            </button>
+          }
+        </div>
+        </div>{/* end sticky */}
 
         {/* ── SMART ACTION BAR ── */}
         <SmartActionBar
