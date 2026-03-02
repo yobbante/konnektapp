@@ -1,10 +1,11 @@
 /**
  * AerienRegistration — Inscription transporteur aérien cargo
+ * Formulaire multi-étape : Identité → Corridor → Capacité → Tarification → Confirmation
  */
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Plane, ArrowRight, ArrowLeft, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { Plane, ArrowRight, ArrowLeft, Eye, EyeOff, CheckCircle, DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { TransportPageLoader } from "@/components/ui/TransportLoader";
 
-const STEPS = ["Identité", "Corridor aérien", "Capacité", "Confirmation"];
+const STEPS = ["Identité", "Corridor aérien", "Capacité", "Tarification", "Confirmation"];
 const AIRPORTS = ["Paris CDG", "Paris Orly", "Dakar AIBD", "Abidjan FHB", "New York JFK", "Casablanca CMN", "Dubaï DXB", "Bruxelles BRU", "Conakry CKY", "Douala DLA"];
 const AIR_ROLES = [
   { value: "independent", label: "Indépendant", desc: "Voyageur fréquent / consolidateur" },
@@ -33,6 +34,12 @@ export default function AerienRegistration() {
     businessName: "", phone: "", email: "", password: "",
     airportOrigin: "", airportDest: "", city: "",
     airRole: "", capacityKg: "",
+    // Pricing aérien
+    pricePerKg: "",
+    forfaitMinimum: "",
+    surchargeCarburant: "",
+    forfaitExpress: "",
+    currency: "XOF",
   });
 
   useEffect(() => {
@@ -62,10 +69,13 @@ export default function AerienRegistration() {
         userId = data.user!.id;
       }
 
+      const cleanPhone = form.phone.replace(/\s+/g, "").replace(/^\+/, "");
       const { error: gpError } = await supabase.from("gp_profiles").insert({
-        user_id: userId, business_name: form.businessName, phone: form.phone,
+        user_id: userId, business_name: form.businessName, phone: cleanPhone,
         city: form.city, country_code: "SN", gp_type: "aerien" as any,
         base_origin_city: form.airportOrigin, base_destination_city: form.airportDest,
+        base_price_per_kg: form.pricePerKg ? parseFloat(form.pricePerKg) : null,
+        default_currency: form.currency,
         status: "pending" as any, kyc_status: "pending",
       });
       if (gpError) throw gpError;
@@ -83,6 +93,7 @@ export default function AerienRegistration() {
   const canNext = step === 0 ? form.businessName && form.phone && form.email
     : step === 1 ? form.airportOrigin && form.airportDest && form.city
     : step === 2 ? form.airRole && form.capacityKg
+    : step === 3 ? form.pricePerKg
     : true;
 
   return (
@@ -149,7 +160,80 @@ export default function AerienRegistration() {
                 <div><Label>Capacité moyenne (kg)</Label><Input type="number" value={form.capacityKg} onChange={e => set("capacityKg", e.target.value)} placeholder="Ex: 500" /></div>
               </>
             )}
+
+            {/* ─── Tarification Aérien ─── */}
             {step === 3 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="w-5 h-5 text-violet-600" />
+                  <h2 className="font-semibold">Grille tarifaire aérien cargo</h2>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Tarifs appliqués au fret aérien. Le prix au kilo est la base principale.
+                </p>
+
+                <div className="p-4 rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-950/30 space-y-3">
+                  <p className="text-sm font-semibold text-violet-800 dark:text-violet-200">✈️ Tarif cargo de base</p>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-xs">Prix par kilogramme *</Label>
+                    <div className="relative">
+                      <Input type="number" value={form.pricePerKg} onChange={e => set("pricePerKg", e.target.value)} placeholder="3500" />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{form.currency}/kg</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">Tarif standard par kilo de fret</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs">Forfait minimum (par envoi)</Label>
+                    <div className="relative">
+                      <Input type="number" value={form.forfaitMinimum} onChange={e => set("forfaitMinimum", e.target.value)} placeholder="25000" />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{form.currency}</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">Montant minimum facturé, même pour les petits envois</p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30 space-y-3">
+                  <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">⛽ Options supplémentaires</p>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-xs">Surcharge carburant (%)</Label>
+                    <div className="relative">
+                      <Input type="number" value={form.surchargeCarburant} onChange={e => set("surchargeCarburant", e.target.value)} placeholder="5" />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs">Supplément express (livraison J+1)</Label>
+                    <div className="relative">
+                      <Input type="number" value={form.forfaitExpress} onChange={e => set("forfaitExpress", e.target.value)} placeholder="15000" />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{form.currency}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Simulation */}
+                {form.pricePerKg && (
+                  <div className="p-3 bg-muted/50 rounded-xl border text-xs space-y-1">
+                    <p className="font-semibold">📊 Aperçu tarifaire</p>
+                    <p>• 10 kg standard : <strong>{Math.max(parseInt(form.pricePerKg) * 10, parseInt(form.forfaitMinimum || "0")).toLocaleString()} {form.currency}</strong></p>
+                    <p>• 50 kg standard : <strong>{Math.max(parseInt(form.pricePerKg) * 50, parseInt(form.forfaitMinimum || "0")).toLocaleString()} {form.currency}</strong></p>
+                    {form.surchargeCarburant && <p>• + surcharge carburant : <strong>{form.surchargeCarburant}%</strong></p>}
+                    {form.forfaitExpress && <p>• + express J+1 : <strong>{parseInt(form.forfaitExpress).toLocaleString()} {form.currency}</strong></p>}
+                  </div>
+                )}
+
+                <div className="p-3 rounded-xl bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800">
+                  <p className="text-xs text-violet-800 dark:text-violet-200">
+                    <strong>💡 Formule :</strong> Prix = max(forfait minimum, poids × prix/kg) × (1 + surcharge%) + express
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {step === 4 && (
               <div className="text-center py-6 space-y-3">
                 <CheckCircle className="w-12 h-12 text-violet-600 mx-auto" />
                 <h2 className="text-lg font-bold">Tout est prêt !</h2>
@@ -159,6 +243,8 @@ export default function AerienRegistration() {
                   <p><strong>Corridor:</strong> {form.airportOrigin} → {form.airportDest}</p>
                   <p><strong>Profil:</strong> {form.airRole === "independent" ? "Indépendant" : "Shipping Partner"}</p>
                   <p><strong>Capacité:</strong> {form.capacityKg} kg</p>
+                  <p><strong>Tarif cargo:</strong> {form.pricePerKg ? `${parseInt(form.pricePerKg).toLocaleString()} ${form.currency}/kg` : "—"}</p>
+                  {form.forfaitMinimum && <p><strong>Minimum:</strong> {parseInt(form.forfaitMinimum).toLocaleString()} {form.currency}</p>}
                 </div>
               </div>
             )}
