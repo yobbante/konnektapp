@@ -74,6 +74,10 @@ import RoutierMissionRequestPage from "./pages/routier/RoutierMissionRequestPage
 import RoutierWalletPage from "./pages/routier/RoutierWalletPage";
 import RoutierParametresPage from "./pages/routier/RoutierParametresPage";
 import RoutierPublierPage from "./pages/routier/RoutierPublierPage";
+// Maritime pages
+import MaritimeApercuPage from "./pages/maritime/MaritimeApercuPage";
+import MaritimePublierPage from "./pages/maritime/MaritimePublierPage";
+import MaritimeParametresPage from "./pages/maritime/MaritimeParametresPage";
 // Universal shipment entry
 import ShipmentTypeSelector from "./pages/ShipmentTypeSelector";
 // Tutorials and History pages
@@ -222,6 +226,21 @@ const App = () => (
             <Route path="/routier/mission" element={<RoutierMissionRequestPage />} />
             <Route path="/routier/demande" element={<Navigate to="/routier/mission" replace />} />
             <Route path="/routier/tarification" element={<Navigate to="/routier/apercu" replace />} />
+            
+            {/* ============================================
+                MARITIME ROUTES - Dashboard fret maritime
+            ============================================ */}
+            <Route path="/maritime/dashboard" element={<Navigate to="/maritime/apercu" replace />} />
+            <Route path="/maritime/apercu" element={<MaritimeApercuPage />} />
+            <Route path="/maritime/publier" element={<MaritimePublierPage />} />
+            <Route path="/maritime/parametres" element={<MaritimeParametresPage />} />
+            <Route path="/maritime/demandes" element={<MaritimeApercuPage />} />
+            <Route path="/maritime/en-cours" element={<MaritimeApercuPage />} />
+            <Route path="/maritime/historique" element={<MaritimeApercuPage />} />
+            <Route path="/maritime/wallet" element={<MaritimeApercuPage />} />
+            <Route path="/maritime/profil-public" element={<MaritimeApercuPage />} />
+            <Route path="/maritime/messages" element={<Navigate to="/messages" replace />} />
+            <Route path="/maritime/demande" element={<MaritimeApercuPage />} />
             
             {/* ============================================
                 ADMIN ROUTES - Dashboard admin
