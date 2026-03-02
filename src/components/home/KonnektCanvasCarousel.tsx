@@ -36,7 +36,7 @@ export function KonnektCanvasCarousel() {
               <img
                 src={slide.src}
                 alt={slide.alt}
-                className="w-full aspect-[16/9] object-cover rounded-2xl"
+                className="w-full aspect-[2.5/1] object-cover rounded-2xl"
                 loading={idx === 0 ? "eager" : "lazy"}
               />
             </div>
