@@ -6,7 +6,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { CompareProvider } from "@/components/offers/OfferCompare";
 import { ClientAppHome } from "@/components/home/ClientAppHome";
-import { ActiveReservationBanner } from "@/components/client/ActiveReservationBanner";
+
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { PullToRefreshIndicator } from "@/components/ui/pull-to-refresh";
@@ -265,7 +265,7 @@ function IndexContent() {
     <div className="h-screen bg-background overflow-hidden fixed inset-0">
       <PullToRefreshIndicator isRefreshing={isRefreshing} progress={progress} pullDistance={pullDistance} />
       <AppHeader />
-      <ActiveReservationBanner />
+      
       <ClientAppHome
         userName={userName}
         recentOrders={recentOrders}

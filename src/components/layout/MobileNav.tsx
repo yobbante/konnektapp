@@ -1,8 +1,8 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Search, MessageCircle, LayoutGrid, ScanLine } from "lucide-react";
+import { Home, Search, CalendarCheck, LayoutGrid, ScanLine } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+
 import { useRef, useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ClientScanSheet } from "@/components/scan/ClientScanSheet";
@@ -14,7 +14,7 @@ import { ClientScanSheet } from "@/components/scan/ClientScanSheet";
 export function MobileNav() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { unreadCount } = useUnreadMessages();
+  
   const lastHomeClickRef = useRef<number>(0);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<'client' | 'transporter' | null>(null);
@@ -68,7 +68,7 @@ export function MobileNav() {
     { href: "/", icon: Home, label: "Accueil", isHome: true },
     { href: "/offres", icon: Search, label: "Offres" },
     { href: "#scan", icon: ScanLine, label: "Scan", isScan: true },
-    { href: "/messages", icon: MessageCircle, label: "Messages", showBadge: true, requiresAuth: true },
+    { href: "/reservations", icon: CalendarCheck, label: "Réservations", requiresAuth: true },
     { href: getEspaceHref(), icon: LayoutGrid, label: "Espace", isEspace: true },
   ];
 
@@ -210,16 +210,6 @@ export function MobileNav() {
                   <motion.div animate={isActive ? { scale: 1.1 } : { scale: 1 }} transition={{ type: "spring", stiffness: 500 }}>
                     <item.icon className={cn("w-5 h-5", isActive && "text-primary")} />
                   </motion.div>
-                  {'showBadge' in item && item.showBadge && unreadCount > 0 && (
-                    <motion.span 
-                      className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 500 }}
-                    >
-                      {unreadCount > 9 ? "9+" : unreadCount}
-                    </motion.span>
-                  )}
                 </motion.div>
                 <motion.span className={cn("text-[10px] font-medium", isActive && "text-primary")} animate={isActive ? { fontWeight: 600 } : { fontWeight: 500 }}>
                   {item.label}

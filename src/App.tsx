@@ -61,6 +61,7 @@ import AdminMessages from "./pages/AdminMessages";
 import NotFound from "./pages/NotFound";
 import Recipients from "./pages/Recipients";
 import ClientScanPage from "./pages/ClientScanPage";
+import ReservationsPage from "./pages/ReservationsPage";
 // Routier pages
 import RoutierApercuPage from "./pages/routier/RoutierApercuPage";
 import RoutierDemandesPage from "./pages/routier/RoutierDemandesPage";
@@ -164,6 +165,7 @@ const App = () => (
             <Route path="/quote-confirmation" element={<QuoteConfirmation />} />
             <Route path="/reservation/gp/:gpId" element={<SmartBookingPage />} />
             <Route path="/messages" element={<Messages />} />
+            <Route path="/reservations" element={<ReservationsPage />} />
             <Route path="/client/dashboard" element={<Navigate to="/profil" replace />} />
             <Route path="/favorites" element={<Navigate to="/favoris" replace />} />
             <Route path="/favoris" element={<Favorites />} />

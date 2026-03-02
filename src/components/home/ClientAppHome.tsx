@@ -488,51 +488,7 @@ export function ClientAppHome({
           activeOrdersCount={activeOrdersCount}
         />
 
-        {/* ── ACTIVE ORDERS (compact) ── */}
-        {allActiveItems.length > 0 && (
-          <div className="px-4 pb-3">
-            <div className="flex items-center justify-between mb-1.5">
-              <h2 className="text-sm font-bold text-foreground">Envois actifs</h2>
-              <Link to="/historique" className="text-xs text-primary font-medium flex items-center gap-0.5">
-                Voir tout <ChevronRight className="w-3 h-3" />
-              </Link>
-            </div>
-            <div className="space-y-1.5">
-              {allActiveItems.slice(0, 2).map((item, i) => {
-                const cfg = STATUS_CONFIG[item.status] || { label: item.status, color: "bg-muted text-muted-foreground" };
-                const Icon = getStatusIcon(item.status, item.type);
-                return (
-                  <motion.div
-                    key={`${item.type}-${item.id}`}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    onClick={() =>
-                      item.type === 'order' ? setFullScreenOrderId(item.id) :
-                      setRequestPopup({ type: item.type as 'custom' | 'moving', item })
-                    }
-                    className="bg-card border border-border rounded-xl p-2.5 flex items-center gap-2.5 active:scale-[0.98] transition-transform cursor-pointer"
-                  >
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      item.type === 'moving' ? 'bg-amber-500/10' : item.type === 'custom' ? 'bg-purple-500/10' : 'bg-primary/10'
-                    }`}>
-                      <Icon className={`w-4 h-4 ${
-                        item.type === 'moving' ? 'text-amber-600' : item.type === 'custom' ? 'text-purple-600' : 'text-primary'
-                      }`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-foreground truncate">{item.origin_city} → {item.destination_city}</p>
-                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${cfg.color}`}>
-                        {cfg.label}
-                      </span>
-                    </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* Envois actifs déplacés vers /reservations */}
 
         {/* ── OFFERS / MISSIONS (adaptive) ── */}
         <div className="px-4 pb-2">
