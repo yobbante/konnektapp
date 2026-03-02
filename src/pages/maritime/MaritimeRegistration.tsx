@@ -46,8 +46,8 @@ export default function MaritimeRegistration() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
-        supabase.from("gp_profiles").select("id").eq("user_id", data.user.id).eq("gp_type", "maritime").maybeSingle()
-          .then(({ data: gp }) => { if (gp) { navigate("/maritime/apercu"); return; } setLoading(false); });
+        supabase.from("gp_profiles").select("id").eq("user_id", data.user.id).maybeSingle()
+          .then(({ data: gp }) => { if (gp) { navigate("/gp/dashboard"); return; } setLoading(false); });
       } else { setLoading(false); }
     });
   }, []);
@@ -70,8 +70,17 @@ export default function MaritimeRegistration() {
         userId = data.user!.id;
       }
 
+      // Vérifier si un profil existe déjà pour cet utilisateur
+      const { data: existingGp } = await supabase.from("gp_profiles").select("id").eq("user_id", userId).maybeSingle();
+      if (existingGp) {
+        toast({ title: "Profil existant", description: "Vous avez déjà un profil transporteur." });
+        navigate("/gp/dashboard");
+        return;
+      }
+
+      const cleanPhone = form.phone.replace(/\s+/g, "").replace(/^\+/, "");
       const { error: gpError } = await supabase.from("gp_profiles").insert({
-        user_id: userId, business_name: form.businessName, phone: form.phone,
+        user_id: userId, business_name: form.businessName, phone: cleanPhone,
         city: form.city, country_code: "SN", gp_type: "maritime" as any,
         base_origin_city: form.portOrigin, base_destination_city: form.portDest,
         status: "pending" as any, kyc_status: "pending",
