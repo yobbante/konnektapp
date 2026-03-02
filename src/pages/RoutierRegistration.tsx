@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { 
   Truck, ArrowRight, ArrowLeft, User, MapPin,
   Eye, EyeOff, Building2, CheckCircle, Shield, Package,
-  Route, Home, ToggleLeft
+  Route, Home, ToggleLeft, DollarSign
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -105,6 +105,13 @@ export default function RoutierRegistration() {
   const [destinationAddress, setDestinationAddress] = useState("");
   const [homeDeliveryEnabled, setHomeDeliveryEnabled] = useState(false);
 
+  // Step 5: Tarification routier
+  const [routierMinPrice, setRoutierMinPrice] = useState("");
+  const [routierPricePerKm, setRoutierPricePerKm] = useState("");
+  const [routierPricePerKg, setRoutierPricePerKg] = useState("");
+  const [routierPricePerM3, setRoutierPricePerM3] = useState("");
+  const [routierCurrency, setRoutierCurrency] = useState("XOF");
+
   // Check session
   useEffect(() => {
     const checkSession = async () => {
@@ -132,8 +139,9 @@ export default function RoutierRegistration() {
     { num: 2, label: "Identité", icon: User },
     { num: 3, label: "Véhicule", icon: Truck },
     { num: 4, label: "Trajet", icon: MapPin },
+    { num: 5, label: "Tarifs", icon: DollarSign },
   ];
-  const TOTAL_STEPS = 4;
+  const TOTAL_STEPS = 5;
 
   const validateStep = (s: number): boolean => {
     if (s === 1) {
@@ -154,6 +162,10 @@ export default function RoutierRegistration() {
     }
     if (s === 4) {
       if (!originCity) { toast({ title: "Ville de départ requise", variant: "destructive" }); return false; }
+      return true;
+    }
+    if (s === 5) {
+      if (!routierMinPrice || parseFloat(routierMinPrice) <= 0) { toast({ title: "Prix minimum requis", variant: "destructive" }); return false; }
       return true;
     }
     return true;
@@ -248,7 +260,8 @@ export default function RoutierRegistration() {
           city: originCity || "Dakar",
           country_code: "SN",
           status: "verified" as any,
-          default_currency: "XOF",
+          default_currency: routierCurrency,
+          base_price_per_kg: routierPricePerKg ? parseFloat(routierPricePerKg) : null,
           base_origin_city: originCity || null,
           base_destination_city: destinationCity || null,
           address: originAddress || null,
@@ -289,7 +302,7 @@ export default function RoutierRegistration() {
           departure_date: new Date(Date.now() + 86400000 * 3).toISOString().split("T")[0],
           total_capacity: vehicles[0]?.maxWeightKg ? parseFloat(vehicles[0].maxWeightKg) : 5000,
           available_capacity: vehicles[0]?.maxWeightKg ? parseFloat(vehicles[0].maxWeightKg) : 5000,
-          price_per_kg: 500,
+          price_per_kg: routierPricePerKg ? parseFloat(routierPricePerKg) : 500,
           currency: "XOF",
           transport_type: "routier" as any,
           status: "active" as any,
@@ -646,6 +659,74 @@ export default function RoutierRegistration() {
                         {homeDeliveryEnabled && <p>🏠 Livraison domicile activée</p>}
                         {freightTypes.length > 0 && <p>📦 {freightTypes.length} types de fret</p>}
                       </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* ─── Step 5: Tarification Routier ─── */}
+              {step === 5 && (
+                <Card>
+                  <CardContent className="p-5 space-y-4">
+                    <h2 className="font-semibold text-lg flex items-center gap-2">
+                      <DollarSign className="w-5 h-5 text-primary" /> Tarification routière
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      Définissez vos tarifs de base. Le système calculera automatiquement le prix final pour chaque course.
+                    </p>
+
+                    <div className="space-y-2">
+                      <Label>Prix minimum par course *</Label>
+                      <div className="relative">
+                        <Input type="number" value={routierMinPrice} onChange={e => setRoutierMinPrice(e.target.value)} placeholder="15000" />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{routierCurrency}</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">Prix plancher, peu importe la distance ou le poids</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Prix par kilomètre</Label>
+                      <div className="relative">
+                        <Input type="number" value={routierPricePerKm} onChange={e => setRoutierPricePerKm(e.target.value)} placeholder="500" />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{routierCurrency}/km</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">Facteur distance appliqué au calcul du prix</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label>Prix par kg</Label>
+                        <div className="relative">
+                          <Input type="number" value={routierPricePerKg} onChange={e => setRoutierPricePerKg(e.target.value)} placeholder="100" />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">/kg</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Prix par m³</Label>
+                        <div className="relative">
+                          <Input type="number" value={routierPricePerM3} onChange={e => setRoutierPricePerM3(e.target.value)} placeholder="5000" />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">/m³</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Simulation */}
+                    {routierMinPrice && (
+                      <div className="p-4 bg-muted/50 rounded-xl border space-y-2">
+                        <p className="text-xs font-semibold">📊 Aperçu tarifaire</p>
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          <p>• Course minimum : <strong>{parseInt(routierMinPrice || "0").toLocaleString()} {routierCurrency}</strong></p>
+                          {routierPricePerKm && <p>• 100 km : <strong>{(parseInt(routierPricePerKm) * 100).toLocaleString()} {routierCurrency}</strong> (distance seule)</p>}
+                          {routierPricePerKg && <p>• 500 kg : <strong>{(parseInt(routierPricePerKg) * 500).toLocaleString()} {routierCurrency}</strong> (poids seul)</p>}
+                          {routierPricePerM3 && <p>• 10 m³ : <strong>{(parseInt(routierPricePerM3) * 10).toLocaleString()} {routierCurrency}</strong> (volume seul)</p>}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                      <p className="text-xs text-amber-800 dark:text-amber-200">
+                        <strong>💡 Formule :</strong> Prix = max(minimum, distance × prix/km + poids × prix/kg + volume × prix/m³)
+                      </p>
                     </div>
                   </CardContent>
                 </Card>

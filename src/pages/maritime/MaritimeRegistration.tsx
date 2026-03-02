@@ -1,11 +1,11 @@
 /**
  * MaritimeRegistration — Inscription transporteur maritime
- * Formulaire multi-étape : Identité → Route → Capacité → Confirmation
+ * Formulaire multi-étape : Identité → Corridor → Capacité → Tarification → Confirmation
  */
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Ship, ArrowRight, ArrowLeft, User, MapPin, Eye, EyeOff, Building2, CheckCircle, Shield, Anchor } from "lucide-react";
+import { Ship, ArrowRight, ArrowLeft, Eye, EyeOff, CheckCircle, DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { TransportPageLoader } from "@/components/ui/TransportLoader";
 
-const STEPS = ["Identité", "Corridor", "Capacité", "Confirmation"];
+const STEPS = ["Identité", "Corridor", "Capacité", "Tarification", "Confirmation"];
 
 const PORTS = [
   "Dakar", "Marseille", "Le Havre", "Abidjan", "Casablanca", "New York", "Dubaï", "Cotonou", "Lomé", "Douala", "Conakry"
@@ -41,6 +41,13 @@ export default function MaritimeRegistration() {
     businessName: "", phone: "", email: "", password: "",
     portOrigin: "", portDest: "", city: "",
     containerTypes: [] as string[], capacityM3: "",
+    // Pricing maritime
+    priceLclPerM3: "",
+    priceLclPerKg: "",
+    forfaitContainer20ft: "",
+    forfaitContainer40ft: "",
+    forfaitRoRo: "",
+    currency: "XOF",
   });
 
   useEffect(() => {
@@ -70,7 +77,6 @@ export default function MaritimeRegistration() {
         userId = data.user!.id;
       }
 
-      // Vérifier si un profil existe déjà pour cet utilisateur
       const { data: existingGp } = await supabase.from("gp_profiles").select("id").eq("user_id", userId).maybeSingle();
       if (existingGp) {
         toast({ title: "Profil existant", description: "Vous avez déjà un profil transporteur." });
@@ -83,6 +89,8 @@ export default function MaritimeRegistration() {
         user_id: userId, business_name: form.businessName, phone: cleanPhone,
         city: form.city, country_code: "SN", gp_type: "maritime" as any,
         base_origin_city: form.portOrigin, base_destination_city: form.portDest,
+        base_price_per_kg: form.priceLclPerKg ? parseFloat(form.priceLclPerKg) : null,
+        default_currency: form.currency,
         status: "pending" as any, kyc_status: "pending",
       });
       if (gpError) throw gpError;
@@ -100,6 +108,7 @@ export default function MaritimeRegistration() {
   const canNext = step === 0 ? form.businessName && form.phone && form.email
     : step === 1 ? form.portOrigin && form.portDest && form.city
     : step === 2 ? form.capacityM3
+    : step === 3 ? (form.priceLclPerM3 || form.forfaitContainer20ft)
     : true;
 
   return (
@@ -158,7 +167,7 @@ export default function MaritimeRegistration() {
                   <div className="grid grid-cols-2 gap-2 mt-1">
                     {CONTAINER_TYPES.map(ct => (
                       <button key={ct.value} onClick={() => set("containerTypes", form.containerTypes.includes(ct.value) ? form.containerTypes.filter(x => x !== ct.value) : [...form.containerTypes, ct.value])}
-                        className={`p-2.5 rounded-xl border text-xs font-medium transition-all ${form.containerTypes.includes(ct.value) ? "border-blue-500 bg-blue-50 text-blue-700" : "border-border bg-card"}`}>
+                        className={`p-2.5 rounded-xl border text-xs font-medium transition-all ${form.containerTypes.includes(ct.value) ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300" : "border-border bg-card"}`}>
                         {ct.label}
                       </button>
                     ))}
@@ -166,7 +175,116 @@ export default function MaritimeRegistration() {
                 </div>
               </>
             )}
+
+            {/* ─── Tarification Maritime ─── */}
             {step === 3 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="w-5 h-5 text-blue-600" />
+                  <h2 className="font-semibold">Grille tarifaire maritime</h2>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Définissez vos tarifs selon les types de service que vous proposez.
+                </p>
+
+                {/* LCL Groupage */}
+                {form.containerTypes.includes("lcl") && (
+                  <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30 space-y-3">
+                    <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">📦 Groupage (LCL)</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Prix par m³</Label>
+                        <div className="relative">
+                          <Input type="number" value={form.priceLclPerM3} onChange={e => set("priceLclPerM3", e.target.value)} placeholder="150000" />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{form.currency}/m³</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Prix par kg vol.</Label>
+                        <div className="relative">
+                          <Input type="number" value={form.priceLclPerKg} onChange={e => set("priceLclPerKg", e.target.value)} placeholder="500" />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{form.currency}/kg</span>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">Le système facture le maximum entre poids et volume</p>
+                  </div>
+                )}
+
+                {/* Conteneur FCL */}
+                {(form.containerTypes.includes("20ft") || form.containerTypes.includes("40ft")) && (
+                  <div className="p-4 rounded-xl border border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/30 space-y-3">
+                    <p className="text-sm font-semibold text-green-800 dark:text-green-200">🚢 Conteneur complet (FCL)</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {form.containerTypes.includes("20ft") && (
+                        <div className="space-y-1">
+                          <Label className="text-xs">Forfait 20ft</Label>
+                          <div className="relative">
+                            <Input type="number" value={form.forfaitContainer20ft} onChange={e => set("forfaitContainer20ft", e.target.value)} placeholder="1500000" />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{form.currency}</span>
+                          </div>
+                        </div>
+                      )}
+                      {form.containerTypes.includes("40ft") && (
+                        <div className="space-y-1">
+                          <Label className="text-xs">Forfait 40ft</Label>
+                          <div className="relative">
+                            <Input type="number" value={form.forfaitContainer40ft} onChange={e => set("forfaitContainer40ft", e.target.value)} placeholder="2500000" />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{form.currency}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">Prix fixe tout compris par conteneur</p>
+                  </div>
+                )}
+
+                {/* RoRo */}
+                {form.containerTypes.includes("roro") && (
+                  <div className="p-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30 space-y-3">
+                    <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">🚗 Véhicules (RoRo)</p>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Forfait par véhicule</Label>
+                      <div className="relative">
+                        <Input type="number" value={form.forfaitRoRo} onChange={e => set("forfaitRoRo", e.target.value)} placeholder="800000" />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{form.currency}</span>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">Tarif de base par véhicule, ajustable selon le gabarit</p>
+                  </div>
+                )}
+
+                {/* No container types selected fallback */}
+                {form.containerTypes.length === 0 && (
+                  <div className="p-4 rounded-xl border border-muted bg-muted/30 space-y-3">
+                    <p className="text-sm font-semibold">Tarif général</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Prix par m³</Label>
+                        <Input type="number" value={form.priceLclPerM3} onChange={e => set("priceLclPerM3", e.target.value)} placeholder="150000" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Prix par kg</Label>
+                        <Input type="number" value={form.priceLclPerKg} onChange={e => set("priceLclPerKg", e.target.value)} placeholder="500" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Simulation */}
+                {(form.priceLclPerM3 || form.forfaitContainer20ft) && (
+                  <div className="p-3 bg-muted/50 rounded-xl border text-xs space-y-1">
+                    <p className="font-semibold">📊 Aperçu</p>
+                    {form.priceLclPerM3 && <p>• 5 m³ LCL : <strong>{(parseInt(form.priceLclPerM3) * 5).toLocaleString()} {form.currency}</strong></p>}
+                    {form.forfaitContainer20ft && <p>• 1× Conteneur 20ft : <strong>{parseInt(form.forfaitContainer20ft).toLocaleString()} {form.currency}</strong></p>}
+                    {form.forfaitContainer40ft && <p>• 1× Conteneur 40ft : <strong>{parseInt(form.forfaitContainer40ft).toLocaleString()} {form.currency}</strong></p>}
+                    {form.forfaitRoRo && <p>• 1× Véhicule RoRo : <strong>{parseInt(form.forfaitRoRo).toLocaleString()} {form.currency}</strong></p>}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {step === 4 && (
               <div className="text-center py-6 space-y-3">
                 <CheckCircle className="w-12 h-12 text-blue-600 mx-auto" />
                 <h2 className="text-lg font-bold">Tout est prêt !</h2>
@@ -175,6 +293,9 @@ export default function MaritimeRegistration() {
                   <p><strong>Entreprise:</strong> {form.businessName}</p>
                   <p><strong>Corridor:</strong> {form.portOrigin} → {form.portDest}</p>
                   <p><strong>Capacité:</strong> {form.capacityM3} m³</p>
+                  <p><strong>Services:</strong> {form.containerTypes.map(ct => CONTAINER_TYPES.find(c => c.value === ct)?.label).join(", ") || "Général"}</p>
+                  {form.priceLclPerM3 && <p><strong>LCL:</strong> {parseInt(form.priceLclPerM3).toLocaleString()} {form.currency}/m³</p>}
+                  {form.forfaitContainer20ft && <p><strong>20ft:</strong> {parseInt(form.forfaitContainer20ft).toLocaleString()} {form.currency}</p>}
                 </div>
               </div>
             )}
