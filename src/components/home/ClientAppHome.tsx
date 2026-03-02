@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -180,6 +180,7 @@ export function ClientAppHome({
   const [fullScreenOrderId, setFullScreenOrderId] = useState<string | null>(null);
   const [requestPopup, setRequestPopup] = useState<{type: 'custom' | 'moving';item: any;} | null>(null);
   const [activeTab, setActiveTab] = useState("all");
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const modeConfig = MODE_CONFIG[activeTab] || MODE_CONFIG.all;
   const isRoutier = activeTab === "routier";
@@ -346,7 +347,7 @@ export function ClientAppHome({
         }
       </AnimatePresence>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" ref={scrollRef}>
         {/* ── GREETING ── */}
         
 
@@ -371,7 +372,7 @@ export function ClientAppHome({
                     onClick={() => {
                       if (!tab.soon) {
                         setActiveTab(tab.id);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
                       }
                     }}
                     className={`relative flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-all border-b-2 ${
