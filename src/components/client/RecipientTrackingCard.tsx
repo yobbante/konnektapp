@@ -361,25 +361,26 @@ function RecipientParcelDetails({
               </div>
 
               {/* Expandable QR */}
-              <AnimatePresence>
+              <AnimatePresence initial={false}>
                 {showQR && (
                   <motion.div
+                    key="qr-panel"
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden border-t border-border"
+                    transition={{ type: "spring", damping: 22, stiffness: 260 }}
+                    style={{ overflow: "hidden" }}
                   >
-                    <div className="p-4 flex flex-col items-center gap-2 bg-white dark:bg-card">
-                      <p className="text-xs text-muted-foreground font-medium">QR de suivi — Montrez-le au livreur</p>
-                      <div className="bg-white p-3 rounded-xl">
+                    <div className="border-t border-border p-4 flex flex-col items-center gap-2.5 bg-muted/30">
+                      <p className="text-[11px] text-muted-foreground font-medium">Montrez ce QR au livreur</p>
+                      <div className="bg-white p-3 rounded-xl shadow-sm">
                         <QRCode
                           value={`https://konnektapp.lovable.app/tracking?order=${parcel.id}`}
-                          size={140}
+                          size={130}
                           level="M"
                         />
                       </div>
-                      <p className="text-[10px] text-muted-foreground">{parcel.order_number}</p>
+                      <p className="text-[10px] text-muted-foreground font-mono">{parcel.order_number}</p>
                     </div>
                   </motion.div>
                 )}
