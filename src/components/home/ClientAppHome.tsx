@@ -141,7 +141,19 @@ const POPULAR_ROUTES_BY_MODE: Record<string, {from: string;to: string;flag: stri
   { from: "Lomé", to: "Cotonou", flag: "🇹🇬→🇧🇯" },
   { from: "Douala", to: "Libreville", flag: "🇨🇲→🇬🇦" },
   { from: "Accra", to: "Lomé", flag: "🇬🇭→🇹🇬" },
-  { from: "Abidjan", to: "Dakar", flag: "🇨🇮→🇸🇳" }]
+  { from: "Abidjan", to: "Dakar", flag: "🇨🇮→🇸🇳" }],
+
+  maritime: [
+  { from: "Dakar", to: "Marseille", flag: "🇸🇳→🇫🇷", hot: true },
+  { from: "Abidjan", to: "Le Havre", flag: "🇨🇮→🇫🇷", hot: true },
+  { from: "Douala", to: "Anvers", flag: "🇨🇲→🇧🇪" },
+  { from: "Lomé", to: "Rotterdam", flag: "🇹🇬→🇳🇱" }],
+
+  aerien: [
+  { from: "Paris", to: "Dakar", flag: "🇫🇷→🇸🇳", hot: true },
+  { from: "Paris", to: "Abidjan", flag: "🇫🇷→🇨🇮", hot: true },
+  { from: "Bruxelles", to: "Kinshasa", flag: "🇧🇪→🇨🇩" },
+  { from: "Casablanca", to: "Paris", flag: "🇲🇦→🇫🇷" }]
 
 };
 
@@ -156,7 +168,25 @@ const TRUST_ITEMS_BY_MODE: Record<string, {icon: typeof Shield;title: string;des
   { icon: Shield, title: "Escrow sécurisé", desc: "Paiement garanti à la livraison", color: "text-emerald-500 bg-emerald-500/10" },
   { icon: Truck, title: "Flotte vérifiée", desc: "Véhicules certifiés", color: "text-blue-500 bg-blue-500/10" },
   { icon: Zap, title: "Négociation directe", desc: "Prix en temps réel", color: "text-amber-500 bg-amber-500/10" },
-  { icon: Route, title: "Corridors routiers", desc: "Afrique de l'Ouest & Centrale", color: "text-purple-500 bg-purple-500/10" }]
+  { icon: Route, title: "Corridors routiers", desc: "Afrique de l'Ouest & Centrale", color: "text-purple-500 bg-purple-500/10" }],
+
+  maritime: [
+  { icon: Shield, title: "Assurance cargo", desc: "Protection marchandises", color: "text-emerald-500 bg-emerald-500/10" },
+  { icon: Ship, title: "Groupage & FCL", desc: "LCL ou conteneur complet", color: "text-blue-500 bg-blue-500/10" },
+  { icon: TrendingUp, title: "Suivi embarquement", desc: "Tracking port à port", color: "text-amber-500 bg-amber-500/10" },
+  { icon: Users, title: "Transitaires vérifiés", desc: "Partenaires certifiés", color: "text-purple-500 bg-purple-500/10" }],
+
+  aerien: [
+  { icon: Zap, title: "Livraison express", desc: "2-5 jours porte à porte", color: "text-amber-500 bg-amber-500/10" },
+  { icon: Shield, title: "Colis sécurisé", desc: "Assurance incluse", color: "text-emerald-500 bg-emerald-500/10" },
+  { icon: Plane, title: "Vols directs", desc: "Réseau aérien étendu", color: "text-blue-500 bg-blue-500/10" },
+  { icon: Award, title: "Agents certifiés", desc: "Fret aérien homologué", color: "text-purple-500 bg-purple-500/10" }],
+
+  bagages: [
+  { icon: Shield, title: "Escrow protégé", desc: "Paiement sécurisé", color: "text-emerald-500 bg-emerald-500/10" },
+  { icon: Luggage, title: "Bagages accompagnés", desc: "Suivi personnalisé", color: "text-blue-500 bg-blue-500/10" },
+  { icon: Award, title: "GP notés", desc: "Avis clients vérifiés", color: "text-amber-500 bg-amber-500/10" },
+  { icon: Globe, title: "Réseau mondial", desc: "Afrique, Europe, Amériques", color: "text-purple-500 bg-purple-500/10" }]
 
 };
 
@@ -554,7 +584,52 @@ export function ClientAppHome({
               </div> :
 
 
-          // GP / Other offers
+          // "Tout" tab: show top 4 offers (1 per transport mode, best GP score)
+          activeTab === "all" ?
+          (() => {
+            const modes = ["routier", "maritime", "aerien", "bagages_accompagnes"];
+            const modeLabels: Record<string, string> = {
+              routier: "Routier", maritime: "Maritime", aerien: "Aérien", bagages_accompagnes: "GP"
+            };
+            const modeIcons: Record<string, typeof Package> = {
+              routier: Truck, maritime: Ship, aerien: Plane, bagages_accompagnes: Luggage
+            };
+            const top4 = modes.map(mode => {
+              const modeOffers = offers
+                .filter(o => o.transport_type === mode || (mode === "bagages_accompagnes" && (o.transport_type === "bagages_accompagnes" || o.transport_type === "navette")))
+                .sort((a, b) => (b.gp_profiles?.rating || 0) - (a.gp_profiles?.rating || 0));
+              return modeOffers[0] ? { ...modeOffers[0], _mode: mode } : null;
+            }).filter(Boolean);
+            
+            return top4.length > 0 ? (
+              <div className="space-y-2">
+                {top4.map((offer: any, idx: number) => {
+                  const ModeIcon = modeIcons[offer._mode] || Package;
+                  return (
+                    <div key={offer.id} className="relative">
+                      <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-muted/80 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                        <ModeIcon className="w-3 h-3 text-muted-foreground" />
+                        <span className="text-[10px] font-semibold text-muted-foreground">{modeLabels[offer._mode]}</span>
+                      </div>
+                      <HomeOfferCard offer={offer} index={idx} />
+                    </div>
+                  );
+                })}
+                <button 
+                  onClick={goToOffres}
+                  className="w-full py-2.5 text-sm font-semibold text-primary flex items-center justify-center gap-1 hover:bg-primary/5 rounded-xl transition-colors">
+                  Voir toutes les offres <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="bg-muted/30 border border-border rounded-xl p-6 text-center">
+                <Package className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground font-medium">{modeConfig.emptyLabel}</p>
+              </div>
+            );
+          })() :
+
+          // Specific tab: filtered offers
           filteredOffers.length > 0 ?
           <div className="space-y-2">
                 {filteredOffers.slice(0, 6).map((offer, idx) =>
@@ -565,36 +640,104 @@ export function ClientAppHome({
           <div className="bg-muted/30 border border-border rounded-xl p-6 text-center">
                 <Package className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground font-medium">{modeConfig.emptyLabel}</p>
-                {activeTab !== "all" &&
-            <button onClick={() => setActiveTab("all")} className="text-xs text-primary font-medium mt-1.5">
+                <button onClick={() => setActiveTab("all")} className="text-xs text-primary font-medium mt-1.5">
                     Voir toutes les offres
                   </button>
-            }
               </div>
 
           }
         </div>
 
-        {/* ── KONNEKT CANVAS CAROUSEL ── */}
-        <KonnektCanvasCarousel />
+        {/* ── BOTTOM SECTIONS (conditional per tab) ── */}
+        {activeTab === "all" ? (
+          <>
+            {/* Découvrez Konnekt — only in "Tout" */}
+            <KonnektCanvasCarousel />
 
-        {/* ── POURQUOI KONNEKT (adaptive) ── */}
-        <div className="px-4 pb-8">
-          <h2 className="text-base font-bold text-foreground mb-2">
-            {isRoutier ? "Pourquoi Konnekt Routier ?" : "Pourquoi Konnekt ?"}
-          </h2>
-          <div className="grid grid-cols-2 gap-2">
-            {trustItems.map((item, idx) =>
-            <div key={idx} className="bg-card border border-border rounded-2xl p-3">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-2 ${item.color}`}>
-                  <item.icon className="w-4 h-4" />
-                </div>
-                <p className="text-xs font-bold text-foreground leading-tight">{item.title}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{item.desc}</p>
+            {/* Pourquoi Konnekt — only in "Tout" */}
+            <div className="px-4 pb-8">
+              <h2 className="text-base font-bold text-foreground mb-2">Pourquoi Konnekt ?</h2>
+              <div className="grid grid-cols-2 gap-2">
+                {trustItems.map((item, idx) =>
+                <div key={idx} className="bg-card border border-border rounded-2xl p-3">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-2 ${item.color}`}>
+                      <item.icon className="w-4 h-4" />
+                    </div>
+                    <p className="text-xs font-bold text-foreground leading-tight">{item.title}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{item.desc}</p>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+          </>
+        ) : (
+          /* Tab-specific bottom content */
+          <div className="px-4 pb-8 space-y-4">
+            {/* Popular routes for this mode */}
+            <div>
+              <h2 className="text-base font-bold text-foreground mb-2">
+                {activeTab === "routier" ? "🚛 Corridors populaires" :
+                 activeTab === "maritime" ? "🚢 Routes maritimes" :
+                 activeTab === "aerien" ? "✈️ Liaisons aériennes" :
+                 "🧳 Trajets GP populaires"}
+              </h2>
+              <div className="grid grid-cols-2 gap-2">
+                {popularRoutes.slice(0, 4).map((route, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => { setSearchOrigin(route.from); setSearchDest(route.to); }}
+                    className="bg-card border border-border rounded-xl p-3 text-left hover:bg-muted/50 transition-colors">
+                    <p className="text-xs font-bold text-foreground">{route.flag}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{route.from} → {route.to}</p>
+                    {route.hot && <span className="text-[9px] bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-full font-semibold mt-1 inline-block">🔥 Populaire</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Mode-specific trust items */}
+            <div>
+              <h2 className="text-base font-bold text-foreground mb-2">
+                {activeTab === "routier" ? "Avantages Konnekt Routier" :
+                 activeTab === "maritime" ? "Avantages Konnekt Maritime" :
+                 activeTab === "aerien" ? "Avantages Konnekt Aérien" :
+                 "Avantages Konnekt GP"}
+              </h2>
+              <div className="grid grid-cols-2 gap-2">
+                {trustItems.map((item, idx) =>
+                <div key={idx} className="bg-card border border-border rounded-2xl p-3">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-2 ${item.color}`}>
+                      <item.icon className="w-4 h-4" />
+                    </div>
+                    <p className="text-xs font-bold text-foreground leading-tight">{item.title}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{item.desc}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Mode-specific CTA */}
+            <div className="bg-card border border-border rounded-2xl p-4 text-center">
+              <p className="text-sm font-bold text-foreground mb-1">
+                {activeTab === "routier" ? "Besoin d'un transport sur mesure ?" :
+                 activeTab === "maritime" ? "Expédiez par conteneur ou groupage" :
+                 activeTab === "aerien" ? "Fret aérien express disponible" :
+                 "Trouvez un GP de confiance"}
+              </p>
+              <p className="text-xs text-muted-foreground mb-3">
+                {activeTab === "routier" ? "Créez une mission et recevez des propositions" :
+                 activeTab === "maritime" ? "Solutions LCL, FCL et véhicules" :
+                 activeTab === "aerien" ? "Livraison rapide porte à porte" :
+                 "Envoi de bagages accompagnés en toute sécurité"}
+              </p>
+              <button
+                onClick={handleMainAction}
+                className="px-6 py-2.5 bg-primary text-primary-foreground text-sm font-bold rounded-xl">
+                {modeConfig.searchButtonLabel}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Request Popup */}
