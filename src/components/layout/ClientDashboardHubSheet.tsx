@@ -92,7 +92,7 @@ export function ClientDashboardHubSheet({
         { 
           icon: Search, 
           label: "Voir les offres", 
-          path: "/offres",
+          path: "/?offres=1",
           description: "Parcourir les transporteurs"
         },
       ]

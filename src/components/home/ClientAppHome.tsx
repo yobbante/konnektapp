@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Package, MessageCircle, MapPin, History, Heart, ArrowRight,
   Clock, ChevronRight, FileText, Home as HomeIcon, Truck, Calendar,
@@ -16,6 +16,7 @@ import { FullScreenOrderDetails } from "./FullScreenOrderDetails";
 import { RequestDetailsPopup } from "./RequestDetailsPopup";
 import { HomeOfferCard } from "./HomeOfferCard";
 import { SmartActionBar } from "./SmartActionBar";
+import { FullScreenOffresPopup } from "./FullScreenOffresPopup";
 import { PostDeliveryFlow, usePostDeliveryDetection } from "@/components/delivery/PostDeliveryFlow";
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle } from
@@ -204,12 +205,15 @@ export function ClientAppHome({
   unreadMessages = 0, activeOrdersCount = 0, userId, userCity
 }: ClientAppHomeProps) {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const firstName = userName?.split(' ')[0] || 'Bienvenue';
   const greeting = new Date().getHours() < 12 ? 'Bonjour' : new Date().getHours() < 18 ? 'Bon après-midi' : 'Bonsoir';
 
   const [fullScreenOrderId, setFullScreenOrderId] = useState<string | null>(null);
   const [requestPopup, setRequestPopup] = useState<{type: 'custom' | 'moving';item: any;} | null>(null);
   const [activeTab, setActiveTab] = useState("all");
+  const [offresPopupOpen, setOffresPopupOpen] = useState(false);
+  const [offresPopupSearch, setOffresPopupSearch] = useState<{origin?: string; dest?: string; tab?: string}>({});
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const modeConfig = MODE_CONFIG[activeTab] || MODE_CONFIG.all;
@@ -232,6 +236,15 @@ export function ClientAppHome({
   const [routierWeight, setRoutierWeight] = useState("");
 
   useEffect(() => {if (userCity && !searchOrigin) setSearchOrigin(userCity);}, [userCity]);
+
+  // Auto-open offres popup from nav
+  useEffect(() => {
+    if (searchParams.get("offres") === "1") {
+      setOffresPopupOpen(true);
+      searchParams.delete("offres");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams]);
 
   const swapOriginDest = () => {
     const o = searchOrigin;
@@ -259,7 +272,6 @@ export function ClientAppHome({
 
   const handleMainAction = () => {
     if (isRoutier) {
-      // Navigate to routier mission request page with pre-filled data
       const params = new URLSearchParams();
       if (searchOrigin) params.set("origin", searchOrigin);
       if (searchDest) params.set("destination", searchDest);
@@ -267,16 +279,20 @@ export function ClientAppHome({
       if (routierWeight) params.set("weight", routierWeight);
       navigate(`/routier/mission?${params.toString()}`);
     } else {
-      goToOffres();
+      openOffresPopup();
     }
   };
 
-  const goToOffres = () => {
-    const params = buildSearchParams();
-    if (searchOrigin || searchDest) {
-      localStorage.setItem("kkt_last_search", JSON.stringify({ origin: searchOrigin, destination: searchDest }));
+  const openOffresPopup = (origin?: string, dest?: string, tab?: string) => {
+    if (searchOrigin || searchDest || origin || dest) {
+      localStorage.setItem("kkt_last_search", JSON.stringify({ origin: origin || searchOrigin, destination: dest || searchDest }));
     }
-    navigate(`/offres${params.toString() ? `?${params}` : ""}`);
+    setOffresPopupSearch({ origin: origin || searchOrigin, dest: dest || searchDest, tab: tab || (activeTab !== "all" ? activeTab : undefined) });
+    setOffresPopupOpen(true);
+  };
+
+  const goToOffres = () => {
+    openOffresPopup();
   };
 
   // Offers (GP)
@@ -739,6 +755,15 @@ export function ClientAppHome({
           </div>
         )}
       </div>
+
+      {/* Offers Popup */}
+      <FullScreenOffresPopup
+        open={offresPopupOpen}
+        onClose={() => setOffresPopupOpen(false)}
+        initialOrigin={offresPopupSearch.origin}
+        initialDestination={offresPopupSearch.dest}
+        initialTab={offresPopupSearch.tab}
+      />
 
       {/* Request Popup */}
       <RequestDetailsPopup

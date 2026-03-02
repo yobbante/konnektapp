@@ -66,7 +66,7 @@ export function MobileNav() {
 
   const navItems = [
     { href: "/", icon: Home, label: "Accueil", isHome: true },
-    { href: "/offres", icon: Search, label: "Offres" },
+    { href: "/?offres=1", icon: Search, label: "Offres", isOffres: true },
     { href: "#scan", icon: ScanLine, label: "Scan", isScan: true },
     { href: "/reservations", icon: CalendarCheck, label: "Réservations", requiresAuth: true },
     { href: getEspaceHref(), icon: LayoutGrid, label: "Espace", isEspace: true },
@@ -77,6 +77,13 @@ export function MobileNav() {
     if ('isScan' in item && item.isScan) {
       e.preventDefault();
       setScanOpen(true);
+      return;
+    }
+
+    // Offres button - navigate to home with offres param
+    if ('isOffres' in item && item.isOffres) {
+      e.preventDefault();
+      navigate("/?offres=1");
       return;
     }
 
