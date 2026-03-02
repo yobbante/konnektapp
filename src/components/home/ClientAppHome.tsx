@@ -8,6 +8,7 @@ import {
   TrendingUp, Users, ArrowUpDown, Weight, Route
 } from "lucide-react";
 import { RecipientTrackingCard } from "@/components/client/RecipientTrackingCard";
+import { KonnektCanvasCarousel } from "./KonnektCanvasCarousel";
 import { WeightValidationAlert } from "@/components/client/WeightValidationAlert";
 import { supabase } from "@/integrations/supabase/client";
 import { WORLD_CITIES, FEATURED_CITIES } from "@/components/gp/SearchableCitySelect";
@@ -617,30 +618,8 @@ export function ClientAppHome({
           )}
         </div>
 
-        {/* ── ROUTES POPULAIRES (adaptive) ── */}
-        <div className="px-4 pb-4">
-          <h2 className="text-base font-bold text-foreground mb-2">
-            {isRoutier ? "Corridors routiers populaires" : "Routes populaires"}
-          </h2>
-          <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
-            {popularRoutes.map((route, idx) => (
-              <button
-                key={idx}
-                onClick={() => { setSearchOrigin(route.from); setSearchDest(route.to); }}
-                className="flex-shrink-0 w-[120px] bg-card border border-border rounded-2xl p-3 text-left hover:border-primary/30 transition-all relative"
-              >
-                {route.hot && (
-                  <span className="absolute top-2 right-2 text-[9px] bg-destructive/90 text-destructive-foreground px-1.5 py-0.5 rounded-full font-bold flex items-center gap-0.5">
-                    <TrendingUp className="w-2.5 h-2.5" /> Hot
-                  </span>
-                )}
-                <span className="text-lg block mb-1">{route.flag}</span>
-                <p className="text-sm font-bold text-foreground leading-tight">{route.from}</p>
-                <p className="text-[10px] text-muted-foreground">→ {route.to}</p>
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* ── KONNEKT CANVAS CAROUSEL ── */}
+        <KonnektCanvasCarousel />
 
         {/* ── POURQUOI KONNEKT (adaptive) ── */}
         <div className="px-4 pb-8">
