@@ -358,47 +358,49 @@ export function ClientAppHome({
         {/* Alerts */}
         {userId && <div className="px-4"><WeightValidationAlert userId={userId} /></div>}
 
-        {/* ── TRANSPORT TYPE TABS ── */}
-        <div className="px-4 pt-1 pb-2">
-          <div className="flex gap-1.5">
-            {TRANSPORT_TABS.map((tab) => {
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => !tab.soon && setActiveTab(tab.id)}
-                  className={`relative flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl text-[10px] font-semibold transition-all border ${
-                  tab.soon ?
-                  "opacity-50 cursor-default bg-muted/30 border-border/50 text-muted-foreground" :
-                  isActive ?
-                  "bg-primary text-primary-foreground border-primary shadow-md" :
-                  "bg-card text-muted-foreground border-border hover:border-primary/30"}`
-                  }>
-                  
-                  <tab.icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
-                  {tab.soon &&
-                  <span className="absolute -top-1.5 right-0.5 text-[7px] bg-amber-500/20 text-amber-600 px-1 rounded-full font-bold leading-tight">
-                      Bientôt
-                    </span>
-                  }
-                </button>);
+        {/* ── TRANSPORT TABS + SEARCH (unified block like Booking.com) ── */}
+        <div className="sticky top-0 z-30 bg-background">
+          {/* Transport tabs row */}
+          <div className="px-4 pt-1 pb-0">
+            <div className="flex gap-0">
+              {TRANSPORT_TABS.map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => !tab.soon && setActiveTab(tab.id)}
+                    className={`relative flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-all border-b-2 ${
+                    tab.soon ?
+                    "opacity-50 cursor-default text-muted-foreground border-transparent" :
+                    isActive ?
+                    "text-primary border-primary" :
+                    "text-muted-foreground border-transparent hover:text-foreground hover:border-border"}`
+                    }>
+                    
+                    <tab.icon className="w-4 h-4" />
+                    <span>{tab.label}</span>
+                    {tab.soon &&
+                    <span className="absolute -top-0.5 right-0.5 text-[7px] bg-amber-500/20 text-amber-600 px-1 rounded-full font-bold leading-tight">
+                        Bientôt
+                      </span>
+                    }
+                  </button>);
 
-            })}
+              })}
+            </div>
           </div>
-        </div>
 
-        {/* ── SEARCH ENGINE (adaptive per mode) ── */}
-        <div className="px-4 pb-2">
-          <div className={`bg-card border-2 rounded-2xl overflow-hidden shadow-sm relative ${
-          isRoutier ? "border-blue-500/40" : "border-primary/30"}`
-          }>
+          {/* ── SEARCH ENGINE (unified box) ── */}
+          <div className="px-4 pt-2 pb-3">
+            <div className={`bg-card border border-border overflow-hidden shadow-md relative rounded-none ${
+            isRoutier ? "border-primary/40" : "border-border"}`
+            }>
             {/* Origin */}
             <button
               onClick={() => {setCityQuery("");setActivePicker("origin");}}
               className="w-full flex items-center gap-3 px-3 py-2.5 text-left border-b border-border/40">
               
-              <MapPin className={`w-4 h-4 flex-shrink-0 ${isRoutier ? "text-blue-500" : "text-primary"}`} />
+              <MapPin className={`w-4 h-4 flex-shrink-0 text-primary`} />
               <span className={`flex-1 text-sm ${searchOrigin ? "text-foreground font-medium" : "text-muted-foreground"}`}>
                 {searchOrigin || modeConfig.searchPlaceholderOrigin}
               </span>
@@ -454,31 +456,28 @@ export function ClientAppHome({
                 style={{ colorScheme: 'dark' }} />
               
             </div>
-          </div>
 
-          <motion.button
-            whileTap={{ scale: 0.98 }}
-            onClick={handleMainAction}
-            className={`w-full font-bold text-center py-3 rounded-xl shadow-lg mt-2 text-sm ${
-            isRoutier ?
-            "bg-blue-600 text-white" :
-            "bg-primary text-primary-foreground"}`
-            }>
-            
-            {modeConfig.searchButtonLabel}
-          </motion.button>
+            {/* Search button inside the box */}
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={handleMainAction}
+              className="w-full font-bold text-center py-3 text-sm bg-primary text-primary-foreground">
+              {modeConfig.searchButtonLabel}
+            </motion.button>
+          </div>
 
           {/* Routier: quick action to create custom mission */}
           {isRoutier &&
           <button
             onClick={() => navigate("/routier/mission")}
-            className="w-full mt-2 py-2.5 rounded-xl border-2 border-dashed border-blue-500/40 text-blue-500 text-sm font-semibold flex items-center justify-center gap-2 hover:bg-blue-500/5 transition-colors">
+            className="w-full mt-2 py-2.5 border-2 border-dashed border-primary/40 text-primary text-sm font-semibold flex items-center justify-center gap-2 hover:bg-primary/5 transition-colors">
             
               <FileText className="w-4 h-4" />
               Créer une mission personnalisée
             </button>
           }
         </div>
+        </div>{/* end sticky */}
 
         {/* ── SMART ACTION BAR ── */}
         <SmartActionBar
