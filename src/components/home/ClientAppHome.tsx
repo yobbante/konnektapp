@@ -368,7 +368,12 @@ export function ClientAppHome({
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => !tab.soon && setActiveTab(tab.id)}
+                    onClick={() => {
+                      if (!tab.soon) {
+                        setActiveTab(tab.id);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }
+                    }}
                     className={`relative flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-all border-b-2 ${
                     tab.soon ?
                     "opacity-50 cursor-default text-muted-foreground border-transparent" :
