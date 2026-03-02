@@ -63,9 +63,9 @@ const transportOptions: TransportOption[] = [
     icon: Ship,
     title: "Transport maritime",
     subtitle: "Gros volumes",
-    description: "Conteneur / groupage maritime",
+    description: "Conteneur, groupage, véhicule maritime",
     path: "/maritime/demande",
-    available: false,
+    available: true,
     color: "bg-transport-maritime/10 text-transport-maritime border-transport-maritime/30",
   },
 ];

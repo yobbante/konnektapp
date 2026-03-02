@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
-export type RoleTheme = "client" | "transporter" | "routier" | "admin" | null;
+export type RoleTheme = "client" | "transporter" | "routier" | "maritime" | "admin" | null;
 
 /**
  * Hook to apply role-based theme classes automatically based on current route
@@ -15,11 +15,13 @@ export function useRoleTheme(): RoleTheme {
     const path = location.pathname;
     
     // Remove existing role theme classes
-    root.classList.remove("theme-admin", "theme-transporter", "theme-client", "theme-routier");
+    root.classList.remove("theme-admin", "theme-transporter", "theme-client", "theme-routier", "theme-maritime");
     
     // Apply role-based theme class
     if (path.startsWith("/admin")) {
       root.classList.add("theme-admin");
+    } else if (path.startsWith("/maritime")) {
+      root.classList.add("theme-maritime");
     } else if (path.startsWith("/routier")) {
       root.classList.add("theme-routier");
     } else if (path.startsWith("/gp") || path.startsWith("/transporter")) {
@@ -31,6 +33,7 @@ export function useRoleTheme(): RoleTheme {
 
   const path = location.pathname;
   if (path.startsWith("/admin")) return "admin";
+  if (path.startsWith("/maritime")) return "maritime";
   if (path.startsWith("/routier")) return "routier";
   if (path.startsWith("/gp") || path.startsWith("/transporter")) return "transporter";
   return "client";

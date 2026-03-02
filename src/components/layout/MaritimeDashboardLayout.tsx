@@ -1,0 +1,297 @@
+import { ReactNode, useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import {
+  Ship, Bell, ScanLine, Lock,
+  Home, Package, MessageCircle, UserCircle,
+  Settings, LogOut, MapPin, Anchor,
+  History, Wallet, Calendar,
+  ChevronRight, Eye, EyeOff, Shield, Plus
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { GPNotificationsDropdown } from "@/components/gp/dashboard/GPNotificationsDropdown";
+import { GPScanSheet } from "@/components/scan/GPScanSheet";
+import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+
+interface MaritimeDashboardLayoutProps {
+  children: ReactNode;
+  gpProfile: {
+    id: string;
+    business_name: string;
+    gp_type: string;
+    status: string;
+  };
+  pendingCount?: number;
+  activeOrdersCount?: number;
+}
+
+export function MaritimeDashboardLayout({
+  children,
+  gpProfile,
+  pendingCount = 0,
+  activeOrdersCount = 0,
+}: MaritimeDashboardLayoutProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showScanSheet, setShowScanSheet] = useState(false);
+  const [showWallet, setShowWallet] = useState(false);
+  const [walletData, setWalletData] = useState<{ balance: number; pending: number; currency: string } | null>(null);
+  const [showBalance, setShowBalance] = useState(true);
+
+  const isVerified = gpProfile.status === "verified" || gpProfile.status === "premium" || gpProfile.status === "starter";
+  const totalBadge = pendingCount + activeOrdersCount;
+
+  useEffect(() => {
+    if (showWallet && !walletData) {
+      (async () => {
+        try {
+          const [walletRes, escrowRes] = await Promise.all([
+            supabase.from("gp_wallets").select("balance, pending_balance, currency").eq("gp_id", gpProfile.id).maybeSingle(),
+            supabase.from("escrow_transactions").select("net_to_gp").eq("gp_id", gpProfile.id).eq("status", "held"),
+          ]);
+          const pendingEscrow = escrowRes.data?.reduce((sum: number, e: any) => sum + (e.net_to_gp || 0), 0) || 0;
+          setWalletData({
+            balance: walletRes.data?.balance || 0,
+            pending: pendingEscrow,
+            currency: walletRes.data?.currency || "XOF",
+          });
+        } catch (e) {
+          console.error("Wallet load error:", e);
+        }
+      })();
+    }
+  }, [showWallet, gpProfile.id]);
+
+  const getActiveTab = () => {
+    const path = location.pathname;
+    if (path.includes("/maritime/demandes") || path.includes("/maritime/en-cours")) return "missions";
+    if (path.includes("/maritime/messages")) return "messages";
+    if (path.includes("/maritime/profil-public") || path.includes("/maritime/parametres") || path.includes("/maritime/historique") || path.includes("/maritime/wallet")) return "profil";
+    return "apercu";
+  };
+  const currentTab = getActiveTab();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* HEADER */}
+      <header
+        className="sticky top-0 z-50 bg-gradient-to-r from-primary to-primary/90 shadow-lg"
+        style={{ paddingTop: 'calc(8px + var(--safe-top, 0px))' }}
+      >
+        <div className="px-3 py-2.5 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0 flex-shrink">
+            <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 shadow-sm">
+              <Ship className="w-5 h-5 text-white" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-white font-bold text-sm leading-tight truncate max-w-[120px]">
+                {gpProfile.business_name}
+              </p>
+              <span className="text-[10px] text-white/60 font-medium">Maritime</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {isVerified && (
+              <Button
+                onClick={() => setShowWallet(prev => !prev)}
+                size="icon"
+                className={cn(
+                  "h-8 w-8 rounded-full border-none transition-all",
+                  showWallet ? "bg-white/30 text-white" : "bg-white/15 hover:bg-white/25 text-white"
+                )}
+              >
+                <Wallet className="w-4 h-4" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative text-white hover:bg-white/10 w-8 h-8 flex-shrink-0"
+              onClick={() => setShowNotifications(true)}
+            >
+              <Bell className="w-4.5 h-4.5" />
+              {totalBadge > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                  {totalBadge > 9 ? "9+" : totalBadge}
+                </span>
+              )}
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* WALLET DROPDOWN */}
+      <AnimatePresence>
+        {showWallet && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="sticky top-[calc(52px+var(--safe-top,0px))] z-40 overflow-hidden"
+          >
+            <div className="bg-gradient-to-b from-primary/95 to-primary/85 backdrop-blur-xl border-b border-white/10 px-4 py-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Wallet className="w-4 h-4 text-white/70" />
+                  <span className="text-xs text-white/70 font-medium">Mon portefeuille</span>
+                </div>
+                <button onClick={() => setShowBalance(b => !b)} className="text-white/50 hover:text-white/80 transition-colors">
+                  {showBalance ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+              {walletData ? (
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-2xl font-bold text-white tracking-tight">
+                      {showBalance ? `${walletData.balance.toLocaleString("fr-FR")} ${walletData.currency}` : "••••••"}
+                    </p>
+                    <p className="text-[11px] text-white/50 mt-0.5">Solde disponible</p>
+                  </div>
+                  {walletData.pending > 0 && (
+                    <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
+                      <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                      <span className="text-xs text-white/80 flex-1">En attente (escrow)</span>
+                      <span className="text-xs font-semibold text-white">
+                        {showBalance ? `${walletData.pending.toLocaleString("fr-FR")} ${walletData.currency}` : "••••"}
+                      </span>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => { setShowWallet(false); navigate("/maritime/wallet"); }}
+                    className="w-full flex items-center justify-center gap-2 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold py-2.5 rounded-xl transition-all active:scale-[0.98]"
+                  >
+                    Voir le détail
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center py-3">
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* MAIN CONTENT */}
+      <main className="flex-1 pb-20">{children}</main>
+
+      {/* BOTTOM NAV */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border/50 md:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
+        <div className="flex items-center justify-around h-16 px-1">
+          <NavItem icon={Home} label="Accueil" active={currentTab === "apercu"} onClick={() => navigate("/maritime/apercu")} />
+          <NavItem icon={Package} label="Expéditions" active={currentTab === "missions"} badge={pendingCount + activeOrdersCount} locked={!isVerified} onClick={() => isVerified && navigate("/maritime/demandes")} />
+
+          {/* SCAN central */}
+          <button
+            onClick={() => isVerified && setShowScanSheet(true)}
+            disabled={!isVerified}
+            className="flex flex-col items-center justify-center flex-1 h-full relative"
+          >
+            <motion.div
+              className={cn("w-14 h-14 -mt-6 rounded-full flex items-center justify-center shadow-xl", isVerified ? "bg-primary" : "bg-muted")}
+              whileTap={isVerified ? { scale: 0.9 } : undefined}
+            >
+              {isVerified ? <ScanLine className="w-6 h-6 text-primary-foreground" /> : <Lock className="w-5 h-5 text-muted-foreground" />}
+            </motion.div>
+            {isVerified && (
+              <motion.div className="absolute inset-0 flex items-start justify-center" style={{ top: '-6px' }}>
+                <motion.div
+                  className="w-14 h-14 rounded-full border-2 border-primary/30"
+                  animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0, 0.5] }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                />
+              </motion.div>
+            )}
+            <span className={cn("text-[10px] font-bold mt-0.5", "text-muted-foreground")}>Scan</span>
+          </button>
+
+          <NavItem icon={MessageCircle} label="Messages" active={currentTab === "messages"} onClick={() => navigate("/maritime/messages")} />
+
+          {/* Profil menu */}
+          <Sheet open={showMenu} onOpenChange={setShowMenu}>
+            <SheetTrigger asChild>
+              <button className={cn("flex flex-col items-center justify-center flex-1 h-full gap-0.5", currentTab === "profil" ? "text-primary" : "text-muted-foreground")}>
+                <UserCircle className="w-5 h-5" />
+                <span className="text-[10px] font-medium">Profil</span>
+              </button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="rounded-t-2xl pb-safe">
+              <SheetHeader className="pb-4">
+                <SheetTitle className="text-left">Menu Maritime</SheetTitle>
+              </SheetHeader>
+              <div className="grid grid-cols-3 gap-3 pb-4">
+                <MenuBtn icon={MapPin} label="Profil public" onClick={() => { setShowMenu(false); navigate("/maritime/profil-public"); }} />
+                <MenuBtn icon={Package} label="Expéditions" badge={pendingCount} locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/maritime/demandes"); }}} />
+                <MenuBtn icon={Anchor} label="Corridors" onClick={() => { setShowMenu(false); navigate("/maritime/apercu"); }} />
+                <MenuBtn icon={Wallet} label="Wallet" locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/maritime/wallet"); }}} />
+                <MenuBtn icon={Plus} label="Publier" onClick={() => { setShowMenu(false); navigate("/maritime/publier"); }} />
+                <MenuBtn icon={History} label="Historique" onClick={() => { setShowMenu(false); navigate("/maritime/historique"); }} />
+                <MenuBtn icon={Shield} label="KTP" onClick={() => { setShowMenu(false); navigate("/maritime/apercu"); }} />
+                <MenuBtn icon={Settings} label="Réglages" onClick={() => { setShowMenu(false); navigate("/maritime/parametres"); }} />
+                <MenuBtn icon={LogOut} label="Déconnexion" variant="destructive" onClick={() => { setShowMenu(false); handleSignOut(); }} />
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </nav>
+
+      <GPNotificationsDropdown gpProfileId={gpProfile.id} isOpen={showNotifications} onClose={() => setShowNotifications(false)} onViewOrderDetail={(orderId) => navigate(`/maritime/order/${orderId}`)} />
+      <GPScanSheet open={showScanSheet} onOpenChange={setShowScanSheet} gpId={gpProfile.id} isVerified={isVerified} />
+    </div>
+  );
+}
+
+function NavItem({ icon: Icon, label, active, badge, locked, onClick }: {
+  icon: any; label: string; active: boolean; badge?: number; locked?: boolean; onClick: () => void;
+}) {
+  return (
+    <button onClick={onClick} disabled={locked}
+      className={cn("flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors relative", locked ? "opacity-40 cursor-not-allowed" : "", active ? "text-primary" : "text-muted-foreground")}>
+      <motion.div className="relative" whileTap={!locked ? { scale: 0.85 } : undefined} animate={active ? { y: -2 } : { y: 0 }}>
+        {locked ? <Lock className="w-5 h-5" /> : <Icon className={cn("w-5 h-5", active && "text-primary")} />}
+        {!!badge && badge > 0 && !locked && (
+          <span className="absolute -top-1.5 -right-2 w-4 h-4 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center">{badge > 9 ? "9+" : badge}</span>
+        )}
+      </motion.div>
+      <span className={cn("text-[10px] font-medium", active && "text-primary font-semibold")}>{label}</span>
+      {active && (
+        <motion.div layoutId="maritime-nav" className="absolute bottom-1 w-1 h-1 rounded-full bg-primary" transition={{ type: "spring", stiffness: 500, damping: 30 }} />
+      )}
+    </button>
+  );
+}
+
+function MenuBtn({ icon: Icon, label, badge, locked, variant, onClick }: {
+  icon: any; label: string; badge?: number; locked?: boolean; variant?: "destructive"; onClick: () => void;
+}) {
+  return (
+    <button onClick={onClick} disabled={locked}
+      className={cn("flex flex-col items-center gap-2 p-3 rounded-xl transition-all active:scale-95",
+        locked ? "bg-muted/30 opacity-40 cursor-not-allowed" : variant === "destructive" ? "bg-destructive/10 hover:bg-destructive/15" : "bg-muted/50 hover:bg-muted"
+      )}>
+      <div className="relative">
+        {locked ? <Lock className="w-5 h-5 text-muted-foreground" /> : <Icon className={cn("w-5 h-5", variant === "destructive" ? "text-destructive" : "text-foreground")} />}
+        {!!badge && badge > 0 && !locked && (
+          <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-destructive text-destructive-foreground text-[8px] font-bold rounded-full flex items-center justify-center">{badge}</span>
+        )}
+      </div>
+      <span className={cn("text-[10px] font-medium text-center", variant === "destructive" ? "text-destructive" : "text-foreground")}>{label}</span>
+    </button>
+  );
+}
