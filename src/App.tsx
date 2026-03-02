@@ -78,10 +78,16 @@ import RoutierPublierPage from "./pages/routier/RoutierPublierPage";
 import MaritimeApercuPage from "./pages/maritime/MaritimeApercuPage";
 import MaritimePublierPage from "./pages/maritime/MaritimePublierPage";
 import MaritimeParametresPage from "./pages/maritime/MaritimeParametresPage";
+import MaritimeRegistration from "./pages/maritime/MaritimeRegistration";
 // Aérien pages
 import AerienApercuPage from "./pages/aerien/AerienApercuPage";
 import AerienPublierPage from "./pages/aerien/AerienPublierPage";
 import AerienDemandeFretPage from "./pages/aerien/AerienDemandeFretPage";
+import AerienRegistration from "./pages/aerien/AerienRegistration";
+// Coursier pages
+import CoursierRegistration from "./pages/coursier/CoursierRegistration";
+// Agence pages
+import AgenceRegistration from "./pages/agence/AgenceRegistration";
 // Universal shipment entry
 import ShipmentTypeSelector from "./pages/ShipmentTypeSelector";
 // Tutorials and History pages
@@ -234,6 +240,7 @@ const App = () => (
             {/* ============================================
                 MARITIME ROUTES - Dashboard fret maritime
             ============================================ */}
+            <Route path="/maritime/inscription" element={<MaritimeRegistration />} />
             <Route path="/maritime/dashboard" element={<Navigate to="/maritime/apercu" replace />} />
             <Route path="/maritime/apercu" element={<MaritimeApercuPage />} />
             <Route path="/maritime/publier" element={<MaritimePublierPage />} />
@@ -249,6 +256,7 @@ const App = () => (
             {/* ============================================
                 AÉRIEN ROUTES - Dashboard fret aérien
             ============================================ */}
+            <Route path="/aerien/inscription" element={<AerienRegistration />} />
             <Route path="/aerien/dashboard" element={<Navigate to="/aerien/apercu" replace />} />
             <Route path="/aerien/apercu" element={<AerienApercuPage />} />
             <Route path="/aerien/publier" element={<AerienPublierPage />} />
@@ -262,6 +270,16 @@ const App = () => (
             <Route path="/aerien/marketplace" element={<AerienApercuPage />} />
             <Route path="/aerien/parametres" element={<AerienApercuPage />} />
             <Route path="/aerien/messages" element={<Navigate to="/messages" replace />} />
+            
+            {/* ============================================
+                COURSIER ROUTES - Livraison express locale
+            ============================================ */}
+            <Route path="/coursier/inscription" element={<CoursierRegistration />} />
+            
+            {/* ============================================
+                AGENCE ROUTES - Transitaire & logistique
+            ============================================ */}
+            <Route path="/agence/inscription" element={<AgenceRegistration />} />
             
             {/* ============================================
                 ADMIN ROUTES - Dashboard admin
