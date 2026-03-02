@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, ChevronLeft, LogIn, ScanLine, Wallet } from "lucide-react";
+import { Menu, ChevronLeft, LogIn, ScanLine, Wallet, Package } from "lucide-react";
 import { KonnektLogo } from "@/components/ui/KonnektLogo";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
@@ -128,6 +128,18 @@ export function AppHeader({
               className="rounded-full w-8 h-8"
             >
               <Wallet className="w-4 h-4 text-muted-foreground" />
+            </Button>
+          )}
+
+          {/* Colis shortcut */}
+          {isAuthenticated && isHome && (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => navigate("/mes-colis")}
+              className="rounded-full w-8 h-8"
+            >
+              <Package className="w-4 h-4 text-muted-foreground" />
             </Button>
           )}
 
