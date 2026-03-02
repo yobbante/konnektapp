@@ -82,14 +82,8 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
       setPendingReviews([]);
     }
 
-    const { data: incoming } = await supabase
-      .from("orders")
-      .select("id, order_number, origin_city, destination_city, status, gp_id")
-      .eq("recipient_user_id", userId)
-      .not("status", "in", '("cancelled","released","delivery_confirmed","delivered")')
-      .order("created_at", { ascending: false })
-      .limit(5);
-    setIncomingParcels(incoming || []);
+    // Incoming parcels removed from SmartActionBar — now shown in /reservations
+    setIncomingParcels([]);
 
     setSupplementOrders(recentOrders.filter(o => o.status === "weight_pending_payment"));
 
