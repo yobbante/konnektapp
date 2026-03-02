@@ -359,8 +359,8 @@ export function ClientAppHome({
         {userId && <div className="px-4"><WeightValidationAlert userId={userId} /></div>}
 
         {/* ── TRANSPORT TABS + SEARCH (unified block like Booking.com) ── */}
-        <div className="z-30 bg-background">
-          {/* Transport tabs row */}
+        {/* ── TRANSPORT TABS (sticky) ── */}
+        <div className="sticky top-0 z-30 bg-background">
           <div className="px-4 pt-1 pb-0">
             <div className="flex gap-0">
               {TRANSPORT_TABS.map((tab) => {
@@ -385,16 +385,16 @@ export function ClientAppHome({
                       </span>
                     }
                   </button>);
-
               })}
             </div>
           </div>
+        </div>
 
-          {/* ── SEARCH ENGINE (unified box) ── */}
-          <div className="px-4 pt-2 pb-3">
-            <div className={`bg-card border border-border overflow-hidden shadow-md relative rounded-none ${
-            isRoutier ? "border-primary/40" : "border-border"}`
-            }>
+        {/* ── SEARCH ENGINE (scrolls with content) ── */}
+        <div className="px-4 pt-2 pb-3">
+          <div className={`bg-card border border-border overflow-hidden shadow-md relative rounded-none ${
+          isRoutier ? "border-primary/40" : "border-border"}`
+          }>
             {/* Origin */}
             <button
               onClick={() => {setCityQuery("");setActivePicker("origin");}}
@@ -441,7 +441,6 @@ export function ClientAppHome({
                 onChange={(e) => setRoutierWeight(e.target.value)}
                 className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
                 min="1" />
-              
               </div>
             }
 
@@ -454,7 +453,6 @@ export function ClientAppHome({
                 className="flex-1 bg-transparent text-sm text-foreground outline-none"
                 placeholder={isRoutier ? "Date de collecte souhaitée" : undefined}
                 style={{ colorScheme: 'dark' }} />
-              
             </div>
 
             {/* Search button inside the box */}
@@ -471,13 +469,11 @@ export function ClientAppHome({
           <button
             onClick={() => navigate("/routier/mission")}
             className="w-full mt-2 py-2.5 border-2 border-dashed border-primary/40 text-primary text-sm font-semibold flex items-center justify-center gap-2 hover:bg-primary/5 transition-colors">
-            
               <FileText className="w-4 h-4" />
               Créer une mission personnalisée
             </button>
           }
         </div>
-        </div>{/* end sticky */}
 
         {/* ── SMART ACTION BAR ── */}
         <SmartActionBar
