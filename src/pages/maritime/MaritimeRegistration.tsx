@@ -179,78 +179,92 @@ export default function MaritimeRegistration() {
             {/* ─── Tarification Maritime ─── */}
             {step === 3 && (
               <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <DollarSign className="w-5 h-5 text-blue-600" />
-                  <h2 className="font-semibold">Grille tarifaire maritime</h2>
+                {/* Header coloré maritime */}
+                <div className="rounded-xl bg-gradient-to-r from-sky-600 to-blue-700 p-4 text-white">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                      <Ship className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-base">Grille tarifaire maritime</h2>
+                      <p className="text-white/80 text-[11px]">Tarifs par service : LCL · FCL · RoRo</p>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Définissez vos tarifs selon les types de service que vous proposez.
-                </p>
 
                 {/* LCL Groupage */}
                 {form.containerTypes.includes("lcl") && (
-                  <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30 space-y-3">
-                    <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">📦 Groupage (LCL)</p>
+                  <div className="p-4 rounded-xl border-2 border-sky-500/30 bg-sky-500/5 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">📦</span>
+                      <p className="text-sm font-bold text-sky-800 dark:text-sky-200">Groupage (LCL)</p>
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Prix par m³</Label>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium">Prix par m³</Label>
                         <div className="relative">
-                          <Input type="number" value={form.priceLclPerM3} onChange={e => set("priceLclPerM3", e.target.value)} placeholder="150000" />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{form.currency}/m³</span>
+                          <Input type="number" value={form.priceLclPerM3} onChange={e => set("priceLclPerM3", e.target.value)} placeholder="150000" className="h-11 font-medium" />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground">{form.currency}/m³</span>
                         </div>
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Prix par kg vol.</Label>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium">Prix par kg vol.</Label>
                         <div className="relative">
-                          <Input type="number" value={form.priceLclPerKg} onChange={e => set("priceLclPerKg", e.target.value)} placeholder="500" />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{form.currency}/kg</span>
+                          <Input type="number" value={form.priceLclPerKg} onChange={e => set("priceLclPerKg", e.target.value)} placeholder="500" className="h-11 font-medium" />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground">{form.currency}/kg</span>
                         </div>
                       </div>
                     </div>
-                    <p className="text-[10px] text-muted-foreground">Le système facture le maximum entre poids et volume</p>
+                    <p className="text-[10px] text-muted-foreground bg-sky-500/10 rounded-lg px-2.5 py-1.5">💡 Le système facture le maximum entre poids réel et poids volumétrique</p>
                   </div>
                 )}
 
                 {/* Conteneur FCL */}
                 {(form.containerTypes.includes("20ft") || form.containerTypes.includes("40ft")) && (
-                  <div className="p-4 rounded-xl border border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/30 space-y-3">
-                    <p className="text-sm font-semibold text-green-800 dark:text-green-200">🚢 Conteneur complet (FCL)</p>
+                  <div className="p-4 rounded-xl border-2 border-emerald-500/30 bg-emerald-500/5 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">🚢</span>
+                      <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200">Conteneur complet (FCL)</p>
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
                       {form.containerTypes.includes("20ft") && (
-                        <div className="space-y-1">
-                          <Label className="text-xs">Forfait 20ft</Label>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-medium">Forfait 20ft</Label>
                           <div className="relative">
-                            <Input type="number" value={form.forfaitContainer20ft} onChange={e => set("forfaitContainer20ft", e.target.value)} placeholder="1500000" />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{form.currency}</span>
+                            <Input type="number" value={form.forfaitContainer20ft} onChange={e => set("forfaitContainer20ft", e.target.value)} placeholder="1500000" className="h-11 font-medium" />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground">{form.currency}</span>
                           </div>
                         </div>
                       )}
                       {form.containerTypes.includes("40ft") && (
-                        <div className="space-y-1">
-                          <Label className="text-xs">Forfait 40ft</Label>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-medium">Forfait 40ft</Label>
                           <div className="relative">
-                            <Input type="number" value={form.forfaitContainer40ft} onChange={e => set("forfaitContainer40ft", e.target.value)} placeholder="2500000" />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{form.currency}</span>
+                            <Input type="number" value={form.forfaitContainer40ft} onChange={e => set("forfaitContainer40ft", e.target.value)} placeholder="2500000" className="h-11 font-medium" />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground">{form.currency}</span>
                           </div>
                         </div>
                       )}
                     </div>
-                    <p className="text-[10px] text-muted-foreground">Prix fixe tout compris par conteneur</p>
+                    <p className="text-[10px] text-muted-foreground">Prix fixe tout compris par conteneur, port à port</p>
                   </div>
                 )}
 
                 {/* RoRo */}
                 {form.containerTypes.includes("roro") && (
-                  <div className="p-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30 space-y-3">
-                    <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">🚗 Véhicules (RoRo)</p>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Forfait par véhicule</Label>
+                  <div className="p-4 rounded-xl border-2 border-amber-500/30 bg-amber-500/5 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">🚗</span>
+                      <p className="text-sm font-bold text-amber-800 dark:text-amber-200">Véhicules (RoRo)</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium">Forfait par véhicule</Label>
                       <div className="relative">
-                        <Input type="number" value={form.forfaitRoRo} onChange={e => set("forfaitRoRo", e.target.value)} placeholder="800000" />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{form.currency}</span>
+                        <Input type="number" value={form.forfaitRoRo} onChange={e => set("forfaitRoRo", e.target.value)} placeholder="800000" className="h-11 font-medium" />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground">{form.currency}</span>
                       </div>
                     </div>
-                    <p className="text-[10px] text-muted-foreground">Tarif de base par véhicule, ajustable selon le gabarit</p>
+                    <p className="text-[10px] text-muted-foreground">Tarif de base par véhicule, ajustable selon gabarit</p>
                   </div>
                 )}
 
@@ -271,16 +285,44 @@ export default function MaritimeRegistration() {
                   </div>
                 )}
 
-                {/* Simulation */}
+                {/* Simulation améliorée */}
                 {(form.priceLclPerM3 || form.forfaitContainer20ft) && (
-                  <div className="p-3 bg-muted/50 rounded-xl border text-xs space-y-1">
-                    <p className="font-semibold">📊 Aperçu</p>
-                    {form.priceLclPerM3 && <p>• 5 m³ LCL : <strong>{(parseInt(form.priceLclPerM3) * 5).toLocaleString()} {form.currency}</strong></p>}
-                    {form.forfaitContainer20ft && <p>• 1× Conteneur 20ft : <strong>{parseInt(form.forfaitContainer20ft).toLocaleString()} {form.currency}</strong></p>}
-                    {form.forfaitContainer40ft && <p>• 1× Conteneur 40ft : <strong>{parseInt(form.forfaitContainer40ft).toLocaleString()} {form.currency}</strong></p>}
-                    {form.forfaitRoRo && <p>• 1× Véhicule RoRo : <strong>{parseInt(form.forfaitRoRo).toLocaleString()} {form.currency}</strong></p>}
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-muted/60 to-muted/30 border space-y-2.5">
+                    <p className="text-xs font-bold flex items-center gap-1.5">📊 Simulateur tarifaire</p>
+                    <div className="grid grid-cols-1 gap-1.5 text-xs">
+                      {form.priceLclPerM3 && (
+                        <div className="flex justify-between py-1 border-b border-border/50">
+                          <span className="text-muted-foreground">5 m³ LCL ({form.portOrigin || "—"} → {form.portDest || "—"})</span>
+                          <span className="font-bold">{(parseInt(form.priceLclPerM3) * 5).toLocaleString()} {form.currency}</span>
+                        </div>
+                      )}
+                      {form.forfaitContainer20ft && (
+                        <div className="flex justify-between py-1 border-b border-border/50">
+                          <span className="text-muted-foreground">1× Conteneur 20ft</span>
+                          <span className="font-bold">{parseInt(form.forfaitContainer20ft).toLocaleString()} {form.currency}</span>
+                        </div>
+                      )}
+                      {form.forfaitContainer40ft && (
+                        <div className="flex justify-between py-1 border-b border-border/50">
+                          <span className="text-muted-foreground">1× Conteneur 40ft</span>
+                          <span className="font-bold">{parseInt(form.forfaitContainer40ft).toLocaleString()} {form.currency}</span>
+                        </div>
+                      )}
+                      {form.forfaitRoRo && (
+                        <div className="flex justify-between py-1.5 bg-amber-500/10 rounded-lg px-2 mt-1">
+                          <span className="font-semibold text-amber-700 dark:text-amber-300">1× Véhicule RoRo</span>
+                          <span className="font-black text-amber-700 dark:text-amber-300">{parseInt(form.forfaitRoRo).toLocaleString()} {form.currency}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
+
+                <div className="p-3 rounded-xl bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800">
+                  <p className="text-xs text-sky-800 dark:text-sky-200">
+                    <strong>🔒 Assurance maritime</strong> incluse automatiquement pour le fret conteneurisé. Couverture standard CIF.
+                  </p>
+                </div>
               </div>
             )}
 

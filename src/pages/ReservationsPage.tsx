@@ -8,6 +8,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
+import { RecipientTrackingCard } from "@/components/client/RecipientTrackingCard";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -47,6 +48,7 @@ export default function ReservationsPage() {
   const [activeTab, setActiveTab] = useState<TabId>("actives");
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     loadOrders();
@@ -56,6 +58,7 @@ export default function ReservationsPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      setUserId(user.id);
 
       const { data } = await supabase
         .from("orders")
@@ -132,6 +135,12 @@ export default function ReservationsPage() {
 
       {/* Orders list */}
       <div className="flex-1 overflow-y-auto pb-24">
+        {/* Colis pour vous - subtil */}
+        {userId && (
+          <div className="pt-2">
+            <RecipientTrackingCard userId={userId} />
+          </div>
+        )}
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />

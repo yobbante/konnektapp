@@ -666,66 +666,106 @@ export default function RoutierRegistration() {
 
               {/* ─── Step 5: Tarification Routier ─── */}
               {step === 5 && (
-                <Card>
-                  <CardContent className="p-5 space-y-4">
-                    <h2 className="font-semibold text-lg flex items-center gap-2">
-                      <DollarSign className="w-5 h-5 text-primary" /> Tarification routière
-                    </h2>
-                    <p className="text-xs text-muted-foreground">
-                      Définissez vos tarifs de base. Le système calculera automatiquement le prix final pour chaque course.
-                    </p>
-
-                    <div className="space-y-2">
-                      <Label>Prix minimum par course *</Label>
-                      <div className="relative">
-                        <Input type="number" value={routierMinPrice} onChange={e => setRoutierMinPrice(e.target.value)} placeholder="15000" />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{routierCurrency}</span>
+                <Card className="overflow-hidden">
+                  <div className="bg-gradient-to-r from-emerald-600 to-green-700 px-5 py-4 text-white">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                        <Truck className="w-5 h-5" />
                       </div>
-                      <p className="text-[10px] text-muted-foreground">Prix plancher, peu importe la distance ou le poids</p>
+                      <div>
+                        <h2 className="font-bold text-base">Tarification routière</h2>
+                        <p className="text-white/80 text-[11px]">Grille combinée : distance + poids + volume</p>
+                      </div>
+                    </div>
+                  </div>
+                  <CardContent className="p-5 space-y-4">
+                    {/* Forfait minimum */}
+                    <div className="p-4 rounded-xl border-2 border-emerald-500/30 bg-emerald-500/5 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                          <Shield className="w-3.5 h-3.5 text-emerald-600" />
+                        </div>
+                        <Label className="font-semibold text-sm">Prix minimum par course *</Label>
+                      </div>
+                      <div className="relative">
+                        <Input type="number" value={routierMinPrice} onChange={e => setRoutierMinPrice(e.target.value)} placeholder="15000" className="h-11 text-base font-medium" />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">{routierCurrency}</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">Montant plancher garanti, quelle que soit la course</p>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label>Prix par kilomètre</Label>
+                    {/* Distance */}
+                    <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30 space-y-2">
+                      <p className="text-sm font-semibold text-blue-800 dark:text-blue-200 flex items-center gap-2">
+                        <Route className="w-4 h-4" /> Facteur distance
+                      </p>
                       <div className="relative">
                         <Input type="number" value={routierPricePerKm} onChange={e => setRoutierPricePerKm(e.target.value)} placeholder="500" />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{routierCurrency}/km</span>
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{routierCurrency}/km</span>
                       </div>
-                      <p className="text-[10px] text-muted-foreground">Facteur distance appliqué au calcul du prix</p>
+                      <p className="text-[10px] text-muted-foreground">Appliqué à chaque kilomètre parcouru</p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label>Prix par kg</Label>
-                        <div className="relative">
-                          <Input type="number" value={routierPricePerKg} onChange={e => setRoutierPricePerKg(e.target.value)} placeholder="100" />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">/kg</span>
+                    {/* Poids + Volume */}
+                    <div className="p-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30 space-y-3">
+                      <p className="text-sm font-semibold text-amber-800 dark:text-amber-200 flex items-center gap-2">
+                        <Package className="w-4 h-4" /> Facteurs chargement
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Prix / kg</Label>
+                          <div className="relative">
+                            <Input type="number" value={routierPricePerKg} onChange={e => setRoutierPricePerKg(e.target.value)} placeholder="100" />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{routierCurrency}/kg</span>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Prix / m³</Label>
+                          <div className="relative">
+                            <Input type="number" value={routierPricePerM3} onChange={e => setRoutierPricePerM3(e.target.value)} placeholder="5000" />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{routierCurrency}/m³</span>
+                          </div>
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label>Prix par m³</Label>
-                        <div className="relative">
-                          <Input type="number" value={routierPricePerM3} onChange={e => setRoutierPricePerM3(e.target.value)} placeholder="5000" />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">/m³</span>
-                        </div>
-                      </div>
+                      <p className="text-[10px] text-muted-foreground">Le système applique le max entre poids réel et poids volumétrique</p>
                     </div>
 
                     {/* Simulation */}
                     {routierMinPrice && (
-                      <div className="p-4 bg-muted/50 rounded-xl border space-y-2">
-                        <p className="text-xs font-semibold">📊 Aperçu tarifaire</p>
-                        <div className="text-xs text-muted-foreground space-y-1">
-                          <p>• Course minimum : <strong>{parseInt(routierMinPrice || "0").toLocaleString()} {routierCurrency}</strong></p>
-                          {routierPricePerKm && <p>• 100 km : <strong>{(parseInt(routierPricePerKm) * 100).toLocaleString()} {routierCurrency}</strong> (distance seule)</p>}
-                          {routierPricePerKg && <p>• 500 kg : <strong>{(parseInt(routierPricePerKg) * 500).toLocaleString()} {routierCurrency}</strong> (poids seul)</p>}
-                          {routierPricePerM3 && <p>• 10 m³ : <strong>{(parseInt(routierPricePerM3) * 10).toLocaleString()} {routierCurrency}</strong> (volume seul)</p>}
+                      <div className="p-4 rounded-xl bg-gradient-to-br from-muted/60 to-muted/30 border space-y-2.5">
+                        <p className="text-xs font-bold flex items-center gap-1.5">📊 Simulateur tarifaire</p>
+                        <div className="grid grid-cols-1 gap-1.5 text-xs">
+                          <div className="flex justify-between py-1 border-b border-border/50">
+                            <span className="text-muted-foreground">Course minimum</span>
+                            <span className="font-bold">{parseInt(routierMinPrice || "0").toLocaleString()} {routierCurrency}</span>
+                          </div>
+                          {routierPricePerKm && (
+                            <div className="flex justify-between py-1 border-b border-border/50">
+                              <span className="text-muted-foreground">Dakar → Thiès (~70 km)</span>
+                              <span className="font-bold">{Math.max(parseInt(routierMinPrice || "0"), parseInt(routierPricePerKm) * 70).toLocaleString()} {routierCurrency}</span>
+                            </div>
+                          )}
+                          {routierPricePerKg && (
+                            <div className="flex justify-between py-1 border-b border-border/50">
+                              <span className="text-muted-foreground">Chargement 500 kg</span>
+                              <span className="font-bold">{(parseInt(routierPricePerKg) * 500).toLocaleString()} {routierCurrency}</span>
+                            </div>
+                          )}
+                          {routierPricePerKm && routierPricePerKg && (
+                            <div className="flex justify-between py-1.5 bg-emerald-500/10 rounded-lg px-2 mt-1">
+                              <span className="font-semibold text-emerald-700 dark:text-emerald-300">Combiné 70 km + 500 kg</span>
+                              <span className="font-black text-emerald-700 dark:text-emerald-300">
+                                {Math.max(parseInt(routierMinPrice || "0"), parseInt(routierPricePerKm) * 70 + parseInt(routierPricePerKg) * 500).toLocaleString()} {routierCurrency}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
 
-                    <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                      <p className="text-xs text-amber-800 dark:text-amber-200">
-                        <strong>💡 Formule :</strong> Prix = max(minimum, distance × prix/km + poids × prix/kg + volume × prix/m³)
+                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+                      <p className="text-xs text-emerald-800 dark:text-emerald-200">
+                        <strong>💡 Formule :</strong> Prix = max(minimum, km × prix/km + kg × prix/kg + m³ × prix/m³)
                       </p>
                     </div>
                   </CardContent>

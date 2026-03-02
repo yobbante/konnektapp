@@ -164,70 +164,104 @@ export default function AerienRegistration() {
             {/* ─── Tarification Aérien ─── */}
             {step === 3 && (
               <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <DollarSign className="w-5 h-5 text-violet-600" />
-                  <h2 className="font-semibold">Grille tarifaire aérien cargo</h2>
+                {/* Header coloré aérien */}
+                <div className="rounded-xl bg-gradient-to-r from-violet-600 to-purple-700 p-4 text-white">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                      <Plane className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-base">Tarification aérien cargo</h2>
+                      <p className="text-white/80 text-[11px]">Prix au kilo · Forfait minimum · Options express</p>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Tarifs appliqués au fret aérien. Le prix au kilo est la base principale.
-                </p>
 
-                <div className="p-4 rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-950/30 space-y-3">
-                  <p className="text-sm font-semibold text-violet-800 dark:text-violet-200">✈️ Tarif cargo de base</p>
+                {/* Tarif principal */}
+                <div className="p-4 rounded-xl border-2 border-violet-500/30 bg-violet-500/5 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">✈️</span>
+                    <p className="text-sm font-bold text-violet-800 dark:text-violet-200">Tarif cargo de base</p>
+                  </div>
                   
                   <div className="space-y-2">
-                    <Label className="text-xs">Prix par kilogramme *</Label>
+                    <Label className="text-xs font-medium">Prix par kilogramme *</Label>
                     <div className="relative">
-                      <Input type="number" value={form.pricePerKg} onChange={e => set("pricePerKg", e.target.value)} placeholder="3500" />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{form.currency}/kg</span>
+                      <Input type="number" value={form.pricePerKg} onChange={e => set("pricePerKg", e.target.value)} placeholder="3500" className="h-11 text-base font-medium" />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground">{form.currency}/kg</span>
                     </div>
-                    <p className="text-[10px] text-muted-foreground">Tarif standard par kilo de fret</p>
+                    <p className="text-[10px] text-muted-foreground">Tarif standard appliqué à chaque kilo de fret</p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-xs">Forfait minimum (par envoi)</Label>
+                    <Label className="text-xs font-medium">Forfait minimum (par envoi)</Label>
                     <div className="relative">
-                      <Input type="number" value={form.forfaitMinimum} onChange={e => set("forfaitMinimum", e.target.value)} placeholder="25000" />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{form.currency}</span>
+                      <Input type="number" value={form.forfaitMinimum} onChange={e => set("forfaitMinimum", e.target.value)} placeholder="25000" className="h-11 font-medium" />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground">{form.currency}</span>
                     </div>
-                    <p className="text-[10px] text-muted-foreground">Montant minimum facturé, même pour les petits envois</p>
+                    <p className="text-[10px] text-muted-foreground bg-violet-500/10 rounded-lg px-2.5 py-1.5">💡 Montant minimum facturé, même pour les petits envois (&lt; 5 kg)</p>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30 space-y-3">
-                  <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">⛽ Options supplémentaires</p>
+                {/* Options supplémentaires */}
+                <div className="p-4 rounded-xl border-2 border-amber-500/30 bg-amber-500/5 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">⛽</span>
+                    <p className="text-sm font-bold text-amber-800 dark:text-amber-200">Options supplémentaires</p>
+                  </div>
                   
-                  <div className="space-y-2">
-                    <Label className="text-xs">Surcharge carburant (%)</Label>
-                    <div className="relative">
-                      <Input type="number" value={form.surchargeCarburant} onChange={e => set("surchargeCarburant", e.target.value)} placeholder="5" />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium">Surcharge carburant</Label>
+                      <div className="relative">
+                        <Input type="number" value={form.surchargeCarburant} onChange={e => set("surchargeCarburant", e.target.value)} placeholder="5" className="h-11 font-medium" />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground">%</span>
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-xs">Supplément express (livraison J+1)</Label>
-                    <div className="relative">
-                      <Input type="number" value={form.forfaitExpress} onChange={e => set("forfaitExpress", e.target.value)} placeholder="15000" />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{form.currency}</span>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium">Supplément express J+1</Label>
+                      <div className="relative">
+                        <Input type="number" value={form.forfaitExpress} onChange={e => set("forfaitExpress", e.target.value)} placeholder="15000" className="h-11 font-medium" />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground">{form.currency}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Simulation */}
+                {/* Simulation améliorée */}
                 {form.pricePerKg && (
-                  <div className="p-3 bg-muted/50 rounded-xl border text-xs space-y-1">
-                    <p className="font-semibold">📊 Aperçu tarifaire</p>
-                    <p>• 10 kg standard : <strong>{Math.max(parseInt(form.pricePerKg) * 10, parseInt(form.forfaitMinimum || "0")).toLocaleString()} {form.currency}</strong></p>
-                    <p>• 50 kg standard : <strong>{Math.max(parseInt(form.pricePerKg) * 50, parseInt(form.forfaitMinimum || "0")).toLocaleString()} {form.currency}</strong></p>
-                    {form.surchargeCarburant && <p>• + surcharge carburant : <strong>{form.surchargeCarburant}%</strong></p>}
-                    {form.forfaitExpress && <p>• + express J+1 : <strong>{parseInt(form.forfaitExpress).toLocaleString()} {form.currency}</strong></p>}
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-muted/60 to-muted/30 border space-y-2.5">
+                    <p className="text-xs font-bold flex items-center gap-1.5">📊 Simulateur tarifaire</p>
+                    <div className="grid grid-cols-1 gap-1.5 text-xs">
+                      <div className="flex justify-between py-1 border-b border-border/50">
+                        <span className="text-muted-foreground">Envoi 10 kg standard</span>
+                        <span className="font-bold">{Math.max(parseInt(form.pricePerKg) * 10, parseInt(form.forfaitMinimum || "0")).toLocaleString()} {form.currency}</span>
+                      </div>
+                      <div className="flex justify-between py-1 border-b border-border/50">
+                        <span className="text-muted-foreground">Envoi 50 kg standard</span>
+                        <span className="font-bold">{Math.max(parseInt(form.pricePerKg) * 50, parseInt(form.forfaitMinimum || "0")).toLocaleString()} {form.currency}</span>
+                      </div>
+                      {form.surchargeCarburant && (
+                        <div className="flex justify-between py-1 border-b border-border/50">
+                          <span className="text-muted-foreground">+ Surcharge carburant</span>
+                          <span className="font-bold">+{form.surchargeCarburant}%</span>
+                        </div>
+                      )}
+                      {form.forfaitExpress && (
+                        <div className="flex justify-between py-1.5 bg-violet-500/10 rounded-lg px-2 mt-1">
+                          <span className="font-semibold text-violet-700 dark:text-violet-300">50 kg express J+1</span>
+                          <span className="font-black text-violet-700 dark:text-violet-300">
+                            {(Math.round(Math.max(parseInt(form.pricePerKg) * 50, parseInt(form.forfaitMinimum || "0")) * (1 + (parseInt(form.surchargeCarburant || "0") / 100)) + parseInt(form.forfaitExpress))).toLocaleString()} {form.currency}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 
                 <div className="p-3 rounded-xl bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800">
                   <p className="text-xs text-violet-800 dark:text-violet-200">
-                    <strong>💡 Formule :</strong> Prix = max(forfait minimum, poids × prix/kg) × (1 + surcharge%) + express
+                    <strong>💡 Formule :</strong> Prix = max(forfait min, poids × prix/kg) × (1 + surcharge%) + express
                   </p>
                 </div>
               </div>
