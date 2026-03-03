@@ -2,14 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Package, Truck, FileText, Home as HomeIcon, ChevronRight,
-  Clock, CheckCircle, XCircle, MapPin, Calendar
+  Package, Truck, ChevronRight,
+  Clock, CheckCircle, XCircle, Plane, Ship, Luggage
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { RecipientTrackingCard } from "@/components/client/RecipientTrackingCard";
-import { Badge } from "@/components/ui/badge";
+import { OrderDetailSheet, getTransportIcon } from "@/components/client/OrderDetailSheet";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -49,6 +49,7 @@ export default function ReservationsPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
   useEffect(() => {
     loadOrders();
@@ -65,7 +66,8 @@ export default function ReservationsPage() {
         .select(`
           id, origin_city, destination_city, origin_country, destination_country,
           weight, status, order_number, total_price, currency, pickup_date, created_at,
-          gp_id, gp_profiles(business_name, rating)
+          gp_id, price_per_kg, has_insurance, recipient_name, recipient_phone, tracking_code,
+          gp_profiles(business_name, rating, gp_type)
         `)
         .eq("client_id", user.id)
         .order("created_at", { ascending: false });
@@ -85,11 +87,10 @@ export default function ReservationsPage() {
     return false;
   });
 
-  const getStatusIcon = (status: string) => {
-    if (status === 'in_transit') return Truck;
-    if (DELIVERED_STATUSES.includes(status)) return CheckCircle;
-    if (CANCELLED_STATUSES.includes(status)) return XCircle;
-    return Package;
+  const getOrderIcon = (order: any) => {
+    if (CANCELLED_STATUSES.includes(order.status)) return XCircle;
+    if (DELIVERED_STATUSES.includes(order.status)) return CheckCircle;
+    return getTransportIcon(order.gp_profiles?.gp_type);
   };
 
   return (
@@ -167,7 +168,7 @@ export default function ReservationsPage() {
           <div className="px-4 pt-3 space-y-2">
             {filteredOrders.map((order, i) => {
               const cfg = STATUS_CONFIG[order.status] || { label: order.status, color: "bg-muted text-muted-foreground" };
-              const Icon = getStatusIcon(order.status);
+              const Icon = getOrderIcon(order);
 
               return (
                 <motion.div
@@ -175,7 +176,7 @@ export default function ReservationsPage() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03 }}
-                  onClick={() => navigate(`/tracking?id=${order.id}`)}
+                  onClick={() => setSelectedOrder(order)}
                   className="bg-card border border-border rounded-xl p-3 active:scale-[0.98] transition-transform cursor-pointer"
                 >
                   <div className="flex items-start gap-3">
@@ -227,6 +228,11 @@ export default function ReservationsPage() {
       </div>
 
       <MobileNav />
+      <OrderDetailSheet
+        order={selectedOrder}
+        open={!!selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+      />
     </div>
   );
 }
