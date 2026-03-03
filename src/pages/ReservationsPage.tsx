@@ -135,7 +135,7 @@ export default function ReservationsPage() {
       </div>
 
       {/* Orders list */}
-      <div className="flex-1 overflow-y-auto pb-24">
+      <div className="flex-1 overflow-y-auto overscroll-contain pb-32" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Colis pour vous - subtil */}
         {userId && (
           <div className="pt-2">
