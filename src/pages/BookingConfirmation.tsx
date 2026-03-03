@@ -425,13 +425,12 @@ export default function BookingConfirmation() {
                         )}
                       </div>
                       {canSeeWhatsApp && contactInfo.whatsapp_number ? (
-                        <a
-                          href={`https://wa.me/${contactInfo.whatsapp_number.replace(/\D/g, "")}`}
+                        <button
+                          onClick={() => navigate(`/messages?gp=${order.gp_id}&order=${order.id}`)}
                           className="text-xs text-primary underline"
-                          target="_blank" rel="noopener noreferrer"
                         >
-                          {contactInfo.whatsapp_number}
-                        </a>
+                          Ouvrir la messagerie sécurisée
+                        </button>
                       ) : (
                         <p className="text-xs text-muted-foreground mt-0.5">
                           {isPaid ? "Non renseigné" : "Visible après paiement"}
@@ -487,6 +486,8 @@ export default function BookingConfirmation() {
                       depositAddress={contactInfo.deposit_address}
                       phone={contactInfo.phone_secondary}
                       whatsapp={contactInfo.whatsapp_number}
+                      gpId={order.gp_id}
+                      orderId={order.id}
                       gpName={publicInfo?.business_name || "Transporteur"}
                       isActive={["accepted"].includes(order.status)}
                     />

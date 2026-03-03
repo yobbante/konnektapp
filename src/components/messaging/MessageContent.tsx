@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 interface MessageContentProps {
   content: string;
@@ -31,6 +32,8 @@ interface ActionButton {
 }
 
 export function MessageContent({ content, orderId, isOwn = false }: MessageContentProps) {
+  const navigate = useNavigate();
+
   // Extract action buttons from content
   const extractActions = (text: string): ActionButton[] => {
     const actions: ActionButton[] = [];
@@ -108,7 +111,7 @@ export function MessageContent({ content, orderId, isOwn = false }: MessageConte
         window.open(`tel:${action.phone}`, "_self");
         break;
       case "whatsapp":
-        window.open(action.url, "_blank");
+        navigate(orderId ? `/messages?order=${orderId}` : "/messages");
         break;
       case "qrcode":
         window.location.href = action.url!;

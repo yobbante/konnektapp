@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Package, MapPin, Eye, Phone, Clock, CheckCircle, Truck, X, Navigation, MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +36,7 @@ interface GPContactInfo {
  */
 export function ActiveReservationBanner() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [activeOrders, setActiveOrders] = useState<ActiveOrder[]>([]);
   const [gpInfo, setGpInfo] = useState<Record<string, GPContactInfo>>({});
   const [loading, setLoading] = useState(true);
@@ -85,8 +86,8 @@ export function ActiveReservationBanner() {
     }
   };
 
-  const handleWhatsApp = (phone: string) => {
-    window.open(`https://wa.me/${phone.replace(/[^0-9]/g, "")}`, "_blank");
+  const openIntegratedMessage = (gpId: string, orderId: string) => {
+    navigate(`/messages?gp=${gpId}&order=${orderId}`);
   };
 
   const visibleOrders = activeOrders.filter(o => !dismissed.includes(o.id));
@@ -175,9 +176,9 @@ export function ActiveReservationBanner() {
                       size="sm"
                       variant="outline"
                       className="flex-1 h-9 text-xs gap-1.5"
-                      onClick={() => handleWhatsApp(gp.whatsapp_phone!)}
+                      onClick={() => openIntegratedMessage(primaryOrder.gp_id, primaryOrder.id)}
                     >
-                      <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+                      <MessageCircle className="w-3.5 h-3.5" /> Message
                     </Button>
                   )}
                   {gp?.phone && (

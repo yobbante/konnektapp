@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 interface DepositAddressPopupProps {
   depositAddress: string | null;
@@ -21,6 +22,8 @@ interface DepositAddressPopupProps {
   gpName: string;
   isActive?: boolean; // True when order is accepted but not yet collected
   className?: string;
+  gpId?: string;
+  orderId?: string;
 }
 
 export function DepositAddressPopup({
@@ -30,10 +33,13 @@ export function DepositAddressPopup({
   gpName,
   isActive = true,
   className,
+  gpId,
+  orderId,
 }: DepositAddressPopupProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   if (!depositAddress) return null;
 
@@ -55,10 +61,11 @@ export function DepositAddressPopup({
   };
 
   const handleWhatsApp = () => {
-    if (whatsapp) {
-      const cleaned = whatsapp.replace(/[^0-9+]/g, "");
-      window.open(`https://wa.me/${cleaned}`, "_blank");
-    }
+    setOpen(false);
+    const params = new URLSearchParams();
+    if (gpId) params.set("gp", gpId);
+    if (orderId) params.set("order", orderId);
+    navigate(`/messages${params.toString() ? `?${params.toString()}` : ""}`);
   };
 
   return (
@@ -153,14 +160,14 @@ export function DepositAddressPopup({
             )}
 
             {/* WhatsApp */}
-            {whatsapp && (
+            {(whatsapp || gpId) && (
               <Button
                 variant="outline"
                 className="h-12 gap-2 rounded-xl"
                 onClick={handleWhatsApp}
               >
-                <MessageCircle className="w-4 h-4 text-green-500" />
-                <span className="text-xs">WhatsApp</span>
+                <MessageCircle className="w-4 h-4 text-primary" />
+                <span className="text-xs">Message sécurisé</span>
               </Button>
             )}
           </div>

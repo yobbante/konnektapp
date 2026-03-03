@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plane, Truck, Ship, Luggage, Package, MapPin, Calendar, Weight, Hash, User, Phone, Shield, QrCode, ExternalLink, Lock, MapPinned } from "lucide-react";
+import { X, Plane, Truck, Ship, Luggage, Package, MapPin, Calendar, Weight, Hash, User, Phone, Shield, QrCode, ExternalLink, Lock, MapPinned, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -148,7 +148,10 @@ export function OrderDetailSheet({ order, open, onClose }: OrderDetailSheetProps
 
             {/* GP Info - Progressive release */}
             {order.gp_profiles && (
-              <GPInfoSection order={order} />
+              <GPInfoSection
+                order={order}
+                onMessage={() => navigate(`/messages?gp=${order.gp_id}&order=${order.id}`)}
+              />
             )}
 
             {/* Recipient */}
@@ -229,7 +232,7 @@ function InfoItem({ icon: Icon, label, value }: { icon: typeof MapPin; label: st
 const POST_ACCEPTED = ['accepted', 'collected', 'paid_held', 'checked_in', 'weight_pending_payment', 'scheduled_departure', 'in_transit', 'arrived_destination', 'delivery_pending', 'delivered', 'delivery_confirmed'];
 const POST_COLLECTED = ['collected', 'checked_in', 'weight_pending_payment', 'scheduled_departure', 'in_transit', 'arrived_destination', 'delivery_pending', 'delivered', 'delivery_confirmed'];
 
-function GPInfoSection({ order }: { order: any }) {
+function GPInfoSection({ order, onMessage }: { order: any; onMessage: () => void }) {
   const gp = order.gp_profiles;
   const status = order.status;
   const isAccepted = POST_ACCEPTED.includes(status);
@@ -252,12 +255,14 @@ function GPInfoSection({ order }: { order: any }) {
 
       {/* Phone - visible after acceptance */}
       {isAccepted && gp.phone ? (
-        <div className="flex items-center gap-2 pt-1 border-t border-border/30">
-          <Phone className="w-3.5 h-3.5 text-primary" />
-          <a href={`tel:${gp.phone}`} className="text-xs text-primary font-medium">{gp.phone}</a>
-          {gp.whatsapp_phone && (
-            <a href={`https://wa.me/${gp.whatsapp_phone.replace(/\D/g, '')}`} className="text-[10px] text-emerald-600 font-medium ml-auto">WhatsApp</a>
-          )}
+        <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/30">
+          <div className="flex items-center gap-2">
+            <Phone className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs text-foreground font-medium">{gp.phone}</span>
+          </div>
+          <button onClick={onMessage} className="text-[11px] px-2 py-1 rounded-md bg-primary/10 text-primary font-medium inline-flex items-center gap-1">
+            <MessageCircle className="w-3 h-3" /> Message
+          </button>
         </div>
       ) : !isAccepted && (
         <LockedInfo label="Téléphone visible après acceptation" />

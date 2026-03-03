@@ -2,7 +2,7 @@
  * RecipientTrackingCard — Interactive card for recipients with QR, address & messaging
  */
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Package, ArrowRight, MapPin, Clock, Truck, CheckCircle, X,
   User, Eye, MessageCircle, QrCode, Navigation, Copy, ExternalLink
@@ -166,23 +166,18 @@ export function RecipientTrackingCard({ userId }: RecipientTrackingCardProps) {
         </div>
       </motion.div>
 
-      <AnimatePresence>
-        {selectedParcel && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-background"
-            style={{ paddingTop: 'env(safe-area-inset-top)' }}
-          >
-            <RecipientParcelDetails
-              parcels={parcels}
-              onClose={() => setSelectedParcel(null)}
-              navigate={navigate}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {selectedParcel && (
+        <div
+          className="fixed inset-0 z-[80] bg-background"
+          style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        >
+          <RecipientParcelDetails
+            parcels={parcels}
+            onClose={() => setSelectedParcel(null)}
+            navigate={navigate}
+          />
+        </div>
+      )}
     </>
   );
 }
@@ -216,7 +211,7 @@ function RecipientParcelDetails({
       animate={{ y: 0 }}
       exit={{ y: "100%" }}
       transition={{ type: "spring", damping: 25, stiffness: 300 }}
-      className="h-full flex flex-col bg-background"
+      className="h-[100dvh] flex flex-col bg-background pb-[calc(env(safe-area-inset-bottom)+88px)]"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
@@ -235,7 +230,7 @@ function RecipientParcelDetails({
       </div>
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto overscroll-contain p-4 pb-36 space-y-3" style={{ WebkitOverflowScrolling: 'touch' }}>
         {parcels.map((parcel, i) => {
           const statusInfo = STATUS_MAP[parcel.status] || { label: parcel.status, color: "bg-muted text-muted-foreground", icon: Clock };
           const StatusIcon = statusInfo.icon;
@@ -361,30 +356,29 @@ function RecipientParcelDetails({
               </div>
 
               {/* Expandable QR */}
-              <AnimatePresence initial={false}>
+              <motion.div
+                initial={false}
+                animate={{
+                  height: showQR ? "auto" : 0,
+                  opacity: showQR ? 1 : 0,
+                }}
+                transition={{ type: "spring", damping: 22, stiffness: 260 }}
+                style={{ overflow: "hidden" }}
+              >
                 {showQR && (
-                  <motion.div
-                    key="qr-panel"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ type: "spring", damping: 22, stiffness: 260 }}
-                    style={{ overflow: "hidden" }}
-                  >
-                    <div className="border-t border-border p-4 flex flex-col items-center gap-2.5 bg-muted/30">
-                      <p className="text-[11px] text-muted-foreground font-medium">Montrez ce QR au livreur</p>
-                      <div className="bg-white p-3 rounded-xl shadow-sm">
-                        <QRCode
-                          value={`https://konnektapp.lovable.app/tracking?order=${parcel.id}`}
-                          size={130}
-                          level="M"
-                        />
-                      </div>
-                      <p className="text-[10px] text-muted-foreground font-mono">{parcel.order_number}</p>
+                  <div className="border-t border-border p-4 flex flex-col items-center gap-2.5 bg-muted/30">
+                    <p className="text-[11px] text-muted-foreground font-medium">Montrez ce QR au livreur</p>
+                    <div className="bg-white p-3 rounded-xl shadow-sm">
+                      <QRCode
+                        value={`https://konnektapp.lovable.app/tracking?order=${parcel.id}`}
+                        size={130}
+                        level="M"
+                      />
                     </div>
-                  </motion.div>
+                    <p className="text-[10px] text-muted-foreground font-mono">{parcel.order_number}</p>
+                  </div>
                 )}
-              </AnimatePresence>
+              </motion.div>
             </motion.div>
           );
         })}
