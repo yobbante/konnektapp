@@ -4893,6 +4893,7 @@ export type Database = {
       }
       owns_gp_offer: { Args: { offer_gp_id: string }; Returns: boolean }
       owns_gp_wallet: { Args: { wallet_gp_id: string }; Returns: boolean }
+      process_gp_response_deadlines: { Args: never; Returns: Json }
       remove_user_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

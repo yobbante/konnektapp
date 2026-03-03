@@ -121,7 +121,7 @@ export function FullScreenOrderDetails({ order, onClose, navigate }: FullScreenO
                       <p className="text-xs text-muted-foreground uppercase tracking-wide">Adresse de dépôt</p>
                       <p className="font-medium text-sm text-foreground">{order.gp_deposit_address || "Disponible après acceptation"}</p>
                     </div>
-                    {order.gp_deposit_address && <DepositAddressPopup depositAddress={order.gp_deposit_address} phone={order.gp_whatsapp} whatsapp={order.gp_whatsapp} gpName="Transporteur" isActive={order.status === "accepted"} />}
+                    {order.gp_deposit_address && <DepositAddressPopup depositAddress={order.gp_deposit_address} phone={order.gp_whatsapp} whatsapp={order.gp_whatsapp} gpId={order.gp_id} orderId={order.id} gpName="Transporteur" isActive={order.status === "accepted"} />}
                   </div>
                 ) : (
                   <div className="flex items-start gap-3 bg-muted/30 p-3 rounded-xl">
