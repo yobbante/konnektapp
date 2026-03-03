@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plane, Truck, Ship, Luggage, Package, MapPin, Calendar, Weight, Hash, User, Phone, Shield, QrCode, ExternalLink } from "lucide-react";
+import { X, Plane, Truck, Ship, Luggage, Package, MapPin, Calendar, Weight, Hash, User, Phone, Shield, QrCode, ExternalLink, Lock, MapPinned } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -146,22 +146,9 @@ export function OrderDetailSheet({ order, open, onClose }: OrderDetailSheetProps
               )}
             </div>
 
-            {/* GP Info */}
+            {/* GP Info - Progressive release */}
             {order.gp_profiles && (
-              <div className="mx-4 mb-3 p-3 rounded-xl bg-muted/30 border border-border/50">
-                <p className="text-[10px] text-muted-foreground mb-1">Transporteur</p>
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{order.gp_profiles.business_name}</p>
-                    {order.gp_profiles.rating && (
-                      <p className="text-[10px] text-muted-foreground">⭐ {order.gp_profiles.rating.toFixed(1)}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <GPInfoSection order={order} />
             )}
 
             {/* Recipient */}
@@ -235,6 +222,81 @@ function InfoItem({ icon: Icon, label, value }: { icon: typeof MapPin; label: st
         <span className="text-[10px] text-muted-foreground">{label}</span>
       </div>
       <p className="text-xs font-medium text-foreground truncate">{value}</p>
+    </div>
+  );
+}
+
+const POST_ACCEPTED = ['accepted', 'collected', 'paid_held', 'checked_in', 'weight_pending_payment', 'scheduled_departure', 'in_transit', 'arrived_destination', 'delivery_pending', 'delivered', 'delivery_confirmed'];
+const POST_COLLECTED = ['collected', 'checked_in', 'weight_pending_payment', 'scheduled_departure', 'in_transit', 'arrived_destination', 'delivery_pending', 'delivered', 'delivery_confirmed'];
+
+function GPInfoSection({ order }: { order: any }) {
+  const gp = order.gp_profiles;
+  const status = order.status;
+  const isAccepted = POST_ACCEPTED.includes(status);
+  const isCollected = POST_COLLECTED.includes(status);
+
+  return (
+    <div className="mx-4 mb-3 p-3 rounded-xl bg-muted/30 border border-border/50 space-y-2.5">
+      <p className="text-[10px] text-muted-foreground">Transporteur</p>
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+          <User className="w-4 h-4 text-primary" />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-foreground">{gp.business_name}</p>
+          {gp.rating && (
+            <p className="text-[10px] text-muted-foreground">⭐ {gp.rating.toFixed(1)}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Phone - visible after acceptance */}
+      {isAccepted && gp.phone ? (
+        <div className="flex items-center gap-2 pt-1 border-t border-border/30">
+          <Phone className="w-3.5 h-3.5 text-primary" />
+          <a href={`tel:${gp.phone}`} className="text-xs text-primary font-medium">{gp.phone}</a>
+          {gp.whatsapp_phone && (
+            <a href={`https://wa.me/${gp.whatsapp_phone.replace(/\D/g, '')}`} className="text-[10px] text-emerald-600 font-medium ml-auto">WhatsApp</a>
+          )}
+        </div>
+      ) : !isAccepted && (
+        <LockedInfo label="Téléphone visible après acceptation" />
+      )}
+
+      {/* Deposit address - visible after acceptance */}
+      {isAccepted && gp.deposit_address ? (
+        <div className="flex items-start gap-2 pt-1 border-t border-border/30">
+          <MapPinned className="w-3.5 h-3.5 text-primary mt-0.5" />
+          <div>
+            <p className="text-[10px] text-muted-foreground">Adresse de dépôt</p>
+            <p className="text-xs text-foreground">{gp.deposit_address}</p>
+          </div>
+        </div>
+      ) : !isAccepted && (
+        <LockedInfo label="Adresse de dépôt visible après acceptation" />
+      )}
+
+      {/* Reception address - visible after collection */}
+      {isCollected && gp.reception_address ? (
+        <div className="flex items-start gap-2 pt-1 border-t border-border/30">
+          <MapPin className="w-3.5 h-3.5 text-primary mt-0.5" />
+          <div>
+            <p className="text-[10px] text-muted-foreground">Adresse de réception</p>
+            <p className="text-xs text-foreground">{gp.reception_address}</p>
+          </div>
+        </div>
+      ) : !isCollected && (
+        <LockedInfo label="Adresse de réception visible après collecte" />
+      )}
+    </div>
+  );
+}
+
+function LockedInfo({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-1.5 pt-1 border-t border-border/30">
+      <Lock className="w-3 h-3 text-muted-foreground/50" />
+      <span className="text-[10px] text-muted-foreground/70 italic">{label}</span>
     </div>
   );
 }
