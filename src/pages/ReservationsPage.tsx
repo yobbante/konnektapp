@@ -67,7 +67,7 @@ export default function ReservationsPage() {
           id, origin_city, destination_city, origin_country, destination_country,
           weight, status, order_number, total_price, currency, pickup_date, created_at,
           gp_id, price_per_kg, has_insurance, recipient_name, recipient_phone, tracking_code,
-          gp_profiles(business_name, rating, gp_type)
+          gp_profiles(business_name, rating, gp_type, phone, whatsapp_phone, deposit_address, reception_address)
         `)
         .eq("client_id", user.id)
         .order("created_at", { ascending: false });
