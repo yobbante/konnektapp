@@ -94,7 +94,7 @@ export default function ReservationsPage() {
   };
 
   return (
-    <div className="h-screen bg-background overflow-hidden fixed inset-0 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col pb-20">
       <AppHeader title="Mes réservations" showBack />
 
       {/* Tabs */}
@@ -135,7 +135,7 @@ export default function ReservationsPage() {
       </div>
 
       {/* Orders list */}
-      <div className="flex-1 overflow-y-auto overscroll-contain pb-32" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="flex-1 overflow-y-auto overscroll-contain pb-8" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Colis pour vous - subtil */}
         {userId && (
           <div className="pt-2">

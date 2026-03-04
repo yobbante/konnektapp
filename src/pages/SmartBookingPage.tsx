@@ -426,8 +426,9 @@ export default function SmartBookingPage() {
       return insuranceChoice.choiceMade;
     }
     if (currentStep === 4) {
-      // Recipient is mandatory
-      if (!recipientData.name.trim() || recipientData.phone.trim().length < 8) return false;
+      // Recipient is mandatory — if Konnekt user found (userId), phone is optional
+      if (!recipientData.name.trim()) return false;
+      if (!recipientData.userId && recipientData.phone.trim().length < 8) return false;
       return true;
     }
     if (currentStep === 5) {
