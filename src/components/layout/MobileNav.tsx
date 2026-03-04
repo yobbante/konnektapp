@@ -1,17 +1,19 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Search, CalendarCheck, LayoutGrid, ScanLine } from "lucide-react";
+import { Home, Search, CalendarCheck, Menu, ScanLine } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 import { useRef, useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ClientScanSheet } from "@/components/scan/ClientScanSheet";
+import { CentralMenuSheet } from "@/components/layout/CentralMenuSheet";
 
 /**
- * MobileNav V4 — Konnekt
- * 5 items: Accueil, Offres, SCAN (center, instant camera), Messages, Espace
+ * MobileNav V5 — Konnekt
+ * 5 items: Accueil, Offres, SCAN (center, instant camera), Réservations, Menu
  */
 export function MobileNav() {
+  const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -58,21 +60,22 @@ export function MobileNav() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const getEspaceHref = () => {
-    if (!isAuthenticated) return "/auth";
-    if (userRole === 'transporter') return "/gp/demandes";
-    return "/profil";
-  };
-
   const navItems = [
     { href: "/", icon: Home, label: "Accueil", isHome: true },
     { href: "/?offres=1", icon: Search, label: "Offres", isOffres: true },
     { href: "#scan", icon: ScanLine, label: "Scan", isScan: true },
     { href: "/reservations", icon: CalendarCheck, label: "Réservations", requiresAuth: true },
-    { href: getEspaceHref(), icon: LayoutGrid, label: "Espace", isEspace: true },
+    { href: "#menu", icon: Menu, label: "Menu", isMenu: true },
   ];
 
   const handleNavClick = useCallback((e: React.MouseEvent, item: typeof navItems[0]) => {
+    // Menu button - open central menu sheet
+    if ('isMenu' in item && item.isMenu) {
+      e.preventDefault();
+      setMenuOpen(true);
+      return;
+    }
+
     // Scan button - open camera immediately
     if ('isScan' in item && item.isScan) {
       e.preventDefault();
@@ -127,12 +130,11 @@ export function MobileNav() {
           style={{ paddingLeft: 'var(--safe-left, 0px)', paddingRight: 'var(--safe-right, 0px)' }}
         >
           {navItems.map((item) => {
-            const isEspaceActive = 'isEspace' in item && item.isEspace && 
-              ["/profil", "/settings", "/client/dashboard", "/gp/demandes", "/gp/tarification", "/gp/historique"].includes(location.pathname);
+            const isMenuActive = 'isMenu' in item && item.isMenu && menuOpen;
             const isScanActive = 'isScan' in item && item.isScan && scanOpen;
             const isActive = location.pathname === item.href || 
               (item.href === "/" && location.pathname === "/") ||
-              isEspaceActive || isScanActive;
+              isMenuActive || isScanActive;
 
             // ─── SCAN BUTTON (center, circle, instant camera) ───
             if ('isScan' in item && item.isScan) {
@@ -171,34 +173,24 @@ export function MobileNav() {
               );
             }
 
-            // ─── ESPACE BUTTON ───
-            if ('isEspace' in item && item.isEspace) {
+            // ─── MENU BUTTON ───
+            if ('isMenu' in item && item.isMenu) {
               return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  onClick={(e) => handleNavClick(e, item as any)}
+                <button
+                  key="menu"
+                  onClick={(e) => handleNavClick(e as any, item as any)}
                   className={cn(
                     "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors relative",
                     isActive ? "text-primary" : "text-muted-foreground"
                   )}
                 >
-                  <motion.div className="relative" whileTap={{ scale: 0.85 }} animate={isActive ? { y: -2 } : { y: 0 }}>
-                    <motion.div
-                      className={cn(
-                        "w-9 h-9 rounded-xl flex items-center justify-center transition-all",
-                        isActive ? "bg-primary text-primary-foreground shadow-md" : "bg-gradient-to-br from-primary/20 to-accent/20 text-primary"
-                      )}
-                      animate={isActive ? { scale: 1.05 } : { scale: 1 }}
-                      transition={{ type: "spring", stiffness: 500 }}
-                    >
-                      <item.icon className="w-5 h-5" />
-                    </motion.div>
+                  <motion.div className="relative" whileTap={{ scale: 0.85 }}>
+                    <item.icon className={cn("w-5 h-5", isActive && "text-primary")} />
                   </motion.div>
-                  <motion.span className={cn("text-[10px] font-semibold", isActive ? "text-primary" : "text-muted-foreground")}>
+                  <span className={cn("text-[10px] font-semibold", isActive ? "text-primary" : "text-muted-foreground")}>
                     {item.label}
-                  </motion.span>
-                </Link>
+                  </span>
+                </button>
               );
             }
 
@@ -236,6 +228,11 @@ export function MobileNav() {
 
       {/* Client Scan Sheet - instant camera */}
       <ClientScanSheet open={scanOpen} onOpenChange={setScanOpen} />
+      
+      {/* Central Menu Sheet */}
+      <CentralMenuSheet open={menuOpen} onOpenChange={setMenuOpen}>
+        <span />
+      </CentralMenuSheet>
     </>
   );
 }

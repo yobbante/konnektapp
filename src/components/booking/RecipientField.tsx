@@ -243,14 +243,12 @@ export function RecipientField({
     setSearchQuery(value);
     const type = detectInputType(value);
     setDetectedType(type);
+    // No auto-search — user must press the search button
+  };
 
-    // Debounced search
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (value.trim().length >= 3) {
-      debounceRef.current = setTimeout(() => smartSearch(value), 600);
-    } else {
-      setSearchResult(null);
-      setSearchNotFound(false);
+  const handleManualSearch = () => {
+    if (searchQuery.trim().length >= 3) {
+      smartSearch(searchQuery);
     }
   };
 
@@ -319,19 +317,29 @@ export function RecipientField({
           {/* ═══ SMART SEARCH BAR ═══ */}
           {!searchResult ? (
             <div className="space-y-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
-                <Input
-                  placeholder="Téléphone, email, nom ou ID Konnekt..."
-                  value={searchQuery}
-                  onChange={(e) => handleQueryChange(e.target.value)}
-                  className="pl-10 pr-12 h-12 rounded-xl text-sm bg-muted/40 border-0 focus-visible:ring-primary"
-                />
-                {searching && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                  </div>
-                )}
+              <div className="relative flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
+                  <Input
+                    placeholder="Téléphone, email, nom ou ID Konnekt..."
+                    value={searchQuery}
+                    onChange={(e) => handleQueryChange(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleManualSearch(); } }}
+                    className="pl-10 h-12 rounded-xl text-sm bg-muted/40 border-0 focus-visible:ring-primary"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  onClick={handleManualSearch}
+                  disabled={searchQuery.trim().length < 3 || searching}
+                  className="h-12 px-4 rounded-xl"
+                >
+                  {searching ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Search className="w-4 h-4" />
+                  )}
+                </Button>
               </div>
 
               {/* Type detection hint */}

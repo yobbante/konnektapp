@@ -36,7 +36,7 @@ export interface AuthFormData {
 // Login steps: phone → password (or fallback to email → password)
 type LoginStep = "phone" | "password" | "email-fallback";
 // Register steps: type → phone → credentials
-type RegisterStep = "type" | "phone" | "credentials";
+type RegisterStep = "country" | "type" | "phone" | "credentials";
 
 export function InteractiveAuthForm({
   mode,
@@ -50,7 +50,7 @@ export function InteractiveAuthForm({
   // If phone is pre-filled from entry flow, skip to credentials for register
   const hasEntryPhone = !!prefillPhone;
   
-  const [registerStep, setRegisterStep] = useState<RegisterStep>(hasEntryPhone ? "credentials" : "type");
+  const [registerStep, setRegisterStep] = useState<RegisterStep>(hasEntryPhone ? "credentials" : "country");
   const [loginStep, setLoginStep] = useState<LoginStep>("phone");
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<AuthFormData>({
@@ -89,8 +89,9 @@ export function InteractiveAuthForm({
   const getProgress = () => {
     if (mode === "login") return loginStep === "phone" ? 50 : 100;
     switch (registerStep) {
-      case "type": return 33;
-      case "phone": return 66;
+      case "country": return 25;
+      case "type": return 50;
+      case "phone": return 75;
       case "credentials": return 100;
       default: return 0;
     }
@@ -235,7 +236,7 @@ export function InteractiveAuthForm({
 
   const resetToRegister = () => {
     onModeChange("register");
-    setRegisterStep("type");
+    setRegisterStep("country");
     setPhoneError(null);
   };
 
@@ -546,6 +547,56 @@ export function InteractiveAuthForm({
 
         {/* ═══════════════ REGISTER FLOW ═══════════════ */}
 
+        {/* Register Step 0: Choose country */}
+        {mode === "register" && registerStep === "country" && (
+          <motion.div
+            key="register-country"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            className="space-y-4"
+          >
+            <div className="text-center mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                <Globe className="w-7 h-7 text-primary" />
+              </div>
+              <h2 className="text-xl font-bold">Votre pays</h2>
+              <p className="text-sm text-muted-foreground mt-1">Sélectionnez votre pays de résidence</p>
+            </div>
+
+            <div className="space-y-2">
+              <input
+                type="text"
+                placeholder="Rechercher un pays..."
+                value={countrySearch}
+                onChange={(e) => setCountrySearch(e.target.value)}
+                className="w-full h-10 px-3 text-sm rounded-xl border border-input bg-muted/40 focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <div className="max-h-64 overflow-y-auto rounded-xl border border-border divide-y divide-border">
+                {COUNTRY_OPTIONS.filter(c =>
+                  c.name.toLowerCase().includes(countrySearch.toLowerCase()) || c.code.toLowerCase().includes(countrySearch.toLowerCase())
+                ).map((c) => (
+                  <button
+                    key={c.code}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCountry(c.code);
+                      setFormData(prev => ({ ...prev, country: c.code }));
+                      setCountrySearch("");
+                      setRegisterStep("type");
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-muted transition-colors ${selectedCountry === c.code ? "bg-primary/10 font-medium" : ""}`}
+                  >
+                    <span className="text-lg">{c.flag}</span>
+                    <span className="flex-1 text-left font-medium">{c.name}</span>
+                    <span className="text-xs text-muted-foreground">{COUNTRY_PHONE_CODES[c.code]}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Register Step 1: Choose profile type */}
         {mode === "register" && registerStep === "type" && (
           <motion.div
@@ -555,9 +606,14 @@ export function InteractiveAuthForm({
             exit={{ opacity: 0, x: -50 }}
             className="space-y-4"
           >
-            <div className="text-center mb-6">
-              <h2 className="text-xl font-bold">Je suis...</h2>
-              <p className="text-sm text-muted-foreground mt-1">Choisissez votre profil</p>
+            <div className="flex items-center gap-2 mb-6">
+              <Button variant="ghost" size="icon" onClick={() => setRegisterStep("country")}>
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              <div>
+                <h2 className="text-xl font-bold">Je suis...</h2>
+                <p className="text-sm text-muted-foreground mt-1">Choisissez votre profil</p>
+              </div>
             </div>
 
             <motion.button
