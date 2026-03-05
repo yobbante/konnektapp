@@ -2545,6 +2545,47 @@ export type Database = {
           },
         ]
       }
+      mission_negotiation_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          message: string | null
+          negotiation_id: string
+          offer_price: number | null
+          sender_id: string
+          sender_type: string
+        }
+        Insert: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          message?: string | null
+          negotiation_id: string
+          offer_price?: number | null
+          sender_id: string
+          sender_type: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          message?: string | null
+          negotiation_id?: string
+          offer_price?: number | null
+          sender_id?: string
+          sender_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mission_negotiation_events_negotiation_id_fkey"
+            columns: ["negotiation_id"]
+            isOneToOne: false
+            referencedRelation: "mission_negotiations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mission_negotiations: {
         Row: {
           agreed_price: number | null
@@ -4878,6 +4919,10 @@ export type Database = {
         Returns: boolean
       }
       is_gp_verified: { Args: { gp_id: string }; Returns: boolean }
+      is_mission_negotiation_participant: {
+        Args: { _negotiation_id: string }
+        Returns: boolean
+      }
       is_order_gp: { Args: { order_gp_id: string }; Returns: boolean }
       is_valid_state_transition: {
         Args: { p_current_status: string; p_target_status: string }

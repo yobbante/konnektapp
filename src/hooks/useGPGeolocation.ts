@@ -21,6 +21,8 @@ interface GeolocationState {
   trackingActive: boolean;
   lastCountry: string | null;
   lastCity: string | null;
+  lastLat: number | null;
+  lastLng: number | null;
   lastCheckAt: string | null;
   loading: boolean;
 }
@@ -33,6 +35,8 @@ export function useGPGeolocation(gpId: string | null, userId: string | null) {
     trackingActive: false,
     lastCountry: null,
     lastCity: null,
+    lastLat: null,
+    lastLng: null,
     lastCheckAt: null,
     loading: true,
   });
@@ -70,6 +74,8 @@ export function useGPGeolocation(gpId: string | null, userId: string | null) {
           trackingActive: data.tracking_active,
           lastCountry: data.last_detected_country,
           lastCity: data.last_detected_city,
+          lastLat: data.last_position_lat,
+          lastLng: data.last_position_lng,
           lastCheckAt: data.last_check_at,
           loading: false,
         });
@@ -186,6 +192,8 @@ export function useGPGeolocation(gpId: string | null, userId: string | null) {
         ...s,
         lastCountry: country,
         lastCity: city,
+        lastLat: lat,
+        lastLng: lng,
         lastCheckAt: new Date().toISOString(),
       }));
 
