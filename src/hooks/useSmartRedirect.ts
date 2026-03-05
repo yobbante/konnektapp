@@ -118,7 +118,7 @@ export function useSmartRedirect() {
       if (gpProfile) {
         // Route based on gp_type
         const isRoutier = gpProfile.gp_type === "routier";
-        const destination = isRoutier ? "/routier/demandes" : "/gp/demandes";
+        const destination = isRoutier ? "/routier/apercu" : "/gp/demandes";
         navigate(destination);
         return { 
           success: true, 
@@ -160,8 +160,8 @@ export function useSmartRedirect() {
         .maybeSingle();
 
       if (gpProfile) {
-        // Already a GP - redirect to demandes page instead
-        navigate("/gp/demandes");
+        // Already a GP - redirect to the correct operational home
+        navigate(gpProfile.gp_type === "routier" ? "/routier/apercu" : "/gp/demandes");
         return false;
       }
 
