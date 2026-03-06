@@ -211,6 +211,45 @@ export function RoutierDashboardLayout({
       {/* ══════════════════════════════════════
           MAIN CONTENT
       ══════════════════════════════════════ */}
+      {/* ══════════════════════════════════════
+          STICKY SUB-HEADER — Quick nav tabs
+      ══════════════════════════════════════ */}
+      <div className="sticky top-[calc(52px+var(--safe-top,0px))] z-30 bg-card/95 backdrop-blur-md border-b border-border/50">
+        <div className="flex items-center gap-1 px-3 py-1.5 overflow-x-auto scrollbar-hide">
+          {[
+            { label: "Aperçu", path: "/routier/apercu", icon: Home },
+            { label: "Missions", path: "/routier/demandes", badge: pendingCount + activeOrdersCount },
+            { label: "En cours", path: "/routier/en-cours", badge: activeOrdersCount },
+            { label: "Flotte", path: "/routier/vehicules" },
+            { label: "Historique", path: "/routier/historique" },
+          ].map(tab => {
+            const isActive = location.pathname === tab.path;
+            return (
+              <button
+                key={tab.path}
+                onClick={() => navigate(tab.path)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all shrink-0",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-muted"
+                )}
+              >
+                {tab.label}
+                {!!tab.badge && tab.badge > 0 && (
+                  <span className={cn(
+                    "w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center",
+                    isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-destructive text-destructive-foreground"
+                  )}>
+                    {tab.badge > 9 ? "9+" : tab.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <main className="flex-1 pb-20">
         {children}
       </main>

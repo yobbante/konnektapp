@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { 
   Truck, ArrowRight, ArrowLeft, User, MapPin,
   Eye, EyeOff, Building2, CheckCircle, Shield, Package,
-  Route, Home, ToggleLeft, DollarSign
+  Route, Home, DollarSign, Briefcase, UserCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,8 +19,8 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { TransportPageLoader } from "@/components/ui/TransportLoader";
+import { Textarea } from "@/components/ui/textarea";
 
-// ─── Exhaustive vehicle list (admin-paramétrable) ───
 const ROUTIER_VEHICLES = [
   { value: "moto", label: "🏍️ Moto", category: "light" },
   { value: "tricycle", label: "🛺 Tricycle / Jakarta", category: "light" },
@@ -57,6 +57,7 @@ const SENEGAL_CITIES = [
 ];
 
 type RoadType = "shuttle" | "mission" | "both";
+type EntityType = "particulier" | "entreprise";
 
 interface VehicleData {
   id: string;
@@ -78,17 +79,21 @@ export default function RoutierRegistration() {
   const [existingUser, setExistingUser] = useState<{ id: string; email: string } | null>(null);
   const [isLogin, setIsLogin] = useState(false);
 
-  // Step 1: Profil type
+  // Step 1: Entity type + Road type
+  const [entityType, setEntityType] = useState<EntityType | null>(null);
   const [roadType, setRoadType] = useState<RoadType | null>(null);
 
   // Step 2: Identité
-  const [transporterType, setTransporterType] = useState<"independant" | "entreprise">("independant");
   const [businessName, setBusinessName] = useState("");
   const [phone, setPhone] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [sameAsPhone, setSameAsPhone] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // Enterprise-specific
+  const [registrationNumber, setRegistrationNumber] = useState("");
+  const [companyAddress, setCompanyAddress] = useState("");
+  const [contactPerson, setContactPerson] = useState("");
 
   // Step 3: Véhicule
   const [vehicles, setVehicles] = useState<VehicleData[]>([]);
@@ -105,14 +110,13 @@ export default function RoutierRegistration() {
   const [destinationAddress, setDestinationAddress] = useState("");
   const [homeDeliveryEnabled, setHomeDeliveryEnabled] = useState(false);
 
-  // Step 5: Tarification routier
+  // Step 5: Tarification
   const [routierMinPrice, setRoutierMinPrice] = useState("");
   const [routierPricePerKm, setRoutierPricePerKm] = useState("");
   const [routierPricePerKg, setRoutierPricePerKg] = useState("");
   const [routierPricePerM3, setRoutierPricePerM3] = useState("");
   const [routierCurrency, setRoutierCurrency] = useState("XOF");
 
-  // Check session
   useEffect(() => {
     const checkSession = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -135,7 +139,7 @@ export default function RoutierRegistration() {
   }, [navigate]);
 
   const STEPS = [
-    { num: 1, label: "Type", icon: Route },
+    { num: 1, label: "Profil", icon: Briefcase },
     { num: 2, label: "Identité", icon: User },
     { num: 3, label: "Véhicule", icon: Truck },
     { num: 4, label: "Trajet", icon: MapPin },
@@ -145,7 +149,8 @@ export default function RoutierRegistration() {
 
   const validateStep = (s: number): boolean => {
     if (s === 1) {
-      if (!roadType) { toast({ title: "Choisissez votre type", variant: "destructive" }); return false; }
+      if (!entityType) { toast({ title: "Choisissez votre type d'entité", variant: "destructive" }); return false; }
+      if (!roadType) { toast({ title: "Choisissez votre mode de transport", variant: "destructive" }); return false; }
       return true;
     }
     if (s === 2) {
@@ -154,6 +159,7 @@ export default function RoutierRegistration() {
       if (!phone) { toast({ title: "Téléphone requis", variant: "destructive" }); return false; }
       if (!email) { toast({ title: "Email requis", variant: "destructive" }); return false; }
       if (!isLogin && (!password || password.length < 6)) { toast({ title: "Mot de passe 6+ caractères", variant: "destructive" }); return false; }
+      if (entityType === "entreprise" && !registrationNumber) { toast({ title: "N° registre commerce requis", variant: "destructive" }); return false; }
       return true;
     }
     if (s === 3) {
@@ -202,33 +208,21 @@ export default function RoutierRegistration() {
     if (step === 2 && !existingUser) {
       if (!(await handleAuth())) return;
     }
-    if (step === TOTAL_STEPS) {
-      await handleSubmit();
-      return;
-    }
-    // Skip identity step if already logged in and going to step 2
-    if (step === 1 && existingUser) {
-      setStep(3); // Skip identity, go to vehicle
-      return;
-    }
+    if (step === TOTAL_STEPS) { await handleSubmit(); return; }
+    if (step === 1 && existingUser) { setStep(3); return; }
     setStep(prev => prev + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBack = () => {
-    if (step <= 1) {
-      navigate("/transporteur/inscription");
-    } else if (step === 3 && existingUser) {
-      setStep(1); // Back to type selection
-    } else {
-      setStep(prev => prev - 1);
-    }
+    if (step <= 1) navigate("/transporteur/inscription");
+    else if (step === 3 && existingUser) setStep(1);
+    else setStep(prev => prev - 1);
   };
 
   const addVehicle = () => {
     if (!currentVehicle.type || !currentVehicle.name) {
-      toast({ title: "Type et nom requis", variant: "destructive" });
-      return;
+      toast({ title: "Type et nom requis", variant: "destructive" }); return;
     }
     setVehicles(prev => [...prev, { ...currentVehicle, id: `v-${Date.now()}` }]);
     setCurrentVehicle({ id: "", type: "", name: "", maxWeightKg: "", maxVolumeM3: "", hasInsurance: false, homeDelivery: false });
@@ -244,7 +238,6 @@ export default function RoutierRegistration() {
         phone, full_name: businessName, is_gp: true,
       }).eq("user_id", existingUser.id);
 
-      // Determine road_type for DB
       const dbRoadType = roadType === "shuttle" ? "shuttle" : roadType === "mission" ? "mission" : "shuttle";
 
       const { data: gpProfile, error: gpError } = await supabase
@@ -264,16 +257,16 @@ export default function RoutierRegistration() {
           base_price_per_kg: routierPricePerKg ? parseFloat(routierPricePerKg) : null,
           base_origin_city: originCity || null,
           base_destination_city: destinationCity || null,
-          address: originAddress || null,
+          address: entityType === "entreprise" ? companyAddress : originAddress || null,
           deposit_address: destinationAddress || null,
           reception_address: homeDeliveryEnabled ? "home_delivery" : destinationAddress || null,
           zones_covered: [originCity, destinationCity].filter(Boolean),
+          description: entityType === "entreprise" ? `Entreprise · RC: ${registrationNumber}` : null,
         })
         .select().single();
 
       if (gpError) throw gpError;
 
-      // Insert vehicles
       for (const v of vehicles) {
         await supabase.from("vehicles").insert({
           gp_id: gpProfile.id,
@@ -282,23 +275,16 @@ export default function RoutierRegistration() {
           transport_category: "routier",
           max_weight_kg: v.maxWeightKg ? parseFloat(v.maxWeightKg) : null,
           max_volume_m3: v.maxVolumeM3 ? parseFloat(v.maxVolumeM3) : null,
-          specifications: {
-            freight_types: freightTypes,
-            has_insurance: v.hasInsurance,
-            home_delivery: v.homeDelivery,
-          },
+          specifications: { freight_types: freightTypes, has_insurance: v.hasInsurance, home_delivery: v.homeDelivery },
           is_active: true,
         });
       }
 
-      // If shuttle, auto-create first route/offer
       if ((roadType === "shuttle" || roadType === "both") && originCity && destinationCity) {
         await supabase.from("gp_offers").insert({
           gp_id: gpProfile.id,
-          origin_city: originCity,
-          origin_country: "Sénégal",
-          destination_city: destinationCity,
-          destination_country: "Sénégal",
+          origin_city: originCity, origin_country: "Sénégal",
+          destination_city: destinationCity, destination_country: "Sénégal",
           departure_date: new Date(Date.now() + 86400000 * 3).toISOString().split("T")[0],
           total_capacity: vehicles[0]?.maxWeightKg ? parseFloat(vehicles[0].maxWeightKg) : 5000,
           available_capacity: vehicles[0]?.maxWeightKg ? parseFloat(vehicles[0].maxWeightKg) : 5000,
@@ -310,7 +296,7 @@ export default function RoutierRegistration() {
         });
       }
 
-      toast({ title: "🚛 Inscription réussie !", description: roadType === "both" ? "Navette + Missions activés" : roadType === "shuttle" ? "Votre ligne est publiée" : "Vous recevrez des missions" });
+      toast({ title: "🚛 Inscription réussie !" });
       navigate("/routier/apercu");
     } catch (error: any) {
       console.error(error);
@@ -325,16 +311,13 @@ export default function RoutierRegistration() {
       <AppHeader showNotifications={false} />
       <main className="pt-4 pb-24 px-4">
         <div className="max-w-lg mx-auto">
-          {/* Header */}
+          {/* Corporate Header */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-6">
-            <div className="w-16 h-16 mx-auto bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl flex items-center justify-center mb-3 shadow-lg">
-              <Truck className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 mx-auto bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center mb-3 shadow-lg">
+              <Truck className="w-8 h-8 text-primary-foreground" />
             </div>
-            <Badge variant="secondary" className="mb-2 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-              Transport Routier
-            </Badge>
-            <h1 className="text-xl font-bold">Inscription Routier</h1>
-            <p className="text-xs text-muted-foreground mt-1">Navette · Fret · Livraison</p>
+            <h1 className="text-xl font-bold">Devenir Transporteur Routier</h1>
+            <p className="text-xs text-muted-foreground mt-1">Rejoignez le réseau Konnekt · Navette · Fret · Livraison</p>
           </motion.div>
 
           {/* Progress */}
@@ -358,69 +341,93 @@ export default function RoutierRegistration() {
           <AnimatePresence mode="wait">
             <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
 
-              {/* ─── Step 1: Type de transporteur ─── */}
+              {/* ─── Step 1: Profil Type ─── */}
               {step === 1 && (
-                <div className="space-y-4">
-                  <h2 className="font-semibold text-lg text-center">Quel type de transporteur êtes-vous ?</h2>
-                  <p className="text-xs text-muted-foreground text-center">Vous pouvez combiner les deux modes</p>
-
+                <div className="space-y-5">
+                  {/* Entity Type Selection */}
                   <div className="space-y-3">
-                    {/* Navette */}
-                    <button type="button" onClick={() => setRoadType(roadType === "shuttle" ? null : roadType === "both" ? "mission" : roadType === "mission" ? "both" : "shuttle")}
-                      className={`w-full text-left p-4 rounded-2xl border-2 transition-all ${roadType === "shuttle" || roadType === "both" ? "border-blue-500 bg-blue-500/10 shadow-md" : "border-border hover:border-blue-300"}`}>
-                      <div className="flex items-start gap-3">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${roadType === "shuttle" || roadType === "both" ? "bg-blue-600 text-white" : "bg-muted"}`}>
-                          <Route className="w-6 h-6" />
+                    <h2 className="font-semibold text-lg text-center">Vous êtes...</h2>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button type="button" onClick={() => setEntityType("particulier")}
+                        className={`p-4 rounded-2xl border-2 text-center transition-all ${entityType === "particulier" ? "border-primary bg-primary/5 shadow-md" : "border-border hover:border-primary/40"}`}>
+                        <div className={`w-12 h-12 rounded-xl mx-auto mb-2 flex items-center justify-center ${entityType === "particulier" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                          <UserCircle className="w-6 h-6" />
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-bold text-sm">🚌 Transporteur Navette</h3>
-                            {(roadType === "shuttle" || roadType === "both") && <CheckCircle className="w-4 h-4 text-blue-600" />}
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Lignes fixes · Départs réguliers · Horaires définis
-                          </p>
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {["Route publiée", "Capacité restante", "Prix/kg"].map(t => (
-                              <Badge key={t} variant="secondary" className="text-[10px] px-1.5 py-0">{t}</Badge>
-                            ))}
-                          </div>
+                        <h3 className="font-bold text-sm">Particulier</h3>
+                        <p className="text-[10px] text-muted-foreground mt-1">Chauffeur indépendant</p>
+                      </button>
+                      <button type="button" onClick={() => setEntityType("entreprise")}
+                        className={`p-4 rounded-2xl border-2 text-center transition-all ${entityType === "entreprise" ? "border-primary bg-primary/5 shadow-md" : "border-border hover:border-primary/40"}`}>
+                        <div className={`w-12 h-12 rounded-xl mx-auto mb-2 flex items-center justify-center ${entityType === "entreprise" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                          <Building2 className="w-6 h-6" />
                         </div>
-                      </div>
-                    </button>
-
-                    {/* Mission */}
-                    <button type="button" onClick={() => setRoadType(roadType === "mission" ? null : roadType === "both" ? "shuttle" : roadType === "shuttle" ? "both" : "mission")}
-                      className={`w-full text-left p-4 rounded-2xl border-2 transition-all ${roadType === "mission" || roadType === "both" ? "border-amber-500 bg-amber-500/10 shadow-md" : "border-border hover:border-amber-300"}`}>
-                      <div className="flex items-start gap-3">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${roadType === "mission" || roadType === "both" ? "bg-amber-600 text-white" : "bg-muted"}`}>
-                          <Package className="w-6 h-6" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-bold text-sm">🚛 Véhicule à Mission</h3>
-                            {(roadType === "mission" || roadType === "both") && <CheckCircle className="w-4 h-4 text-amber-600" />}
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Camion, semi, fourgon · Pas de route fixe · Marketplace dynamique
-                          </p>
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {["Missions à la demande", "Négociation prix", "Notifications"].map(t => (
-                              <Badge key={t} variant="secondary" className="text-[10px] px-1.5 py-0">{t}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </button>
+                        <h3 className="font-bold text-sm">Entreprise</h3>
+                        <p className="text-[10px] text-muted-foreground mt-1">Société de transport</p>
+                      </button>
+                    </div>
                   </div>
 
-                  {roadType === "both" && (
-                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                      className="p-3 rounded-xl bg-green-500/10 border border-green-500/30 text-center">
-                      <p className="text-sm font-semibold text-green-700 dark:text-green-300">✅ Mode hybride activé</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Publiez des lignes fixes ET recevez des missions</p>
-                    </motion.div>
-                  )}
+                  {/* Road Type Selection */}
+                  <AnimatePresence>
+                    {entityType && (
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+                        <h2 className="font-semibold text-lg text-center">Mode de transport</h2>
+                        <p className="text-xs text-muted-foreground text-center">Combinez les deux modes si vous le souhaitez</p>
+
+                        <div className="space-y-3">
+                          <button type="button" onClick={() => setRoadType(roadType === "shuttle" ? null : roadType === "both" ? "mission" : roadType === "mission" ? "both" : "shuttle")}
+                            className={`w-full text-left p-4 rounded-2xl border-2 transition-all ${roadType === "shuttle" || roadType === "both" ? "border-primary bg-primary/5 shadow-md" : "border-border hover:border-primary/30"}`}>
+                            <div className="flex items-start gap-3">
+                              <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${roadType === "shuttle" || roadType === "both" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                                <Route className="w-6 h-6" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-bold text-sm">🚌 Navette</h3>
+                                  {(roadType === "shuttle" || roadType === "both") && <CheckCircle className="w-4 h-4 text-primary" />}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">Lignes fixes · Départs réguliers · Horaires définis</p>
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {["Route publiée", "Capacité restante", "Prix/kg"].map(t => (
+                                    <Badge key={t} variant="secondary" className="text-[10px] px-1.5 py-0">{t}</Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+
+                          <button type="button" onClick={() => setRoadType(roadType === "mission" ? null : roadType === "both" ? "shuttle" : roadType === "shuttle" ? "both" : "mission")}
+                            className={`w-full text-left p-4 rounded-2xl border-2 transition-all ${roadType === "mission" || roadType === "both" ? "border-accent bg-accent/5 shadow-md" : "border-border hover:border-accent/30"}`}>
+                            <div className="flex items-start gap-3">
+                              <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${roadType === "mission" || roadType === "both" ? "bg-accent text-accent-foreground" : "bg-muted"}`}>
+                                <Package className="w-6 h-6" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-bold text-sm">🚛 Mission</h3>
+                                  {(roadType === "mission" || roadType === "both") && <CheckCircle className="w-4 h-4 text-accent" />}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">À la demande · Marketplace · Négociation prix</p>
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {["Missions dynamiques", "Négociation", "Notifications"].map(t => (
+                                    <Badge key={t} variant="secondary" className="text-[10px] px-1.5 py-0">{t}</Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+                        </div>
+
+                        {roadType === "both" && (
+                          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                            className="p-3 rounded-xl bg-primary/10 border border-primary/30 text-center">
+                            <p className="text-sm font-semibold text-primary">✅ Mode hybride</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">Navette + Missions activés</p>
+                          </motion.div>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               )}
 
@@ -429,31 +436,45 @@ export default function RoutierRegistration() {
                 <Card>
                   <CardContent className="p-5 space-y-4">
                     <h2 className="font-semibold text-lg flex items-center gap-2">
-                      <User className="w-5 h-5 text-primary" /> Identité
+                      {entityType === "entreprise" ? <Building2 className="w-5 h-5 text-primary" /> : <User className="w-5 h-5 text-primary" />}
+                      {entityType === "entreprise" ? "Informations de l'entreprise" : "Vos informations"}
                     </h2>
-                    <div className="grid grid-cols-2 gap-3">
-                      {([
-                        { id: "independant", label: "Indépendant", icon: User },
-                        { id: "entreprise", label: "Entreprise", icon: Building2 },
-                      ] as const).map((t) => {
-                        const TIcon = t.icon;
-                        return (
-                          <button key={t.id} type="button" onClick={() => setTransporterType(t.id)}
-                            className={`p-3 rounded-xl border-2 transition-all text-center ${transporterType === t.id ? "border-primary bg-primary/5" : "border-border"}`}>
-                            <TIcon className={`w-5 h-5 mx-auto mb-1 ${transporterType === t.id ? "text-primary" : "text-muted-foreground"}`} />
-                            <span className="text-sm font-medium">{t.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
+
+                    <Badge variant="outline" className="text-xs">
+                      {entityType === "entreprise" ? "🏢 Entreprise" : "👤 Particulier"}
+                    </Badge>
+
                     <div className="space-y-2">
-                      <Label>{transporterType === "entreprise" ? "Raison sociale" : "Nom complet"}</Label>
-                      <Input value={businessName} onChange={e => setBusinessName(e.target.value)} placeholder={transporterType === "entreprise" ? "Ma Société SARL" : "Moussa Diallo"} />
+                      <Label>{entityType === "entreprise" ? "Raison sociale *" : "Nom complet *"}</Label>
+                      <Input value={businessName} onChange={e => setBusinessName(e.target.value)}
+                        placeholder={entityType === "entreprise" ? "SARL Transport Express" : "Moussa Diallo"} />
                     </div>
+
+                    {entityType === "entreprise" && (
+                      <>
+                        <div className="space-y-2">
+                          <Label>N° Registre de Commerce (NINEA/RC) *</Label>
+                          <Input value={registrationNumber} onChange={e => setRegistrationNumber(e.target.value)}
+                            placeholder="RC-SN-DKR-2024-A-12345" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Adresse du siège</Label>
+                          <Input value={companyAddress} onChange={e => setCompanyAddress(e.target.value)}
+                            placeholder="123 Rue des Transports, Dakar" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Personne de contact</Label>
+                          <Input value={contactPerson} onChange={e => setContactPerson(e.target.value)}
+                            placeholder="Responsable logistique" />
+                        </div>
+                      </>
+                    )}
+
                     <div className="space-y-2">
-                      <Label>Téléphone</Label>
+                      <Label>Téléphone *</Label>
                       <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+221 77 123 45 67" />
                     </div>
+
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <Checkbox checked={sameAsPhone} onCheckedChange={c => setSameAsPhone(c === true)} />
@@ -461,14 +482,15 @@ export default function RoutierRegistration() {
                       </div>
                       {!sameAsPhone && <Input value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="WhatsApp" />}
                     </div>
+
                     {!existingUser && (
                       <>
                         <div className="space-y-2">
-                          <Label>Email</Label>
+                          <Label>Email *</Label>
                           <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com" />
                         </div>
                         <div className="space-y-2">
-                          <Label>Mot de passe</Label>
+                          <Label>Mot de passe *</Label>
                           <div className="relative">
                             <Input type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
                             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -490,8 +512,12 @@ export default function RoutierRegistration() {
                 <Card>
                   <CardContent className="p-5 space-y-4">
                     <h2 className="font-semibold text-lg flex items-center gap-2">
-                      <Truck className="w-5 h-5 text-primary" /> Mon véhicule
+                      <Truck className="w-5 h-5 text-primary" />
+                      {entityType === "entreprise" ? "Flotte de véhicules" : "Mon véhicule"}
                     </h2>
+                    {entityType === "entreprise" && (
+                      <p className="text-xs text-muted-foreground">Ajoutez tous les véhicules de votre flotte</p>
+                    )}
 
                     {vehicles.length > 0 && (
                       <div className="space-y-2">
@@ -524,12 +550,10 @@ export default function RoutierRegistration() {
                             </SelectContent>
                           </Select>
                         </div>
-
                         <div className="space-y-2">
                           <Label>Nom / Immatriculation *</Label>
                           <Input value={currentVehicle.name} onChange={e => setCurrentVehicle(prev => ({ ...prev, name: e.target.value }))} placeholder="Camion 01 ou AA-123-SN" />
                         </div>
-
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1">
                             <Label className="text-xs">Capacité max (kg)</Label>
@@ -540,12 +564,10 @@ export default function RoutierRegistration() {
                             <Input type="number" value={currentVehicle.maxVolumeM3} onChange={e => setCurrentVehicle(prev => ({ ...prev, maxVolumeM3: e.target.value }))} placeholder="30" />
                           </div>
                         </div>
-
                         <div className="flex items-center justify-between p-2 bg-muted rounded-lg">
                           <Label className="text-xs font-normal">Assurance incluse</Label>
                           <Switch checked={currentVehicle.hasInsurance} onCheckedChange={v => setCurrentVehicle(prev => ({ ...prev, hasInsurance: v }))} />
                         </div>
-
                         <div className="flex items-center justify-between p-2 bg-muted rounded-lg">
                           <div>
                             <Label className="text-xs font-normal">Livraison à domicile</Label>
@@ -553,7 +575,6 @@ export default function RoutierRegistration() {
                           </div>
                           <Switch checked={currentVehicle.homeDelivery} onCheckedChange={v => setCurrentVehicle(prev => ({ ...prev, homeDelivery: v }))} />
                         </div>
-
                         <Button onClick={addVehicle} className="w-full" size="sm">
                           <CheckCircle className="w-4 h-4 mr-2" /> Ajouter ce véhicule
                         </Button>
@@ -566,7 +587,6 @@ export default function RoutierRegistration() {
                       </Button>
                     )}
 
-                    {/* Freight types */}
                     <div className="space-y-2 pt-3 border-t">
                       <Label>Types de fret acceptés</Label>
                       <div className="flex flex-wrap gap-2">
@@ -588,50 +608,37 @@ export default function RoutierRegistration() {
                 <Card>
                   <CardContent className="p-5 space-y-4">
                     <h2 className="font-semibold text-lg flex items-center gap-2">
-                      <MapPin className="w-5 h-5 text-primary" /> 
+                      <MapPin className="w-5 h-5 text-primary" />
                       {roadType === "mission" ? "Zone d'opération" : "Définir votre trajet"}
                     </h2>
 
-                    {roadType !== "mission" && (
-                      <p className="text-xs text-muted-foreground">
-                        Comme un GP : définissez votre ligne fixe. Les clients pourront réserver du fret sur votre navette.
-                      </p>
-                    )}
-
                     <div className="space-y-3">
-                      {/* Origin */}
-                      <div className="p-3 rounded-xl bg-green-500/5 border border-green-500/20">
+                      <div className="p-3 rounded-xl bg-primary/5 border border-primary/20">
                         <div className="flex items-center gap-2 mb-2">
-                          <div className="w-3 h-3 rounded-full bg-green-500" />
+                          <div className="w-3 h-3 rounded-full bg-primary" />
                           <Label className="text-sm font-semibold">Départ</Label>
                         </div>
                         <Select value={originCity} onValueChange={setOriginCity}>
                           <SelectTrigger><SelectValue placeholder="Ville de départ" /></SelectTrigger>
-                          <SelectContent>
-                            {SENEGAL_CITIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                          </SelectContent>
+                          <SelectContent>{SENEGAL_CITIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                         </Select>
-                        <Input value={originAddress} onChange={e => setOriginAddress(e.target.value)} placeholder="Adresse / Dépôt de départ" className="mt-2" />
+                        <Input value={originAddress} onChange={e => setOriginAddress(e.target.value)} placeholder="Adresse / Dépôt" className="mt-2" />
                       </div>
 
-                      {/* Destination */}
                       {roadType !== "mission" && (
-                        <div className="p-3 rounded-xl bg-blue-500/5 border border-blue-500/20">
+                        <div className="p-3 rounded-xl bg-accent/5 border border-accent/20">
                           <div className="flex items-center gap-2 mb-2">
-                            <div className="w-3 h-3 rounded-full bg-blue-500" />
+                            <div className="w-3 h-3 rounded-full bg-accent" />
                             <Label className="text-sm font-semibold">Arrivée</Label>
                           </div>
                           <Select value={destinationCity} onValueChange={setDestinationCity}>
                             <SelectTrigger><SelectValue placeholder="Ville d'arrivée" /></SelectTrigger>
-                            <SelectContent>
-                              {SENEGAL_CITIES.filter(c => c !== originCity).map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                            </SelectContent>
+                            <SelectContent>{SENEGAL_CITIES.filter(c => c !== originCity).map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                           </Select>
-                          <Input value={destinationAddress} onChange={e => setDestinationAddress(e.target.value)} placeholder="Adresse hub / dépôt d'arrivée" className="mt-2" />
+                          <Input value={destinationAddress} onChange={e => setDestinationAddress(e.target.value)} placeholder="Adresse hub / dépôt" className="mt-2" />
                         </div>
                       )}
 
-                      {/* Home delivery toggle */}
                       <div className="flex items-center justify-between p-3 bg-muted rounded-xl">
                         <div className="flex items-center gap-2">
                           <Home className="w-4 h-4 text-primary" />
@@ -644,46 +651,42 @@ export default function RoutierRegistration() {
                       </div>
                     </div>
 
-                    {/* Recap */}
-                    <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-200 dark:border-blue-800 space-y-2">
+                    <div className="p-4 bg-muted/50 rounded-xl border space-y-2">
                       <div className="flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-semibold text-blue-800 dark:text-blue-200">Récapitulatif</span>
+                        <Shield className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-semibold">Récapitulatif</span>
                       </div>
-                      <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-                        <p>👤 {businessName}</p>
-                        <p>📋 Mode: {roadType === "both" ? "Navette + Mission" : roadType === "shuttle" ? "Navette (ligne fixe)" : "Mission (marketplace)"}</p>
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        <p>{entityType === "entreprise" ? "🏢" : "👤"} {businessName}</p>
+                        <p>📋 Mode: {roadType === "both" ? "Navette + Mission" : roadType === "shuttle" ? "Navette" : "Mission"}</p>
                         <p>🚛 {vehicles.length} véhicule{vehicles.length > 1 ? "s" : ""}</p>
                         {originCity && <p>📍 Départ: {originCity}</p>}
                         {destinationCity && roadType !== "mission" && <p>📍 Arrivée: {destinationCity}</p>}
-                        {homeDeliveryEnabled && <p>🏠 Livraison domicile activée</p>}
-                        {freightTypes.length > 0 && <p>📦 {freightTypes.length} types de fret</p>}
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               )}
 
-              {/* ─── Step 5: Tarification Routier ─── */}
+              {/* ─── Step 5: Tarification ─── */}
               {step === 5 && (
                 <Card className="overflow-hidden">
-                  <div className="bg-gradient-to-r from-emerald-600 to-green-700 px-5 py-4 text-white">
+                  <div className="bg-gradient-to-r from-primary to-primary/80 px-5 py-4 text-primary-foreground">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
                         <Truck className="w-5 h-5" />
                       </div>
                       <div>
                         <h2 className="font-bold text-base">Tarification routière</h2>
-                        <p className="text-white/80 text-[11px]">Grille combinée : distance + poids + volume</p>
+                        <p className="text-primary-foreground/80 text-[11px]">Grille combinée : distance + poids + volume</p>
                       </div>
                     </div>
                   </div>
                   <CardContent className="p-5 space-y-4">
-                    {/* Forfait minimum */}
-                    <div className="p-4 rounded-xl border-2 border-emerald-500/30 bg-emerald-500/5 space-y-2">
+                    <div className="p-4 rounded-xl border-2 border-primary/30 bg-primary/5 space-y-2">
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                          <Shield className="w-3.5 h-3.5 text-emerald-600" />
+                        <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                          <Shield className="w-3.5 h-3.5 text-primary" />
                         </div>
                         <Label className="font-semibold text-sm">Prix minimum par course *</Label>
                       </div>
@@ -691,26 +694,18 @@ export default function RoutierRegistration() {
                         <Input type="number" value={routierMinPrice} onChange={e => setRoutierMinPrice(e.target.value)} placeholder="15000" className="h-11 text-base font-medium" />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">{routierCurrency}</span>
                       </div>
-                      <p className="text-[10px] text-muted-foreground">Montant plancher garanti, quelle que soit la course</p>
                     </div>
 
-                    {/* Distance */}
-                    <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30 space-y-2">
-                      <p className="text-sm font-semibold text-blue-800 dark:text-blue-200 flex items-center gap-2">
-                        <Route className="w-4 h-4" /> Facteur distance
-                      </p>
+                    <div className="p-4 rounded-xl border border-border bg-muted/30 space-y-2">
+                      <p className="text-sm font-semibold flex items-center gap-2"><Route className="w-4 h-4" /> Distance</p>
                       <div className="relative">
                         <Input type="number" value={routierPricePerKm} onChange={e => setRoutierPricePerKm(e.target.value)} placeholder="500" />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{routierCurrency}/km</span>
                       </div>
-                      <p className="text-[10px] text-muted-foreground">Appliqué à chaque kilomètre parcouru</p>
                     </div>
 
-                    {/* Poids + Volume */}
-                    <div className="p-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30 space-y-3">
-                      <p className="text-sm font-semibold text-amber-800 dark:text-amber-200 flex items-center gap-2">
-                        <Package className="w-4 h-4" /> Facteurs chargement
-                      </p>
+                    <div className="p-4 rounded-xl border border-border bg-muted/30 space-y-3">
+                      <p className="text-sm font-semibold flex items-center gap-2"><Package className="w-4 h-4" /> Chargement</p>
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
                           <Label className="text-xs">Prix / kg</Label>
@@ -727,13 +722,11 @@ export default function RoutierRegistration() {
                           </div>
                         </div>
                       </div>
-                      <p className="text-[10px] text-muted-foreground">Le système applique le max entre poids réel et poids volumétrique</p>
                     </div>
 
-                    {/* Simulation */}
                     {routierMinPrice && (
-                      <div className="p-4 rounded-xl bg-gradient-to-br from-muted/60 to-muted/30 border space-y-2.5">
-                        <p className="text-xs font-bold flex items-center gap-1.5">📊 Simulateur tarifaire</p>
+                      <div className="p-4 rounded-xl bg-muted/50 border space-y-2.5">
+                        <p className="text-xs font-bold">📊 Simulation tarifaire</p>
                         <div className="grid grid-cols-1 gap-1.5 text-xs">
                           <div className="flex justify-between py-1 border-b border-border/50">
                             <span className="text-muted-foreground">Course minimum</span>
@@ -741,31 +734,17 @@ export default function RoutierRegistration() {
                           </div>
                           {routierPricePerKm && (
                             <div className="flex justify-between py-1 border-b border-border/50">
-                              <span className="text-muted-foreground">Dakar → Thiès (~70 km)</span>
+                              <span className="text-muted-foreground">70 km (Dakar → Thiès)</span>
                               <span className="font-bold">{Math.max(parseInt(routierMinPrice || "0"), parseInt(routierPricePerKm) * 70).toLocaleString()} {routierCurrency}</span>
-                            </div>
-                          )}
-                          {routierPricePerKg && (
-                            <div className="flex justify-between py-1 border-b border-border/50">
-                              <span className="text-muted-foreground">Chargement 500 kg</span>
-                              <span className="font-bold">{(parseInt(routierPricePerKg) * 500).toLocaleString()} {routierCurrency}</span>
-                            </div>
-                          )}
-                          {routierPricePerKm && routierPricePerKg && (
-                            <div className="flex justify-between py-1.5 bg-emerald-500/10 rounded-lg px-2 mt-1">
-                              <span className="font-semibold text-emerald-700 dark:text-emerald-300">Combiné 70 km + 500 kg</span>
-                              <span className="font-black text-emerald-700 dark:text-emerald-300">
-                                {Math.max(parseInt(routierMinPrice || "0"), parseInt(routierPricePerKm) * 70 + parseInt(routierPricePerKg) * 500).toLocaleString()} {routierCurrency}
-                              </span>
                             </div>
                           )}
                         </div>
                       </div>
                     )}
 
-                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
-                      <p className="text-xs text-emerald-800 dark:text-emerald-200">
-                        <strong>💡 Formule :</strong> Prix = max(minimum, km × prix/km + kg × prix/kg + m³ × prix/m³)
+                    <div className="p-3 rounded-xl bg-primary/5 border border-primary/20">
+                      <p className="text-xs text-foreground">
+                        <strong>💡</strong> Prix = max(minimum, km × prix/km + kg × prix/kg + m³ × prix/m³)
                       </p>
                     </div>
                   </CardContent>
@@ -774,13 +753,13 @@ export default function RoutierRegistration() {
             </motion.div>
           </AnimatePresence>
 
-          {/* Navigation */}
+          {/* Navigation Footer */}
           <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t safe-area-bottom">
             <div className="max-w-lg mx-auto flex gap-3">
               <Button variant="outline" onClick={handleBack} className="flex-1">
                 <ArrowLeft className="w-4 h-4 mr-2" /> Retour
               </Button>
-              <Button onClick={handleNext} className="flex-1 bg-blue-600 hover:bg-blue-700" disabled={loading || (step === 1 && !roadType)}>
+              <Button onClick={handleNext} className="flex-1" disabled={loading || (step === 1 && (!roadType || !entityType))}>
                 {loading ? "..." : step === TOTAL_STEPS ? (
                   <><CheckCircle className="w-4 h-4 mr-2" /> Valider</>
                 ) : (
