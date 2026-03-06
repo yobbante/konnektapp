@@ -155,7 +155,7 @@ export function useSmartRedirect() {
     try {
       const { data: gpProfile } = await supabase
         .from("gp_profiles")
-        .select("id")
+        .select("id, gp_type")
         .eq("user_id", userId)
         .maybeSingle();
 
