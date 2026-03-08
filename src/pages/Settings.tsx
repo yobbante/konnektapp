@@ -154,9 +154,13 @@ export default function Settings() {
 
           {/* AIDE */}
           <SettingsSection title="Aide & informations">
-            <SettingsRow icon={HelpCircle} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Tutoriels" desc="Guides d'utilisation" onClick={() => navigate("/tutoriels")} />
+            <SettingsRow icon={HelpCircle} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Aide & FAQ" desc="Questions fréquentes" onClick={() => navigate("/aide")} />
             <Separator />
-            <SettingsRow icon={FileText} iconColor="text-emerald-500" iconBg="bg-emerald-500/10" label="Documents légaux" desc="CGU, CGV, Confidentialité" onClick={() => navigate("/documents-legaux")} />
+            <SettingsRow icon={HelpCircle} iconColor="text-indigo-500" iconBg="bg-indigo-500/10" label="Tutoriels" desc="Guides d'utilisation" onClick={() => navigate("/tutoriels")} />
+            <Separator />
+            <SettingsRow icon={FileText} iconColor="text-emerald-500" iconBg="bg-emerald-500/10" label="CGU & Confidentialité" onClick={() => navigate("/cgu")} />
+            <Separator />
+            <SettingsRow icon={Globe} iconColor="text-muted-foreground" iconBg="bg-muted" label="À propos" desc="v1.0.0" onClick={() => navigate("/a-propos")} />
             <Separator />
             <SettingsRow icon={Globe} iconColor="text-muted-foreground" iconBg="bg-muted" label="Langue" desc="Français" right={<Badge variant="outline" className="text-[10px]">FR</Badge>} />
           </SettingsSection>
