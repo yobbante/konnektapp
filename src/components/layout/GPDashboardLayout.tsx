@@ -6,7 +6,7 @@ import {
   Shield, DollarSign, History, Calendar, Wallet,
   Settings, LogOut, MapPin, User, Plus,
   MessageCircle, UserCircle, ChevronRight, Eye, EyeOff,
-  BarChart3, Crown,
+  BarChart3, Crown, Rocket,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -115,9 +115,11 @@ export function GPDashboardLayout({
       <header 
         className={cn(
           "sticky top-0 z-50 shadow-lg",
-          isGPPremium((gpProfile as any).subscription)
-            ? "bg-gradient-to-r from-amber-600 via-amber-500 to-orange-500"
-            : "bg-gradient-to-r from-primary to-primary/90"
+          (gpProfile as any).subscription === "pro"
+            ? "bg-gradient-to-r from-violet-700 via-violet-600 to-purple-600"
+            : (gpProfile as any).subscription === "premium"
+              ? "bg-gradient-to-r from-amber-600 via-amber-500 to-orange-500"
+              : "bg-gradient-to-r from-primary to-primary/90"
         )}
         style={{ paddingTop: 'calc(8px + var(--safe-top, 0px))' }}
       >
@@ -133,10 +135,13 @@ export function GPDashboardLayout({
                 <p className="text-white font-bold text-sm leading-tight truncate max-w-[120px]">
                   {gpProfile.business_name}
                 </p>
-                {isGPPremium((gpProfile as any).subscription) ? (
+                {(gpProfile as any).subscription === "pro" ? (
+                  <span className="inline-flex items-center gap-0.5 h-4 px-1.5 rounded text-[10px] font-bold bg-white text-violet-700 border border-white/80 shadow-sm">
+                    <Rocket className="w-2.5 h-2.5" /> Pro
+                  </span>
+                ) : (gpProfile as any).subscription === "premium" ? (
                   <span className="inline-flex items-center gap-0.5 h-4 px-1.5 rounded text-[10px] font-bold bg-white text-amber-700 border border-white/80 shadow-sm">
-                    <Crown className="w-2.5 h-2.5" />
-                    {(gpProfile as any).subscription === "pro" ? "Pro" : "Premium"}
+                    <Crown className="w-2.5 h-2.5" /> Premium
                   </span>
                 ) : (
                   <GPKYCBadge status={displayStatus} kycLevel={kycLevel} size="sm" />
@@ -205,7 +210,14 @@ export function GPDashboardLayout({
             transition={{ duration: 0.25, ease: "easeOut" }}
             className="sticky top-[calc(52px+var(--safe-top,0px))] z-40 overflow-hidden"
           >
-            <div className="bg-gradient-to-b from-primary/95 to-primary/85 backdrop-blur-xl border-b border-white/10 px-4 py-4">
+            <div className={cn(
+              "backdrop-blur-xl border-b border-white/10 px-4 py-4",
+              (gpProfile as any).subscription === "pro"
+                ? "bg-gradient-to-b from-violet-700/95 to-violet-600/85"
+                : (gpProfile as any).subscription === "premium"
+                  ? "bg-gradient-to-b from-amber-500/95 to-amber-600/85"
+                  : "bg-gradient-to-b from-primary/95 to-primary/85"
+            )}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Wallet className="w-4 h-4 text-white/70" />
