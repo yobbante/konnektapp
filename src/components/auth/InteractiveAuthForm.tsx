@@ -813,7 +813,7 @@ export function InteractiveAuthForm({
             exit={{ opacity: 0, x: -50 }}
           >
             <div className="flex items-center gap-2 mb-6">
-              <Button variant="ghost" size="icon" onClick={() => { setRegisterStep("phone"); setFormData(prev => ({ ...prev, phone: prev.phone?.replace(selectedDialCode + " ", "") || "" })); }}>
+              <Button variant="ghost" size="icon" onClick={() => setRegisterStep("type")}>
                 <ChevronLeft className="w-5 h-5" />
               </Button>
               <div>
