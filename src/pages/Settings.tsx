@@ -75,15 +75,6 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* COMPTE */}
-          <SettingsSection title="Mon compte">
-            <SettingsRow icon={User} label="Mon profil" desc="Informations, photo, KYC" onClick={() => navigate("/profil/complet")} />
-            <Separator />
-            <SettingsRow icon={CreditCard} iconColor="text-emerald-500" iconBg="bg-emerald-500/10" label="Portefeuille" desc="Solde, transactions" onClick={() => navigate("/client/wallet")} />
-            <Separator />
-            <SettingsRow icon={Heart} iconColor="text-pink-500" iconBg="bg-pink-500/10" label="Favoris" desc="Transporteurs sauvegardés" onClick={() => navigate("/favoris")} />
-          </SettingsSection>
-
           {/* APPARENCE */}
           <SettingsSection title="Apparence">
             <div className="p-4">
@@ -98,6 +89,15 @@ export default function Settings() {
               </div>
               <ThemeToggle />
             </div>
+          </SettingsSection>
+
+          {/* COMPTE */}
+          <SettingsSection title="Mon compte">
+            <SettingsRow icon={User} label="Mon profil" desc="Informations, photo, KYC" onClick={() => navigate("/profil/complet")} />
+            <Separator />
+            <SettingsRow icon={CreditCard} iconColor="text-emerald-500" iconBg="bg-emerald-500/10" label="Portefeuille" desc="Solde, transactions" onClick={() => navigate("/client/wallet")} />
+            <Separator />
+            <SettingsRow icon={Heart} iconColor="text-pink-500" iconBg="bg-pink-500/10" label="Favoris" desc="Transporteurs sauvegardés" onClick={() => navigate("/favoris")} />
           </SettingsSection>
 
           {/* NOTIFICATIONS */}
