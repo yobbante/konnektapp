@@ -58,7 +58,7 @@ export function GPKYCProgressCard({
   if (kycLevel >= 2 || status === "suspended" || (progress === 100 && !isVerified && !isVerifying)) return null;
 
   const label = isVerified
-    ? "GP Vérifié — Passez Premium"
+    ? "GP Vérifié ✓"
     : isVerifying
     ? "Vérification en cours..."
     : `Profil ${progress}% complété`;
@@ -144,7 +144,7 @@ export function GPKYCProgressCard({
 
               {isVerified && (
                 <p className="text-xs text-muted-foreground">
-                  Commission réduite, support prioritaire, mise en avant.
+                  Votre profil est vérifié. Continuez à améliorer votre score KTP.
                 </p>
               )}
 
@@ -153,11 +153,11 @@ export function GPKYCProgressCard({
                 className="w-full text-xs h-8"
                 onClick={() => {
                   setExpanded(false);
-                  navigate(isVerified ? "/gp/parametres?section=premium" : "/gp/apercu");
+                  navigate(isVerified ? "/gp/ktp-geotrack" : "/gp/apercu");
                 }}
               >
                 <ShieldCheck className="w-3.5 h-3.5 mr-1.5" />
-                {isVerified ? "Gérer mon compte" : "Compléter mon profil"}
+                {isVerified ? "Voir mon score KTP" : "Compléter mon profil"}
               </Button>
             </div>
           </motion.div>

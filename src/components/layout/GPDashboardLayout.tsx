@@ -14,6 +14,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { GPNotificationsDropdown } from "@/components/gp/dashboard/GPNotificationsDropdown";
 import { GPKYCBadge, getGPDisplayStatus } from "@/components/gp/GPKYCBadge";
 import { GPScanSheet } from "@/components/scan/GPScanSheet";
+import { PremiumCTABanner } from "@/components/gp/PremiumCTABanner";
+import { isGPPremium } from "@/lib/premiumGating";
 import { cn } from "@/lib/utils";
 import { useEnforceDashboardRole } from "@/hooks/useSmartRedirect";
 import { supabase } from "@/integrations/supabase/client";
@@ -320,7 +322,7 @@ export function GPDashboardLayout({
               <SheetHeader className="pb-4">
                 <SheetTitle className="text-left">Menu GP</SheetTitle>
               </SheetHeader>
-              <div className="grid grid-cols-3 gap-3 pb-4">
+              <div className="grid grid-cols-3 gap-3 pb-3">
                 <MenuButton icon={MapPin} label="Profil public" onClick={() => { setShowMenu(false); navigate("/gp/profil-public"); }} />
                 <MenuButton icon={Package} label="Demandes" badge={pendingCount} locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/demandes"); }}} />
                 <MenuButton icon={Calendar} label="Départs" locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/calendrier"); }}} />
@@ -334,6 +336,12 @@ export function GPDashboardLayout({
                 <MenuButton icon={Settings} label="Réglages" onClick={() => { setShowMenu(false); navigate("/gp/parametres"); }} />
                 <MenuButton icon={LogOut} label="Déconnexion" variant="destructive" onClick={() => { setShowMenu(false); handleSignOut(); }} />
               </div>
+              {/* Premium CTA in menu */}
+              {!isGPPremium((gpProfile as any).subscription) && (
+                <div className="pb-3">
+                  <PremiumCTABanner variant="compact" context="menu" isPremium={false} />
+                </div>
+              )}
             </SheetContent>
           </Sheet>
         </div>

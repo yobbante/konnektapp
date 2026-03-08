@@ -6,6 +6,8 @@ import { GPWalletCard } from "@/components/gp/GPWalletCard";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { useGPProfile } from "@/hooks/useGPProfile";
 import { SmartVoyageForm } from "@/components/gp/SmartVoyageForm";
+import { PremiumCTABanner } from "@/components/gp/PremiumCTABanner";
+import { isGPPremium } from "@/lib/premiumGating";
 
 export default function GPWalletPage() {
   const navigate = useNavigate();
@@ -40,7 +42,7 @@ export default function GPWalletPage() {
       activeTab="wallet"
       onNewVoyage={() => setShowVoyageForm(true)}
     >
-      <div className="px-4 py-4">
+      <div className="px-4 py-4 space-y-4">
         <GPWalletCard
           wallet={wallet}
           gpId={gpProfile.id}
@@ -48,6 +50,11 @@ export default function GPWalletPage() {
           kycLevel={gpProfile.kyc_level ?? 0}
           onActivateKYC={() => navigate("/gp/profil-public")}
         />
+
+        {/* Premium CTA in wallet */}
+        {!isGPPremium((gpProfile as any).subscription) && (
+          <PremiumCTABanner variant="card" context="wallet" isPremium={isGPPremium((gpProfile as any).subscription)} />
+        )}
       </div>
 
       {gpProfile && (

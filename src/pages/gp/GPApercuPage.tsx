@@ -27,7 +27,9 @@ import { QRCameraScanner } from "@/components/gp/QRCameraScanner";
 import { GPScanSheet } from "@/components/scan/GPScanSheet";
 import { SelfieVerificationSheet } from "@/components/gp/SelfieVerificationSheet";
 import { DocumentVerificationSheet } from "@/components/gp/DocumentVerificationSheet";
+import { PremiumCTABanner } from "@/components/gp/PremiumCTABanner";
 import { useGPProfile } from "@/hooks/useGPProfile";
+import { isGPPremium } from "@/lib/premiumGating";
 import { getOrderStatusLabel, getOrderStatusColor } from "@/lib/transportTypes";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { useToast } from "@/hooks/use-toast";
@@ -649,6 +651,11 @@ export default function GPApercuPage() {
             )}
               </div>
           }
+
+            {/* ── PREMIUM CTA (dashboard) ── */}
+            {!isGPPremium((gpProfile as any)?.subscription) && (
+              <PremiumCTABanner variant="compact" context="dashboard" isPremium={isGPPremium((gpProfile as any)?.subscription)} />
+            )}
 
             {/* ── PERFORMANCE ── */}
             <div className="space-y-2">
