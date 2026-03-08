@@ -467,50 +467,16 @@ export default function GPApercuPage() {
               </div>
           }
 
-            {/* ── QUICK ACTIONS ── */}
-            <div className="grid grid-cols-4 gap-2">
-              <QuickAction icon={ScanLine} label="Scanner" primary onClick={() => setScanSheetOpen(true)} />
-              <QuickAction icon={Package} label="Demandes" badge={pendingCount} onClick={() => navigate("/gp/demandes")} />
-              <QuickAction icon={Plus} label="Voyage" onClick={() => setShowVoyageForm(true)} />
-              <QuickAction icon={History} label="Historique" onClick={() => navigate("/gp/historique")} />
+            {/* ── QUICK ACTIONS — sticky ── */}
+            <div className="sticky top-[calc(52px+var(--safe-top,0px))] z-30 bg-background py-2 -mx-4 px-4">
+              <div className="grid grid-cols-4 gap-2">
+                <QuickAction icon={ScanLine} label="Scanner" primary onClick={() => setScanSheetOpen(true)} />
+                <QuickAction icon={Package} label="Demandes" badge={pendingCount} onClick={() => navigate("/gp/demandes")} />
+                <QuickAction icon={Plus} label="Voyage" onClick={() => setShowVoyageForm(true)} />
+                <QuickAction icon={History} label="Historique" onClick={() => navigate("/gp/historique")} />
+              </div>
             </div>
 
-            {/* ── WALLET SHORTCUT ── */}
-            {w && (
-              <motion.div
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <Card
-                  className="cursor-pointer active:scale-[0.98] transition-all overflow-hidden"
-                  onClick={() => navigate("/gp/wallet")}
-                >
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center flex-shrink-0">
-                        <Wallet className="w-5 h-5 text-accent" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-muted-foreground">Solde disponible</p>
-                        <p className="text-lg font-bold leading-tight">
-                          {w.balance.toLocaleString()} {getCurrencySymbol(currency)}
-                        </p>
-                      </div>
-                      {w.pending > 0 && (
-                        <div className="text-right shrink-0">
-                          <p className="text-[10px] text-muted-foreground">En attente</p>
-                          <p className="text-sm font-semibold text-secondary">
-                            +{w.pending.toLocaleString()} {getCurrencySymbol(currency)}
-                          </p>
-                        </div>
-                      )}
-                      <ChevronRight className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
 
             {/* ── PENDING PARCELS — Action requise ── */}
             {data.pendingParcels.length > 0 &&
