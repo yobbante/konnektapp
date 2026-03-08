@@ -72,7 +72,7 @@ const UPGRADE_MESSAGES: Record<string, { title: string; desc: string }> = {
   },
 };
 
-export function PremiumCTABanner({ variant = "card", context = "default", isPremium, subscription, className }: PremiumCTABannerProps) {
+export function PremiumCTABanner({ variant = "card", context = "default", isPremium, subscription, className, premiumRoute }: PremiumCTABannerProps) {
   const navigate = useNavigate();
 
   // Determine effective subscription
@@ -84,7 +84,8 @@ export function PremiumCTABanner({ variant = "card", context = "default", isPrem
   const isUpgrade = sub === "premium";
   const messages = isUpgrade ? UPGRADE_MESSAGES : FREE_MESSAGES;
   const msg = messages[context] || messages.default;
-  const goToPremium = () => navigate("/gp/premium");
+  const targetRoute = premiumRoute || "/gp/premium";
+  const goToPremium = () => navigate(targetRoute);
 
   const accentColor = isUpgrade ? "violet" : "amber";
   const Icon = isUpgrade ? Rocket : Crown;
