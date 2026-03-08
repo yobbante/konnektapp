@@ -724,6 +724,7 @@ export function ClientAppHome({
           recentOrders={recentOrders}
           unreadMessages={unreadMessages}
           activeOrdersCount={activeOrdersCount}
+          pendingRecipientFeedback={pendingRecipientFeedback}
         />
 
         {/* ── OFFERS / MISSIONS ── */}
