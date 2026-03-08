@@ -30,6 +30,7 @@ interface Departure {
 interface GPCompactCalendarProps {
   departures: Departure[];
   onDateTap: (date: Date) => void;
+  onDepartureTap?: (departureId: string) => void;
 }
 
 const WEEKDAYS_SHORT = ["L", "M", "M", "J", "V", "S", "D"];
