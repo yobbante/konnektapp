@@ -56,6 +56,7 @@ export default function GPPremiumPage() {
   const { gpProfile, loading } = useGPProfile();
   const [step, setStep] = useState<FlowStep>("plans");
   const [upgrading, setUpgrading] = useState(false);
+  const [downgrading, setDowngrading] = useState(false);
 
   if (loading) return <PageLoader message="Chargement..." />;
   if (!gpProfile) return null;
@@ -81,6 +82,23 @@ export default function GPPremiumPage() {
       setStep("plans");
     } finally {
       setUpgrading(false);
+    }
+  };
+
+  const handleDowngrade = async () => {
+    setDowngrading(true);
+    try {
+      const { error } = await supabase
+        .from("gp_profiles")
+        .update({ subscription: "free" as any, auto_accept_enabled: false })
+        .eq("id", gpProfile.id);
+      if (error) throw error;
+      toast({ title: "Plan modifié", description: "Vous êtes revenu au plan Standard." });
+      setTimeout(() => { window.location.href = "/gp/apercu"; }, 1200);
+    } catch (err: any) {
+      toast({ title: "Erreur", description: err.message, variant: "destructive" });
+    } finally {
+      setDowngrading(false);
     }
   };
 
@@ -269,9 +287,14 @@ export default function GPPremiumPage() {
             <p className="text-[11px] text-muted-foreground">Gratuit pour toujours</p>
 
             {isPremium ? (
-              <div className="h-10 flex items-center justify-center rounded-lg border text-xs text-muted-foreground">
-                Plan précédent
-              </div>
+              <Button
+                variant="outline"
+                className="w-full h-10 text-xs text-muted-foreground"
+                onClick={handleDowngrade}
+                disabled={downgrading}
+              >
+                {downgrading ? "Changement..." : "Revenir au plan Standard"}
+              </Button>
             ) : (
               <div className="h-10 flex items-center justify-center rounded-lg border border-accent text-xs font-medium text-accent">
                 <Check className="w-3.5 h-3.5 mr-1.5" /> Votre plan actuel
