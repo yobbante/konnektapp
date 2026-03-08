@@ -373,3 +373,17 @@ function DocRow({ label, done, onClick }: { label: string; done: boolean; onClic
     </button>
   );
 }
+
+function PremiumBenefit({ icon: Icon, label, desc }: { icon: any; label: string; desc: string }) {
+  return (
+    <div className="flex items-center gap-3 py-1">
+      <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+        <Icon className="w-3.5 h-3.5 text-amber-500" />
+      </div>
+      <div>
+        <p className="text-xs font-medium">{label}</p>
+        <p className="text-[10px] text-muted-foreground">{desc}</p>
+      </div>
+    </div>
+  );
+}
