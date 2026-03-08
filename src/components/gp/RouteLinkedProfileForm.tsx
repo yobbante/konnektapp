@@ -415,6 +415,13 @@ export function RouteLinkedProfileForm({
                 )}
               />
             </div>
+            {/* Warn if destination phone matches origin (entry) phone */}
+            {entryPhone && data.destinationPhone.replace(/\s/g, "") === data.originPhone.replace(/\s/g, "") && data.destinationPhone.replace(/\s/g, "").length > 5 && (
+              <p className="text-[11px] text-amber-600 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                Ce numéro est identique à votre numéro principal (déjà renseigné)
+              </p>
+            )}
           </motion.div>
         </CardContent>
       </Card>
