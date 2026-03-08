@@ -100,7 +100,7 @@ export default function GPDepartDetailPage() {
       // Load bookings for this offer
       const { data: ordersData } = await supabase
         .from("orders")
-        .select("id, order_number, sender_name, recipient_name, weight, total_price, currency, status, created_at")
+        .select("id, order_number, recipient_name, weight, total_price, currency, status, created_at")
         .eq("offer_id", id)
         .order("created_at", { ascending: false });
 
@@ -287,7 +287,7 @@ export default function GPDepartDetailPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">
-                        {b.recipient_name || b.sender_name || b.order_number}
+                        {b.recipient_name || b.order_number}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {b.weight} kg · {b.total_price} {getCurrencySymbol(b.currency)}
