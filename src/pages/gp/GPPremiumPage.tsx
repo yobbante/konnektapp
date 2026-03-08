@@ -344,14 +344,23 @@ export default function GPPremiumPage() {
 
             <p className="text-[11px] text-muted-foreground">Sans engagement · Résiliable à tout moment</p>
 
-            {isPremium ? (
+            {currentSub === "premium" ? (
               <div className="h-11 flex items-center justify-center rounded-xl border-2 border-amber-500/50 text-sm font-semibold text-amber-600 gap-1.5">
                 <Crown className="w-4 h-4" /> Votre plan actuel
               </div>
+            ) : isPro ? (
+              <Button
+                variant="outline"
+                className="w-full h-11 text-xs text-muted-foreground"
+                onClick={handleDowngrade}
+                disabled={downgrading}
+              >
+                {downgrading ? "Changement..." : "Revenir à Premium"}
+              </Button>
             ) : (
               <Button
                 className="w-full gap-2 h-11 text-sm bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-lg shadow-amber-500/20"
-                onClick={() => setStep("confirm")}
+                onClick={() => { setSelectedPlan("premium"); setStep("confirm"); }}
               >
                 <Crown className="w-4 h-4" />
                 Passer Premium
