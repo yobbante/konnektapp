@@ -132,7 +132,7 @@ export function GPKYCProgressCard({
                 <Button
                   size="sm"
                   className="w-full text-xs h-8 gap-1.5 bg-violet-500 hover:bg-violet-600 text-white"
-                  onClick={() => { setExpanded(false); navigate("/gp/premium"); }}
+                  onClick={() => { setExpanded(false); navigate("/gp/premium?plan=pro&step=confirm"); }}
                 >
                   <Rocket className="w-3.5 h-3.5" />
                   Passer Pro
