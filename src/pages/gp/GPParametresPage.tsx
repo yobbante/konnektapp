@@ -10,7 +10,7 @@ import {
   ShieldX, Upload, BadgeCheck, Wallet, Key,
   Crown, Zap, BarChart3, Mail, HelpCircle,
   FileText, Info, Languages, Trash2,
-  Award, AlertTriangle, CheckCircle, Palette, Route,
+  Award, AlertTriangle, CheckCircle, Palette, Route, ArrowRight,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
@@ -215,33 +215,21 @@ export default function GPParametresPage() {
           )}
         </SettingsSection>
 
-        {/* ═══ 2. KYC compact ═══ */}
+        {/* ═══ 2. KYC compact — just progress bar + arrow ═══ */}
         <SettingsSection title="Vérification KYC">
-          <div className="p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <BadgeCheck className={`w-4 h-4 ${kycStatus === "verified" ? "text-emerald-500" : "text-muted-foreground"}`} />
+          <button onClick={() => navigate("/gp/profil-public")} className="w-full p-3 flex items-center gap-3 hover:bg-muted/50 transition-colors active:scale-[0.98]">
+            <BadgeCheck className={`w-4 h-4 flex-shrink-0 ${kycStatus === "verified" ? "text-emerald-500" : "text-muted-foreground"}`} />
+            <div className="flex-1 min-w-0 space-y-1">
+              <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold">Niveau {kycLevel}</span>
                 <Badge variant={kycStatus === "verified" ? "default" : "secondary"} className="text-[9px] h-4">
                   {kycStatus === "verified" ? "Vérifié" : "En cours"}
                 </Badge>
               </div>
-              <span className="text-[10px] font-medium text-muted-foreground">{withdrawalLimit.toLocaleString("fr-FR")} FCFA/mois</span>
+              <Progress value={kycProgress} className="h-1.5" />
             </div>
-            <Progress value={kycProgress} className="h-1.5" />
-            <div className="flex gap-1.5 flex-wrap">
-              {kycSteps.map((step, i) => (
-                <Badge key={i} variant={step.done ? "default" : "outline"} className={`text-[9px] h-5 ${step.done ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : ""}`}>
-                  {step.done ? "✓" : "○"} {step.label}
-                </Badge>
-              ))}
-            </div>
-            {kycProgress < 100 && (
-              <Button variant="outline" size="sm" className="w-full gap-1 text-[11px] h-7" onClick={() => navigate("/gp/profil-public")}>
-                <Upload className="w-3 h-3" /> Compléter
-              </Button>
-            )}
-          </div>
+            <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          </button>
         </SettingsSection>
 
         {/* ═══ 3. NAVETTES ═══ */}
