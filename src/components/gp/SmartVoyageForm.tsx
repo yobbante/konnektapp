@@ -1,12 +1,11 @@
 /**
- * SmartVoyageForm — Redesigned voyage creation form
- * Matches the mobile-first teal design with locked route card
- * Interactive luggage counter for capacity selection
+ * SmartVoyageForm — Compact voyage creation form
+ * Date-only (no time), interactive luggage counter, no emojis
  */
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
-  Plane, Weight, Calendar, Clock, CheckCircle,
+  Plane, Calendar, Clock, CheckCircle,
   MapPin, Info, Luggage, Plus, Minus
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,20 +17,15 @@ import { Badge } from "@/components/ui/badge";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { AirlineSelect } from "@/components/gp/AirlineSelect";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { fr } from "date-fns/locale";
+import { LUGGAGE_PRESETS } from "@/lib/bookingRules";
 
 const FLAGS: Record<string, string> = {
   FR: "🇫🇷", SN: "🇸🇳", CI: "🇨🇮", CM: "🇨🇲", ML: "🇲🇱", US: "🇺🇸", CA: "🇨🇦",
   AE: "🇦🇪", GB: "🇬🇧", BE: "🇧🇪", MA: "🇲🇦", TN: "🇹🇳", GA: "🇬🇦", CG: "🇨🇬",
   DE: "🇩🇪", ES: "🇪🇸", IT: "🇮🇹", CH: "🇨🇭", NL: "🇳🇱", GN: "🇬🇳",
 };
-
-const LUGGAGE_TYPES = [
-  { kg: 23, label: "23 kg", emoji: "🧳", color: "bg-blue-500" },
-  { kg: 15, label: "15 kg", emoji: "👜", color: "bg-amber-500" },
-  { kg: 12, label: "12 kg", emoji: "🎒", color: "bg-emerald-500" },
-];
 
 interface SmartVoyageFormProps {
   open: boolean;
@@ -64,22 +58,18 @@ export function SmartVoyageForm({
     airline: "",
   });
 
-  // Luggage counters
   const [luggage, setLuggage] = useState<Record<number, number>>({ 23: 0, 15: 0, 12: 0 });
 
-  const totalCapacity = useMemo(() => {
-    return Object.entries(luggage).reduce((sum, [kg, count]) => sum + Number(kg) * count, 0);
-  }, [luggage]);
+  const totalCapacity = useMemo(() =>
+    Object.entries(luggage).reduce((sum, [kg, count]) => sum + Number(kg) * count, 0),
+  [luggage]);
 
-  const totalBags = useMemo(() => {
-    return Object.values(luggage).reduce((sum, c) => sum + c, 0);
-  }, [luggage]);
+  const totalBags = useMemo(() =>
+    Object.values(luggage).reduce((sum, c) => sum + c, 0),
+  [luggage]);
 
   const adjustLuggage = (kg: number, delta: number) => {
-    setLuggage(prev => ({
-      ...prev,
-      [kg]: Math.max(0, (prev[kg] || 0) + delta),
-    }));
+    setLuggage(prev => ({ ...prev, [kg]: Math.max(0, (prev[kg] || 0) + delta) }));
   };
 
   useEffect(() => {
@@ -88,8 +78,9 @@ export function SmartVoyageForm({
 
   useEffect(() => {
     if (open) {
+      const minDate = format(addDays(new Date(), 1), "yyyy-MM-dd");
       setForm({
-        departureDate: selectedDate ? format(selectedDate, "yyyy-MM-dd'T'HH:mm") : "",
+        departureDate: selectedDate ? format(selectedDate, "yyyy-MM-dd") : minDate,
         arrivalDate: "",
         flightNumber: "",
         airline: "",
@@ -145,10 +136,11 @@ export function SmartVoyageForm({
 
   const currencySymbol = getCurrencySymbol(gpData.currency as any);
   const getFlag = (code: string) => FLAGS[code] || "🌍";
+  const minDate = format(addDays(new Date(), 1), "yyyy-MM-dd");
 
   const handleSubmit = async () => {
     if (!form.departureDate || totalCapacity <= 0) {
-      toast({ title: "Champs requis", description: "Date et au moins 1 valise obligatoires", variant: "destructive" });
+      toast({ title: "Champs requis", description: "Date et au moins 1 bagage requis", variant: "destructive" });
       return;
     }
     if (new Date(form.departureDate) <= new Date()) {
@@ -177,16 +169,16 @@ export function SmartVoyageForm({
       });
       if (error) {
         if (error.code === "23505") {
-          toast({ title: "Doublon détecté", description: "Vous avez déjà un départ actif à cette date sur cette route", variant: "destructive" });
+          toast({ title: "Doublon", description: "Départ déjà existant à cette date", variant: "destructive" });
           return;
         }
         throw error;
       }
-      toast({ title: "✈️ Voyage créé !", description: `${currentRoute.origin.city} → ${currentRoute.destination.city} · ${totalCapacity} kg` });
+      toast({ title: "Voyage créé", description: `${currentRoute.origin.city} → ${currentRoute.destination.city} · ${totalCapacity} kg` });
       onSuccess();
       onClose();
     } catch (error: any) {
-      toast({ title: "Erreur", description: error.message || "Impossible de créer", variant: "destructive" });
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -194,211 +186,180 @@ export function SmartVoyageForm({
 
   return (
     <Drawer open={open} onOpenChange={(o) => !loading && !o && onClose()}>
-      <DrawerContent className="max-h-[95vh] focus:outline-none">
-        {/* Teal header */}
-        <div className="bg-primary text-primary-foreground px-5 py-4 rounded-t-2xl">
-          <div className="flex items-center gap-2.5">
-            <Plane className="w-5 h-5" />
-            <h2 className="text-lg font-bold">Nouveau voyage</h2>
-          </div>
+      <DrawerContent className="max-h-[92vh] focus:outline-none">
+        <div className="bg-primary text-primary-foreground px-4 py-3 rounded-t-2xl flex items-center gap-2">
+          <Plane className="w-4 h-4" />
+          <h2 className="text-base font-bold">Nouveau voyage</h2>
         </div>
 
-        <div className="px-5 py-5 space-y-5 overflow-y-auto pb-safe" style={{ maxHeight: 'calc(95vh - 72px)' }}>
-          {/* Route card — locked */}
-          <div className="rounded-2xl border-2 border-primary/20 bg-primary/5 p-4">
-            <div className="flex items-center justify-center gap-5">
-              <div className="text-center">
-                <span className="text-3xl">{getFlag(currentRoute.origin.country)}</span>
-                <p className="text-xs font-medium mt-1">{currentRoute.origin.city}</p>
-              </div>
-              <motion.div animate={{ x: [0, 3, 0] }} transition={{ repeat: Infinity, duration: 2.5 }}>
-                <Plane className={`w-5 h-5 text-primary ${tripType === "retour" ? "rotate-180" : ""}`} />
-              </motion.div>
-              <div className="text-center">
-                <span className="text-3xl">{getFlag(currentRoute.destination.country)}</span>
-                <p className="text-xs font-medium mt-1">{currentRoute.destination.city}</p>
-              </div>
+        <div className="px-4 py-4 space-y-4 overflow-y-auto pb-safe" style={{ maxHeight: 'calc(92vh - 56px)' }}>
+          {/* Route card */}
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex items-center justify-center gap-4">
+            <div className="text-center">
+              <span className="text-2xl">{getFlag(currentRoute.origin.country)}</span>
+              <p className="text-[11px] font-medium mt-0.5">{currentRoute.origin.city}</p>
             </div>
-            <div className="flex justify-center mt-2.5">
-              <Badge className="bg-orange-500 hover:bg-orange-600 text-white text-[11px] gap-1 px-3 py-1">
-                <MapPin className="w-3 h-3" /> Navette verrouillée
-              </Badge>
+            <Plane className={`w-4 h-4 text-primary ${tripType === "retour" ? "rotate-180" : ""}`} />
+            <div className="text-center">
+              <span className="text-2xl">{getFlag(currentRoute.destination.country)}</span>
+              <p className="text-[11px] font-medium mt-0.5">{currentRoute.destination.city}</p>
             </div>
           </div>
 
-          {/* Aller / Retour toggle */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Aller / Retour */}
+          <div className="grid grid-cols-2 gap-2">
             <Button
               type="button"
               variant={tripType === "aller" ? "default" : "outline"}
-              className={`h-12 text-sm font-semibold gap-2 rounded-xl ${tripType === "aller" ? "" : "border-2"}`}
+              className="h-10 text-xs font-semibold gap-1.5 rounded-lg"
               onClick={() => setTripType("aller")}
             >
-              <Plane className="w-4 h-4" /> Aller
+              <Plane className="w-3.5 h-3.5" /> Aller
             </Button>
             <Button
               type="button"
               variant={tripType === "retour" ? "default" : "outline"}
-              className={`h-12 text-sm font-semibold gap-2 rounded-xl ${tripType === "retour" ? "" : "border-2"}`}
+              className="h-10 text-xs font-semibold gap-1.5 rounded-lg"
               onClick={() => setTripType("retour")}
             >
-              <Luggage className="w-4 h-4" /> Retour
+              <Luggage className="w-3.5 h-3.5" /> Retour
             </Button>
           </div>
 
-          {/* Date de départ */}
-          <div className="space-y-2">
-            <Label className="text-sm flex items-center gap-1.5 text-muted-foreground">
-              <Calendar className="w-4 h-4" /> Date de départ *
+          {/* Date de départ (date only) */}
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5" /> Date de départ
             </Label>
             <Input
-              type="datetime-local"
+              type="date"
               value={form.departureDate}
-              min={new Date().toISOString().slice(0, 16)}
+              min={minDate}
               onChange={(e) => setForm({ ...form, departureDate: e.target.value })}
-              className="h-12 rounded-xl border-2 border-primary/30 focus:border-primary"
+              className="h-10 rounded-lg border-2 border-primary/30 focus:border-primary"
             />
           </div>
 
-          {/* ── Luggage counter ── */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium flex items-center gap-1.5">
-              <Luggage className="w-4 h-4" /> Vos bagages *
+          {/* Luggage counter */}
+          <div className="space-y-2">
+            <Label className="text-xs font-medium flex items-center gap-1">
+              <Luggage className="w-3.5 h-3.5" /> Bagages
             </Label>
 
-            <div className="space-y-2.5">
-              {LUGGAGE_TYPES.map(({ kg, label, emoji, color }) => (
+            <div className="space-y-1.5">
+              {LUGGAGE_PRESETS.map(({ kg, label, sublabel }) => (
                 <div
                   key={kg}
-                  className="flex items-center justify-between rounded-xl border-2 border-border bg-card p-3"
+                  className="flex items-center justify-between rounded-lg border bg-card px-3 py-2"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{emoji}</span>
-                    <div>
-                      <p className="text-sm font-semibold">{label}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {kg === 23 ? "Valise soute" : kg === 15 ? "Valise cabine" : "Bagage cabine"}
-                      </p>
-                    </div>
+                  <div>
+                    <p className="text-sm font-semibold">{label}</p>
+                    <p className="text-[10px] text-muted-foreground">{sublabel}</p>
                   </div>
-
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="h-9 w-9 rounded-full border-2 shrink-0"
+                      type="button" variant="outline" size="icon"
+                      className="h-8 w-8 rounded-full"
                       onClick={() => adjustLuggage(kg, -1)}
                       disabled={!luggage[kg]}
                     >
-                      <Minus className="w-4 h-4" />
+                      <Minus className="w-3.5 h-3.5" />
                     </Button>
-
                     <motion.span
                       key={luggage[kg]}
-                      initial={{ scale: 1.3 }}
+                      initial={{ scale: 1.2 }}
                       animate={{ scale: 1 }}
-                      className="w-8 text-center text-lg font-bold tabular-nums"
+                      className="w-7 text-center text-base font-bold tabular-nums"
                     >
                       {luggage[kg] || 0}
                     </motion.span>
-
                     <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="h-9 w-9 rounded-full border-2 shrink-0"
+                      type="button" variant="outline" size="icon"
+                      className="h-8 w-8 rounded-full"
                       onClick={() => adjustLuggage(kg, 1)}
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-3.5 h-3.5" />
                     </Button>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Total bar */}
-            <motion.div
-              key={totalCapacity}
-              initial={{ scale: 0.97 }}
-              animate={{ scale: 1 }}
-              className={`flex items-center justify-between rounded-xl p-3.5 border-2 ${
-                totalCapacity > 0
-                  ? "border-primary bg-primary/10"
-                  : "border-border bg-muted/40"
-              }`}
-            >
-              <span className="text-sm font-medium text-muted-foreground">
+            {/* Total */}
+            <div className={`flex items-center justify-between rounded-lg p-2.5 border ${
+              totalCapacity > 0 ? "border-primary bg-primary/10" : "border-border bg-muted/40"
+            }`}>
+              <span className="text-xs text-muted-foreground">
                 {totalBags} bagage{totalBags !== 1 ? "s" : ""}
               </span>
-              <span className={`text-xl font-bold ${totalCapacity > 0 ? "text-primary" : "text-muted-foreground"}`}>
+              <span className={`text-lg font-bold ${totalCapacity > 0 ? "text-primary" : "text-muted-foreground"}`}>
                 {totalCapacity} kg
               </span>
-            </motion.div>
+            </div>
           </div>
 
-          {/* Compagnie + N° Vol */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Compagnie</Label>
+          {/* Compagnie + Vol */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className="text-[10px] text-muted-foreground">Compagnie</Label>
               <AirlineSelect
                 value={form.airline}
                 onChange={(v) => setForm({ ...form, airline: v })}
                 placeholder="Compagnie..."
               />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">N° Vol</Label>
+            <div className="space-y-1">
+              <Label className="text-[10px] text-muted-foreground">N° Vol</Label>
               <Input
                 placeholder="AF123"
                 value={form.flightNumber}
                 onChange={(e) => setForm({ ...form, flightNumber: e.target.value })}
-                className="h-11 rounded-xl"
+                className="h-10 rounded-lg"
               />
             </div>
           </div>
 
-          {/* Date d'arrivée estimée */}
-          <div className="space-y-2">
-            <Label className="text-sm text-muted-foreground flex items-center gap-1.5">
-              <Clock className="w-4 h-4" /> Date d'arrivée estimée
+          {/* Date d'arrivée */}
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" /> Arrivée estimée
             </Label>
             <Input
-              type="datetime-local"
+              type="date"
               value={form.arrivalDate}
-              min={form.departureDate}
+              min={form.departureDate || minDate}
               onChange={(e) => setForm({ ...form, arrivalDate: e.target.value })}
-              className="h-12 rounded-xl border-2 border-primary/30 focus:border-primary"
+              className="h-10 rounded-lg border-2 border-primary/30 focus:border-primary"
             />
           </div>
 
           {/* Prix verrouillé */}
-          <div className="flex items-center justify-between p-3.5 rounded-xl bg-muted/60 border">
-            <span className="text-sm text-muted-foreground flex items-center gap-2">
-              <Info className="w-4 h-4" /> Prix verrouillé
+          <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/60 border text-sm">
+            <span className="text-muted-foreground flex items-center gap-1.5">
+              <Info className="w-3.5 h-3.5" /> Prix verrouillé
             </span>
-            <span className="font-bold text-sm">
+            <span className="font-bold">
               {gpData.basePricePerKg.toLocaleString()} {currencySymbol}/kg
             </span>
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-1 pb-4">
+          <div className="flex gap-2 pt-1 pb-3">
             <Button
               variant="outline"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 h-12 rounded-xl border-2 text-sm font-semibold"
+              className="flex-1 h-11 rounded-lg text-sm font-semibold"
             >
               Annuler
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={loading || totalCapacity <= 0}
-              className="flex-1 h-12 rounded-xl text-sm font-semibold gap-2"
+              className="flex-1 h-11 rounded-lg text-sm font-semibold gap-1.5"
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
                   <CheckCircle className="w-4 h-4" />
