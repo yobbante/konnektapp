@@ -1,12 +1,13 @@
 /**
  * SmartVoyageForm — Redesigned voyage creation form
  * Matches the mobile-first teal design with locked route card
+ * Interactive luggage counter for capacity selection
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   Plane, Weight, Calendar, Clock, CheckCircle,
-  MapPin, Info, Luggage
+  MapPin, Info, Luggage, Plus, Minus
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +26,12 @@ const FLAGS: Record<string, string> = {
   AE: "🇦🇪", GB: "🇬🇧", BE: "🇧🇪", MA: "🇲🇦", TN: "🇹🇳", GA: "🇬🇦", CG: "🇨🇬",
   DE: "🇩🇪", ES: "🇪🇸", IT: "🇮🇹", CH: "🇨🇭", NL: "🇳🇱", GN: "🇬🇳",
 };
+
+const LUGGAGE_TYPES = [
+  { kg: 23, label: "23 kg", emoji: "🧳", color: "bg-blue-500" },
+  { kg: 15, label: "15 kg", emoji: "👜", color: "bg-amber-500" },
+  { kg: 12, label: "12 kg", emoji: "🎒", color: "bg-emerald-500" },
+];
 
 interface SmartVoyageFormProps {
   open: boolean;
@@ -53,10 +60,27 @@ export function SmartVoyageForm({
   const [form, setForm] = useState({
     departureDate: "",
     arrivalDate: "",
-    capacity: "",
     flightNumber: "",
     airline: "",
   });
+
+  // Luggage counters
+  const [luggage, setLuggage] = useState<Record<number, number>>({ 23: 0, 15: 0, 12: 0 });
+
+  const totalCapacity = useMemo(() => {
+    return Object.entries(luggage).reduce((sum, [kg, count]) => sum + Number(kg) * count, 0);
+  }, [luggage]);
+
+  const totalBags = useMemo(() => {
+    return Object.values(luggage).reduce((sum, c) => sum + c, 0);
+  }, [luggage]);
+
+  const adjustLuggage = (kg: number, delta: number) => {
+    setLuggage(prev => ({
+      ...prev,
+      [kg]: Math.max(0, (prev[kg] || 0) + delta),
+    }));
+  };
 
   useEffect(() => {
     if (open && gpId) loadGpData();
@@ -67,10 +91,10 @@ export function SmartVoyageForm({
       setForm({
         departureDate: selectedDate ? format(selectedDate, "yyyy-MM-dd'T'HH:mm") : "",
         arrivalDate: "",
-        capacity: "",
         flightNumber: "",
         airline: "",
       });
+      setLuggage({ 23: 0, 15: 0, 12: 0 });
     }
   }, [open, selectedDate]);
 
@@ -123,8 +147,8 @@ export function SmartVoyageForm({
   const getFlag = (code: string) => FLAGS[code] || "🌍";
 
   const handleSubmit = async () => {
-    if (!form.departureDate || !form.capacity || parseFloat(form.capacity) <= 0) {
-      toast({ title: "Champs requis", description: "Date et capacité obligatoires", variant: "destructive" });
+    if (!form.departureDate || totalCapacity <= 0) {
+      toast({ title: "Champs requis", description: "Date et au moins 1 valise obligatoires", variant: "destructive" });
       return;
     }
     if (new Date(form.departureDate) <= new Date()) {
@@ -145,8 +169,8 @@ export function SmartVoyageForm({
         arrival_date: form.arrivalDate || null,
         price_per_kg: gpData.basePricePerKg,
         currency: gpData.currency,
-        total_capacity: parseFloat(form.capacity),
-        available_capacity: parseFloat(form.capacity),
+        total_capacity: totalCapacity,
+        available_capacity: totalCapacity,
         flight_number: form.flightNumber || null,
         airline: form.airline || null,
         status: "active",
@@ -158,7 +182,7 @@ export function SmartVoyageForm({
         }
         throw error;
       }
-      toast({ title: "✈️ Voyage créé !", description: `${currentRoute.origin.city} → ${currentRoute.destination.city}` });
+      toast({ title: "✈️ Voyage créé !", description: `${currentRoute.origin.city} → ${currentRoute.destination.city} · ${totalCapacity} kg` });
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -236,23 +260,81 @@ export function SmartVoyageForm({
             />
           </div>
 
-          {/* Capacité */}
-          <div className="space-y-2">
+          {/* ── Luggage counter ── */}
+          <div className="space-y-3">
             <Label className="text-sm font-medium flex items-center gap-1.5">
-              <Luggage className="w-4 h-4" /> Capacité totale (kg) *
+              <Luggage className="w-4 h-4" /> Vos bagages *
             </Label>
-            <Input
-              type="number"
-              inputMode="decimal"
-              step="0.5"
-              placeholder="Ex: 46 (2×23kg) ou 61 (2×23+15)"
-              className="h-12 text-lg rounded-xl border-2 border-primary/30 focus:border-primary"
-              value={form.capacity}
-              onChange={(e) => setForm({ ...form, capacity: e.target.value })}
-            />
-            <p className="text-[11px] text-muted-foreground">
-              💡 Indiquez le total de tous vos bagages (ex: 2 valises de 23kg + 1 de 15kg = 61 kg)
-            </p>
+
+            <div className="space-y-2.5">
+              {LUGGAGE_TYPES.map(({ kg, label, emoji, color }) => (
+                <div
+                  key={kg}
+                  className="flex items-center justify-between rounded-xl border-2 border-border bg-card p-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{emoji}</span>
+                    <div>
+                      <p className="text-sm font-semibold">{label}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {kg === 23 ? "Valise soute" : kg === 15 ? "Valise cabine" : "Bagage cabine"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9 rounded-full border-2 shrink-0"
+                      onClick={() => adjustLuggage(kg, -1)}
+                      disabled={!luggage[kg]}
+                    >
+                      <Minus className="w-4 h-4" />
+                    </Button>
+
+                    <motion.span
+                      key={luggage[kg]}
+                      initial={{ scale: 1.3 }}
+                      animate={{ scale: 1 }}
+                      className="w-8 text-center text-lg font-bold tabular-nums"
+                    >
+                      {luggage[kg] || 0}
+                    </motion.span>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9 rounded-full border-2 shrink-0"
+                      onClick={() => adjustLuggage(kg, 1)}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Total bar */}
+            <motion.div
+              key={totalCapacity}
+              initial={{ scale: 0.97 }}
+              animate={{ scale: 1 }}
+              className={`flex items-center justify-between rounded-xl p-3.5 border-2 ${
+                totalCapacity > 0
+                  ? "border-primary bg-primary/10"
+                  : "border-border bg-muted/40"
+              }`}
+            >
+              <span className="text-sm font-medium text-muted-foreground">
+                {totalBags} bagage{totalBags !== 1 ? "s" : ""}
+              </span>
+              <span className={`text-xl font-bold ${totalCapacity > 0 ? "text-primary" : "text-muted-foreground"}`}>
+                {totalCapacity} kg
+              </span>
+            </motion.div>
           </div>
 
           {/* Compagnie + N° Vol */}
@@ -312,7 +394,7 @@ export function SmartVoyageForm({
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={loading || !form.capacity || parseFloat(form.capacity) <= 0}
+              disabled={loading || totalCapacity <= 0}
               className="flex-1 h-12 rounded-xl text-sm font-semibold gap-2"
             >
               {loading ? (
@@ -320,7 +402,7 @@ export function SmartVoyageForm({
               ) : (
                 <>
                   <CheckCircle className="w-4 h-4" />
-                  Créer le voyage
+                  Créer · {totalCapacity} kg
                 </>
               )}
             </Button>
