@@ -48,7 +48,6 @@ interface Voyage {
 interface Booking {
   id: string;
   order_number: string;
-  sender_name: string | null;
   recipient_name: string | null;
   weight: number;
   total_price: number;
