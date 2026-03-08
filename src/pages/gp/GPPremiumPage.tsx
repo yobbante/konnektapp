@@ -31,6 +31,8 @@ const STANDARD_FEATURES = [
 
 const PREMIUM_FEATURES = [
   { label: "Tout Standard, plus :", highlight: false, separator: true },
+  { label: "Réservations clients jusqu'à 12h avant départ", highlight: true },
+  { label: "Heure de départ précise sur vos voyages", highlight: true },
   { label: "Priorité dans les résultats de recherche", highlight: true },
   { label: "Auto-acceptation des commandes", highlight: true },
   { label: "Dashboard performances avancé", highlight: true },
@@ -41,9 +43,9 @@ const PREMIUM_FEATURES = [
 
 const PRO_FEATURES = [
   { label: "Tout Premium, plus :", separator: true },
-  { label: "Visibilité maximale" },
-  { label: "Boost automatique des trajets" },
-  { label: "Commission réduite" },
+  { label: "Réservations clients jusqu'à 4h avant départ", highlight: true },
+  { label: "Visibilité maximale + boost auto" },
+  { label: "Commission réduite de 40%" },
   { label: "Analytics avancés" },
   { label: "Support prioritaire dédié" },
 ];
