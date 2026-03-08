@@ -31,12 +31,13 @@ export interface AuthFormData {
   fullName?: string;
   phone?: string;
   country?: string;
+  city?: string;
 }
 
 // Login steps: phone → password (or fallback to email → password)
 type LoginStep = "phone" | "password" | "email-fallback";
-// Register steps: type → phone → credentials
-type RegisterStep = "country" | "type" | "phone" | "credentials";
+// Register steps: country → city → phone → type → credentials
+type RegisterStep = "country" | "city" | "phone" | "type" | "credentials";
 
 export function InteractiveAuthForm({
   mode,
