@@ -26,6 +26,7 @@ const STANDARD_FEATURES = [
   "Recevoir des demandes",
   "Accepter manuellement",
   "Visibilité standard",
+  "Réservations fermées 24h avant départ",
   "Portefeuille basique",
 ];
 
