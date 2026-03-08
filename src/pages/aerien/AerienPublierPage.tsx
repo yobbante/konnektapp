@@ -121,6 +121,24 @@ export default function AerienPublierPage() {
             <h3 className="text-xs font-bold flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-primary" /> Itinéraire
             </h3>
+            {/* Navette picker for subscribers */}
+            {isPremiumOrPro && navettes.length > 0 && (
+              <div>
+                <Label className="text-[10px] mb-1">Choisir une navette</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {navettes.map((nav, i) => (
+                    <button key={i} type="button"
+                      onClick={() => setForm(f => ({ ...f, originCity: nav.origin_city, originCountry: nav.origin_country, destinationCity: nav.destination_city, destinationCountry: nav.destination_country }))}
+                      className={`text-[10px] px-2 py-1 rounded-md border transition-all ${
+                        form.originCity === nav.origin_city && form.destinationCity === nav.destination_city
+                          ? "border-primary bg-primary/10 text-primary font-medium" : "border-border hover:border-primary/50"
+                      }`}>
+                      {nav.origin_city} → {nav.destination_city}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label className="text-[10px]">Ville départ</Label>
