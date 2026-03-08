@@ -4,9 +4,10 @@
  * Detail: curved road-style route with Départ/Arrivée labels + bottom card
  */
 import { useEffect, useRef, useMemo, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Truck, Package, MapPin, Plus, Minus, LocateFixed } from "lucide-react";
+import { Truck, Package, MapPin, Plus, Minus, LocateFixed, ChevronRight } from "lucide-react";
 
 /* ─── City coordinates ─── */
 const CITY_COORDS: Record<string, [number, number]> = {
