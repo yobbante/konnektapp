@@ -2,8 +2,10 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ChevronLeft, ChevronRight, Plus, Plane, MapPin,
-  Weight, Calendar, Clock, CheckCircle, ArrowLeftRight, X, Info
+  Weight, Calendar, Clock, CheckCircle, ArrowLeftRight, X, Info,
+  Luggage, Minus
 } from "lucide-react";
+import { LUGGAGE_PRESETS } from "@/lib/bookingRules";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -435,12 +437,24 @@ function SmartVoyageFormInline({
 }) {
   const [loading, setLoading] = useState(false);
   const [tripType, setTripType] = useState<"aller" | "retour">("aller");
+  const [luggage, setLuggage] = useState<Record<number, number>>({ 23: 0, 15: 0, 12: 0 });
   const [form, setForm] = useState({
-    capacity: "23",
     airline: "",
     flightNumber: "",
     arrivalDate: "",
   });
+
+  const totalCapacity = useMemo(() =>
+    Object.entries(luggage).reduce((sum, [kg, count]) => sum + Number(kg) * count, 0),
+  [luggage]);
+
+  const totalBags = useMemo(() =>
+    Object.values(luggage).reduce((sum, c) => sum + c, 0),
+  [luggage]);
+
+  const adjustLuggage = (kg: number, delta: number) => {
+    setLuggage(prev => ({ ...prev, [kg]: Math.max(0, (prev[kg] || 0) + delta) }));
+  };
 
   const currentRoute = tripType === "aller"
     ? defaultRoute
