@@ -238,7 +238,7 @@ export default function GPPerformancesPage() {
         )}
 
         {/* ═══ PRO: Revenue trend ═══ */}
-        {isPro && (
+        {isPro && stats.revenueTrend !== null && (
           <Card className="border-violet-500/20 bg-violet-500/5">
             <CardContent className="p-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
