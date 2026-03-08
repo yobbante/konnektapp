@@ -130,10 +130,10 @@ export function MobileNav() {
         >
           {navItems.map((item) => {
             const isMenuActive = 'isMenu' in item && item.isMenu && menuOpen;
-            const isScanActive = 'isScan' in item && item.isScan && scanOpen;
+            const isMissionActive = 'isMission' in item && item.isMission && missionOpen;
             const isActive = location.pathname === item.href || 
               (item.href === "/" && location.pathname === "/") ||
-              isMenuActive || isScanActive;
+              isMenuActive || isMissionActive;
 
             // ─── MISSION BUTTON (center, circle) ───
             if ('isMission' in item && item.isMission) {
