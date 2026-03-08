@@ -271,6 +271,17 @@ export default function SmartBookingPage() {
         data: offerData
       } = await offerQuery.single();
       if (offerData) {
+        // Check booking cutoff: block if departure is within 48h
+        const { isOfferBookable, getBookingCutoffMessage } = await import("@/lib/bookingRules");
+        if (!isOfferBookable(offerData.departure_date)) {
+          toast({
+            title: "Réservations fermées",
+            description: getBookingCutoffMessage(),
+            variant: "destructive"
+          });
+          navigate(-1);
+          return;
+        }
         setOffer(offerData);
       }
 
