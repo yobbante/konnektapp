@@ -50,6 +50,15 @@ export default function GPParametresPage() {
 
   useEffect(() => { loadData(); }, []);
 
+  // Auto-scroll to section from query params
+  useEffect(() => {
+    if (!loading && searchParams.get("section") === "premium" && premiumRef.current) {
+      setTimeout(() => {
+        premiumRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
+    }
+  }, [loading, searchParams]);
+
   const loadData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
