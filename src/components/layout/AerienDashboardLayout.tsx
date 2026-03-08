@@ -3,16 +3,20 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   Plane, Bell, ScanLine, Lock,
   Home, Package, MessageCircle, UserCircle,
-  Settings, LogOut, MapPin,
-  History, Wallet,
-  ChevronRight, Eye, EyeOff, Shield, Plus
+  Settings, LogOut, MapPin, Plus,
+  History, Wallet, DollarSign,
+  ChevronRight, Eye, EyeOff, Shield,
+  BarChart3, Crown, Rocket
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { GPNotificationsDropdown } from "@/components/gp/dashboard/GPNotificationsDropdown";
+import { GPKYCBadge, getGPDisplayStatus } from "@/components/gp/GPKYCBadge";
 import { GPScanSheet } from "@/components/scan/GPScanSheet";
+import { PremiumCTABanner } from "@/components/gp/PremiumCTABanner";
 import { cn } from "@/lib/utils";
+import { useEnforceDashboardRole } from "@/hooks/useSmartRedirect";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AerienDashboardLayoutProps {
@@ -22,9 +26,14 @@ interface AerienDashboardLayoutProps {
     business_name: string;
     gp_type: string;
     status: string;
+    kyc_level?: number;
+    base_origin_city?: string | null;
+    base_destination_city?: string | null;
+    subscription?: string;
   };
   pendingCount?: number;
   activeOrdersCount?: number;
+  onNewVoyage?: () => void;
 }
 
 export function AerienDashboardLayout({
@@ -32,6 +41,7 @@ export function AerienDashboardLayout({
   gpProfile,
   pendingCount = 0,
   activeOrdersCount = 0,
+  onNewVoyage,
 }: AerienDashboardLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -44,6 +54,10 @@ export function AerienDashboardLayout({
 
   const isVerified = gpProfile.status === "verified" || gpProfile.status === "premium" || gpProfile.status === "starter";
   const totalBadge = pendingCount + activeOrdersCount;
+  const kycLevel = gpProfile.kyc_level ?? 0;
+  const displayStatus = getGPDisplayStatus(gpProfile.status, kycLevel);
+
+  useEnforceDashboardRole("aerien");
 
   useEffect(() => {
     if (showWallet && !walletData) {
@@ -82,9 +96,16 @@ export function AerienDashboardLayout({
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* HEADER */}
+      {/* HEADER — Matches GP style */}
       <header
-        className="sticky top-0 z-50 bg-gradient-to-r from-primary to-primary/90 shadow-lg"
+        className={cn(
+          "sticky top-0 z-50 shadow-lg",
+          (gpProfile as any).subscription === "pro"
+            ? "bg-gradient-to-r from-violet-700 via-violet-600 to-purple-600"
+            : (gpProfile as any).subscription === "premium"
+              ? "bg-gradient-to-r from-amber-600 via-amber-500 to-orange-500"
+              : "bg-gradient-to-r from-primary to-primary/90"
+        )}
         style={{ paddingTop: 'calc(8px + var(--safe-top, 0px))' }}
       >
         <div className="px-3 py-2.5 flex items-center justify-between gap-2">
@@ -93,32 +114,47 @@ export function AerienDashboardLayout({
               <Plane className="w-5 h-5 text-white" />
             </div>
             <div className="min-w-0">
-              <p className="text-white font-bold text-sm leading-tight truncate max-w-[120px]">
-                {gpProfile.business_name}
-              </p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-white font-bold text-sm leading-tight truncate max-w-[120px]">
+                  {gpProfile.business_name}
+                </p>
+                {(gpProfile as any).subscription === "pro" ? (
+                  <span className="inline-flex items-center gap-0.5 h-4 px-1.5 rounded text-[10px] font-bold bg-white text-violet-700 border border-white/80 shadow-sm">
+                    <Rocket className="w-2.5 h-2.5" /> Pro
+                  </span>
+                ) : (gpProfile as any).subscription === "premium" ? (
+                  <span className="inline-flex items-center gap-0.5 h-4 px-1.5 rounded text-[10px] font-bold bg-white text-amber-700 border border-white/80 shadow-sm">
+                    <Crown className="w-2.5 h-2.5" /> Premium
+                  </span>
+                ) : (
+                  <GPKYCBadge status={displayStatus} kycLevel={kycLevel} size="sm" />
+                )}
+              </div>
               <span className="text-[10px] text-white/60 font-medium">Aérien Cargo</span>
+              {gpProfile.base_origin_city && gpProfile.base_destination_city && (
+                <p className="text-white/70 text-[10px] leading-tight truncate">
+                  {gpProfile.base_origin_city} → {gpProfile.base_destination_city}
+                </p>
+              )}
             </div>
           </div>
 
           <div className="flex items-center gap-1.5">
+            {isVerified && onNewVoyage && (
+              <Button onClick={onNewVoyage} size="icon" className="h-8 w-8 rounded-full bg-white/15 hover:bg-white/25 text-white border-none">
+                <Plus className="w-4 h-4" />
+              </Button>
+            )}
             {isVerified && (
               <Button
                 onClick={() => setShowWallet(prev => !prev)}
                 size="icon"
-                className={cn(
-                  "h-8 w-8 rounded-full border-none transition-all",
-                  showWallet ? "bg-white/30 text-white" : "bg-white/15 hover:bg-white/25 text-white"
-                )}
+                className={cn("h-8 w-8 rounded-full border-none transition-all", showWallet ? "bg-white/30 text-white" : "bg-white/15 hover:bg-white/25 text-white")}
               >
                 <Wallet className="w-4 h-4" />
               </Button>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative text-white hover:bg-white/10 w-8 h-8 flex-shrink-0"
-              onClick={() => setShowNotifications(true)}
-            >
+            <Button variant="ghost" size="icon" className="relative text-white hover:bg-white/10 w-8 h-8 flex-shrink-0" onClick={() => setShowNotifications(true)}>
               <Bell className="w-4.5 h-4.5" />
               {totalBadge > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
@@ -133,14 +169,15 @@ export function AerienDashboardLayout({
       {/* WALLET DROPDOWN */}
       <AnimatePresence>
         {showWallet && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-            className="sticky top-[calc(52px+var(--safe-top,0px))] z-40 overflow-hidden"
-          >
-            <div className="bg-gradient-to-b from-primary/95 to-primary/85 backdrop-blur-xl border-b border-white/10 px-4 py-4">
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: "easeOut" }} className="sticky top-[calc(52px+var(--safe-top,0px))] z-40 overflow-hidden">
+            <div className={cn(
+              "backdrop-blur-xl border-b border-white/10 px-4 py-4",
+              (gpProfile as any).subscription === "pro"
+                ? "bg-gradient-to-b from-violet-700/95 to-violet-600/85"
+                : (gpProfile as any).subscription === "premium"
+                  ? "bg-gradient-to-b from-amber-500/95 to-amber-600/85"
+                  : "bg-gradient-to-b from-primary/95 to-primary/85"
+            )}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Wallet className="w-4 h-4 text-white/70" />
@@ -167,12 +204,8 @@ export function AerienDashboardLayout({
                       </span>
                     </div>
                   )}
-                  <button
-                    onClick={() => { setShowWallet(false); navigate("/aerien/wallet"); }}
-                    className="w-full flex items-center justify-center gap-2 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold py-2.5 rounded-xl transition-all active:scale-[0.98]"
-                  >
-                    Voir le détail
-                    <ChevronRight className="w-3.5 h-3.5" />
+                  <button onClick={() => { setShowWallet(false); navigate("/aerien/wallet"); }} className="w-full flex items-center justify-center gap-2 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold py-2.5 rounded-xl transition-all active:scale-[0.98]">
+                    Voir le détail <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
               ) : (
@@ -185,45 +218,28 @@ export function AerienDashboardLayout({
         )}
       </AnimatePresence>
 
-      {/* MAIN CONTENT */}
       <main className="flex-1 pb-20">{children}</main>
 
       {/* BOTTOM NAV */}
-      <nav
-        className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border/50 md:hidden"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
-      >
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border/50 md:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         <div className="flex items-center justify-around h-16 px-1">
           <NavItem icon={Home} label="Accueil" active={currentTab === "apercu"} onClick={() => navigate("/aerien/apercu")} />
           <NavItem icon={Package} label="Fret" active={currentTab === "missions"} badge={pendingCount + activeOrdersCount} locked={!isVerified} onClick={() => isVerified && navigate("/aerien/demandes")} />
 
-          {/* SCAN central */}
-          <button
-            onClick={() => isVerified && setShowScanSheet(true)}
-            disabled={!isVerified}
-            className="flex flex-col items-center justify-center flex-1 h-full relative"
-          >
-            <motion.div
-              className={cn("w-14 h-14 -mt-6 rounded-full flex items-center justify-center shadow-xl", isVerified ? "bg-primary" : "bg-muted")}
-              whileTap={isVerified ? { scale: 0.9 } : undefined}
-            >
+          <button onClick={() => isVerified && setShowScanSheet(true)} disabled={!isVerified} className="flex flex-col items-center justify-center flex-1 h-full relative">
+            <motion.div className={cn("w-14 h-14 -mt-6 rounded-full flex items-center justify-center shadow-xl", isVerified ? "bg-primary" : "bg-muted")} whileTap={isVerified ? { scale: 0.9 } : undefined}>
               {isVerified ? <ScanLine className="w-6 h-6 text-primary-foreground" /> : <Lock className="w-5 h-5 text-muted-foreground" />}
             </motion.div>
             {isVerified && (
               <motion.div className="absolute inset-0 flex items-start justify-center" style={{ top: '-6px' }}>
-                <motion.div
-                  className="w-14 h-14 rounded-full border-2 border-primary/30"
-                  animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0, 0.5] }}
-                  transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                />
+                <motion.div className="w-14 h-14 rounded-full border-2 border-primary/30" animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }} />
               </motion.div>
             )}
-            <span className="text-[10px] font-bold mt-0.5 text-muted-foreground">Scan</span>
+            <span className={cn("text-[10px] font-bold mt-0.5", "text-muted-foreground")}>Scan</span>
           </button>
 
           <NavItem icon={MessageCircle} label="Messages" active={currentTab === "messages"} onClick={() => navigate("/aerien/messages")} />
 
-          {/* Profil menu */}
           <Sheet open={showMenu} onOpenChange={setShowMenu}>
             <SheetTrigger asChild>
               <button className={cn("flex flex-col items-center justify-center flex-1 h-full gap-0.5", currentTab === "profil" ? "text-primary" : "text-muted-foreground")}>
@@ -235,16 +251,21 @@ export function AerienDashboardLayout({
               <SheetHeader className="pb-4">
                 <SheetTitle className="text-left">Menu Aérien</SheetTitle>
               </SheetHeader>
-              <div className="grid grid-cols-3 gap-3 pb-4">
+              <div className="grid grid-cols-3 gap-3 pb-3">
+                <MenuBtn icon={BarChart3} label="Performances" onClick={() => { setShowMenu(false); navigate("/aerien/apercu"); }} />
                 <MenuBtn icon={MapPin} label="Profil public" onClick={() => { setShowMenu(false); navigate("/aerien/profil-public"); }} />
                 <MenuBtn icon={Package} label="Fret" badge={pendingCount} locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/aerien/demandes"); }}} />
-                <MenuBtn icon={Plane} label="Corridors" onClick={() => { setShowMenu(false); navigate("/aerien/apercu"); }} />
-                <MenuBtn icon={Wallet} label="Wallet" locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/aerien/wallet"); }}} />
                 <MenuBtn icon={Plus} label="Publier" onClick={() => { setShowMenu(false); navigate("/aerien/publier"); }} />
+                <MenuBtn icon={Wallet} label="Wallet" locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/aerien/wallet"); }}} />
+                <MenuBtn icon={DollarSign} label="Tarifs" onClick={() => { setShowMenu(false); navigate("/aerien/parametres"); }} />
+                <MenuBtn icon={Plane} label="Corridors" onClick={() => { setShowMenu(false); navigate("/aerien/apercu"); }} />
                 <MenuBtn icon={History} label="Historique" onClick={() => { setShowMenu(false); navigate("/aerien/historique"); }} />
-                <MenuBtn icon={Shield} label="KTP" onClick={() => { setShowMenu(false); navigate("/aerien/apercu"); }} />
+                <MenuBtn icon={Shield} label="KTP & Geo" onClick={() => { setShowMenu(false); navigate("/aerien/apercu"); }} />
                 <MenuBtn icon={Settings} label="Réglages" onClick={() => { setShowMenu(false); navigate("/aerien/parametres"); }} />
                 <MenuBtn icon={LogOut} label="Déconnexion" variant="destructive" onClick={() => { setShowMenu(false); handleSignOut(); }} />
+              </div>
+              <div className="pb-3">
+                <PremiumCTABanner variant="compact" context="menu" subscription={(gpProfile as any).subscription} />
               </div>
             </SheetContent>
           </Sheet>
@@ -291,7 +312,7 @@ function MenuBtn({ icon: Icon, label, badge, locked, variant, onClick }: {
           <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-destructive text-destructive-foreground text-[8px] font-bold rounded-full flex items-center justify-center">{badge}</span>
         )}
       </div>
-      <span className={cn("text-[10px] font-medium text-center", variant === "destructive" ? "text-destructive" : "text-foreground")}>{label}</span>
+      <span className={cn("text-[11px] font-medium text-center", variant === "destructive" ? "text-destructive" : "text-foreground")}>{label}</span>
     </button>
   );
 }
