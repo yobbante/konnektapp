@@ -322,7 +322,7 @@ export default function GPParametresPage() {
           <Separator />
           <SettingsRow icon={ScanLine} iconColor="text-purple-500" iconBg="bg-purple-500/10" label="Scanner QR" desc="Caméra" onClick={() => navigate("/gp/scan")} />
           <Separator />
-          <SettingsRow icon={BarChart3} iconColor="text-amber-500" iconBg="bg-amber-500/10" label="Performances" desc={isPremium ? "Statistiques avancées" : "🔒 Premium"} onClick={() => navigate("/gp/performances")} />
+          <SettingsRow icon={BarChart3} iconColor="text-amber-500" iconBg="bg-amber-500/10" label="Performances" desc={isPremium ? "Statistiques avancées" : "Découvrir"} onClick={() => navigate("/gp/performances")} />
         </SettingsSection>
 
         {/* ═══ 4. SÉCURITÉ ═══ */}
@@ -379,7 +379,7 @@ export default function GPParametresPage() {
             iconColor="text-emerald-500" 
             iconBg="bg-emerald-500/10" 
             label="Auto-acceptation" 
-            desc={isPremium && (gpProfile as any).auto_accept_enabled ? "Activée ✅" : isPremium ? "Désactivée" : "🔒 Premium"} 
+            desc={isPremium && (gpProfile as any).auto_accept_enabled ? "Activée ✅" : isPremium ? "Désactivée" : "Découvrir"} 
             onClick={() => navigate("/gp/auto-accept")} 
           />
         </SettingsSection>
