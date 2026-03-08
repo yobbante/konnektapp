@@ -273,7 +273,7 @@ export default function RoutierParametresPage() {
           <Separator />
           <SettingsRow icon={BarChart3} iconColor="text-amber-500" iconBg="bg-amber-500/10" label="Performances" desc={isPremium ? "Statistiques" : "Découvrir"} onClick={() => navigate("/routier/performances")} />
           <Separator />
-          <SettingsRow icon={Zap} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Auto-acceptation" desc={isPremium && gpProfile.auto_accept_enabled ? "Activée ✅" : isPremium ? "Désactivée" : "Découvrir"} onClick={() => {}} />
+          <SettingsRow icon={Zap} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Auto-acceptation" desc={isPremium && gpProfile.auto_accept_enabled ? "Activée ✅" : isPremium ? "Désactivée" : "Découvrir"} onClick={() => navigate(isPremium ? "/routier/auto-accept" : "/routier/premium")} />
         </SettingsSection>
 
         {/* ═══ 6. SÉCURITÉ & FINANCES ═══ */}
@@ -290,7 +290,7 @@ export default function RoutierParametresPage() {
           <SettingsRow icon={Crown} iconColor="text-amber-500" iconBg="bg-amber-500/10" label="Mon plan" desc={`${subLabel} — ${isPremium ? "Actif" : "Comparer les offres"}`} onClick={() => navigate("/routier/premium")} />
         </SettingsSection>
 
-        <PremiumCTABanner variant="compact" context="menu" subscription={gpProfile.subscription} />
+        <PremiumCTABanner variant="compact" context="menu" subscription={gpProfile.subscription} premiumRoute="/routier/premium" />
 
         {/* ═══ 8. NOTIFICATIONS ═══ */}
         <SettingsSection title="Notifications">
