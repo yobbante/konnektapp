@@ -12,7 +12,7 @@ import {
   Calendar, RefreshCw, Scale, Wallet, Plus, ScanLine,
   TrendingUp, Shield, History, Camera, FileText, Check,
   Bell, Zap, Star, ArrowRight, CheckCircle2, Truck, Activity,
-  UserCheck, AlertOctagon, ShieldAlert, Lock, Crown } from
+  UserCheck, AlertOctagon, ShieldAlert, Lock, Crown, Rocket } from
 "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -619,8 +619,15 @@ export default function GPApercuPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-bold">Performance du mois</h3>
-                    <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30 text-[9px] h-4 gap-0.5">
-                      <Crown className="w-2.5 h-2.5" /> Premium
+                    <Badge className={cn(
+                      "text-[9px] h-4 gap-0.5 border",
+                      (gpProfile as any)?.subscription === "pro"
+                        ? "bg-violet-500/15 text-violet-600 border-violet-500/30"
+                        : "bg-amber-500/15 text-amber-600 border-amber-500/30"
+                    )}>
+                      {(gpProfile as any)?.subscription === "pro"
+                        ? <><Rocket className="w-2.5 h-2.5" /> Pro</>
+                        : <><Crown className="w-2.5 h-2.5" /> Premium</>}
                     </Badge>
                   </div>
                   <Button variant="ghost" size="sm" className="text-xs h-7 gap-1" onClick={() => navigate("/gp/performances")}>
