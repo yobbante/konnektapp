@@ -329,6 +329,7 @@ export function GPDashboardLayout({
                 <MenuButton icon={ShieldX} label="Restrictions" onClick={() => { setShowMenu(false); navigate("/gp/restrictions"); }} />
                 <MenuButton icon={ListChecks} label="Distribution" locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/distribution"); }}} />
                 <MenuButton icon={History} label="Historique" onClick={() => { setShowMenu(false); navigate("/gp/historique"); }} />
+                <MenuButton icon={BarChart3} label="Performances" onClick={() => { setShowMenu(false); navigate("/gp/performances"); }} />
                 <MenuButton icon={Shield} label="KTP & Geo" onClick={() => { setShowMenu(false); navigate("/gp/ktp-geotrack"); }} />
                 <MenuButton icon={Settings} label="Réglages" onClick={() => { setShowMenu(false); navigate("/gp/parametres"); }} />
                 <MenuButton icon={LogOut} label="Déconnexion" variant="destructive" onClick={() => { setShowMenu(false); handleSignOut(); }} />
