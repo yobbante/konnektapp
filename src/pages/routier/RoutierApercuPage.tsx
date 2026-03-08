@@ -76,13 +76,15 @@ export default function RoutierApercuPage() {
     if (!gpProfile) return;
     if (refresh) setRefreshing(true);
     try {
-      const [ordersRes, walletRes, vehiclesRes, navettesRes] = await Promise.all([
+      const [ordersRes, walletRes, vehiclesRes, navettesRes, missionsRes] = await Promise.all([
         supabase.from("orders").select("id, order_number, origin_city, destination_city, weight, status, total_price, currency, created_at, description, recipient_name")
           .eq("gp_id", gpProfile.id).not("status", "eq", "cancelled").order("created_at", { ascending: false }),
         supabase.from("gp_wallets").select("balance, pending_balance, currency").eq("gp_id", gpProfile.id).maybeSingle(),
         supabase.from("vehicles").select("id, name, vehicle_type, is_active, max_weight_kg").eq("gp_id", gpProfile.id),
         supabase.from("gp_offers").select("id, origin_city, destination_city, departure_date, available_capacity, total_capacity, price_per_kg, currency, status, vehicle_id")
           .eq("gp_id", gpProfile.id).eq("status", "active").order("departure_date", { ascending: true }),
+        supabase.from("routier_missions").select("id, origin_city, destination_city, weight_kg, freight_type, vehicle_type_required, client_budget, estimated_price, currency, urgency, created_at, status")
+          .in("status", ["open", "matching", "negotiating"]).order("created_at", { ascending: false }).limit(5),
       ]);
 
       const orders = ordersRes.data || [];
@@ -102,9 +104,9 @@ export default function RoutierApercuPage() {
           missions: orders.length,
           avgRating: gpProfile.rating || 0,
         },
-        pendingActions: { pendingOrders: pending.length, marketplaceMissions: 0 },
+        pendingActions: { pendingOrders: pending.length, marketplaceMissions: (missionsRes.data || []).length },
         navettes: navettesRes.data || [],
-        missionRequests: [],
+        missionRequests: missionsRes.data || [],
       });
     } catch (err) {
       console.error("Dashboard load error:", err);
