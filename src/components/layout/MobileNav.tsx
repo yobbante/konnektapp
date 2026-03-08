@@ -63,7 +63,6 @@ export function MobileNav() {
   const navItems = [
     { href: "/", icon: Home, label: "Accueil", isHome: true },
     { href: "/?offres=1", icon: Search, label: "Offres", isOffres: true },
-    { href: "#scan", icon: ScanLine, label: "Scan", isScan: true },
     { href: "/reservations", icon: CalendarCheck, label: "Réservations", requiresAuth: true },
     { href: "#menu", icon: Menu, label: "Menu", isMenu: true },
   ];
