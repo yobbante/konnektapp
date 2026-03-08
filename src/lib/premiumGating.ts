@@ -22,6 +22,12 @@ export function isGPPremium(subscription?: string): boolean {
   return subscription === "premium" || subscription === "pro";
 }
 
+export function getPremiumCommissionDiscount(subscription?: string): number {
+  if (subscription === "pro") return 0.60;
+  if (subscription === "premium") return 0.80;
+  return 1.00;
+}
+
 export function canAccessFeature(subscription?: string, _feature?: PremiumFeature): boolean {
   return isGPPremium(subscription);
 }

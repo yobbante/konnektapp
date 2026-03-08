@@ -4982,7 +4982,7 @@ export type Database = {
         | "premium"
         | "suspended"
         | "rejected"
-      gp_subscription: "free" | "premium"
+      gp_subscription: "free" | "premium" | "pro"
       gp_type:
         | "express"
         | "routier"
@@ -5206,7 +5206,7 @@ export const Constants = {
         "suspended",
         "rejected",
       ],
-      gp_subscription: ["free", "premium"],
+      gp_subscription: ["free", "premium", "pro"],
       gp_type: [
         "express",
         "routier",

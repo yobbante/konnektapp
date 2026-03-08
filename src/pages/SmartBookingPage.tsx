@@ -313,7 +313,7 @@ export default function SmartBookingPage() {
       if (walletRes.data?.commission_rate) {
         let rate = walletRes.data.commission_rate;
         // Apply premium discount: Premium -20%, Pro -40%
-        const sub = gpSubRes.data?.subscription;
+        const sub = gpSubRes.data?.subscription as string;
         if (sub === 'pro') rate = Math.round(rate * 60) / 100;
         else if (sub === 'premium') rate = Math.round(rate * 80) / 100;
         setGpCommissionRate(rate);

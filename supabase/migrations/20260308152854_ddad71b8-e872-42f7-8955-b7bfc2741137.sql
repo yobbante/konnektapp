@@ -1,0 +1,1 @@
+ALTER TYPE public.gp_subscription ADD VALUE IF NOT EXISTS 'pro';
