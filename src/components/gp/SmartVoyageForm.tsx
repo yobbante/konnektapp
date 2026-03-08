@@ -168,18 +168,20 @@ export function SmartVoyageForm({
       return;
     }
 
-    // Check for existing active offer on the same date
+    // Check for existing active offer on the same date AND same route
     const { data: existing } = await supabase
       .from("gp_offers")
       .select("id")
       .eq("gp_id", gpId)
       .eq("status", "active")
+      .eq("origin_city", currentRoute.origin.city)
+      .eq("destination_city", currentRoute.destination.city)
       .gte("departure_date", form.departureDate + "T00:00:00")
       .lte("departure_date", form.departureDate + "T23:59:59")
       .limit(1);
 
     if (existing && existing.length > 0) {
-      toast({ title: "Départ existant", description: "Vous avez déjà un départ prévu à cette date", variant: "destructive" });
+      toast({ title: "Départ existant", description: "Vous avez déjà un départ sur cette route à cette date", variant: "destructive" });
       return;
     }
 
