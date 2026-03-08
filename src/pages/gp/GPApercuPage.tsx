@@ -652,63 +652,39 @@ export default function GPApercuPage() {
               </div>
           }
 
-            {/* ── PREMIUM CTA (dashboard) ── */}
-            {!isGPPremium((gpProfile as any)?.subscription) && (
-              <PremiumCTABanner variant="compact" context="dashboard" isPremium={isGPPremium((gpProfile as any)?.subscription)} gpId={gpProfile.id} />
-            )}
-
-            {/* ── PERFORMANCE ── */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold">Performance du mois</h3>
-                {isGPPremium((gpProfile as any)?.subscription) && (
+            {/* ── PERFORMANCE DU MOIS (Premium only) ── */}
+            {isGPPremium((gpProfile as any)?.subscription) && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold">Performance du mois</h3>
+                    <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30 text-[9px] h-4 gap-0.5">
+                      <Crown className="w-2.5 h-2.5" /> Premium
+                    </Badge>
+                  </div>
                   <Button variant="ghost" size="sm" className="text-xs h-7 gap-1" onClick={() => navigate("/gp/performances")}>
                     Détails <ChevronRight className="w-3 h-3" />
                   </Button>
-                )}
-              </div>
-
-              {isGPPremium((gpProfile as any)?.subscription) ? (
-                <>
-                  <div className="grid grid-cols-4 gap-2">
-                    <MiniStat label="Livrés" value={String(data.stats.delivered)} icon={CheckCircle2} color="text-green-600" />
-                    <MiniStat label="Réussite" value={`${data.stats.successRate}%`} icon={Activity} color="text-primary" />
-                    <MiniStat label="Litiges" value={String(data.stats.disputes)} icon={AlertTriangle} color={data.stats.disputes > 0 ? "text-destructive" : "text-muted-foreground"} />
-                    <MiniStat label="Manuel%" value={`${data.stats.manualPercent}%`} icon={UserCheck} color={data.stats.manualPercent > 20 ? "text-secondary" : "text-muted-foreground"} />
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  <MiniStat label="Livrés" value={String(data.stats.delivered)} icon={CheckCircle2} color="text-green-600" />
+                  <MiniStat label="Réussite" value={`${data.stats.successRate}%`} icon={Activity} color="text-primary" />
+                  <MiniStat label="Litiges" value={String(data.stats.disputes)} icon={AlertTriangle} color={data.stats.disputes > 0 ? "text-destructive" : "text-muted-foreground"} />
+                  <MiniStat label="Manuel%" value={`${data.stats.manualPercent}%`} icon={UserCheck} color={data.stats.manualPercent > 20 ? "text-secondary" : "text-muted-foreground"} />
+                </div>
+                {data.stats.manualPercent > 20 &&
+                  <div className="p-2.5 rounded-xl bg-secondary/10 border border-secondary/20 text-xs text-muted-foreground flex items-center gap-2">
+                    <Zap className="w-3.5 h-3.5 text-secondary flex-shrink-0" />
+                    Passez sous 20% de colis manuels pour booster votre score KTP.
                   </div>
-                  {data.stats.manualPercent > 20 &&
-                    <div className="p-2.5 rounded-xl bg-secondary/10 border border-secondary/20 text-xs text-muted-foreground flex items-center gap-2">
-                      <Zap className="w-3.5 h-3.5 text-secondary flex-shrink-0" />
-                      Passez sous 20% de colis manuels pour booster votre score KTP.
-                    </div>
-                  }
-                </>
-              ) : (
-                <Card className="relative overflow-hidden">
-                  <CardContent className="p-3">
-                    {/* Blurred preview */}
-                    <div className="grid grid-cols-4 gap-2 blur-[6px] select-none pointer-events-none opacity-60">
-                      <MiniStat label="Livrés" value="--" icon={CheckCircle2} color="text-muted-foreground" />
-                      <MiniStat label="Réussite" value="--%" icon={Activity} color="text-muted-foreground" />
-                      <MiniStat label="Litiges" value="--" icon={AlertTriangle} color="text-muted-foreground" />
-                      <MiniStat label="Manuel%" value="--%" icon={UserCheck} color="text-muted-foreground" />
-                    </div>
-                    {/* Lock overlay */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-card/60 backdrop-blur-[2px]">
-                      <Lock className="w-5 h-5 text-amber-500 mb-1.5" />
-                      <p className="text-xs font-semibold mb-0.5">Stats réservées Premium</p>
-                      <Button
-                        size="sm"
-                        className="h-7 text-[11px] gap-1 bg-amber-500 hover:bg-amber-600 text-white mt-1"
-                        onClick={() => navigate("/gp/parametres?section=premium")}
-                      >
-                        <Crown className="w-3 h-3" /> Débloquer
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                }
+              </div>
+            )}
+
+            {/* ── PREMIUM CTA (only for non-subscribers) ── */}
+            {!isGPPremium((gpProfile as any)?.subscription) && (
+              <PremiumCTABanner variant="banner" context="dashboard" isPremium={false} gpId={gpProfile.id} />
+            )}
 
             {/* ── DEPARTURES ── */}
             <div className="space-y-2">
