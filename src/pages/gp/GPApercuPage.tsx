@@ -681,6 +681,11 @@ export default function GPApercuPage() {
               </div>
             )}
 
+            {/* ── PREMIUM CTA (only for non-subscribers) ── */}
+            {!isGPPremium((gpProfile as any)?.subscription) && (
+              <PremiumCTABanner variant="banner" context="dashboard" isPremium={false} gpId={gpProfile.id} />
+            )}
+
             {/* ── DEPARTURES ── */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
