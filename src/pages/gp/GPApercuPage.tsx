@@ -478,6 +478,110 @@ export default function GPApercuPage() {
               </div>
             </div>
 
+            {/* ── PROCHAIN DÉPART — Contexte intelligent ── */}
+            {data.departures.length > 0 && (() => {
+              const dep = data.departures[0];
+              const depDate = new Date(dep.departure_date);
+              const daysUntil = Math.ceil((depDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+              const hasPending = data.pendingParcels.length > 0;
+              const hasActive = data.activeParcels.length > 0;
+              const totalColisForTrip = data.pendingParcels.length + data.activeParcels.length;
+              const fillPercent = dep.available_capacity > 0 
+                ? Math.round(((dep.total_capacity || dep.available_capacity + (data.activeParcels.reduce((s: number, c: any) => s + (c.weight || 0), 0))) - dep.available_capacity) / (dep.total_capacity || dep.available_capacity + data.activeParcels.reduce((s: number, c: any) => s + (c.weight || 0), 0)) * 100) 
+                : 0;
+
+              return (
+                <div className="space-y-2">
+                  {/* Mini-bandeau départ */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                      <h3 className="text-sm font-bold">
+                        {dep.origin_city} → {dep.destination_city}
+                      </h3>
+                      <Badge variant="outline" className="text-[10px] h-4">
+                        {daysUntil === 0 ? "Aujourd'hui" : daysUntil === 1 ? "Demain" : `J-${daysUntil}`}
+                      </Badge>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">
+                      {format(depDate, "d MMM · HH'h'mm", { locale: fr })}
+                    </span>
+                  </div>
+
+                  {/* Jauge capacité */}
+                  <div className="bg-card rounded-xl border border-border/40 p-3 space-y-2">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-muted-foreground">Capacité restante</span>
+                      <span className="font-bold">{dep.available_capacity} kg dispo</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-muted/60 overflow-hidden">
+                      <div 
+                        className="h-full rounded-full bg-accent transition-all" 
+                        style={{ width: `${Math.min(fillPercent, 100)}%` }} 
+                      />
+                    </div>
+
+                    {hasPending ? (
+                      /* Aperçu des demandes en attente */
+                      <div className="pt-1 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-semibold text-secondary">
+                            {data.pendingParcels.length} demande{data.pendingParcels.length > 1 ? "s" : ""} en attente
+                          </span>
+                          <Button variant="ghost" size="sm" className="h-5 text-[10px] px-1.5" onClick={() => navigate("/gp/demandes")}>
+                            Tout voir <ChevronRight className="w-3 h-3 ml-0.5" />
+                          </Button>
+                        </div>
+                        {data.pendingParcels.slice(0, 2).map((c: any) => (
+                          <div 
+                            key={c.id}
+                            className="flex items-center gap-2 p-2 rounded-lg bg-secondary/5 border border-secondary/15 cursor-pointer active:scale-[0.99]"
+                            onClick={() => navigate(`/gp/order/${c.id}`)}
+                          >
+                            <div className="w-7 h-7 rounded-lg bg-secondary/15 flex items-center justify-center flex-shrink-0">
+                              <Package className="w-3.5 h-3.5 text-secondary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[11px] font-medium truncate">{c.description || `${c.weight} kg`}</p>
+                              <p className="text-[10px] text-muted-foreground">#{c.order_number?.slice(-6)} · {formatDistanceToNow(new Date(c.created_at), { locale: fr, addSuffix: true })}</p>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button size="sm" className="h-6 text-[10px] px-2 bg-accent hover:bg-accent/90 text-accent-foreground"
+                                onClick={(e) => { e.stopPropagation(); handleQuickStatusUpdate(c.id, "accepted"); }}
+                                disabled={updatingOrder === c.id}>
+                                {updatingOrder === c.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : "Accepter"}
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : hasActive ? (
+                      /* Résumé des colis en cours */
+                      <div className="flex items-center justify-between pt-1 text-[11px]">
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <Truck className="w-3.5 h-3.5" />
+                          <span>{data.activeParcels.length} colis en cours de traitement</span>
+                        </div>
+                        <Button variant="ghost" size="sm" className="h-5 text-[10px] px-1.5" onClick={() => navigate("/gp/colis?filter=active")}>
+                          Voir <ChevronRight className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      /* Aucun colis — incitation */
+                      <div className="flex items-center gap-3 pt-1">
+                        <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0">
+                          <Send className="w-4 h-4 text-muted-foreground/40" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-[11px] font-medium text-muted-foreground">Aucune réservation pour ce voyage</p>
+                          <p className="text-[10px] text-muted-foreground/60">Partagez votre offre pour attirer des clients</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* ── PENDING PARCELS — Action requise ── */}
             {data.pendingParcels.length > 0 &&
