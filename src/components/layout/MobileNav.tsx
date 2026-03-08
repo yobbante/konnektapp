@@ -75,10 +75,10 @@ export function MobileNav() {
       return;
     }
 
-    // Scan button - open camera immediately
-    if ('isScan' in item && item.isScan) {
+    // Mission button - open mission request sheet
+    if ('isMission' in item && item.isMission) {
       e.preventDefault();
-      setScanOpen(true);
+      setMissionOpen(true);
       return;
     }
 
@@ -135,26 +135,26 @@ export function MobileNav() {
               (item.href === "/" && location.pathname === "/") ||
               isMenuActive || isScanActive;
 
-            // ─── SCAN BUTTON (center, circle, instant camera) ───
-            if ('isScan' in item && item.isScan) {
+            // ─── MISSION BUTTON (center, circle) ───
+            if ('isMission' in item && item.isMission) {
               return (
                 <button
-                  key="scan"
+                  key="mission"
                   onClick={(e) => handleNavClick(e as any, item as any)}
                   className="flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors relative"
                 >
                   <motion.div 
                     className={cn(
                       "w-12 h-12 -mt-5 rounded-full flex items-center justify-center shadow-lg relative",
-                      isActive
+                      missionOpen
                         ? "bg-primary"
                         : "bg-gradient-to-br from-primary to-accent"
                     )}
                     whileTap={{ scale: 0.9 }}
                     whileHover={{ scale: 1.05 }}
                   >
-                    <ScanLine className="w-5 h-5 text-primary-foreground" />
-                    {!isActive && (
+                    <Send className="w-5 h-5 text-primary-foreground" />
+                    {!missionOpen && (
                       <motion.div
                         className="absolute inset-0 rounded-full border-2 border-primary/30"
                         animate={{ scale: [1, 1.2, 1], opacity: [0.6, 0, 0.6] }}
@@ -164,7 +164,7 @@ export function MobileNav() {
                   </motion.div>
                   <span className={cn(
                     "text-[10px] font-semibold",
-                    isActive ? "text-primary" : "text-muted-foreground"
+                    missionOpen ? "text-primary" : "text-muted-foreground"
                   )}>
                     {item.label}
                   </span>
@@ -227,6 +227,9 @@ export function MobileNav() {
 
       {/* Client Scan Sheet - instant camera */}
       <ClientScanSheet open={scanOpen} onOpenChange={setScanOpen} />
+
+      {/* Mission Request Sheet */}
+      <MissionRequestSheet open={missionOpen} onOpenChange={setMissionOpen} />
       
       {/* Central Menu Sheet */}
       <CentralMenuSheet open={menuOpen} onOpenChange={setMenuOpen}>

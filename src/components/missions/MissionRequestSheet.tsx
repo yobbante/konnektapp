@@ -73,7 +73,7 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
       }
 
       if (mode === "routier") {
-        const { error } = await supabase.from("routier_missions").insert({
+        const { error } = await supabase.from("routier_missions").insert([{
           client_id: session.user.id,
           origin_city: originCity.trim(),
           origin_country: originCountry.trim() || "Sénégal",
@@ -87,7 +87,7 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
           urgency: isUrgent ? "express" as const : "normal" as const,
           mission_number: `MSN-${Date.now()}`,
           status: "open",
-        });
+        }]);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("freight_requests").insert({
