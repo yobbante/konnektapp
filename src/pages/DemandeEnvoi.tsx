@@ -108,7 +108,7 @@ export default function DemandeEnvoi() {
           gp_id
         `)
         .eq("status", "active")
-        .gte("departure_date", new Date().toISOString())
+        .gte("departure_date", new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString())
         .order("departure_date", { ascending: true });
 
       if (error) throw error;
