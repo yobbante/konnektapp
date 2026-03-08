@@ -35,7 +35,7 @@ interface GPCompactCalendarProps {
 
 const WEEKDAYS_SHORT = ["L", "M", "M", "J", "V", "S", "D"];
 
-export function GPCompactCalendar({ departures, onDateTap }: GPCompactCalendarProps) {
+export function GPCompactCalendar({ departures, onDateTap, onDepartureTap }: GPCompactCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const monthDays = useMemo(() => {
@@ -159,7 +159,7 @@ export function GPCompactCalendar({ departures, onDateTap }: GPCompactCalendarPr
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
             .slice(0, 4)
             .map(dep => (
-              <div key={dep.id} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/50">
+              <div key={dep.id} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/50 cursor-pointer active:scale-[0.98] transition-all" onClick={() => onDepartureTap?.(dep.id)}>
                 <div className="flex items-center gap-2.5">
                   <div className={cn(
                     "w-8 h-8 rounded-lg flex items-center justify-center",
