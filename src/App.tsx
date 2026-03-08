@@ -121,6 +121,7 @@ import GPWalletPage from "./pages/gp/GPWalletPage";
 import GPPerformancesPage from "./pages/gp/GPPerformancesPage";
 import GPPremiumPage from "./pages/gp/GPPremiumPage";
 import GPAutoAcceptPage from "./pages/gp/GPAutoAcceptPage";
+import GPFacturationPage from "./pages/gp/GPFacturationPage";
 const queryClient = new QueryClient();
 
 const App = () => (
