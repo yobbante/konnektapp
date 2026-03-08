@@ -426,31 +426,36 @@ export default function RoutierApercuPage() {
               </Button>
             </div>
             <div className="space-y-2">
-              {data.missionRequests.slice(0, 3).map((m: any) => (
-                <Card key={m.id} className="cursor-pointer active:scale-[0.99] border-accent/20"
-                  onClick={() => navigate("/routier/demandes")}>
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
-                        <Package className="w-5 h-5 text-accent" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate">{m.origin_city} → {m.destination_city}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <Badge variant="outline" className="text-[9px] h-4 px-1.5">{m.vehicle_type_requested?.replace(/_/g, " ") || m.freight_type}</Badge>
-                          <span className="text-xs text-muted-foreground">{m.weight_kg} kg</span>
+              {data.missionRequests.slice(0, 3).map((m: any) => {
+                const size = getSizeFromWeight(m.weight_kg || 0);
+                const freight = freightTypeLabels[m.freight_type] || { label: m.freight_type, emoji: "📦" };
+                const price = m.client_budget || m.estimated_price || 0;
+                return (
+                  <Card key={m.id} className="cursor-pointer active:scale-[0.99] border-accent/20"
+                    onClick={() => navigate("/routier/demandes")}>
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                            <span className="text-sm font-semibold truncate">{m.origin_city}</span>
+                            <ArrowRight className="w-3 h-3 text-muted-foreground shrink-0" />
+                            <span className="text-sm font-semibold truncate">{m.destination_city}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="text-xs">{freight.emoji}</span>
+                            <span className="text-xs text-muted-foreground">{m.weight_kg} kg</span>
+                            <Badge className={cn("text-[9px] h-4 px-1.5 font-bold", size.bg, size.color)}>{size.label}</Badge>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-bold text-primary">{price.toLocaleString()} CFA</p>
                         </div>
                       </div>
-                      <div className="text-right shrink-0">
-                        {m.budget_max && <p className="text-xs font-bold text-primary">{m.budget_max.toLocaleString()} {m.currency}</p>}
-                        <p className="text-[10px] text-muted-foreground">
-                          {formatDistanceToNow(new Date(m.created_at), { locale: fr, addSuffix: true })}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </motion.div>
         )}
