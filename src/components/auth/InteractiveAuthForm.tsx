@@ -31,12 +31,13 @@ export interface AuthFormData {
   fullName?: string;
   phone?: string;
   country?: string;
+  city?: string;
 }
 
 // Login steps: phone → password (or fallback to email → password)
 type LoginStep = "phone" | "password" | "email-fallback";
-// Register steps: type → phone → credentials
-type RegisterStep = "country" | "type" | "phone" | "credentials";
+// Register steps: country → city → phone → type → credentials
+type RegisterStep = "country" | "city" | "phone" | "type" | "credentials";
 
 export function InteractiveAuthForm({
   mode,
@@ -59,7 +60,9 @@ export function InteractiveAuthForm({
     fullName: "",
     phone: prefillPhone || "",
     country: prefillCountry,
+    city: "",
   });
+  const [cityInput, setCityInput] = useState("");
 
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [phoneError, setPhoneError] = useState<string | null>(null);
@@ -89,9 +92,10 @@ export function InteractiveAuthForm({
   const getProgress = () => {
     if (mode === "login") return loginStep === "phone" ? 50 : 100;
     switch (registerStep) {
-      case "country": return 25;
-      case "type": return 50;
-      case "phone": return 75;
+      case "country": return 20;
+      case "city": return 40;
+      case "phone": return 60;
+      case "type": return 80;
       case "credentials": return 100;
       default: return 0;
     }
@@ -155,7 +159,7 @@ export function InteractiveAuthForm({
     const isDuplicate = await checkPhoneDuplicate(formData.phone || "");
     if (!isDuplicate) {
       setFormData(prev => ({ ...prev, phone: `${selectedDialCode} ${prev.phone}` }));
-      setRegisterStep("credentials");
+      setRegisterStep("type");
     }
   };
 
@@ -238,8 +242,9 @@ export function InteractiveAuthForm({
     onModeChange("register");
     setRegisterStep("country");
     setPhoneError(null);
-    setFormData({ email: "", password: "", fullName: "", phone: "", country: "SN" });
+    setFormData({ email: "", password: "", fullName: "", phone: "", country: "SN", city: "" });
     setSelectedCountry("SN");
+    setCityInput("");
     setTouched({});
     setCheckingPhone(false);
   };
@@ -587,7 +592,7 @@ export function InteractiveAuthForm({
                       setSelectedCountry(c.code);
                       setFormData(prev => ({ ...prev, country: c.code }));
                       setCountrySearch("");
-                      setRegisterStep("type");
+                      setRegisterStep("city");
                     }}
                     className={`w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-muted transition-colors ${selectedCountry === c.code ? "bg-primary/10 font-medium" : ""}`}
                   >
@@ -601,7 +606,61 @@ export function InteractiveAuthForm({
           </motion.div>
         )}
 
-        {/* Register Step 1: Choose profile type */}
+        {/* Register Step 1: City */}
+        {mode === "register" && registerStep === "city" && (
+          <motion.div
+            key="register-city"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            className="space-y-4"
+          >
+            <div className="flex items-center gap-2 mb-6">
+              <Button variant="ghost" size="icon" onClick={() => setRegisterStep("country")}>
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              <div>
+                <h2 className="text-xl font-bold">Votre ville</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {COUNTRY_OPTIONS.find(c => c.code === selectedCountry)?.flag}{" "}
+                  {COUNTRY_OPTIONS.find(c => c.code === selectedCountry)?.name}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm">Ville de résidence *</Label>
+              <div className="relative">
+                <Input
+                  placeholder="Ex: Dakar, Abidjan, Paris..."
+                  className="h-12 text-base"
+                  value={cityInput}
+                  onChange={(e) => setCityInput(e.target.value)}
+                  autoFocus
+                />
+                {cityInput.length >= 2 && (
+                  <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Cela nous aide à vous proposer les services disponibles dans votre zone
+              </p>
+            </div>
+
+            <Button
+              className="w-full h-12 mt-4"
+              disabled={cityInput.length < 2}
+              onClick={() => {
+                setFormData(prev => ({ ...prev, city: cityInput }));
+                setRegisterStep("phone");
+              }}
+            >
+              Continuer <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
+          </motion.div>
+        )}
+
+        {/* Register Step 2: Choose profile type */}
         {mode === "register" && registerStep === "type" && (
           <motion.div
             key="register-type"
@@ -611,7 +670,7 @@ export function InteractiveAuthForm({
             className="space-y-4"
           >
             <div className="flex items-center gap-2 mb-6">
-              <Button variant="ghost" size="icon" onClick={() => setRegisterStep("country")}>
+              <Button variant="ghost" size="icon" onClick={() => setRegisterStep("phone")}>
                 <ChevronLeft className="w-5 h-5" />
               </Button>
               <div>
@@ -623,7 +682,7 @@ export function InteractiveAuthForm({
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setRegisterStep("phone")}
+              onClick={() => setRegisterStep("credentials")}
               className="w-full p-5 rounded-2xl border-2 border-border bg-card hover:border-primary hover:bg-primary/5 transition-all"
             >
               <div className="flex items-center gap-4">
@@ -668,7 +727,7 @@ export function InteractiveAuthForm({
             className="space-y-4"
           >
             <div className="flex items-center gap-2 mb-6">
-              <Button variant="ghost" size="icon" onClick={() => setRegisterStep("type")}>
+              <Button variant="ghost" size="icon" onClick={() => setRegisterStep("city")}>
                 <ChevronLeft className="w-5 h-5" />
               </Button>
               <div>
@@ -754,7 +813,7 @@ export function InteractiveAuthForm({
             exit={{ opacity: 0, x: -50 }}
           >
             <div className="flex items-center gap-2 mb-6">
-              <Button variant="ghost" size="icon" onClick={() => { setRegisterStep("phone"); setFormData(prev => ({ ...prev, phone: prev.phone?.replace(selectedDialCode + " ", "") || "" })); }}>
+              <Button variant="ghost" size="icon" onClick={() => setRegisterStep("type")}>
                 <ChevronLeft className="w-5 h-5" />
               </Button>
               <div>
@@ -791,15 +850,16 @@ export function InteractiveAuthForm({
                 </div>
               )}
 
-              {/* Country is pre-filled from entry flow — show read-only badge */}
+              {/* Country + City badges */}
               {formData.country && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border">
                   <Globe className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm">
                     {COUNTRY_OPTIONS.find(c => c.code === formData.country)?.flag}{" "}
                     {COUNTRY_OPTIONS.find(c => c.code === formData.country)?.name || formData.country}
+                    {formData.city ? ` — ${formData.city}` : ""}
                   </span>
-                  <span className="text-[10px] text-muted-foreground ml-auto">Pays de résidence</span>
+                  <span className="text-[10px] text-muted-foreground ml-auto">Localisation</span>
                 </div>
               )}
 
