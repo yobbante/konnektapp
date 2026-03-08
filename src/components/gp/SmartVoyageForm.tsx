@@ -132,7 +132,7 @@ export function SmartVoyageForm({
     const [{ data: profile }, { data: lastOffer }, { data: navData }] = await Promise.all([
       supabase
         .from("gp_profiles")
-        .select("base_origin_city, base_origin_country, base_destination_city, base_destination_country, base_price_per_kg, default_currency")
+        .select("base_origin_city, base_origin_country, base_destination_city, base_destination_country, base_price_per_kg, default_currency, business_name, phone")
         .eq("id", gpId)
         .single(),
       supabase
@@ -163,6 +163,8 @@ export function SmartVoyageForm({
         baseDestCountry: profile.base_destination_country || "",
         basePricePerKg: profile.base_price_per_kg || 0,
         currency: profile.default_currency || "XOF",
+        businessName: profile.business_name || "",
+        phone: profile.phone || "",
       });
 
       if (lastOffer && profile.base_origin_city) {
