@@ -126,8 +126,8 @@ export default function GPPerformancesPage() {
 
     // Trend: compare last 2 months revenue
     const lastMonthRev = monthly[monthly.length - 1]?.revenue || 0;
-    const prevMonthRev = monthly[monthly.length - 2]?.revenue || 0;
-    const revenueTrend = prevMonthRev > 0 ? Math.round(((lastMonthRev - prevMonthRev) / prevMonthRev) * 100) : 0;
+    const prevMonthRev = monthly.length >= 2 ? (monthly[monthly.length - 2]?.revenue || 0) : null;
+    const revenueTrend = prevMonthRev !== null && prevMonthRev > 0 ? Math.round(((lastMonthRev - prevMonthRev) / prevMonthRev) * 100) : null;
 
     return {
       totalRevenue, totalCommission, netRevenue,
@@ -238,7 +238,7 @@ export default function GPPerformancesPage() {
         )}
 
         {/* ═══ PRO: Revenue trend ═══ */}
-        {isPro && (
+        {isPro && stats.revenueTrend !== null && (
           <Card className="border-violet-500/20 bg-violet-500/5">
             <CardContent className="p-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
