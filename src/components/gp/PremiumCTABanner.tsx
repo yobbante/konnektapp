@@ -236,7 +236,7 @@ export function PremiumCTABanner({ variant = "card", context = "default", isPrem
 }
 
 /** Lock overlay for premium-gated features */
-export function PremiumLockOverlay({ feature }: { feature: string }) {
+export function PremiumLockOverlay({ feature, premiumRoute = "/gp/premium" }: { feature: string; premiumRoute?: string }) {
   const navigate = useNavigate();
   return (
     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm rounded-2xl">
@@ -245,7 +245,7 @@ export function PremiumLockOverlay({ feature }: { feature: string }) {
       </div>
       <p className="text-sm font-bold mb-1">Fonctionnalité Premium</p>
       <p className="text-xs text-muted-foreground mb-3">{feature}</p>
-      <Button size="sm" className="gap-1.5 h-8 text-xs bg-amber-500 hover:bg-amber-600 text-white" onClick={() => navigate("/gp/premium")}>
+      <Button size="sm" className="gap-1.5 h-8 text-xs bg-amber-500 hover:bg-amber-600 text-white" onClick={() => navigate(premiumRoute)}>
         <Crown className="w-3.5 h-3.5" />
         Débloquer
       </Button>
