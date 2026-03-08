@@ -165,7 +165,7 @@ export default function Offres() {
           gp_id
         `)
         .eq("status", "active")
-        .gte("departure_date", new Date().toISOString().split("T")[0])
+        .gte("departure_date", new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString())
         .gt("available_capacity", 0)
         .order("departure_date", { ascending: true })
         .range(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE - 1);
