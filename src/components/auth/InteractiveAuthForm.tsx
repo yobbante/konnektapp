@@ -238,6 +238,10 @@ export function InteractiveAuthForm({
     onModeChange("register");
     setRegisterStep("country");
     setPhoneError(null);
+    setFormData({ email: "", password: "", fullName: "", phone: "", country: "SN" });
+    setSelectedCountry("SN");
+    setTouched({});
+    setCheckingPhone(false);
   };
 
   return (
