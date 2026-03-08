@@ -3,30 +3,27 @@ import { Package, Mail, Phone, MapPin, Facebook, Instagram, Linkedin, Twitter } 
 
 const footerLinks = {
   services: [
-    { label: "Express", href: "/services/express" },
-    { label: "Fret Maritime", href: "/services/maritime" },
-    { label: "Fret Aérien", href: "/services/aerien" },
-    { label: "Transport Routier", href: "/services/routier" },
-    { label: "GP Voyageur", href: "/services/voyageur" },
+    { label: "GP Bagages", href: "/offres" },
+    { label: "Fret Maritime", href: "/offres" },
+    { label: "Fret Aérien", href: "/offres" },
+    { label: "Transport Routier", href: "/offres" },
+    { label: "Coursier Express", href: "/offres" },
   ],
   entreprise: [
-    { label: "À propos", href: "/a-propos" },
-    { label: "Devenir GP", href: "/gp" },
-    { label: "Tarifs", href: "/tarifs" },
-    { label: "Blog", href: "/blog" },
-    { label: "Carrières", href: "/carrieres" },
+    { label: "Devenir Transporteur", href: "/transporteur/inscription" },
+    { label: "Envoyer un colis", href: "/envoyer" },
+    { label: "Suivi de colis", href: "/tracking" },
   ],
   support: [
-    { label: "Centre d'aide", href: "/aide" },
-    { label: "Contact", href: "/contact" },
     { label: "Suivi de colis", href: "/tracking" },
-    { label: "Réclamations", href: "/reclamations" },
-    { label: "FAQ", href: "/faq" },
+    { label: "Mes réservations", href: "/reservations" },
+    { label: "Mon profil", href: "/profil" },
+    { label: "Paramètres", href: "/settings" },
   ],
   legal: [
-    { label: "Conditions d'utilisation", href: "/cgu" },
-    { label: "Politique de confidentialité", href: "/confidentialite" },
-    { label: "Mentions légales", href: "/mentions-legales" },
+    { label: "Conditions d'utilisation", href: "#" },
+    { label: "Politique de confidentialité", href: "#" },
+    { label: "Mentions légales", href: "#" },
   ],
 };
 
