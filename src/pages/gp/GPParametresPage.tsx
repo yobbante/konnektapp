@@ -1,8 +1,9 @@
 /**
  * GPParametresPage — Paramètres GP factorisés avec composants partagés
+ * Supports ?section=premium query param for auto-scroll
  */
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Settings, User, DollarSign, Bell, ScanLine, Shield,
   Globe, LogOut, Palette, MapPin, Phone,
