@@ -168,6 +168,21 @@ export function SmartVoyageForm({
       return;
     }
 
+    // Check for existing active offer on the same date
+    const { data: existing } = await supabase
+      .from("gp_offers")
+      .select("id")
+      .eq("gp_id", gpId)
+      .eq("status", "active")
+      .gte("departure_date", form.departureDate + "T00:00:00")
+      .lte("departure_date", form.departureDate + "T23:59:59")
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      toast({ title: "Départ existant", description: "Vous avez déjà un départ prévu à cette date", variant: "destructive" });
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase.from("gp_offers").insert({

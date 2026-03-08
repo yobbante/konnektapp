@@ -64,11 +64,28 @@ export function GPNavetteManager({ gpId, subscription }: Props) {
   useEffect(() => { loadData(); }, [gpId]);
 
   const loadData = async () => {
-    const [navRes, reqRes] = await Promise.all([
+    const [navRes, reqRes, profileRes] = await Promise.all([
       supabase.from("gp_navettes").select("*").eq("gp_id", gpId).order("is_primary", { ascending: false }),
       supabase.from("gp_navette_change_requests").select("*").eq("gp_id", gpId).eq("status", "pending").order("created_at", { ascending: false }),
+      supabase.from("gp_profiles").select("base_origin_city, base_origin_country, base_destination_city, base_destination_country").eq("id", gpId).single(),
     ]);
-    setNavettes(navRes.data || []);
+    let navData = navRes.data || [];
+
+    // Auto-create base navette from profile if none exist yet
+    const profile = profileRes.data;
+    if (navData.length === 0 && profile?.base_origin_city && profile?.base_destination_city) {
+      const { data: created } = await supabase.from("gp_navettes").insert({
+        gp_id: gpId,
+        origin_city: profile.base_origin_city,
+        origin_country: profile.base_origin_country || "FR",
+        destination_city: profile.base_destination_city,
+        destination_country: profile.base_destination_country || "SN",
+        is_primary: true,
+      } as any).select();
+      if (created) navData = created;
+    }
+
+    setNavettes(navData);
     setPendingRequests(reqRes.data || []);
     setLoading(false);
   };
