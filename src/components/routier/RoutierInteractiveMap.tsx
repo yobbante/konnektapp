@@ -6,7 +6,7 @@
 import { useEffect, useRef, useMemo, useState, useCallback } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Truck, Package, MapPin } from "lucide-react";
+import { Truck, Package, MapPin, Plus, Minus, LocateFixed } from "lucide-react";
 
 /* ─── City coordinates ─── */
 const CITY_COORDS: Record<string, [number, number]> = {
@@ -271,8 +271,8 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
 
   return (
     <div className="relative rounded-xl overflow-hidden border border-border/50 shadow-sm">
-      {/* Top bar */}
-      <div className="absolute top-0 left-0 right-0 z-[1000] p-2.5 flex items-center justify-between pointer-events-none">
+      {/* Top bar: LIVE badge left + mission counters center */}
+      <div className="absolute top-0 left-0 right-16 z-[1000] p-2.5 flex items-center gap-2 pointer-events-none">
         <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md rounded-full px-2.5 py-1 pointer-events-auto">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-[10px] font-semibold text-white">LIVE</span>
@@ -297,6 +297,36 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
             </div>
           )}
         </div>
+      </div>
+
+      {/* Zoom + / - and locate button (top right) */}
+      <div className="absolute top-2.5 right-2.5 z-[1000] flex flex-col gap-1.5 pointer-events-auto">
+        <button
+          onClick={() => mapInstanceRef.current?.zoomIn()}
+          className="w-8 h-8 rounded-lg bg-background/90 backdrop-blur-sm border border-border/50 shadow-sm flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => mapInstanceRef.current?.zoomOut()}
+          className="w-8 h-8 rounded-lg bg-background/90 backdrop-blur-sm border border-border/50 shadow-sm flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+        >
+          <Minus className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => {
+            navigator.geolocation?.getCurrentPosition(
+              (pos) => {
+                mapInstanceRef.current?.setView([pos.coords.latitude, pos.coords.longitude], 10, { animate: true });
+              },
+              () => {},
+              { enableHighAccuracy: true, timeout: 5000 }
+            );
+          }}
+          className="w-8 h-8 rounded-lg bg-background/90 backdrop-blur-sm border border-border/50 shadow-sm flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+        >
+          <LocateFixed className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Detail card (bottom overlay when mission selected) */}
