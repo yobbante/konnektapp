@@ -38,6 +38,35 @@ export default function RoutierMissionDetailPage() {
   useEffect(() => {
     if (!id) return;
     (async () => {
+      // Try routier_missions first
+      const { data: mission, error: mErr } = await supabase
+        .from("routier_missions")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      if (mission) {
+        // Map mission fields to expected shape
+        setOrder({
+          ...mission,
+          order_number: mission.mission_number,
+          description: mission.merchandise_description || mission.freight_type,
+          weight: mission.weight_kg,
+          total_price: mission.client_budget || mission.estimated_price || 0,
+          currency: mission.currency || "XOF",
+          origin_city: mission.origin_city,
+          origin_country: mission.origin_country,
+          destination_city: mission.destination_city,
+          destination_country: mission.destination_country,
+          pickup_date: mission.pickup_date_start,
+          status: mission.status === "open" ? "pending" : mission.status,
+          created_at: mission.created_at,
+          has_insurance: false,
+          _source: "mission",
+        });
+        setLoading(false);
+        return;
+      }
+      // Fallback to orders
       const { data, error } = await supabase
         .from("orders")
         .select("*")
@@ -48,7 +77,7 @@ export default function RoutierMissionDetailPage() {
         navigate(-1);
         return;
       }
-      setOrder(data);
+      setOrder({ ...data, _source: "order" });
       setLoading(false);
     })();
   }, [id]);
