@@ -76,16 +76,36 @@ export function SmartVoyageForm({
     if (open && gpId) loadGpData();
   }, [open, gpId]);
 
+  // Load saved preferences from localStorage
+  const PREFS_KEY = `gp_voyage_prefs_${gpId}`;
+
+  const loadSavedPrefs = () => {
+    try {
+      const saved = localStorage.getItem(PREFS_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return null;
+  };
+
+  const savePrefs = (luggageData: Record<number, number>, airline: string) => {
+    try {
+      localStorage.setItem(PREFS_KEY, JSON.stringify({ luggage: luggageData, airline }));
+    } catch {}
+  };
+
   useEffect(() => {
     if (open) {
       const minDate = format(addDays(new Date(), 1), "yyyy-MM-dd");
+      const prefs = loadSavedPrefs();
       setForm({
         departureDate: selectedDate ? format(selectedDate, "yyyy-MM-dd") : minDate,
         arrivalDate: "",
         flightNumber: "",
-        airline: "",
+        airline: prefs?.airline || "",
       });
-      setLuggage({ 23: 0, 15: 0, 12: 0 });
+      setLuggage(prefs?.luggage && Object.values(prefs.luggage).some((v: any) => v > 0)
+        ? prefs.luggage
+        : { 23: 0, 15: 0, 12: 0 });
     }
   }, [open, selectedDate]);
 
