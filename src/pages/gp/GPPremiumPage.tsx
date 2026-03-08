@@ -403,13 +403,14 @@ export default function GPPremiumPage() {
         </Card>
 
         {/* ── PRO CARD ── */}
-        <Card className="border-border/40 opacity-75">
+        <Card className={cn("relative overflow-hidden", isPro ? "border-primary/40 shadow-md shadow-primary/10" : "border-border/60")}>
+          {isPro && <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-blue-600" />}
           <CardContent className="p-5 space-y-4">
             <div className="flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg font-bold">Pro</h3>
-                  <Badge variant="secondary" className="text-[9px] h-4">Bientôt</Badge>
+                  {isPro && <Badge className="bg-primary/15 text-primary border-primary/30 text-[9px] h-4">Actif</Badge>}
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Le maximum pour votre activité
@@ -423,9 +424,19 @@ export default function GPPremiumPage() {
               <span className="text-sm text-muted-foreground">FCFA / mois</span>
             </div>
 
-            <div className="h-10 flex items-center justify-center rounded-lg border text-xs text-muted-foreground cursor-not-allowed">
-              Bientôt disponible
-            </div>
+            {isPro ? (
+              <div className="h-11 flex items-center justify-center rounded-xl border-2 border-primary/50 text-sm font-semibold text-primary gap-1.5">
+                <Rocket className="w-4 h-4" /> Votre plan actuel
+              </div>
+            ) : (
+              <Button
+                className="w-full gap-2 h-11 text-sm font-semibold"
+                onClick={() => { setSelectedPlan("pro"); setStep("confirm"); }}
+              >
+                <Rocket className="w-4 h-4" />
+                {isPremium ? "Passer à Pro" : "Choisir Pro"}
+              </Button>
+            )}
 
             <Separator />
 
@@ -436,7 +447,7 @@ export default function GPPremiumPage() {
                     <p className="text-xs font-semibold text-foreground/80">{feat.label}</p>
                   ) : (
                     <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
-                      <Check className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0" />
+                      <Check className={cn("w-3.5 h-3.5 flex-shrink-0", isPro ? "text-primary" : "text-muted-foreground/40")} />
                       {feat.label}
                     </div>
                   )}
