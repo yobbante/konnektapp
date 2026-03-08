@@ -253,12 +253,7 @@ export function GPDashboardLayout({
         )}
       </AnimatePresence>
 
-      {/* PREMIUM/PRO UPGRADE BANNER — under header */}
-      {(gpProfile as any).subscription !== "pro" && !showWallet && (
-        <div className="sticky top-[calc(52px+var(--safe-top,0px))] z-40 px-3 py-2 bg-background/95 backdrop-blur-sm border-b">
-          <PremiumCTABanner variant="compact" context="dashboard" subscription={(gpProfile as any).subscription} />
-        </div>
-      )}
+      {/* Premium/Pro upgrade is now handled by GPKYCProgressCard */}
 
 
       {/* ══════════════════════════════════════
