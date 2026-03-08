@@ -147,6 +147,10 @@ export default function GPCalendrierPage() {
                   status: v.status === "active" ? (isFuture(new Date(v.departure_date)) ? "open" as const : "past" as const) : "past" as const,
                 }))}
                 onDateTap={handleDateTap}
+                onDepartureTap={(depId) => {
+                  const v = voyages.find(v => v.id === depId);
+                  if (v) { setSelectedVoyage(v); setShowEditVoyage(true); }
+                }}
               />
             ) : (
               <>
