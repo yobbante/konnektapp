@@ -17,6 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { AirlineSelect } from "@/components/gp/AirlineSelect";
+import { DepartureFlyerSheet } from "@/components/gp/DepartureFlyerSheet";
+import { type FlyerData } from "@/lib/generateDepartureFlyer";
 import { format, addDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import { LUGGAGE_PRESETS } from "@/lib/bookingRules";
@@ -54,6 +56,9 @@ export function SmartVoyageForm({
   const [navettes, setNavettes] = useState<NavetteRoute[]>([]);
   const [selectedNavetteIdx, setSelectedNavetteIdx] = useState(0);
 
+  const [flyerData, setFlyerData] = useState<FlyerData | null>(null);
+  const [showFlyer, setShowFlyer] = useState(false);
+
   const [gpData, setGpData] = useState<{
     baseOriginCity: string;
     baseOriginCountry: string;
@@ -61,6 +66,8 @@ export function SmartVoyageForm({
     baseDestCountry: string;
     basePricePerKg: number;
     currency: string;
+    businessName: string;
+    phone: string;
   } | null>(null);
 
   const [form, setForm] = useState({
@@ -125,7 +132,7 @@ export function SmartVoyageForm({
     const [{ data: profile }, { data: lastOffer }, { data: navData }] = await Promise.all([
       supabase
         .from("gp_profiles")
-        .select("base_origin_city, base_origin_country, base_destination_city, base_destination_country, base_price_per_kg, default_currency")
+        .select("base_origin_city, base_origin_country, base_destination_city, base_destination_country, base_price_per_kg, default_currency, business_name, phone")
         .eq("id", gpId)
         .single(),
       supabase
@@ -156,6 +163,8 @@ export function SmartVoyageForm({
         baseDestCountry: profile.base_destination_country || "",
         basePricePerKg: profile.base_price_per_kg || 0,
         currency: profile.default_currency || "XOF",
+        businessName: profile.business_name || "",
+        phone: profile.phone || "",
       });
 
       if (lastOffer && profile.base_origin_city) {
@@ -242,8 +251,28 @@ export function SmartVoyageForm({
       }
       toast({ title: "Voyage créé", description: `${currentRoute.origin.city} → ${currentRoute.destination.city} · ${totalCapacity} kg` });
       savePrefs(luggage, form.airline);
+      
+      // Generate flyer data for promo image
+      const bookingUrl = "konnektapp.lovable.app";
+      setFlyerData({
+        originCity: currentRoute.origin.city,
+        originCountry: currentRoute.origin.country,
+        destinationCity: currentRoute.destination.city,
+        destinationCountry: currentRoute.destination.country,
+        departureDate: form.departureDate,
+        pricePerKg: gpData.basePricePerKg,
+        currency: getCurrencySymbol(gpData.currency as any),
+        totalCapacity,
+        airline: form.airline || undefined,
+        flightNumber: form.flightNumber || undefined,
+        businessName: gpData.businessName,
+        phone: gpData.phone,
+        bookingUrl,
+      });
       onSuccess();
       onClose();
+      // Show flyer after a brief delay so the drawer closes first
+      setTimeout(() => setShowFlyer(true), 400);
     } catch (error: any) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } finally {
@@ -252,7 +281,9 @@ export function SmartVoyageForm({
   };
 
   return (
+    <>
     <Drawer open={open} onOpenChange={(o) => !loading && !o && onClose()}>
+    
       <DrawerContent className="max-h-[92vh] focus:outline-none [&>div:first-child]:hidden">
         <div className="bg-primary text-primary-foreground px-4 py-3 rounded-t-2xl flex items-center gap-2">
           <div className="mx-auto w-10 h-1 rounded-full bg-primary-foreground/30 mb-2" />
@@ -466,5 +497,12 @@ export function SmartVoyageForm({
         </div>
       </DrawerContent>
     </Drawer>
+
+    <DepartureFlyerSheet
+      open={showFlyer}
+      onClose={() => setShowFlyer(false)}
+      data={flyerData}
+    />
+    </>
   );
 }
