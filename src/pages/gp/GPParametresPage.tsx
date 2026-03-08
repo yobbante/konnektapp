@@ -10,7 +10,7 @@ import {
   ShieldX, Upload, BadgeCheck, Wallet, Key,
   Crown, Zap, BarChart3, Mail, HelpCircle,
   FileText, Info, Languages, Trash2,
-  Award, AlertTriangle, CheckCircle, Palette, Route,
+  Award, AlertTriangle, CheckCircle, Palette, Route, ArrowRight,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
