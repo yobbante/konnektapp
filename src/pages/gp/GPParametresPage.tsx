@@ -1,13 +1,15 @@
 /**
  * GPParametresPage — Paramètres GP factorisés avec composants partagés
+ * Supports ?section=premium query param for auto-scroll
  */
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Settings, User, DollarSign, Bell, ScanLine, Shield,
   Globe, LogOut, Palette, MapPin, Phone,
   Edit3, Save, X, MessageCircle, FileCheck,
   ShieldX, Upload, BadgeCheck, Wallet, Key, Lock,
+  Crown, Star, Zap,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
@@ -28,7 +30,9 @@ import {
 } from "@/components/settings/SharedSettingsComponents";
 
 export default function GPParametresPage() {
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const premiumRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [gpProfile, setGpProfile] = useState<any>(null);
   const [pendingCount, setPendingCount] = useState(0);
@@ -46,6 +50,15 @@ export default function GPParametresPage() {
 
   useEffect(() => { loadData(); }, []);
 
+  // Auto-scroll to section from query params
+  useEffect(() => {
+    if (!loading && searchParams.get("section") === "premium" && premiumRef.current) {
+      setTimeout(() => {
+        premiumRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
+    }
+  }, [loading, searchParams]);
+
   const loadData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -54,7 +67,7 @@ export default function GPParametresPage() {
 
       const [profileRes, prefsData] = await Promise.all([
         supabase.from("gp_profiles")
-          .select("id, business_name, gp_type, status, base_price_per_kg, default_currency, deposit_address, reception_address, phone, whatsapp_phone, description, kyc_level, kyc_status, id_document_url, selfie_url, explicit_restrictions, base_origin_city, base_origin_country, base_destination_city, base_destination_country")
+          .select("id, business_name, gp_type, status, subscription, base_price_per_kg, default_currency, deposit_address, reception_address, phone, whatsapp_phone, description, kyc_level, kyc_status, id_document_url, selfie_url, explicit_restrictions, base_origin_city, base_origin_country, base_destination_city, base_destination_country")
           .eq("user_id", user.id).maybeSingle(),
         loadNotificationPrefs(user.id),
       ]);
@@ -269,6 +282,56 @@ export default function GPParametresPage() {
           </div>
         </SettingsSection>
 
+        {/* ═══ PREMIUM / ABONNEMENT ═══ */}
+        <div ref={premiumRef} id="section-premium">
+          <SettingsSection title="Abonnement Premium">
+            <div className="p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
+                    <Crown className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">
+                      {gpProfile.subscription === "premium" ? "Premium actif" : "Plan Starter"}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {gpProfile.subscription === "premium"
+                        ? "Commission réduite, priorité, support dédié"
+                        : "Passez Premium pour débloquer tous les avantages"}
+                    </p>
+                  </div>
+                </div>
+                <Badge
+                  variant={gpProfile.subscription === "premium" ? "default" : "secondary"}
+                  className="text-[10px]"
+                >
+                  {gpProfile.subscription === "premium" ? "Actif" : "Starter"}
+                </Badge>
+              </div>
+              <Separator />
+              <div className="space-y-2">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Avantages Premium</p>
+                <PremiumBenefit icon={Zap} label="Commission réduite" desc="Taux préférentiel sur chaque livraison" />
+                <PremiumBenefit icon={Star} label="Mise en avant" desc="Profil affiché en priorité aux clients" />
+                <PremiumBenefit icon={Shield} label="Support prioritaire" desc="Réponse rapide de l'équipe Konnekt" />
+                <PremiumBenefit icon={Crown} label="Badge Premium" desc="Gage de confiance visible par les clients" />
+              </div>
+              {gpProfile.subscription !== "premium" && (
+                <>
+                  <Separator />
+                  <Button className="w-full gap-2 h-10" onClick={() => {
+                    toast({ title: "Bientôt disponible", description: "L'abonnement Premium sera disponible prochainement." });
+                  }}>
+                    <Crown className="w-4 h-4" />
+                    Passer Premium
+                  </Button>
+                </>
+              )}
+            </div>
+          </SettingsSection>
+        </div>
+
         <button onClick={async () => { await supabase.auth.signOut(); navigate("/"); }} className="w-full bg-destructive/10 rounded-xl p-3 flex items-center gap-3 hover:bg-destructive/15 transition-colors active:scale-[0.98]">
           <LogOut className="w-4 h-4 text-destructive" />
           <span className="font-medium text-sm text-destructive">Déconnexion</span>
@@ -308,5 +371,19 @@ function DocRow({ label, done, onClick }: { label: string; done: boolean; onClic
         <span className={`text-xs ${done ? "text-foreground" : "text-muted-foreground"}`}>{label}</span>
       </div>
     </button>
+  );
+}
+
+function PremiumBenefit({ icon: Icon, label, desc }: { icon: any; label: string; desc: string }) {
+  return (
+    <div className="flex items-center gap-3 py-1">
+      <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+        <Icon className="w-3.5 h-3.5 text-amber-500" />
+      </div>
+      <div>
+        <p className="text-xs font-medium">{label}</p>
+        <p className="text-[10px] text-muted-foreground">{desc}</p>
+      </div>
+    </div>
   );
 }

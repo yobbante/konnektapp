@@ -153,7 +153,7 @@ export function GPKYCProgressCard({
                 className="w-full text-xs h-8"
                 onClick={() => {
                   setExpanded(false);
-                  navigate(isVerified ? "/gp/parametres" : "/gp/apercu");
+                  navigate(isVerified ? "/gp/parametres?section=premium" : "/gp/apercu");
                 }}
               >
                 <ShieldCheck className="w-3.5 h-3.5 mr-1.5" />
