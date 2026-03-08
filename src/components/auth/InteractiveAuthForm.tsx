@@ -92,9 +92,10 @@ export function InteractiveAuthForm({
   const getProgress = () => {
     if (mode === "login") return loginStep === "phone" ? 50 : 100;
     switch (registerStep) {
-      case "country": return 25;
-      case "type": return 50;
-      case "phone": return 75;
+      case "country": return 20;
+      case "city": return 40;
+      case "phone": return 60;
+      case "type": return 80;
       case "credentials": return 100;
       default: return 0;
     }
@@ -158,7 +159,7 @@ export function InteractiveAuthForm({
     const isDuplicate = await checkPhoneDuplicate(formData.phone || "");
     if (!isDuplicate) {
       setFormData(prev => ({ ...prev, phone: `${selectedDialCode} ${prev.phone}` }));
-      setRegisterStep("credentials");
+      setRegisterStep("type");
     }
   };
 
@@ -241,8 +242,9 @@ export function InteractiveAuthForm({
     onModeChange("register");
     setRegisterStep("country");
     setPhoneError(null);
-    setFormData({ email: "", password: "", fullName: "", phone: "", country: "SN" });
+    setFormData({ email: "", password: "", fullName: "", phone: "", country: "SN", city: "" });
     setSelectedCountry("SN");
+    setCityInput("");
     setTouched({});
     setCheckingPhone(false);
   };
