@@ -61,6 +61,7 @@ const STATUS_BADGE_STYLES: Record<string, string> = {
 };
 
 const ACTIVE_STATUSES = ["accepted", "collected", "in_transit", "checked_in", "scheduled_departure", "arrived"];
+const DELIVERED_STATUSES = ["delivered", "delivery_confirmed", "delivery_pending", "arrived_destination", "released"];
 
 export default function GPColisPage() {
   const navigate = useNavigate();
