@@ -5033,6 +5033,7 @@ export type Database = {
         Returns: string
       }
       evaluate_ktp_level: { Args: { p_trust_score: number }; Returns: string }
+      expire_routier_missions: { Args: never; Returns: number }
       get_ktp_commission_rate: {
         Args: { p_trust_score: number }
         Returns: number
