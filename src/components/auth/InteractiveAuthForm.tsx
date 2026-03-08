@@ -592,7 +592,7 @@ export function InteractiveAuthForm({
                       setSelectedCountry(c.code);
                       setFormData(prev => ({ ...prev, country: c.code }));
                       setCountrySearch("");
-                      setRegisterStep("type");
+                      setRegisterStep("city");
                     }}
                     className={`w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-muted transition-colors ${selectedCountry === c.code ? "bg-primary/10 font-medium" : ""}`}
                   >
