@@ -5,7 +5,8 @@ import {
   Lock, Home, ListChecks, LayoutGrid, ShieldX,
   Shield, DollarSign, History, Calendar, Wallet,
   Settings, LogOut, MapPin, User, Plus,
-  MessageCircle, UserCircle, ChevronRight, Eye, EyeOff
+  MessageCircle, UserCircle, ChevronRight, Eye, EyeOff,
+  BarChart3, Crown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -88,7 +89,7 @@ export function GPDashboardLayout({
     if (path.includes("/gp/wallet")) return "wallet";
     if (path.includes("/gp/messages")) return "messages";
     if (path.includes("/gp/scan")) return "scan";
-    if (path.includes("/gp/profil-public") || path.includes("/gp/parametres") || path.includes("/gp/historique") || path.includes("/gp/calendrier") || path.includes("/gp/tarification") || path.includes("/gp/restrictions") || path.includes("/gp/ktp-geotrack") || path.includes("/gp/distribution")) return "profil";
+    if (path.includes("/gp/profil-public") || path.includes("/gp/parametres") || path.includes("/gp/historique") || path.includes("/gp/calendrier") || path.includes("/gp/tarification") || path.includes("/gp/restrictions") || path.includes("/gp/ktp-geotrack") || path.includes("/gp/distribution") || path.includes("/gp/performances")) return "profil";
     if (path.includes("/gp/apercu")) return "apercu";
     return "apercu";
   };
