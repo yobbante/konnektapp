@@ -850,15 +850,16 @@ export function InteractiveAuthForm({
                 </div>
               )}
 
-              {/* Country is pre-filled from entry flow — show read-only badge */}
+              {/* Country + City badges */}
               {formData.country && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border">
                   <Globe className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm">
                     {COUNTRY_OPTIONS.find(c => c.code === formData.country)?.flag}{" "}
                     {COUNTRY_OPTIONS.find(c => c.code === formData.country)?.name || formData.country}
+                    {formData.city ? ` — ${formData.city}` : ""}
                   </span>
-                  <span className="text-[10px] text-muted-foreground ml-auto">Pays de résidence</span>
+                  <span className="text-[10px] text-muted-foreground ml-auto">Localisation</span>
                 </div>
               )}
 
