@@ -6,7 +6,7 @@
 import { useEffect, useRef, useMemo, useState, useCallback } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Truck, Package, MapPin } from "lucide-react";
+import { Truck, Package, MapPin, Plus, Minus, LocateFixed } from "lucide-react";
 
 /* ─── City coordinates ─── */
 const CITY_COORDS: Record<string, [number, number]> = {
