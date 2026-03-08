@@ -10,7 +10,7 @@ import {
   ShieldX, Upload, BadgeCheck, Wallet, Key,
   Crown, Zap, BarChart3, Mail, HelpCircle,
   FileText, Info, Languages, Trash2,
-  Award, AlertTriangle, CheckCircle, Palette, Route, ArrowRight,
+  Award, AlertTriangle, CheckCircle, Palette, Route, ArrowRight, Lock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
@@ -234,7 +234,15 @@ export default function GPParametresPage() {
 
         {/* ═══ 3. NAVETTES ═══ */}
         <SettingsSection title="Opérations">
-          <SettingsRow icon={Route} iconColor="text-violet-500" iconBg="bg-violet-500/10" label="Mes navettes" desc={`Gérer mes trajets réguliers`} onClick={() => navigate("/gp/navettes")} />
+          <SettingsRow
+            icon={Route}
+            iconColor="text-violet-500"
+            iconBg="bg-violet-500/10"
+            label="Mes navettes"
+            desc={isPremium ? `Gérer mes trajets réguliers` : "Réservé Premium / Pro"}
+            onClick={() => isPremium ? navigate("/gp/navettes") : navigate("/gp/premium")}
+            right={!isPremium ? <Lock className="w-4 h-4 text-muted-foreground" /> : undefined}
+          />
 
           <Separator />
           <SettingsRow icon={User} label="Profil public" desc="Aperçu client" onClick={() => navigate("/gp/profil-public")} />
