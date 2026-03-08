@@ -1,17 +1,16 @@
 /**
- * GPParametresPage — Paramètres GP factorisés avec composants partagés
- * Supports ?section=premium query param for auto-scroll
+ * GPParametresPage — Paramètres GP complets et organisés logiquement
  */
-import { useState, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Settings, User, DollarSign, Bell, ScanLine, Shield,
   Globe, LogOut, Palette, MapPin, Phone,
   Edit3, Save, X, MessageCircle, FileCheck,
   ShieldX, Upload, BadgeCheck, Wallet, Key, Lock,
   Crown, Star, Zap, BarChart3, Mail, HelpCircle,
-  FileText, Info, ExternalLink, Languages, Smartphone,
-  History, Trash2,
+  FileText, Info, Languages, Trash2,
+  Award, TrendingUp, AlertTriangle, CheckCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
@@ -22,8 +21,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { ThemeToggle } from "@/components/settings/ThemeToggle";
 import { toast } from "@/components/ui/use-toast";
+import { PremiumCTABanner } from "@/components/gp/PremiumCTABanner";
 import {
   SettingsSection, SettingsRow, ToggleRow,
   PasswordChangeDialog, ForgotPasswordDialog,
@@ -32,9 +33,7 @@ import {
 } from "@/components/settings/SharedSettingsComponents";
 
 export default function GPParametresPage() {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const premiumRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [gpProfile, setGpProfile] = useState<any>(null);
   const [pendingCount, setPendingCount] = useState(0);
@@ -52,15 +51,6 @@ export default function GPParametresPage() {
 
   useEffect(() => { loadData(); }, []);
 
-  // Auto-scroll to section from query params
-  useEffect(() => {
-    if (!loading && searchParams.get("section") === "premium" && premiumRef.current) {
-      setTimeout(() => {
-        premiumRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 300);
-    }
-  }, [loading, searchParams]);
-
   const loadData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -69,7 +59,7 @@ export default function GPParametresPage() {
 
       const [profileRes, prefsData] = await Promise.all([
         supabase.from("gp_profiles")
-          .select("id, business_name, gp_type, status, subscription, base_price_per_kg, default_currency, deposit_address, reception_address, phone, whatsapp_phone, description, kyc_level, kyc_status, id_document_url, selfie_url, explicit_restrictions, base_origin_city, base_origin_country, base_destination_city, base_destination_country")
+          .select("id, business_name, gp_type, status, subscription, base_price_per_kg, default_currency, deposit_address, reception_address, phone, whatsapp_phone, description, kyc_level, kyc_status, id_document_url, selfie_url, business_registration_url, explicit_restrictions, base_origin_city, base_origin_country, base_destination_city, base_destination_country, rating, total_deliveries, total_reviews, verified_at, withdrawal_limit")
           .eq("user_id", user.id).maybeSingle(),
         loadNotificationPrefs(user.id),
       ]);
@@ -79,7 +69,6 @@ export default function GPParametresPage() {
       setGpProfile(profile);
       setNotifPrefs(prefsData);
 
-      // Auto-fill addresses from route
       const originLabel = [profile.base_origin_city, profile.base_origin_country].filter(Boolean).join(", ");
       const destLabel = [profile.base_destination_city, profile.base_destination_country].filter(Boolean).join(", ");
 
@@ -133,8 +122,27 @@ export default function GPParametresPage() {
   const kycStatus = gpProfile.kyc_status || "pending";
   const hasId = !!gpProfile.id_document_url;
   const hasSelfie = !!gpProfile.selfie_url;
+  const hasBusinessReg = !!gpProfile.business_registration_url;
   const originLabel = gpProfile.base_origin_country || "départ";
   const destLabel = gpProfile.base_destination_country || "destination";
+  const isPremium = gpProfile.subscription === "premium";
+  const withdrawalLimit = gpProfile.withdrawal_limit ?? 300000;
+
+  // KYC progression
+  const kycSteps = [
+    { label: "Inscription", done: true, icon: CheckCircle },
+    { label: "Pièce d'identité", done: hasId, icon: FileText },
+    { label: "Selfie vérification", done: hasSelfie, icon: User },
+    { label: "Document entreprise", done: hasBusinessReg, icon: FileText },
+  ];
+  const kycCompletedSteps = kycSteps.filter(s => s.done).length;
+  const kycProgress = Math.round((kycCompletedSteps / kycSteps.length) * 100);
+
+  const kycBadges = [
+    { level: 0, label: "Starter", desc: "Inscription complétée", limit: "300 000 FCFA", unlocked: kycLevel >= 0 },
+    { level: 1, label: "Vérifié", desc: "ID + Selfie validés", limit: "1 000 000 FCFA", unlocked: kycLevel >= 1 },
+    { level: 2, label: "Confirmé", desc: "Documents entreprise", limit: "Illimité", unlocked: kycLevel >= 2 },
+  ];
 
   return (
     <GPDashboardLayout gpProfile={gpProfile} pendingCount={pendingCount} activeOrdersCount={activeCount} activeTab="parametres">
@@ -144,7 +152,7 @@ export default function GPParametresPage() {
           <h1 className="text-lg font-bold">Paramètres</h1>
         </div>
 
-        {/* ═══ IDENTITÉ & PROFIL ═══ */}
+        {/* ═══ 1. IDENTITÉ & PROFIL ═══ */}
         <SettingsSection title="Identité & Profil">
           {editingProfile ? (
             <div className="p-3 space-y-2.5">
@@ -213,36 +221,96 @@ export default function GPParametresPage() {
           )}
         </SettingsSection>
 
-        {/* ═══ KYC & VÉRIFICATION ═══ */}
-        <SettingsSection title="KYC & Vérification">
-          <div className="p-3 space-y-2.5">
+        {/* ═══ 2. KYC & VÉRIFICATION (enrichi) ═══ */}
+        <SettingsSection title="Vérification & Badges">
+          <div className="p-3 space-y-3">
+            {/* Status header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <BadgeCheck className={`w-4 h-4 ${kycStatus === "verified" ? "text-emerald-500" : "text-muted-foreground"}`} />
+                <BadgeCheck className={`w-5 h-5 ${kycStatus === "verified" ? "text-emerald-500" : "text-muted-foreground"}`} />
                 <div>
-                  <p className="text-sm font-medium">Statut KYC</p>
-                  <p className="text-[10px] text-muted-foreground">Niveau {kycLevel}</p>
+                  <p className="text-sm font-semibold">Niveau KYC {kycLevel}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {kycStatus === "verified" ? "Vérifié" : kycStatus === "pending" ? "En cours de vérification" : "À compléter"}
+                  </p>
                 </div>
               </div>
               <Badge variant={kycStatus === "verified" ? "default" : "secondary"} className="text-[10px]">
-                {kycStatus === "verified" ? "✓ Vérifié" : kycStatus === "pending" ? "En attente" : kycStatus}
+                {kycBadges[kycLevel]?.label || "Starter"}
               </Badge>
             </div>
+
+            {/* Progress */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="text-muted-foreground">Progression</span>
+                <span className="font-medium">{kycProgress}%</span>
+              </div>
+              <Progress value={kycProgress} className="h-2" />
+            </div>
+
             <Separator />
+
+            {/* Documents checklist */}
             <div className="space-y-1.5">
               <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Documents requis</p>
-              <DocRow label="Pièce d'identité" done={hasId} onClick={() => navigate("/gp/profil-public")} />
-              <DocRow label="Selfie de vérification" done={hasSelfie} onClick={() => navigate("/gp/profil-public")} />
+              {kycSteps.map((step, i) => (
+                <DocRow
+                  key={i}
+                  label={step.label}
+                  done={step.done}
+                  onClick={() => i === 0 ? undefined : navigate("/gp/profil-public")}
+                  disabled={i === 0}
+                />
+              ))}
             </div>
-            {(!hasId || !hasSelfie) && (
+
+            {kycProgress < 100 && (
               <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs h-8" onClick={() => navigate("/gp/profil-public")}>
                 <Upload className="w-3 h-3" /> Compléter mes documents
               </Button>
             )}
+
+            <Separator />
+
+            {/* Badge progression */}
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Badges & Plafonds</p>
+              {kycBadges.map((badge) => (
+                <div key={badge.level} className={`flex items-center gap-3 p-2 rounded-lg ${badge.unlocked ? "bg-emerald-500/5" : "bg-muted/50"}`}>
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${badge.unlocked ? "bg-emerald-500/10" : "bg-muted"}`}>
+                    <Award className={`w-3.5 h-3.5 ${badge.unlocked ? "text-emerald-500" : "text-muted-foreground"}`} />
+                  </div>
+                  <div className="flex-1">
+                    <p className={`text-xs font-medium ${badge.unlocked ? "text-foreground" : "text-muted-foreground"}`}>
+                      L{badge.level} — {badge.label}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">{badge.desc}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-[10px] font-medium ${badge.unlocked ? "text-emerald-600" : "text-muted-foreground"}`}>
+                      {badge.limit}
+                    </p>
+                    {badge.unlocked && <CheckCircle className="w-3.5 h-3.5 text-emerald-500 ml-auto" />}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Withdrawal info */}
+            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/15">
+              <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+              <div>
+                <p className="text-[11px] font-medium">Plafond retrait actuel</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {withdrawalLimit.toLocaleString("fr-FR")} FCFA/mois — Augmentez votre niveau KYC pour relever ce plafond.
+                </p>
+              </div>
+            </div>
           </div>
         </SettingsSection>
 
-        {/* ═══ OPÉRATIONS ═══ */}
+        {/* ═══ 3. OPÉRATIONS ═══ */}
         <SettingsSection title="Opérations">
           <SettingsRow icon={User} label="Profil public" desc="Aperçu client" onClick={() => navigate("/gp/profil-public")} />
           <Separator />
@@ -254,10 +322,10 @@ export default function GPParametresPage() {
           <Separator />
           <SettingsRow icon={ScanLine} iconColor="text-purple-500" iconBg="bg-purple-500/10" label="Scanner QR" desc="Caméra" onClick={() => navigate("/gp/scan")} />
           <Separator />
-          <SettingsRow icon={BarChart3} iconColor="text-amber-500" iconBg="bg-amber-500/10" label="Performances" desc={gpProfile.subscription === "premium" ? "Statistiques avancées" : "Premium requis"} onClick={() => navigate("/gp/performances")} />
+          <SettingsRow icon={BarChart3} iconColor="text-amber-500" iconBg="bg-amber-500/10" label="Performances" desc={isPremium ? "Statistiques avancées" : "🔒 Premium"} onClick={() => navigate("/gp/performances")} />
         </SettingsSection>
 
-        {/* ═══ SÉCURITÉ ═══ */}
+        {/* ═══ 4. SÉCURITÉ ═══ */}
         <SettingsSection title="Sécurité & Confiance">
           <SettingsRow icon={Shield} label="KTP & GeoTrack" desc="Score de confiance" onClick={() => navigate("/gp/ktp-geotrack")} />
           <Separator />
@@ -268,7 +336,7 @@ export default function GPParametresPage() {
           <SettingsRow icon={Lock} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Mot de passe oublié" desc="Réinitialiser" onClick={() => setShowForgotPwd(true)} />
         </SettingsSection>
 
-        {/* ═══ NOTIFICATIONS ═══ */}
+        {/* ═══ 5. NOTIFICATIONS ═══ */}
         <SettingsSection title="Notifications">
           <ToggleRow icon={Bell} label="Push" desc="Notifications en temps réel" checked={notifPrefs.push_notifications} onToggle={() => handleToggle("push_notifications")} />
           <Separator />
@@ -277,7 +345,7 @@ export default function GPParametresPage() {
           <ToggleRow icon={Bell} iconColor="text-orange-500" iconBg="bg-orange-500/10" label="Statuts commandes" desc="Mises à jour" checked={notifPrefs.order_status_alerts} onToggle={() => handleToggle("order_status_alerts")} />
         </SettingsSection>
 
-        {/* ═══ APPARENCE & LANGUE ═══ */}
+        {/* ═══ 6. APPARENCE & LANGUE ═══ */}
         <SettingsSection title="Apparence & Langue">
           <div className="p-3">
             <div className="flex items-center gap-3 mb-2">
@@ -290,57 +358,12 @@ export default function GPParametresPage() {
           <SettingsRow icon={Languages} iconColor="text-indigo-500" iconBg="bg-indigo-500/10" label="Langue" desc="Français" onClick={() => toast({ title: "Bientôt disponible", description: "Le choix de langue sera disponible prochainement." })} />
         </SettingsSection>
 
-        {/* ═══ PREMIUM / ABONNEMENT ═══ */}
-        <div ref={premiumRef} id="section-premium">
-          <SettingsSection title="Abonnement Premium">
-            <div className="p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
-                    <Crown className="w-5 h-5 text-amber-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold">
-                      {gpProfile.subscription === "premium" ? "Premium actif" : "Plan Starter"}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {gpProfile.subscription === "premium"
-                        ? "Commission réduite, priorité, support dédié"
-                        : "Passez Premium pour débloquer tous les avantages"}
-                    </p>
-                  </div>
-                </div>
-                <Badge
-                  variant={gpProfile.subscription === "premium" ? "default" : "secondary"}
-                  className="text-[10px]"
-                >
-                  {gpProfile.subscription === "premium" ? "Actif" : "Starter"}
-                </Badge>
-              </div>
-              <Separator />
-              <div className="space-y-2">
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Avantages Premium</p>
-                <PremiumBenefit icon={Zap} label="Commission réduite" desc="Taux préférentiel sur chaque livraison" />
-                <PremiumBenefit icon={Star} label="Mise en avant" desc="Profil affiché en priorité aux clients" />
-                <PremiumBenefit icon={Shield} label="Support prioritaire" desc="Réponse rapide de l'équipe Konnekt" />
-                <PremiumBenefit icon={Crown} label="Badge Premium" desc="Gage de confiance visible par les clients" />
-              </div>
-              {gpProfile.subscription !== "premium" && (
-                <>
-                  <Separator />
-                  <Button className="w-full gap-2 h-10" onClick={() => {
-                    toast({ title: "Bientôt disponible", description: "L'abonnement Premium sera disponible prochainement." });
-                  }}>
-                    <Crown className="w-4 h-4" />
-                    Passer Premium
-                  </Button>
-                </>
-              )}
-            </div>
-          </SettingsSection>
-        </div>
+        {/* ═══ 7. PREMIUM CTA (inline, pas section dédiée) ═══ */}
+        {!isPremium && (
+          <PremiumCTABanner variant="banner" context="dashboard" isPremium={isPremium} />
+        )}
 
-        {/* ═══ AIDE & LÉGAL ═══ */}
+        {/* ═══ 8. AIDE & LÉGAL ═══ */}
         <SettingsSection title="Aide & Légal">
           <SettingsRow icon={HelpCircle} label="Centre d'aide" desc="FAQ et support" onClick={() => toast({ title: "Bientôt disponible" })} />
           <Separator />
@@ -351,7 +374,7 @@ export default function GPParametresPage() {
           <SettingsRow icon={Info} iconColor="text-muted-foreground" iconBg="bg-muted" label="À propos de Konnekt" desc="v1.0.0 — Prototype" onClick={() => toast({ title: "Konnekt v1.0.0", description: "Plateforme de transport collaboratif." })} />
         </SettingsSection>
 
-        {/* ═══ ZONE DANGER ═══ */}
+        {/* ═══ 9. COMPTE (Déconnexion / Suppression) ═══ */}
         <SettingsSection title="Compte">
           <button onClick={async () => { await supabase.auth.signOut(); navigate("/"); }} className="w-full rounded-xl p-3 flex items-center gap-3 hover:bg-destructive/10 transition-colors active:scale-[0.98]">
             <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center">
@@ -392,35 +415,22 @@ function CompactInfoRow({ icon: Icon, label, value }: { icon: any; label: string
   );
 }
 
-function DocRow({ label, done, onClick }: { label: string; done: boolean; onClick: () => void }) {
+function DocRow({ label, done, onClick, disabled }: { label: string; done: boolean; onClick: () => void; disabled?: boolean }) {
   return (
-    <button onClick={onClick} className="w-full flex items-center justify-between py-1 hover:opacity-80 transition-opacity">
+    <button onClick={disabled ? undefined : onClick} className={`w-full flex items-center justify-between py-1.5 ${disabled ? "" : "hover:opacity-80"} transition-opacity`}>
       <div className="flex items-center gap-2">
         {done ? (
-          <div className="w-4 h-4 rounded-full bg-emerald-500/10 flex items-center justify-center">
-            <FileCheck className="w-2.5 h-2.5 text-emerald-500" />
+          <div className="w-5 h-5 rounded-full bg-emerald-500/10 flex items-center justify-center">
+            <FileCheck className="w-3 h-3 text-emerald-500" />
           </div>
         ) : (
-          <div className="w-4 h-4 rounded-full bg-muted flex items-center justify-center">
-            <Upload className="w-2.5 h-2.5 text-muted-foreground" />
+          <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
+            <Upload className="w-3 h-3 text-muted-foreground" />
           </div>
         )}
         <span className={`text-xs ${done ? "text-foreground" : "text-muted-foreground"}`}>{label}</span>
       </div>
+      {done && <Badge variant="outline" className="text-[9px] h-4 bg-emerald-500/5 text-emerald-600 border-emerald-500/20">✓</Badge>}
     </button>
-  );
-}
-
-function PremiumBenefit({ icon: Icon, label, desc }: { icon: any; label: string; desc: string }) {
-  return (
-    <div className="flex items-center gap-3 py-1">
-      <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-        <Icon className="w-3.5 h-3.5 text-amber-500" />
-      </div>
-      <div>
-        <p className="text-xs font-medium">{label}</p>
-        <p className="text-[10px] text-muted-foreground">{desc}</p>
-      </div>
-    </div>
   );
 }
