@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Menu, ChevronLeft, LogIn, ScanLine, Wallet, Package, Fingerprint } from "lucide-react";
+import { Menu, ChevronLeft, LogIn, ScanLine, Wallet, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { useUserRole } from "@/hooks/useUserRole";
