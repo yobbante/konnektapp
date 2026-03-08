@@ -606,7 +606,61 @@ export function InteractiveAuthForm({
           </motion.div>
         )}
 
-        {/* Register Step 1: Choose profile type */}
+        {/* Register Step 1: City */}
+        {mode === "register" && registerStep === "city" && (
+          <motion.div
+            key="register-city"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            className="space-y-4"
+          >
+            <div className="flex items-center gap-2 mb-6">
+              <Button variant="ghost" size="icon" onClick={() => setRegisterStep("country")}>
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              <div>
+                <h2 className="text-xl font-bold">Votre ville</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {COUNTRY_OPTIONS.find(c => c.code === selectedCountry)?.flag}{" "}
+                  {COUNTRY_OPTIONS.find(c => c.code === selectedCountry)?.name}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm">Ville de résidence *</Label>
+              <div className="relative">
+                <Input
+                  placeholder="Ex: Dakar, Abidjan, Paris..."
+                  className="h-12 text-base"
+                  value={cityInput}
+                  onChange={(e) => setCityInput(e.target.value)}
+                  autoFocus
+                />
+                {cityInput.length >= 2 && (
+                  <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Cela nous aide à vous proposer les services disponibles dans votre zone
+              </p>
+            </div>
+
+            <Button
+              className="w-full h-12 mt-4"
+              disabled={cityInput.length < 2}
+              onClick={() => {
+                setFormData(prev => ({ ...prev, city: cityInput }));
+                setRegisterStep("phone");
+              }}
+            >
+              Continuer <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
+          </motion.div>
+        )}
+
+        {/* Register Step 2: Choose profile type */}
         {mode === "register" && registerStep === "type" && (
           <motion.div
             key="register-type"
@@ -616,7 +670,7 @@ export function InteractiveAuthForm({
             className="space-y-4"
           >
             <div className="flex items-center gap-2 mb-6">
-              <Button variant="ghost" size="icon" onClick={() => setRegisterStep("country")}>
+              <Button variant="ghost" size="icon" onClick={() => setRegisterStep("phone")}>
                 <ChevronLeft className="w-5 h-5" />
               </Button>
               <div>
