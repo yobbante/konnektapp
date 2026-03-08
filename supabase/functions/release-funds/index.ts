@@ -71,13 +71,11 @@ Deno.serve(async (req) => {
     const transportPrice = (order.weight || 0) * (order.price_per_kg || 0);
     const insuranceAmount = order.has_insurance ? (order.insurance_amount || 0) : 0;
 
-    // Commission on TRANSPORT only — minimum 1000 FCFA
-    const MIN_COMMISSION_FCFA = 1000;
+    // Commission on TRANSPORT only — percentage-based (manual parcels have fixed 1000 FCFA set at creation)
     const commissionRate = wallet.commission_rate || 5;
-    const rawCommission = order.commission_amount != null && order.commission_amount > 0
+    const commissionAmount = order.commission_amount != null && order.commission_amount > 0
       ? order.commission_amount
       : Math.ceil(transportPrice * commissionRate / 100);
-    const commissionAmount = Math.max(rawCommission, MIN_COMMISSION_FCFA);
     const netGP = transportPrice - commissionAmount;
 
     // Get insurance amount from escrow if any

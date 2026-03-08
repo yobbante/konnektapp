@@ -458,8 +458,7 @@ async function execWeightModify(
 
   if (escrow) {
     const newEscrowAmount = priceDiff > 0 ? escrow.amount + priceDiff : Math.max(0, escrow.amount + priceDiff);
-    const MIN_COMMISSION_FCFA = 1000;
-    const newCommission = Math.max(Math.ceil(newTransportPrice * 0.05), MIN_COMMISSION_FCFA);
+    const newCommission = Math.ceil(newTransportPrice * 0.05);
     const newNetGP = newTransportPrice - newCommission;
 
     await supabase.from("escrow_transactions").update({

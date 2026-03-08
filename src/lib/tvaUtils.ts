@@ -34,7 +34,7 @@ export function formatTVALine(commissionTTC: number, currencySymbol: string): st
 }
 
 /**
- * Get minimum commission in GP currency
- * Minimum is 1000 FCFA, converted to GP currency
+ * Fixed commission for manual parcels only (1000 FCFA).
+ * Platform orders use percentage-based commission with no minimum.
  */
-export const MIN_COMMISSION_FCFA = 1000;
+export const MANUAL_PARCEL_COMMISSION_FCFA = 1000;

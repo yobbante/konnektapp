@@ -101,13 +101,12 @@ Deno.serve(async (req) => {
       ? ((logOpts.pickup_enabled ? (logOpts.pickup_price || 0) : 0) + (logOpts.delivery_enabled ? (logOpts.delivery_price || 0) : 0))
       : 0;
 
-    // ── Commission on TRANSPORT only (not insurance/logistics) — minimum 1000 FCFA ──
-    const MIN_COMMISSION_FCFA = 1000;
+    // ── Commission on TRANSPORT only (not insurance/logistics) ──
+    // Percentage-based commission. Manual parcels already have commission_amount=1000 set at creation.
     const commissionRate = gpWallet.commission_rate || 5;
-    const rawCommission = order.commission_amount != null && order.commission_amount > 0
+    const commissionAmount = order.commission_amount != null && order.commission_amount > 0
       ? order.commission_amount
       : Math.ceil(transportPrice * commissionRate / 100);
-    const commissionAmount = Math.max(rawCommission, MIN_COMMISSION_FCFA);
     
     // GP net = transport - commission (NOT total_price - commission)
     let netGP = transportPrice - commissionAmount;

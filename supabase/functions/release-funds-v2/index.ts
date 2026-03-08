@@ -187,14 +187,12 @@ Deno.serve(async (req) => {
     const transportPrice = (order.weight || 0) * (order.price_per_kg || 0); // Revenu transport brut
     const insuranceAmount = order.has_insurance ? (order.insurance_amount || 0) : 0;
     const commissionRate = gpWallet.commission_rate || 5;
-    const MIN_COMMISSION_FCFA = 1000;
 
-    // Commission calculée sur le TRANSPORT uniquement — minimum 1000 FCFA
-    const rawCommission =
+    // Commission calculée sur le TRANSPORT uniquement — pourcentage (colis manuels: 1000 FCFA fixé à la création)
+    const commissionAmount =
       order.commission_amount > 0
         ? order.commission_amount
         : Math.ceil(transportPrice * commissionRate / 100);
-    const commissionAmount = Math.max(rawCommission, MIN_COMMISSION_FCFA);
 
     // GP net = transport - commission (pas total_price - commission)
     let netGP = transportPrice - commissionAmount;
