@@ -94,10 +94,10 @@ export default function GPAutoAcceptPage() {
   const isPro = gpProfile?.subscription === "pro";
   const currency = gpProfile?.default_currency || "EUR";
 
-  if (loading) return <GPDashboardLayout><PageLoader /></GPDashboardLayout>;
+  if (loading) return <GPDashboardLayout gpProfile={{ id: "", business_name: "", gp_type: "", status: "" }}><PageLoader /></GPDashboardLayout>;
 
   return (
-    <GPDashboardLayout>
+    <GPDashboardLayout gpProfile={gpProfile}>
       <div className="px-4 py-6 max-w-lg mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
