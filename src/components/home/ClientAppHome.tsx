@@ -437,7 +437,7 @@ export function ClientAppHome({
     setSearchDest(o);
   };
 
-  const { deliveredOrder, role: deliveryRole, dismiss: dismissDelivery } = usePostDeliveryDetection(userId);
+  const { deliveredOrder, role: deliveryRole, dismiss: dismissDelivery, pendingRecipientFeedback } = usePostDeliveryDetection(userId);
 
   const filteredCities = useMemo(() => {
     if (!cityQuery) return FEATURED_CITIES;
