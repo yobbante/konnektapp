@@ -46,6 +46,7 @@ const TRANSPORTER_ROUTES = [
   "/gp/en-cours",
   "/gp/historique",
   "/gp/calendrier",
+  "/gp/depart",
   "/gp/tarification",
   "/gp/scan",
   "/gp/messages",
