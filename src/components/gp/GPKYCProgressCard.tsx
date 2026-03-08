@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { isGPPremium } from "@/lib/premiumGating";
-import { PremiumCTABanner } from "@/components/gp/PremiumCTABanner";
+
 
 interface GPKYCProgressCardProps {
   kycLevel: number;
