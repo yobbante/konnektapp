@@ -253,6 +253,7 @@ const App = () => (
             <Route path="/routier/profil-public" element={<RoutierProfilPublicPage />} />
             <Route path="/routier/wallet" element={<RoutierWalletPage />} />
             <Route path="/routier/parametres" element={<RoutierParametresPage />} />
+            <Route path="/routier/premium" element={<RoutierPremiumPage />} />
             <Route path="/routier/publier" element={<RoutierPublierPage />} />
             <Route path="/routier/messages" element={<RoutierMessagesPage />} />
             {/* Client-facing routier mission request */}
@@ -271,7 +272,8 @@ const App = () => (
             <Route path="/maritime/demandes" element={<MaritimeApercuPage />} />
             <Route path="/maritime/en-cours" element={<MaritimeApercuPage />} />
             <Route path="/maritime/historique" element={<MaritimeApercuPage />} />
-            <Route path="/maritime/wallet" element={<MaritimeApercuPage />} />
+            <Route path="/maritime/wallet" element={<MaritimeWalletPage />} />
+            <Route path="/maritime/premium" element={<MaritimePremiumPage />} />
             <Route path="/maritime/profil-public" element={<MaritimeApercuPage />} />
             <Route path="/maritime/messages" element={<Navigate to="/messages" replace />} />
             <Route path="/maritime/demande" element={<MaritimeApercuPage />} />
@@ -288,10 +290,11 @@ const App = () => (
             <Route path="/aerien/demandes" element={<AerienApercuPage />} />
             <Route path="/aerien/en-cours" element={<AerienApercuPage />} />
             <Route path="/aerien/historique" element={<AerienApercuPage />} />
-            <Route path="/aerien/wallet" element={<AerienApercuPage />} />
+            <Route path="/aerien/wallet" element={<AerienWalletPage />} />
             <Route path="/aerien/profil-public" element={<AerienApercuPage />} />
             <Route path="/aerien/marketplace" element={<AerienApercuPage />} />
-            <Route path="/aerien/parametres" element={<AerienApercuPage />} />
+            <Route path="/aerien/parametres" element={<AerienParametresPage />} />
+            <Route path="/aerien/premium" element={<AerienPremiumPage />} />
             <Route path="/aerien/messages" element={<Navigate to="/messages" replace />} />
             
             {/* ============================================
