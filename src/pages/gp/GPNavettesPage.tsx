@@ -17,6 +17,8 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { isGPPremium, getMaxNavettes } from "@/lib/premiumGating";
 import { motion, AnimatePresence } from "framer-motion";
+import { SearchableCitySelect } from "@/components/gp/SearchableCitySelect";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Navette {
   id: string;
@@ -293,23 +295,23 @@ export default function GPNavettesPage() {
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <Label className="text-[10px]">Ville départ</Label>
-                        <Input className="h-8 text-xs" value={editForm.origin_city}
-                          onChange={e => setEditForm(f => ({ ...f, origin_city: e.target.value }))} />
-                      </div>
-                      <div>
-                        <Label className="text-[10px]">Pays départ</Label>
-                        <Input className="h-8 text-xs" value={editForm.origin_country}
-                          onChange={e => setEditForm(f => ({ ...f, origin_country: e.target.value }))} />
+                        <SearchableCitySelect
+                          value={editForm.origin_city}
+                          countryCode={editForm.origin_country}
+                          onSelect={(city, country) => setEditForm(f => ({ ...f, origin_city: city, origin_country: country }))}
+                          placeholder="Ville départ"
+                          className="h-8 text-xs"
+                        />
                       </div>
                       <div>
                         <Label className="text-[10px]">Ville arrivée</Label>
-                        <Input className="h-8 text-xs" value={editForm.destination_city}
-                          onChange={e => setEditForm(f => ({ ...f, destination_city: e.target.value }))} />
-                      </div>
-                      <div>
-                        <Label className="text-[10px]">Pays arrivée</Label>
-                        <Input className="h-8 text-xs" value={editForm.destination_country}
-                          onChange={e => setEditForm(f => ({ ...f, destination_country: e.target.value }))} />
+                        <SearchableCitySelect
+                          value={editForm.destination_city}
+                          countryCode={editForm.destination_country}
+                          onSelect={(city, country) => setEditForm(f => ({ ...f, destination_city: city, destination_country: country }))}
+                          placeholder="Ville arrivée"
+                          className="h-8 text-xs"
+                        />
                       </div>
                     </div>
 
@@ -455,23 +457,23 @@ export default function GPNavettesPage() {
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <Label className="text-[10px]">Ville départ *</Label>
-                      <Input className="h-8 text-xs" placeholder="Paris" value={form.origin_city}
-                        onChange={e => setForm(f => ({ ...f, origin_city: e.target.value }))} />
-                    </div>
-                    <div>
-                      <Label className="text-[10px]">Pays départ</Label>
-                      <Input className="h-8 text-xs" value={form.origin_country}
-                        onChange={e => setForm(f => ({ ...f, origin_country: e.target.value }))} />
+                      <SearchableCitySelect
+                        value={form.origin_city}
+                        countryCode={form.origin_country}
+                        onSelect={(city, country) => setForm(f => ({ ...f, origin_city: city, origin_country: country }))}
+                        placeholder="Ville départ"
+                        className="h-8 text-xs"
+                      />
                     </div>
                     <div>
                       <Label className="text-[10px]">Ville arrivée *</Label>
-                      <Input className="h-8 text-xs" placeholder="Dakar" value={form.destination_city}
-                        onChange={e => setForm(f => ({ ...f, destination_city: e.target.value }))} />
-                    </div>
-                    <div>
-                      <Label className="text-[10px]">Pays arrivée</Label>
-                      <Input className="h-8 text-xs" value={form.destination_country}
-                        onChange={e => setForm(f => ({ ...f, destination_country: e.target.value }))} />
+                      <SearchableCitySelect
+                        value={form.destination_city}
+                        countryCode={form.destination_country}
+                        onSelect={(city, country) => setForm(f => ({ ...f, destination_city: city, destination_country: country }))}
+                        placeholder="Ville arrivée"
+                        className="h-8 text-xs"
+                      />
                     </div>
                   </div>
 
