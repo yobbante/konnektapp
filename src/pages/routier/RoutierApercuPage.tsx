@@ -147,56 +147,14 @@ export default function RoutierApercuPage() {
     <RoutierDashboardLayout gpProfile={gpProfile} pendingCount={pendingCount} activeOrdersCount={totalActive}>
       <div className="px-3 py-3 space-y-3 pb-24">
 
-        {/* ── MINI MAP + LIVE STATUS ── */}
+        {/* ── INTERACTIVE MAP ── */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-          <Card className="overflow-hidden border-none shadow-sm bg-gradient-to-br from-emerald-600 to-emerald-700">
-            <CardContent className="p-0">
-              {/* Map embed compact */}
-              <div className="relative h-28 bg-emerald-800/30">
-                <iframe
-                  title="Carte routier"
-                  src={`https://www.openstreetmap.org/export/embed.html?bbox=-20%2C0%2C20%2C25&layer=mapnik`}
-                  className="w-full h-full border-0 opacity-60"
-                  loading="lazy"
-                />
-                {/* Overlay gradient */}
-                <div className="absolute inset-0 bg-gradient-to-t from-emerald-700/90 via-transparent to-transparent" />
-                {/* Live indicator */}
-                <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 bg-white/20 backdrop-blur-md rounded-full px-2 py-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
-                  <span className="text-[9px] font-semibold text-white">LIVE</span>
-                </div>
-                {/* Stats overlay on map */}
-                <div className="absolute bottom-0 left-0 right-0 p-3 flex items-end justify-between">
-                  <div>
-                    <p className="text-white/70 text-[10px] font-medium uppercase tracking-wider">En activité</p>
-                    <p className="text-white text-xl font-bold leading-none mt-0.5">
-                      {totalActive} <span className="text-sm font-medium text-white/70">mission{totalActive !== 1 ? "s" : ""}</span>
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <div className="bg-white/15 backdrop-blur-sm rounded-lg px-2.5 py-1.5 text-center">
-                      <p className="text-white text-sm font-bold">{data.stats.delivered}</p>
-                      <p className="text-white/60 text-[8px] uppercase tracking-wide">Livrés</p>
-                    </div>
-                    <div className="bg-white/15 backdrop-blur-sm rounded-lg px-2.5 py-1.5 text-center">
-                      <p className="text-white text-sm font-bold">{data.stats.successRate}%</p>
-                      <p className="text-white/60 text-[8px] uppercase tracking-wide">Réussite</p>
-                    </div>
-                    {data.stats.avgRating > 0 && (
-                      <div className="bg-white/15 backdrop-blur-sm rounded-lg px-2.5 py-1.5 text-center">
-                        <p className="text-white text-sm font-bold flex items-center gap-0.5">
-                          <Star className="w-3 h-3 fill-amber-300 text-amber-300" />
-                          {data.stats.avgRating.toFixed(1)}
-                        </p>
-                        <p className="text-white/60 text-[8px] uppercase tracking-wide">Note</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <RoutierInteractiveMap
+            activeMissions={data.activeMissions}
+            missionRequests={data.missionRequests}
+            pendingMissions={data.pendingMissions}
+            stats={data.stats}
+          />
         </motion.div>
 
         {/* ── QUICK ACTIONS — Row of 4 ── */}
