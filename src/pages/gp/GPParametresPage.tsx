@@ -306,11 +306,11 @@ export default function GPParametresPage() {
           <Separator />
           <SettingsRow icon={Languages} iconColor="text-indigo-500" iconBg="bg-indigo-500/10" label="Langue" desc="Français" onClick={() => toast({ title: "Bientôt disponible" })} />
           <Separator />
-          <SettingsRow icon={HelpCircle} label="Aide & FAQ" onClick={() => toast({ title: "Bientôt disponible" })} />
+          <SettingsRow icon={HelpCircle} label="Aide & FAQ" onClick={() => navigate("/aide")} />
           <Separator />
-          <SettingsRow icon={FileText} iconColor="text-muted-foreground" iconBg="bg-muted" label="CGU & Confidentialité" onClick={() => toast({ title: "Bientôt disponible" })} />
+          <SettingsRow icon={FileText} iconColor="text-muted-foreground" iconBg="bg-muted" label="CGU & Confidentialité" onClick={() => navigate("/cgu")} />
           <Separator />
-          <SettingsRow icon={Info} iconColor="text-muted-foreground" iconBg="bg-muted" label="À propos" desc="v1.0.0" onClick={() => toast({ title: "Konnekt v1.0.0" })} />
+          <SettingsRow icon={Info} iconColor="text-muted-foreground" iconBg="bg-muted" label="À propos" desc="v1.0.0" onClick={() => navigate("/a-propos")} />
         </SettingsSection>
 
         {/* ═══ 8. COMPTE ═══ */}
