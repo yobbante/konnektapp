@@ -169,6 +169,18 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
       });
     });
 
+    // URGENT: Pending recipient feedback
+    pendingRecipientFeedback.forEach(o => {
+      items.push({
+        id: `feedback-${o.id}`, priority: "urgent", icon: Heart,
+        label: "Confirmez la réception",
+        description: `${o.order_number} · ${o.origin_city} → ${o.destination_city}`,
+        onClick: () => setFeedbackOrder(o),
+        color: "text-rose-600 dark:text-rose-400", bgColor: "bg-rose-500/10", borderColor: "border-rose-500/30",
+        pulse: true,
+      });
+    });
+
     // IMPORTANT: Unread messages
     if (unreadMessages > 0) {
       items.push({
