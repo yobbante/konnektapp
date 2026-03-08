@@ -74,6 +74,7 @@ import RoutierDemandePage from "./pages/routier/RoutierDemandePage";
 import RoutierMissionRequestPage from "./pages/routier/RoutierMissionRequestPage";
 import RoutierWalletPage from "./pages/routier/RoutierWalletPage";
 import RoutierParametresPage from "./pages/routier/RoutierParametresPage";
+import RoutierPremiumPage from "./pages/routier/RoutierPremiumPage";
 import RoutierPublierPage from "./pages/routier/RoutierPublierPage";
 import RoutierMessagesPage from "./pages/routier/RoutierMessagesPage";
 // Maritime pages
@@ -81,11 +82,16 @@ import MaritimeApercuPage from "./pages/maritime/MaritimeApercuPage";
 import MaritimePublierPage from "./pages/maritime/MaritimePublierPage";
 import MaritimeParametresPage from "./pages/maritime/MaritimeParametresPage";
 import MaritimeRegistration from "./pages/maritime/MaritimeRegistration";
+import MaritimeWalletPage from "./pages/maritime/MaritimeWalletPage";
+import MaritimePremiumPage from "./pages/maritime/MaritimePremiumPage";
 // Aérien pages
 import AerienApercuPage from "./pages/aerien/AerienApercuPage";
 import AerienPublierPage from "./pages/aerien/AerienPublierPage";
 import AerienDemandeFretPage from "./pages/aerien/AerienDemandeFretPage";
 import AerienRegistration from "./pages/aerien/AerienRegistration";
+import AerienWalletPage from "./pages/aerien/AerienWalletPage";
+import AerienPremiumPage from "./pages/aerien/AerienPremiumPage";
+import AerienParametresPage from "./pages/aerien/AerienParametresPage";
 // Coursier pages
 import CoursierRegistration from "./pages/coursier/CoursierRegistration";
 // Agence pages
