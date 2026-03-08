@@ -316,9 +316,13 @@ export default function GPNavettesPage() {
 
                     <Separator />
                     <p className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
-                      <Phone className="w-3 h-3" /> Coordonnées secondaires
+                      <Phone className="w-3 h-3" /> Coordonnées
                     </p>
 
+                    <div>
+                      <Label className="text-[10px]">Téléphone 1 (compte)</Label>
+                      <Input className="h-8 text-xs bg-muted/50 text-muted-foreground cursor-not-allowed" readOnly value={gpProfile?.phone || "—"} />
+                    </div>
                     <div>
                       <Label className="text-[10px]">Téléphone 2 (cette navette)</Label>
                       <Input className="h-8 text-xs" placeholder="+33 6 12 34 56 78" value={editForm.phone_secondary}
@@ -380,8 +384,13 @@ export default function GPNavettesPage() {
 
                     <div className="text-[10px] text-muted-foreground">{nav.origin_country} → {nav.destination_country}</div>
 
-                    {/* Secondary info */}
+                    {/* Contact info */}
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
+                      <div className="flex items-center gap-1.5">
+                        <Phone className="w-3 h-3 text-muted-foreground" />
+                        <span className="text-muted-foreground">Tél. 1:</span>
+                        <span>{gpProfile?.phone || "—"}</span>
+                      </div>
                       <div className="flex items-center gap-1.5">
                         <Phone className="w-3 h-3 text-muted-foreground" />
                         <span className="text-muted-foreground">Tél. 2:</span>
@@ -481,6 +490,10 @@ export default function GPNavettesPage() {
                     <Phone className="w-3 h-3" /> Coordonnées pour cette navette
                   </p>
 
+                  <div>
+                    <Label className="text-[10px]">Téléphone 1 (compte) — non modifiable</Label>
+                    <Input className="h-8 text-xs bg-muted/50 text-muted-foreground cursor-not-allowed" readOnly value={gpProfile?.phone || "—"} />
+                  </div>
                   <div>
                     <Label className="text-[10px]">Téléphone 2 (optionnel)</Label>
                     <Input className="h-8 text-xs" placeholder="+33 6 12 34 56 78" value={form.phone_secondary}
