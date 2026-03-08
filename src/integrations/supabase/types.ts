@@ -1474,6 +1474,11 @@ export type Database = {
         Row: {
           address: string | null
           auto_accept_enabled: boolean | null
+          auto_accept_exclude_fragile: boolean | null
+          auto_accept_max_orders_per_day: number | null
+          auto_accept_max_weight: number | null
+          auto_accept_min_price: number | null
+          auto_accept_require_insurance: boolean | null
           base_destination_city: string | null
           base_destination_country: string | null
           base_origin_city: string | null
@@ -1526,6 +1531,11 @@ export type Database = {
         Insert: {
           address?: string | null
           auto_accept_enabled?: boolean | null
+          auto_accept_exclude_fragile?: boolean | null
+          auto_accept_max_orders_per_day?: number | null
+          auto_accept_max_weight?: number | null
+          auto_accept_min_price?: number | null
+          auto_accept_require_insurance?: boolean | null
           base_destination_city?: string | null
           base_destination_country?: string | null
           base_origin_city?: string | null
@@ -1578,6 +1588,11 @@ export type Database = {
         Update: {
           address?: string | null
           auto_accept_enabled?: boolean | null
+          auto_accept_exclude_fragile?: boolean | null
+          auto_accept_max_orders_per_day?: number | null
+          auto_accept_max_weight?: number | null
+          auto_accept_min_price?: number | null
+          auto_accept_require_insurance?: boolean | null
           base_destination_city?: string | null
           base_destination_country?: string | null
           base_origin_city?: string | null
