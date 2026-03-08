@@ -3,6 +3,7 @@
  * Style GP Bagages : header sticky + barres d'étapes + footer fixe
  */
 import { useState, useEffect } from "react";
+import { getEntryFlowData } from "@/lib/entryFlowData";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Plane, ArrowRight, ArrowLeft, Eye, EyeOff, CheckCircle, MapPin, Lock, Mail, Loader2, DollarSign, Shield } from "lucide-react";

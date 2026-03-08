@@ -4,6 +4,7 @@
  * Flow: Pays/Ville/Téléphone → Entité → Véhicule → Tarifs
  */
 import { useState, useEffect } from "react";
+import { getEntryFlowData } from "@/lib/entryFlowData";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { 
