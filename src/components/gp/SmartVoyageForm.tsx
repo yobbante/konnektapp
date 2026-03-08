@@ -122,7 +122,7 @@ export function SmartVoyageForm({
   }, [open, selectedDate]);
 
   const loadGpData = async () => {
-    const [{ data: profile }, { data: lastOffer }] = await Promise.all([
+    const [{ data: profile }, { data: lastOffer }, { data: navData }] = await Promise.all([
       supabase
         .from("gp_profiles")
         .select("base_origin_city, base_origin_country, base_destination_city, base_destination_country, base_price_per_kg, default_currency")
@@ -135,7 +135,18 @@ export function SmartVoyageForm({
         .order("departure_date", { ascending: false })
         .limit(1)
         .maybeSingle(),
+      supabase
+        .from("gp_navettes")
+        .select("id, origin_city, origin_country, destination_city, destination_country, is_primary")
+        .eq("gp_id", gpId)
+        .eq("is_active", true)
+        .order("is_primary", { ascending: false }),
     ]);
+
+    if (navData && navData.length > 0) {
+      setNavettes(navData);
+      setSelectedNavetteIdx(0);
+    }
 
     if (profile) {
       setGpData({
@@ -156,14 +167,20 @@ export function SmartVoyageForm({
 
   if (!gpData) return null;
 
+  // Use selected navette if available, otherwise fall back to base profile route
+  const activeNavette = navettes.length > 0 ? navettes[selectedNavetteIdx] : null;
+  const baseRoute = activeNavette
+    ? { originCity: activeNavette.origin_city, originCountry: activeNavette.origin_country, destCity: activeNavette.destination_city, destCountry: activeNavette.destination_country }
+    : { originCity: gpData.baseOriginCity, originCountry: gpData.baseOriginCountry, destCity: gpData.baseDestCity, destCountry: gpData.baseDestCountry };
+
   const currentRoute = tripType === "aller"
     ? {
-        origin: { city: gpData.baseOriginCity, country: gpData.baseOriginCountry },
-        destination: { city: gpData.baseDestCity, country: gpData.baseDestCountry },
+        origin: { city: baseRoute.originCity, country: baseRoute.originCountry },
+        destination: { city: baseRoute.destCity, country: baseRoute.destCountry },
       }
     : {
-        origin: { city: gpData.baseDestCity, country: gpData.baseDestCountry },
-        destination: { city: gpData.baseOriginCity, country: gpData.baseOriginCountry },
+        origin: { city: baseRoute.destCity, country: baseRoute.destCountry },
+        destination: { city: baseRoute.originCity, country: baseRoute.originCountry },
       };
 
   const currencySymbol = getCurrencySymbol(gpData.currency as any);
