@@ -690,12 +690,12 @@ export default function GPApercuPage() {
               </div>
           }
 
-            {/* ── EMPTY STATE ── */}
-            {data.pendingParcels.length === 0 && data.activeParcels.length === 0 &&
+            {/* ── EMPTY STATE — only if no active AND no pending ── */}
+            {data.activeParcels.length === 0 && data.pendingParcels.length === 0 && data.departures.length === 0 &&
           <Card className="border-dashed">
                 <CardContent className="py-8 text-center text-muted-foreground">
                   <Package className="w-10 h-10 mx-auto mb-3 opacity-20" />
-                  <p className="text-sm font-medium">Aucun colis en cours</p>
+                  <p className="text-sm font-medium">Aucune activité</p>
                   <p className="text-xs mt-1">Créez un voyage pour recevoir des réservations</p>
                   <Button variant="outline" size="sm" className="mt-3" onClick={() => setShowVoyageForm(true)}>
                     <Plus className="w-3.5 h-3.5 mr-1.5" /> Nouveau voyage
