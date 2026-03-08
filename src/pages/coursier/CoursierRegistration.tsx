@@ -3,6 +3,7 @@
  * Style GP Bagages : header sticky + barres d'étapes + footer fixe
  */
 import { useState, useEffect } from "react";
+import { getEntryFlowData } from "@/lib/entryFlowData";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Package, ArrowRight, ArrowLeft, Eye, EyeOff, CheckCircle, MapPin, Lock, Mail, Loader2 } from "lucide-react";
@@ -57,10 +58,11 @@ export default function CoursierRegistration() {
   const [phoneChecking, setPhoneChecking] = useState(false);
   const [phoneUnique, setPhoneUnique] = useState<boolean | null>(null);
 
-  const [country, setCountry] = useState("SN");
-  const [city, setCity] = useState("");
+  const entryFlow = getEntryFlowData();
+  const [country, setCountry] = useState(entryFlow.countryCode || "SN");
+  const [city, setCity] = useState(entryFlow.city || "");
   const [form, setForm] = useState({
-    fullName: "", phone: "", email: "", password: "",
+    fullName: "", phone: entryFlow.phone || "", email: "", password: "",
     zone: "", vehicleType: "",
   });
 
@@ -161,21 +163,38 @@ export default function CoursierRegistration() {
               <Card><CardContent className="p-4 space-y-3">
                 <h2 className="text-base font-semibold flex items-center gap-2"><MapPin className="w-4 h-4 text-primary" /> Vos coordonnées</h2>
                 <div className="space-y-1"><Label className="text-xs">Pays *</Label>
-                  <Select value={country} onValueChange={setCountry}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                    <SelectContent>{COUNTRIES.map(c => <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>)}</SelectContent></Select>
+                  {entryFlow.hasCity ? (
+                    <div className="h-10 px-3 flex items-center rounded-md border border-input bg-muted/50 text-sm text-muted-foreground">{selectedCountry?.name || country}<span className="ml-auto text-[10px] text-primary">✓ Déjà renseigné</span></div>
+                  ) : (
+                    <Select value={country} onValueChange={setCountry}><SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                      <SelectContent>{COUNTRIES.map(c => <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>)}</SelectContent></Select>
+                  )}
                 </div>
                 <div className="space-y-1"><Label className="text-xs">Ville *</Label>
-                  <Select value={city} onValueChange={setCity}><SelectTrigger className="h-10"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                    <SelectContent>{cities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select>
+                  {entryFlow.hasCity ? (
+                    <div className="h-10 px-3 flex items-center rounded-md border border-input bg-muted/50 text-sm text-muted-foreground">{city}<span className="ml-auto text-[10px] text-primary">✓ Déjà renseigné</span></div>
+                  ) : (
+                    <Select value={city} onValueChange={setCity}><SelectTrigger className="h-10"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                      <SelectContent>{cities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select>
+                  )}
                 </div>
                 <div className="space-y-1"><Label className="text-xs">Téléphone *</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">{selectedCountry?.dialCode}</span>
-                    <Input value={form.phone} onChange={e => set("phone", e.target.value)} placeholder="77 123 45 67" className="pl-14 h-10" />
-                    {phoneChecking && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />}
-                    {!phoneChecking && phoneUnique === true && <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />}
-                  </div>
-                  {phoneUnique === false && <p className="text-[11px] text-destructive">Ce numéro est déjà utilisé</p>}
+                  {entryFlow.hasPhone ? (
+                    <>
+                      <div className="h-10 px-3 flex items-center rounded-md border border-input bg-muted/50 text-sm text-muted-foreground">{form.phone}<span className="ml-auto text-[10px] text-primary">✓ Déjà renseigné</span></div>
+                      <p className="text-[11px] text-muted-foreground">Ce numéro a été vérifié lors de votre inscription</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">{selectedCountry?.dialCode}</span>
+                        <Input value={form.phone} onChange={e => set("phone", e.target.value)} placeholder="77 123 45 67" className="pl-14 h-10" />
+                        {phoneChecking && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />}
+                        {!phoneChecking && phoneUnique === true && <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />}
+                      </div>
+                      {phoneUnique === false && <p className="text-[11px] text-destructive">Ce numéro est déjà utilisé</p>}
+                    </>
+                  )}
                 </div>
               </CardContent></Card>
             </motion.div>
