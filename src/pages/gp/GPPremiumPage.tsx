@@ -88,15 +88,19 @@ export default function GPPremiumPage() {
     }
   };
 
-  const handleDowngrade = async () => {
+  const handleDowngrade = async (targetPlan: "free" | "premium" = "free") => {
     setDowngrading(true);
     try {
       const { error } = await supabase
         .from("gp_profiles")
-        .update({ subscription: "free" as any, auto_accept_enabled: false })
+        .update({ 
+          subscription: targetPlan as any, 
+          auto_accept_enabled: targetPlan === "premium" 
+        })
         .eq("id", gpProfile.id);
       if (error) throw error;
-      toast({ title: "Plan modifié", description: "Vous êtes revenu au plan Standard." });
+      const label = targetPlan === "free" ? "Standard" : "Premium";
+      toast({ title: "Plan modifié", description: `Vous êtes passé au plan ${label}.` });
       setTimeout(() => { window.location.href = "/gp/apercu"; }, 1200);
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
