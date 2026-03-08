@@ -195,19 +195,19 @@ export default function GPPremiumPage() {
 
         <div className="max-w-md mx-auto px-5 py-8 space-y-6">
           <div className="text-center space-y-3">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mx-auto shadow-lg shadow-amber-500/25">
-              <Crown className="w-8 h-8 text-white" />
+            <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-lg", selectedPlan === "pro" ? "bg-gradient-to-br from-violet-500 to-purple-600 shadow-violet-500/25" : "bg-gradient-to-br from-amber-500 to-orange-500 shadow-amber-500/25")}>
+              {selectedPlan === "pro" ? <Rocket className="w-8 h-8 text-white" /> : <Crown className="w-8 h-8 text-white" />}
             </div>
             <h2 className="text-xl font-bold">GP {selectedPlan === "pro" ? "Pro" : "Premium"}</h2>
           </div>
 
-          <Card className="border-amber-500/30 bg-amber-500/5">
+          <Card className={selectedPlan === "pro" ? "border-violet-500/30 bg-violet-500/5" : "border-amber-500/30 bg-amber-500/5"}>
             <CardContent className="p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Abonnement mensuel</span>
-                <span className="text-lg font-bold text-amber-600">{selectedPlan === "pro" ? "19 900" : "9 900"} FCFA</span>
+                <span className={cn("text-lg font-bold", selectedPlan === "pro" ? "text-violet-600" : "text-amber-600")}>{selectedPlan === "pro" ? "19 900" : "9 900"} FCFA</span>
               </div>
-              <Separator className="bg-amber-500/15" />
+              <Separator className={selectedPlan === "pro" ? "bg-violet-500/15" : "bg-amber-500/15"} />
               <div className="space-y-2">
                 {[
                   { label: "Fréquence", value: "Mensuel" },
@@ -229,7 +229,7 @@ export default function GPPremiumPage() {
             <div className="grid grid-cols-1 gap-1.5">
               {(selectedPlan === "pro" ? PRO_FEATURES.filter(f => !f.separator) : PREMIUM_FEATURES.filter(f => f.highlight)).map((f, i) => (
                 <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-accent flex-shrink-0" />
+                  <CheckCircle2 className={cn("w-3.5 h-3.5 flex-shrink-0", selectedPlan === "pro" ? "text-violet-500" : "text-accent")} />
                   {f.label}
                 </div>
               ))}
@@ -238,11 +238,11 @@ export default function GPPremiumPage() {
 
           <div className="space-y-3 pt-2">
             <Button
-              className="w-full gap-2 h-12 text-sm bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-lg shadow-amber-500/20"
+              className={cn("w-full gap-2 h-12 text-sm text-white font-semibold shadow-lg", selectedPlan === "pro" ? "bg-violet-500 hover:bg-violet-600 shadow-violet-500/20" : "bg-amber-500 hover:bg-amber-600 shadow-amber-500/20")}
               onClick={handleConfirmUpgrade}
               disabled={upgrading}
             >
-              <Crown className="w-4 h-4" />
+              {selectedPlan === "pro" ? <Rocket className="w-4 h-4" /> : <Crown className="w-4 h-4" />}
               Confirmer — {selectedPlan === "pro" ? "19 900" : "9 900"} FCFA/mois
             </Button>
             <Button
