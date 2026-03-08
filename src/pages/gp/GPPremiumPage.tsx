@@ -56,6 +56,7 @@ export default function GPPremiumPage() {
   const { gpProfile, loading } = useGPProfile();
   const [step, setStep] = useState<FlowStep>("plans");
   const [upgrading, setUpgrading] = useState(false);
+  const [downgrading, setDowngrading] = useState(false);
 
   if (loading) return <PageLoader message="Chargement..." />;
   if (!gpProfile) return null;
