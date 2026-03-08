@@ -1123,6 +1123,7 @@ export type Database = {
       gp_navette_change_requests: {
         Row: {
           admin_notes: string | null
+          auto_approved: boolean | null
           created_at: string
           gp_id: string
           id: string
@@ -1142,6 +1143,7 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          auto_approved?: boolean | null
           created_at?: string
           gp_id: string
           id?: string
@@ -1161,6 +1163,7 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          auto_approved?: boolean | null
           created_at?: string
           gp_id?: string
           id?: string
@@ -1188,6 +1191,60 @@ export type Database = {
           },
           {
             foreignKeyName: "gp_navette_change_requests_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gp_navettes: {
+        Row: {
+          created_at: string
+          destination_city: string
+          destination_country: string
+          gp_id: string
+          id: string
+          is_active: boolean
+          is_primary: boolean
+          origin_city: string
+          origin_country: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          destination_city: string
+          destination_country?: string
+          gp_id: string
+          id?: string
+          is_active?: boolean
+          is_primary?: boolean
+          origin_city: string
+          origin_country?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          destination_city?: string
+          destination_country?: string
+          gp_id?: string
+          id?: string
+          is_active?: boolean
+          is_primary?: boolean
+          origin_city?: string
+          origin_country?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gp_navettes_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_navettes_gp_id_fkey"
             columns: ["gp_id"]
             isOneToOne: false
             referencedRelation: "public_gp_profiles"
@@ -4976,6 +5033,7 @@ export type Database = {
         Returns: number
       }
       get_ktp_payment_rule: { Args: { p_trust_score: number }; Returns: string }
+      get_max_navettes: { Args: { p_subscription: string }; Returns: number }
       get_premium_commission_discount: {
         Args: { p_subscription: string }
         Returns: number
