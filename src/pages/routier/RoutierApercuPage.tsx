@@ -15,6 +15,7 @@ import {
   MapPin, Calendar, ArrowRight, Scale,
   Shield, Star, TrendingUp, Send
 } from "lucide-react";
+import { getSizeFromWeight, freightTypeLabels } from "@/lib/routierUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -76,13 +77,15 @@ export default function RoutierApercuPage() {
     if (!gpProfile) return;
     if (refresh) setRefreshing(true);
     try {
-      const [ordersRes, walletRes, vehiclesRes, navettesRes] = await Promise.all([
+      const [ordersRes, walletRes, vehiclesRes, navettesRes, missionsRes] = await Promise.all([
         supabase.from("orders").select("id, order_number, origin_city, destination_city, weight, status, total_price, currency, created_at, description, recipient_name")
           .eq("gp_id", gpProfile.id).not("status", "eq", "cancelled").order("created_at", { ascending: false }),
         supabase.from("gp_wallets").select("balance, pending_balance, currency").eq("gp_id", gpProfile.id).maybeSingle(),
         supabase.from("vehicles").select("id, name, vehicle_type, is_active, max_weight_kg").eq("gp_id", gpProfile.id),
         supabase.from("gp_offers").select("id, origin_city, destination_city, departure_date, available_capacity, total_capacity, price_per_kg, currency, status, vehicle_id")
           .eq("gp_id", gpProfile.id).eq("status", "active").order("departure_date", { ascending: true }),
+        supabase.from("routier_missions").select("id, origin_city, destination_city, weight_kg, freight_type, vehicle_type_required, client_budget, estimated_price, currency, urgency, created_at, status")
+          .in("status", ["open", "matching", "negotiating"]).order("created_at", { ascending: false }).limit(5),
       ]);
 
       const orders = ordersRes.data || [];
@@ -102,9 +105,9 @@ export default function RoutierApercuPage() {
           missions: orders.length,
           avgRating: gpProfile.rating || 0,
         },
-        pendingActions: { pendingOrders: pending.length, marketplaceMissions: 0 },
+        pendingActions: { pendingOrders: pending.length, marketplaceMissions: (missionsRes.data || []).length },
         navettes: navettesRes.data || [],
-        missionRequests: [],
+        missionRequests: missionsRes.data || [],
       });
     } catch (err) {
       console.error("Dashboard load error:", err);
@@ -423,31 +426,36 @@ export default function RoutierApercuPage() {
               </Button>
             </div>
             <div className="space-y-2">
-              {data.missionRequests.slice(0, 3).map((m: any) => (
-                <Card key={m.id} className="cursor-pointer active:scale-[0.99] border-accent/20"
-                  onClick={() => navigate("/routier/demandes")}>
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
-                        <Package className="w-5 h-5 text-accent" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate">{m.origin_city} → {m.destination_city}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <Badge variant="outline" className="text-[9px] h-4 px-1.5">{m.vehicle_type_requested?.replace(/_/g, " ") || m.freight_type}</Badge>
-                          <span className="text-xs text-muted-foreground">{m.weight_kg} kg</span>
+              {data.missionRequests.slice(0, 3).map((m: any) => {
+                const size = getSizeFromWeight(m.weight_kg || 0);
+                const freight = freightTypeLabels[m.freight_type] || { label: m.freight_type, emoji: "📦" };
+                const price = m.client_budget || m.estimated_price || 0;
+                return (
+                  <Card key={m.id} className="cursor-pointer active:scale-[0.99] border-accent/20"
+                    onClick={() => navigate("/routier/demandes")}>
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                            <span className="text-sm font-semibold truncate">{m.origin_city}</span>
+                            <ArrowRight className="w-3 h-3 text-muted-foreground shrink-0" />
+                            <span className="text-sm font-semibold truncate">{m.destination_city}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="text-xs">{freight.emoji}</span>
+                            <span className="text-xs text-muted-foreground">{m.weight_kg} kg</span>
+                            <Badge className={cn("text-[9px] h-4 px-1.5 font-bold", size.bg, size.color)}>{size.label}</Badge>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-bold text-primary">{price.toLocaleString()} CFA</p>
                         </div>
                       </div>
-                      <div className="text-right shrink-0">
-                        {m.budget_max && <p className="text-xs font-bold text-primary">{m.budget_max.toLocaleString()} {m.currency}</p>}
-                        <p className="text-[10px] text-muted-foreground">
-                          {formatDistanceToNow(new Date(m.created_at), { locale: fr, addSuffix: true })}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </motion.div>
         )}
