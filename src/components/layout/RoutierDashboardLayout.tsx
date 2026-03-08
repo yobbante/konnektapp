@@ -355,7 +355,7 @@ export function RoutierDashboardLayout({
                 <MenuButton icon={LogOut} label="Déconnexion" variant="destructive" onClick={() => {setShowMenu(false);handleSignOut();}} />
               </div>
               <div className="pb-3">
-                <PremiumCTABanner variant="compact" context="menu" subscription={(gpProfile as any).subscription} />
+                <PremiumCTABanner variant="compact" context="menu" subscription={(gpProfile as any).subscription} premiumRoute="/routier/premium" />
               </div>
             </SheetContent>
           </Sheet>

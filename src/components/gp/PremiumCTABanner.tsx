@@ -22,6 +22,8 @@ interface PremiumCTABannerProps {
   className?: string;
   gpId?: string;
   onUpgraded?: () => void;
+  /** Override the premium page route (default: /gp/premium) */
+  premiumRoute?: string;
 }
 
 const FREE_MESSAGES: Record<string, { title: string; desc: string }> = {
@@ -70,7 +72,7 @@ const UPGRADE_MESSAGES: Record<string, { title: string; desc: string }> = {
   },
 };
 
-export function PremiumCTABanner({ variant = "card", context = "default", isPremium, subscription, className }: PremiumCTABannerProps) {
+export function PremiumCTABanner({ variant = "card", context = "default", isPremium, subscription, className, premiumRoute }: PremiumCTABannerProps) {
   const navigate = useNavigate();
 
   // Determine effective subscription
@@ -82,7 +84,8 @@ export function PremiumCTABanner({ variant = "card", context = "default", isPrem
   const isUpgrade = sub === "premium";
   const messages = isUpgrade ? UPGRADE_MESSAGES : FREE_MESSAGES;
   const msg = messages[context] || messages.default;
-  const goToPremium = () => navigate("/gp/premium");
+  const targetRoute = premiumRoute || "/gp/premium";
+  const goToPremium = () => navigate(targetRoute);
 
   const accentColor = isUpgrade ? "violet" : "amber";
   const Icon = isUpgrade ? Rocket : Crown;
@@ -233,7 +236,7 @@ export function PremiumCTABanner({ variant = "card", context = "default", isPrem
 }
 
 /** Lock overlay for premium-gated features */
-export function PremiumLockOverlay({ feature }: { feature: string }) {
+export function PremiumLockOverlay({ feature, premiumRoute = "/gp/premium" }: { feature: string; premiumRoute?: string }) {
   const navigate = useNavigate();
   return (
     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm rounded-2xl">
@@ -242,7 +245,7 @@ export function PremiumLockOverlay({ feature }: { feature: string }) {
       </div>
       <p className="text-sm font-bold mb-1">Fonctionnalité Premium</p>
       <p className="text-xs text-muted-foreground mb-3">{feature}</p>
-      <Button size="sm" className="gap-1.5 h-8 text-xs bg-amber-500 hover:bg-amber-600 text-white" onClick={() => navigate("/gp/premium")}>
+      <Button size="sm" className="gap-1.5 h-8 text-xs bg-amber-500 hover:bg-amber-600 text-white" onClick={() => navigate(premiumRoute)}>
         <Crown className="w-3.5 h-3.5" />
         Débloquer
       </Button>
