@@ -142,7 +142,7 @@ export default function GPColisPage() {
     pending: allColis.filter(c => c.status === "pending").length,
     active: allColis.filter(c => ACTIVE_STATUSES.includes(c.status)).length,
     arrived: allColis.filter(c => c.status === "arrived").length,
-    delivered: allColis.filter(c => c.status === "delivered").length,
+    delivered: allColis.filter(c => DELIVERED_STATUSES.includes(c.status)).length,
   };
 
   return (
