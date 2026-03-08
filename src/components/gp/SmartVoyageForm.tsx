@@ -263,6 +263,34 @@ export function SmartVoyageForm({
         </div>
 
         <div className="px-4 py-4 space-y-4 overflow-y-auto pb-safe" style={{ maxHeight: 'calc(92vh - 56px)' }}>
+          
+          {/* Navette selector — only if multiple navettes */}
+          {navettes.length > 1 && (
+            <div className="space-y-1.5">
+              <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Navette</p>
+              <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+                {navettes.map((nav, idx) => (
+                  <button
+                    key={nav.id}
+                    type="button"
+                    onClick={() => { setSelectedNavetteIdx(idx); setTripType("aller"); }}
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all ${
+                      idx === selectedNavetteIdx 
+                        ? "bg-primary text-primary-foreground shadow-sm" 
+                        : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <span>{getFlag(nav.origin_country)}</span>
+                    <span>{nav.origin_city}</span>
+                    <span className="text-[9px] opacity-60">→</span>
+                    <span>{getFlag(nav.destination_country)}</span>
+                    <span>{nav.destination_city}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Route card */}
           <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex items-center justify-center gap-4">
             <div className="text-center">
