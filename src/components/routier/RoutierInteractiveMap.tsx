@@ -4,9 +4,10 @@
  * Detail: curved road-style route with Départ/Arrivée labels + bottom card
  */
 import { useEffect, useRef, useMemo, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Truck, Package, MapPin, Plus, Minus, LocateFixed } from "lucide-react";
+import { Truck, Package, MapPin, Plus, Minus, LocateFixed, ChevronRight } from "lucide-react";
 
 /* ─── City coordinates ─── */
 const CITY_COORDS: Record<string, [number, number]> = {
@@ -146,6 +147,7 @@ function createEndpointIcon(label: string, isOrigin: boolean) {
 
 /* ─── Main Component ─── */
 export function RoutierInteractiveMap({ activeMissions, missionRequests, pendingMissions, stats }: Props) {
+  const navigate = useNavigate();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layersRef = useRef<L.Layer[]>([]);
@@ -331,7 +333,10 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
 
       {/* Detail card (bottom overlay when mission selected) */}
       {selectedMission && (
-        <div className="absolute bottom-0 left-0 right-0 z-[1000] bg-background/95 backdrop-blur-md border-t border-border/50 p-3 pointer-events-auto animate-in slide-in-from-bottom-4 duration-200">
+        <div
+          className="absolute bottom-0 left-0 right-0 z-[1000] bg-background/95 backdrop-blur-md border-t border-border/50 p-3 pointer-events-auto animate-in slide-in-from-bottom-4 duration-200 cursor-pointer"
+          onClick={() => navigate(`/routier/mission/${selectedMission.id}`)}
+        >
           <div className="flex items-start gap-3">
             <div className="w-14 h-14 rounded-xl bg-muted/40 flex items-center justify-center flex-shrink-0">
               <Package className="w-7 h-7 text-muted-foreground/30" />
@@ -353,27 +358,30 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
                     </div>
                   </div>
                 </div>
-                <div className="text-right flex-shrink-0">
-                  <span className="text-base font-bold" style={{ color: TYPE_COLORS[selectedMission.type] }}>
-                    {selectedMission.price ? `${Math.round(selectedMission.price).toLocaleString()} CFA` : "—"}
-                  </span>
-                  {selectedMission.weight && (
-                    <div className="flex items-center justify-end gap-1.5 mt-1">
-                      <span className="text-[10px] text-muted-foreground">{selectedMission.weight} kg</span>
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{
-                        background: TYPE_BG[selectedMission.type],
-                        color: TYPE_COLORS[selectedMission.type],
-                      }}>
-                        {getWeightLabel(selectedMission.weight)}
-                      </span>
-                    </div>
-                  )}
+                <div className="text-right flex-shrink-0 flex items-center gap-2">
+                  <div>
+                    <span className="text-base font-bold" style={{ color: TYPE_COLORS[selectedMission.type] }}>
+                      {selectedMission.price ? `${Math.round(selectedMission.price).toLocaleString()} CFA` : "—"}
+                    </span>
+                    {selectedMission.weight && (
+                      <div className="flex items-center justify-end gap-1.5 mt-1">
+                        <span className="text-[10px] text-muted-foreground">{selectedMission.weight} kg</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{
+                          background: TYPE_BG[selectedMission.type],
+                          color: TYPE_COLORS[selectedMission.type],
+                        }}>
+                          {getWeightLabel(selectedMission.weight)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </div>
               </div>
             </div>
           </div>
           <button
-            onClick={() => setSelectedMission(null)}
+            onClick={(e) => { e.stopPropagation(); setSelectedMission(null); }}
             className="absolute top-2 right-2 w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-muted/80 transition-colors"
           >
             <span className="text-sm font-bold">✕</span>

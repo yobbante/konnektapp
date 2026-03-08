@@ -73,6 +73,7 @@ import RoutierTarificationPage from "./pages/routier/RoutierTarificationPage";
 import RoutierProfilPublicPage from "./pages/routier/RoutierProfilPublicPage";
 import RoutierDemandePage from "./pages/routier/RoutierDemandePage";
 import RoutierMissionRequestPage from "./pages/routier/RoutierMissionRequestPage";
+import RoutierMissionDetailPage from "./pages/routier/RoutierMissionDetailPage";
 import RoutierWalletPage from "./pages/routier/RoutierWalletPage";
 import RoutierParametresPage from "./pages/routier/RoutierParametresPage";
 import RoutierPremiumPage from "./pages/routier/RoutierPremiumPage";
@@ -261,6 +262,7 @@ const App = () => (
             <Route path="/routier/publier" element={<RoutierPublierPage />} />
             <Route path="/routier/messages" element={<RoutierMessagesPage />} />
             {/* Client-facing routier mission request */}
+            <Route path="/routier/mission/:id" element={<RoutierMissionDetailPage />} />
             <Route path="/routier/mission" element={<RoutierMissionRequestPage />} />
             <Route path="/routier/demande" element={<Navigate to="/routier/mission" replace />} />
             <Route path="/routier/tarification" element={<Navigate to="/routier/apercu" replace />} />
