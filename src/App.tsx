@@ -27,6 +27,7 @@ import GPDemandesPage from "./pages/gp/GPDemandesPage";
 import GPEnCoursPage from "./pages/gp/GPEnCoursPage";
 import GPHistoriquePage from "./pages/gp/GPHistoriquePage";
 import GPCalendrierPage from "./pages/gp/GPCalendrierPage";
+import GPDepartDetailPage from "./pages/gp/GPDepartDetailPage";
 import GPTarificationPage from "./pages/gp/GPTarificationPage";
 import GPRestrictionsPage from "./pages/gp/GPRestrictionsPage";
 import GPProfilPublicPage from "./pages/gp/GPProfilPublicPage";
@@ -221,6 +222,7 @@ const App = () => (
             <Route path="/gp/en-cours" element={<GPEnCoursPage />} />
             <Route path="/gp/historique" element={<GPHistoriquePage />} />
             <Route path="/gp/calendrier" element={<GPCalendrierPage />} />
+            <Route path="/gp/depart/:id" element={<GPDepartDetailPage />} />
             <Route path="/gp/tarification" element={<GPTarificationPage />} />
             <Route path="/gp/restrictions" element={<GPRestrictionsPage />} />
             <Route path="/gp/scan" element={<GPScanPage />} />

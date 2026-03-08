@@ -787,7 +787,7 @@ export default function GPApercuPage() {
 
             data.departures.map((dep: any) =>
             <Card key={dep.id} className="cursor-pointer active:scale-[0.98] transition-all"
-            onClick={() => navigate(`/offres/${dep.id}`)}>
+            onClick={() => navigate(`/gp/depart/${dep.id}`)}>
                     <CardContent className="p-3 flex items-center gap-3">
                       <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                         <Plane className="w-4 h-4 text-primary" />
