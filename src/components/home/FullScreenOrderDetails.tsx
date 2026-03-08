@@ -111,7 +111,7 @@ export function FullScreenOrderDetails({ order, onClose, navigate }: FullScreenO
                     <div className="flex-1">
                       <p className="text-xs text-blue-600 dark:text-blue-400 uppercase tracking-wide font-medium">Enlèvement Konnekt</p>
                       <p className="font-medium text-sm text-blue-800 dark:text-blue-200">Un livreur viendra récupérer votre colis</p>
-                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">📍 {order.logistics_options?.pickup_address || "Adresse configurée"}</p>
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">{order.logistics_options?.pickup_address || "Adresse configurée"}</p>
                     </div>
                   </div>
                 ) : !isCollected ? (
@@ -145,7 +145,7 @@ export function FullScreenOrderDetails({ order, onClose, navigate }: FullScreenO
                     <div className="flex-1">
                       <p className="text-xs text-purple-600 dark:text-purple-400 uppercase tracking-wide font-medium">Livraison Konnekt</p>
                       <p className="font-medium text-sm text-purple-800 dark:text-purple-200">Un livreur livrera votre colis</p>
-                      {isDelivered && <p className="text-xs text-purple-600 mt-1">📍 {order.logistics_options?.delivery_address || "Adresse configurée"}</p>}
+                      {isDelivered && <p className="text-xs text-purple-600 mt-1">{order.logistics_options?.delivery_address || "Adresse configurée"}</p>}
                       {!isDelivered && <p className="text-xs text-purple-500 mt-1 italic">Adresse visible après livraison</p>}
                     </div>
                   </div>

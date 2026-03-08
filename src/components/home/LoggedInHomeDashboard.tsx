@@ -35,7 +35,7 @@ export function LoggedInHomeDashboard({
         className="text-center"
       >
         <h1 className="text-xl font-bold text-foreground">
-          {greeting}, <span className="text-primary">{firstName}</span> 👋
+          {greeting}, <span className="text-primary">{firstName}</span>
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           Que souhaitez-vous faire aujourd'hui ?
