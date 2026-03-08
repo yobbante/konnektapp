@@ -557,8 +557,8 @@ function QuickAction({ icon: Icon, label, badge, primary, onClick }: {
       className={cn("flex flex-col items-center justify-center gap-1 w-full aspect-square rounded-xl transition-all relative",
         primary ? "bg-primary text-primary-foreground shadow-md shadow-primary/20" : "bg-card border border-border hover:bg-muted/50"
       )}>
-      {badge && badge > 0 && (
-        <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground text-[9px] rounded-full flex items-center justify-center font-bold animate-pulse">{badge}</span>
+      {!!badge && badge > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-destructive rounded-full animate-pulse ring-2 ring-card" />
       )}
       <Icon className="w-5 h-5" />
       <span className="text-[10px] font-medium leading-tight">{label}</span>
