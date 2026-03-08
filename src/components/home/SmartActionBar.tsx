@@ -206,7 +206,7 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
 
     const priorityOrder = { critical: 0, urgent: 1, important: 2 };
     return items.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
-  }, [supplementOrders, incomingParcels, pendingReviews, unreadMessages, priceChanges, navigate]);
+  }, [supplementOrders, incomingParcels, pendingReviews, pendingRecipientFeedback, unreadMessages, priceChanges, navigate]);
 
   // Reset index when actions change
   useEffect(() => {
@@ -332,6 +332,15 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
           gpId={ratingOrder.gp_id}
           gpName={ratingOrder.gp_name}
           onSuccess={handleReviewSuccess}
+        />
+      )}
+
+      {feedbackOrder && (
+        <PostDeliveryFlow
+          order={feedbackOrder}
+          role="recipient"
+          onClose={() => setFeedbackOrder(null)}
+          onNavigate={(path) => { setFeedbackOrder(null); navigate(path); }}
         />
       )}
     </>
