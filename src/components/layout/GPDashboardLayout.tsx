@@ -134,7 +134,7 @@ export function GPDashboardLayout({
                   {gpProfile.business_name}
                 </p>
                 {isGPPremium((gpProfile as any).subscription) ? (
-                  <span className="inline-flex items-center gap-0.5 h-4 px-1.5 rounded text-[10px] font-semibold bg-amber-400/20 text-amber-200 border border-amber-400/30">
+                  <span className="inline-flex items-center gap-0.5 h-4 px-1.5 rounded text-[10px] font-bold bg-white text-amber-700 border border-white/80 shadow-sm">
                     <Crown className="w-2.5 h-2.5" />
                     Premium
                   </span>
