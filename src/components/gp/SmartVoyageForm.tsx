@@ -17,6 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { AirlineSelect } from "@/components/gp/AirlineSelect";
+import { DepartureFlyerSheet } from "@/components/gp/DepartureFlyerSheet";
+import { type FlyerData } from "@/lib/generateDepartureFlyer";
 import { format, addDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import { LUGGAGE_PRESETS } from "@/lib/bookingRules";
