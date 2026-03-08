@@ -112,15 +112,16 @@ export function RouteLinkedProfileForm({
     onChange(data, isValid);
   }, [data, isValid]);
 
-  // Auto-prefix phone with country code when country changes
+  // Auto-prefix phone with country code when country changes (skip if entry phone provided)
   useEffect(() => {
+    if (entryPhone) return; // Don't override entry flow phone
     const code = getCountryPhoneCode(data.originCountry);
     if (!data.originPhone || data.originPhone === "") {
       setData(prev => ({ ...prev, originPhone: code + " " }));
     } else if (!data.originPhone.startsWith("+")) {
       setData(prev => ({ ...prev, originPhone: code + " " + prev.originPhone }));
     }
-  }, [data.originCountry]);
+  }, [data.originCountry, entryPhone]);
 
   useEffect(() => {
     const code = getCountryPhoneCode(data.destinationCountry);
