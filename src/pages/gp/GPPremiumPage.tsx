@@ -2,8 +2,8 @@
  * GPPremiumPage — Dedicated pricing page for GP Premium subscription
  * Inspired by Lovable pricing: clean cards, feature lists, clear CTAs
  */
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Crown, Zap, Star, TrendingUp, BarChart3, Eye, Percent,
