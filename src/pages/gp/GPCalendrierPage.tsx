@@ -206,7 +206,7 @@ export default function GPCalendrierPage() {
                   <div className="space-y-2 opacity-60">
                     <p className="text-sm font-medium text-muted-foreground">Passés ({pastVoyages.length})</p>
                     {pastVoyages.slice(0, 3).map((v) => (
-                      <Card key={v.id}>
+                      <Card key={v.id} className="cursor-pointer active:scale-[0.98]" onClick={() => navigate(`/gp/depart/${v.id}`)}>
                         <CardContent className="p-3 flex items-center justify-between">
                           <div>
                             <p className="text-sm">{v.origin_city} → {v.destination_city}</p>
