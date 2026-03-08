@@ -479,21 +479,50 @@ export default function RoutierApercuPage() {
           </motion.div>
         )}
 
-        {/* ── EMPTY STATE ── */}
-        {data.pendingMissions.length === 0 && data.activeMissions.length === 0 && data.navettes.length === 0 && data.missionRequests.length === 0 && (
-          <Card className="border-dashed">
-            <CardContent className="py-10 text-center text-muted-foreground">
-              <Truck className="w-12 h-12 mx-auto mb-3 opacity-20" />
-              <p className="text-sm font-medium">Aucune activité</p>
-              <p className="text-xs mt-1">
-                {isShuttle ? "Publiez votre première ligne navette pour recevoir des réservations" : "Ajoutez des véhicules pour recevoir des missions"}
-              </p>
-              <Button variant="outline" size="sm" className="mt-3 h-8 text-xs" onClick={() => navigate(isShuttle ? "/routier/publier" : "/routier/vehicules")}>
-                <Plus className="w-3.5 h-3.5 mr-1" /> {isShuttle ? "Publier une ligne" : "Gérer ma flotte"}
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+        {/* ── ADAPTIVE EMPTY STATE ── */}
+        {(() => {
+          const hasDemands = data.missionRequests.length > 0 || data.pendingMissions.length > 0;
+          const hasNavettes = data.navettes.length > 0;
+          const hasActive = data.activeMissions.length > 0;
+          const hasVehicles = data.vehicles.length > 0;
+
+          // Si des demandes existent → on les montre (déjà rendu plus haut)
+          // Si pas de demandes mais au moins 1 navette → masquer ce bloc
+          if (hasDemands || hasActive || hasNavettes) return null;
+
+          // Pas de demandes, pas de navette → guider l'utilisateur
+          return (
+            <Card className="border-dashed">
+              <CardContent className="py-8 text-center text-muted-foreground">
+                {!hasVehicles ? (
+                  <>
+                    <Car className="w-10 h-10 mx-auto mb-2 opacity-20" />
+                    <p className="text-sm font-medium">Commencez ici</p>
+                    <p className="text-xs mt-1">Ajoutez votre premier véhicule pour recevoir des missions</p>
+                    <Button variant="outline" size="sm" className="mt-3 h-8 text-xs" onClick={() => navigate("/routier/vehicules")}>
+                      <Plus className="w-3.5 h-3.5 mr-1" /> Ajouter un véhicule
+                    </Button>
+                  </>
+                ) : isShuttle ? (
+                  <>
+                    <Route className="w-10 h-10 mx-auto mb-2 opacity-20" />
+                    <p className="text-sm font-medium">Publiez une ligne</p>
+                    <p className="text-xs mt-1">Créez votre première navette pour recevoir des réservations</p>
+                    <Button variant="outline" size="sm" className="mt-3 h-8 text-xs" onClick={() => navigate("/routier/publier")}>
+                      <Plus className="w-3.5 h-3.5 mr-1" /> Publier une ligne
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Package className="w-10 h-10 mx-auto mb-2 opacity-20" />
+                    <p className="text-sm font-medium">Aucune demande</p>
+                    <p className="text-xs mt-1">Vous serez notifié dès qu'une mission correspond à votre flotte</p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* ── FLEET OVERVIEW ── */}
         {data.vehicles.length > 0 && (
