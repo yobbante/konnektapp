@@ -406,8 +406,7 @@ export default function GPApercuPage() {
 
         {!isPending &&
         <>
-            {/* ── PREMIUM/PRO CTA — top of dashboard ── */}
-            <PremiumCTABanner variant="banner" context="dashboard" subscription={(gpProfile as any)?.subscription} gpId={gpProfile.id} />
+            {/* Premium CTA now in GPDashboardLayout header */}
 
             {/* ── URGENT ALERTS BLOCK ── */}
             {urgentCount > 0 &&
