@@ -69,7 +69,7 @@ export default function GPPremiumPage() {
       await new Promise(resolve => setTimeout(resolve, 2000));
       const { error } = await supabase
         .from("gp_profiles")
-        .update({ subscription: "premium" as any })
+        .update({ subscription: "premium" as any, auto_accept_enabled: true })
         .eq("id", gpProfile.id);
       if (error) throw error;
       setStep("success");
