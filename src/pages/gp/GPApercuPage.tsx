@@ -403,12 +403,6 @@ export default function GPApercuPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-base font-bold">Bonjour 👋</h2>
-                {gpProfile.base_origin_city && gpProfile.base_destination_city &&
-              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                    <Plane className="w-3 h-3" />
-                    {gpProfile.base_origin_city} → {gpProfile.base_destination_city}
-                  </p>
-              }
               </div>
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => loadAll(true)} disabled={refreshing}>
                 <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
