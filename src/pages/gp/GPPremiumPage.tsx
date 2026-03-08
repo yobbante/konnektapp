@@ -57,11 +57,14 @@ export default function GPPremiumPage() {
   const [step, setStep] = useState<FlowStep>("plans");
   const [upgrading, setUpgrading] = useState(false);
   const [downgrading, setDowngrading] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<"premium" | "pro">("premium");
 
   if (loading) return <PageLoader message="Chargement..." />;
   if (!gpProfile) return null;
 
-  const isPremium = isGPPremium((gpProfile as any).subscription);
+  const currentSub = (gpProfile as any).subscription || "free";
+  const isPremium = isGPPremium(currentSub);
+  const isPro = currentSub === "pro";
 
   const handleConfirmUpgrade = async () => {
     setStep("processing");
@@ -70,7 +73,7 @@ export default function GPPremiumPage() {
       await new Promise(resolve => setTimeout(resolve, 2000));
       const { error } = await supabase
         .from("gp_profiles")
-        .update({ subscription: "premium" as any, auto_accept_enabled: true })
+        .update({ subscription: selectedPlan as any, auto_accept_enabled: true })
         .eq("id", gpProfile.id);
       if (error) throw error;
       setStep("success");
@@ -85,15 +88,19 @@ export default function GPPremiumPage() {
     }
   };
 
-  const handleDowngrade = async () => {
+  const handleDowngrade = async (targetPlan: "free" | "premium" = "free") => {
     setDowngrading(true);
     try {
       const { error } = await supabase
         .from("gp_profiles")
-        .update({ subscription: "free" as any, auto_accept_enabled: false })
+        .update({ 
+          subscription: targetPlan as any, 
+          auto_accept_enabled: targetPlan === "premium" 
+        })
         .eq("id", gpProfile.id);
       if (error) throw error;
-      toast({ title: "Plan modifié", description: "Vous êtes revenu au plan Standard." });
+      const label = targetPlan === "free" ? "Standard" : "Premium";
+      toast({ title: "Plan modifié", description: `Vous êtes passé au plan ${label}.` });
       setTimeout(() => { window.location.href = "/gp/apercu"; }, 1200);
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
@@ -120,13 +127,13 @@ export default function GPPremiumPage() {
             <CheckCircle2 className="w-10 h-10 text-amber-500" />
           </motion.div>
           <div>
-            <h2 className="text-2xl font-bold">🎉 Bienvenue Premium !</h2>
+            <h2 className="text-2xl font-bold">🎉 Bienvenue {selectedPlan === "pro" ? "Pro" : "Premium"} !</h2>
             <p className="text-sm text-muted-foreground mt-2">
-              Votre compte a été mis à niveau. Profitez de tous les avantages Premium.
+              Votre compte a été mis à niveau. Profitez de tous les avantages {selectedPlan === "pro" ? "Pro" : "Premium"}.
             </p>
           </div>
           <Badge className="bg-amber-500 text-white border-none gap-1.5 text-sm px-4 py-1.5">
-            <Crown className="w-4 h-4" /> GP Premium
+            <Crown className="w-4 h-4" /> GP {selectedPlan === "pro" ? "Pro" : "Premium"}
           </Badge>
           <motion.div
             initial={{ width: 0 }}
@@ -177,14 +184,14 @@ export default function GPPremiumPage() {
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mx-auto shadow-lg shadow-amber-500/25">
               <Crown className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-xl font-bold">GP Premium</h2>
+            <h2 className="text-xl font-bold">GP {selectedPlan === "pro" ? "Pro" : "Premium"}</h2>
           </div>
 
           <Card className="border-amber-500/30 bg-amber-500/5">
             <CardContent className="p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Abonnement mensuel</span>
-                <span className="text-lg font-bold text-amber-600">9 900 FCFA</span>
+                <span className="text-lg font-bold text-amber-600">{selectedPlan === "pro" ? "19 900" : "9 900"} FCFA</span>
               </div>
               <Separator className="bg-amber-500/15" />
               <div className="space-y-2">
@@ -204,9 +211,9 @@ export default function GPPremiumPage() {
           </Card>
 
           <div className="space-y-2">
-            <p className="text-xs font-semibold">Inclus dans Premium :</p>
+            <p className="text-xs font-semibold">Inclus dans {selectedPlan === "pro" ? "Pro" : "Premium"} :</p>
             <div className="grid grid-cols-1 gap-1.5">
-              {PREMIUM_FEATURES.filter(f => f.highlight).map((f, i) => (
+              {(selectedPlan === "pro" ? PRO_FEATURES.filter(f => !f.separator) : PREMIUM_FEATURES.filter(f => f.highlight)).map((f, i) => (
                 <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
                   <CheckCircle2 className="w-3.5 h-3.5 text-accent flex-shrink-0" />
                   {f.label}
@@ -222,7 +229,7 @@ export default function GPPremiumPage() {
               disabled={upgrading}
             >
               <Crown className="w-4 h-4" />
-              Confirmer — 9 900 FCFA/mois
+              Confirmer — {selectedPlan === "pro" ? "19 900" : "9 900"} FCFA/mois
             </Button>
             <Button
               variant="ghost"
@@ -290,7 +297,7 @@ export default function GPPremiumPage() {
               <Button
                 variant="outline"
                 className="w-full h-10 text-xs text-muted-foreground"
-                onClick={handleDowngrade}
+                onClick={() => handleDowngrade("free")}
                 disabled={downgrading}
               >
                 {downgrading ? "Changement..." : "Revenir au plan Standard"}
@@ -341,14 +348,23 @@ export default function GPPremiumPage() {
 
             <p className="text-[11px] text-muted-foreground">Sans engagement · Résiliable à tout moment</p>
 
-            {isPremium ? (
+            {currentSub === "premium" ? (
               <div className="h-11 flex items-center justify-center rounded-xl border-2 border-amber-500/50 text-sm font-semibold text-amber-600 gap-1.5">
                 <Crown className="w-4 h-4" /> Votre plan actuel
               </div>
+            ) : isPro ? (
+              <Button
+                variant="outline"
+                className="w-full h-11 text-xs text-muted-foreground"
+                onClick={() => handleDowngrade("premium")}
+                disabled={downgrading}
+              >
+                {downgrading ? "Changement..." : "Revenir à Premium"}
+              </Button>
             ) : (
               <Button
                 className="w-full gap-2 h-11 text-sm bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-lg shadow-amber-500/20"
-                onClick={() => setStep("confirm")}
+                onClick={() => { setSelectedPlan("premium"); setStep("confirm"); }}
               >
                 <Crown className="w-4 h-4" />
                 Passer Premium
@@ -391,13 +407,14 @@ export default function GPPremiumPage() {
         </Card>
 
         {/* ── PRO CARD ── */}
-        <Card className="border-border/40 opacity-75">
+        <Card className={cn("relative overflow-hidden", isPro ? "border-primary/40 shadow-md shadow-primary/10" : "border-border/60")}>
+          {isPro && <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-blue-600" />}
           <CardContent className="p-5 space-y-4">
             <div className="flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg font-bold">Pro</h3>
-                  <Badge variant="secondary" className="text-[9px] h-4">Bientôt</Badge>
+                  {isPro && <Badge className="bg-primary/15 text-primary border-primary/30 text-[9px] h-4">Actif</Badge>}
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Le maximum pour votre activité
@@ -411,9 +428,19 @@ export default function GPPremiumPage() {
               <span className="text-sm text-muted-foreground">FCFA / mois</span>
             </div>
 
-            <div className="h-10 flex items-center justify-center rounded-lg border text-xs text-muted-foreground cursor-not-allowed">
-              Bientôt disponible
-            </div>
+            {isPro ? (
+              <div className="h-11 flex items-center justify-center rounded-xl border-2 border-primary/50 text-sm font-semibold text-primary gap-1.5">
+                <Rocket className="w-4 h-4" /> Votre plan actuel
+              </div>
+            ) : (
+              <Button
+                className="w-full gap-2 h-11 text-sm font-semibold"
+                onClick={() => { setSelectedPlan("pro"); setStep("confirm"); }}
+              >
+                <Rocket className="w-4 h-4" />
+                {isPremium ? "Passer à Pro" : "Choisir Pro"}
+              </Button>
+            )}
 
             <Separator />
 
@@ -424,7 +451,7 @@ export default function GPPremiumPage() {
                     <p className="text-xs font-semibold text-foreground/80">{feat.label}</p>
                   ) : (
                     <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
-                      <Check className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0" />
+                      <Check className={cn("w-3.5 h-3.5 flex-shrink-0", isPro ? "text-primary" : "text-muted-foreground/40")} />
                       {feat.label}
                     </div>
                   )}
