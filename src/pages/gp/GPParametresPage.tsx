@@ -67,7 +67,7 @@ export default function GPParametresPage() {
 
       const [profileRes, prefsData] = await Promise.all([
         supabase.from("gp_profiles")
-          .select("id, business_name, gp_type, status, base_price_per_kg, default_currency, deposit_address, reception_address, phone, whatsapp_phone, description, kyc_level, kyc_status, id_document_url, selfie_url, explicit_restrictions, base_origin_city, base_origin_country, base_destination_city, base_destination_country")
+          .select("id, business_name, gp_type, status, subscription, base_price_per_kg, default_currency, deposit_address, reception_address, phone, whatsapp_phone, description, kyc_level, kyc_status, id_document_url, selfie_url, explicit_restrictions, base_origin_city, base_origin_country, base_destination_city, base_destination_country")
           .eq("user_id", user.id).maybeSingle(),
         loadNotificationPrefs(user.id),
       ]);
