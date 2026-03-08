@@ -152,10 +152,7 @@ export default function GPColisPage() {
 
         {/* Header — titre + actions */}
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-foreground">
-            Colis
-            <span className="text-muted-foreground font-normal text-sm ml-1.5">({allColis.length})</span>
-          </h2>
+          <h2 className="text-lg font-bold text-foreground">Colis</h2>
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setShowSearch(s => !s)}>
               <Search className="w-4 h-4" />
@@ -168,6 +165,35 @@ export default function GPColisPage() {
               Manuel
             </Button>
           </div>
+        </div>
+
+        {/* ── RÉSUMÉ RAPIDE ── */}
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { key: "pending" as FilterKey, label: "À traiter", count: counts.pending, icon: Clock, bg: "bg-amber-500/10", text: "text-amber-600", border: "border-amber-500/20", dot: "bg-amber-500" },
+            { key: "active" as FilterKey, label: "En route", count: counts.active, icon: Truck, bg: "bg-blue-500/10", text: "text-blue-600", border: "border-blue-500/20", dot: "bg-blue-500" },
+            { key: "done" as FilterKey, label: "Terminés", count: counts.done, icon: CheckCircle2, bg: "bg-emerald-500/10", text: "text-emerald-600", border: "border-emerald-500/20", dot: "bg-emerald-500" },
+          ].map(s => (
+            <button
+              key={s.key}
+              onClick={() => setFilter(f => f === s.key ? "all" : s.key)}
+              className={cn(
+                "relative rounded-xl border p-2.5 text-center transition-all active:scale-[0.97]",
+                filter === s.key ? cn(s.bg, s.border, "shadow-sm") : "bg-card border-border/40 hover:border-border"
+              )}
+            >
+              <div className={cn("text-2xl font-bold tabular-nums", filter === s.key ? s.text : "text-foreground")}>
+                {s.count}
+              </div>
+              <div className="flex items-center justify-center gap-1 mt-0.5">
+                <span className={cn("w-1.5 h-1.5 rounded-full", s.dot)} />
+                <span className="text-[10px] font-medium text-muted-foreground">{s.label}</span>
+              </div>
+              {s.key === "pending" && s.count > 0 && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+              )}
+            </button>
+          ))}
         </div>
 
         {/* Search (collapsible) */}
@@ -188,36 +214,15 @@ export default function GPColisPage() {
           )}
         </AnimatePresence>
 
-        {/* Filter tabs — simple, un seul niveau */}
-        <div className="flex bg-muted/40 rounded-lg p-0.5 gap-0.5">
-          {FILTERS.map(f => {
-            const count = counts[f.value];
-            const isActive = filter === f.value;
-            return (
-              <button
-                key={f.value}
-                onClick={() => setFilter(f.value)}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-medium transition-all",
-                  isActive
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <span className={cn("w-2 h-2 rounded-full", isActive ? f.dot : "bg-transparent")} />
-                {f.label}
-                {count > 0 && (
-                  <span className={cn(
-                    "text-[10px] min-w-[16px] text-center",
-                    isActive ? "text-foreground font-bold" : "text-muted-foreground"
-                  )}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        {/* Filter chip — affiche le filtre actif */}
+        {filter !== "all" && (
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-[10px] h-5 gap-1 cursor-pointer" onClick={() => setFilter("all")}>
+              {FILTERS.find(f => f.value === filter)?.label} · {counts[filter]}
+              <span className="ml-1 text-muted-foreground">✕</span>
+            </Badge>
+          </div>
+        )}
 
         {/* Liste des colis */}
         {filtered.length === 0 ? (
@@ -242,6 +247,12 @@ export default function GPColisPage() {
                 const group = getStatusGroup(c.status);
                 const borderColor = GROUP_BORDER[group] || "border-l-border";
 
+                const statusColors: Record<string, string> = {
+                  pending: "bg-amber-500/15 text-amber-700 border-amber-500/20",
+                  active: "bg-blue-500/15 text-blue-700 border-blue-500/20",
+                  done: "bg-emerald-500/15 text-emerald-700 border-emerald-500/20",
+                };
+
                 return (
                   <motion.div
                     key={c.id}
@@ -254,7 +265,7 @@ export default function GPColisPage() {
                       className={cn(
                         "bg-card rounded-lg border border-border/40 border-l-[3px] p-3 cursor-pointer active:scale-[0.99] transition-all",
                         borderColor,
-                        group === "done" && "opacity-70"
+                        group === "done" && "opacity-60"
                       )}
                       onClick={() => !isManual && navigate(`/gp/order/${c.id}`)}
                     >
@@ -270,8 +281,8 @@ export default function GPColisPage() {
                         </span>
                       </div>
 
-                      {/* Ligne 2 : meta + statut */}
-                      <div className="flex items-center justify-between mt-1">
+                      {/* Ligne 2 : meta + statut coloré */}
+                      <div className="flex items-center justify-between mt-1.5">
                         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                           <span className="font-mono">#{c.order_number.slice(-6)}</span>
                           <span>·</span>
@@ -282,7 +293,10 @@ export default function GPColisPage() {
                           <span>·</span>
                           <span>{formatDistanceToNow(new Date(c.created_at), { locale: fr, addSuffix: true })}</span>
                         </div>
-                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-0 bg-muted/60 text-muted-foreground font-medium">
+                        <Badge variant="outline" className={cn(
+                          "text-[9px] px-1.5 py-0 h-4 font-semibold",
+                          statusColors[group] || "bg-muted/60 text-muted-foreground"
+                        )}>
                           {getOrderStatusLabel(c.status as any)}
                         </Badge>
                       </div>
