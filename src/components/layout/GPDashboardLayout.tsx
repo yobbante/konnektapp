@@ -28,6 +28,9 @@ interface GPDashboardLayoutProps {
     gp_type: string;
     status: string;
     kyc_level?: number;
+    base_origin_city?: string | null;
+    base_destination_city?: string | null;
+    subscription?: string;
   };
   pendingCount?: number;
   activeOrdersCount?: number;
@@ -130,8 +133,13 @@ export function GPDashboardLayout({
                 <p className="text-white font-bold text-sm leading-tight truncate max-w-[120px]">
                   {gpProfile.business_name}
                 </p>
+                <GPKYCBadge status={displayStatus} kycLevel={kycLevel} size="sm" />
               </div>
-              <GPKYCBadge status={displayStatus} kycLevel={kycLevel} size="sm" />
+              {gpProfile.base_origin_city && gpProfile.base_destination_city && (
+                <p className="text-white/70 text-[10px] leading-tight truncate">
+                  {gpProfile.base_origin_city} → {gpProfile.base_destination_city}
+                </p>
+              )}
             </div>
           </div>
 
@@ -338,23 +346,8 @@ export function GPDashboardLayout({
               <SheetHeader className="pb-4">
                 <SheetTitle className="text-left">Menu GP</SheetTitle>
               </SheetHeader>
-              {/* Performances highlight */}
-              <button
-                onClick={() => { setShowMenu(false); navigate("/gp/performances"); }}
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-amber-500/10 to-primary/10 border border-amber-500/20 mb-3 active:scale-[0.98] transition-all"
-              >
-                <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center">
-                  <BarChart3 className="w-5 h-5 text-amber-600" />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="text-sm font-bold">Performances</p>
-                  <p className="text-[11px] text-muted-foreground">Revenus, stats & activité</p>
-                </div>
-                <Crown className="w-4 h-4 text-amber-500" />
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-              </button>
-
               <div className="grid grid-cols-3 gap-3 pb-3">
+                <MenuButton icon={BarChart3} label="Performances" onClick={() => { setShowMenu(false); navigate("/gp/performances"); }} />
                 <MenuButton icon={MapPin} label="Profil public" onClick={() => { setShowMenu(false); navigate("/gp/profil-public"); }} />
                 <MenuButton icon={Package} label="Demandes" badge={pendingCount} locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/demandes"); }}} />
                 <MenuButton icon={Calendar} label="Départs" locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/calendrier"); }}} />

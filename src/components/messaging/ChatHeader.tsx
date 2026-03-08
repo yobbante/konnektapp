@@ -103,7 +103,7 @@ export function ChatHeader({
           <div className="flex items-center gap-1.5">
             <p className="font-medium text-sm truncate">{contactName || "Contact"}</p>
             {isGpVerified && (
-              <Badge variant="secondary" className="h-4 text-[10px] px-1.5 bg-primary/10 text-primary">
+              <Badge variant="secondary" className="h-4 text-[10px] px-1.5 bg-primary/10 text-primary flex-shrink-0">
                 Vérifié
               </Badge>
             )}
