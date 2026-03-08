@@ -135,19 +135,11 @@ export function RoutierDashboardLayout({
                 <GPKYCBadge status={displayStatus} kycLevel={kycLevel} size="sm" />
                 }
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-white/60 font-medium">Routier</span>
-                {gpProfile.road_type &&
-                <span className="text-[9px] px-1.5 py-0 rounded-full bg-white/15 text-white/80">
-                    {gpProfile.road_type === "shuttle" || gpProfile.road_type === "navette" ? "🚌 Navette" : gpProfile.road_type === "mission" ? "🚛 Mission" : "🚌🚛 Hybride"}
-                  </span>
-                }
-              </div>
-              {gpProfile.base_origin_city && gpProfile.base_destination_city &&
-              <p className="text-white/70 text-[10px] leading-tight truncate">
+              {gpProfile.base_origin_city && gpProfile.base_destination_city && (
+                <p className="text-white/70 text-[10px] leading-tight truncate">
                   {gpProfile.base_origin_city} → {gpProfile.base_destination_city}
                 </p>
-              }
+              )}
             </div>
           </div>
 
