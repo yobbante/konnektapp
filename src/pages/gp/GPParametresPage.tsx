@@ -25,7 +25,6 @@ import { Progress } from "@/components/ui/progress";
 import { ThemeToggle } from "@/components/settings/ThemeToggle";
 import { toast } from "@/components/ui/use-toast";
 import { PremiumCTABanner } from "@/components/gp/PremiumCTABanner";
-import { PremiumCTABanner } from "@/components/gp/PremiumCTABanner";
 import {
   SettingsSection, SettingsRow, ToggleRow,
   PasswordChangeDialog, ForgotPasswordDialog,
