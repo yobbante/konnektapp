@@ -9,6 +9,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { loadExchangeRates, convertFromFCFA, type ExchangeRate } from "@/lib/currencyUtils";
+import { getEntryFlowData } from "@/lib/entryFlowData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,15 +43,14 @@ export default function GPBagagesRegistration() {
 
   const [authData, setAuthData] = useState({ email: "", password: "", confirmPassword: "" });
   // Read entry flow data from sessionStorage
-  const entryPhone = sessionStorage.getItem("entry_phone") || "";
-  const entryCity = sessionStorage.getItem("entry_city") || "";
-  const entryCountryRaw = sessionStorage.getItem("entry_country");
-  const entryCountryCode = entryCountryRaw ? (() => { try { return JSON.parse(entryCountryRaw)?.code || "SN"; } catch { return "SN"; } })() : "SN";
+  const entryFlow = getEntryFlowData();
+  const entryPhone = entryFlow.phone;
+  const entryCity = entryFlow.city;
 
   const [profileData, setProfileData] = useState<RouteLinkedProfileData>({
     fullName: "", 
     originCity: entryCity || "Dakar", 
-    originCountry: entryCountryCode,
+    originCountry: entryFlow.countryCode,
     destinationCity: "Paris", destinationCountry: "FR",
     originAddress: "", 
     originPhone: entryPhone || "", 
