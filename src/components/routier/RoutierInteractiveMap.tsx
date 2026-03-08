@@ -104,6 +104,64 @@ function FitBounds({ bounds }: { bounds: L.LatLngBoundsExpression | null }) {
   return null;
 }
 
+// Inner map content component to avoid context consumer issues
+function MapContent({ routes, markers, bounds, allMissions, typeColors, typeLabels, defaultCenter }: {
+  routes: Array<{ from: [number, number]; to: [number, number]; mission: MissionPoint }>;
+  markers: Array<{ pos: [number, number]; mission: MissionPoint; pointType: "origin" | "destination" }>;
+  bounds: L.LatLngBounds | null;
+  allMissions: MissionPoint[];
+  typeColors: Record<string, string>;
+  typeLabels: Record<string, string>;
+  defaultCenter: [number, number];
+}) {
+  return (
+    <>
+      <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
+      {bounds && <FitBounds bounds={bounds} />}
+      {routes.map((route, i) => (
+        <Polyline
+          key={`route-${i}`}
+          positions={[route.from, route.to]}
+          pathOptions={{
+            color: typeColors[route.mission.type],
+            weight: 2,
+            opacity: 0.6,
+            dashArray: route.mission.type === "available" ? "6, 8" : undefined,
+          }}
+        />
+      ))}
+      {markers.map((m, i) => (
+        <Marker
+          key={`marker-${i}`}
+          position={m.pos}
+          icon={createMarkerIcon(typeColors[m.mission.type], m.pointType)}
+        >
+          <Popup className="routier-popup" closeButton={false}>
+            <div className="text-xs min-w-[140px]">
+              <p className="font-bold text-sm">{m.mission.origin_city} → {m.mission.destination_city}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className={cn(
+                  "inline-block w-2 h-2 rounded-full",
+                  m.mission.type === "active" ? "bg-blue-600" :
+                  m.mission.type === "available" ? "bg-emerald-500" : "bg-amber-500"
+                )} />
+                <span className="font-medium">{typeLabels[m.mission.type]}</span>
+              </div>
+              {m.mission.weight && <p className="text-muted-foreground mt-0.5">{m.mission.weight} kg</p>}
+              {m.mission.price && <p className="font-bold text-emerald-600 mt-0.5">{m.mission.price.toLocaleString()} CFA</p>}
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+      {allMissions.length === 0 && (
+        <Marker position={defaultCenter} icon={createMarkerIcon("#10b981", "destination")}>
+          <Popup><p className="text-xs font-medium">Aucune mission active</p></Popup>
+        </Marker>
+      )}
+    </>
+  );
+}
+
 interface MissionPoint {
   id: string;
   origin_city: string;
