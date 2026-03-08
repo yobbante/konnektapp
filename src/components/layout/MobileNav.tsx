@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Search, CalendarCheck, Menu, ScanLine } from "lucide-react";
+import { Home, Search, CalendarCheck, Menu, Send } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -7,10 +7,11 @@ import { useRef, useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ClientScanSheet } from "@/components/scan/ClientScanSheet";
 import { CentralMenuSheet } from "@/components/layout/CentralMenuSheet";
+import { MissionRequestSheet } from "@/components/missions/MissionRequestSheet";
 
 /**
- * MobileNav V5 — Konnekt
- * 5 items: Accueil, Offres, SCAN (center, instant camera), Réservations, Menu
+ * MobileNav V6 — Konnekt
+ * 5 items: Accueil, Offres, MISSION (center, circle), Réservations, Menu
  */
 export function MobileNav() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -21,6 +22,7 @@ export function MobileNav() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<'client' | 'transporter' | null>(null);
   const [scanOpen, setScanOpen] = useState(false);
+  const [missionOpen, setMissionOpen] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -48,21 +50,19 @@ export function MobileNav() {
       } else if (session?.user?.id) {
         supabase
           .from("gp_profiles")
-          .select("id")
+          .select("id, gp_type")
           .eq("user_id", session.user.id)
           .maybeSingle()
-          .then(({ data }) => {
-            setUserRole(data ? 'transporter' : 'client');
-          });
+          .then(({ data }) => setUserRole(data ? 'transporter' : 'client'));
       }
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
   const navItems = [
     { href: "/", icon: Home, label: "Accueil", isHome: true },
     { href: "/?offres=1", icon: Search, label: "Offres", isOffres: true },
+    { href: "#mission", icon: Send, label: "Mission", isMission: true },
     { href: "/reservations", icon: CalendarCheck, label: "Réservations", requiresAuth: true },
     { href: "#menu", icon: Menu, label: "Menu", isMenu: true },
   ];
