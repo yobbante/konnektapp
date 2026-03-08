@@ -10,7 +10,7 @@ import {
   ShieldX, Upload, BadgeCheck, Wallet, Key,
   Crown, Zap, BarChart3, Mail, HelpCircle,
   FileText, Info, Languages, Trash2,
-  Award, AlertTriangle, CheckCircle, Palette,
+  Award, AlertTriangle, CheckCircle, Palette, Route,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
@@ -25,6 +25,7 @@ import { Progress } from "@/components/ui/progress";
 import { ThemeToggle } from "@/components/settings/ThemeToggle";
 import { toast } from "@/components/ui/use-toast";
 import { PremiumCTABanner } from "@/components/gp/PremiumCTABanner";
+import { GPNavetteManager } from "@/components/gp/GPNavetteManager";
 import {
   SettingsSection, SettingsRow, ToggleRow,
   PasswordChangeDialog, ForgotPasswordDialog,
@@ -244,7 +245,14 @@ export default function GPParametresPage() {
           </div>
         </SettingsSection>
 
-        {/* ═══ 3. OPÉRATIONS (fusionné, sans doublons) ═══ */}
+        {/* ═══ 3. NAVETTES ═══ */}
+        <SettingsSection title="Navettes">
+          <div className="p-3">
+            <GPNavetteManager gpId={gpProfile.id} subscription={gpProfile.subscription} />
+          </div>
+        </SettingsSection>
+
+        {/* ═══ 4. OPÉRATIONS ═══ */}
         <SettingsSection title="Opérations">
           <SettingsRow icon={User} label="Profil public" desc="Aperçu client" onClick={() => navigate("/gp/profil-public")} />
           <Separator />

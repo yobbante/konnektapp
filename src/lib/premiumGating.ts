@@ -10,11 +10,15 @@ export type PremiumFeature =
   | "reduced_commission"
   | "advanced_stats"
   | "extended_booking_window"
-  | "departure_time";
+  | "departure_time"
+  | "multi_navettes"
+  | "auto_navette_change";
 
 export const PREMIUM_FEATURES: Record<PremiumFeature, { label: string; desc: string }> = {
   extended_booking_window: { label: "Fenêtre de réservation étendue", desc: "Vos clients peuvent réserver jusqu'à 12h avant le départ (vs 24h standard)" },
   departure_time: { label: "Heure de départ précise", desc: "Publiez l'heure exacte de départ pour vos clients" },
+  multi_navettes: { label: "Multi-navettes", desc: "Gérez jusqu'à 3 navettes (Premium) ou 5 (Pro)" },
+  auto_navette_change: { label: "Changement navette auto", desc: "Changez de navette sans validation admin" },
   performances: { label: "Performances", desc: "Statistiques avancées de votre activité" },
   auto_accept: { label: "Auto-accept", desc: "Acceptation automatique des réservations" },
   priority_visibility: { label: "Visibilité prioritaire", desc: "Profil mis en avant dans les recherches" },
@@ -40,4 +44,10 @@ export function getPremiumCommissionDiscount(subscription?: string): number {
 
 export function canAccessFeature(subscription?: string, _feature?: PremiumFeature): boolean {
   return isGPPremium(subscription);
+}
+
+export function getMaxNavettes(subscription?: string): number {
+  if (subscription === "pro") return 5;
+  if (subscription === "premium") return 3;
+  return 1;
 }
