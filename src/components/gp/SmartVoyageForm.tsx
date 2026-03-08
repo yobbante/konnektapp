@@ -56,6 +56,9 @@ export function SmartVoyageForm({
   const [navettes, setNavettes] = useState<NavetteRoute[]>([]);
   const [selectedNavetteIdx, setSelectedNavetteIdx] = useState(0);
 
+  const [flyerData, setFlyerData] = useState<FlyerData | null>(null);
+  const [showFlyer, setShowFlyer] = useState(false);
+
   const [gpData, setGpData] = useState<{
     baseOriginCity: string;
     baseOriginCountry: string;
@@ -63,6 +66,8 @@ export function SmartVoyageForm({
     baseDestCountry: string;
     basePricePerKg: number;
     currency: string;
+    businessName: string;
+    phone: string;
   } | null>(null);
 
   const [form, setForm] = useState({
