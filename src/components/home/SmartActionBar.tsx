@@ -175,7 +175,7 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
         id: `feedback-${o.id}`, priority: "urgent", icon: Heart,
         label: "Confirmez la réception",
         description: `${o.order_number} · ${o.origin_city} → ${o.destination_city}`,
-        onClick: () => setFeedbackOrder(o),
+        onClick: () => navigate(`/confirmer-reception?orderId=${o.id}`),
         color: "text-rose-600 dark:text-rose-400", bgColor: "bg-rose-500/10", borderColor: "border-rose-500/30",
         pulse: true,
       });
