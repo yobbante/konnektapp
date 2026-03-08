@@ -9,7 +9,9 @@ import {
   Globe, LogOut, Palette, MapPin, Phone,
   Edit3, Save, X, MessageCircle, FileCheck,
   ShieldX, Upload, BadgeCheck, Wallet, Key, Lock,
-  Crown, Star, Zap, BarChart3,
+  Crown, Star, Zap, BarChart3, Mail, HelpCircle,
+  FileText, Info, ExternalLink, Languages, Smartphone,
+  History, Trash2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
@@ -198,6 +200,8 @@ export default function GPParametresPage() {
                 </Button>
               </div>
               <Separator />
+              <CompactInfoRow icon={Mail} label="Email" value={userEmail || "—"} />
+              <Separator />
               <CompactInfoRow icon={Phone} label="Tél." value={gpProfile.phone || "—"} />
               <Separator />
               <CompactInfoRow icon={MessageCircle} label="WhatsApp" value={gpProfile.whatsapp_phone || "—"} />
@@ -273,8 +277,8 @@ export default function GPParametresPage() {
           <ToggleRow icon={Bell} iconColor="text-orange-500" iconBg="bg-orange-500/10" label="Statuts commandes" desc="Mises à jour" checked={notifPrefs.order_status_alerts} onToggle={() => handleToggle("order_status_alerts")} />
         </SettingsSection>
 
-        {/* ═══ APPARENCE ═══ */}
-        <SettingsSection title="Apparence">
+        {/* ═══ APPARENCE & LANGUE ═══ */}
+        <SettingsSection title="Apparence & Langue">
           <div className="p-3">
             <div className="flex items-center gap-3 mb-2">
               <Palette className="w-4 h-4 text-primary" />
@@ -282,6 +286,8 @@ export default function GPParametresPage() {
             </div>
             <ThemeToggle />
           </div>
+          <Separator />
+          <SettingsRow icon={Languages} iconColor="text-indigo-500" iconBg="bg-indigo-500/10" label="Langue" desc="Français" onClick={() => toast({ title: "Bientôt disponible", description: "Le choix de langue sera disponible prochainement." })} />
         </SettingsSection>
 
         {/* ═══ PREMIUM / ABONNEMENT ═══ */}
@@ -334,10 +340,39 @@ export default function GPParametresPage() {
           </SettingsSection>
         </div>
 
-        <button onClick={async () => { await supabase.auth.signOut(); navigate("/"); }} className="w-full bg-destructive/10 rounded-xl p-3 flex items-center gap-3 hover:bg-destructive/15 transition-colors active:scale-[0.98]">
-          <LogOut className="w-4 h-4 text-destructive" />
-          <span className="font-medium text-sm text-destructive">Déconnexion</span>
-        </button>
+        {/* ═══ AIDE & LÉGAL ═══ */}
+        <SettingsSection title="Aide & Légal">
+          <SettingsRow icon={HelpCircle} label="Centre d'aide" desc="FAQ et support" onClick={() => toast({ title: "Bientôt disponible" })} />
+          <Separator />
+          <SettingsRow icon={FileText} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Conditions d'utilisation" desc="CGU & CGV" onClick={() => toast({ title: "Bientôt disponible" })} />
+          <Separator />
+          <SettingsRow icon={Shield} iconColor="text-green-500" iconBg="bg-green-500/10" label="Politique de confidentialité" desc="Données personnelles" onClick={() => toast({ title: "Bientôt disponible" })} />
+          <Separator />
+          <SettingsRow icon={Info} iconColor="text-muted-foreground" iconBg="bg-muted" label="À propos de Konnekt" desc="v1.0.0 — Prototype" onClick={() => toast({ title: "Konnekt v1.0.0", description: "Plateforme de transport collaboratif." })} />
+        </SettingsSection>
+
+        {/* ═══ ZONE DANGER ═══ */}
+        <SettingsSection title="Compte">
+          <button onClick={async () => { await supabase.auth.signOut(); navigate("/"); }} className="w-full rounded-xl p-3 flex items-center gap-3 hover:bg-destructive/10 transition-colors active:scale-[0.98]">
+            <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center">
+              <LogOut className="w-4 h-4 text-destructive" />
+            </div>
+            <div className="text-left">
+              <span className="font-medium text-sm text-destructive">Déconnexion</span>
+              <p className="text-[10px] text-muted-foreground">Se déconnecter de votre compte</p>
+            </div>
+          </button>
+          <Separator />
+          <button onClick={() => toast({ title: "Contactez le support", description: "Pour supprimer votre compte, contactez notre équipe support.", variant: "destructive" })} className="w-full rounded-xl p-3 flex items-center gap-3 hover:bg-destructive/10 transition-colors active:scale-[0.98]">
+            <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center">
+              <Trash2 className="w-4 h-4 text-destructive" />
+            </div>
+            <div className="text-left">
+              <span className="font-medium text-sm text-destructive">Supprimer mon compte</span>
+              <p className="text-[10px] text-muted-foreground">Action irréversible</p>
+            </div>
+          </button>
+        </SettingsSection>
       </div>
 
       <PasswordChangeDialog open={showPwdDialog} onOpenChange={setShowPwdDialog} userEmail={userEmail} />
