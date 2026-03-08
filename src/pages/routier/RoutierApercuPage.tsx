@@ -230,7 +230,7 @@ export default function RoutierApercuPage() {
             </div>
 
             <div className="space-y-2">
-              {data.missionRequests.slice(0, 3).map((m: any, i: number) => {
+              {data.missionRequests.slice(0, 2).map((m: any, i: number) => {
                 const size = getSizeFromWeight(m.weight_kg || 0);
                 const freight = freightTypeLabels[m.freight_type] || { label: m.freight_type, emoji: "📦" };
                 const price = m.client_budget || m.estimated_price || 0;
@@ -320,7 +320,7 @@ export default function RoutierApercuPage() {
               </Button>
             </div>
             <div className="space-y-2">
-              {data.activeMissions.slice(0, 3).map((c: any, i: number) => {
+              {data.activeMissions.slice(0, 2).map((c: any, i: number) => {
                 const flow = STATUS_FLOW[c.status];
                 return (
                   <motion.div
