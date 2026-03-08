@@ -1,98 +1,336 @@
 /**
- * MaritimeParametresPage — Maritime-specific settings
+ * MaritimeParametresPage — Factored from GPParametresPage with maritime specifics
  */
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Ship, Bell, Shield, Globe, FileText, Anchor } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
+import {
+  Settings, User, Bell, Shield, LogOut, MapPin, Phone,
+  Edit3, Save, X, MessageCircle, Key, Crown, Wallet,
+  Palette, Languages, HelpCircle, FileText, Info,
+  Upload, BadgeCheck, Trash2, Ship, Anchor, Globe,
+  BarChart3, Zap, ScanLine,
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { MaritimeDashboardLayout } from "@/components/layout/MaritimeDashboardLayout";
+import { PageLoader } from "@/components/ui/PageLoader";
+import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { ThemeToggle } from "@/components/settings/ThemeToggle";
+import { toast } from "@/components/ui/use-toast";
+import { PremiumCTABanner } from "@/components/gp/PremiumCTABanner";
+import { GPNavetteManager } from "@/components/gp/GPNavetteManager";
+import {
+  SettingsSection, SettingsRow, ToggleRow,
+  PasswordChangeDialog, ForgotPasswordDialog,
+  loadNotificationPrefs, saveNotificationPref,
+  type NotificationPrefs, defaultNotificationPrefs,
+} from "@/components/settings/SharedSettingsComponents";
 
 export default function MaritimeParametresPage() {
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState(true);
-  const [autoAccept, setAutoAccept] = useState(false);
-  const [insuranceDefault, setInsuranceDefault] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [gpProfile, setGpProfile] = useState<any>(null);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [activeCount, setActiveCount] = useState(0);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+  const [showPwdDialog, setShowPwdDialog] = useState(false);
+  const [showForgotPwd, setShowForgotPwd] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    business_name: "", phone: "", whatsapp_phone: "",
+    deposit_address: "", reception_address: "", description: "",
+  });
+  const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs>(defaultNotificationPrefs);
+
+  useEffect(() => { loadData(); }, []);
+
+  const loadData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { navigate("/auth"); return; }
+      setUserEmail(user.email || "");
+
+      const [profileRes, prefsData] = await Promise.all([
+        supabase.from("gp_profiles")
+          .select("id, business_name, gp_type, status, subscription, deposit_address, reception_address, phone, whatsapp_phone, description, base_origin_city, base_origin_country, base_destination_city, base_destination_country, kyc_level, kyc_status, id_document_url, selfie_url, business_registration_url, rating, total_deliveries, total_reviews, verified_at, withdrawal_limit, auto_accept_enabled, default_currency, international_destinations")
+          .eq("user_id", user.id).eq("gp_type", "maritime").maybeSingle(),
+        loadNotificationPrefs(user.id),
+      ]);
+
+      const profile = profileRes.data;
+      if (!profile) { navigate("/maritime/inscription"); return; }
+      setGpProfile(profile);
+      setNotifPrefs(prefsData);
+
+      const originLabel = [profile.base_origin_city, profile.base_origin_country].filter(Boolean).join(", ");
+      const destLabel = [profile.base_destination_city, profile.base_destination_country].filter(Boolean).join(", ");
+
+      setProfileForm({
+        business_name: profile.business_name || "",
+        phone: profile.phone || "",
+        whatsapp_phone: profile.whatsapp_phone || "",
+        deposit_address: profile.deposit_address || originLabel || "",
+        reception_address: profile.reception_address || destLabel || "",
+        description: profile.description || "",
+      });
+
+      const { data: orders } = await supabase.from("orders").select("status").eq("gp_id", profile.id);
+      setPendingCount(orders?.filter(o => o.status === "pending").length || 0);
+      setActiveCount(orders?.filter(o => ["accepted", "collected", "in_transit"].includes(o.status)).length || 0);
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("gp_profiles").update({
+        ...profileForm, updated_at: new Date().toISOString(),
+      }).eq("id", gpProfile.id);
+      if (error) throw error;
+      setGpProfile((prev: any) => ({ ...prev, ...profileForm }));
+      setEditingProfile(false);
+      toast({ title: "Profil mis à jour ✓" });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggle = async (key: keyof NotificationPrefs) => {
+    const newVal = !notifPrefs[key];
+    setNotifPrefs(p => ({ ...p, [key]: newVal }));
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) await saveNotificationPref(user.id, key, newVal);
+  };
+
+  if (loading) return <PageLoader message="Chargement..." />;
+  if (!gpProfile) return null;
+
+  const kycLevel = gpProfile.kyc_level ?? 0;
+  const kycStatus = gpProfile.kyc_status || "pending";
+  const hasId = !!gpProfile.id_document_url;
+  const hasSelfie = !!gpProfile.selfie_url;
+  const hasBusinessReg = !!gpProfile.business_registration_url;
+  const isPremium = gpProfile.subscription === "premium" || gpProfile.subscription === "pro";
+  const subLabel = gpProfile.subscription === "pro" ? "Pro" : gpProfile.subscription === "premium" ? "Premium" : "Gratuit";
+  const withdrawalLimit = gpProfile.withdrawal_limit ?? 300000;
+  const corridorsCount = (gpProfile.international_destinations || []).length;
+
+  const kycSteps = [
+    { label: "Inscription", done: true },
+    { label: "Pièce d'identité", done: hasId },
+    { label: "Selfie", done: hasSelfie },
+    { label: "Agrément maritime", done: hasBusinessReg },
+  ];
+  const kycCompletedSteps = kycSteps.filter(s => s.done).length;
+  const kycProgress = Math.round((kycCompletedSteps / kycSteps.length) * 100);
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-50 bg-gradient-to-r from-primary to-primary/90 shadow-lg" style={{ paddingTop: 'calc(8px + var(--safe-top, 0px))' }}>
-        <div className="px-3 py-2.5 flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 h-8 w-8" onClick={() => navigate(-1)}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <Ship className="w-5 h-5 text-white" />
-            <h1 className="text-white font-bold text-sm">Paramètres Maritime</h1>
-          </div>
+    <MaritimeDashboardLayout gpProfile={gpProfile} pendingCount={pendingCount} activeOrdersCount={activeCount}>
+      <div className="px-4 py-3 space-y-3 pb-24">
+        <div className="flex items-center gap-2">
+          <Settings className="w-4.5 h-4.5 text-primary" />
+          <h1 className="text-base font-bold">Paramètres</h1>
         </div>
-      </header>
 
-      <div className="px-4 py-4 space-y-4 max-w-lg mx-auto">
-        {/* Corridors */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2"><Anchor className="w-4 h-4 text-primary" /> Corridors actifs</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-xs text-muted-foreground">Définissez vos lignes maritimes principales</p>
-            {["Marseille ↔ Dakar", "Le Havre ↔ Dakar", "Casablanca ↔ Dakar"].map((corridor) => (
-              <div key={corridor} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/50">
-                <span className="text-xs font-medium">{corridor}</span>
-                <Switch defaultChecked />
+        {/* ═══ 1. PROFIL ═══ */}
+        <SettingsSection title="Profil">
+          {editingProfile ? (
+            <div className="p-3 space-y-2">
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Nom commercial</Label>
+                <Input className="h-8 text-sm" value={profileForm.business_name} onChange={e => setProfileForm(p => ({ ...p, business_name: e.target.value }))} />
               </div>
-            ))}
-            <Button variant="outline" size="sm" className="w-full text-xs h-8">
-              <Globe className="w-3 h-3 mr-1" /> Ajouter un corridor
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Notifications */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2"><Bell className="w-4 h-4 text-primary" /> Notifications</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs">Nouvelles réservations</Label>
-              <Switch checked={notifications} onCheckedChange={setNotifications} />
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Description</Label>
+                <Textarea value={profileForm.description} onChange={e => setProfileForm(p => ({ ...p, description: e.target.value }))} rows={2} className="text-sm" placeholder="Décrivez votre activité maritime..." />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Téléphone</Label>
+                  <Input className="h-8 text-sm" value={profileForm.phone} onChange={e => setProfileForm(p => ({ ...p, phone: e.target.value }))} />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">WhatsApp</Label>
+                  <Input className="h-8 text-sm" value={profileForm.whatsapp_phone} onChange={e => setProfileForm(p => ({ ...p, whatsapp_phone: e.target.value }))} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">⚓ Port d'origine</Label>
+                  <Input className="h-8 text-sm" value={profileForm.deposit_address} onChange={e => setProfileForm(p => ({ ...p, deposit_address: e.target.value }))} />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">⚓ Port d'arrivée</Label>
+                  <Input className="h-8 text-sm" value={profileForm.reception_address} onChange={e => setProfileForm(p => ({ ...p, reception_address: e.target.value }))} />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleSaveProfile} disabled={saving} size="sm" className="flex-1 gap-1 h-8 text-xs">
+                  <Save className="w-3 h-3" /> {saving ? "..." : "Enregistrer"}
+                </Button>
+                <Button variant="outline" size="sm" className="h-8" onClick={() => setEditingProfile(false)}>
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center justify-between">
-              <Label className="text-xs">Acceptation automatique</Label>
-              <Switch checked={autoAccept} onCheckedChange={setAutoAccept} />
-            </div>
-          </CardContent>
-        </Card>
+          ) : (
+            <>
+              <div className="p-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Ship className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm leading-tight">{gpProfile.business_name}</p>
+                    <p className="text-[10px] text-muted-foreground">{userEmail}</p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingProfile(true)}>
+                  <Edit3 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+              <Separator />
+              <div className="px-3 py-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
+                <InfoPair icon={Phone} label="Tél." value={gpProfile.phone || "—"} />
+                <InfoPair icon={MessageCircle} label="WhatsApp" value={gpProfile.whatsapp_phone || "—"} />
+                <InfoPair icon={Anchor} label="Port origine" value={gpProfile.deposit_address || "—"} />
+                <InfoPair icon={Anchor} label="Port arrivée" value={gpProfile.reception_address || "—"} />
+              </div>
+            </>
+          )}
+        </SettingsSection>
 
-        {/* Insurance */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2"><Shield className="w-4 h-4 text-primary" /> Assurance maritime</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        {/* ═══ 2. KYC ═══ */}
+        <SettingsSection title="Vérification KYC">
+          <div className="p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="text-xs">Proposer assurance par défaut</Label>
-              <Switch checked={insuranceDefault} onCheckedChange={setInsuranceDefault} />
+              <div className="flex items-center gap-2">
+                <BadgeCheck className={`w-4 h-4 ${kycStatus === "verified" ? "text-emerald-500" : "text-muted-foreground"}`} />
+                <span className="text-xs font-semibold">Niveau {kycLevel}</span>
+                <Badge variant={kycStatus === "verified" ? "default" : "secondary"} className="text-[9px] h-4">
+                  {kycStatus === "verified" ? "Vérifié" : "En cours"}
+                </Badge>
+              </div>
+              <span className="text-[10px] font-medium text-muted-foreground">{withdrawalLimit.toLocaleString("fr-FR")} FCFA/mois</span>
             </div>
-            <p className="text-[10px] text-muted-foreground">L'assurance maritime protège contre les risques en mer, les dommages conteneur et les retards portuaires.</p>
-          </CardContent>
-        </Card>
+            <Progress value={kycProgress} className="h-1.5" />
+            <div className="flex gap-1.5 flex-wrap">
+              {kycSteps.map((step, i) => (
+                <Badge key={i} variant={step.done ? "default" : "outline"} className={`text-[9px] h-5 ${step.done ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : ""}`}>
+                  {step.done ? "✓" : "○"} {step.label}
+                </Badge>
+              ))}
+            </div>
+            {kycProgress < 100 && (
+              <Button variant="outline" size="sm" className="w-full gap-1 text-[11px] h-7" onClick={() => navigate("/maritime/profil-public")}>
+                <Upload className="w-3 h-3" /> Compléter
+              </Button>
+            )}
+          </div>
+        </SettingsSection>
 
-        {/* Documents */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2"><FileText className="w-4 h-4 text-primary" /> Documents & KYC</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">Licence de transitaire, agrément portuaire, assurance RC</p>
-            <Button variant="outline" size="sm" className="mt-2 text-xs h-8 w-full">
-              Gérer mes documents
-            </Button>
-          </CardContent>
-        </Card>
+        {/* ═══ 3. CORRIDORS / NAVETTES ═══ */}
+        <SettingsSection title="Corridors maritimes">
+          <div className="p-3">
+            <GPNavetteManager gpId={gpProfile.id} subscription={gpProfile.subscription} />
+          </div>
+        </SettingsSection>
+
+        {/* ═══ 4. OPÉRATIONS ═══ */}
+        <SettingsSection title="Opérations">
+          <SettingsRow icon={User} label="Profil public" desc="Aperçu client" onClick={() => navigate("/maritime/profil-public")} />
+          <Separator />
+          <SettingsRow icon={Globe} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Corridors" desc={`${corridorsCount} destinations`} onClick={() => navigate("/maritime/apercu")} />
+          <Separator />
+          <SettingsRow icon={ScanLine} iconColor="text-purple-500" iconBg="bg-purple-500/10" label="Scanner QR" desc="Caméra" onClick={() => navigate("/maritime/scan")} />
+          <Separator />
+          <SettingsRow icon={Shield} iconColor="text-teal-500" iconBg="bg-teal-500/10" label="Assurance maritime" desc="Risques en mer" onClick={() => {}} />
+        </SettingsSection>
+
+        {/* ═══ 5. SÉCURITÉ & FINANCES ═══ */}
+        <SettingsSection title="Sécurité & Finances">
+          <SettingsRow icon={Wallet} iconColor="text-emerald-500" iconBg="bg-emerald-500/10" label="Portefeuille" desc="Solde et retraits" onClick={() => navigate("/maritime/wallet")} />
+          <Separator />
+          <SettingsRow icon={Shield} label="KTP" desc="Score de confiance" onClick={() => {}} />
+          <Separator />
+          <SettingsRow icon={Key} iconColor="text-amber-500" iconBg="bg-amber-500/10" label="Mot de passe" desc="Modifier ou réinitialiser" onClick={() => setShowPwdDialog(true)} />
+        </SettingsSection>
+
+        {/* ═══ 6. ABONNEMENT ═══ */}
+        <SettingsSection title="Abonnement">
+          <SettingsRow icon={Crown} iconColor="text-amber-500" iconBg="bg-amber-500/10" label="Mon plan" desc={`${subLabel} — ${isPremium ? "Actif" : "Comparer les offres"}`} onClick={() => navigate("/maritime/premium")} />
+        </SettingsSection>
+
+        <PremiumCTABanner variant="compact" context="menu" subscription={gpProfile.subscription} />
+
+        {/* ═══ 7. NOTIFICATIONS ═══ */}
+        <SettingsSection title="Notifications">
+          <ToggleRow icon={Bell} label="Push" desc="Temps réel" checked={notifPrefs.push_notifications} onToggle={() => handleToggle("push_notifications")} />
+          <Separator />
+          <ToggleRow icon={Bell} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Réservations" desc="Nouvelles demandes" checked={notifPrefs.new_message_alerts} onToggle={() => handleToggle("new_message_alerts")} />
+          <Separator />
+          <ToggleRow icon={Bell} iconColor="text-orange-500" iconBg="bg-orange-500/10" label="Expéditions" desc="Statuts" checked={notifPrefs.order_status_alerts} onToggle={() => handleToggle("order_status_alerts")} />
+        </SettingsSection>
+
+        {/* ═══ 8. AUTRES ═══ */}
+        <SettingsSection title="Autres">
+          <div className="px-3 py-2.5 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <Palette className="w-3.5 h-3.5 text-primary" />
+              <span className="text-sm font-medium">Apparence</span>
+            </div>
+            <ThemeToggle />
+          </div>
+          <Separator />
+          <SettingsRow icon={Languages} iconColor="text-indigo-500" iconBg="bg-indigo-500/10" label="Langue" desc="Français" onClick={() => toast({ title: "Bientôt disponible" })} />
+          <Separator />
+          <SettingsRow icon={HelpCircle} label="Aide & FAQ" onClick={() => navigate("/aide")} />
+          <Separator />
+          <SettingsRow icon={Info} iconColor="text-muted-foreground" iconBg="bg-muted" label="À propos" desc="v1.0.0" onClick={() => navigate("/a-propos")} />
+        </SettingsSection>
+
+        {/* ═══ 9. COMPTE ═══ */}
+        <SettingsSection title="Compte">
+          <button onClick={async () => { await supabase.auth.signOut(); navigate("/"); }} className="w-full p-3 flex items-center gap-3 hover:bg-destructive/10 transition-colors active:scale-[0.98]">
+            <div className="w-7 h-7 rounded-lg bg-destructive/10 flex items-center justify-center">
+              <LogOut className="w-3.5 h-3.5 text-destructive" />
+            </div>
+            <span className="font-medium text-sm text-destructive">Déconnexion</span>
+          </button>
+          <Separator />
+          <button onClick={() => toast({ title: "Contactez le support", description: "Pour supprimer votre compte, contactez notre équipe.", variant: "destructive" })} className="w-full p-3 flex items-center gap-3 hover:bg-destructive/10 transition-colors active:scale-[0.98]">
+            <div className="w-7 h-7 rounded-lg bg-destructive/10 flex items-center justify-center">
+              <Trash2 className="w-3.5 h-3.5 text-destructive" />
+            </div>
+            <span className="font-medium text-sm text-destructive">Supprimer mon compte</span>
+          </button>
+        </SettingsSection>
       </div>
+
+      <PasswordChangeDialog open={showPwdDialog} onOpenChange={setShowPwdDialog} userEmail={userEmail} />
+      <ForgotPasswordDialog open={showForgotPwd} onOpenChange={setShowForgotPwd} userEmail={userEmail} />
+    </MaritimeDashboardLayout>
+  );
+}
+
+function InfoPair({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
+  return (
+    <div className="flex items-center gap-1.5 py-0.5 min-w-0">
+      <Icon className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+      <span className="text-muted-foreground flex-shrink-0">{label}:</span>
+      <span className="font-medium truncate">{value}</span>
     </div>
   );
 }
