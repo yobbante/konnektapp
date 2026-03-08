@@ -1,12 +1,14 @@
 /**
- * GPPerformancesPage — Dashboard performances (Premium only)
- * KPIs: Revenus, Taux de remplissage, Satisfaction, Activité
+ * GPPerformancesPage — Dashboard performances
+ * Premium: basic KPIs (revenue, fill rate, satisfaction, activity)
+ * Pro: all Premium + advanced KPIs (avg order value, response time, weight stats, trends)
  */
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  BarChart3, TrendingUp, Star, Plane, Lock, Crown,
-  DollarSign, Percent, Package, CalendarDays,
+  BarChart3, TrendingUp, Star, Plane, Lock, Crown, Rocket,
+  DollarSign, Percent, Package, CalendarDays, Clock, Weight,
+  ArrowUpRight, ArrowDownRight, Zap, Target,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
@@ -17,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { isGPPremium } from "@/lib/premiumGating";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
-import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
+import { format, subMonths, startOfMonth, endOfMonth, differenceInHours } from "date-fns";
 import { fr } from "date-fns/locale";
 
 export default function GPPerformancesPage() {
@@ -29,6 +31,7 @@ export default function GPPerformancesPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [offers, setOffers] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
+  const [responseTracking, setResponseTracking] = useState<any[]>([]);
 
   useEffect(() => { loadData(); }, []);
 
@@ -39,24 +42,25 @@ export default function GPPerformancesPage() {
 
       const { data: profile } = await supabase
         .from("gp_profiles")
-        .select("id, business_name, gp_type, status, subscription, kyc_level, default_currency, base_price_per_kg, total_deliveries, rating, total_reviews")
+        .select("id, business_name, gp_type, status, subscription, kyc_level, default_currency, base_price_per_kg, total_deliveries, rating, total_reviews, base_origin_city, base_destination_city")
         .eq("user_id", user.id)
         .maybeSingle();
 
       if (!profile) { navigate("/gp/inscription"); return; }
       setGpProfile(profile);
 
-      // Fetch all data in parallel
       const sixMonthsAgo = subMonths(new Date(), 6).toISOString();
-      const [ordersRes, offersRes, reviewsRes] = await Promise.all([
+      const [ordersRes, offersRes, reviewsRes, trackingRes] = await Promise.all([
         supabase.from("orders").select("id, status, total_price, weight, commission_amount, created_at, currency").eq("gp_id", profile.id),
         supabase.from("gp_offers").select("id, total_capacity, available_capacity, departure_date, status, created_at").eq("gp_id", profile.id).gte("created_at", sixMonthsAgo),
         supabase.from("reviews").select("id, rating, created_at").eq("gp_id", profile.id),
+        supabase.from("gp_response_tracking").select("created_at, responded_at, deadline_at").eq("gp_id", profile.id),
       ]);
 
       setOrders(ordersRes.data || []);
       setOffers(offersRes.data || []);
       setReviews(reviewsRes.data || []);
+      setResponseTracking(trackingRes.data || []);
       setPendingCount((ordersRes.data || []).filter(o => o.status === "pending").length);
       setActiveCount((ordersRes.data || []).filter(o => ["accepted", "collected", "in_transit"].includes(o.status)).length);
     } catch (e) {
@@ -67,8 +71,8 @@ export default function GPPerformancesPage() {
   };
 
   const isPremium = isGPPremium(gpProfile?.subscription);
+  const isPro = gpProfile?.subscription === "pro";
 
-  // ═══ KPI calculations ═══
   const stats = useMemo(() => {
     const delivered = orders.filter(o => ["delivered", "released", "delivery_confirmed"].includes(o.status));
     const cancelled = orders.filter(o => o.status === "cancelled");
@@ -76,13 +80,11 @@ export default function GPPerformancesPage() {
     const totalCommission = delivered.reduce((sum, o) => sum + (o.commission_amount || 0), 0);
     const netRevenue = totalRevenue - totalCommission;
 
-    // Fill rate: used capacity / total capacity
     const completedOffers = offers.filter(o => ["expired", "completed"].includes(o.status) || new Date(o.departure_date) < new Date());
     const totalCap = completedOffers.reduce((sum, o) => sum + (o.total_capacity || 0), 0);
     const usedCap = completedOffers.reduce((sum, o) => sum + ((o.total_capacity || 0) - (o.available_capacity || 0)), 0);
     const fillRate = totalCap > 0 ? Math.round((usedCap / totalCap) * 100) : 0;
 
-    // Monthly breakdown (last 6 months)
     const monthly: { month: string; revenue: number; orders: number; voyages: number }[] = [];
     for (let i = 5; i >= 0; i--) {
       const date = subMonths(new Date(), i);
@@ -104,26 +106,43 @@ export default function GPPerformancesPage() {
       });
     }
 
-    // Average rating
     const avgRating = reviews.length > 0
       ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
       : 0;
 
+    // Pro-only stats
+    const avgOrderValue = delivered.length > 0 ? Math.round(totalRevenue / delivered.length) : 0;
+    const totalWeight = delivered.reduce((sum, o) => sum + (o.weight || 0), 0);
+    const avgWeight = delivered.length > 0 ? Math.round((totalWeight / delivered.length) * 10) / 10 : 0;
+
+    // Response time
+    const respondedTracking = responseTracking.filter(t => t.responded_at);
+    const avgResponseHours = respondedTracking.length > 0
+      ? Math.round(respondedTracking.reduce((sum, t) => sum + differenceInHours(new Date(t.responded_at), new Date(t.created_at)), 0) / respondedTracking.length)
+      : 0;
+    const responseRate = responseTracking.length > 0
+      ? Math.round((respondedTracking.length / responseTracking.length) * 100)
+      : 100;
+
+    // Trend: compare last 2 months revenue
+    const lastMonthRev = monthly[monthly.length - 1]?.revenue || 0;
+    const prevMonthRev = monthly[monthly.length - 2]?.revenue || 0;
+    const revenueTrend = prevMonthRev > 0 ? Math.round(((lastMonthRev - prevMonthRev) / prevMonthRev) * 100) : 0;
+
     return {
-      totalRevenue,
-      totalCommission,
-      netRevenue,
+      totalRevenue, totalCommission, netRevenue,
       totalOrders: orders.length,
       deliveredCount: delivered.length,
       cancelledCount: cancelled.length,
       cancelRate: orders.length > 0 ? Math.round((cancelled.length / orders.length) * 100) : 0,
-      fillRate,
-      avgRating,
-      totalReviews: reviews.length,
-      totalVoyages: offers.length,
+      fillRate, avgRating, totalReviews: reviews.length, totalVoyages: offers.length,
       monthly,
+      // Pro extras
+      avgOrderValue, totalWeight, avgWeight,
+      avgResponseHours, responseRate, revenueTrend,
+      usedCap, totalCap,
     };
-  }, [orders, offers, reviews]);
+  }, [orders, offers, reviews, responseTracking]);
 
   if (loading) return <PageLoader message="Chargement..." />;
   if (!gpProfile) return null;
@@ -159,7 +178,7 @@ export default function GPPerformancesPage() {
     );
   }
 
-  // ═══ Premium content ═══
+  // ═══ Premium + Pro content ═══
   return (
     <GPDashboardLayout gpProfile={gpProfile} pendingCount={pendingCount} activeOrdersCount={activeCount} activeTab="profil">
       <div className="px-4 py-3 space-y-4 pb-24">
@@ -168,8 +187,9 @@ export default function GPPerformancesPage() {
             <BarChart3 className="w-5 h-5 text-primary" />
             <h1 className="text-lg font-bold">Performances</h1>
           </div>
-          <Badge variant="outline" className="text-[10px] gap-1 text-amber-600 border-amber-500/30">
-            <Crown className="w-3 h-3" /> Premium
+          <Badge variant="outline" className={`text-[10px] gap-1 ${isPro ? "text-violet-600 border-violet-500/30" : "text-amber-600 border-amber-500/30"}`}>
+            {isPro ? <Rocket className="w-3 h-3" /> : <Crown className="w-3 h-3" />}
+            {isPro ? "Pro" : "Premium"}
           </Badge>
         </div>
 
@@ -193,6 +213,50 @@ export default function GPPerformancesPage() {
           />
         </div>
 
+        {/* ═══ PRO: Advanced KPIs row ═══ */}
+        {isPro && (
+          <div className="grid grid-cols-3 gap-2">
+            <MiniKPI
+              icon={Target}
+              label="Panier moyen"
+              value={`${stats.avgOrderValue.toLocaleString()} ${sym}`}
+              color="text-violet-500"
+            />
+            <MiniKPI
+              icon={Weight}
+              label="Poids moyen"
+              value={`${stats.avgWeight} kg`}
+              color="text-violet-500"
+            />
+            <MiniKPI
+              icon={Package}
+              label="Poids total"
+              value={`${stats.totalWeight.toLocaleString()} kg`}
+              color="text-violet-500"
+            />
+          </div>
+        )}
+
+        {/* ═══ PRO: Revenue trend ═══ */}
+        {isPro && (
+          <Card className="border-violet-500/20 bg-violet-500/5">
+            <CardContent className="p-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {stats.revenueTrend >= 0 ? (
+                  <ArrowUpRight className="w-4 h-4 text-emerald-500" />
+                ) : (
+                  <ArrowDownRight className="w-4 h-4 text-destructive" />
+                )}
+                <span className="text-xs font-medium">Tendance revenus</span>
+              </div>
+              <span className={`text-sm font-bold ${stats.revenueTrend >= 0 ? "text-emerald-500" : "text-destructive"}`}>
+                {stats.revenueTrend >= 0 ? "+" : ""}{stats.revenueTrend}%
+              </span>
+              <span className="text-[10px] text-muted-foreground">vs mois précédent</span>
+            </CardContent>
+          </Card>
+        )}
+
         {/* ═══ Fill rate ═══ */}
         <Card>
           <CardHeader className="pb-2 px-4 pt-4">
@@ -208,10 +272,38 @@ export default function GPPerformancesPage() {
             </div>
             <Progress value={stats.fillRate} className="h-2" />
             <p className="text-[10px] text-muted-foreground">
-              Capacité utilisée vs. capacité totale proposée
+              {isPro
+                ? `${stats.usedCap} kg utilisés sur ${stats.totalCap} kg proposés`
+                : "Capacité utilisée vs. capacité totale proposée"}
             </p>
           </CardContent>
         </Card>
+
+        {/* ═══ PRO: Response time ═══ */}
+        {isPro && (
+          <Card className="border-violet-500/20">
+            <CardHeader className="pb-2 px-4 pt-4">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Clock className="w-4 h-4 text-violet-500" />
+                Réactivité
+                <Badge className="ml-auto bg-violet-500/15 text-violet-600 border-violet-500/30 text-[8px] h-4 px-1.5">Pro</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold">{stats.avgResponseHours}h</p>
+                  <p className="text-[10px] text-muted-foreground">Temps de réponse moyen</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold">{stats.responseRate}%</p>
+                  <p className="text-[10px] text-muted-foreground">Taux de réponse</p>
+                </div>
+              </div>
+              <Progress value={stats.responseRate} className="h-1.5 mt-3" />
+            </CardContent>
+          </Card>
+        )}
 
         {/* ═══ Satisfaction ═══ */}
         <Card>
@@ -256,7 +348,6 @@ export default function GPPerformancesPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4 space-y-3">
-            {/* Mini bar chart */}
             <div className="flex items-end gap-1.5 h-24">
               {stats.monthly.map((m, i) => {
                 const maxRev = Math.max(...stats.monthly.map(x => x.revenue), 1);
@@ -264,7 +355,7 @@ export default function GPPerformancesPage() {
                 return (
                   <div key={i} className="flex-1 flex flex-col items-center gap-1">
                     <div
-                      className="w-full rounded-t bg-primary/80 transition-all"
+                      className={`w-full rounded-t transition-all ${isPro ? "bg-violet-500/80" : "bg-primary/80"}`}
                       style={{ height: `${h}%` }}
                     />
                     <span className="text-[9px] text-muted-foreground">{m.month}</span>
@@ -273,13 +364,37 @@ export default function GPPerformancesPage() {
               })}
             </div>
 
-            <div className="grid grid-cols-3 gap-2 pt-2 border-t">
+            <div className={`grid gap-2 pt-2 border-t ${isPro ? "grid-cols-4" : "grid-cols-3"}`}>
               <MiniStat label="Commandes" value={stats.deliveredCount.toString()} />
               <MiniStat label="Annulations" value={`${stats.cancelRate}%`} negative={stats.cancelRate > 10} />
               <MiniStat label="Voyages" value={stats.totalVoyages.toString()} />
+              {isPro && (
+                <MiniStat label="Réponse" value={`${stats.avgResponseHours}h`} />
+              )}
             </div>
           </CardContent>
         </Card>
+
+        {/* ═══ PRO: Commission savings ═══ */}
+        {isPro && (
+          <Card className="border-violet-500/20 bg-gradient-to-br from-violet-500/5 to-transparent">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-violet-500/15 flex items-center justify-center flex-shrink-0">
+                <Zap className="w-5 h-5 text-violet-500" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs font-semibold">Économies Pro</p>
+                <p className="text-[10px] text-muted-foreground">
+                  Commission réduite de 40% — vous économisez{" "}
+                  <span className="font-bold text-violet-600">
+                    {Math.round(stats.totalCommission * 0.4).toLocaleString()} {sym}
+                  </span>
+                  {" "}sur vos livraisons
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </GPDashboardLayout>
   );
@@ -298,6 +413,18 @@ function StatCard({ icon: Icon, label, value, sub, color, bg }: {
         <p className="text-[10px] text-muted-foreground">{label}</p>
         <p className="text-sm font-bold">{value}</p>
         <p className="text-[9px] text-muted-foreground">{sub}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function MiniKPI({ icon: Icon, label, value, color }: { icon: any; label: string; value: string; color: string }) {
+  return (
+    <Card className="border-violet-500/15">
+      <CardContent className="p-2.5 text-center space-y-1">
+        <Icon className={`w-3.5 h-3.5 mx-auto ${color}`} />
+        <p className="text-xs font-bold">{value}</p>
+        <p className="text-[9px] text-muted-foreground">{label}</p>
       </CardContent>
     </Card>
   );
