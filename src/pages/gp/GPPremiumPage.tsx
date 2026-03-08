@@ -57,7 +57,7 @@ export default function GPPremiumPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { gpProfile, loading } = useGPProfile();
-  const [step, setStep] = useState<FlowStep>("plans");
+  const [step, setStep] = useState<FlowStep>("confirm");
   const [upgrading, setUpgrading] = useState(false);
   const [downgrading, setDowngrading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<"premium" | "pro">("premium");
