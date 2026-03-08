@@ -90,16 +90,28 @@ export function PostDeliveryFlow({ order, role, onClose, onNavigate }: PostDeliv
   const handleRecipientFeedback = async () => {
     setSubmitting(true);
     try {
-      // Log recipient satisfaction as a notification/acknowledgement
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        // Persist feedback in notifications so we can check later
+        const gpUserId = order.gp_id ? (await supabase.from("gp_profiles").select("user_id").eq("id", order.gp_id).single()).data?.user_id : user.id;
         await supabase.from("notifications").insert({
-          user_id: order.gp_id ? (await supabase.from("gp_profiles").select("user_id").eq("id", order.gp_id).single()).data?.user_id : user.id,
-          title: satisfaction === "good" ? "Destinataire satisfait ✓" : "Destinataire insatisfait",
+          user_id: gpUserId || user.id,
+          title: satisfaction === "good" ? "Destinataire satisfait" : "Destinataire insatisfait",
           message: `Le destinataire du colis ${order.order_number} ${satisfaction === "good" ? "confirme la bonne réception" : "a signalé un problème"}${comment ? ` : "${comment}"` : ""}`,
           type: "order_status",
           related_id: order.id,
           related_type: "order",
+        });
+
+        // Mark recipient feedback as given in a separate notification for the recipient themselves
+        await supabase.from("notifications").insert({
+          user_id: user.id,
+          title: "Retour envoyé",
+          message: `Vous avez confirmé la réception du colis ${order.order_number}`,
+          type: "recipient_feedback_given",
+          related_id: order.id,
+          related_type: "order",
+          read: true,
         });
       }
       notify.success("Merci pour votre retour !");
@@ -415,6 +427,7 @@ export function PostDeliveryFlow({ order, role, onClose, onNavigate }: PostDeliv
  */
 export function usePostDeliveryDetection(userId: string | undefined) {
   const [deliveredOrder, setDeliveredOrder] = useState<PostDeliveryOrder | null>(null);
+  const [pendingRecipientFeedback, setPendingRecipientFeedback] = useState<PostDeliveryOrder[]>([]);
   const [role, setRole] = useState<"client" | "recipient">("client");
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
@@ -422,12 +435,19 @@ export function usePostDeliveryDetection(userId: string | undefined) {
     if (!userId) return;
 
     const checkDelivered = async () => {
-      // Check dismissed in sessionStorage
       const dismissedIds = JSON.parse(sessionStorage.getItem("kkt_delivery_dismissed") || "[]");
       const dismissedSet = new Set<string>(dismissedIds);
       setDismissed(dismissedSet);
 
-      // Check as client
+      // Check which orders already have recipient feedback
+      const { data: feedbackGiven } = await supabase
+        .from("notifications")
+        .select("related_id")
+        .eq("user_id", userId)
+        .eq("type", "recipient_feedback_given");
+      const feedbackOrderIds = new Set((feedbackGiven || []).map(n => n.related_id));
+
+      // Check as client (for rating)
       const { data: clientOrders } = await supabase
         .from("orders")
         .select("id, order_number, origin_city, destination_city, weight, total_price, currency, gp_id, status")
@@ -436,9 +456,20 @@ export function usePostDeliveryDetection(userId: string | undefined) {
         .order("updated_at", { ascending: false })
         .limit(1);
 
-      if (clientOrders && clientOrders.length > 0 && !dismissedSet.has(clientOrders[0].id)) {
+      // Check existing reviews for client orders
+      let clientHasReview = false;
+      if (clientOrders && clientOrders.length > 0) {
+        const { data: existingReview } = await supabase
+          .from("reviews")
+          .select("id")
+          .eq("order_id", clientOrders[0].id)
+          .eq("client_id", userId)
+          .limit(1);
+        clientHasReview = (existingReview && existingReview.length > 0) || false;
+      }
+
+      if (clientOrders && clientOrders.length > 0 && !dismissedSet.has(clientOrders[0].id) && !clientHasReview) {
         const o = clientOrders[0];
-        // Get GP name
         const { data: gp } = await supabase.from("gp_profiles").select("business_name").eq("id", o.gp_id).single();
         setDeliveredOrder({ ...o, gp_name: gp?.business_name });
         setRole("client");
@@ -450,21 +481,35 @@ export function usePostDeliveryDetection(userId: string | undefined) {
         .from("orders")
         .select("id, order_number, origin_city, destination_city, weight, total_price, currency, gp_id, status")
         .eq("recipient_user_id", userId)
-        .eq("status", "delivery_confirmed")
+        .in("status", ["delivery_confirmed", "delivered", "released"] as any[])
         .order("updated_at", { ascending: false })
-        .limit(1);
+        .limit(5);
 
-      if (recipientOrders && recipientOrders.length > 0 && !dismissedSet.has(recipientOrders[0].id)) {
-        const o = recipientOrders[0];
-        const { data: gp } = await supabase.from("gp_profiles").select("business_name").eq("id", o.gp_id).single();
-        setDeliveredOrder({ ...o, gp_name: gp?.business_name });
-        setRole("recipient");
+      if (recipientOrders && recipientOrders.length > 0) {
+        // Filter out orders that already have feedback
+        const pendingFeedback = recipientOrders.filter(o => !feedbackOrderIds.has(o.id));
+        
+        // Build with GP names
+        if (pendingFeedback.length > 0) {
+          const gpIds = [...new Set(pendingFeedback.map(o => o.gp_id))];
+          const { data: gps } = await supabase.from("gp_profiles").select("id, business_name").in("id", gpIds);
+          const gpMap = new Map((gps || []).map(g => [g.id, g.business_name]));
+          
+          const enriched = pendingFeedback.map(o => ({ ...o, gp_name: gpMap.get(o.gp_id) }));
+          setPendingRecipientFeedback(enriched);
+
+          // Show popup only for the first one that hasn't been dismissed this session
+          const firstUndismissed = enriched.find(o => !dismissedSet.has(o.id));
+          if (firstUndismissed && !deliveredOrder) {
+            setDeliveredOrder(firstUndismissed);
+            setRole("recipient");
+          }
+        }
       }
     };
 
     checkDelivered();
 
-    // Subscribe to realtime changes
     const channel = supabase
       .channel("post-delivery-detection")
       .on("postgres_changes", {
@@ -490,5 +535,5 @@ export function usePostDeliveryDetection(userId: string | undefined) {
     setDeliveredOrder(null);
   };
 
-  return { deliveredOrder, role, dismiss };
+  return { deliveredOrder, role, dismiss, pendingRecipientFeedback };
 }
