@@ -28,6 +28,7 @@ import { GPScanSheet } from "@/components/scan/GPScanSheet";
 import { SelfieVerificationSheet } from "@/components/gp/SelfieVerificationSheet";
 import { DocumentVerificationSheet } from "@/components/gp/DocumentVerificationSheet";
 import { PremiumCTABanner } from "@/components/gp/PremiumCTABanner";
+import { ShareOfferButton } from "@/components/share/ShareOfferButton";
 import { useGPProfile } from "@/hooks/useGPProfile";
 import { isGPPremium } from "@/lib/premiumGating";
 import { getOrderStatusLabel, getOrderStatusColor } from "@/lib/transportTypes";
@@ -576,6 +577,16 @@ export default function GPApercuPage() {
                           <p className="text-[11px] font-medium text-muted-foreground">Aucune réservation pour ce voyage</p>
                           <p className="text-[10px] text-muted-foreground/60">Partagez votre offre pour attirer des clients</p>
                         </div>
+                        <ShareOfferButton
+                          offerId={dep.id}
+                          originCity={dep.origin_city}
+                          destinationCity={dep.destination_city}
+                          departureDate={dep.departure_date}
+                          pricePerKg={dep.price_per_kg}
+                          currency={dep.currency}
+                          variant="icon"
+                          className="h-8 w-8 text-muted-foreground/60"
+                        />
                       </div>
                     )}
                   </div>
