@@ -1,6 +1,6 @@
 /**
- * RoutierMissionRequestPage - Client creates a mission request for routier transporters
- * Uses the new routier_missions table with full negotiation support
+ * RoutierMissionRequestPage - Simplified Cocolis-inspired client form
+ * 3 steps: What + Where + When/Budget → Submit
  */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, ArrowRight, Package, MapPin, Truck, Scale, Box,
   Thermometer, AlertTriangle, Droplets, Shield, Clock, Check,
-  Calculator, Loader2, Calendar, Zap, DollarSign
+  Loader2, Calendar, DollarSign, ChevronRight
 } from "lucide-react";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { Button } from "@/components/ui/button";
@@ -17,57 +17,40 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { SearchableCountrySelect } from "@/components/gp/SearchableCountrySelect";
 import { SearchableCitySelect } from "@/components/gp/SearchableCitySelect";
+import { getSizeFromWeight, formatWeightShort, freightTypeLabels } from "@/lib/routierUtils";
 
 type FreightType = "colis" | "palettes" | "alimentaire" | "frigorifie" | "liquides" | "materiaux" | "btp" | "vehicules";
-type VolumeSize = "petit" | "moyen" | "grand" | "hors_gabarit";
 type Urgency = "standard" | "express" | "immediate";
 
-const freightTypes: { id: FreightType; label: string; icon: React.ComponentType<{ className?: string }>; desc: string }[] = [
-  { id: "colis", label: "Colis / Cartons", icon: Package, desc: "Marchandises emballées" },
-  { id: "palettes", label: "Palettes", icon: Box, desc: "Marchandises palettisées" },
-  { id: "alimentaire", label: "Alimentaire", icon: Package, desc: "Produits alimentaires" },
-  { id: "frigorifie", label: "Frigorifié", icon: Thermometer, desc: "Température contrôlée" },
-  { id: "liquides", label: "Liquides", icon: Droplets, desc: "Citernes, cuves" },
-  { id: "materiaux", label: "Matériaux / Vrac", icon: Truck, desc: "Sable, ciment, latérite" },
-  { id: "btp", label: "BTP / Machines", icon: Truck, desc: "Équipement lourd" },
-  { id: "vehicules", label: "Véhicules", icon: Truck, desc: "Transport automobile" },
+const freightTypes: { id: FreightType; icon: React.ComponentType<{ className?: string }>; emoji: string; label: string }[] = [
+  { id: "colis", icon: Package, emoji: "📦", label: "Colis" },
+  { id: "palettes", icon: Box, emoji: "🪵", label: "Palettes" },
+  { id: "alimentaire", icon: Package, emoji: "🍎", label: "Alimentaire" },
+  { id: "frigorifie", icon: Thermometer, emoji: "❄️", label: "Frigorifié" },
+  { id: "liquides", icon: Droplets, emoji: "🛢️", label: "Liquides" },
+  { id: "materiaux", icon: Truck, emoji: "🪨", label: "Matériaux" },
+  { id: "btp", icon: Truck, emoji: "🏗️", label: "BTP" },
+  { id: "vehicules", icon: Truck, emoji: "🚗", label: "Véhicules" },
 ];
 
 const vehicleTypes = [
-  { id: "moto", label: "Moto", emoji: "🏍️" },
-  { id: "tricycle", label: "Tricycle", emoji: "🛺" },
-  { id: "fourgon", label: "Fourgon", emoji: "🚐" },
-  { id: "camionnette", label: "Camionnette", emoji: "🚙" },
-  { id: "camion_3t", label: "Camion 3T", emoji: "🚚" },
-  { id: "camion_10t", label: "Camion 10T", emoji: "🚛" },
-  { id: "semi_remorque", label: "Semi-remorque", emoji: "🚛" },
-  { id: "plateau", label: "Plateau", emoji: "🚧" },
-  { id: "frigo", label: "Frigorifique", emoji: "❄️" },
-  { id: "porte_conteneur", label: "Porte-conteneur", emoji: "📦" },
-];
-
-const volumeSizes: { id: VolumeSize; label: string; desc: string }[] = [
-  { id: "petit", label: "Petit", desc: "< 1 m³" },
-  { id: "moyen", label: "Moyen", desc: "1-5 m³" },
-  { id: "grand", label: "Grand", desc: "5-20 m³" },
-  { id: "hors_gabarit", label: "Hors gabarit", desc: "> 20 m³" },
+  { id: "fourgon", emoji: "🚐" },
+  { id: "camionnette", emoji: "🚙" },
+  { id: "camion_3t", emoji: "🚚" },
+  { id: "camion_10t", emoji: "🚛" },
+  { id: "semi_remorque", emoji: "🚛" },
+  { id: "frigo", emoji: "❄️" },
 ];
 
 const constraintOptions = [
   { id: "fragile", label: "Fragile", icon: AlertTriangle },
-  { id: "temperature", label: "Température contrôlée", icon: Thermometer },
-  { id: "dangereux", label: "Marchandise dangereuse", icon: AlertTriangle },
-  { id: "protection", label: "Protection pluie/vol", icon: Shield },
-];
-
-const urgencyOptions: { id: Urgency; label: string; desc: string; badge?: string }[] = [
-  { id: "standard", label: "Standard", desc: "3-7 jours" },
-  { id: "express", label: "Express", desc: "24-48h", badge: "+30%" },
-  { id: "immediate", label: "Immédiat", desc: "Aujourd'hui", badge: "+60%" },
+  { id: "temperature", label: "Temp. contrôlée", icon: Thermometer },
+  { id: "dangereux", label: "Dangereux", icon: AlertTriangle },
+  { id: "protection", label: "Protection", icon: Shield },
 ];
 
 export default function RoutierMissionRequestPage() {
@@ -75,69 +58,48 @@ export default function RoutierMissionRequestPage() {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const totalSteps = 5;
-
+  const totalSteps = 3;
   const today = new Date().toISOString().split("T")[0];
 
   const [form, setForm] = useState({
     freightType: null as FreightType | null,
     weight: "",
     weightUnit: "kg" as "kg" | "tonnes",
-    volume: null as VolumeSize | null,
-    constraints: [] as string[],
     vehicleType: null as string | null,
+    constraints: [] as string[],
     originCity: "",
     originCountry: "SN",
-    originAddress: "",
     destinationCity: "",
     destinationCountry: "SN",
-    destinationAddress: "",
     deliveryToDoor: false,
-    pickupDateStart: today,
-    pickupDateEnd: "",
+    pickupDate: today,
     urgency: "standard" as Urgency,
     budget: "",
     description: "",
   });
 
-  const toggleConstraint = (id: string) => {
-    setForm(prev => ({
-      ...prev,
-      constraints: prev.constraints.includes(id)
-        ? prev.constraints.filter(c => c !== id)
-        : [...prev.constraints, id],
-    }));
-  };
+  const set = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }));
+  const toggleConstraint = (id: string) => set("constraints", form.constraints.includes(id) ? form.constraints.filter(c => c !== id) : [...form.constraints, id]);
 
-  const weightKg = form.weightUnit === "tonnes"
-    ? parseFloat(form.weight || "0") * 1000
-    : parseFloat(form.weight || "0");
+  const weightKg = form.weightUnit === "tonnes" ? parseFloat(form.weight || "0") * 1000 : parseFloat(form.weight || "0");
+  const size = getSizeFromWeight(weightKg);
 
   const estimatedPrice = (() => {
     let base = 15000;
     if (weightKg > 5000) base += 50000;
     else if (weightKg > 1000) base += 20000;
     else if (weightKg > 500) base += 10000;
-    const multipliers: Record<string, number> = {
-      colis: 1, palettes: 1.1, alimentaire: 1.2, frigorifie: 1.5,
-      liquides: 1.4, materiaux: 1.3, btp: 1.6, vehicules: 1.8,
-    };
-    let total = base * (multipliers[form.freightType || "colis"] || 1);
+    const mult: Record<string, number> = { colis: 1, palettes: 1.1, alimentaire: 1.2, frigorifie: 1.5, liquides: 1.4, materiaux: 1.3, btp: 1.6, vehicules: 1.8 };
+    let total = base * (mult[form.freightType || "colis"] || 1);
     if (form.urgency === "express") total *= 1.3;
     if (form.urgency === "immediate") total *= 1.6;
-    if (form.constraints.includes("dangereux")) total *= 1.4;
     return Math.round(total);
   })();
 
   const canProceed = (): boolean => {
-    switch (step) {
-      case 1: return !!form.freightType && !!form.weight && parseFloat(form.weight) > 0;
-      case 2: return !!form.originCity && !!form.destinationCity;
-      case 3: return !!form.pickupDateStart;
-      case 4: return true; // budget optional
-      case 5: return true; // review
-      default: return false;
-    }
+    if (step === 1) return !!form.freightType && !!form.weight && parseFloat(form.weight) > 0;
+    if (step === 2) return !!form.originCity && !!form.destinationCity;
+    return true;
   };
 
   const handleSubmit = async () => {
@@ -146,26 +108,21 @@ export default function RoutierMissionRequestPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { navigate("/auth"); return; }
 
-      const endDate = form.pickupDateEnd || form.pickupDateStart;
-
       const { error } = await supabase.from("routier_missions").insert({
         client_id: session.user.id,
-        mission_number: "MSN-TEMP", // trigger will override
+        mission_number: "MSN-TEMP",
         origin_city: form.originCity,
         origin_country: form.originCountry,
-        origin_address: form.originAddress || null,
         destination_city: form.destinationCity,
         destination_country: form.destinationCountry,
-        destination_address: form.destinationAddress || null,
         delivery_to_door: form.deliveryToDoor,
         freight_type: form.freightType || "colis",
         weight_kg: weightKg,
-        volume_estimate: form.volume,
         merchandise_description: form.description || null,
         constraints: form.constraints,
         vehicle_type_required: form.vehicleType,
-        pickup_date_start: form.pickupDateStart,
-        pickup_date_end: endDate,
+        pickup_date_start: form.pickupDate,
+        pickup_date_end: form.pickupDate,
         urgency: form.urgency,
         client_budget: form.budget ? parseFloat(form.budget) : estimatedPrice,
         currency: "XOF",
@@ -173,15 +130,11 @@ export default function RoutierMissionRequestPage() {
       } as any);
 
       if (error) throw error;
-
-      toast({ title: "🚛 Mission publiée !", description: "Les transporteurs compatibles seront notifiés." });
-      navigate("/");
+      toast({ title: "Mission publiée !", description: "Les transporteurs compatibles seront notifiés." });
+      navigate("/reservations");
     } catch (err: any) {
-      console.error(err);
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   return (
@@ -189,12 +142,12 @@ export default function RoutierMissionRequestPage() {
       <AppHeader />
 
       {/* Progress */}
-      <div className="px-4 pt-2 pb-4 bg-background border-b">
+      <div className="px-4 pt-2 pb-3 bg-background border-b">
         <div className="flex items-center justify-between mb-2">
           <button onClick={() => step === 1 ? navigate(-1) : setStep(s => s - 1)} className="p-2 -ml-2 rounded-full hover:bg-muted">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <span className="text-sm font-medium">Étape {step}/{totalSteps}</span>
+          <span className="text-sm font-medium">{step}/{totalSteps}</span>
           <div className="w-9" />
         </div>
         <div className="h-1.5 bg-muted rounded-full overflow-hidden">
@@ -202,270 +155,189 @@ export default function RoutierMissionRequestPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-6">
+      <div className="flex-1 overflow-y-auto px-4 py-4">
         <AnimatePresence mode="wait">
-          {/* Step 1: Freight */}
+          {/* ── Step 1: What ── */}
           {step === 1 && (
-            <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-              <div className="text-center">
-                <Package className="w-10 h-10 text-primary mx-auto mb-2" />
-                <h2 className="text-xl font-bold">Décrivez votre fret</h2>
+            <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
+              <div>
+                <h2 className="text-lg font-bold">Que transportez-vous ?</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">Type de marchandise et poids</p>
               </div>
 
-              <div>
-                <Label className="text-sm font-medium mb-3 block">Type de fret *</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {freightTypes.map(t => {
-                    const Icon = t.icon;
-                    const sel = form.freightType === t.id;
-                    return (
-                      <button key={t.id} onClick={() => setForm(p => ({ ...p, freightType: t.id }))}
-                        className={`p-3 rounded-xl border-2 text-left transition-all ${sel ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}>
-                        <Icon className={`w-5 h-5 mb-1 ${sel ? "text-primary" : "text-muted-foreground"}`} />
-                        <p className="font-medium text-sm">{t.label}</p>
-                        <p className="text-xs text-muted-foreground">{t.desc}</p>
-                      </button>
-                    );
-                  })}
-                </div>
+              {/* Freight type - compact grid */}
+              <div className="grid grid-cols-4 gap-2">
+                {freightTypes.map(t => {
+                  const sel = form.freightType === t.id;
+                  return (
+                    <button key={t.id} onClick={() => set("freightType", t.id)}
+                      className={`flex flex-col items-center p-2.5 rounded-xl border-2 transition-all ${sel ? "border-primary bg-primary/5" : "border-border"}`}>
+                      <span className="text-xl mb-0.5">{t.emoji}</span>
+                      <span className="text-[10px] font-medium text-center leading-tight">{t.label}</span>
+                    </button>
+                  );
+                })}
               </div>
 
+              {/* Weight */}
               <div>
-                <Label className="text-sm font-medium mb-2 block">Poids total *</Label>
+                <Label className="text-sm font-medium mb-1.5 block">Poids total</Label>
                 <div className="flex gap-2">
                   <div className="flex-1 relative">
                     <Scale className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input type="number" placeholder="500" value={form.weight}
-                      onChange={e => setForm(p => ({ ...p, weight: e.target.value }))} className="pl-10" />
+                      onChange={e => set("weight", e.target.value)} className="pl-10 h-10" />
                   </div>
                   <div className="flex rounded-lg border overflow-hidden">
                     {(["kg", "tonnes"] as const).map(u => (
-                      <button key={u} onClick={() => setForm(p => ({ ...p, weightUnit: u }))}
+                      <button key={u} onClick={() => set("weightUnit", u)}
                         className={`px-4 py-2 text-sm font-medium ${form.weightUnit === u ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
                         {u === "kg" ? "kg" : "T"}
                       </button>
                     ))}
                   </div>
                 </div>
+                {weightKg > 0 && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge className={`${size.bg} ${size.color} font-bold`}>{size.label}</Badge>
+                    <span className="text-xs text-muted-foreground">{size.description} · {formatWeightShort(weightKg)}</span>
+                  </div>
+                )}
               </div>
 
+              {/* Vehicle type - compact */}
               <div>
-                <Label className="text-sm font-medium mb-2 block">Volume estimé</Label>
+                <Label className="text-sm font-medium mb-1.5 block">Véhicule souhaité</Label>
                 <div className="flex gap-2 flex-wrap">
-                  {volumeSizes.map(s => (
-                    <button key={s.id} onClick={() => setForm(p => ({ ...p, volume: s.id }))}
-                      className={`px-4 py-2 rounded-full border text-sm font-medium ${form.volume === s.id ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Véhicule souhaité</Label>
-                <div className="grid grid-cols-2 gap-2">
                   {vehicleTypes.map(v => (
-                    <button key={v.id} onClick={() => setForm(p => ({ ...p, vehicleType: v.id }))}
-                      className={`p-2.5 rounded-xl border-2 text-left ${form.vehicleType === v.id ? "border-primary bg-primary/5" : "border-border"}`}>
-                      <span className="text-lg mr-2">{v.emoji}</span>
-                      <span className="text-sm font-medium">{v.label}</span>
+                    <button key={v.id} onClick={() => set("vehicleType", form.vehicleType === v.id ? null : v.id)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm ${form.vehicleType === v.id ? "border-primary bg-primary/10 text-primary" : "border-border"}`}>
+                      <span>{v.emoji}</span>
+                      <span className="text-xs font-medium">{v.id.replace(/_/g, " ")}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
+              {/* Constraints - pills */}
               <div>
-                <Label className="text-sm font-medium mb-2 block">Contraintes</Label>
-                <div className="flex flex-wrap gap-2">
+                <Label className="text-sm font-medium mb-1.5 block">Contraintes</Label>
+                <div className="flex flex-wrap gap-1.5">
                   {constraintOptions.map(c => {
-                    const Icon = c.icon;
                     const sel = form.constraints.includes(c.id);
+                    const Icon = c.icon;
                     return (
                       <button key={c.id} onClick={() => toggleConstraint(c.id)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm ${sel ? "border-primary bg-primary/10 text-primary" : "border-border"}`}>
-                        <Icon className="w-3.5 h-3.5" />{c.label}
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs ${sel ? "border-primary bg-primary/10 text-primary" : "border-border"}`}>
+                        <Icon className="w-3 h-3" />{c.label}
                       </button>
                     );
                   })}
                 </div>
               </div>
-            </motion.div>
-          )}
 
-          {/* Step 2: Itinerary */}
-          {step === 2 && (
-            <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-              <div className="text-center">
-                <MapPin className="w-10 h-10 text-primary mx-auto mb-2" />
-                <h2 className="text-xl font-bold">Itinéraire</h2>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-sm font-medium mb-1 block">Ville de départ *</Label>
-                  <SearchableCitySelect value={form.originCity} onSelect={v => setForm(p => ({ ...p, originCity: v }))} placeholder="Ville de départ" countryCode={form.originCountry} />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium mb-1 block">Adresse de départ</Label>
-                  <Input placeholder="Adresse précise (optionnel)" value={form.originAddress}
-                    onChange={e => setForm(p => ({ ...p, originAddress: e.target.value }))} />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium mb-1 block">Ville d'arrivée *</Label>
-                  <SearchableCitySelect value={form.destinationCity} onSelect={v => setForm(p => ({ ...p, destinationCity: v }))} placeholder="Ville d'arrivée" countryCode={form.destinationCountry} />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium mb-1 block">Adresse d'arrivée</Label>
-                  <Input placeholder="Adresse précise (optionnel)" value={form.destinationAddress}
-                    onChange={e => setForm(p => ({ ...p, destinationAddress: e.target.value }))} />
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-xl border">
-                  <div>
-                    <p className="text-sm font-medium">Livraison à domicile</p>
-                    <p className="text-xs text-muted-foreground">Le transporteur livre à votre adresse</p>
-                  </div>
-                  <Switch checked={form.deliveryToDoor} onCheckedChange={v => setForm(p => ({ ...p, deliveryToDoor: v }))} />
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Step 3: Timing & Urgency */}
-          {step === 3 && (
-            <motion.div key="s3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-              <div className="text-center">
-                <Calendar className="w-10 h-10 text-primary mx-auto mb-2" />
-                <h2 className="text-xl font-bold">Planning</h2>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-sm font-medium mb-1 block">Date de collecte souhaitée *</Label>
-                  <Input type="date" min={today} value={form.pickupDateStart}
-                    onChange={e => setForm(p => ({ ...p, pickupDateStart: e.target.value }))} />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium mb-1 block">Date limite (optionnel)</Label>
-                  <Input type="date" min={form.pickupDateStart} value={form.pickupDateEnd}
-                    onChange={e => setForm(p => ({ ...p, pickupDateEnd: e.target.value }))} />
-                </div>
-              </div>
-
+              {/* Description */}
               <div>
-                <Label className="text-sm font-medium mb-3 block">Urgence</Label>
-                <div className="space-y-2">
-                  {urgencyOptions.map(u => (
-                    <button key={u.id} onClick={() => setForm(p => ({ ...p, urgency: u.id }))}
-                      className={`w-full p-3 rounded-xl border-2 text-left flex items-center justify-between ${form.urgency === u.id ? "border-primary bg-primary/5" : "border-border"}`}>
-                      <div>
-                        <p className="font-medium text-sm">{u.label}</p>
-                        <p className="text-xs text-muted-foreground">{u.desc}</p>
-                      </div>
-                      {u.badge && <Badge variant="secondary" className="text-xs">{u.badge}</Badge>}
+                <Label className="text-sm font-medium mb-1.5 block">Description (optionnel)</Label>
+                <Textarea placeholder="Détails sur votre marchandise..." value={form.description}
+                  onChange={e => set("description", e.target.value)} className="h-16 text-sm" />
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── Step 2: Where ── */}
+          {step === 2 && (
+            <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
+              <div>
+                <h2 className="text-lg font-bold">Itinéraire</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">Villes de départ et d'arrivée</p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="relative">
+                  <div className="absolute left-4 top-3 w-2.5 h-2.5 rounded-full bg-emerald-500 z-10" />
+                  <div className="pl-10">
+                    <Label className="text-xs text-muted-foreground mb-1 block">Départ</Label>
+                    <SearchableCitySelect value={form.originCity} onSelect={v => set("originCity", v)} placeholder="Ville de départ" countryCode={form.originCountry} />
+                  </div>
+                </div>
+
+                <div className="ml-5 w-px h-4 bg-border" />
+
+                <div className="relative">
+                  <div className="absolute left-4 top-3 w-2.5 h-2.5 rounded-full bg-primary z-10" />
+                  <div className="pl-10">
+                    <Label className="text-xs text-muted-foreground mb-1 block">Arrivée</Label>
+                    <SearchableCitySelect value={form.destinationCity} onSelect={v => set("destinationCity", v)} placeholder="Ville d'arrivée" countryCode={form.destinationCountry} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl border">
+                <div>
+                  <p className="text-sm font-medium">Livraison à domicile</p>
+                  <p className="text-[10px] text-muted-foreground">Le transporteur livre directement</p>
+                </div>
+                <Switch checked={form.deliveryToDoor} onCheckedChange={v => set("deliveryToDoor", v)} />
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── Step 3: When + Budget + Review ── */}
+          {step === 3 && (
+            <motion.div key="s3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
+              <div>
+                <h2 className="text-lg font-bold">Quand & budget</h2>
+              </div>
+
+              {/* Date */}
+              <div>
+                <Label className="text-sm font-medium mb-1.5 block">Date de collecte</Label>
+                <Input type="date" min={today} value={form.pickupDate}
+                  onChange={e => set("pickupDate", e.target.value)} className="h-10" />
+              </div>
+
+              {/* Urgency */}
+              <div>
+                <Label className="text-sm font-medium mb-1.5 block">Urgence</Label>
+                <div className="flex gap-2">
+                  {([
+                    { id: "standard" as Urgency, label: "Standard", desc: "3-7j" },
+                    { id: "express" as Urgency, label: "Express", desc: "+30%" },
+                    { id: "immediate" as Urgency, label: "Urgent", desc: "+60%" },
+                  ]).map(u => (
+                    <button key={u.id} onClick={() => set("urgency", u.id)}
+                      className={`flex-1 p-2.5 rounded-xl border-2 text-center ${form.urgency === u.id ? "border-primary bg-primary/5" : "border-border"}`}>
+                      <p className="text-sm font-semibold">{u.label}</p>
+                      <p className="text-[10px] text-muted-foreground">{u.desc}</p>
                     </button>
                   ))}
                 </div>
               </div>
-            </motion.div>
-          )}
 
-          {/* Step 4: Budget */}
-          {step === 4 && (
-            <motion.div key="s4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-              <div className="text-center">
-                <DollarSign className="w-10 h-10 text-primary mx-auto mb-2" />
-                <h2 className="text-xl font-bold">Votre budget</h2>
-                <p className="text-sm text-muted-foreground">Proposez un prix ou utilisez l'estimation</p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-primary/5 border border-primary/20 text-center">
-                <p className="text-xs text-muted-foreground mb-1">Prix estimé par Konnekt</p>
-                <p className="text-3xl font-bold text-primary">{estimatedPrice.toLocaleString()} FCFA</p>
-              </div>
-
+              {/* Budget */}
               <div>
-                <Label className="text-sm font-medium mb-1 block">Votre proposition (FCFA)</Label>
+                <Label className="text-sm font-medium mb-1.5 block">Votre budget (CFA)</Label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input type="number" placeholder={estimatedPrice.toString()} value={form.budget}
-                    onChange={e => setForm(p => ({ ...p, budget: e.target.value }))} className="pl-10 text-lg" />
+                  <Input type="number" placeholder={`${estimatedPrice.toLocaleString()}`} value={form.budget}
+                    onChange={e => set("budget", e.target.value)} className="pl-10 h-10" />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Laisser vide pour utiliser le prix estimé. Les transporteurs pourront négocier.
-                </p>
+                <p className="text-[10px] text-muted-foreground mt-1">Estimation : {estimatedPrice.toLocaleString()} CFA</p>
               </div>
 
-              <div>
-                <Label className="text-sm font-medium mb-1 block">Description complémentaire</Label>
-                <Textarea placeholder="Détails sur la marchandise, contraintes spéciales..." value={form.description}
-                  onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={3} />
-              </div>
-            </motion.div>
-          )}
+              <Separator />
 
-          {/* Step 5: Review */}
-          {step === 5 && (
-            <motion.div key="s5" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
-              <div className="text-center">
-                <Check className="w-10 h-10 text-primary mx-auto mb-2" />
-                <h2 className="text-xl font-bold">Récapitulatif</h2>
-              </div>
-
-              <div className="space-y-3">
-                <div className="p-4 rounded-xl border space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Fret</span>
-                    <span className="font-medium">{freightTypes.find(f => f.id === form.freightType)?.label}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Poids</span>
-                    <span className="font-medium">{weightKg.toLocaleString()} kg</span>
-                  </div>
-                  {form.vehicleType && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Véhicule</span>
-                      <span className="font-medium">{vehicleTypes.find(v => v.id === form.vehicleType)?.label}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-4 rounded-xl border space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-                    <span>{form.originCity}</span>
-                    {form.originAddress && <span className="text-xs text-muted-foreground">· {form.originAddress}</span>}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                    <span>{form.destinationCity}</span>
-                    {form.destinationAddress && <span className="text-xs text-muted-foreground">· {form.destinationAddress}</span>}
-                  </div>
-                  {form.deliveryToDoor && <Badge variant="secondary" className="text-xs">Livraison à domicile</Badge>}
-                </div>
-
-                <div className="p-4 rounded-xl border space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Date</span>
-                    <span className="font-medium">{form.pickupDateStart}{form.pickupDateEnd ? ` → ${form.pickupDateEnd}` : ""}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Urgence</span>
-                    <Badge variant={form.urgency === "immediate" ? "destructive" : form.urgency === "express" ? "default" : "secondary"}>
-                      {urgencyOptions.find(u => u.id === form.urgency)?.label}
-                    </Badge>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">Budget proposé</span>
-                    <span className="text-xl font-bold text-primary">
-                      {(form.budget ? parseInt(form.budget) : estimatedPrice).toLocaleString()} FCFA
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Les transporteurs pourront accepter ou contre-proposer
-                  </p>
+              {/* Review summary */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Récapitulatif</p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div><span className="text-muted-foreground">Fret :</span> <span className="font-medium">{freightTypeLabels[form.freightType || ""]?.label || "—"}</span></div>
+                  <div><span className="text-muted-foreground">Poids :</span> <span className="font-medium">{formatWeightShort(weightKg)}</span> <Badge className={`${size.bg} ${size.color} text-[9px] ml-1`}>{size.label}</Badge></div>
+                  <div><span className="text-muted-foreground">De :</span> <span className="font-medium">{form.originCity || "—"}</span></div>
+                  <div><span className="text-muted-foreground">À :</span> <span className="font-medium">{form.destinationCity || "—"}</span></div>
+                  <div><span className="text-muted-foreground">Date :</span> <span className="font-medium">{form.pickupDate}</span></div>
+                  <div><span className="text-muted-foreground">Budget :</span> <span className="font-bold text-primary">{(form.budget ? parseInt(form.budget) : estimatedPrice).toLocaleString()} CFA</span></div>
                 </div>
               </div>
             </motion.div>
@@ -473,15 +345,15 @@ export default function RoutierMissionRequestPage() {
         </AnimatePresence>
       </div>
 
-      {/* Bottom Action */}
-      <div className="p-4 border-t bg-background">
+      {/* Footer CTA */}
+      <div className="px-4 py-3 border-t bg-background">
         {step < totalSteps ? (
-          <Button className="w-full" size="lg" disabled={!canProceed()} onClick={() => setStep(s => s + 1)}>
+          <Button className="w-full h-12" disabled={!canProceed()} onClick={() => setStep(s => s + 1)}>
             Continuer <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         ) : (
-          <Button className="w-full" size="lg" disabled={loading} onClick={handleSubmit}>
-            {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Zap className="w-4 h-4 mr-2" />}
+          <Button className="w-full h-12" disabled={loading} onClick={handleSubmit}>
+            {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
             Publier la mission
           </Button>
         )}
