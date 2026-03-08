@@ -57,11 +57,14 @@ export default function GPPremiumPage() {
   const [step, setStep] = useState<FlowStep>("plans");
   const [upgrading, setUpgrading] = useState(false);
   const [downgrading, setDowngrading] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<"premium" | "pro">("premium");
 
   if (loading) return <PageLoader message="Chargement..." />;
   if (!gpProfile) return null;
 
-  const isPremium = isGPPremium((gpProfile as any).subscription);
+  const currentSub = (gpProfile as any).subscription || "free";
+  const isPremium = isGPPremium(currentSub);
+  const isPro = currentSub === "pro";
 
   const handleConfirmUpgrade = async () => {
     setStep("processing");
@@ -70,7 +73,7 @@ export default function GPPremiumPage() {
       await new Promise(resolve => setTimeout(resolve, 2000));
       const { error } = await supabase
         .from("gp_profiles")
-        .update({ subscription: "premium" as any, auto_accept_enabled: true })
+        .update({ subscription: selectedPlan as any, auto_accept_enabled: true })
         .eq("id", gpProfile.id);
       if (error) throw error;
       setStep("success");
@@ -120,13 +123,13 @@ export default function GPPremiumPage() {
             <CheckCircle2 className="w-10 h-10 text-amber-500" />
           </motion.div>
           <div>
-            <h2 className="text-2xl font-bold">🎉 Bienvenue Premium !</h2>
+            <h2 className="text-2xl font-bold">🎉 Bienvenue {selectedPlan === "pro" ? "Pro" : "Premium"} !</h2>
             <p className="text-sm text-muted-foreground mt-2">
-              Votre compte a été mis à niveau. Profitez de tous les avantages Premium.
+              Votre compte a été mis à niveau. Profitez de tous les avantages {selectedPlan === "pro" ? "Pro" : "Premium"}.
             </p>
           </div>
           <Badge className="bg-amber-500 text-white border-none gap-1.5 text-sm px-4 py-1.5">
-            <Crown className="w-4 h-4" /> GP Premium
+            <Crown className="w-4 h-4" /> GP {selectedPlan === "pro" ? "Pro" : "Premium"}
           </Badge>
           <motion.div
             initial={{ width: 0 }}
