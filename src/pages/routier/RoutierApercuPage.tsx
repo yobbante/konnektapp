@@ -147,18 +147,8 @@ export default function RoutierApercuPage() {
     <RoutierDashboardLayout gpProfile={gpProfile} pendingCount={pendingCount} activeOrdersCount={totalActive}>
       <div className="px-3 py-3 space-y-3 pb-24">
 
-        {/* ── INTERACTIVE MAP ── */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-          <RoutierInteractiveMap
-            activeMissions={data.activeMissions}
-            missionRequests={data.missionRequests}
-            pendingMissions={data.pendingMissions}
-            stats={data.stats}
-          />
-        </motion.div>
-
         {/* ── QUICK ACTIONS — Row of 4 ── */}
-        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
           <div className="grid grid-cols-4 gap-2">
             <QuickAction icon={ScanLine} label="Scanner" primary onClick={() => setScanSheetOpen(true)} />
             <QuickAction icon={Package} label="Missions" badge={pendingCount} onClick={() => navigate("/routier/demandes")} />
@@ -168,6 +158,16 @@ export default function RoutierApercuPage() {
             }
             <QuickAction icon={History} label="Historique" onClick={() => navigate("/routier/historique")} />
           </div>
+        </motion.div>
+
+        {/* ── INTERACTIVE MAP ── */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+          <RoutierInteractiveMap
+            activeMissions={data.activeMissions}
+            missionRequests={data.missionRequests}
+            pendingMissions={data.pendingMissions}
+            stats={data.stats}
+          />
         </motion.div>
 
         {/* ── URGENT ALERTS ── */}
