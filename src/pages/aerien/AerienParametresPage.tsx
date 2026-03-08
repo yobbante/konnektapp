@@ -1,5 +1,5 @@
 /**
- * RoutierParametresPage — Factored from GPParametresPage with routier specifics
+ * AerienParametresPage — Factored from GPParametresPage with aérien specifics
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -7,11 +7,11 @@ import {
   Settings, User, Bell, Shield, LogOut, MapPin, Phone,
   Edit3, Save, X, MessageCircle, Key, Crown, Wallet,
   Palette, Languages, HelpCircle, FileText, Info,
-  Upload, BadgeCheck, Trash2, Car, Truck, Route,
-  BarChart3, Zap, ScanLine, ShieldX, DollarSign,
+  Upload, BadgeCheck, Trash2, Plane, Globe,
+  BarChart3, Zap, ScanLine,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { RoutierDashboardLayout } from "@/components/layout/RoutierDashboardLayout";
+import { AerienDashboardLayout } from "@/components/layout/AerienDashboardLayout";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
@@ -31,7 +31,7 @@ import {
   type NotificationPrefs, defaultNotificationPrefs,
 } from "@/components/settings/SharedSettingsComponents";
 
-export default function RoutierParametresPage() {
+export default function AerienParametresPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [gpProfile, setGpProfile] = useState<any>(null);
@@ -47,7 +47,6 @@ export default function RoutierParametresPage() {
     deposit_address: "", reception_address: "", description: "",
   });
   const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs>(defaultNotificationPrefs);
-  const [vehicleCount, setVehicleCount] = useState(0);
 
   useEffect(() => { loadData(); }, []);
 
@@ -59,13 +58,13 @@ export default function RoutierParametresPage() {
 
       const [profileRes, prefsData] = await Promise.all([
         supabase.from("gp_profiles")
-          .select("id, business_name, gp_type, status, subscription, road_type, deposit_address, reception_address, phone, whatsapp_phone, description, base_origin_city, base_origin_country, base_destination_city, base_destination_country, zones_covered, fleet_size, kyc_level, kyc_status, id_document_url, selfie_url, business_registration_url, transport_license_url, rating, total_deliveries, total_reviews, verified_at, withdrawal_limit, auto_accept_enabled, explicit_restrictions, default_currency")
-          .eq("user_id", user.id).eq("gp_type", "routier").maybeSingle(),
+          .select("id, business_name, gp_type, status, subscription, deposit_address, reception_address, phone, whatsapp_phone, description, base_origin_city, base_origin_country, base_destination_city, base_destination_country, kyc_level, kyc_status, id_document_url, selfie_url, business_registration_url, rating, total_deliveries, total_reviews, verified_at, withdrawal_limit, auto_accept_enabled, default_currency")
+          .eq("user_id", user.id).eq("gp_type", "aerien").maybeSingle(),
         loadNotificationPrefs(user.id),
       ]);
 
       const profile = profileRes.data;
-      if (!profile) { navigate("/routier/inscription"); return; }
+      if (!profile) { navigate("/aerien/inscription"); return; }
       setGpProfile(profile);
       setNotifPrefs(prefsData);
 
@@ -81,13 +80,9 @@ export default function RoutierParametresPage() {
         description: profile.description || "",
       });
 
-      const [ordersRes, vehiclesRes] = await Promise.all([
-        supabase.from("orders").select("status").eq("gp_id", profile.id),
-        supabase.from("vehicles").select("id").eq("gp_id", profile.id),
-      ]);
-      setPendingCount(ordersRes.data?.filter(o => o.status === "pending").length || 0);
-      setActiveCount(ordersRes.data?.filter(o => ["accepted", "collected", "in_transit"].includes(o.status)).length || 0);
-      setVehicleCount(vehiclesRes.data?.length || 0);
+      const { data: orders } = await supabase.from("orders").select("status").eq("gp_id", profile.id);
+      setPendingCount(orders?.filter(o => o.status === "pending").length || 0);
+      setActiveCount(orders?.filter(o => ["accepted", "collected", "in_transit"].includes(o.status)).length || 0);
     } catch (error) {
       console.error("Error:", error);
     } finally {
@@ -127,25 +122,21 @@ export default function RoutierParametresPage() {
   const hasId = !!gpProfile.id_document_url;
   const hasSelfie = !!gpProfile.selfie_url;
   const hasBusinessReg = !!gpProfile.business_registration_url;
-  const hasTransportLicense = !!gpProfile.transport_license_url;
   const isPremium = gpProfile.subscription === "premium" || gpProfile.subscription === "pro";
   const subLabel = gpProfile.subscription === "pro" ? "Pro" : gpProfile.subscription === "premium" ? "Premium" : "Gratuit";
   const withdrawalLimit = gpProfile.withdrawal_limit ?? 300000;
-  const currency = gpProfile.default_currency || "XOF";
-  const roadTypeLabel = gpProfile.road_type === "shuttle" || gpProfile.road_type === "navette" ? "Navette" : gpProfile.road_type === "mission" ? "Mission" : "Hybride";
 
   const kycSteps = [
     { label: "Inscription", done: true },
     { label: "Pièce d'identité", done: hasId },
     { label: "Selfie", done: hasSelfie },
-    { label: "Licence transport", done: hasTransportLicense },
-    { label: "Doc. entreprise", done: hasBusinessReg },
+    { label: "Licence / Agrément", done: hasBusinessReg },
   ];
   const kycCompletedSteps = kycSteps.filter(s => s.done).length;
   const kycProgress = Math.round((kycCompletedSteps / kycSteps.length) * 100);
 
   return (
-    <RoutierDashboardLayout gpProfile={gpProfile} pendingCount={pendingCount} activeOrdersCount={activeCount}>
+    <AerienDashboardLayout gpProfile={gpProfile} pendingCount={pendingCount} activeOrdersCount={activeCount}>
       <div className="px-4 py-3 space-y-3 pb-24">
         <div className="flex items-center gap-2">
           <Settings className="w-4.5 h-4.5 text-primary" />
@@ -162,7 +153,7 @@ export default function RoutierParametresPage() {
               </div>
               <div>
                 <Label className="text-[10px] text-muted-foreground">Description</Label>
-                <Textarea value={profileForm.description} onChange={e => setProfileForm(p => ({ ...p, description: e.target.value }))} rows={2} className="text-sm" placeholder="Décrivez votre activité de transport routier..." />
+                <Textarea value={profileForm.description} onChange={e => setProfileForm(p => ({ ...p, description: e.target.value }))} rows={2} className="text-sm" placeholder="Décrivez votre activité de fret aérien..." />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -176,11 +167,11 @@ export default function RoutierParametresPage() {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label className="text-[10px] text-muted-foreground">📍 Adresse départ</Label>
+                  <Label className="text-[10px] text-muted-foreground">✈️ Aéroport origine</Label>
                   <Input className="h-8 text-sm" value={profileForm.deposit_address} onChange={e => setProfileForm(p => ({ ...p, deposit_address: e.target.value }))} />
                 </div>
                 <div>
-                  <Label className="text-[10px] text-muted-foreground">📍 Adresse arrivée</Label>
+                  <Label className="text-[10px] text-muted-foreground">✈️ Aéroport arrivée</Label>
                   <Input className="h-8 text-sm" value={profileForm.reception_address} onChange={e => setProfileForm(p => ({ ...p, reception_address: e.target.value }))} />
                 </div>
               </div>
@@ -198,7 +189,7 @@ export default function RoutierParametresPage() {
               <div className="p-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="w-3.5 h-3.5 text-primary" />
+                    <Plane className="w-3.5 h-3.5 text-primary" />
                   </div>
                   <div>
                     <p className="font-semibold text-sm leading-tight">{gpProfile.business_name}</p>
@@ -213,8 +204,8 @@ export default function RoutierParametresPage() {
               <div className="px-3 py-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
                 <InfoPair icon={Phone} label="Tél." value={gpProfile.phone || "—"} />
                 <InfoPair icon={MessageCircle} label="WhatsApp" value={gpProfile.whatsapp_phone || "—"} />
-                <InfoPair icon={MapPin} label="Départ" value={gpProfile.deposit_address || "—"} />
-                <InfoPair icon={MapPin} label="Arrivée" value={gpProfile.reception_address || "—"} />
+                <InfoPair icon={Plane} label="Aéroport orig." value={gpProfile.deposit_address || "—"} />
+                <InfoPair icon={Plane} label="Aéroport dest." value={gpProfile.reception_address || "—"} />
               </div>
             </>
           )}
@@ -242,66 +233,57 @@ export default function RoutierParametresPage() {
               ))}
             </div>
             {kycProgress < 100 && (
-              <Button variant="outline" size="sm" className="w-full gap-1 text-[11px] h-7" onClick={() => navigate("/routier/profil-public")}>
+              <Button variant="outline" size="sm" className="w-full gap-1 text-[11px] h-7" onClick={() => navigate("/aerien/profil-public")}>
                 <Upload className="w-3 h-3" /> Compléter
               </Button>
             )}
           </div>
         </SettingsSection>
 
-        {/* ═══ 3. NAVETTES ═══ */}
-        <SettingsSection title="Navettes">
+        {/* ═══ 3. LIGNES / NAVETTES ═══ */}
+        <SettingsSection title="Lignes aériennes">
           <div className="p-3">
             <GPNavetteManager gpId={gpProfile.id} subscription={gpProfile.subscription} />
           </div>
         </SettingsSection>
 
-        {/* ═══ 4. FLOTTE & TRANSPORT ═══ */}
-        <SettingsSection title="Flotte & Transport">
-          <SettingsRow icon={Car} label="Ma flotte" desc={`${vehicleCount} véhicule${vehicleCount > 1 ? "s" : ""}`} onClick={() => navigate("/routier/vehicules")} />
-          <Separator />
-          <SettingsRow icon={Truck} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Mode transport" desc={roadTypeLabel} onClick={() => {}} />
-          <Separator />
-          <SettingsRow icon={Route} iconColor="text-emerald-500" iconBg="bg-emerald-500/10" label="Zones couvertes" desc={`${(gpProfile.zones_covered || []).length} zones`} onClick={() => navigate("/routier/apercu")} />
-        </SettingsSection>
-
-        {/* ═══ 5. OPÉRATIONS ═══ */}
+        {/* ═══ 4. OPÉRATIONS ═══ */}
         <SettingsSection title="Opérations">
-          <SettingsRow icon={User} label="Profil public" desc="Aperçu client" onClick={() => navigate("/routier/profil-public")} />
+          <SettingsRow icon={User} label="Profil public" desc="Aperçu client" onClick={() => navigate("/aerien/profil-public")} />
           <Separator />
-          <SettingsRow icon={ScanLine} iconColor="text-purple-500" iconBg="bg-purple-500/10" label="Scanner QR" desc="Caméra" onClick={() => navigate("/routier/scan")} />
+          <SettingsRow icon={Globe} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Demandes fret" desc="Appels d'offres" onClick={() => navigate("/aerien/demande-fret")} />
           <Separator />
-          <SettingsRow icon={BarChart3} iconColor="text-amber-500" iconBg="bg-amber-500/10" label="Performances" desc={isPremium ? "Statistiques" : "Découvrir"} onClick={() => navigate("/routier/performances")} />
+          <SettingsRow icon={ScanLine} iconColor="text-purple-500" iconBg="bg-purple-500/10" label="Scanner QR" desc="Caméra" onClick={() => navigate("/aerien/scan")} />
           <Separator />
           <SettingsRow icon={Zap} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Auto-acceptation" desc={isPremium && gpProfile.auto_accept_enabled ? "Activée ✅" : isPremium ? "Désactivée" : "Découvrir"} onClick={() => {}} />
         </SettingsSection>
 
-        {/* ═══ 6. SÉCURITÉ & FINANCES ═══ */}
+        {/* ═══ 5. SÉCURITÉ & FINANCES ═══ */}
         <SettingsSection title="Sécurité & Finances">
-          <SettingsRow icon={Wallet} iconColor="text-emerald-500" iconBg="bg-emerald-500/10" label="Portefeuille" desc="Solde et retraits" onClick={() => navigate("/routier/wallet")} />
+          <SettingsRow icon={Wallet} iconColor="text-emerald-500" iconBg="bg-emerald-500/10" label="Portefeuille" desc="Solde et retraits" onClick={() => navigate("/aerien/wallet")} />
           <Separator />
-          <SettingsRow icon={Shield} label="KTP & GeoTrack" desc="Score de confiance" onClick={() => {}} />
+          <SettingsRow icon={Shield} label="KTP" desc="Score de confiance" onClick={() => {}} />
           <Separator />
           <SettingsRow icon={Key} iconColor="text-amber-500" iconBg="bg-amber-500/10" label="Mot de passe" desc="Modifier ou réinitialiser" onClick={() => setShowPwdDialog(true)} />
         </SettingsSection>
 
-        {/* ═══ 7. ABONNEMENT ═══ */}
+        {/* ═══ 6. ABONNEMENT ═══ */}
         <SettingsSection title="Abonnement">
-          <SettingsRow icon={Crown} iconColor="text-amber-500" iconBg="bg-amber-500/10" label="Mon plan" desc={`${subLabel} — ${isPremium ? "Actif" : "Comparer les offres"}`} onClick={() => navigate("/routier/premium")} />
+          <SettingsRow icon={Crown} iconColor="text-amber-500" iconBg="bg-amber-500/10" label="Mon plan" desc={`${subLabel} — ${isPremium ? "Actif" : "Comparer les offres"}`} onClick={() => navigate("/aerien/premium")} />
         </SettingsSection>
 
         <PremiumCTABanner variant="compact" context="menu" subscription={gpProfile.subscription} />
 
-        {/* ═══ 8. NOTIFICATIONS ═══ */}
+        {/* ═══ 7. NOTIFICATIONS ═══ */}
         <SettingsSection title="Notifications">
           <ToggleRow icon={Bell} label="Push" desc="Temps réel" checked={notifPrefs.push_notifications} onToggle={() => handleToggle("push_notifications")} />
           <Separator />
-          <ToggleRow icon={Bell} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Missions" desc="Marketplace" checked={notifPrefs.new_message_alerts} onToggle={() => handleToggle("new_message_alerts")} />
+          <ToggleRow icon={Bell} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Demandes fret" desc="Nouveaux appels" checked={notifPrefs.new_message_alerts} onToggle={() => handleToggle("new_message_alerts")} />
           <Separator />
-          <ToggleRow icon={Bell} iconColor="text-orange-500" iconBg="bg-orange-500/10" label="Commandes" desc="Statuts" checked={notifPrefs.order_status_alerts} onToggle={() => handleToggle("order_status_alerts")} />
+          <ToggleRow icon={Bell} iconColor="text-orange-500" iconBg="bg-orange-500/10" label="Expéditions" desc="Statuts" checked={notifPrefs.order_status_alerts} onToggle={() => handleToggle("order_status_alerts")} />
         </SettingsSection>
 
-        {/* ═══ 9. AUTRES ═══ */}
+        {/* ═══ 8. AUTRES ═══ */}
         <SettingsSection title="Autres">
           <div className="px-3 py-2.5 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -315,12 +297,10 @@ export default function RoutierParametresPage() {
           <Separator />
           <SettingsRow icon={HelpCircle} label="Aide & FAQ" onClick={() => navigate("/aide")} />
           <Separator />
-          <SettingsRow icon={FileText} iconColor="text-muted-foreground" iconBg="bg-muted" label="CGU & Confidentialité" onClick={() => navigate("/cgu")} />
-          <Separator />
           <SettingsRow icon={Info} iconColor="text-muted-foreground" iconBg="bg-muted" label="À propos" desc="v1.0.0" onClick={() => navigate("/a-propos")} />
         </SettingsSection>
 
-        {/* ═══ 10. COMPTE ═══ */}
+        {/* ═══ 9. COMPTE ═══ */}
         <SettingsSection title="Compte">
           <button onClick={async () => { await supabase.auth.signOut(); navigate("/"); }} className="w-full p-3 flex items-center gap-3 hover:bg-destructive/10 transition-colors active:scale-[0.98]">
             <div className="w-7 h-7 rounded-lg bg-destructive/10 flex items-center justify-center">
@@ -340,7 +320,7 @@ export default function RoutierParametresPage() {
 
       <PasswordChangeDialog open={showPwdDialog} onOpenChange={setShowPwdDialog} userEmail={userEmail} />
       <ForgotPasswordDialog open={showForgotPwd} onOpenChange={setShowForgotPwd} userEmail={userEmail} />
-    </RoutierDashboardLayout>
+    </AerienDashboardLayout>
   );
 }
 
