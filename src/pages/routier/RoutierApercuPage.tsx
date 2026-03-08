@@ -16,6 +16,7 @@ import {
   Shield, Star, TrendingUp, Send, Navigation,
   Eye, CircleDot
 } from "lucide-react";
+import { RoutierInteractiveMap } from "@/components/routier/RoutierInteractiveMap";
 import { getSizeFromWeight, freightTypeLabels } from "@/lib/routierUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
