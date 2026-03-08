@@ -282,9 +282,6 @@ export function SmartVoyageForm({
                   >
                     <span>{getFlag(nav.origin_country)}</span>
                     <span>{nav.origin_city}</span>
-                    <span className="text-[9px] opacity-60">→</span>
-                    <span>{getFlag(nav.destination_country)}</span>
-                    <span>{nav.destination_city}</span>
                   </button>
                 ))}
               </div>
