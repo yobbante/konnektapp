@@ -110,7 +110,12 @@ export function GPDashboardLayout({
           HEADER — Fixed, scan-centric + bouton +
       ══════════════════════════════════════ */}
       <header 
-        className="sticky top-0 z-50 bg-gradient-to-r from-primary to-primary/90 shadow-lg"
+        className={cn(
+          "sticky top-0 z-50 shadow-lg",
+          isGPPremium((gpProfile as any).subscription)
+            ? "bg-gradient-to-r from-amber-600 via-amber-500 to-orange-500"
+            : "bg-gradient-to-r from-primary to-primary/90"
+        )}
         style={{ paddingTop: 'calc(8px + var(--safe-top, 0px))' }}
       >
         {/* Main header row */}
@@ -234,6 +239,17 @@ export function GPDashboardLayout({
       </AnimatePresence>
 
       {/* ══════════════════════════════════════
+          PREMIUM HEADER ACCENT
+      ══════════════════════════════════════ */}
+      {isGPPremium((gpProfile as any).subscription) && (
+        <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border-b border-amber-500/15 px-4 py-1.5 flex items-center gap-2">
+          <Crown className="w-3.5 h-3.5 text-amber-500" />
+          <span className="text-[11px] font-semibold text-amber-600">GP Premium</span>
+          <span className="text-[10px] text-muted-foreground ml-auto">Visibilité prioritaire active</span>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════
           MAIN CONTENT
       ══════════════════════════════════════ */}
       <main className="flex-1 pb-20">
@@ -351,7 +367,7 @@ export function GPDashboardLayout({
                 <MenuButton icon={Settings} label="Réglages" onClick={() => { setShowMenu(false); navigate("/gp/parametres"); }} />
                 <MenuButton icon={LogOut} label="Déconnexion" variant="destructive" onClick={() => { setShowMenu(false); handleSignOut(); }} />
               </div>
-              {/* Premium CTA in menu */}
+              {/* Premium CTA in menu — hidden for subscribers */}
               {!isGPPremium((gpProfile as any).subscription) && (
                 <div className="pb-3">
                   <PremiumCTABanner variant="compact" context="menu" isPremium={false} />

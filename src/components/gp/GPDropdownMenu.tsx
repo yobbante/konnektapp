@@ -38,7 +38,7 @@ export function GPDropdownMenu({ onTabChange, activeTab, onCreateOffer }: GPDrop
     { id: "offers", label: "Mes offres", icon: Package },
     { id: "orders", label: "Mes missions", icon: Truck },
     { id: "wallet", label: "Portefeuille", icon: Wallet },
-    { id: "stats", label: "Statistiques", icon: BarChart3 },
+    { id: "performances", label: "Performances", icon: BarChart3, route: "/gp/performances" },
     { id: "messages", label: "Messages", icon: MessageSquare, route: "/messages" },
   ];
 
