@@ -7,10 +7,11 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Star, MessageCircle, Package, Scale, Bell, ChevronRight, Sparkles, ChevronLeft
+  Star, MessageCircle, Package, Scale, Bell, ChevronRight, Sparkles, ChevronLeft, Heart
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { RateOrderDialog } from "@/components/RateOrderDialog";
+import { PostDeliveryFlow } from "@/components/delivery/PostDeliveryFlow";
 
 interface SmartAction {
   id: string;
@@ -33,6 +34,7 @@ interface SmartActionBarProps {
   recentOrders?: any[];
   unreadMessages?: number;
   activeOrdersCount?: number;
+  pendingRecipientFeedback?: any[];
 }
 
 interface PendingReview {
@@ -43,7 +45,7 @@ interface PendingReview {
   gp_name: string;
 }
 
-export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, activeOrdersCount = 0 }: SmartActionBarProps) {
+export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, activeOrdersCount = 0, pendingRecipientFeedback = [] }: SmartActionBarProps) {
   const navigate = useNavigate();
   const [pendingReviews, setPendingReviews] = useState<PendingReview[]>([]);
   const [incomingParcels, setIncomingParcels] = useState<any[]>([]);
@@ -51,6 +53,7 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
   const [priceChanges, setPriceChanges] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [ratingOrder, setRatingOrder] = useState<PendingReview | null>(null);
+  const [feedbackOrder, setFeedbackOrder] = useState<any | null>(null);
 
   const fetchContextualData = useCallback(async () => {
     if (!userId) return;
@@ -166,6 +169,18 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
       });
     });
 
+    // URGENT: Pending recipient feedback
+    pendingRecipientFeedback.forEach(o => {
+      items.push({
+        id: `feedback-${o.id}`, priority: "urgent", icon: Heart,
+        label: "Confirmez la réception",
+        description: `${o.order_number} · ${o.origin_city} → ${o.destination_city}`,
+        onClick: () => setFeedbackOrder(o),
+        color: "text-rose-600 dark:text-rose-400", bgColor: "bg-rose-500/10", borderColor: "border-rose-500/30",
+        pulse: true,
+      });
+    });
+
     // IMPORTANT: Unread messages
     if (unreadMessages > 0) {
       items.push({
@@ -191,7 +206,7 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
 
     const priorityOrder = { critical: 0, urgent: 1, important: 2 };
     return items.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
-  }, [supplementOrders, incomingParcels, pendingReviews, unreadMessages, priceChanges, navigate]);
+  }, [supplementOrders, incomingParcels, pendingReviews, pendingRecipientFeedback, unreadMessages, priceChanges, navigate]);
 
   // Reset index when actions change
   useEffect(() => {
@@ -317,6 +332,15 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
           gpId={ratingOrder.gp_id}
           gpName={ratingOrder.gp_name}
           onSuccess={handleReviewSuccess}
+        />
+      )}
+
+      {feedbackOrder && (
+        <PostDeliveryFlow
+          order={feedbackOrder}
+          role="recipient"
+          onClose={() => setFeedbackOrder(null)}
+          onNavigate={(path) => { setFeedbackOrder(null); navigate(path); }}
         />
       )}
     </>
