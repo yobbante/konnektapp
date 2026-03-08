@@ -907,6 +907,28 @@ function CreateVoyageDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Navette picker for subscribers */}
+          {isPremiumOrPro && navettes.length > 0 && (
+            <div>
+              <Label className="text-xs mb-1.5 block">Choisir une navette</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {navettes.map((nav, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => selectNavette(nav)}
+                    className={`text-xs px-2.5 py-1.5 rounded-lg border transition-all ${
+                      formData.originCity === nav.origin_city && formData.destinationCity === nav.destination_city
+                        ? "border-primary bg-primary/10 text-primary font-medium"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    {nav.origin_city} → {nav.destination_city}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {/* Route */}
           <div className="grid grid-cols-2 gap-3">
             <div>
