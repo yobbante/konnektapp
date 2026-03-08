@@ -73,7 +73,6 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
       }
 
       if (mode === "routier") {
-        // Insert into routier_missions
         const { error } = await supabase.from("routier_missions").insert({
           client_id: session.user.id,
           origin_city: originCity.trim(),
@@ -81,16 +80,16 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
           destination_city: destCity.trim(),
           destination_country: destCountry.trim() || "Sénégal",
           freight_type: "Marchandise",
-          description: description.trim(),
-          weight_kg: weightKg ? parseFloat(weightKg) : null,
-          pickup_date: pickupDate || null,
-          budget_max: budgetMax ? parseFloat(budgetMax) : null,
-          is_urgent: isUrgent,
+          merchandise_description: description.trim(),
+          weight_kg: weightKg ? parseFloat(weightKg) : 0,
+          pickup_date_start: pickupDate || new Date().toISOString().split("T")[0],
+          client_budget: budgetMax ? parseFloat(budgetMax) : null,
+          urgency: isUrgent ? "express" as const : "normal" as const,
+          mission_number: `MSN-${Date.now()}`,
           status: "open",
         });
         if (error) throw error;
       } else {
-        // Insert into freight_requests for maritime/aerien
         const { error } = await supabase.from("freight_requests").insert({
           client_id: session.user.id,
           origin_city: originCity.trim(),
