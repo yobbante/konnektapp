@@ -19,7 +19,7 @@ export const PREMIUM_FEATURES: Record<PremiumFeature, { label: string; desc: str
 };
 
 export function isGPPremium(subscription?: string): boolean {
-  return subscription === "premium";
+  return subscription === "premium" || subscription === "pro";
 }
 
 export function canAccessFeature(subscription?: string, _feature?: PremiumFeature): boolean {
