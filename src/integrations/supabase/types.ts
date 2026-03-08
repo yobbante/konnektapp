@@ -4898,6 +4898,10 @@ export type Database = {
         Returns: number
       }
       get_ktp_payment_rule: { Args: { p_trust_score: number }; Returns: string }
+      get_premium_commission_discount: {
+        Args: { p_subscription: string }
+        Returns: number
+      }
       get_progressive_commission_rate: {
         Args: { p_total_deliveries: number }
         Returns: number
