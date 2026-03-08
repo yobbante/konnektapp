@@ -1,8 +1,8 @@
 /**
  * RoutierInteractiveMap — Plain Leaflet interactive map (no react-leaflet)
- * Avoids react-leaflet context consumer bug with React 18
+ * Shows missions as package chips with price; click to expand route view
  */
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Truck, Package, MapPin } from "lucide-react";
@@ -60,17 +60,17 @@ function getCityCoords(cityName: string): [number, number] | null {
   return null;
 }
 
-function createMarkerIcon(color: string, type: "origin" | "destination") {
-  const svg = type === "origin"
-    ? `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5"><circle cx="12" cy="12" r="4" fill="${color}" opacity="0.3"/><circle cx="12" cy="12" r="2" fill="${color}"/></svg>`
-    : `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="32" viewBox="0 0 24 32"><path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20C24 5.4 18.6 0 12 0z" fill="${color}"/><circle cx="12" cy="12" r="5" fill="white"/></svg>`;
-  return L.divIcon({
-    html: svg,
-    className: "custom-marker",
-    iconSize: type === "origin" ? [24, 24] : [24, 32],
-    iconAnchor: type === "origin" ? [12, 12] : [12, 32],
-    popupAnchor: [0, type === "origin" ? -14 : -34],
-  });
+function getWeightLabel(weight?: number): string {
+  if (!weight) return "";
+  if (weight <= 5) return "S";
+  if (weight <= 15) return "M";
+  if (weight <= 30) return "L";
+  if (weight <= 70) return "XL";
+  return "XXL";
+}
+
+function getMidpoint(a: [number, number], b: [number, number]): [number, number] {
+  return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
 }
 
 interface MissionPoint {
@@ -96,15 +96,84 @@ const typeColors: Record<string, string> = {
   pending: "#f59e0b",
 };
 
-const typeLabels: Record<string, string> = {
-  active: "En cours",
-  available: "Disponible",
-  pending: "En attente",
+const typeBgColors: Record<string, string> = {
+  active: "#dbeafe",
+  available: "#d1fae5",
+  pending: "#fef3c7",
 };
+
+function createPriceChipIcon(mission: MissionPoint) {
+  const price = mission.price ? `${mission.price.toLocaleString()} CFA` : "—";
+  const sizeLabel = getWeightLabel(mission.weight);
+  const borderColor = typeColors[mission.type];
+  const bgColor = typeBgColors[mission.type];
+
+  const html = `
+    <div class="mission-chip" style="
+      display:flex;align-items:center;gap:4px;
+      background:white;border:1.5px solid ${borderColor};
+      border-radius:20px;padding:3px 8px 3px 6px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.15);
+      cursor:pointer;white-space:nowrap;
+      font-family:system-ui,-apple-system,sans-serif;
+      transition:transform 0.15s ease;
+    ">
+      <span style="
+        display:flex;align-items:center;justify-content:center;
+        width:18px;height:18px;border-radius:4px;
+        background:${bgColor};
+      ">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${borderColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+          <line x1="12" y1="22.08" x2="12" y2="12"/>
+        </svg>
+      </span>
+      <span style="font-size:11px;font-weight:700;color:#1a1a1a;">${price}</span>
+      ${sizeLabel ? `<span style="font-size:9px;font-weight:500;color:#888;margin-left:2px;">${sizeLabel}</span>` : ""}
+    </div>
+  `;
+
+  return L.divIcon({
+    html,
+    className: "mission-chip-wrapper",
+    iconSize: [0, 0],
+    iconAnchor: [0, 0],
+  });
+}
+
+function createRouteEndpointIcon(label: string, isOrigin: boolean) {
+  const html = `
+    <div style="
+      display:flex;align-items:center;gap:6px;
+      background:#111;color:white;
+      border-radius:24px;padding:6px 14px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.3);
+      font-family:system-ui,-apple-system,sans-serif;
+      white-space:nowrap;
+    ">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        ${isOrigin
+          ? '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>'
+          : '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>'
+        }
+      </svg>
+      <span style="font-size:13px;font-weight:700;">${label}</span>
+    </div>
+  `;
+  return L.divIcon({
+    html,
+    className: "route-endpoint-marker",
+    iconSize: [0, 0],
+    iconAnchor: [0, -10],
+  });
+}
 
 export function RoutierInteractiveMap({ activeMissions, missionRequests, pendingMissions, stats }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const layersRef = useRef<L.Layer[]>([]);
+  const [selectedMission, setSelectedMission] = useState<MissionPoint | null>(null);
 
   const allMissions = useMemo(() => {
     const missions: MissionPoint[] = [];
@@ -140,61 +209,120 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
     };
   }, []);
 
-  // Update markers/routes when missions change
-  useEffect(() => {
+  // Clear helper
+  const clearLayers = () => {
     const map = mapInstanceRef.current;
     if (!map) return;
+    layersRef.current.forEach((l) => map.removeLayer(l));
+    layersRef.current = [];
+  };
 
-    // Clear existing layers (except tile layer)
-    map.eachLayer((layer) => {
-      if (!(layer instanceof L.TileLayer)) {
-        map.removeLayer(layer);
-      }
-    });
+  const addLayer = (layer: L.Layer) => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    layer.addTo(map);
+    layersRef.current.push(layer);
+  };
+
+  // Show all missions as price chips (default overview)
+  const showOverview = () => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    clearLayers();
 
     const allPoints: L.LatLng[] = [];
 
     allMissions.forEach((m) => {
       const origin = getCityCoords(m.origin_city);
       const dest = getCityCoords(m.destination_city);
-      const color = typeColors[m.type];
 
-      if (origin) {
-        const marker = L.marker(origin, { icon: createMarkerIcon(color, "origin") }).addTo(map);
-        marker.bindPopup(`<div class="text-xs"><p class="font-bold">${m.origin_city} → ${m.destination_city}</p><p>${typeLabels[m.type]}${m.weight ? ` · ${m.weight} kg` : ""}${m.price ? ` · ${m.price.toLocaleString()} CFA` : ""}</p></div>`);
-        allPoints.push(L.latLng(origin[0], origin[1]));
-      }
-      if (dest) {
-        const marker = L.marker(dest, { icon: createMarkerIcon(color, "destination") }).addTo(map);
-        marker.bindPopup(`<div class="text-xs"><p class="font-bold">${m.origin_city} → ${m.destination_city}</p><p>${typeLabels[m.type]}${m.weight ? ` · ${m.weight} kg` : ""}${m.price ? ` · ${m.price.toLocaleString()} CFA` : ""}</p></div>`);
-        allPoints.push(L.latLng(dest[0], dest[1]));
-      }
-      if (origin && dest) {
-        L.polyline([origin, dest], {
-          color,
-          weight: 2,
-          opacity: 0.6,
-          dashArray: m.type === "available" ? "6, 8" : undefined,
-        }).addTo(map);
-      }
+      // Place chip at midpoint if both exist, else at whichever exists
+      const chipPos = origin && dest ? getMidpoint(origin, dest) : origin || dest;
+      if (!chipPos) return;
+
+      const marker = L.marker(chipPos, { icon: createPriceChipIcon(m) });
+      marker.on("click", () => {
+        setSelectedMission(m);
+      });
+      addLayer(marker);
+      allPoints.push(L.latLng(chipPos[0], chipPos[1]));
     });
 
     if (allMissions.length === 0) {
-      L.marker([12.5, -4.0], { icon: createMarkerIcon("#10b981", "destination") })
-        .addTo(map)
-        .bindPopup('<p class="text-xs font-medium">Aucune mission active</p>');
+      const emptyMarker = L.marker([12.5, -4.0], {
+        icon: L.divIcon({
+          html: `<div style="background:white;border-radius:12px;padding:6px 12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);font-size:11px;font-weight:600;color:#888;white-space:nowrap;">Aucune mission</div>`,
+          className: "mission-chip-wrapper",
+          iconSize: [0, 0],
+        }),
+      });
+      addLayer(emptyMarker);
     }
 
     if (allPoints.length >= 2) {
-      map.fitBounds(L.latLngBounds(allPoints), { padding: [30, 30], maxZoom: 8 });
+      map.fitBounds(L.latLngBounds(allPoints), { padding: [40, 40], maxZoom: 8 });
     } else if (allPoints.length === 1) {
       map.setView(allPoints[0], 7);
     }
-  }, [allMissions]);
+  };
+
+  // Show expanded route for a selected mission
+  const showRoute = (mission: MissionPoint) => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    clearLayers();
+
+    const origin = getCityCoords(mission.origin_city);
+    const dest = getCityCoords(mission.destination_city);
+    const color = typeColors[mission.type];
+
+    if (origin) {
+      addLayer(L.marker(origin, { icon: createRouteEndpointIcon("Départ", true) }));
+    }
+    if (dest) {
+      addLayer(L.marker(dest, { icon: createRouteEndpointIcon("Arrivée", false) }));
+    }
+    if (origin && dest) {
+      // Draw thick route line
+      addLayer(L.polyline([origin, dest], {
+        color: "#888",
+        weight: 6,
+        opacity: 0.5,
+        lineCap: "round",
+      }));
+      addLayer(L.polyline([origin, dest], {
+        color: "#333",
+        weight: 3,
+        opacity: 0.9,
+        lineCap: "round",
+      }));
+
+      const bounds = L.latLngBounds([origin, dest]);
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 8 });
+    } else if (origin) {
+      map.setView(origin, 7);
+    } else if (dest) {
+      map.setView(dest, 7);
+    }
+  };
+
+  // React to mission changes => overview
+  useEffect(() => {
+    if (!selectedMission) {
+      showOverview();
+    }
+  }, [allMissions, selectedMission]);
+
+  // React to selected mission
+  useEffect(() => {
+    if (selectedMission) {
+      showRoute(selectedMission);
+    }
+  }, [selectedMission]);
 
   return (
     <div className="relative rounded-xl overflow-hidden border border-border/50 shadow-sm">
-      {/* Stats bar overlay */}
+      {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-[1000] p-2.5 flex items-center justify-between pointer-events-none">
         <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md rounded-full px-2.5 py-1 pointer-events-auto">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -222,35 +350,71 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="absolute bottom-2.5 left-2.5 z-[1000] bg-white/90 dark:bg-black/70 backdrop-blur-md rounded-lg px-2.5 py-1.5 flex gap-3 pointer-events-auto">
-        <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-blue-600" />
-          <span className="text-[9px] font-medium text-foreground/80">En cours</span>
+      {/* Selected mission detail card (bottom overlay) */}
+      {selectedMission && (
+        <div className="absolute bottom-0 left-0 right-0 z-[1000] bg-white/95 dark:bg-black/90 backdrop-blur-md border-t border-border/50 p-3 pointer-events-auto">
+          <div className="flex items-start gap-3">
+            <div className="w-12 h-12 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0">
+              <Package className="w-6 h-6 text-muted-foreground/40" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold text-foreground truncate">
+                  {selectedMission.origin_city} → {selectedMission.destination_city}
+                </p>
+                <span className="text-sm font-bold" style={{ color: typeColors[selectedMission.type] }}>
+                  {selectedMission.price ? `${selectedMission.price.toLocaleString()} CFA` : "—"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-[10px] text-muted-foreground">○ {selectedMission.origin_city}</span>
+              </div>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-[10px] text-muted-foreground">○ {selectedMission.destination_city}</span>
+              </div>
+              <div className="flex items-center justify-between mt-1.5">
+                {selectedMission.weight && (
+                  <span className="text-[10px] text-muted-foreground">
+                    {selectedMission.weight} kg
+                  </span>
+                )}
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md" style={{ 
+                  background: typeBgColors[selectedMission.type],
+                  color: typeColors[selectedMission.type],
+                }}>
+                  {getWeightLabel(selectedMission.weight) || "—"}
+                </span>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => setSelectedMission(null)}
+            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-muted/80 flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors"
+          >
+            <span className="text-xs font-bold">✕</span>
+          </button>
         </div>
-        <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          <span className="text-[9px] font-medium text-foreground/80">Disponible</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-amber-500" />
-          <span className="text-[9px] font-medium text-foreground/80">En attente</span>
-        </div>
-      </div>
+      )}
 
-      {/* Bottom stats */}
-      <div className="absolute bottom-2.5 right-2.5 z-[1000] flex gap-1.5">
-        <div className="bg-white/90 dark:bg-black/70 backdrop-blur-md rounded-lg px-2 py-1 text-center pointer-events-auto">
-          <p className="text-[10px] font-bold text-foreground">{stats.delivered}</p>
-          <p className="text-[7px] text-muted-foreground uppercase">Livrés</p>
+      {/* Legend (only in overview) */}
+      {!selectedMission && (
+        <div className="absolute bottom-2.5 left-2.5 z-[1000] bg-white/90 dark:bg-black/70 backdrop-blur-md rounded-lg px-2.5 py-1.5 flex gap-3 pointer-events-auto">
+          <div className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-blue-600" />
+            <span className="text-[9px] font-medium text-foreground/80">En cours</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-[9px] font-medium text-foreground/80">Disponible</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-amber-500" />
+            <span className="text-[9px] font-medium text-foreground/80">En attente</span>
+          </div>
         </div>
-        <div className="bg-white/90 dark:bg-black/70 backdrop-blur-md rounded-lg px-2 py-1 text-center pointer-events-auto">
-          <p className="text-[10px] font-bold text-foreground">{stats.successRate}%</p>
-          <p className="text-[7px] text-muted-foreground uppercase">Réussite</p>
-        </div>
-      </div>
+      )}
 
-      <div ref={mapRef} style={{ height: "220px", width: "100%" }} />
+      <div ref={mapRef} style={{ height: selectedMission ? "320px" : "260px", width: "100%", transition: "height 0.3s ease" }} />
     </div>
   );
 }
