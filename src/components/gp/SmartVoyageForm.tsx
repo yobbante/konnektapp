@@ -495,5 +495,12 @@ export function SmartVoyageForm({
         </div>
       </DrawerContent>
     </Drawer>
+
+    <DepartureFlyerSheet
+      open={showFlyer}
+      onClose={() => setShowFlyer(false)}
+      data={flyerData}
+    />
+    </>
   );
 }
