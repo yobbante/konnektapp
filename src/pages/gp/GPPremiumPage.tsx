@@ -297,7 +297,7 @@ export default function GPPremiumPage() {
               <Button
                 variant="outline"
                 className="w-full h-10 text-xs text-muted-foreground"
-                onClick={handleDowngrade}
+                onClick={() => handleDowngrade("free")}
                 disabled={downgrading}
               >
                 {downgrading ? "Changement..." : "Revenir au plan Standard"}
@@ -356,7 +356,7 @@ export default function GPPremiumPage() {
               <Button
                 variant="outline"
                 className="w-full h-11 text-xs text-muted-foreground"
-                onClick={handleDowngrade}
+                onClick={() => handleDowngrade("premium")}
                 disabled={downgrading}
               >
                 {downgrading ? "Changement..." : "Revenir à Premium"}
