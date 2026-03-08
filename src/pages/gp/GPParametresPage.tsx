@@ -25,7 +25,6 @@ import { Progress } from "@/components/ui/progress";
 import { ThemeToggle } from "@/components/settings/ThemeToggle";
 import { toast } from "@/components/ui/use-toast";
 import { PremiumCTABanner } from "@/components/gp/PremiumCTABanner";
-import { GPNavetteManager } from "@/components/gp/GPNavetteManager";
 import {
   SettingsSection, SettingsRow, ToggleRow,
   PasswordChangeDialog, ForgotPasswordDialog,
@@ -246,14 +245,10 @@ export default function GPParametresPage() {
         </SettingsSection>
 
         {/* ═══ 3. NAVETTES ═══ */}
-        <SettingsSection title="Navettes">
-          <div className="p-3">
-            <GPNavetteManager gpId={gpProfile.id} subscription={gpProfile.subscription} />
-          </div>
-        </SettingsSection>
-
-        {/* ═══ 4. OPÉRATIONS ═══ */}
         <SettingsSection title="Opérations">
+          <SettingsRow icon={Route} iconColor="text-violet-500" iconBg="bg-violet-500/10" label="Mes navettes" desc={`Gérer mes trajets réguliers`} onClick={() => navigate("/gp/navettes")} />
+
+          <Separator />
           <SettingsRow icon={User} label="Profil public" desc="Aperçu client" onClick={() => navigate("/gp/profil-public")} />
           <Separator />
           <SettingsRow icon={DollarSign} iconColor="text-emerald-500" iconBg="bg-emerald-500/10" label="Tarification" desc={`${gpProfile.base_price_per_kg || 0} ${currency}/kg`} onClick={() => navigate("/gp/tarification")} />

@@ -34,6 +34,7 @@ export default function MaritimePublierPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [gpProfile, setGpProfile] = useState<any>(null);
+  const [navettes, setNavettes] = useState<Array<{ origin_city: string; origin_country: string; destination_city: string; destination_country: string }>>([]);
 
   const [maritimeType, setMaritimeType] = useState<MaritimeType>("lcl");
   const [portDepart, setPortDepart] = useState("");
@@ -46,6 +47,8 @@ export default function MaritimePublierPage() {
   const [currency, setCurrency] = useState("EUR");
   const [description, setDescription] = useState("");
 
+  const isPremiumOrPro = gpProfile?.subscription === "premium" || gpProfile?.subscription === "pro";
+
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -55,6 +58,13 @@ export default function MaritimePublierPage() {
       if (!gp) { navigate("/transporteur/inscription"); return; }
       setGpProfile(gp);
       setCurrency(gp.default_currency || "EUR");
+
+      if (gp.subscription === "premium" || gp.subscription === "pro") {
+        const { data: navData } = await supabase.from("gp_navettes")
+          .select("origin_city, origin_country, destination_city, destination_country")
+          .eq("gp_id", gp.id).eq("is_active", true);
+        setNavettes(navData || []);
+      }
       setLoading(false);
     })();
   }, []);
@@ -151,6 +161,25 @@ export default function MaritimePublierPage() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+        )}
+
+        {/* Navette picker for subscribers */}
+        {isPremiumOrPro && navettes.length > 0 && (
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold">Choisir une navette</Label>
+            <div className="flex flex-wrap gap-1.5">
+              {navettes.map((nav, i) => (
+                <button key={i} type="button"
+                  onClick={() => { setPortDepart(nav.origin_city); setPortArrivee(nav.destination_city); }}
+                  className={`text-[11px] px-2.5 py-1.5 rounded-lg border transition-all ${
+                    portDepart === nav.origin_city && portArrivee === nav.destination_city
+                      ? "border-primary bg-primary/10 text-primary font-medium" : "border-border hover:border-primary/50"
+                  }`}>
+                  {nav.origin_city} → {nav.destination_city}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 

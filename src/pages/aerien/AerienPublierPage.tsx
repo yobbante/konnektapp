@@ -18,6 +18,7 @@ export default function AerienPublierPage() {
   const { toast } = useToast();
   const [gpProfile, setGpProfile] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [navettes, setNavettes] = useState<Array<{ origin_city: string; origin_country: string; destination_city: string; destination_country: string }>>([]);
 
   const [form, setForm] = useState({
     originCity: "",
@@ -34,6 +35,8 @@ export default function AerienPublierPage() {
     description: "",
   });
 
+  const isPremiumOrPro = gpProfile?.subscription === "premium" || gpProfile?.subscription === "pro";
+
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -43,10 +46,17 @@ export default function AerienPublierPage() {
         .in("gp_type", ["aerien", "agence"]).maybeSingle();
       if (!gp) { navigate("/transporteur/inscription"); return; }
       setGpProfile(gp);
-      // Prefill from base navette
       if (gp.base_origin_city) setForm(f => ({ ...f, originCity: gp.base_origin_city }));
       if (gp.base_destination_city) setForm(f => ({ ...f, destinationCity: gp.base_destination_city }));
       if (gp.default_currency) setForm(f => ({ ...f, currency: gp.default_currency }));
+
+      // Load navettes for subscribers
+      if (gp.subscription === "premium" || gp.subscription === "pro") {
+        const { data: navData } = await supabase.from("gp_navettes")
+          .select("origin_city, origin_country, destination_city, destination_country")
+          .eq("gp_id", gp.id).eq("is_active", true);
+        setNavettes(navData || []);
+      }
     })();
   }, []);
 
@@ -111,6 +121,24 @@ export default function AerienPublierPage() {
             <h3 className="text-xs font-bold flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-primary" /> Itinéraire
             </h3>
+            {/* Navette picker for subscribers */}
+            {isPremiumOrPro && navettes.length > 0 && (
+              <div>
+                <Label className="text-[10px] mb-1">Choisir une navette</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {navettes.map((nav, i) => (
+                    <button key={i} type="button"
+                      onClick={() => setForm(f => ({ ...f, originCity: nav.origin_city, originCountry: nav.origin_country, destinationCity: nav.destination_city, destinationCountry: nav.destination_country }))}
+                      className={`text-[10px] px-2 py-1 rounded-md border transition-all ${
+                        form.originCity === nav.origin_city && form.destinationCity === nav.destination_city
+                          ? "border-primary bg-primary/10 text-primary font-medium" : "border-border hover:border-primary/50"
+                      }`}>
+                      {nav.origin_city} → {nav.destination_city}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label className="text-[10px]">Ville départ</Label>

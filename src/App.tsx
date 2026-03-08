@@ -128,6 +128,7 @@ import GPPerformancesPage from "./pages/gp/GPPerformancesPage";
 import GPPremiumPage from "./pages/gp/GPPremiumPage";
 import GPAutoAcceptPage from "./pages/gp/GPAutoAcceptPage";
 import GPFacturationPage from "./pages/gp/GPFacturationPage";
+import GPNavettesPage from "./pages/gp/GPNavettesPage";
 import AideFAQPage from "./pages/AideFAQPage";
 import CGUPage from "./pages/CGUPage";
 import AProposPage from "./pages/AProposPage";
@@ -234,6 +235,7 @@ const App = () => (
             <Route path="/gp/premium" element={<GPPremiumPage />} />
             <Route path="/gp/auto-accept" element={<GPAutoAcceptPage />} />
             <Route path="/gp/facturation" element={<GPFacturationPage />} />
+            <Route path="/gp/navettes" element={<GPNavettesPage />} />
             <Route path="/aide" element={<AideFAQPage />} />
             <Route path="/cgu" element={<CGUPage />} />
             <Route path="/a-propos" element={<AProposPage />} />

@@ -33,6 +33,7 @@ interface GPProfile {
   rating: number;
   total_deliveries: number;
   phone?: string;
+  subscription?: string;
 }
 
 interface VoyageOffer {
@@ -500,6 +501,7 @@ export default function GPBagagesInternationalDashboard() {
         open={showCreateVoyage} 
         onClose={() => setShowCreateVoyage(false)}
         gpId={gpProfile.id}
+        subscription={gpProfile.subscription}
         onSuccess={() => {
           setShowCreateVoyage(false);
           loadData();
@@ -782,15 +784,19 @@ function CreateVoyageDialog({
   open, 
   onClose, 
   gpId, 
+  subscription,
   onSuccess 
 }: { 
   open: boolean; 
   onClose: () => void;
   gpId: string;
+  subscription?: string;
   onSuccess: () => void;
 }) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [navettes, setNavettes] = useState<Array<{ origin_city: string; origin_country: string; destination_city: string; destination_country: string }>>([]);
+  const isPremiumOrPro = subscription === "premium" || subscription === "pro";
   const [formData, setFormData] = useState({
     originCity: "",
     originCountry: "SN",
@@ -805,6 +811,25 @@ function CreateVoyageDialog({
     baggageTypesAccepted: [] as string[],
     restrictions: "",
   });
+
+  // Load navettes for subscribers
+  useEffect(() => {
+    if (open && isPremiumOrPro && gpId) {
+      supabase.from("gp_navettes").select("origin_city, origin_country, destination_city, destination_country")
+        .eq("gp_id", gpId).eq("is_active", true)
+        .then(({ data }) => setNavettes(data || []));
+    }
+  }, [open, gpId, isPremiumOrPro]);
+
+  const selectNavette = (nav: typeof navettes[0]) => {
+    setFormData(prev => ({
+      ...prev,
+      originCity: nav.origin_city,
+      originCountry: nav.origin_country,
+      destinationCity: nav.destination_city,
+      destinationCountry: nav.destination_country,
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -882,6 +907,28 @@ function CreateVoyageDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Navette picker for subscribers */}
+          {isPremiumOrPro && navettes.length > 0 && (
+            <div>
+              <Label className="text-xs mb-1.5 block">Choisir une navette</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {navettes.map((nav, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => selectNavette(nav)}
+                    className={`text-xs px-2.5 py-1.5 rounded-lg border transition-all ${
+                      formData.originCity === nav.origin_city && formData.destinationCity === nav.destination_city
+                        ? "border-primary bg-primary/10 text-primary font-medium"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    {nav.origin_city} → {nav.destination_city}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {/* Route */}
           <div className="grid grid-cols-2 gap-3">
             <div>

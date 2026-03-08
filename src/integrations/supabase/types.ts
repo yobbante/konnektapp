@@ -1200,6 +1200,8 @@ export type Database = {
       }
       gp_navettes: {
         Row: {
+          address_destination: string | null
+          address_origin: string | null
           created_at: string
           destination_city: string
           destination_country: string
@@ -1209,9 +1211,12 @@ export type Database = {
           is_primary: boolean
           origin_city: string
           origin_country: string
+          phone_secondary: string | null
           updated_at: string
         }
         Insert: {
+          address_destination?: string | null
+          address_origin?: string | null
           created_at?: string
           destination_city: string
           destination_country?: string
@@ -1221,9 +1226,12 @@ export type Database = {
           is_primary?: boolean
           origin_city: string
           origin_country?: string
+          phone_secondary?: string | null
           updated_at?: string
         }
         Update: {
+          address_destination?: string | null
+          address_origin?: string | null
           created_at?: string
           destination_city?: string
           destination_country?: string
@@ -1233,6 +1241,7 @@ export type Database = {
           is_primary?: boolean
           origin_city?: string
           origin_country?: string
+          phone_secondary?: string | null
           updated_at?: string
         }
         Relationships: [
