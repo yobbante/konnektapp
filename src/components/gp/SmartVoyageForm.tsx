@@ -42,6 +42,18 @@ export function SmartVoyageForm({
   const [loading, setLoading] = useState(false);
   const [tripType, setTripType] = useState<"aller" | "retour">("aller");
 
+  interface NavetteRoute {
+    id: string;
+    origin_city: string;
+    origin_country: string;
+    destination_city: string;
+    destination_country: string;
+    is_primary: boolean;
+  }
+
+  const [navettes, setNavettes] = useState<NavetteRoute[]>([]);
+  const [selectedNavetteIdx, setSelectedNavetteIdx] = useState(0);
+
   const [gpData, setGpData] = useState<{
     baseOriginCity: string;
     baseOriginCountry: string;
@@ -110,7 +122,7 @@ export function SmartVoyageForm({
   }, [open, selectedDate]);
 
   const loadGpData = async () => {
-    const [{ data: profile }, { data: lastOffer }] = await Promise.all([
+    const [{ data: profile }, { data: lastOffer }, { data: navData }] = await Promise.all([
       supabase
         .from("gp_profiles")
         .select("base_origin_city, base_origin_country, base_destination_city, base_destination_country, base_price_per_kg, default_currency")
@@ -123,7 +135,18 @@ export function SmartVoyageForm({
         .order("departure_date", { ascending: false })
         .limit(1)
         .maybeSingle(),
+      supabase
+        .from("gp_navettes")
+        .select("id, origin_city, origin_country, destination_city, destination_country, is_primary")
+        .eq("gp_id", gpId)
+        .eq("is_active", true)
+        .order("is_primary", { ascending: false }),
     ]);
+
+    if (navData && navData.length > 0) {
+      setNavettes(navData);
+      setSelectedNavetteIdx(0);
+    }
 
     if (profile) {
       setGpData({
@@ -144,14 +167,20 @@ export function SmartVoyageForm({
 
   if (!gpData) return null;
 
+  // Use selected navette if available, otherwise fall back to base profile route
+  const activeNavette = navettes.length > 0 ? navettes[selectedNavetteIdx] : null;
+  const baseRoute = activeNavette
+    ? { originCity: activeNavette.origin_city, originCountry: activeNavette.origin_country, destCity: activeNavette.destination_city, destCountry: activeNavette.destination_country }
+    : { originCity: gpData.baseOriginCity, originCountry: gpData.baseOriginCountry, destCity: gpData.baseDestCity, destCountry: gpData.baseDestCountry };
+
   const currentRoute = tripType === "aller"
     ? {
-        origin: { city: gpData.baseOriginCity, country: gpData.baseOriginCountry },
-        destination: { city: gpData.baseDestCity, country: gpData.baseDestCountry },
+        origin: { city: baseRoute.originCity, country: baseRoute.originCountry },
+        destination: { city: baseRoute.destCity, country: baseRoute.destCountry },
       }
     : {
-        origin: { city: gpData.baseDestCity, country: gpData.baseDestCountry },
-        destination: { city: gpData.baseOriginCity, country: gpData.baseOriginCountry },
+        origin: { city: baseRoute.destCity, country: baseRoute.destCountry },
+        destination: { city: baseRoute.originCity, country: baseRoute.originCountry },
       };
 
   const currencySymbol = getCurrencySymbol(gpData.currency as any);
@@ -234,6 +263,34 @@ export function SmartVoyageForm({
         </div>
 
         <div className="px-4 py-4 space-y-4 overflow-y-auto pb-safe" style={{ maxHeight: 'calc(92vh - 56px)' }}>
+          
+          {/* Navette selector — only if multiple navettes */}
+          {navettes.length > 1 && (
+            <div className="space-y-1.5">
+              <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Navette</p>
+              <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+                {navettes.map((nav, idx) => (
+                  <button
+                    key={nav.id}
+                    type="button"
+                    onClick={() => { setSelectedNavetteIdx(idx); setTripType("aller"); }}
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all ${
+                      idx === selectedNavetteIdx 
+                        ? "bg-primary text-primary-foreground shadow-sm" 
+                        : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <span>{getFlag(nav.origin_country)}</span>
+                    <span>{nav.origin_city}</span>
+                    <span className="text-[9px] opacity-60">→</span>
+                    <span>{getFlag(nav.destination_country)}</span>
+                    <span>{nav.destination_city}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Route card */}
           <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex items-center justify-center gap-4">
             <div className="text-center">
