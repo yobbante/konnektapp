@@ -1,11 +1,8 @@
 /**
- * AdminDashboard — Unified Konnekt Admin V2
+ * AdminDashboard — Unified Konnekt Admin V3
  * 
- * Single dashboard with 11 modules:
- * Overview, Colis, GP, Finance, Scan, Litiges, Assurance, Manuel, Taux, Paramètres, KYC
- * 
- * Sidebar (desktop) + Bottom nav (mobile)
- * Super Admin only for V1
+ * 15 modules: Overview, Colis, GP, Clients, Finance, Demandes, Scan, Manuel,
+ * Litiges, Reputation, Support, KYC, Assurance, Taux, Paramètres
  */
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
@@ -17,9 +14,13 @@ import { UnifiedAdminLayout, type AdminModule } from "@/components/layout/Unifie
 import { AdminOverviewModule, type AdminGlobalStats } from "@/components/admin/modules/AdminOverviewModule";
 import { AdminColisModule } from "@/components/admin/modules/AdminColisModule";
 import { AdminGPModule } from "@/components/admin/modules/AdminGPModule";
+import { AdminClientsModule } from "@/components/admin/modules/AdminClientsModule";
 import { AdminFinanceModule } from "@/components/admin/modules/AdminFinanceModule";
+import { AdminDemandesModule } from "@/components/admin/modules/AdminDemandesModule";
 import { AdminScanModule } from "@/components/admin/modules/AdminScanModule";
 import { AdminLitigesModule } from "@/components/admin/modules/AdminLitigesModule";
+import { AdminReputationModule } from "@/components/admin/modules/AdminReputationModule";
+import { AdminSupportModule } from "@/components/admin/modules/AdminSupportModule";
 import { AdminAssuranceModule } from "@/components/admin/modules/AdminAssuranceModule";
 import { AdminManuelModule } from "@/components/admin/modules/AdminManuelModule";
 import { AdminTauxModule } from "@/components/admin/modules/AdminTauxModule";
@@ -45,6 +46,9 @@ export default function AdminDashboard() {
     totalInsurance: 0, colisInTransit: 0, colisLitiges: 0, colisManuel: 0,
     colisManuelPercent: 0, gpActifs: 0, gpPending: 0, gpVerified: 0,
     gpSuspended: 0, totalOrders: 0, deliveredOrders: 0, avgRating: 0, anomalies: 0,
+    totalClients: 0, totalCustomRequests: 0, totalFreightRequests: 0,
+    totalRoutierMissions: 0, openSupportTickets: 0, avgKtpScore: 0,
+    activeSanctions: 0, totalRevenue: 0,
   });
 
   useEffect(() => {
@@ -65,12 +69,19 @@ export default function AdminDashboard() {
       today.setHours(0, 0, 0, 0);
       const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
-      const [gpsRes, ordersRes, manualRes, escrowRes, disputesRes] = await Promise.all([
+      const [gpsRes, ordersRes, manualRes, escrowRes, disputesRes, profilesRes, customReqRes, freightReqRes, routierRes, ticketsRes, sanctionsRes, ktpRes] = await Promise.all([
         supabase.from("gp_profiles").select("*").order("created_at", { ascending: false }),
         supabase.from("orders").select("*, gp_profile:gp_profiles(business_name, phone)").order("created_at", { ascending: false }).limit(500),
         supabase.from("manual_parcels").select("*, gp:gp_profiles(business_name)").order("created_at", { ascending: false }).limit(200),
         supabase.from("escrow_transactions").select("amount, status").eq("status", "held"),
         supabase.from("disputes").select("id, status").in("status", ["open", "under_review", "awaiting_response"]),
+        supabase.from("profiles").select("id, is_gp", { count: "exact", head: true }).eq("is_gp", false),
+        supabase.from("custom_requests").select("id, status", { count: "exact", head: true }),
+        supabase.from("freight_requests").select("id, status", { count: "exact", head: true }),
+        supabase.from("routier_missions").select("id, status", { count: "exact", head: true }),
+        supabase.from("support_tickets").select("id, status").eq("status", "open"),
+        supabase.from("sanctions").select("id").eq("is_active", true),
+        supabase.from("ktp_status").select("trust_score"),
       ]);
 
       const allGps = gpsRes.data || [];
@@ -78,6 +89,7 @@ export default function AdminDashboard() {
       const allManual = manualRes.data || [];
       const escrowHeld = escrowRes.data || [];
       const disputes = disputesRes.data || [];
+      const ktpScores = ktpRes.data || [];
 
       setGps(allGps);
       setOrders(allOrders);
@@ -86,13 +98,14 @@ export default function AdminDashboard() {
       // Compute global stats
       const todayOrders = allOrders.filter(o => new Date(o.created_at) >= today);
       const monthOrders = allOrders.filter(o => new Date(o.created_at) >= monthStart);
-      const delivered = allOrders.filter(o => o.status === "delivered");
+      const delivered = allOrders.filter(o => o.status === "delivered" || o.status === "released");
       const totalEscrow = escrowHeld.reduce((s, e) => s + (e.amount || 0), 0);
       const totalCommissions = delivered.reduce((s, o) => s + (o.commission_amount || 0), 0);
       const totalInsurance = allOrders.reduce((s, o) => s + (o.insurance_amount || 0), 0);
       const inTransit = allOrders.filter(o => o.status === "in_transit");
       const ratings = allGps.filter(g => g.rating > 0).map(g => g.rating);
       const totalColis = allOrders.length + allManual.length;
+      const avgKtp = ktpScores.length > 0 ? Math.round(ktpScores.reduce((s, k) => s + k.trust_score, 0) / ktpScores.length) : 0;
 
       setGlobalStats({
         volumeToday: todayOrders.length,
@@ -112,6 +125,14 @@ export default function AdminDashboard() {
         deliveredOrders: delivered.length,
         avgRating: ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0,
         anomalies: 0,
+        totalClients: profilesRes.count || 0,
+        totalCustomRequests: customReqRes.count || 0,
+        totalFreightRequests: freightReqRes.count || 0,
+        totalRoutierMissions: routierRes.count || 0,
+        openSupportTickets: (ticketsRes.data || []).length,
+        avgKtpScore: avgKtp,
+        activeSanctions: (sanctionsRes.data || []).length,
+        totalRevenue: totalCommissions + totalInsurance,
       });
     } catch (err) {
       console.error("Error refreshing admin data:", err);
@@ -137,7 +158,7 @@ export default function AdminDashboard() {
     return <PageLoader message="Chargement Admin..." />;
   }
 
-  const subtitle = `${globalStats.colisInTransit} en transit · ${globalStats.gpPending} GP en attente`;
+  const subtitle = `${globalStats.colisInTransit} en transit · ${globalStats.gpPending} GP en attente · ${globalStats.openSupportTickets} tickets`;
 
   return (
     <UnifiedAdminLayout
@@ -172,6 +193,7 @@ export default function AdminDashboard() {
           onUpdateStatus={updateGPStatus}
         />
       )}
+      {activeModule === "clients" && <AdminClientsModule />}
       {activeModule === "finance" && (
         <AdminFinanceModule
           totalEscrow={globalStats.totalEscrow}
@@ -179,8 +201,11 @@ export default function AdminDashboard() {
           totalInsurance={globalStats.totalInsurance}
         />
       )}
+      {activeModule === "demandes" && <AdminDemandesModule />}
       {activeModule === "scan" && <AdminScanModule />}
       {activeModule === "litiges" && <AdminLitigesModule />}
+      {activeModule === "reputation" && <AdminReputationModule />}
+      {activeModule === "support" && <AdminSupportModule />}
       {activeModule === "assurance" && <AdminAssuranceModule />}
       {activeModule === "manuel" && <AdminManuelModule />}
       {activeModule === "taux" && <AdminTauxModule />}
