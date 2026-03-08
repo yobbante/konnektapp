@@ -78,7 +78,7 @@ export default function GPNavettesPage() {
     if (!user) { navigate("/auth"); return; }
 
     const { data: gp } = await supabase.from("gp_profiles")
-      .select("id, subscription, phone, deposit_address, reception_address, business_name")
+      .select("id, subscription, phone, deposit_address, reception_address, business_name, base_origin_city, base_origin_country, base_destination_city, base_destination_country")
       .eq("user_id", user.id).maybeSingle();
     if (!gp) { navigate("/gp/inscription"); return; }
     setGpProfile(gp);
@@ -87,7 +87,22 @@ export default function GPNavettesPage() {
       supabase.from("gp_navettes").select("*").eq("gp_id", gp.id).order("is_primary", { ascending: false }),
       supabase.from("gp_navette_change_requests").select("*").eq("gp_id", gp.id).eq("status", "pending").order("created_at", { ascending: false }),
     ]);
-    setNavettes((navRes.data as any[]) || []);
+    let navData = (navRes.data as any[]) || [];
+
+    // Auto-create base navette from profile if none exist yet
+    if (navData.length === 0 && gp.base_origin_city && gp.base_destination_city) {
+      const { data: created } = await supabase.from("gp_navettes").insert({
+        gp_id: gp.id,
+        origin_city: gp.base_origin_city,
+        origin_country: gp.base_origin_country || "FR",
+        destination_city: gp.base_destination_city,
+        destination_country: gp.base_destination_country || "SN",
+        is_primary: true,
+      } as any).select();
+      if (created) navData = created;
+    }
+
+    setNavettes(navData);
     setPendingRequests(reqRes.data || []);
     setLoading(false);
   };
