@@ -125,6 +125,13 @@ export default function GPApercuPage() {
     if (gpProfile) loadAll();
   }, [gpProfile]);
 
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    if (!gpProfile) return;
+    const interval = setInterval(() => loadAll(true), 30000);
+    return () => clearInterval(interval);
+  }, [gpProfile]);
+
   const loadAll = async (refresh = false) => {
     if (!gpProfile) return;
     if (refresh) setRefreshing(true);
@@ -399,15 +406,6 @@ export default function GPApercuPage() {
 
         {!isPending &&
         <>
-            {/* ── HEADER ── */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-bold">Bonjour 👋</h2>
-              </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => loadAll(true)} disabled={refreshing}>
-                <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
-              </Button>
-            </div>
 
             {/* ── URGENT ALERTS BLOCK ── */}
             {urgentCount > 0 &&
