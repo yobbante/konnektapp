@@ -2,8 +2,8 @@
  * GPPremiumPage — Dedicated pricing page for GP Premium subscription
  * Inspired by Lovable pricing: clean cards, feature lists, clear CTAs
  */
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Crown, Zap, Star, TrendingUp, BarChart3, Eye, Percent,
@@ -59,12 +59,19 @@ type FlowStep = "plans" | "confirm" | "processing" | "success";
 
 export default function GPPremiumPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { gpProfile, loading } = useGPProfile();
-  const [step, setStep] = useState<FlowStep>("confirm");
+  const [step, setStep] = useState<FlowStep>(() => {
+    const sp = searchParams.get("step");
+    return sp === "confirm" ? "confirm" : "plans";
+  });
   const [upgrading, setUpgrading] = useState(false);
   const [downgrading, setDowngrading] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<"premium" | "pro">("premium");
+  const [selectedPlan, setSelectedPlan] = useState<"premium" | "pro">(() => {
+    const p = searchParams.get("plan");
+    return p === "pro" ? "pro" : "premium";
+  });
 
   if (loading) return <PageLoader message="Chargement..." />;
   if (!gpProfile) return null;
