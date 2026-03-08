@@ -251,8 +251,28 @@ export function SmartVoyageForm({
       }
       toast({ title: "Voyage créé", description: `${currentRoute.origin.city} → ${currentRoute.destination.city} · ${totalCapacity} kg` });
       savePrefs(luggage, form.airline);
+      
+      // Generate flyer data for promo image
+      const bookingUrl = "konnektapp.lovable.app";
+      setFlyerData({
+        originCity: currentRoute.origin.city,
+        originCountry: currentRoute.origin.country,
+        destinationCity: currentRoute.destination.city,
+        destinationCountry: currentRoute.destination.country,
+        departureDate: form.departureDate,
+        pricePerKg: gpData.basePricePerKg,
+        currency: getCurrencySymbol(gpData.currency as any),
+        totalCapacity,
+        airline: form.airline || undefined,
+        flightNumber: form.flightNumber || undefined,
+        businessName: gpData.businessName,
+        phone: gpData.phone,
+        bookingUrl,
+      });
       onSuccess();
       onClose();
+      // Show flyer after a brief delay so the drawer closes first
+      setTimeout(() => setShowFlyer(true), 400);
     } catch (error: any) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } finally {
