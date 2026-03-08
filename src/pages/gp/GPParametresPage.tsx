@@ -9,6 +9,7 @@ import {
   Globe, LogOut, Palette, MapPin, Phone,
   Edit3, Save, X, MessageCircle, FileCheck,
   ShieldX, Upload, BadgeCheck, Wallet, Key, Lock,
+  Crown, Star, Zap,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
@@ -29,7 +30,9 @@ import {
 } from "@/components/settings/SharedSettingsComponents";
 
 export default function GPParametresPage() {
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const premiumRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [gpProfile, setGpProfile] = useState<any>(null);
   const [pendingCount, setPendingCount] = useState(0);
