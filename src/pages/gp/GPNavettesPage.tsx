@@ -18,7 +18,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { isGPPremium, getMaxNavettes } from "@/lib/premiumGating";
 import { motion, AnimatePresence } from "framer-motion";
 import { SearchableCitySelect } from "@/components/gp/SearchableCitySelect";
-import { motion, AnimatePresence } from "framer-motion";
 
 interface Navette {
   id: string;
