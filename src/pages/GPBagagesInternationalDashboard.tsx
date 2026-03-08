@@ -33,6 +33,7 @@ interface GPProfile {
   rating: number;
   total_deliveries: number;
   phone?: string;
+  subscription?: string;
 }
 
 interface VoyageOffer {
