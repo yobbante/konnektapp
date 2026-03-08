@@ -147,6 +147,7 @@ function createEndpointIcon(label: string, isOrigin: boolean) {
 
 /* ─── Main Component ─── */
 export function RoutierInteractiveMap({ activeMissions, missionRequests, pendingMissions, stats }: Props) {
+  const navigate = useNavigate();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layersRef = useRef<L.Layer[]>([]);
