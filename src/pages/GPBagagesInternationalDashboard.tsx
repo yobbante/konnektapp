@@ -500,6 +500,7 @@ export default function GPBagagesInternationalDashboard() {
         open={showCreateVoyage} 
         onClose={() => setShowCreateVoyage(false)}
         gpId={gpProfile.id}
+        subscription={gpProfile.subscription}
         onSuccess={() => {
           setShowCreateVoyage(false);
           loadData();
@@ -782,15 +783,19 @@ function CreateVoyageDialog({
   open, 
   onClose, 
   gpId, 
+  subscription,
   onSuccess 
 }: { 
   open: boolean; 
   onClose: () => void;
   gpId: string;
+  subscription?: string;
   onSuccess: () => void;
 }) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [navettes, setNavettes] = useState<Array<{ origin_city: string; origin_country: string; destination_city: string; destination_country: string }>>([]);
+  const isPremiumOrPro = subscription === "premium" || subscription === "pro";
   const [formData, setFormData] = useState({
     originCity: "",
     originCountry: "SN",
@@ -805,6 +810,25 @@ function CreateVoyageDialog({
     baggageTypesAccepted: [] as string[],
     restrictions: "",
   });
+
+  // Load navettes for subscribers
+  useEffect(() => {
+    if (open && isPremiumOrPro && gpId) {
+      supabase.from("gp_navettes").select("origin_city, origin_country, destination_city, destination_country")
+        .eq("gp_id", gpId).eq("is_active", true)
+        .then(({ data }) => setNavettes(data || []));
+    }
+  }, [open, gpId, isPremiumOrPro]);
+
+  const selectNavette = (nav: typeof navettes[0]) => {
+    setFormData(prev => ({
+      ...prev,
+      originCity: nav.origin_city,
+      originCountry: nav.origin_country,
+      destinationCity: nav.destination_city,
+      destinationCountry: nav.destination_country,
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
