@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { isGPPremium } from "@/lib/premiumGating";
-import { PremiumCTABanner } from "@/components/gp/PremiumCTABanner";
+
 
 interface GPKYCProgressCardProps {
   kycLevel: number;
@@ -195,7 +195,17 @@ export function GPKYCProgressCard({
                   ))}
                 </div>
 
-                <PremiumCTABanner variant="compact" context="performances" isPremium={false} gpId={gpId} />
+                <Button
+                  size="sm"
+                  className="w-full text-xs h-8 gap-1.5 bg-amber-500 hover:bg-amber-600 text-white"
+                  onClick={() => {
+                    setExpanded(false);
+                    navigate("/gp/premium");
+                  }}
+                >
+                  <Crown className="w-3.5 h-3.5" />
+                  Passer Premium — 9 900 FCFA/mois
+                </Button>
               </div>
             </motion.div>
           )}
