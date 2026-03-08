@@ -145,7 +145,7 @@ export default function RoutierApercuPage() {
 
   return (
     <RoutierDashboardLayout gpProfile={gpProfile} pendingCount={pendingCount} activeOrdersCount={totalActive}>
-      <div className="px-3 py-3 space-y-3 pb-24">
+      <div className="px-3 py-2 space-y-2 pb-20">
 
         {/* ── QUICK ACTIONS — Row of 4 ── */}
         <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
@@ -230,7 +230,7 @@ export default function RoutierApercuPage() {
             </div>
 
             <div className="space-y-2">
-              {data.missionRequests.slice(0, 3).map((m: any, i: number) => {
+              {data.missionRequests.slice(0, 2).map((m: any, i: number) => {
                 const size = getSizeFromWeight(m.weight_kg || 0);
                 const freight = freightTypeLabels[m.freight_type] || { label: m.freight_type, emoji: "📦" };
                 const price = m.client_budget || m.estimated_price || 0;
@@ -320,7 +320,7 @@ export default function RoutierApercuPage() {
               </Button>
             </div>
             <div className="space-y-2">
-              {data.activeMissions.slice(0, 3).map((c: any, i: number) => {
+              {data.activeMissions.slice(0, 2).map((c: any, i: number) => {
                 const flow = STATUS_FLOW[c.status];
                 return (
                   <motion.div
@@ -561,14 +561,14 @@ function QuickAction({ icon: Icon, label, badge, primary, onClick }: {
   return (
     <motion.button whileTap={{ scale: 0.95 }} onClick={onClick}
       className={cn(
-        "flex flex-col items-center justify-center gap-1 w-full aspect-square rounded-xl transition-all relative",
+        "flex flex-col items-center justify-center gap-0.5 w-full py-2.5 rounded-xl transition-all relative",
         primary ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20" : "bg-card border border-border hover:bg-muted/50"
       )}
     >
       {!!badge && badge > 0 && (
         <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-destructive rounded-full animate-pulse ring-2 ring-card" />
       )}
-      <Icon className="w-5 h-5" />
+      <Icon className="w-4.5 h-4.5" />
       <span className="text-[10px] font-medium leading-tight">{label}</span>
     </motion.button>
   );

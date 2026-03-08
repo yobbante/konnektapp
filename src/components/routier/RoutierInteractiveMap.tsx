@@ -272,7 +272,7 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
   }, [selectedMission, showRoute]);
 
   return (
-    <div className="relative rounded-xl overflow-hidden border border-border/50 shadow-sm">
+    <div className="relative z-0 rounded-xl overflow-hidden border border-border/50 shadow-sm isolate">
       {/* Top bar: LIVE badge left + mission counters center */}
       <div className="absolute top-0 left-0 right-16 z-[1000] p-2.5 flex items-center gap-2 pointer-events-none">
         <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md rounded-full px-2.5 py-1 pointer-events-auto">
@@ -409,8 +409,9 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
 
       <div
         ref={mapRef}
+        className="relative z-0"
         style={{
-          height: selectedMission ? "340px" : "260px",
+          height: selectedMission ? "280px" : "180px",
           width: "100%",
           transition: "height 0.3s ease",
         }}
