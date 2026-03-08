@@ -185,7 +185,7 @@ export function useSmartRedirect() {
  * Hook to enforce role-based dashboard access
  * Routier NEVER sees GP dashboard
  */
-export function useEnforceDashboardRole(expectedType: "gp" | "routier") {
+export function useEnforceDashboardRole(expectedType: "gp" | "routier" | "aerien" | "maritime") {
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -201,11 +201,25 @@ export function useEnforceDashboardRole(expectedType: "gp" | "routier") {
 
       if (!gpProfile) return;
 
-      // Enforce strict routing
-      if (expectedType === "gp" && gpProfile.gp_type === "routier") {
-        navigate("/routier/apercu", { replace: true });
-      } else if (expectedType === "routier" && gpProfile.gp_type !== "routier") {
-        navigate("/gp/demandes", { replace: true });
+      const typeMap: Record<string, string> = {
+        gp: "bagages_international",
+        routier: "routier",
+        aerien: "aerien",
+        maritime: "maritime",
+      };
+
+      const gpType = gpProfile.gp_type;
+      const expected = typeMap[expectedType];
+
+      // Allow agence type for aerien
+      if (expectedType === "aerien" && (gpType === "aerien" || gpType === "agence")) return;
+      
+      if (expected && gpType !== expected) {
+        // Redirect to correct dashboard
+        if (gpType === "routier") navigate("/routier/apercu", { replace: true });
+        else if (gpType === "aerien" || gpType === "agence") navigate("/aerien/apercu", { replace: true });
+        else if (gpType === "maritime") navigate("/maritime/apercu", { replace: true });
+        else navigate("/gp/apercu", { replace: true });
       }
     };
 
