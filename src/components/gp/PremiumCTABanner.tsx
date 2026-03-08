@@ -1,18 +1,23 @@
 /**
- * PremiumCTABanner — Reusable conversion-optimized Premium upsell
- * Variants: compact (inline), card (standalone), banner (full-width)
+ * PremiumCTABanner — Conversion-optimized Premium upsell with tiered pricing
+ * 3 tiers: Standard (free), Premium (9 900 FCFA/mois), Pro (coming soon)
  */
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Crown, Zap, Star, ChevronRight, Lock, BarChart3, Eye, Percent, CheckCircle2 } from "lucide-react";
+import {
+  Crown, Zap, Star, ChevronRight, Lock, BarChart3, Eye, Percent,
+  CheckCircle2, Bell, Package, Rocket, Shield, TrendingUp,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -29,8 +34,8 @@ const PREMIUM_MESSAGES: Record<string, { title: string; desc: string }> = {
     desc: "Revenus, taux de remplissage, satisfaction — tout en temps réel.",
   },
   wallet: {
-    title: "Commission réduite à 3%",
-    desc: "Gagnez plus sur chaque livraison avec Premium.",
+    title: "Gagnez plus sur chaque livraison",
+    desc: "Notifications prioritaires et dashboard performances.",
   },
   dashboard: {
     title: "Boostez votre activité",
@@ -38,50 +43,36 @@ const PREMIUM_MESSAGES: Record<string, { title: string; desc: string }> = {
   },
   menu: {
     title: "Passez Premium",
-    desc: "Débloquez toutes les fonctionnalités pro.",
+    desc: "9 900 FCFA/mois — Gagnez plus, plus vite.",
   },
   default: {
     title: "Passez Premium",
-    desc: "Commission réduite, visibilité prioritaire, statistiques avancées.",
+    desc: "Visibilité prioritaire, statistiques avancées, auto-accept.",
   },
 };
 
-const PREMIUM_ADVANTAGES = [
-  {
-    icon: Eye,
-    title: "Visibilité prioritaire",
-    desc: "Votre profil apparaît en tête des résultats de recherche.",
-    color: "text-blue-500",
-    bg: "bg-blue-500/10",
-  },
-  {
-    icon: Percent,
-    title: "Commission réduite à 3%",
-    desc: "Au lieu de 5%, gardez plus de revenus sur chaque livraison.",
-    color: "text-emerald-500",
-    bg: "bg-emerald-500/10",
-  },
-  {
-    icon: Zap,
-    title: "Auto-accept commandes",
-    desc: "Acceptez automatiquement les commandes selon vos critères.",
-    color: "text-amber-500",
-    bg: "bg-amber-500/10",
-  },
-  {
-    icon: BarChart3,
-    title: "Statistiques avancées",
-    desc: "Revenus, taux de remplissage, satisfaction et historique détaillé.",
-    color: "text-purple-500",
-    bg: "bg-purple-500/10",
-  },
-  {
-    icon: Star,
-    title: "Badge Premium",
-    desc: "Gagnez la confiance des clients avec un badge visible sur votre profil.",
-    color: "text-amber-500",
-    bg: "bg-amber-500/10",
-  },
+const STANDARD_FEATURES = [
+  { icon: Package, label: "Publier des trajets" },
+  { icon: Bell, label: "Recevoir des demandes" },
+  { icon: CheckCircle2, label: "Accepter manuellement" },
+  { icon: Eye, label: "Visibilité standard" },
+];
+
+const PREMIUM_FEATURES = [
+  { icon: TrendingUp, label: "Priorité dans les résultats", highlight: true },
+  { icon: Zap, label: "Auto-acceptation des commandes", highlight: true },
+  { icon: BarChart3, label: "Dashboard performances avancé", highlight: true },
+  { icon: Star, label: "Badge Premium visible", highlight: true },
+  { icon: Percent, label: "Statistiques revenus détaillées", highlight: false },
+  { icon: Bell, label: "Notifications prioritaires", highlight: false },
+];
+
+const PRO_EXTRAS = [
+  { icon: Rocket, label: "Visibilité maximale" },
+  { icon: TrendingUp, label: "Boost automatique trajets" },
+  { icon: Percent, label: "Commission réduite" },
+  { icon: BarChart3, label: "Analytics avancés" },
+  { icon: Shield, label: "Support prioritaire" },
 ];
 
 export function PremiumCTABanner({ variant = "card", context = "default", isPremium, className }: PremiumCTABannerProps) {
@@ -93,53 +84,143 @@ export function PremiumCTABanner({ variant = "card", context = "default", isPrem
   const msg = PREMIUM_MESSAGES[context] || PREMIUM_MESSAGES.default;
 
   const handleUpgrade = () => {
-    toast({ title: "Bientôt disponible", description: "L'abonnement Premium sera disponible prochainement." });
+    toast({ title: "Bientôt disponible", description: "L'abonnement Premium sera disponible très prochainement." });
   };
 
   const premiumDialog = (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
-      <DialogContent className="max-w-sm mx-auto rounded-2xl">
-        <DialogHeader className="text-center pb-2">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/15 flex items-center justify-center mx-auto mb-3">
-            <Crown className="w-7 h-7 text-amber-500" />
-          </div>
-          <DialogTitle className="text-lg">Konnekt Premium</DialogTitle>
-          <p className="text-xs text-muted-foreground mt-1">
-            Débloquez tout le potentiel de votre activité GP.
-          </p>
-        </DialogHeader>
-
-        <div className="space-y-3 py-2">
-          {PREMIUM_ADVANTAGES.map((adv, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.06 }}
-              className="flex items-start gap-3"
-            >
-              <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0", adv.bg)}>
-                <adv.icon className={cn("w-4.5 h-4.5", adv.color)} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold">{adv.title}</p>
-                <p className="text-[11px] text-muted-foreground leading-snug">{adv.desc}</p>
-              </div>
-              <CheckCircle2 className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
-            </motion.div>
-          ))}
+      <DialogContent className="max-w-sm mx-auto rounded-2xl max-h-[90vh] overflow-y-auto p-0">
+        {/* Hero */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-amber-500/15 via-amber-600/10 to-orange-500/5 px-5 pt-6 pb-4">
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-amber-500/10 blur-3xl -translate-y-1/2 translate-x-1/2" />
+          <DialogHeader className="relative text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mx-auto mb-3 shadow-lg shadow-amber-500/25">
+              <Crown className="w-8 h-8 text-white" />
+            </div>
+            <DialogTitle className="text-xl font-bold">Choisissez votre formule</DialogTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Investissez dans votre activité, gagnez plus chaque mois.
+            </p>
+          </DialogHeader>
         </div>
 
-        <div className="pt-2 space-y-2">
-          <Button
-            className="w-full gap-2 h-11 text-sm bg-amber-500 hover:bg-amber-600 text-white font-semibold"
-            onClick={handleUpgrade}
-          >
-            <Crown className="w-4 h-4" />
-            Passer Premium
-          </Button>
-          <p className="text-[10px] text-center text-muted-foreground">
-            Bientôt disponible — Soyez parmi les premiers !
+        <div className="px-5 pb-5 space-y-4">
+          {/* ── STANDARD TIER ── */}
+          <Card className="border-border/50">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold">GP Standard</p>
+                  <p className="text-[11px] text-muted-foreground">Fonctionnement de base</p>
+                </div>
+                <Badge variant="outline" className="text-[10px] h-5">Gratuit</Badge>
+              </div>
+              <div className="space-y-1.5">
+                {STANDARD_FEATURES.map((f, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <f.icon className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span>{f.label}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="pt-1">
+                <p className="text-[10px] text-muted-foreground text-center">Votre plan actuel</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ── PREMIUM TIER ── */}
+          <Card className="border-amber-500/40 bg-gradient-to-br from-amber-500/5 to-orange-500/5 shadow-md shadow-amber-500/10 relative overflow-hidden">
+            <div className="absolute top-0 right-0 px-2.5 py-0.5 bg-amber-500 text-white text-[9px] font-bold rounded-bl-lg">
+              RECOMMANDÉ
+            </div>
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <Crown className="w-4 h-4 text-amber-500" />
+                    <p className="text-sm font-bold">GP Premium</p>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">Pour les GPs ambitieux</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-amber-600">9 900</p>
+                  <p className="text-[10px] text-muted-foreground -mt-0.5">FCFA / mois</p>
+                </div>
+              </div>
+
+              <Separator className="bg-amber-500/15" />
+
+              <div className="space-y-2">
+                {PREMIUM_FEATURES.map((f, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="flex items-center gap-2.5"
+                  >
+                    <div className={cn(
+                      "w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0",
+                      f.highlight ? "bg-amber-500/15" : "bg-muted/50"
+                    )}>
+                      <f.icon className={cn("w-3.5 h-3.5", f.highlight ? "text-amber-600" : "text-muted-foreground")} />
+                    </div>
+                    <span className={cn("text-xs", f.highlight ? "font-medium" : "text-muted-foreground")}>
+                      {f.label}
+                    </span>
+                    {f.highlight && <CheckCircle2 className="w-3.5 h-3.5 text-accent ml-auto flex-shrink-0" />}
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* ROI argument */}
+              <div className="bg-accent/10 border border-accent/20 rounded-xl p-3 text-center">
+                <p className="text-[11px] font-semibold text-accent">
+                  💡 1 seul colis supplémentaire par mois rembourse l'abonnement
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  En moyenne, les GP Premium reçoivent 3x plus de demandes
+                </p>
+              </div>
+
+              <Button
+                className="w-full gap-2 h-11 text-sm bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-lg shadow-amber-500/20"
+                onClick={handleUpgrade}
+              >
+                <Crown className="w-4 h-4" />
+                Passer Premium — 9 900 FCFA/mois
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* ── PRO TIER (coming soon) ── */}
+          <Card className="border-border/30 opacity-70">
+            <CardContent className="p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Rocket className="w-4 h-4 text-primary" />
+                  <p className="text-sm font-bold">GP Pro</p>
+                  <Badge variant="secondary" className="text-[9px] h-4 ml-1">Bientôt</Badge>
+                </div>
+                <div className="text-right">
+                  <p className="text-base font-bold">19 900</p>
+                  <p className="text-[10px] text-muted-foreground -mt-0.5">FCFA / mois</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {PRO_EXTRAS.map((f, i) => (
+                  <div key={i} className="flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/30 rounded-md px-2 py-1">
+                    <f.icon className="w-3 h-3" />
+                    {f.label}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <p className="text-[10px] text-center text-muted-foreground px-4">
+            Paiement sécurisé · Résiliable à tout moment · Sans engagement
           </p>
         </div>
       </DialogContent>
@@ -198,22 +279,22 @@ export function PremiumCTABanner({ variant = "card", context = "default", isPrem
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-bold">{msg.title}</p>
                   <Badge variant="secondary" className="text-[9px] bg-amber-500/15 text-amber-600 border-amber-500/30">
-                    PRO
+                    9 900 FCFA/mois
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">{msg.desc}</p>
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                  <Zap className="w-3 h-3 text-amber-500" /> Commission 3%
+                  <TrendingUp className="w-3 h-3 text-amber-500" /> Priorité résultats
                 </div>
                 <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                  <Star className="w-3 h-3 text-amber-500" /> Priorité
+                  <Zap className="w-3 h-3 text-amber-500" /> Auto-accept
                 </div>
               </div>
               <Button size="sm" className="h-8 gap-1.5 text-xs bg-amber-500 hover:bg-amber-600 text-white" onClick={() => setShowDialog(true)}>
                 <Crown className="w-3.5 h-3.5" />
-                Découvrir Premium
+                Découvrir les formules
               </Button>
             </div>
           </div>
@@ -245,17 +326,20 @@ export function PremiumCTABanner({ variant = "card", context = "default", isPrem
             <p className="text-[11px] text-muted-foreground">{msg.desc}</p>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground bg-background/50 rounded-lg px-2.5 py-1.5">
-            <Zap className="w-3 h-3 text-amber-500" /> Commission réduite
+        <div className="flex items-center justify-between bg-background/50 rounded-xl px-3 py-2">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              <TrendingUp className="w-3 h-3 text-amber-500" /> Priorité
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              <Zap className="w-3 h-3 text-amber-500" /> Auto-accept
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground bg-background/50 rounded-lg px-2.5 py-1.5">
-            <Star className="w-3 h-3 text-amber-500" /> Visibilité +
-          </div>
+          <p className="text-xs font-bold text-amber-600">9 900 FCFA/mois</p>
         </div>
         <Button className="w-full gap-2 h-9 text-xs bg-amber-500 hover:bg-amber-600 text-white" onClick={() => setShowDialog(true)}>
           <Crown className="w-3.5 h-3.5" />
-          Découvrir Premium
+          Découvrir les formules
         </Button>
       </motion.div>
       {premiumDialog}
