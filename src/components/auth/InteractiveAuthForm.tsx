@@ -727,7 +727,7 @@ export function InteractiveAuthForm({
             className="space-y-4"
           >
             <div className="flex items-center gap-2 mb-6">
-              <Button variant="ghost" size="icon" onClick={() => setRegisterStep("type")}>
+              <Button variant="ghost" size="icon" onClick={() => setRegisterStep("city")}>
                 <ChevronLeft className="w-5 h-5" />
               </Button>
               <div>
