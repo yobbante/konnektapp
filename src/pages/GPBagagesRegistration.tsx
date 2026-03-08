@@ -41,10 +41,20 @@ export default function GPBagagesRegistration() {
   const [pendingGpId, setPendingGpId] = useState<string | null>(null);
 
   const [authData, setAuthData] = useState({ email: "", password: "", confirmPassword: "" });
+  // Read entry flow data from sessionStorage
+  const entryPhone = sessionStorage.getItem("entry_phone") || "";
+  const entryCity = sessionStorage.getItem("entry_city") || "";
+  const entryCountryRaw = sessionStorage.getItem("entry_country");
+  const entryCountryCode = entryCountryRaw ? (() => { try { return JSON.parse(entryCountryRaw)?.code || "SN"; } catch { return "SN"; } })() : "SN";
+
   const [profileData, setProfileData] = useState<RouteLinkedProfileData>({
-    fullName: "", originCity: "Dakar", originCountry: "SN",
+    fullName: "", 
+    originCity: entryCity || "Dakar", 
+    originCountry: entryCountryCode,
     destinationCity: "Paris", destinationCountry: "FR",
-    originAddress: "", originPhone: "", destinationAddress: "",
+    originAddress: "", 
+    originPhone: entryPhone || "", 
+    destinationAddress: "",
     destinationPhone: "", whatsappPhone: "origin",
   });
   const [profileValid, setProfileValid] = useState(false);
@@ -552,7 +562,7 @@ export default function GPBagagesRegistration() {
           {/* Step 2: Profile */}
           {step === 2 && (
             <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <RouteLinkedProfileForm initialData={profileData} onChange={(data, isValid) => { setProfileData(data); setProfileValid(isValid); }} showValidation />
+              <RouteLinkedProfileForm initialData={profileData} onChange={(data, isValid) => { setProfileData(data); setProfileValid(isValid); }} showValidation entryPhone={entryPhone} entryCity={entryCity} />
             </motion.div>
           )}
 

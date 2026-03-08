@@ -71,12 +71,18 @@ interface RouteLinkedProfileFormProps {
   initialData?: Partial<RouteLinkedProfileData>;
   onChange: (data: RouteLinkedProfileData, isValid: boolean) => void;
   showValidation?: boolean;
+  /** Phone from entry flow — shown read-only if present */
+  entryPhone?: string;
+  /** City from entry flow — pre-filled */
+  entryCity?: string;
 }
 
 export function RouteLinkedProfileForm({
   initialData = {},
   onChange,
   showValidation = false,
+  entryPhone = "",
+  entryCity = "",
 }: RouteLinkedProfileFormProps) {
   const isMobile = useIsMobile();
 
@@ -106,15 +112,16 @@ export function RouteLinkedProfileForm({
     onChange(data, isValid);
   }, [data, isValid]);
 
-  // Auto-prefix phone with country code when country changes
+  // Auto-prefix phone with country code when country changes (skip if entry phone provided)
   useEffect(() => {
+    if (entryPhone) return; // Don't override entry flow phone
     const code = getCountryPhoneCode(data.originCountry);
     if (!data.originPhone || data.originPhone === "") {
       setData(prev => ({ ...prev, originPhone: code + " " }));
     } else if (!data.originPhone.startsWith("+")) {
       setData(prev => ({ ...prev, originPhone: code + " " + prev.originPhone }));
     }
-  }, [data.originCountry]);
+  }, [data.originCountry, entryPhone]);
 
   useEffect(() => {
     const code = getCountryPhoneCode(data.destinationCountry);
@@ -298,26 +305,43 @@ export function RouteLinkedProfileForm({
                 <Phone className="w-4 h-4 text-amber-600" />
                 Téléphone {data.originCity} *
               </Label>
-              <ValidationIcon isValid={isOriginPhoneValid} />
+              {entryPhone ? (
+                <Badge variant="outline" className="text-[10px] border-primary/40 text-primary gap-1">
+                  <Check className="w-3 h-3" /> Déjà renseigné
+                </Badge>
+              ) : (
+                <ValidationIcon isValid={isOriginPhoneValid} />
+              )}
             </div>
-            <div className="relative">
-              <Badge 
-                variant="secondary" 
-                className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-mono z-10"
-              >
-                {getCountryPhoneCode(data.originCountry)}
-              </Badge>
-              <Input
-                type="tel"
-                placeholder={getPhonePlaceholder(data.originCountry).replace(/^\+[\d\s]+/, "").trim()}
-                value={data.originPhone.replace(getCountryPhoneCode(data.originCountry), "").trim()}
-                onChange={(e) => handleChange("originPhone", getCountryPhoneCode(data.originCountry) + " " + e.target.value)}
-                className={cn(
-                  "h-12 pl-16",
-                  showValidation && !isOriginPhoneValid && "border-destructive"
-                )}
-              />
-            </div>
+            {entryPhone ? (
+              <div className="h-12 pl-4 flex items-center rounded-md border border-input bg-muted/50 text-sm font-medium text-muted-foreground">
+                {data.originPhone}
+              </div>
+            ) : (
+              <div className="relative">
+                <Badge 
+                  variant="secondary" 
+                  className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-mono z-10"
+                >
+                  {getCountryPhoneCode(data.originCountry)}
+                </Badge>
+                <Input
+                  type="tel"
+                  placeholder={getPhonePlaceholder(data.originCountry).replace(/^\+[\d\s]+/, "").trim()}
+                  value={data.originPhone.replace(getCountryPhoneCode(data.originCountry), "").trim()}
+                  onChange={(e) => handleChange("originPhone", getCountryPhoneCode(data.originCountry) + " " + e.target.value)}
+                  className={cn(
+                    "h-12 pl-16",
+                    showValidation && !isOriginPhoneValid && "border-destructive"
+                  )}
+                />
+              </div>
+            )}
+            {entryPhone && (
+              <p className="text-[11px] text-muted-foreground">
+                Ce numéro a été vérifié lors de votre inscription
+              </p>
+            )}
           </motion.div>
         </CardContent>
       </Card>
@@ -391,6 +415,13 @@ export function RouteLinkedProfileForm({
                 )}
               />
             </div>
+            {/* Warn if destination phone matches origin (entry) phone */}
+            {entryPhone && data.destinationPhone.replace(/\s/g, "") === data.originPhone.replace(/\s/g, "") && data.destinationPhone.replace(/\s/g, "").length > 5 && (
+              <p className="text-[11px] text-amber-600 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                Ce numéro est identique à votre numéro principal (déjà renseigné)
+              </p>
+            )}
           </motion.div>
         </CardContent>
       </Card>
