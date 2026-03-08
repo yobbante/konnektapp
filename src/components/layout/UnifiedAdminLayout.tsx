@@ -1,17 +1,16 @@
 /**
- * UnifiedAdminLayout — Konnekt Admin V2
+ * UnifiedAdminLayout — Konnekt Admin V2+
  * 
  * Sidebar (desktop) + Bottom nav (mobile)
- * 11 modules, Super Admin only for V1
+ * 15 modules: Overview, Colis, GP, Finance, Scan, Litiges, Assurance, Manuel, Taux, Paramètres, KYC, Clients, Demandes, Reputation, Support
  */
 import { ReactNode, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   LayoutDashboard, Package, Users, Wallet, ScanLine,
   AlertTriangle, Shield, PackageOpen, ArrowLeftRight,
   Settings, UserCheck, RefreshCw, Search, ChevronLeft,
-  ChevronRight, MoreHorizontal, X
+  ChevronRight, MoreHorizontal, FileText, Award, HeadphonesIcon, UserRound
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -20,30 +19,47 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 
 export type AdminModule =
   | "overview" | "colis" | "gp" | "finance" | "scan"
-  | "litiges" | "assurance" | "manuel" | "taux" | "parametres" | "kyc";
+  | "litiges" | "assurance" | "manuel" | "taux" | "parametres" | "kyc"
+  | "clients" | "demandes" | "reputation" | "support";
 
 interface ModuleItem {
   id: AdminModule;
   label: string;
   icon: React.ElementType;
   color: string;
+  group: string;
 }
 
 const ALL_MODULES: ModuleItem[] = [
-  { id: "overview", label: "Overview", icon: LayoutDashboard, color: "text-blue-500" },
-  { id: "colis", label: "Colis", icon: Package, color: "text-emerald-500" },
-  { id: "gp", label: "GP", icon: Users, color: "text-violet-500" },
-  { id: "finance", label: "Finance", icon: Wallet, color: "text-amber-500" },
-  { id: "scan", label: "Scan", icon: ScanLine, color: "text-cyan-500" },
-  { id: "litiges", label: "Litiges", icon: AlertTriangle, color: "text-red-500" },
-  { id: "assurance", label: "Assurance", icon: Shield, color: "text-teal-500" },
-  { id: "manuel", label: "Manuel", icon: PackageOpen, color: "text-orange-500" },
-  { id: "taux", label: "Taux", icon: ArrowLeftRight, color: "text-indigo-500" },
-  { id: "parametres", label: "Paramètres", icon: Settings, color: "text-gray-500" },
-  { id: "kyc", label: "KYC", icon: UserCheck, color: "text-green-500" },
+  // Core
+  { id: "overview", label: "Overview", icon: LayoutDashboard, color: "text-blue-500", group: "core" },
+  { id: "colis", label: "Colis", icon: Package, color: "text-emerald-500", group: "core" },
+  { id: "gp", label: "GP", icon: Users, color: "text-violet-500", group: "core" },
+  { id: "clients", label: "Clients", icon: UserRound, color: "text-pink-500", group: "core" },
+  // Operations
+  { id: "finance", label: "Finance", icon: Wallet, color: "text-amber-500", group: "ops" },
+  { id: "demandes", label: "Demandes", icon: FileText, color: "text-purple-500", group: "ops" },
+  { id: "scan", label: "Scan", icon: ScanLine, color: "text-cyan-500", group: "ops" },
+  { id: "manuel", label: "Manuel", icon: PackageOpen, color: "text-orange-500", group: "ops" },
+  // Governance
+  { id: "litiges", label: "Litiges", icon: AlertTriangle, color: "text-red-500", group: "gov" },
+  { id: "reputation", label: "Réputation", icon: Award, color: "text-amber-500", group: "gov" },
+  { id: "support", label: "Support", icon: HeadphonesIcon, color: "text-blue-500", group: "gov" },
+  { id: "kyc", label: "KYC", icon: UserCheck, color: "text-green-500", group: "gov" },
+  // Config
+  { id: "assurance", label: "Assurance", icon: Shield, color: "text-teal-500", group: "config" },
+  { id: "taux", label: "Taux", icon: ArrowLeftRight, color: "text-indigo-500", group: "config" },
+  { id: "parametres", label: "Paramètres", icon: Settings, color: "text-gray-500", group: "config" },
 ];
 
 const BOTTOM_NAV_ITEMS: AdminModule[] = ["overview", "colis", "scan", "finance", "gp"];
+
+const GROUP_LABELS: Record<string, string> = {
+  core: "Principal",
+  ops: "Opérations",
+  gov: "Gouvernance",
+  config: "Configuration",
+};
 
 interface UnifiedAdminLayoutProps {
   children: ReactNode;
@@ -71,6 +87,7 @@ export function UnifiedAdminLayout({
 
   const activeItem = ALL_MODULES.find(m => m.id === activeModule);
   const moreModules = ALL_MODULES.filter(m => !BOTTOM_NAV_ITEMS.includes(m.id));
+  const groups = ["core", "ops", "gov", "config"];
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -99,25 +116,38 @@ export function UnifiedAdminLayout({
           </Button>
         </div>
 
-        {/* Module List */}
-        <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
-          {ALL_MODULES.map((mod) => {
-            const isActive = activeModule === mod.id;
+        {/* Module List - Grouped */}
+        <nav className="flex-1 overflow-y-auto py-2 px-2">
+          {groups.map((group) => {
+            const groupModules = ALL_MODULES.filter(m => m.group === group);
             return (
-              <button
-                key={mod.id}
-                onClick={() => onModuleChange(mod.id)}
-                className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
-                  isActive
-                    ? "bg-primary/10 text-primary font-semibold"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              <div key={group} className="mb-2">
+                {!sidebarCollapsed && (
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-3 py-1.5">
+                    {GROUP_LABELS[group]}
+                  </p>
                 )}
-                title={sidebarCollapsed ? mod.label : undefined}
-              >
-                <mod.icon className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-primary" : mod.color)} />
-                {!sidebarCollapsed && <span>{mod.label}</span>}
-              </button>
+                {sidebarCollapsed && <div className="h-px bg-border mx-2 my-1" />}
+                {groupModules.map((mod) => {
+                  const isActive = activeModule === mod.id;
+                  return (
+                    <button
+                      key={mod.id}
+                      onClick={() => onModuleChange(mod.id)}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                        isActive
+                          ? "bg-primary/10 text-primary font-semibold"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      )}
+                      title={sidebarCollapsed ? mod.label : undefined}
+                    >
+                      <mod.icon className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-primary" : mod.color)} />
+                      {!sidebarCollapsed && <span>{mod.label}</span>}
+                    </button>
+                  );
+                })}
+              </div>
             );
           })}
         </nav>
@@ -125,7 +155,7 @@ export function UnifiedAdminLayout({
         {/* Sidebar Footer */}
         {!sidebarCollapsed && (
           <div className="p-3 border-t border-border">
-            <p className="text-[10px] text-muted-foreground text-center">Konnekt Admin V2</p>
+            <p className="text-[10px] text-muted-foreground text-center">Konnekt Admin V3</p>
           </div>
         )}
       </aside>
@@ -251,24 +281,37 @@ export function UnifiedAdminLayout({
           <SheetHeader>
             <SheetTitle className="text-left">Modules Admin</SheetTitle>
           </SheetHeader>
-          <div className="grid grid-cols-3 gap-3 py-4">
-            {moreModules.map((mod) => {
-              const isActive = activeModule === mod.id;
+          <div className="py-4 space-y-4">
+            {groups.map((group) => {
+              const groupModules = moreModules.filter(m => m.group === group);
+              if (groupModules.length === 0) return null;
               return (
-                <button
-                  key={mod.id}
-                  onClick={() => {
-                    onModuleChange(mod.id);
-                    setMoreSheetOpen(false);
-                  }}
-                  className={cn(
-                    "flex flex-col items-center gap-2 p-4 rounded-xl transition-colors",
-                    isActive ? "bg-primary/10 border border-primary/30" : "bg-muted hover:bg-muted/80"
-                  )}
-                >
-                  <mod.icon className={cn("w-6 h-6", isActive ? "text-primary" : mod.color)} />
-                  <span className={cn("text-xs font-medium", isActive && "text-primary")}>{mod.label}</span>
-                </button>
+                <div key={group}>
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-1 mb-2">
+                    {GROUP_LABELS[group]}
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {groupModules.map((mod) => {
+                      const isActive = activeModule === mod.id;
+                      return (
+                        <button
+                          key={mod.id}
+                          onClick={() => {
+                            onModuleChange(mod.id);
+                            setMoreSheetOpen(false);
+                          }}
+                          className={cn(
+                            "flex flex-col items-center gap-1.5 p-3 rounded-xl transition-colors",
+                            isActive ? "bg-primary/10 border border-primary/30" : "bg-muted hover:bg-muted/80"
+                          )}
+                        >
+                          <mod.icon className={cn("w-5 h-5", isActive ? "text-primary" : mod.color)} />
+                          <span className={cn("text-[10px] font-medium", isActive && "text-primary")}>{mod.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               );
             })}
           </div>
