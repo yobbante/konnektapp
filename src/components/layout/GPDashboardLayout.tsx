@@ -5,7 +5,8 @@ import {
   Lock, Home, ListChecks, LayoutGrid, ShieldX,
   Shield, DollarSign, History, Calendar, Wallet,
   Settings, LogOut, MapPin, User, Plus,
-  MessageCircle, UserCircle, ChevronRight, Eye, EyeOff
+  MessageCircle, UserCircle, ChevronRight, Eye, EyeOff,
+  BarChart3, Crown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -88,7 +89,7 @@ export function GPDashboardLayout({
     if (path.includes("/gp/wallet")) return "wallet";
     if (path.includes("/gp/messages")) return "messages";
     if (path.includes("/gp/scan")) return "scan";
-    if (path.includes("/gp/profil-public") || path.includes("/gp/parametres") || path.includes("/gp/historique") || path.includes("/gp/calendrier") || path.includes("/gp/tarification") || path.includes("/gp/restrictions") || path.includes("/gp/ktp-geotrack") || path.includes("/gp/distribution")) return "profil";
+    if (path.includes("/gp/profil-public") || path.includes("/gp/parametres") || path.includes("/gp/historique") || path.includes("/gp/calendrier") || path.includes("/gp/tarification") || path.includes("/gp/restrictions") || path.includes("/gp/ktp-geotrack") || path.includes("/gp/distribution") || path.includes("/gp/performances")) return "profil";
     if (path.includes("/gp/apercu")) return "apercu";
     return "apercu";
   };
@@ -328,6 +329,7 @@ export function GPDashboardLayout({
                 <MenuButton icon={ShieldX} label="Restrictions" onClick={() => { setShowMenu(false); navigate("/gp/restrictions"); }} />
                 <MenuButton icon={ListChecks} label="Distribution" locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/distribution"); }}} />
                 <MenuButton icon={History} label="Historique" onClick={() => { setShowMenu(false); navigate("/gp/historique"); }} />
+                <MenuButton icon={BarChart3} label="Performances" onClick={() => { setShowMenu(false); navigate("/gp/performances"); }} />
                 <MenuButton icon={Shield} label="KTP & Geo" onClick={() => { setShowMenu(false); navigate("/gp/ktp-geotrack"); }} />
                 <MenuButton icon={Settings} label="Réglages" onClick={() => { setShowMenu(false); navigate("/gp/parametres"); }} />
                 <MenuButton icon={LogOut} label="Déconnexion" variant="destructive" onClick={() => { setShowMenu(false); handleSignOut(); }} />

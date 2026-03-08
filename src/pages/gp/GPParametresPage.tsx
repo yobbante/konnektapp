@@ -9,7 +9,7 @@ import {
   Globe, LogOut, Palette, MapPin, Phone,
   Edit3, Save, X, MessageCircle, FileCheck,
   ShieldX, Upload, BadgeCheck, Wallet, Key, Lock,
-  Crown, Star, Zap,
+  Crown, Star, Zap, BarChart3,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
@@ -249,6 +249,8 @@ export default function GPParametresPage() {
           <SettingsRow icon={Globe} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Devise" desc={gpProfile.default_currency || "XOF"} onClick={() => navigate("/gp/tarification")} />
           <Separator />
           <SettingsRow icon={ScanLine} iconColor="text-purple-500" iconBg="bg-purple-500/10" label="Scanner QR" desc="Caméra" onClick={() => navigate("/gp/scan")} />
+          <Separator />
+          <SettingsRow icon={BarChart3} iconColor="text-amber-500" iconBg="bg-amber-500/10" label="Performances" desc={gpProfile.subscription === "premium" ? "Statistiques avancées" : "Premium requis"} onClick={() => navigate("/gp/performances")} />
         </SettingsSection>
 
         {/* ═══ SÉCURITÉ ═══ */}
