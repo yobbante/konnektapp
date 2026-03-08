@@ -299,7 +299,7 @@ export default function GPParametresPage() {
           <div className="px-3 py-2.5 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <Palette className="w-3.5 h-3.5 text-primary" />
-              <span className="text-sm font-medium">Thème</span>
+              <span className="text-sm font-medium">Apparence</span>
             </div>
             <ThemeToggle />
           </div>
