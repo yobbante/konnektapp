@@ -653,8 +653,8 @@ export default function GPApercuPage() {
           }
 
             {/* ── PREMIUM CTA (dashboard) ── */}
-            {!isGPPremium(gpProfile?.subscription) && (
-              <PremiumCTABanner variant="compact" context="dashboard" isPremium={isGPPremium(gpProfile?.subscription)} />
+            {!isGPPremium((gpProfile as any)?.subscription) && (
+              <PremiumCTABanner variant="compact" context="dashboard" isPremium={isGPPremium((gpProfile as any)?.subscription)} />
             )}
 
             {/* ── PERFORMANCE ── */}
