@@ -12,7 +12,7 @@ import {
   Calendar, RefreshCw, Scale, Wallet, Plus, ScanLine,
   TrendingUp, Shield, History, Camera, FileText, Check,
   Bell, Zap, Star, ArrowRight, CheckCircle2, Truck, Activity,
-  UserCheck, AlertOctagon, ShieldAlert, Lock, Crown } from
+  UserCheck, AlertOctagon, ShieldAlert, Lock, Crown, Rocket } from
 "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
