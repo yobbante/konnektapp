@@ -119,7 +119,9 @@ export default function GPColisPage() {
 
   const filtered = allColis.filter(c => {
     const matchesStatus = statusFilter === "all"
-      || (statusFilter === "active" ? ACTIVE_STATUSES.includes(c.status) : c.status === statusFilter);
+      || (statusFilter === "active" ? ACTIVE_STATUSES.includes(c.status) : false)
+      || (statusFilter === "delivered" ? DELIVERED_STATUSES.includes(c.status) : false)
+      || (statusFilter === "pending" ? c.status === "pending" : false);
     const q = searchQuery.toLowerCase();
     const matchesSearch = !q ||
       c.order_number.toLowerCase().includes(q) ||
