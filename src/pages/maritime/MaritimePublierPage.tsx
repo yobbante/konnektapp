@@ -34,6 +34,7 @@ export default function MaritimePublierPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [gpProfile, setGpProfile] = useState<any>(null);
+  const [navettes, setNavettes] = useState<Array<{ origin_city: string; origin_country: string; destination_city: string; destination_country: string }>>([]);
 
   const [maritimeType, setMaritimeType] = useState<MaritimeType>("lcl");
   const [portDepart, setPortDepart] = useState("");
@@ -46,6 +47,8 @@ export default function MaritimePublierPage() {
   const [currency, setCurrency] = useState("EUR");
   const [description, setDescription] = useState("");
 
+  const isPremiumOrPro = gpProfile?.subscription === "premium" || gpProfile?.subscription === "pro";
+
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -55,6 +58,13 @@ export default function MaritimePublierPage() {
       if (!gp) { navigate("/transporteur/inscription"); return; }
       setGpProfile(gp);
       setCurrency(gp.default_currency || "EUR");
+
+      if (gp.subscription === "premium" || gp.subscription === "pro") {
+        const { data: navData } = await supabase.from("gp_navettes")
+          .select("origin_city, origin_country, destination_city, destination_country")
+          .eq("gp_id", gp.id).eq("is_active", true);
+        setNavettes(navData || []);
+      }
       setLoading(false);
     })();
   }, []);
