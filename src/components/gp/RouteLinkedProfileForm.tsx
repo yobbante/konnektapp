@@ -71,12 +71,18 @@ interface RouteLinkedProfileFormProps {
   initialData?: Partial<RouteLinkedProfileData>;
   onChange: (data: RouteLinkedProfileData, isValid: boolean) => void;
   showValidation?: boolean;
+  /** Phone from entry flow — shown read-only if present */
+  entryPhone?: string;
+  /** City from entry flow — pre-filled */
+  entryCity?: string;
 }
 
 export function RouteLinkedProfileForm({
   initialData = {},
   onChange,
   showValidation = false,
+  entryPhone = "",
+  entryCity = "",
 }: RouteLinkedProfileFormProps) {
   const isMobile = useIsMobile();
 
