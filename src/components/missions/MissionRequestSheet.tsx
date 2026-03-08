@@ -84,7 +84,7 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
           weight_kg: weightKg ? parseFloat(weightKg) : 0,
           pickup_date_start: pickupDate || new Date().toISOString().split("T")[0],
           client_budget: budgetMax ? parseFloat(budgetMax) : null,
-          urgency: isUrgent ? "express" as const : "normal" as const,
+          urgency: isUrgent ? "express" as const : "standard" as const,
           mission_number: `MSN-${Date.now()}`,
           status: "open",
         }]);
