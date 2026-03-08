@@ -387,7 +387,18 @@ export default function GPParametresPage() {
         {/* Premium CTA — progressive */}
         <PremiumCTABanner variant="banner" context="dashboard" subscription={(gpProfile as any)?.subscription} />
 
-        {/* ═══ 7. APPARENCE & LANGUE ═══ */}
+        {/* ═══ 7. AIDE & LÉGAL ═══ */}
+        <SettingsSection title="Aide & Légal">
+          <SettingsRow icon={HelpCircle} label="Centre d'aide" desc="FAQ et support" onClick={() => toast({ title: "Bientôt disponible" })} />
+          <Separator />
+          <SettingsRow icon={FileText} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Conditions d'utilisation" desc="CGU & CGV" onClick={() => toast({ title: "Bientôt disponible" })} />
+          <Separator />
+          <SettingsRow icon={Shield} iconColor="text-green-500" iconBg="bg-green-500/10" label="Politique de confidentialité" desc="Données personnelles" onClick={() => toast({ title: "Bientôt disponible" })} />
+          <Separator />
+          <SettingsRow icon={Info} iconColor="text-muted-foreground" iconBg="bg-muted" label="À propos de Konnekt" desc="v1.0.0 — Prototype" onClick={() => toast({ title: "Konnekt v1.0.0", description: "Plateforme de transport collaboratif." })} />
+        </SettingsSection>
+
+        {/* ═══ 8. APPARENCE & LANGUE ═══ */}
         <SettingsSection title="Apparence & Langue">
           <div className="p-3">
             <div className="flex items-center gap-3 mb-2">
@@ -398,17 +409,6 @@ export default function GPParametresPage() {
           </div>
           <Separator />
           <SettingsRow icon={Languages} iconColor="text-indigo-500" iconBg="bg-indigo-500/10" label="Langue" desc="Français" onClick={() => toast({ title: "Bientôt disponible", description: "Le choix de langue sera disponible prochainement." })} />
-        </SettingsSection>
-
-        {/* ═══ 8. AIDE & LÉGAL ═══ */}
-        <SettingsSection title="Aide & Légal">
-          <SettingsRow icon={HelpCircle} label="Centre d'aide" desc="FAQ et support" onClick={() => toast({ title: "Bientôt disponible" })} />
-          <Separator />
-          <SettingsRow icon={FileText} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Conditions d'utilisation" desc="CGU & CGV" onClick={() => toast({ title: "Bientôt disponible" })} />
-          <Separator />
-          <SettingsRow icon={Shield} iconColor="text-green-500" iconBg="bg-green-500/10" label="Politique de confidentialité" desc="Données personnelles" onClick={() => toast({ title: "Bientôt disponible" })} />
-          <Separator />
-          <SettingsRow icon={Info} iconColor="text-muted-foreground" iconBg="bg-muted" label="À propos de Konnekt" desc="v1.0.0 — Prototype" onClick={() => toast({ title: "Konnekt v1.0.0", description: "Plateforme de transport collaboratif." })} />
         </SettingsSection>
 
         {/* ═══ 9. COMPTE (Déconnexion / Suppression) ═══ */}
