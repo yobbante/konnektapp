@@ -52,11 +52,11 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
 };
 
 const TRANSPORT_TABS = [
-  { id: "all", label: "Tout", icon: Globe, emoji: "🌍" },
-  { id: "routier", label: "Routier", icon: Car, emoji: "🚛" },
-  { id: "maritime", label: "Maritime", icon: Ship, emoji: "🚢" },
-  { id: "aerien", label: "Aérien", icon: Plane, emoji: "✈️" },
-  { id: "bagages", label: "GP", icon: Luggage, emoji: "🧳" },
+  { id: "all", label: "Tout", icon: Globe },
+  { id: "routier", label: "Routier", icon: Car },
+  { id: "maritime", label: "Maritime", icon: Ship },
+  { id: "aerien", label: "Aérien", icon: Plane },
+  { id: "bagages", label: "GP", icon: Luggage },
 ];
 
 const MODE_CONFIG: Record<string, {
@@ -75,7 +75,7 @@ const MODE_CONFIG: Record<string, {
     searchPlaceholderOrigin: "Ville de départ",
     searchPlaceholderDest: "Ville de destination",
     searchButtonLabel: "Rechercher un transporteur",
-    offersTitle: "🔥 Meilleures offres",
+    offersTitle: "Meilleures offres",
     emptyLabel: "Aucune offre pour le moment",
     emptyDesc: "Les transporteurs publient régulièrement de nouvelles offres",
     icon: Package,
@@ -86,7 +86,7 @@ const MODE_CONFIG: Record<string, {
     searchPlaceholderOrigin: "Ville d'envoi",
     searchPlaceholderDest: "Ville de réception",
     searchButtonLabel: "Trouver un GP",
-    offersTitle: "🧳 GP disponibles",
+    offersTitle: "GP disponibles",
     emptyLabel: "Aucun GP disponible",
     emptyDesc: "Revenez bientôt ou créez une demande personnalisée",
     icon: Luggage,
@@ -97,7 +97,7 @@ const MODE_CONFIG: Record<string, {
     searchPlaceholderOrigin: "Aéroport départ",
     searchPlaceholderDest: "Aéroport arrivée",
     searchButtonLabel: "Rechercher un vol cargo",
-    offersTitle: "✈️ Offres aériennes",
+    offersTitle: "Offres aeriennes",
     emptyLabel: "Aucune offre aérienne",
     emptyDesc: "Les agents cargo publient régulièrement des offres",
     icon: Plane,
@@ -108,7 +108,7 @@ const MODE_CONFIG: Record<string, {
     searchPlaceholderOrigin: "Port de départ",
     searchPlaceholderDest: "Port d'arrivée",
     searchButtonLabel: "Rechercher un cargo",
-    offersTitle: "🚢 Offres maritimes",
+    offersTitle: "Offres maritimes",
     emptyLabel: "Aucune offre maritime",
     emptyDesc: "Solutions LCL et FCL en préparation",
     icon: Ship,
@@ -119,7 +119,7 @@ const MODE_CONFIG: Record<string, {
     searchPlaceholderOrigin: "Point de collecte",
     searchPlaceholderDest: "Point de livraison",
     searchButtonLabel: "Trouver un transporteur",
-    offersTitle: "🚛 Missions routières",
+    offersTitle: "Missions routieres",
     emptyLabel: "Aucune mission disponible",
     emptyDesc: "Créez une mission et recevez des propositions",
     icon: Truck,
@@ -129,38 +129,38 @@ const MODE_CONFIG: Record<string, {
 
 const POPULAR_ROUTES_BY_MODE: Record<string, { from: string; to: string; flag: string; hot?: boolean }[]> = {
   all: [
-    { from: "Paris", to: "Dakar", flag: "🇫🇷→🇸🇳", hot: true },
-    { from: "Dakar", to: "Marseille", flag: "🇸🇳→🇫🇷" },
-    { from: "Abidjan", to: "Paris", flag: "🇨🇮→🇫🇷", hot: true },
-    { from: "Dakar", to: "Montréal", flag: "🇸🇳→🇨🇦" },
-    { from: "Abidjan", to: "Bamako", flag: "🇨🇮→🇲🇱" },
-    { from: "Casablanca", to: "Paris", flag: "🇲🇦→🇫🇷" },
+    { from: "Paris", to: "Dakar", flag: "FR-SN", hot: true },
+    { from: "Dakar", to: "Marseille", flag: "SN-FR" },
+    { from: "Abidjan", to: "Paris", flag: "CI-FR", hot: true },
+    { from: "Dakar", to: "Montréal", flag: "SN-CA" },
+    { from: "Abidjan", to: "Bamako", flag: "CI-ML" },
+    { from: "Casablanca", to: "Paris", flag: "MA-FR" },
   ],
   bagages: [
-    { from: "Paris", to: "Dakar", flag: "🇫🇷→🇸🇳", hot: true },
-    { from: "Abidjan", to: "Paris", flag: "🇨🇮→🇫🇷", hot: true },
-    { from: "Dakar", to: "Marseille", flag: "🇸🇳→🇫🇷" },
-    { from: "Casablanca", to: "Paris", flag: "🇲🇦→🇫🇷" },
+    { from: "Paris", to: "Dakar", flag: "FR-SN", hot: true },
+    { from: "Abidjan", to: "Paris", flag: "CI-FR", hot: true },
+    { from: "Dakar", to: "Marseille", flag: "SN-FR" },
+    { from: "Casablanca", to: "Paris", flag: "MA-FR" },
   ],
   routier: [
-    { from: "Dakar", to: "Bamako", flag: "🇸🇳→🇲🇱", hot: true },
-    { from: "Abidjan", to: "Ouagadougou", flag: "🇨🇮→🇧🇫", hot: true },
-    { from: "Lomé", to: "Cotonou", flag: "🇹🇬→🇧🇯" },
-    { from: "Douala", to: "Libreville", flag: "🇨🇲→🇬🇦" },
-    { from: "Accra", to: "Lomé", flag: "🇬🇭→🇹🇬" },
-    { from: "Abidjan", to: "Dakar", flag: "🇨🇮→🇸🇳" },
+    { from: "Dakar", to: "Bamako", flag: "SN-ML", hot: true },
+    { from: "Abidjan", to: "Ouagadougou", flag: "CI-BF", hot: true },
+    { from: "Lomé", to: "Cotonou", flag: "TG-BJ" },
+    { from: "Douala", to: "Libreville", flag: "CM-GA" },
+    { from: "Accra", to: "Lomé", flag: "GH-TG" },
+    { from: "Abidjan", to: "Dakar", flag: "CI-SN" },
   ],
   maritime: [
-    { from: "Dakar", to: "Marseille", flag: "🇸🇳→🇫🇷", hot: true },
-    { from: "Abidjan", to: "Le Havre", flag: "🇨🇮→🇫🇷", hot: true },
-    { from: "Douala", to: "Anvers", flag: "🇨🇲→🇧🇪" },
-    { from: "Lomé", to: "Rotterdam", flag: "🇹🇬→🇳🇱" },
+    { from: "Dakar", to: "Marseille", flag: "SN-FR", hot: true },
+    { from: "Abidjan", to: "Le Havre", flag: "CI-FR", hot: true },
+    { from: "Douala", to: "Anvers", flag: "CM-BE" },
+    { from: "Lomé", to: "Rotterdam", flag: "TG-NL" },
   ],
   aerien: [
-    { from: "Paris", to: "Dakar", flag: "🇫🇷→🇸🇳", hot: true },
-    { from: "Paris", to: "Abidjan", flag: "🇫🇷→🇨🇮", hot: true },
-    { from: "Bruxelles", to: "Kinshasa", flag: "🇧🇪→🇨🇩" },
-    { from: "Casablanca", to: "Paris", flag: "🇲🇦→🇫🇷" },
+    { from: "Paris", to: "Dakar", flag: "FR-SN", hot: true },
+    { from: "Paris", to: "Abidjan", flag: "FR-CI", hot: true },
+    { from: "Bruxelles", to: "Kinshasa", flag: "BE-CD" },
+    { from: "Casablanca", to: "Paris", flag: "MA-FR" },
   ],
 };
 
@@ -253,7 +253,9 @@ function TabBanner({ tab, modeConfig }: { tab: string; modeConfig: typeof MODE_C
       className={`mx-4 mb-3 p-3 rounded-xl bg-gradient-to-r ${modeConfig.gradient} border border-border`}
     >
       <div className="flex items-center gap-2.5">
-        <span className="text-xl">{tabData.emoji}</span>
+        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+          <tabData.icon className="w-4 h-4 text-primary" />
+        </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-bold text-foreground">{tabData.label}</h3>
           <p className="text-[11px] text-muted-foreground leading-snug">{modeConfig.subtitle}</p>
@@ -270,11 +272,11 @@ function PopularRoutesSection({ routes, onSelect, tabId }: {
   tabId: string;
 }) {
   const titleMap: Record<string, string> = {
-    all: "📍 Routes populaires",
-    routier: "🚛 Corridors populaires",
-    maritime: "🚢 Routes maritimes",
-    aerien: "✈️ Liaisons aériennes",
-    bagages: "🧳 Trajets GP populaires",
+    all: "Routes populaires",
+    routier: "Corridors populaires",
+    maritime: "Routes maritimes",
+    aerien: "Liaisons aeriennes",
+    bagages: "Trajets GP populaires",
   };
 
   return (
@@ -288,7 +290,7 @@ function PopularRoutesSection({ routes, onSelect, tabId }: {
             onClick={() => onSelect(route.from, route.to)}
             className="flex-shrink-0 bg-card border border-border rounded-xl px-3 py-2.5 text-left hover:border-primary/30 active:bg-muted/40 transition-all min-w-[120px]"
           >
-            <p className="text-sm font-bold text-foreground leading-tight">{route.flag}</p>
+            <p className="text-[10px] font-bold text-primary/70 tracking-wider leading-tight">{route.flag}</p>
             <p className="text-[10px] text-muted-foreground mt-1">{route.from} → {route.to}</p>
             {route.hot && (
               <span className="text-[8px] bg-destructive/10 text-destructive px-1.5 py-px rounded-full font-semibold mt-1.5 inline-flex items-center gap-0.5">
@@ -565,7 +567,7 @@ export function ClientAppHome({
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-lg font-bold text-foreground leading-tight">
-                {greeting}{firstName ? `, ${firstName}` : ""} 👋
+                {greeting}{firstName ? `, ${firstName}` : ""}
               </h1>
               <p className="text-[11px] text-muted-foreground mt-0.5">{modeConfig.subtitle}</p>
             </div>
@@ -845,7 +847,7 @@ export function ClientAppHome({
             <KonnektCanvasCarousel />
 
             {/* Trust */}
-            <TrustSection items={trustItems} title="💎 Pourquoi Konnekt ?" />
+            <TrustSection items={trustItems} title="Pourquoi Konnekt" />
           </>
         ) : (
           <>
@@ -856,10 +858,10 @@ export function ClientAppHome({
             <TrustSection
               items={trustItems}
               title={
-                activeTab === "routier" ? "🚛 Avantages Routier" :
-                activeTab === "maritime" ? "🚢 Avantages Maritime" :
-                activeTab === "aerien" ? "✈️ Avantages Aérien" :
-                "🧳 Avantages GP"
+                activeTab === "routier" ? "Avantages Routier" :
+                activeTab === "maritime" ? "Avantages Maritime" :
+                activeTab === "aerien" ? "Avantages Aerien" :
+                "Avantages GP"
               }
             />
 
@@ -918,7 +920,7 @@ export function ClientAppHome({
                 onClick={() => handleCitySelect(city.city)}
                 className="w-full flex items-center gap-3 py-2.5 px-3 rounded-lg text-left hover:bg-muted/60 active:bg-muted transition-colors"
               >
-                <span className="text-lg">{city.flag}</span>
+                <MapPin className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm font-medium flex-1">{city.city}</span>
               </button>
             ))}
