@@ -7,10 +7,11 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Star, MessageCircle, Package, Scale, Bell, ChevronRight, Sparkles, ChevronLeft
+  Star, MessageCircle, Package, Scale, Bell, ChevronRight, Sparkles, ChevronLeft, Heart
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { RateOrderDialog } from "@/components/RateOrderDialog";
+import { PostDeliveryFlow } from "@/components/delivery/PostDeliveryFlow";
 
 interface SmartAction {
   id: string;
