@@ -91,10 +91,13 @@ export default function RoutierRegistration() {
   const [phoneChecking, setPhoneChecking] = useState(false);
   const [phoneUnique, setPhoneUnique] = useState<boolean | null>(null);
 
+  // Entry flow data
+  const entryFlow = getEntryFlowData();
+
   // Step 1: Country, City, Phone
-  const [country, setCountry] = useState("SN");
-  const [city, setCity] = useState("");
-  const [phone, setPhone] = useState("");
+  const [country, setCountry] = useState(entryFlow.countryCode || "SN");
+  const [city, setCity] = useState(entryFlow.city || "");
+  const [phone, setPhone] = useState(entryFlow.phone || "");
 
   // Step 2: Entity + Auth
   const [entityType, setEntityType] = useState<EntityType | null>(null);
@@ -351,43 +354,69 @@ export default function RoutierRegistration() {
                   {/* Country */}
                   <div className="space-y-1">
                     <Label className="text-xs">Pays *</Label>
-                    <Select value={country} onValueChange={setCountry}>
-                      <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {COUNTRIES.map(c => <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    {entryFlow.hasCity ? (
+                      <div className="h-10 px-3 flex items-center rounded-md border border-input bg-muted/50 text-sm text-muted-foreground">
+                        {selectedCountry?.name || country}
+                        <span className="ml-auto text-[10px] text-primary">✓ Déjà renseigné</span>
+                      </div>
+                    ) : (
+                      <Select value={country} onValueChange={setCountry}>
+                        <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {COUNTRIES.map(c => <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
 
                   {/* City */}
                   <div className="space-y-1">
                     <Label className="text-xs">Ville *</Label>
-                    <Select value={city} onValueChange={setCity}>
-                      <SelectTrigger className="h-10"><SelectValue placeholder="Sélectionner votre ville" /></SelectTrigger>
-                      <SelectContent>
-                        {cities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    {entryFlow.hasCity ? (
+                      <div className="h-10 px-3 flex items-center rounded-md border border-input bg-muted/50 text-sm text-muted-foreground">
+                        {city}
+                        <span className="ml-auto text-[10px] text-primary">✓ Déjà renseigné</span>
+                      </div>
+                    ) : (
+                      <Select value={city} onValueChange={setCity}>
+                        <SelectTrigger className="h-10"><SelectValue placeholder="Sélectionner votre ville" /></SelectTrigger>
+                        <SelectContent>
+                          {cities.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
 
                   {/* Phone */}
                   <div className="space-y-1">
                     <Label className="text-xs">Téléphone *</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">{selectedCountry?.dialCode}</span>
-                      <Input 
-                        value={phone} 
-                        onChange={e => setPhone(e.target.value)} 
-                        placeholder="77 123 45 67" 
-                        className="pl-14 h-10" 
-                      />
-                      {phoneChecking && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />}
-                      {!phoneChecking && phoneUnique === true && <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />}
-                    </div>
-                    {phoneUnique === false && (
-                      <p className="text-[11px] text-destructive flex items-center gap-1">
-                        Ce numéro est déjà associé à un compte
-                      </p>
+                    {entryFlow.hasPhone ? (
+                      <>
+                        <div className="h-10 px-3 flex items-center rounded-md border border-input bg-muted/50 text-sm text-muted-foreground">
+                          {phone}
+                          <span className="ml-auto text-[10px] text-primary">✓ Déjà renseigné</span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">Ce numéro a été vérifié lors de votre inscription</p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">{selectedCountry?.dialCode}</span>
+                          <Input 
+                            value={phone} 
+                            onChange={e => setPhone(e.target.value)} 
+                            placeholder="77 123 45 67" 
+                            className="pl-14 h-10" 
+                          />
+                          {phoneChecking && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />}
+                          {!phoneChecking && phoneUnique === true && <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />}
+                        </div>
+                        {phoneUnique === false && (
+                          <p className="text-[11px] text-destructive flex items-center gap-1">
+                            Ce numéro est déjà associé à un compte
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                 </CardContent>
