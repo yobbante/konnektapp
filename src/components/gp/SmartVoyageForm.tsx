@@ -195,6 +195,7 @@ export function SmartVoyageForm({
         throw error;
       }
       toast({ title: "Voyage créé", description: `${currentRoute.origin.city} → ${currentRoute.destination.city} · ${totalCapacity} kg` });
+      savePrefs(luggage, form.airline);
       onSuccess();
       onClose();
     } catch (error: any) {
