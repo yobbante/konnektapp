@@ -151,7 +151,7 @@ export default function GPPerformancesPage() {
             <LockedCard icon={Star} label="Satisfaction" />
             <LockedCard icon={Plane} label="Activité voyages" />
           </div>
-          <Button className="gap-2" onClick={() => navigate("/gp/parametres?section=premium")}>
+          <Button className="gap-2" onClick={() => navigate("/gp/premium")}>
             <Crown className="w-4 h-4" /> Passer Premium
           </Button>
         </div>
