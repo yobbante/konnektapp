@@ -289,7 +289,7 @@ export function GPOverviewTab({ gpId, gpProfile }: GPOverviewTabProps) {
               <div
                 key={dep.id}
                 className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
-                onClick={() => navigate("/gp/calendrier")}
+                onClick={() => navigate(`/gp/depart/${dep.id}`)}
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">

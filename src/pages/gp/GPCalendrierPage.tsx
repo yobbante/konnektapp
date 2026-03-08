@@ -148,8 +148,7 @@ export default function GPCalendrierPage() {
                 }))}
                 onDateTap={handleDateTap}
                 onDepartureTap={(depId) => {
-                  const v = voyages.find(v => v.id === depId);
-                  if (v) { setSelectedVoyage(v); setShowEditVoyage(true); }
+                  navigate(`/gp/depart/${depId}`);
                 }}
               />
             ) : (
@@ -166,7 +165,7 @@ export default function GPCalendrierPage() {
                     </Card>
                   ) : (
                     upcomingVoyages.map((v) => (
-                      <Card key={v.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                      <Card key={v.id} className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer active:scale-[0.98]" onClick={() => navigate(`/gp/depart/${v.id}`)}>
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between mb-2">
                             <div>
