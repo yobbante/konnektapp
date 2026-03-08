@@ -468,7 +468,7 @@ function SmartVoyageFormInline({
   const getFlag = (code: string) => FLAGS[code] || "🌍";
 
   const handleSubmit = async () => {
-    if (!form.capacity || parseFloat(form.capacity) <= 0) return;
+    if (totalCapacity <= 0) return;
     setLoading(true);
     try {
       await onAddDeparture({
@@ -477,7 +477,7 @@ function SmartVoyageFormInline({
         originCountry: currentRoute.originCountry,
         destinationCity: currentRoute.destinationCity,
         destinationCountry: currentRoute.destinationCountry,
-        capacity: parseFloat(form.capacity),
+        capacity: totalCapacity,
         pricePerKg: defaultPricePerKg,
         type: tripType,
       });
@@ -551,19 +551,38 @@ function SmartVoyageFormInline({
             </div>
           </div>
 
-          {/* Capacité */}
+          {/* Luggage counter */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium flex items-center gap-1.5">
-              <Weight className="w-4 h-4" /> Capacité (kg) *
+            <Label className="text-xs font-medium flex items-center gap-1">
+              <Luggage className="w-3.5 h-3.5" /> Bagages
             </Label>
-            <Input
-              type="number"
-              inputMode="numeric"
-              placeholder="23"
-              className="h-12 text-lg rounded-xl border-2 border-primary/30 focus:border-primary"
-              value={form.capacity}
-              onChange={(e) => setForm({ ...form, capacity: e.target.value })}
-            />
+            <div className="space-y-1.5">
+              {LUGGAGE_PRESETS.map(({ kg, label, sublabel }) => (
+                <div key={kg} className="flex items-center justify-between rounded-lg border bg-card px-3 py-2">
+                  <div>
+                    <p className="text-sm font-semibold">{label}</p>
+                    <p className="text-[10px] text-muted-foreground">{sublabel}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Button type="button" variant="outline" size="icon" className="h-8 w-8 rounded-full"
+                      onClick={() => adjustLuggage(kg, -1)} disabled={!luggage[kg]}>
+                      <Minus className="w-3.5 h-3.5" />
+                    </Button>
+                    <span className="w-7 text-center text-base font-bold tabular-nums">{luggage[kg] || 0}</span>
+                    <Button type="button" variant="outline" size="icon" className="h-8 w-8 rounded-full"
+                      onClick={() => adjustLuggage(kg, 1)}>
+                      <Plus className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className={`flex items-center justify-between rounded-lg p-2.5 border ${
+              totalCapacity > 0 ? "border-primary bg-primary/10" : "border-border bg-muted/40"
+            }`}>
+              <span className="text-xs text-muted-foreground">{totalBags} bagage{totalBags !== 1 ? "s" : ""}</span>
+              <span className={`text-lg font-bold ${totalCapacity > 0 ? "text-primary" : "text-muted-foreground"}`}>{totalCapacity} kg</span>
+            </div>
           </div>
 
           {/* Compagnie + N° Vol */}
@@ -627,14 +646,14 @@ function SmartVoyageFormInline({
             <Button
               className="flex-1 h-12 rounded-xl text-sm font-semibold gap-2"
               onClick={handleSubmit}
-              disabled={loading || !form.capacity || parseFloat(form.capacity) <= 0}
+              disabled={loading || totalCapacity <= 0}
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
                   <CheckCircle className="w-4 h-4" />
-                  Créer le voyage
+                  Créer · {totalCapacity} kg
                 </>
               )}
             </Button>
