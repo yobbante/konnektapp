@@ -123,37 +123,64 @@ export default function GPPremiumPage() {
     }
   };
 
-  // ── SUCCESS SCREEN ──
   if (step === "success") {
+    const isPro = selectedPlan === "pro";
+    const planLabel = isPro ? "Pro" : "Premium";
+    const accentClass = isPro ? "text-violet-600" : "text-amber-600";
+    const bgAccent = isPro ? "bg-violet-500" : "bg-amber-500";
+    const borderAccent = isPro ? "border-violet-500/30" : "border-amber-500/30";
+    const bgLight = isPro ? "bg-violet-500/8" : "bg-amber-500/8";
+
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-6">
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center space-y-6 max-w-sm"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-sm space-y-6"
         >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", bounce: 0.5 }}
-            className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/15 flex items-center justify-center mx-auto"
-          >
-            <CheckCircle2 className="w-10 h-10 text-amber-500" />
-          </motion.div>
-          <div>
-            <h2 className="text-2xl font-bold">🎉 Bienvenue {selectedPlan === "pro" ? "Pro" : "Premium"} !</h2>
-            <p className="text-sm text-muted-foreground mt-2">
-              Votre compte a été mis à niveau. Profitez de tous les avantages {selectedPlan === "pro" ? "Pro" : "Premium"}.
-            </p>
-          </div>
-          <Badge className="bg-amber-500 text-white border-none gap-1.5 text-sm px-4 py-1.5">
-            <Crown className="w-4 h-4" /> GP {selectedPlan === "pro" ? "Pro" : "Premium"}
-          </Badge>
+          <Card className={cn("overflow-hidden", borderAccent)}>
+            <div className={cn("h-1.5 w-full", bgAccent)} />
+            <CardContent className="p-6 space-y-5">
+              <div className="flex items-center gap-4">
+                <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0", bgLight)}>
+                  {isPro ? <Rocket className={cn("w-6 h-6", accentClass)} /> : <Crown className={cn("w-6 h-6", accentClass)} />}
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold">Abonnement {planLabel} activé</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Votre compte a été mis à niveau avec succès.</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                {[
+                  { label: "Formule", value: `GP ${planLabel}` },
+                  { label: "Montant", value: `${isPro ? "19 900" : "9 900"} FCFA/mois` },
+                  { label: "Statut", value: "Actif", accent: true },
+                ].map((row, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">{row.label}</span>
+                    <span className={cn("text-xs font-semibold", row.accent ? accentClass : "")}>{row.value}</span>
+                  </div>
+                ))}
+              </div>
+
+              <Button
+                className={cn("w-full h-10 text-sm font-semibold text-white", bgAccent, isPro ? "hover:bg-violet-600" : "hover:bg-amber-600")}
+                onClick={() => { window.location.href = "/gp/apercu"; }}
+              >
+                Accéder à mon espace
+              </Button>
+            </CardContent>
+          </Card>
+
           <motion.div
             initial={{ width: 0 }}
-            animate={{ width: "70%" }}
-            transition={{ duration: 2, delay: 0.2 }}
-            className="h-1 rounded-full bg-amber-500 mx-auto"
+            animate={{ width: "100%" }}
+            transition={{ duration: 2.5, delay: 0.3 }}
+            className={cn("h-0.5 rounded-full mx-auto", bgAccent)}
           />
         </motion.div>
       </div>
