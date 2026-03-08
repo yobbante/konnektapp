@@ -1,18 +1,15 @@
 /**
- * GPColisPage — Onglet Colis V3
+ * GPColisPage — Onglet Colis V4 (simplifié)
  * 
- * UI/UX amélioré:
- * - Compteurs visuels en haut (mini dashboard)
- * - Filtres simplifiés et épurés
- * - Cartes plus lisibles avec prix affiché
- * - Actions claires et visibles
+ * Philosophie: Le GP voit ses colis regroupés en 3 états clairs.
+ * Pas de surcharge visuelle. Scan-first workflow.
  */
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, ScanLine, Search, Plus, RefreshCw,
-  ArrowRight, Truck, Clock, CheckCircle2, MapPin,
+  ArrowRight, Clock, Truck, CheckCircle2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -41,33 +38,33 @@ interface Colis {
   currency: string; created_at: string; description: string | null;
 }
 
-const STATUS_FILTERS = [
-  { value: "all", label: "Tous", icon: Package, activeClass: "bg-muted text-foreground" },
-  { value: "pending", label: "En attente", icon: Clock, activeClass: "bg-amber-500 text-white" },
-  { value: "active", label: "En cours", icon: Truck, activeClass: "bg-indigo-500 text-white" },
-  { value: "delivered", label: "Livré", icon: CheckCircle2, activeClass: "bg-emerald-500 text-white" },
+// 3 groupes clairs pour le GP
+const PENDING_STATUSES = ["pending"];
+const ACTIVE_STATUSES = ["accepted", "collected", "in_transit", "checked_in", "scheduled_departure", "arrived", "arrived_destination"];
+const DONE_STATUSES = ["delivered", "delivery_confirmed", "delivery_pending", "released"];
+
+type FilterKey = "all" | "pending" | "active" | "done";
+
+const FILTERS: { value: FilterKey; label: string; icon: typeof Package; dot: string }[] = [
+  { value: "all", label: "Tous", icon: Package, dot: "bg-muted-foreground" },
+  { value: "pending", label: "À traiter", icon: Clock, dot: "bg-amber-500" },
+  { value: "active", label: "En route", icon: Truck, dot: "bg-blue-500" },
+  { value: "done", label: "Terminés", icon: CheckCircle2, dot: "bg-emerald-500" },
 ];
 
-// Badge styles distincts par statut
-const STATUS_BADGE_STYLES: Record<string, string> = {
-  pending: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",
-  accepted: "bg-sky-500/15 text-sky-700 dark:text-sky-400 border-sky-500/30",
-  collected: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 border-indigo-500/30",
-  checked_in: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 border-indigo-500/30",
-  scheduled_departure: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 border-indigo-500/30",
-  in_transit: "bg-violet-500/15 text-violet-700 dark:text-violet-400 border-violet-500/30",
-  arrived: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
-  arrived_destination: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
-  delivery_pending: "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30",
-  delivery_confirmed: "bg-green-600/15 text-green-700 dark:text-green-400 border-green-600/30",
-  delivered: "bg-green-600/15 text-green-700 dark:text-green-400 border-green-600/30",
-  released: "bg-green-700/15 text-green-800 dark:text-green-300 border-green-700/30",
-  refused: "bg-destructive/15 text-destructive border-destructive/30",
-  cancelled: "bg-muted text-muted-foreground border-border",
-};
+function getStatusGroup(status: string): FilterKey {
+  if (PENDING_STATUSES.includes(status)) return "pending";
+  if (ACTIVE_STATUSES.includes(status)) return "active";
+  if (DONE_STATUSES.includes(status)) return "done";
+  return "all";
+}
 
-const ACTIVE_STATUSES = ["accepted", "collected", "in_transit", "checked_in", "scheduled_departure", "arrived"];
-const DELIVERED_STATUSES = ["delivered", "delivery_confirmed", "delivery_pending", "arrived_destination", "released"];
+// Couleur de la barre latérale par groupe
+const GROUP_BORDER: Record<string, string> = {
+  pending: "border-l-amber-500",
+  active: "border-l-blue-500",
+  done: "border-l-emerald-500",
+};
 
 export default function GPColisPage() {
   const navigate = useNavigate();
@@ -79,10 +76,10 @@ export default function GPColisPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState(searchParams.get("filter") || "all");
-  const [sourceFilter, setSourceFilter] = useState<"all" | "konnekt" | "manual">("all");
+  const [filter, setFilter] = useState<FilterKey>((searchParams.get("filter") as FilterKey) || "all");
   const [showManualForm, setShowManualForm] = useState(false);
   const [showScanSheet, setShowScanSheet] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
     if (gpProfile) loadColis();
@@ -111,194 +108,183 @@ export default function GPColisPage() {
     }
   };
 
-  // No manual status buttons — scan-first workflow
-
   if (profileLoading || loading) return <PageLoader message="Chargement des colis..." />;
   if (!gpProfile) return null;
 
   type UnifiedColis = (Colis & { is_manual?: false }) | (ManualParcel & { is_manual: true });
 
   const allColis: UnifiedColis[] = [
-    ...(sourceFilter !== "manual" ? colis.map(c => ({ ...c, is_manual: false as const })) : []),
-    ...(sourceFilter !== "konnekt" ? manualParcels : []),
+    ...colis.map(c => ({ ...c, is_manual: false as const })),
+    ...manualParcels,
   ];
 
+  // Counts
+  const counts: Record<FilterKey, number> = {
+    all: allColis.length,
+    pending: allColis.filter(c => PENDING_STATUSES.includes(c.status)).length,
+    active: allColis.filter(c => ACTIVE_STATUSES.includes(c.status)).length,
+    done: allColis.filter(c => DONE_STATUSES.includes(c.status)).length,
+  };
+
+  // Filter + search
   const filtered = allColis.filter(c => {
-    const matchesStatus = statusFilter === "all"
-      || (statusFilter === "active" ? ACTIVE_STATUSES.includes(c.status) : false)
-      || (statusFilter === "delivered" ? DELIVERED_STATUSES.includes(c.status) : false)
-      || (statusFilter === "pending" ? c.status === "pending" : false);
+    const group = getStatusGroup(c.status);
+    const matchesFilter = filter === "all" || group === filter;
+    if (!matchesFilter) return false;
+    if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
-    const matchesSearch = !q ||
-      c.order_number.toLowerCase().includes(q) ||
-      c.origin_city.toLowerCase().includes(q) ||
-      c.destination_city.toLowerCase().includes(q) ||
-      (c.is_manual && c.client_name.toLowerCase().includes(q));
-    return matchesStatus && matchesSearch;
+    return c.order_number.toLowerCase().includes(q)
+      || c.origin_city.toLowerCase().includes(q)
+      || c.destination_city.toLowerCase().includes(q)
+      || (c.is_manual && c.client_name.toLowerCase().includes(q));
   }).sort((a, b) => {
-    const priority: Record<string, number> = { arrived: 0, pending: 1, accepted: 2, collected: 3, in_transit: 4, delivered: 5 };
-    const pa = priority[a.status] ?? 9;
-    const pb = priority[b.status] ?? 9;
-    if (pa !== pb) return pa - pb;
+    // Pending first, then active, then done
+    const groupOrder: Record<string, number> = { pending: 0, active: 1, done: 2 };
+    const ga = groupOrder[getStatusGroup(a.status)] ?? 9;
+    const gb = groupOrder[getStatusGroup(b.status)] ?? 9;
+    if (ga !== gb) return ga - gb;
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 
-  const counts = {
-    all: allColis.length,
-    pending: allColis.filter(c => c.status === "pending").length,
-    active: allColis.filter(c => ACTIVE_STATUSES.includes(c.status)).length,
-    arrived: allColis.filter(c => c.status === "arrived").length,
-    delivered: allColis.filter(c => DELIVERED_STATUSES.includes(c.status)).length,
-  };
-
   return (
     <GPDashboardLayout gpProfile={gpProfile} pendingCount={pendingCount} activeOrdersCount={activeCount} activeTab="colis">
-      <div className="px-4 pt-3 pb-6 space-y-4">
+      <div className="px-4 pt-3 pb-6 space-y-3">
 
-        {/* Header compact */}
+        {/* Header — titre + actions */}
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-foreground">Mes colis</h2>
-          <div className="flex items-center gap-1.5">
-            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 rounded-xl" onClick={() => setShowScanSheet(true)}>
-              <ScanLine className="w-3.5 h-3.5" /> Scan
+          <h2 className="text-lg font-bold text-foreground">
+            Colis
+            <span className="text-muted-foreground font-normal text-sm ml-1.5">({allColis.length})</span>
+          </h2>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setShowSearch(s => !s)}>
+              <Search className="w-4 h-4" />
             </Button>
-            <Button size="sm" className="h-8 text-xs gap-1.5 rounded-xl" onClick={() => setShowManualForm(true)}>
-              <Plus className="w-3.5 h-3.5" /> Manuel
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => loadColis(true)} disabled={refreshing}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => loadColis(true)} disabled={refreshing}>
               <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
+            </Button>
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 rounded-lg" onClick={() => setShowManualForm(true)}>
+              <Plus className="w-3.5 h-3.5" />
+              Manuel
             </Button>
           </div>
         </div>
 
-        {/* Mini stat counters */}
-        <div className="grid grid-cols-4 gap-2">
-          {[
-            { label: "Attente", count: counts.pending, color: "text-amber-600", bg: "bg-amber-500/10", border: "border-amber-500/20" },
-            { label: "En cours", count: counts.active, color: "text-blue-600", bg: "bg-blue-500/10", border: "border-blue-500/20" },
-            { label: "Arrivé", count: counts.arrived, color: "text-emerald-600", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
-            { label: "Livré", count: counts.delivered, color: "text-green-700", bg: "bg-green-500/10", border: "border-green-500/20" },
-          ].map((s) => (
-            <motion.div
-              key={s.label}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className={cn("flex flex-col items-center py-2.5 rounded-xl border", s.bg, s.border)}
-            >
-              <span className={cn("text-xl font-bold leading-none", s.color)}>{s.count}</span>
-              <span className="text-[10px] text-muted-foreground mt-1">{s.label}</span>
+        {/* Search (collapsible) */}
+        <AnimatePresence>
+          {showSearch && (
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  autoFocus
+                  placeholder="N° colis, ville, client..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-9 rounded-lg bg-muted/40 border-border/50 text-sm"
+                />
+              </div>
             </motion.div>
-          ))}
-        </div>
+          )}
+        </AnimatePresence>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Rechercher par n°, ville, client..." value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 h-10 rounded-xl bg-muted/30 border-border/50" />
-        </div>
-
-        {/* Status filter tabs */}
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
-          {STATUS_FILTERS.map(f => {
-            const count = counts[f.value as keyof typeof counts] ?? 0;
-            const isActive = statusFilter === f.value;
-            const Icon = f.icon;
+        {/* Filter tabs — simple, un seul niveau */}
+        <div className="flex bg-muted/40 rounded-lg p-0.5 gap-0.5">
+          {FILTERS.map(f => {
+            const count = counts[f.value];
+            const isActive = filter === f.value;
             return (
-              <button key={f.value} onClick={() => setStatusFilter(f.value)}
+              <button
+                key={f.value}
+                onClick={() => setFilter(f.value)}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all border",
+                  "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-medium transition-all",
                   isActive
-                    ? cn(f.activeClass, "shadow-sm border-transparent")
-                    : "bg-muted/40 text-muted-foreground hover:bg-muted border-transparent"
-                )}>
-                <Icon className="w-3.5 h-3.5" />
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <span className={cn("w-2 h-2 rounded-full", isActive ? f.dot : "bg-transparent")} />
                 {f.label}
                 {count > 0 && (
                   <span className={cn(
-                    "min-w-[18px] h-[18px] rounded-full text-[10px] flex items-center justify-center px-1",
-                    isActive ? "bg-white/20 text-inherit" : "bg-muted-foreground/15 text-muted-foreground"
-                  )}>{count}</span>
+                    "text-[10px] min-w-[16px] text-center",
+                    isActive ? "text-foreground font-bold" : "text-muted-foreground"
+                  )}>
+                    {count}
+                  </span>
                 )}
               </button>
             );
           })}
         </div>
 
-        {/* Source toggle (compact) */}
-        <div className="flex gap-1 bg-muted/30 rounded-lg p-0.5">
-          {([
-            { val: "all" as const, label: "Tous" },
-            { val: "konnekt" as const, label: "Plateforme" },
-            { val: "manual" as const, label: "Hors plateforme" },
-          ]).map(f => (
-            <button key={f.val} onClick={() => setSourceFilter(f.val)}
-              className={cn("flex-1 py-1.5 rounded-md text-[11px] font-medium transition-all",
-                sourceFilter === f.val ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-              )}>
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Colis List */}
+        {/* Liste des colis */}
         {filtered.length === 0 ? (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="flex flex-col items-center py-16 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mb-3">
-              <Package className="w-7 h-7 text-muted-foreground/40" />
+          <div className="flex flex-col items-center py-14 text-center">
+            <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mb-3">
+              <Package className="w-6 h-6 text-muted-foreground/40" />
             </div>
-            <p className="text-sm font-medium text-muted-foreground">Aucun colis trouvé</p>
-            <p className="text-xs text-muted-foreground/70 mt-1">Modifiez vos filtres ou ajoutez un colis</p>
-            <Button variant="outline" size="sm" className="mt-4 rounded-xl text-xs" onClick={() => setShowManualForm(true)}>
-              <Plus className="w-3.5 h-3.5 mr-1" /> Ajouter un colis manuel
-            </Button>
-          </motion.div>
+            <p className="text-sm font-medium text-muted-foreground">
+              {filter === "all" ? "Aucun colis" : `Aucun colis ${FILTERS.find(f => f.value === filter)?.label.toLowerCase()}`}
+            </p>
+            <p className="text-xs text-muted-foreground/60 mt-1">
+              {filter === "pending" ? "Les nouvelles commandes apparaîtront ici" : "Scannez un colis pour commencer"}
+            </p>
+          </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <AnimatePresence>
               {filtered.map((c, i) => {
                 const isManual = c.is_manual === true;
                 const price = isManual ? (c as ManualParcel).amount_paid : (c as Colis).total_price;
                 const currency = c.currency || "XOF";
-                const badgeStyle = STATUS_BADGE_STYLES[c.status] || "bg-muted text-muted-foreground border-border";
+                const group = getStatusGroup(c.status);
+                const borderColor = GROUP_BORDER[group] || "border-l-border";
 
                 return (
-                  <motion.div key={c.id}
-                    initial={{ opacity: 0, y: 6 }}
+                  <motion.div
+                    key={c.id}
+                    initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ delay: i * 0.02 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ delay: Math.min(i * 0.015, 0.15) }}
                   >
                     <div
-                      className="bg-card rounded-xl border border-border/50 p-3 cursor-pointer active:scale-[0.99] transition-all"
+                      className={cn(
+                        "bg-card rounded-lg border border-border/40 border-l-[3px] p-3 cursor-pointer active:scale-[0.99] transition-all",
+                        borderColor,
+                        group === "done" && "opacity-70"
+                      )}
                       onClick={() => !isManual && navigate(`/gp/order/${c.id}`)}
                     >
+                      {/* Ligne 1 : route + prix */}
                       <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="text-sm font-semibold truncate">{c.origin_city}</span>
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                          <span className="text-[13px] font-semibold truncate">{c.origin_city}</span>
                           <ArrowRight className="w-3 h-3 text-muted-foreground flex-shrink-0" />
-                          <span className="text-sm font-semibold truncate">{c.destination_city}</span>
-                        </div>
-                        <Badge variant="outline" className={cn("text-[10px] px-2 py-0.5 border shrink-0", badgeStyle)}>
-                          {getOrderStatusLabel(c.status as any)}
-                        </Badge>
-                      </div>
-
-                      <div className="flex items-center justify-between mt-1.5">
-                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                          <span className="font-mono">#{c.order_number.slice(-6)}</span>
-                          <span>•</span>
-                          <span>{c.weight} kg</span>
-                          {isManual && "client_name" in c && (
-                            <><span>•</span><span>{c.client_name}</span></>
-                          )}
-                          <span>•</span>
-                          <span>{formatDistanceToNow(new Date(c.created_at), { locale: fr, addSuffix: true })}</span>
+                          <span className="text-[13px] font-semibold truncate">{c.destination_city}</span>
                         </div>
                         <span className="text-xs font-bold text-foreground whitespace-nowrap">
-                          {price?.toLocaleString()} {currency}
+                          {price?.toLocaleString()} <span className="text-muted-foreground font-normal">{currency}</span>
                         </span>
+                      </div>
+
+                      {/* Ligne 2 : meta + statut */}
+                      <div className="flex items-center justify-between mt-1">
+                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                          <span className="font-mono">#{c.order_number.slice(-6)}</span>
+                          <span>·</span>
+                          <span>{c.weight} kg</span>
+                          {isManual && "client_name" in c && (
+                            <><span>·</span><span className="truncate max-w-[60px]">{c.client_name}</span></>
+                          )}
+                          <span>·</span>
+                          <span>{formatDistanceToNow(new Date(c.created_at), { locale: fr, addSuffix: true })}</span>
+                        </div>
+                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-0 bg-muted/60 text-muted-foreground font-medium">
+                          {getOrderStatusLabel(c.status as any)}
+                        </Badge>
                       </div>
 
                       {isManual && (
