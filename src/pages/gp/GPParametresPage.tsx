@@ -282,6 +282,56 @@ export default function GPParametresPage() {
           </div>
         </SettingsSection>
 
+        {/* ═══ PREMIUM / ABONNEMENT ═══ */}
+        <div ref={premiumRef} id="section-premium">
+          <SettingsSection title="Abonnement Premium">
+            <div className="p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
+                    <Crown className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">
+                      {gpProfile.subscription === "premium" ? "Premium actif" : "Plan Starter"}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {gpProfile.subscription === "premium"
+                        ? "Commission réduite, priorité, support dédié"
+                        : "Passez Premium pour débloquer tous les avantages"}
+                    </p>
+                  </div>
+                </div>
+                <Badge
+                  variant={gpProfile.subscription === "premium" ? "default" : "secondary"}
+                  className="text-[10px]"
+                >
+                  {gpProfile.subscription === "premium" ? "Actif" : "Starter"}
+                </Badge>
+              </div>
+              <Separator />
+              <div className="space-y-2">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Avantages Premium</p>
+                <PremiumBenefit icon={Zap} label="Commission réduite" desc="Taux préférentiel sur chaque livraison" />
+                <PremiumBenefit icon={Star} label="Mise en avant" desc="Profil affiché en priorité aux clients" />
+                <PremiumBenefit icon={Shield} label="Support prioritaire" desc="Réponse rapide de l'équipe Konnekt" />
+                <PremiumBenefit icon={Crown} label="Badge Premium" desc="Gage de confiance visible par les clients" />
+              </div>
+              {gpProfile.subscription !== "premium" && (
+                <>
+                  <Separator />
+                  <Button className="w-full gap-2 h-10" onClick={() => {
+                    toast({ title: "Bientôt disponible", description: "L'abonnement Premium sera disponible prochainement." });
+                  }}>
+                    <Crown className="w-4 h-4" />
+                    Passer Premium
+                  </Button>
+                </>
+              )}
+            </div>
+          </SettingsSection>
+        </div>
+
         <button onClick={async () => { await supabase.auth.signOut(); navigate("/"); }} className="w-full bg-destructive/10 rounded-xl p-3 flex items-center gap-3 hover:bg-destructive/15 transition-colors active:scale-[0.98]">
           <LogOut className="w-4 h-4 text-destructive" />
           <span className="font-medium text-sm text-destructive">Déconnexion</span>
