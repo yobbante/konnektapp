@@ -384,7 +384,7 @@ export default function GPParametresPage() {
             iconBg="bg-blue-500/10" 
             label="Historique de facturation" 
             desc="Factures et reçus" 
-            onClick={() => toast({ title: "Bientôt disponible", description: "L'historique de facturation sera bientôt accessible." })} 
+            onClick={() => navigate("/gp/facturation")} 
           />
           <Separator />
           <SettingsRow 

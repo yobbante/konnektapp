@@ -4031,6 +4031,69 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_invoices: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          description: string | null
+          gp_id: string
+          id: string
+          invoice_number: string
+          payment_method: string | null
+          payment_reference: string | null
+          period_end: string
+          period_start: string
+          plan: string
+          status: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          gp_id: string
+          id?: string
+          invoice_number: string
+          payment_method?: string | null
+          payment_reference?: string | null
+          period_end: string
+          period_start: string
+          plan?: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          gp_id?: string
+          id?: string
+          invoice_number?: string
+          payment_method?: string | null
+          payment_reference?: string | null
+          period_end?: string
+          period_start?: string
+          plan?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_invoices_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_invoices_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_messages: {
         Row: {
           attachments: string[] | null
