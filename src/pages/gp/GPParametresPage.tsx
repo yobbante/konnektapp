@@ -358,7 +358,46 @@ export default function GPParametresPage() {
           <SettingsRow icon={Languages} iconColor="text-indigo-500" iconBg="bg-indigo-500/10" label="Langue" desc="Français" onClick={() => toast({ title: "Bientôt disponible", description: "Le choix de langue sera disponible prochainement." })} />
         </SettingsSection>
 
-        {/* ═══ 7. PREMIUM CTA (inline, pas section dédiée) ═══ */}
+        {/* ═══ 7. ABONNEMENT & FACTURATION ═══ */}
+        <SettingsSection title="Abonnement & Facturation">
+          <SettingsRow 
+            icon={Crown} 
+            iconColor="text-amber-500" 
+            iconBg="bg-amber-500/10" 
+            label="Mon abonnement" 
+            desc={isPremium ? `Plan ${(gpProfile as any).subscription === 'pro' ? 'Pro' : 'Premium'} actif` : "Plan gratuit"} 
+            onClick={() => navigate("/gp/premium")} 
+          />
+          <Separator />
+          <SettingsRow 
+            icon={Star} 
+            iconColor="text-primary" 
+            iconBg="bg-primary/10" 
+            label="Changer de plan" 
+            desc="Comparer les offres" 
+            onClick={() => navigate("/gp/premium")} 
+          />
+          <Separator />
+          <SettingsRow 
+            icon={FileText} 
+            iconColor="text-blue-500" 
+            iconBg="bg-blue-500/10" 
+            label="Historique de facturation" 
+            desc="Factures et reçus" 
+            onClick={() => toast({ title: "Bientôt disponible", description: "L'historique de facturation sera bientôt accessible." })} 
+          />
+          <Separator />
+          <SettingsRow 
+            icon={Zap} 
+            iconColor="text-emerald-500" 
+            iconBg="bg-emerald-500/10" 
+            label="Auto-acceptation" 
+            desc={isPremium && (gpProfile as any).auto_accept_enabled ? "Activée ✅" : isPremium ? "Désactivée" : "🔒 Premium"} 
+            onClick={() => isPremium ? navigate("/gp/premium") : navigate("/gp/premium")} 
+          />
+        </SettingsSection>
+
+        {/* ═══ PREMIUM CTA (inline, pas section dédiée) ═══ */}
         {!isPremium && (
           <PremiumCTABanner variant="banner" context="dashboard" isPremium={isPremium} />
         )}
