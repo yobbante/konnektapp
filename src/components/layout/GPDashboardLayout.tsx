@@ -133,7 +133,14 @@ export function GPDashboardLayout({
                 <p className="text-white font-bold text-sm leading-tight truncate max-w-[120px]">
                   {gpProfile.business_name}
                 </p>
-                <GPKYCBadge status={displayStatus} kycLevel={kycLevel} size="sm" />
+                {isGPPremium((gpProfile as any).subscription) ? (
+                  <span className="inline-flex items-center gap-0.5 h-4 px-1.5 rounded text-[10px] font-semibold bg-amber-400/20 text-amber-200 border border-amber-400/30">
+                    <Crown className="w-2.5 h-2.5" />
+                    Premium
+                  </span>
+                ) : (
+                  <GPKYCBadge status={displayStatus} kycLevel={kycLevel} size="sm" />
+                )}
               </div>
               {gpProfile.base_origin_city && gpProfile.base_destination_city && (
                 <p className="text-white/70 text-[10px] leading-tight truncate">
@@ -246,16 +253,6 @@ export function GPDashboardLayout({
         )}
       </AnimatePresence>
 
-      {/* ══════════════════════════════════════
-          PREMIUM HEADER ACCENT
-      ══════════════════════════════════════ */}
-      {isGPPremium((gpProfile as any).subscription) && (
-        <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border-b border-amber-500/15 px-4 py-1.5 flex items-center gap-2">
-          <Crown className="w-3.5 h-3.5 text-amber-500" />
-          <span className="text-[11px] font-semibold text-amber-600">GP Premium</span>
-          <span className="text-[10px] text-muted-foreground ml-auto">Visibilité prioritaire active</span>
-        </div>
-      )}
 
       {/* ══════════════════════════════════════
           MAIN CONTENT
