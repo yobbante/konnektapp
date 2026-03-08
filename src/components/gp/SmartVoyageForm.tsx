@@ -281,7 +281,9 @@ export function SmartVoyageForm({
   };
 
   return (
+    <>
     <Drawer open={open} onOpenChange={(o) => !loading && !o && onClose()}>
+    
       <DrawerContent className="max-h-[92vh] focus:outline-none [&>div:first-child]:hidden">
         <div className="bg-primary text-primary-foreground px-4 py-3 rounded-t-2xl flex items-center gap-2">
           <div className="mx-auto w-10 h-1 rounded-full bg-primary-foreground/30 mb-2" />
