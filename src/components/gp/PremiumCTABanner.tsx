@@ -22,6 +22,8 @@ interface PremiumCTABannerProps {
   className?: string;
   gpId?: string;
   onUpgraded?: () => void;
+  /** Override the premium page route (default: /gp/premium) */
+  premiumRoute?: string;
 }
 
 const FREE_MESSAGES: Record<string, { title: string; desc: string }> = {
