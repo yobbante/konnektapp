@@ -77,6 +77,8 @@ import RoutierMissionDetailPage from "./pages/routier/RoutierMissionDetailPage";
 import RoutierWalletPage from "./pages/routier/RoutierWalletPage";
 import RoutierParametresPage from "./pages/routier/RoutierParametresPage";
 import RoutierPremiumPage from "./pages/routier/RoutierPremiumPage";
+import RoutierPerformancesPage from "./pages/routier/RoutierPerformancesPage";
+import RoutierAutoAcceptPage from "./pages/routier/RoutierAutoAcceptPage";
 import RoutierPublierPage from "./pages/routier/RoutierPublierPage";
 import RoutierMessagesPage from "./pages/routier/RoutierMessagesPage";
 // Maritime pages
@@ -259,6 +261,8 @@ const App = () => (
             <Route path="/routier/wallet" element={<RoutierWalletPage />} />
             <Route path="/routier/parametres" element={<RoutierParametresPage />} />
             <Route path="/routier/premium" element={<RoutierPremiumPage />} />
+            <Route path="/routier/performances" element={<RoutierPerformancesPage />} />
+            <Route path="/routier/auto-accept" element={<RoutierAutoAcceptPage />} />
             <Route path="/routier/publier" element={<RoutierPublierPage />} />
             <Route path="/routier/messages" element={<RoutierMessagesPage />} />
             {/* Client-facing routier mission request */}
