@@ -305,14 +305,18 @@ export default function SmartBookingPage() {
         })));
       }
 
-      // Fetch GP's commission rate from wallet
-      const { data: walletData } = await supabase
-        .from("gp_wallets")
-        .select("commission_rate")
-        .eq("gp_id", gpId)
-        .maybeSingle();
-      if (walletData?.commission_rate) {
-        setGpCommissionRate(walletData.commission_rate);
+      // Fetch GP's commission rate from wallet + apply premium discount
+      const [walletRes, gpSubRes] = await Promise.all([
+        supabase.from("gp_wallets").select("commission_rate").eq("gp_id", gpId).maybeSingle(),
+        supabase.from("gp_profiles").select("subscription").eq("id", gpId).maybeSingle(),
+      ]);
+      if (walletRes.data?.commission_rate) {
+        let rate = walletRes.data.commission_rate;
+        // Apply premium discount: Premium -20%, Pro -40%
+        const sub = gpSubRes.data?.subscription;
+        if (sub === 'pro') rate = Math.round(rate * 60) / 100;
+        else if (sub === 'premium') rate = Math.round(rate * 80) / 100;
+        setGpCommissionRate(rate);
       }
 
       // Fetch GP's weight tiers for tiered pricing
