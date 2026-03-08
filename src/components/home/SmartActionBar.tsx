@@ -34,6 +34,7 @@ interface SmartActionBarProps {
   recentOrders?: any[];
   unreadMessages?: number;
   activeOrdersCount?: number;
+  pendingRecipientFeedback?: any[];
 }
 
 interface PendingReview {
@@ -44,7 +45,7 @@ interface PendingReview {
   gp_name: string;
 }
 
-export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, activeOrdersCount = 0 }: SmartActionBarProps) {
+export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, activeOrdersCount = 0, pendingRecipientFeedback = [] }: SmartActionBarProps) {
   const navigate = useNavigate();
   const [pendingReviews, setPendingReviews] = useState<PendingReview[]>([]);
   const [incomingParcels, setIncomingParcels] = useState<any[]>([]);
@@ -52,6 +53,7 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
   const [priceChanges, setPriceChanges] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [ratingOrder, setRatingOrder] = useState<PendingReview | null>(null);
+  const [feedbackOrder, setFeedbackOrder] = useState<any | null>(null);
 
   const fetchContextualData = useCallback(async () => {
     if (!userId) return;
