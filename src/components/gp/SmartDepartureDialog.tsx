@@ -5,25 +5,23 @@
  * - Route is LOCKED to GP's base navette (aller/retour only)
  * - Price is LOCKED from registration (no manual edit)
  * - Only capacity, dates, and flight info are editable
+ * - Premium/Pro: departure TIME field + advantage badges
  */
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { 
-  ArrowRightLeft, Plane, Weight, Calendar, 
-  Clock, MapPin, Info, CheckCircle
+  Plane, CheckCircle, Crown, Rocket, Clock
 } from "lucide-react";
 import { AirlineSelect } from "@/components/gp/AirlineSelect";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
+import { getCutoffAdvantageLabel } from "@/lib/bookingRules";
 
-// Country flags
 const FLAGS: Record<string, string> = {
   FR: "🇫🇷", SN: "🇸🇳", CI: "🇨🇮", CM: "🇨🇲", ML: "🇲🇱", US: "🇺🇸", CA: "🇨🇦",
   AE: "🇦🇪", GB: "🇬🇧", BE: "🇧🇪", MA: "🇲🇦", TN: "🇹🇳", GA: "🇬🇦", CG: "🇨🇬",
@@ -32,6 +30,7 @@ const FLAGS: Record<string, string> = {
 
 export interface SmartDepartureData {
   date: string;
+  departureTime?: string;
   originCity: string;
   originCountry: string;
   destinationCity: string;
@@ -58,6 +57,7 @@ interface SmartDepartureDialogProps {
     basePricePerKg: number;
     currency: string;
   };
+  gpSubscription?: string;
   lastDeparture?: {
     type: "aller" | "retour";
   } | null;
@@ -70,29 +70,33 @@ export function SmartDepartureDialog({
   selectedDate,
   gpRoute,
   gpPricing,
+  gpSubscription,
   lastDeparture,
   onAddDeparture,
 }: SmartDepartureDialogProps) {
   const [loading, setLoading] = useState(false);
   const [tripType, setTripType] = useState<"aller" | "retour">("aller");
   const [capacity, setCapacity] = useState("");
+  const [departureTime, setDepartureTime] = useState("");
   const [flightNumber, setFlightNumber] = useState("");
   const [airline, setAirline] = useState("");
   const [arrivalDate, setArrivalDate] = useState("");
 
-  // Smart pre-fill: alternate aller/retour
+  const isPremiumOrPro = gpSubscription === "premium" || gpSubscription === "pro";
+  const cutoffAdvantage = getCutoffAdvantageLabel(gpSubscription);
+
   useEffect(() => {
     if (open) {
       const nextType = lastDeparture?.type === "aller" ? "retour" : "aller";
       setTripType(nextType);
       setCapacity("");
+      setDepartureTime("");
       setFlightNumber("");
       setAirline("");
       setArrivalDate("");
     }
   }, [open, lastDeparture]);
 
-  // Compute actual route based on trip type
   const currentRoute = tripType === "aller" 
     ? {
         origin: { city: gpRoute.originCity, country: gpRoute.originCountry },
@@ -113,6 +117,7 @@ export function SmartDepartureDialog({
     try {
       await onAddDeparture({
         date: format(selectedDate, "yyyy-MM-dd"),
+        departureTime: departureTime || undefined,
         originCity: currentRoute.origin.city,
         originCountry: currentRoute.origin.country,
         destinationCity: currentRoute.destination.city,
@@ -133,8 +138,7 @@ export function SmartDepartureDialog({
   return (
     <Dialog open={open} onOpenChange={() => !loading && onClose()}>
       <DialogContent className="max-w-md p-0 overflow-hidden">
-        {/* Colored header */}
-        {/* Compact header */}
+        {/* Header */}
         <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-4 py-3">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Plane className="w-4 h-4" />
@@ -148,6 +152,21 @@ export function SmartDepartureDialog({
         </div>
 
         <div className="p-4 space-y-3">
+          {/* Premium advantage badge */}
+          {isPremiumOrPro && cutoffAdvantage && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              {gpSubscription === "pro" ? (
+                <Rocket className="w-4 h-4 text-amber-600 shrink-0" />
+              ) : (
+                <Crown className="w-4 h-4 text-amber-600 shrink-0" />
+              )}
+              <span className="text-xs font-medium text-amber-700">{cutoffAdvantage}</span>
+              <Badge className="ml-auto bg-amber-500 text-white border-none text-[10px] px-1.5 py-0">
+                {gpSubscription === "pro" ? "Pro" : "Premium"}
+              </Badge>
+            </div>
+          )}
+
           {/* Route inline compact */}
           <div className="flex items-center justify-center gap-3 py-2 rounded-lg bg-primary/5 border border-primary/20">
             <span className="text-xl">{getFlag(currentRoute.origin.country)}</span>
@@ -157,7 +176,7 @@ export function SmartDepartureDialog({
             <span className="text-xl">{getFlag(currentRoute.destination.country)}</span>
           </div>
 
-          {/* Trip type + capacity on same row */}
+          {/* Trip type + capacity */}
           <div className="grid grid-cols-3 gap-2">
             <Button type="button" variant={tripType === "aller" ? "default" : "outline"} className="h-9 text-xs" onClick={() => setTripType("aller")}>
               <Plane className="w-3 h-3 mr-1" /> Aller
@@ -166,12 +185,31 @@ export function SmartDepartureDialog({
               <Plane className="w-3 h-3 mr-1 rotate-180" /> Retour
             </Button>
             <div>
-              <Label className="text-[10px] text-muted-foreground">Capacité totale (kg)</Label>
+              <Label className="text-[10px] text-muted-foreground">Capacité (kg)</Label>
               <Input type="number" inputMode="decimal" step="0.5" placeholder="Ex: 61" className="h-9 text-sm" value={capacity} onChange={(e) => setCapacity(e.target.value)} autoFocus />
             </div>
           </div>
 
-          {/* Flight details — 2 cols */}
+          {/* Departure time — Premium/Pro only */}
+          {isPremiumOrPro && (
+            <div>
+              <Label className="text-[10px] text-muted-foreground flex items-center gap-1">
+                <Clock className="w-3 h-3" /> Heure de départ
+                <Badge variant="outline" className="ml-1 text-[9px] px-1 py-0 border-amber-500/40 text-amber-600">
+                  {gpSubscription === "pro" ? "Pro" : "Premium"}
+                </Badge>
+              </Label>
+              <Input 
+                type="time" 
+                value={departureTime} 
+                onChange={(e) => setDepartureTime(e.target.value)} 
+                className="h-9 text-sm" 
+                placeholder="HH:MM"
+              />
+            </div>
+          )}
+
+          {/* Flight details */}
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-[10px] text-muted-foreground">Compagnie</Label>
@@ -183,7 +221,7 @@ export function SmartDepartureDialog({
             </div>
           </div>
 
-          {/* Arrival date + price inline */}
+          {/* Arrival date + price */}
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-[10px] text-muted-foreground">Arrivée estimée</Label>
