@@ -2,11 +2,12 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
-  Package, MessageCircle, MapPin, History, Heart, ArrowRight,
-  Clock, ChevronRight, FileText, Home as HomeIcon, Truck, Calendar,
+  Package, MessageCircle, MapPin, ArrowRight,
+  Clock, ChevronRight, FileText, Truck, Calendar,
   Search, Plane, Ship, Car, Luggage, Globe, Shield, Zap, Award,
-  TrendingUp, Users, ArrowUpDown, Weight, Route } from
-"lucide-react";
+  TrendingUp, Users, ArrowUpDown, Weight, Route, Sparkles,
+  Send, ScanLine, Wallet, Star, CircleDot
+} from "lucide-react";
 import { RecipientTrackingCard } from "@/components/client/RecipientTrackingCard";
 import { KonnektCanvasCarousel } from "./KonnektCanvasCarousel";
 import { WeightValidationAlert } from "@/components/client/WeightValidationAlert";
@@ -19,8 +20,8 @@ import { SmartActionBar } from "./SmartActionBar";
 import { FullScreenOffresPopup } from "./FullScreenOffresPopup";
 import { PostDeliveryFlow, usePostDeliveryDetection } from "@/components/delivery/PostDeliveryFlow";
 import {
-  Drawer, DrawerContent, DrawerHeader, DrawerTitle } from
-"@/components/ui/drawer";
+  Drawer, DrawerContent, DrawerHeader, DrawerTitle
+} from "@/components/ui/drawer";
 
 interface ClientAppHomeProps {
   userName?: string;
@@ -33,7 +34,7 @@ interface ClientAppHomeProps {
   userCity?: string;
 }
 
-const STATUS_CONFIG: Record<string, {label: string;color: string;}> = {
+const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   pending: { label: "En attente", color: "bg-amber-500/20 text-amber-600" },
   accepted: { label: "Accepté", color: "bg-green-500/20 text-green-600" },
   collected: { label: "Collecté", color: "bg-blue-500/20 text-blue-600" },
@@ -47,18 +48,17 @@ const STATUS_CONFIG: Record<string, {label: string;color: string;}> = {
   delivered: { label: "Livré", color: "bg-green-500/20 text-green-700" },
   delivery_confirmed: { label: "Livré ✓", color: "bg-emerald-500/20 text-emerald-700" },
   open: { label: "Ouverte", color: "bg-amber-500/20 text-amber-600" },
-  responded: { label: "Réponses reçues", color: "bg-purple-500/20 text-purple-600" }
+  responded: { label: "Réponses reçues", color: "bg-purple-500/20 text-purple-600" },
 };
 
 const TRANSPORT_TABS = [
-{ id: "all", label: "Tout", icon: Globe, soon: false },
-{ id: "routier", label: "Routier", icon: Car, soon: false },
-{ id: "maritime", label: "Maritime", icon: Ship, soon: false },
-{ id: "aerien", label: "Aérien", icon: Plane, soon: false },
-{ id: "bagages", label: "GP", icon: Luggage, soon: false }];
+  { id: "all", label: "Tout", icon: Globe, emoji: "🌍" },
+  { id: "routier", label: "Routier", icon: Car, emoji: "🚛" },
+  { id: "maritime", label: "Maritime", icon: Ship, emoji: "🚢" },
+  { id: "aerien", label: "Aérien", icon: Plane, emoji: "✈️" },
+  { id: "bagages", label: "GP", icon: Luggage, emoji: "🧳" },
+];
 
-
-// Mode-specific configuration
 const MODE_CONFIG: Record<string, {
   subtitle: string;
   searchPlaceholderOrigin: string;
@@ -66,165 +66,350 @@ const MODE_CONFIG: Record<string, {
   searchButtonLabel: string;
   offersTitle: string;
   emptyLabel: string;
-  accentColor: string;
+  emptyDesc: string;
   icon: typeof Package;
+  gradient: string;
 }> = {
   all: {
     subtitle: "Envoyez vos colis partout dans le monde",
     searchPlaceholderOrigin: "Ville de départ",
     searchPlaceholderDest: "Ville de destination",
     searchButtonLabel: "Rechercher un transporteur",
-    offersTitle: "Offres disponibles",
+    offersTitle: "🔥 Meilleures offres",
     emptyLabel: "Aucune offre pour le moment",
-    accentColor: "primary",
-    icon: Package
+    emptyDesc: "Les transporteurs publient régulièrement de nouvelles offres",
+    icon: Package,
+    gradient: "from-primary/10 to-accent/5",
   },
   bagages: {
-    subtitle: "Trouvez un GP pour vos bagages accompagnés",
+    subtitle: "Bagages accompagnés par GP de confiance",
     searchPlaceholderOrigin: "Ville d'envoi",
     searchPlaceholderDest: "Ville de réception",
     searchButtonLabel: "Trouver un GP",
-    offersTitle: "GP disponibles",
+    offersTitle: "🧳 GP disponibles",
     emptyLabel: "Aucun GP disponible",
-    accentColor: "primary",
-    icon: Luggage
+    emptyDesc: "Revenez bientôt ou créez une demande personnalisée",
+    icon: Luggage,
+    gradient: "from-purple-500/10 to-primary/5",
   },
   aerien: {
-    subtitle: "Fret aérien — bientôt disponible",
+    subtitle: "Fret aérien express, livraison rapide",
     searchPlaceholderOrigin: "Aéroport départ",
     searchPlaceholderDest: "Aéroport arrivée",
     searchButtonLabel: "Rechercher un vol cargo",
-    offersTitle: "Offres aériennes",
+    offersTitle: "✈️ Offres aériennes",
     emptyLabel: "Aucune offre aérienne",
-    accentColor: "primary",
-    icon: Plane
+    emptyDesc: "Les agents cargo publient régulièrement des offres",
+    icon: Plane,
+    gradient: "from-sky-500/10 to-blue-500/5",
   },
   maritime: {
-    subtitle: "Transport maritime — bientôt disponible",
+    subtitle: "Conteneurs & groupage maritime",
     searchPlaceholderOrigin: "Port de départ",
     searchPlaceholderDest: "Port d'arrivée",
     searchButtonLabel: "Rechercher un cargo",
-    offersTitle: "Offres maritimes",
+    offersTitle: "🚢 Offres maritimes",
     emptyLabel: "Aucune offre maritime",
-    accentColor: "primary",
-    icon: Ship
+    emptyDesc: "Solutions LCL et FCL en préparation",
+    icon: Ship,
+    gradient: "from-cyan-500/10 to-teal-500/5",
   },
   routier: {
-    subtitle: "Fret routier — missions sur mesure",
+    subtitle: "Transport routier inter-villes & inter-pays",
     searchPlaceholderOrigin: "Point de collecte",
     searchPlaceholderDest: "Point de livraison",
-    searchButtonLabel: "Trouver un transporteur routier",
-    offersTitle: "Missions routières disponibles",
-    emptyLabel: "Aucune mission routière",
-    accentColor: "primary",
-    icon: Truck
-  }
+    searchButtonLabel: "Trouver un transporteur",
+    offersTitle: "🚛 Missions routières",
+    emptyLabel: "Aucune mission disponible",
+    emptyDesc: "Créez une mission et recevez des propositions",
+    icon: Truck,
+    gradient: "from-orange-500/10 to-amber-500/5",
+  },
 };
 
-const POPULAR_ROUTES_BY_MODE: Record<string, {from: string;to: string;flag: string;hot?: boolean;}[]> = {
+const POPULAR_ROUTES_BY_MODE: Record<string, { from: string; to: string; flag: string; hot?: boolean }[]> = {
   all: [
-  { from: "Paris", to: "Dakar", flag: "🇫🇷→🇸🇳", hot: true },
-  { from: "Dakar", to: "Marseille", flag: "🇸🇳→🇫🇷" },
-  { from: "Abidjan", to: "Paris", flag: "🇨🇮→🇫🇷", hot: true },
-  { from: "Dakar", to: "Montréal", flag: "🇸🇳→🇨🇦" },
-  { from: "Abidjan", to: "Bamako", flag: "🇨🇮→🇲🇱" },
-  { from: "Casablanca", to: "Paris", flag: "🇲🇦→🇫🇷" }],
-
+    { from: "Paris", to: "Dakar", flag: "🇫🇷→🇸🇳", hot: true },
+    { from: "Dakar", to: "Marseille", flag: "🇸🇳→🇫🇷" },
+    { from: "Abidjan", to: "Paris", flag: "🇨🇮→🇫🇷", hot: true },
+    { from: "Dakar", to: "Montréal", flag: "🇸🇳→🇨🇦" },
+    { from: "Abidjan", to: "Bamako", flag: "🇨🇮→🇲🇱" },
+    { from: "Casablanca", to: "Paris", flag: "🇲🇦→🇫🇷" },
+  ],
   bagages: [
-  { from: "Paris", to: "Dakar", flag: "🇫🇷→🇸🇳", hot: true },
-  { from: "Abidjan", to: "Paris", flag: "🇨🇮→🇫🇷", hot: true },
-  { from: "Dakar", to: "Marseille", flag: "🇸🇳→🇫🇷" },
-  { from: "Casablanca", to: "Paris", flag: "🇲🇦→🇫🇷" }],
-
+    { from: "Paris", to: "Dakar", flag: "🇫🇷→🇸🇳", hot: true },
+    { from: "Abidjan", to: "Paris", flag: "🇨🇮→🇫🇷", hot: true },
+    { from: "Dakar", to: "Marseille", flag: "🇸🇳→🇫🇷" },
+    { from: "Casablanca", to: "Paris", flag: "🇲🇦→🇫🇷" },
+  ],
   routier: [
-  { from: "Dakar", to: "Bamako", flag: "🇸🇳→🇲🇱", hot: true },
-  { from: "Abidjan", to: "Ouagadougou", flag: "🇨🇮→🇧🇫", hot: true },
-  { from: "Lomé", to: "Cotonou", flag: "🇹🇬→🇧🇯" },
-  { from: "Douala", to: "Libreville", flag: "🇨🇲→🇬🇦" },
-  { from: "Accra", to: "Lomé", flag: "🇬🇭→🇹🇬" },
-  { from: "Abidjan", to: "Dakar", flag: "🇨🇮→🇸🇳" }],
-
+    { from: "Dakar", to: "Bamako", flag: "🇸🇳→🇲🇱", hot: true },
+    { from: "Abidjan", to: "Ouagadougou", flag: "🇨🇮→🇧🇫", hot: true },
+    { from: "Lomé", to: "Cotonou", flag: "🇹🇬→🇧🇯" },
+    { from: "Douala", to: "Libreville", flag: "🇨🇲→🇬🇦" },
+    { from: "Accra", to: "Lomé", flag: "🇬🇭→🇹🇬" },
+    { from: "Abidjan", to: "Dakar", flag: "🇨🇮→🇸🇳" },
+  ],
   maritime: [
-  { from: "Dakar", to: "Marseille", flag: "🇸🇳→🇫🇷", hot: true },
-  { from: "Abidjan", to: "Le Havre", flag: "🇨🇮→🇫🇷", hot: true },
-  { from: "Douala", to: "Anvers", flag: "🇨🇲→🇧🇪" },
-  { from: "Lomé", to: "Rotterdam", flag: "🇹🇬→🇳🇱" }],
-
+    { from: "Dakar", to: "Marseille", flag: "🇸🇳→🇫🇷", hot: true },
+    { from: "Abidjan", to: "Le Havre", flag: "🇨🇮→🇫🇷", hot: true },
+    { from: "Douala", to: "Anvers", flag: "🇨🇲→🇧🇪" },
+    { from: "Lomé", to: "Rotterdam", flag: "🇹🇬→🇳🇱" },
+  ],
   aerien: [
-  { from: "Paris", to: "Dakar", flag: "🇫🇷→🇸🇳", hot: true },
-  { from: "Paris", to: "Abidjan", flag: "🇫🇷→🇨🇮", hot: true },
-  { from: "Bruxelles", to: "Kinshasa", flag: "🇧🇪→🇨🇩" },
-  { from: "Casablanca", to: "Paris", flag: "🇲🇦→🇫🇷" }]
-
+    { from: "Paris", to: "Dakar", flag: "🇫🇷→🇸🇳", hot: true },
+    { from: "Paris", to: "Abidjan", flag: "🇫🇷→🇨🇮", hot: true },
+    { from: "Bruxelles", to: "Kinshasa", flag: "🇧🇪→🇨🇩" },
+    { from: "Casablanca", to: "Paris", flag: "🇲🇦→🇫🇷" },
+  ],
 };
 
-const TRUST_ITEMS_BY_MODE: Record<string, {icon: typeof Shield;title: string;desc: string;color: string;}[]> = {
+const TRUST_ITEMS_BY_MODE: Record<string, { icon: typeof Shield; title: string; desc: string; color: string }[]> = {
   default: [
-  { icon: Shield, title: "Paiement sécurisé", desc: "Escrow protégé", color: "text-emerald-500 bg-emerald-500/10" },
-  { icon: Globe, title: "Multi-corridors", desc: "Afrique, Europe, Amériques", color: "text-blue-500 bg-blue-500/10" },
-  { icon: Zap, title: "Suivi temps réel", desc: "QR + notifications", color: "text-amber-500 bg-amber-500/10" },
-  { icon: Award, title: "GP vérifiés", desc: "KYC + avis", color: "text-purple-500 bg-purple-500/10" }],
-
+    { icon: Shield, title: "Paiement sécurisé", desc: "Escrow protégé jusqu'à livraison", color: "text-emerald-500 bg-emerald-500/10" },
+    { icon: Globe, title: "Multi-corridors", desc: "Afrique, Europe, Amériques", color: "text-blue-500 bg-blue-500/10" },
+    { icon: Zap, title: "Suivi temps réel", desc: "QR code + notifications push", color: "text-amber-500 bg-amber-500/10" },
+    { icon: Award, title: "GP vérifiés", desc: "KYC complet + avis clients", color: "text-purple-500 bg-purple-500/10" },
+  ],
   routier: [
-  { icon: Shield, title: "Escrow sécurisé", desc: "Paiement garanti à la livraison", color: "text-emerald-500 bg-emerald-500/10" },
-  { icon: Truck, title: "Flotte vérifiée", desc: "Véhicules certifiés", color: "text-blue-500 bg-blue-500/10" },
-  { icon: Zap, title: "Négociation directe", desc: "Prix en temps réel", color: "text-amber-500 bg-amber-500/10" },
-  { icon: Route, title: "Corridors routiers", desc: "Afrique de l'Ouest & Centrale", color: "text-purple-500 bg-purple-500/10" }],
-
+    { icon: Shield, title: "Escrow sécurisé", desc: "Paiement garanti à la livraison", color: "text-emerald-500 bg-emerald-500/10" },
+    { icon: Truck, title: "Flotte vérifiée", desc: "Véhicules certifiés & assurés", color: "text-blue-500 bg-blue-500/10" },
+    { icon: Zap, title: "Négociation directe", desc: "Propositions en temps réel", color: "text-amber-500 bg-amber-500/10" },
+    { icon: Route, title: "Corridors routiers", desc: "Afrique de l'Ouest & Centrale", color: "text-purple-500 bg-purple-500/10" },
+  ],
   maritime: [
-  { icon: Shield, title: "Assurance cargo", desc: "Protection marchandises", color: "text-emerald-500 bg-emerald-500/10" },
-  { icon: Ship, title: "Groupage & FCL", desc: "LCL ou conteneur complet", color: "text-blue-500 bg-blue-500/10" },
-  { icon: TrendingUp, title: "Suivi embarquement", desc: "Tracking port à port", color: "text-amber-500 bg-amber-500/10" },
-  { icon: Users, title: "Transitaires vérifiés", desc: "Partenaires certifiés", color: "text-purple-500 bg-purple-500/10" }],
-
+    { icon: Shield, title: "Assurance cargo", desc: "Protection marchandises incluse", color: "text-emerald-500 bg-emerald-500/10" },
+    { icon: Ship, title: "Groupage & FCL", desc: "LCL ou conteneur complet", color: "text-blue-500 bg-blue-500/10" },
+    { icon: TrendingUp, title: "Suivi embarquement", desc: "Tracking port à port", color: "text-amber-500 bg-amber-500/10" },
+    { icon: Users, title: "Transitaires vérifiés", desc: "Partenaires certifiés", color: "text-purple-500 bg-purple-500/10" },
+  ],
   aerien: [
-  { icon: Zap, title: "Livraison express", desc: "2-5 jours porte à porte", color: "text-amber-500 bg-amber-500/10" },
-  { icon: Shield, title: "Colis sécurisé", desc: "Assurance incluse", color: "text-emerald-500 bg-emerald-500/10" },
-  { icon: Plane, title: "Vols directs", desc: "Réseau aérien étendu", color: "text-blue-500 bg-blue-500/10" },
-  { icon: Award, title: "Agents certifiés", desc: "Fret aérien homologué", color: "text-purple-500 bg-purple-500/10" }],
-
+    { icon: Zap, title: "Livraison express", desc: "2-5 jours porte à porte", color: "text-amber-500 bg-amber-500/10" },
+    { icon: Shield, title: "Colis sécurisé", desc: "Assurance incluse", color: "text-emerald-500 bg-emerald-500/10" },
+    { icon: Plane, title: "Vols directs", desc: "Réseau aérien étendu", color: "text-blue-500 bg-blue-500/10" },
+    { icon: Award, title: "Agents certifiés", desc: "Fret aérien homologué", color: "text-purple-500 bg-purple-500/10" },
+  ],
   bagages: [
-  { icon: Shield, title: "Escrow protégé", desc: "Paiement sécurisé", color: "text-emerald-500 bg-emerald-500/10" },
-  { icon: Luggage, title: "Bagages accompagnés", desc: "Suivi personnalisé", color: "text-blue-500 bg-blue-500/10" },
-  { icon: Award, title: "GP notés", desc: "Avis clients vérifiés", color: "text-amber-500 bg-amber-500/10" },
-  { icon: Globe, title: "Réseau mondial", desc: "Afrique, Europe, Amériques", color: "text-purple-500 bg-purple-500/10" }]
-
+    { icon: Shield, title: "Escrow protégé", desc: "Paiement sécurisé", color: "text-emerald-500 bg-emerald-500/10" },
+    { icon: Luggage, title: "Bagages accompagnés", desc: "Suivi personnalisé", color: "text-blue-500 bg-blue-500/10" },
+    { icon: Award, title: "GP notés", desc: "Avis clients vérifiés", color: "text-amber-500 bg-amber-500/10" },
+    { icon: Globe, title: "Réseau mondial", desc: "Afrique, Europe, Amériques", color: "text-purple-500 bg-purple-500/10" },
+  ],
 };
 
-const ACTIVE_STATUSES = ['pending', 'accepted', 'collected', 'paid_held', 'checked_in', 'weight_pending_payment', 'scheduled_departure', 'in_transit', 'arrived_destination', 'delivery_pending'];
+const ACTIVE_STATUSES = ["pending", "accepted", "collected", "paid_held", "checked_in", "weight_pending_payment", "scheduled_departure", "in_transit", "arrived_destination", "delivery_pending"];
 
 const TYPE_MAP: Record<string, string[]> = {
   aerien: ["aerien"],
   maritime: ["maritime"],
   routier: ["routier"],
-  bagages: ["bagages_accompagnes", "navette"]
+  bagages: ["bagages_accompagnes", "navette"],
 };
+
+// ── Quick Actions Grid ──
+function QuickActionsGrid({ navigate, activeTab }: { navigate: (path: string) => void; activeTab: string }) {
+  const actions = useMemo(() => {
+    const base = [
+      { icon: Send, label: "Envoyer", to: "/envoyer", color: "text-primary bg-primary/10" },
+      { icon: ScanLine, label: "Suivi", to: "/tracking", color: "text-blue-500 bg-blue-500/10" },
+      { icon: FileText, label: "Demandes", to: "/mes-demandes", color: "text-purple-500 bg-purple-500/10" },
+      { icon: Wallet, label: "Portefeuille", to: "/portefeuille", color: "text-emerald-500 bg-emerald-500/10" },
+    ];
+    return base;
+  }, [activeTab]);
+
+  return (
+    <div className="px-4 pb-3">
+      <div className="grid grid-cols-4 gap-2">
+        {actions.map((a) => (
+          <motion.button
+            key={a.label}
+            whileTap={{ scale: 0.92 }}
+            onClick={() => navigate(a.to)}
+            className="flex flex-col items-center gap-1.5 py-2.5 rounded-xl bg-card border border-border hover:border-primary/20 transition-colors"
+          >
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${a.color}`}>
+              <a.icon className="w-4.5 h-4.5" />
+            </div>
+            <span className="text-[10px] font-semibold text-foreground leading-tight">{a.label}</span>
+          </motion.button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Tab-Specific Header Banner ──
+function TabBanner({ tab, modeConfig }: { tab: string; modeConfig: typeof MODE_CONFIG["all"] }) {
+  if (tab === "all") return null;
+
+  const tabData = TRANSPORT_TABS.find((t) => t.id === tab);
+  if (!tabData) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -5 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`mx-4 mb-3 p-3 rounded-xl bg-gradient-to-r ${modeConfig.gradient} border border-border`}
+    >
+      <div className="flex items-center gap-2.5">
+        <span className="text-xl">{tabData.emoji}</span>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm font-bold text-foreground">{tabData.label}</h3>
+          <p className="text-[11px] text-muted-foreground leading-snug">{modeConfig.subtitle}</p>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Popular Routes ──
+function PopularRoutesSection({ routes, onSelect, tabId }: {
+  routes: typeof POPULAR_ROUTES_BY_MODE["all"];
+  onSelect: (from: string, to: string) => void;
+  tabId: string;
+}) {
+  const titleMap: Record<string, string> = {
+    all: "📍 Routes populaires",
+    routier: "🚛 Corridors populaires",
+    maritime: "🚢 Routes maritimes",
+    aerien: "✈️ Liaisons aériennes",
+    bagages: "🧳 Trajets GP populaires",
+  };
+
+  return (
+    <div className="px-4 pb-4">
+      <h2 className="text-sm font-bold text-foreground mb-2 tracking-tight">{titleMap[tabId] || titleMap.all}</h2>
+      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+        {routes.map((route, idx) => (
+          <motion.button
+            key={idx}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => onSelect(route.from, route.to)}
+            className="flex-shrink-0 bg-card border border-border rounded-xl px-3 py-2.5 text-left hover:border-primary/30 active:bg-muted/40 transition-all min-w-[120px]"
+          >
+            <p className="text-sm font-bold text-foreground leading-tight">{route.flag}</p>
+            <p className="text-[10px] text-muted-foreground mt-1">{route.from} → {route.to}</p>
+            {route.hot && (
+              <span className="text-[8px] bg-destructive/10 text-destructive px-1.5 py-px rounded-full font-semibold mt-1.5 inline-flex items-center gap-0.5">
+                <CircleDot className="w-2 h-2" /> Populaire
+              </span>
+            )}
+          </motion.button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Trust Items ──
+function TrustSection({ items, title }: {
+  items: typeof TRUST_ITEMS_BY_MODE["default"];
+  title: string;
+}) {
+  return (
+    <div className="px-4 pb-5">
+      <h2 className="text-sm font-bold text-foreground mb-2 tracking-tight">{title}</h2>
+      <div className="grid grid-cols-2 gap-2">
+        {items.map((item, idx) => (
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0, y: 8 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: idx * 0.05 }}
+            className="bg-card border border-border rounded-xl p-3"
+          >
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${item.color}`}>
+              <item.icon className="w-4 h-4" />
+            </div>
+            <p className="text-xs font-semibold text-foreground leading-tight">{item.title}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">{item.desc}</p>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Mode CTA Banner ──
+function ModeCTA({ activeTab, modeConfig, onClick }: {
+  activeTab: string;
+  modeConfig: typeof MODE_CONFIG["all"];
+  onClick: () => void;
+}) {
+  const ctaMap: Record<string, { title: string; desc: string }> = {
+    routier: { title: "Besoin d'un transport sur mesure ?", desc: "Créez une mission et recevez des propositions de transporteurs vérifiés" },
+    maritime: { title: "Expédiez par conteneur", desc: "Solutions LCL, FCL et véhicules — devis personnalisé" },
+    aerien: { title: "Fret aérien express", desc: "Livraison rapide 2-5 jours, porte à porte" },
+    bagages: { title: "Trouvez un GP de confiance", desc: "Envoi de bagages accompagnés en toute sécurité" },
+    all: { title: "Envoyez votre premier colis", desc: "Comparez les offres et choisissez le meilleur transporteur" },
+  };
+  const cta = ctaMap[activeTab] || ctaMap.all;
+
+  return (
+    <div className="px-4 pb-5">
+      <div className={`bg-gradient-to-br ${modeConfig.gradient} border border-border rounded-2xl p-4 text-center`}>
+        <modeConfig.icon className="w-8 h-8 text-primary mx-auto mb-2 opacity-60" />
+        <p className="text-sm font-bold text-foreground mb-0.5">{cta.title}</p>
+        <p className="text-[11px] text-muted-foreground mb-3 leading-snug max-w-[260px] mx-auto">{cta.desc}</p>
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={onClick}
+          className="px-6 py-2.5 bg-primary text-primary-foreground text-xs font-bold rounded-xl shadow-sm"
+        >
+          {modeConfig.searchButtonLabel}
+        </motion.button>
+      </div>
+    </div>
+  );
+}
+
+// ── Empty State ──
+function EmptyOffers({ modeConfig, onAction }: { modeConfig: typeof MODE_CONFIG["all"]; onAction: () => void }) {
+  return (
+    <div className="bg-muted/30 border border-dashed border-border rounded-2xl p-8 text-center">
+      <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
+        <modeConfig.icon className="w-6 h-6 text-muted-foreground" />
+      </div>
+      <p className="text-sm font-semibold text-foreground mb-1">{modeConfig.emptyLabel}</p>
+      <p className="text-[11px] text-muted-foreground mb-3">{modeConfig.emptyDesc}</p>
+      <button onClick={onAction} className="text-xs text-primary font-semibold">
+        Voir toutes les offres →
+      </button>
+    </div>
+  );
+}
+
+// ═════════════════════════════════════════════════
+// ── MAIN COMPONENT ──
+// ═════════════════════════════════════════════════
 
 export function ClientAppHome({
   userName, recentOrders = [], customRequests = [], movingRequests = [],
-  unreadMessages = 0, activeOrdersCount = 0, userId, userCity
+  unreadMessages = 0, activeOrdersCount = 0, userId, userCity,
 }: ClientAppHomeProps) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const firstName = userName?.split(' ')[0] || 'Bienvenue';
-  const greeting = new Date().getHours() < 12 ? 'Bonjour' : new Date().getHours() < 18 ? 'Bon après-midi' : 'Bonsoir';
+  const firstName = userName?.split(" ")[0] || "";
+  const greeting = new Date().getHours() < 12 ? "Bonjour" : new Date().getHours() < 18 ? "Bon après-midi" : "Bonsoir";
 
   const [fullScreenOrderId, setFullScreenOrderId] = useState<string | null>(null);
-  const [requestPopup, setRequestPopup] = useState<{type: 'custom' | 'moving';item: any;} | null>(null);
+  const [requestPopup, setRequestPopup] = useState<{ type: "custom" | "moving"; item: any } | null>(null);
   const [activeTab, setActiveTab] = useState("all");
   const [offresPopupOpen, setOffresPopupOpen] = useState(false);
-  const [offresPopupSearch, setOffresPopupSearch] = useState<{origin?: string; dest?: string; tab?: string}>({});
+  const [offresPopupSearch, setOffresPopupSearch] = useState<{ origin?: string; dest?: string; tab?: string }>({});
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const modeConfig = MODE_CONFIG[activeTab] || MODE_CONFIG.all;
   const isRoutier = activeTab === "routier";
 
-  // Search — restore last successful search from localStorage
+  // Search
   const lastSearch = useMemo(() => {
     try {
       const saved = localStorage.getItem("kkt_last_search");
       return saved ? JSON.parse(saved) : null;
-    } catch {return null;}
+    } catch { return null; }
   }, []);
 
   const [searchOrigin, setSearchOrigin] = useState(lastSearch?.origin || userCity || "");
@@ -232,12 +417,10 @@ export function ClientAppHome({
   const [searchDate, setSearchDate] = useState("");
   const [activePicker, setActivePicker] = useState<"origin" | "dest" | null>(null);
   const [cityQuery, setCityQuery] = useState("");
-  // Routier-specific fields
   const [routierWeight, setRoutierWeight] = useState("");
 
-  useEffect(() => {if (userCity && !searchOrigin) setSearchOrigin(userCity);}, [userCity]);
+  useEffect(() => { if (userCity && !searchOrigin) setSearchOrigin(userCity); }, [userCity]);
 
-  // Auto-open offres popup from nav
   useEffect(() => {
     if (searchParams.get("offres") === "1") {
       setOffresPopupOpen(true);
@@ -252,7 +435,6 @@ export function ClientAppHome({
     setSearchDest(o);
   };
 
-  // Post-delivery detection
   const { deliveredOrder, role: deliveryRole, dismiss: dismissDelivery } = usePostDeliveryDetection(userId);
 
   const filteredCities = useMemo(() => {
@@ -260,15 +442,6 @@ export function ClientAppHome({
     const q = cityQuery.toLowerCase();
     return WORLD_CITIES.filter((c) => c.city.toLowerCase().includes(q));
   }, [cityQuery]);
-
-  const buildSearchParams = () => {
-    const params = new URLSearchParams();
-    if (searchOrigin) params.set("origin", searchOrigin);
-    if (searchDest) params.set("destination", searchDest);
-    if (searchDate) params.set("date", searchDate);
-    if (activeTab !== "all") params.set("type", activeTab);
-    return params;
-  };
 
   const handleMainAction = () => {
     if (isRoutier) {
@@ -291,35 +464,33 @@ export function ClientAppHome({
     setOffresPopupOpen(true);
   };
 
-  const goToOffres = () => {
-    openOffresPopup();
-  };
+  const goToOffres = () => openOffresPopup();
 
   // Offers (GP)
   const [offers, setOffers] = useState<any[]>([]);
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
-    supabase.
-    from("gp_offers").
-    select("*, gp_profiles(business_name, rating, total_reviews)").
-    eq("status", "active").
-    gte("departure_date", today).
-    order("departure_date", { ascending: true }).
-    limit(12).
-    then(({ data }) => {if (data) setOffers(data);});
+    supabase
+      .from("gp_offers")
+      .select("*, gp_profiles(business_name, rating, total_reviews)")
+      .eq("status", "active")
+      .gte("departure_date", today)
+      .order("departure_date", { ascending: true })
+      .limit(12)
+      .then(({ data }) => { if (data) setOffers(data); });
   }, []);
 
   // Routier missions
   const [routierMissions, setRoutierMissions] = useState<any[]>([]);
   useEffect(() => {
     if (!isRoutier) return;
-    supabase.
-    from("routier_missions").
-    select("*").
-    eq("status", "open").
-    order("created_at", { ascending: false }).
-    limit(6).
-    then(({ data }) => {if (data) setRoutierMissions(data);});
+    supabase
+      .from("routier_missions")
+      .select("*")
+      .eq("status", "open")
+      .order("created_at", { ascending: false })
+      .limit(6)
+      .then(({ data }) => { if (data) setRoutierMissions(data); });
   }, [isRoutier]);
 
   const filteredOffers = useMemo(() => {
@@ -341,74 +512,78 @@ export function ClientAppHome({
     });
   }, [offers, activeTab, searchOrigin, searchDest]);
 
-  // Active items
   const activeOrders = recentOrders.filter((o) => ACTIVE_STATUSES.includes(o.status));
-  const allActiveItems = [
-  ...activeOrders.map((o) => ({ ...o, type: 'order' as const })),
-  ...customRequests.map((r) => ({ ...r, type: 'custom' as const })),
-  ...movingRequests.map((m) => ({ ...m, type: 'moving' as const }))];
-
   const selectedOrder = fullScreenOrderId ? activeOrders.find((o) => o.id === fullScreenOrderId) : null;
-
-  const getStatusIcon = (status: string, type: string) => {
-    if (status === 'in_transit') return Truck;
-    if (type === 'custom') return FileText;
-    if (type === 'moving') return HomeIcon;
-    return Package;
-  };
+  const popularRoutes = POPULAR_ROUTES_BY_MODE[activeTab] || POPULAR_ROUTES_BY_MODE.all;
+  const trustItems = TRUST_ITEMS_BY_MODE[activeTab] || TRUST_ITEMS_BY_MODE.default;
 
   const handleCitySelect = (city: string) => {
-    if (activePicker === "origin") setSearchOrigin(city);else
-    setSearchDest(city);
+    if (activePicker === "origin") setSearchOrigin(city);
+    else setSearchDest(city);
     setActivePicker(null);
     setCityQuery("");
   };
 
-  const popularRoutes = POPULAR_ROUTES_BY_MODE[activeTab] || POPULAR_ROUTES_BY_MODE.all;
-  const trustItems = TRUST_ITEMS_BY_MODE[activeTab] || TRUST_ITEMS_BY_MODE.default;
+  const handleRouteSelect = (from: string, to: string) => {
+    setSearchOrigin(from);
+    setSearchDest(to);
+    scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
-    <div className="flex flex-col relative bg-background" style={{
-      height: 'calc(100vh - 60px - 64px - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
-      minHeight: '400px'
-    }}>
+    <div
+      className="flex flex-col relative bg-background"
+      style={{
+        height: "calc(100vh - 60px - 64px - env(safe-area-inset-top) - env(safe-area-inset-bottom))",
+        minHeight: "400px",
+      }}
+    >
       {/* Post-Delivery Flow */}
       <AnimatePresence>
-        {deliveredOrder &&
-        <PostDeliveryFlow
-          order={deliveredOrder}
-          role={deliveryRole}
-          onClose={() => dismissDelivery(deliveredOrder.id)}
-          onNavigate={navigate} />
-
-        }
+        {deliveredOrder && (
+          <PostDeliveryFlow
+            order={deliveredOrder}
+            role={deliveryRole}
+            onClose={() => dismissDelivery(deliveredOrder.id)}
+            onNavigate={navigate}
+          />
+        )}
       </AnimatePresence>
 
       {/* Full-Screen Order Overlay */}
       <AnimatePresence>
-        {selectedOrder &&
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-background" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+        {selectedOrder && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-background" style={{ paddingTop: "env(safe-area-inset-top)" }}>
             <FullScreenOrderDetails order={selectedOrder} onClose={() => setFullScreenOrderId(null)} navigate={navigate} />
           </motion.div>
-        }
+        )}
       </AnimatePresence>
 
       <div className="flex-1 overflow-y-auto" ref={scrollRef}>
         {/* ── GREETING ── */}
-        
-
-
-
-
-        
+        <div className="px-4 pt-3 pb-1">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-lg font-bold text-foreground leading-tight">
+                {greeting}{firstName ? `, ${firstName}` : ""} 👋
+              </h1>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{modeConfig.subtitle}</p>
+            </div>
+            {activeOrdersCount > 0 && (
+              <Link to="/reservations" className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 rounded-xl px-2.5 py-1.5">
+                <Package className="w-3.5 h-3.5 text-primary" />
+                <span className="text-[11px] font-bold text-primary">{activeOrdersCount}</span>
+              </Link>
+            )}
+          </div>
+        </div>
 
         {/* Alerts */}
         {userId && <div className="px-4"><WeightValidationAlert userId={userId} /></div>}
 
-        {/* ── TRANSPORT TABS + SEARCH (unified block like Booking.com) ── */}
         {/* ── TRANSPORT TABS (sticky) ── */}
-        <div className="sticky top-0 z-30 bg-background">
-          <div className="px-4 pt-1 pb-0">
+        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border/50">
+          <div className="px-2 pt-1 pb-0">
             <div className="flex gap-0">
               {TRANSPORT_TABS.map((tab) => {
                 const isActive = activeTab === tab.id;
@@ -416,344 +591,285 @@ export function ClientAppHome({
                   <button
                     key={tab.id}
                     onClick={() => {
-                      if (!tab.soon) {
-                        setActiveTab(tab.id);
-                        scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-                      }
+                      setActiveTab(tab.id);
+                      scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
                     }}
-                    className={`relative flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-all border-b-2 ${
-                    tab.soon ?
-                    "opacity-50 cursor-default text-muted-foreground border-transparent" :
-                    isActive ?
-                    "text-primary border-primary" :
-                    "text-muted-foreground border-transparent hover:text-foreground hover:border-border"}`
-                    }>
-                    
-                    <tab.icon className="w-4 h-4" />
+                    className={`relative flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold transition-all border-b-2 ${
+                      isActive
+                        ? "text-primary border-primary"
+                        : "text-muted-foreground border-transparent hover:text-foreground"
+                    }`}
+                  >
+                    <tab.icon className={`w-4 h-4 ${isActive ? "text-primary" : ""}`} />
                     <span>{tab.label}</span>
-                    {tab.soon &&
-                    <span className="absolute -top-0.5 right-0.5 text-[7px] bg-amber-500/20 text-amber-600 px-1 rounded-full font-bold leading-tight">
-                        Bientôt
-                      </span>
-                    }
-                  </button>);
+                  </button>
+                );
               })}
             </div>
           </div>
         </div>
 
-        {/* ── SEARCH ENGINE (scrolls with content) ── */}
-        <div className="px-4 pt-2 pb-3">
-          <div className={`bg-card border border-border overflow-hidden shadow-md relative rounded-none ${
-          isRoutier ? "border-primary/40" : "border-border"}`
-          }>
+        {/* ── TAB BANNER (non-"all" tabs) ── */}
+        <div className="pt-3">
+          <TabBanner tab={activeTab} modeConfig={modeConfig} />
+        </div>
+
+        {/* ── SEARCH ENGINE ── */}
+        <div className="px-4 pb-3">
+          <div className={`bg-card border overflow-hidden shadow-sm relative rounded-2xl ${
+            isRoutier ? "border-primary/40" : "border-border"
+          }`}>
             {/* Origin */}
             <button
-              onClick={() => {setCityQuery("");setActivePicker("origin");}}
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-left border-b border-border/40">
-              
-              <MapPin className={`w-4 h-4 flex-shrink-0 text-primary`} />
+              onClick={() => { setCityQuery(""); setActivePicker("origin"); }}
+              className="w-full flex items-center gap-3 px-3.5 py-3 text-left border-b border-border/40"
+            >
+              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <MapPin className="w-3.5 h-3.5 text-primary" />
+              </div>
               <span className={`flex-1 text-sm ${searchOrigin ? "text-foreground font-medium" : "text-muted-foreground"}`}>
                 {searchOrigin || modeConfig.searchPlaceholderOrigin}
               </span>
-              {searchOrigin && <span className="text-[10px] text-muted-foreground">Modifier</span>}
+              {searchOrigin && <span className="text-[9px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">Modifier</span>}
             </button>
 
             {/* Swap button */}
-            {(searchOrigin || searchDest) &&
-            <button
-              onClick={swapOriginDest}
-              className="absolute right-3 top-[40px] -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center hover:bg-accent transition-colors"
-              aria-label="Interchanger">
-              
+            {(searchOrigin || searchDest) && (
+              <button
+                onClick={swapOriginDest}
+                className="absolute right-3 top-[48px] -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-background border border-border shadow-sm flex items-center justify-center hover:bg-muted transition-colors"
+                aria-label="Interchanger"
+              >
                 <ArrowUpDown className="w-3 h-3 text-muted-foreground" />
               </button>
-            }
+            )}
 
             {/* Destination */}
             <button
-              onClick={() => {setCityQuery("");setActivePicker("dest");}}
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-left border-b border-border/40">
-              
-              <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              onClick={() => { setCityQuery(""); setActivePicker("dest"); }}
+              className="w-full flex items-center gap-3 px-3.5 py-3 text-left border-b border-border/40"
+            >
+              <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                <Search className="w-3.5 h-3.5 text-muted-foreground" />
+              </div>
               <span className={`flex-1 text-sm ${searchDest ? "text-foreground font-medium" : "text-muted-foreground"}`}>
                 {searchDest || modeConfig.searchPlaceholderDest}
               </span>
-              {searchDest && <span className="text-[10px] text-muted-foreground">Modifier</span>}
+              {searchDest && <span className="text-[9px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">Modifier</span>}
             </button>
 
-            {/* Routier: weight field */}
-            {isRoutier &&
-            <div className="flex items-center gap-3 px-3 py-2.5 border-b border-border/40">
-                <Weight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            {/* Routier: weight */}
+            {isRoutier && (
+              <div className="flex items-center gap-3 px-3.5 py-3 border-b border-border/40">
+                <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <Weight className="w-3.5 h-3.5 text-muted-foreground" />
+                </div>
                 <input
-                type="number"
-                placeholder="Poids estimé (kg)"
-                value={routierWeight}
-                onChange={(e) => setRoutierWeight(e.target.value)}
-                className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-                min="1" />
+                  type="number"
+                  placeholder="Poids estimé (kg)"
+                  value={routierWeight}
+                  onChange={(e) => setRoutierWeight(e.target.value)}
+                  className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                  min="1"
+                />
               </div>
-            }
+            )}
 
-            <div className="flex items-center gap-3 px-3 py-2.5">
-              <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            {/* Date */}
+            <div className="flex items-center gap-3 px-3.5 py-3">
+              <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+              </div>
               <input
                 type="date"
                 value={searchDate}
                 onChange={(e) => setSearchDate(e.target.value)}
                 className="flex-1 bg-transparent text-sm text-foreground outline-none"
-                placeholder={isRoutier ? "Date de collecte souhaitée" : undefined}
-                style={{ colorScheme: 'dark' }} />
+                style={{ colorScheme: "dark" }}
+              />
             </div>
 
-            {/* Search button inside the box */}
+            {/* Search button */}
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={handleMainAction}
-              className="w-full font-bold text-center py-3 text-sm bg-primary text-primary-foreground">
+              className="w-full font-bold text-center py-3.5 text-sm bg-primary text-primary-foreground rounded-b-2xl flex items-center justify-center gap-2"
+            >
+              <Search className="w-4 h-4" />
               {modeConfig.searchButtonLabel}
             </motion.button>
           </div>
 
-          {/* Routier: quick action to create custom mission */}
-          {isRoutier &&
-          <button
-            onClick={() => navigate("/routier/mission")}
-            className="w-full mt-2 py-2.5 border-2 border-dashed border-primary/40 text-primary text-sm font-semibold flex items-center justify-center gap-2 hover:bg-primary/5 transition-colors">
+          {/* Routier: custom mission shortcut */}
+          {isRoutier && (
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={() => navigate("/routier/mission")}
+              className="w-full mt-2 py-2.5 border-2 border-dashed border-primary/30 text-primary text-xs font-semibold flex items-center justify-center gap-2 rounded-xl hover:bg-primary/5 transition-colors"
+            >
               <FileText className="w-4 h-4" />
               Créer une mission personnalisée
-            </button>
-          }
+            </motion.button>
+          )}
         </div>
+
+        {/* ── QUICK ACTIONS ── */}
+        <QuickActionsGrid navigate={navigate} activeTab={activeTab} />
 
         {/* ── SMART ACTION BAR ── */}
         <SmartActionBar
           userId={userId}
           recentOrders={recentOrders}
           unreadMessages={unreadMessages}
-          activeOrdersCount={activeOrdersCount} />
-        
+          activeOrdersCount={activeOrdersCount}
+        />
 
-        {/* Envois actifs déplacés vers /reservations */}
-
-        {/* ── OFFERS / MISSIONS (adaptive) ── */}
+        {/* ── OFFERS / MISSIONS ── */}
         <div className="px-4 pb-2">
-        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center justify-between mb-2">
             <h2 className="text-sm font-bold text-foreground tracking-tight">{modeConfig.offersTitle}</h2>
-            {!isRoutier &&
-            <button onClick={goToOffres} className="text-xs text-primary font-medium flex items-center gap-0.5">
+            {!isRoutier && (
+              <button onClick={goToOffres} className="text-xs text-primary font-medium flex items-center gap-0.5 hover:underline">
                 Tout voir <ChevronRight className="w-3 h-3" />
               </button>
-            }
+            )}
           </div>
         </div>
 
-        <div className="px-4 pb-3">
-          {isRoutier ?
-          // Routier missions list
-          routierMissions.length > 0 ?
-          <div className="space-y-2">
-                {routierMissions.map((mission) =>
-            <div
-              key={mission.id}
-              className="bg-card border border-border rounded-xl p-3 space-y-1.5">
-              
+        <div className="px-4 pb-4">
+          {isRoutier ? (
+            routierMissions.length > 0 ? (
+              <div className="space-y-2">
+                {routierMissions.map((mission) => (
+                  <motion.div
+                    key={mission.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-card border border-border rounded-xl p-3 space-y-1.5 hover:border-primary/30 transition-colors"
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Truck className="w-4 h-4 text-blue-500" />
+                        <div className="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                          <Truck className="w-3.5 h-3.5 text-orange-500" />
+                        </div>
                         <span className="text-sm font-semibold text-foreground">
                           {mission.origin_city} → {mission.destination_city}
                         </span>
                       </div>
-                      <span className="text-[10px] bg-blue-500/10 text-blue-600 px-2 py-0.5 rounded-full font-medium">
-                        {mission.status === "open" ? "Ouvert" : mission.status}
-                      </span>
+                      <span className="text-[10px] bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded-full font-medium">Ouvert</span>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground pl-9">
                       <span>{mission.total_weight_kg} kg</span>
                       <span>•</span>
                       <span>{mission.vehicle_type_required || "Tout véhicule"}</span>
-                      {mission.budget_max &&
-                <>
+                      {mission.budget_max && (
+                        <>
                           <span>•</span>
-                          <span className="font-medium text-foreground">{mission.budget_max?.toLocaleString()} FCFA</span>
+                          <span className="font-semibold text-foreground">{mission.budget_max?.toLocaleString()} FCFA</span>
                         </>
-                }
+                      )}
                     </div>
-                    {mission.description &&
-              <p className="text-xs text-muted-foreground line-clamp-1">{mission.description}</p>
-              }
-                  </div>
-            )}
-              </div> :
-
-          <div className="bg-muted/30 border border-border rounded-xl p-6 text-center">
-                <Truck className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground font-medium">{modeConfig.emptyLabel}</p>
-                <button
-              onClick={() => navigate("/routier/mission")}
-              className="text-xs text-blue-500 font-medium mt-1.5">
-              
-                  Créer votre première mission
-                </button>
-              </div> :
-
-
-          // "Tout" tab: show top 4 offers (1 per transport mode, best GP score)
-          activeTab === "all" ?
-          (() => {
-            const modes = ["routier", "maritime", "aerien", "bagages_accompagnes"];
-            const modeLabels: Record<string, string> = {
-              routier: "Routier", maritime: "Maritime", aerien: "Aérien", bagages_accompagnes: "GP"
-            };
-            const modeIcons: Record<string, typeof Package> = {
-              routier: Truck, maritime: Ship, aerien: Plane, bagages_accompagnes: Luggage
-            };
-            const top4 = modes.map(mode => {
-              const modeOffers = offers
-                .filter(o => o.transport_type === mode || (mode === "bagages_accompagnes" && (o.transport_type === "bagages_accompagnes" || o.transport_type === "navette")))
-                .sort((a, b) => (b.gp_profiles?.rating || 0) - (a.gp_profiles?.rating || 0));
-              return modeOffers[0] ? { ...modeOffers[0], _mode: mode } : null;
-            }).filter(Boolean);
-            
-            return top4.length > 0 ? (
-              <div className="space-y-1.5">
-                {top4.map((offer: any, idx: number) => {
-                  const ModeIcon = modeIcons[offer._mode] || Package;
-                  return (
-                    <div key={offer.id} className="relative">
-                      <div className="absolute top-1.5 right-1.5 z-10 flex items-center gap-0.5 bg-muted/90 backdrop-blur-sm px-1.5 py-px rounded-full">
-                        <ModeIcon className="w-2.5 h-2.5 text-muted-foreground" />
-                        <span className="text-[9px] font-semibold text-muted-foreground">{modeLabels[offer._mode]}</span>
-                      </div>
-                      <HomeOfferCard offer={offer} index={idx} />
-                    </div>
-                  );
-                })}
-                <button 
-                  onClick={goToOffres}
-                  className="w-full py-2 text-xs font-semibold text-primary flex items-center justify-center gap-0.5 hover:bg-primary/5 rounded-lg transition-colors">
-                  Voir toutes les offres <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : (
-              <div className="bg-muted/30 border border-border rounded-xl p-6 text-center">
-                <Package className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground font-medium">{modeConfig.emptyLabel}</p>
-              </div>
-            );
-          })() :
-
-          // Specific tab: filtered offers
-          filteredOffers.length > 0 ?
-          <div className="space-y-1.5">
-                {filteredOffers.slice(0, 6).map((offer, idx) =>
-            <HomeOfferCard key={offer.id} offer={offer} index={idx} />
-            )}
-              </div> :
-
-          <div className="bg-muted/30 border border-border rounded-xl p-6 text-center">
-                <Package className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground font-medium">{modeConfig.emptyLabel}</p>
-                <button onClick={() => setActiveTab("all")} className="text-xs text-primary font-medium mt-1.5">
-                    Voir toutes les offres
-                  </button>
-              </div>
-
-          }
-        </div>
-
-        {/* ── BOTTOM SECTIONS (conditional per tab) ── */}
-        {activeTab === "all" ? (
-          <>
-            {/* Découvrez Konnekt — only in "Tout" */}
-            <KonnektCanvasCarousel />
-
-            {/* Pourquoi Konnekt — only in "Tout" */}
-            <div className="px-4 pb-6">
-              <h2 className="text-sm font-bold text-foreground mb-1.5 tracking-tight">Pourquoi Konnekt ?</h2>
-              <div className="grid grid-cols-2 gap-1.5">
-                {trustItems.map((item, idx) =>
-                <div key={idx} className="bg-card border border-border rounded-xl p-2.5">
-                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center mb-1.5 ${item.color}`}>
-                      <item.icon className="w-3.5 h-3.5" />
-                    </div>
-                    <p className="text-[11px] font-semibold text-foreground leading-tight">{item.title}</p>
-                    <p className="text-[9px] text-muted-foreground mt-0.5 leading-snug">{item.desc}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </>
-        ) : (
-          /* Tab-specific bottom content */
-          <div className="px-4 pb-6 space-y-3">
-            {/* Popular routes for this mode */}
-            <div>
-              <h2 className="text-sm font-bold text-foreground mb-1.5 tracking-tight">
-                {activeTab === "routier" ? "🚛 Corridors populaires" :
-                 activeTab === "maritime" ? "🚢 Routes maritimes" :
-                 activeTab === "aerien" ? "✈️ Liaisons aériennes" :
-                 "🧳 Trajets GP populaires"}
-              </h2>
-              <div className="grid grid-cols-2 gap-1.5">
-                {popularRoutes.slice(0, 4).map((route, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => { setSearchOrigin(route.from); setSearchDest(route.to); }}
-                    className="bg-card border border-border rounded-lg p-2.5 text-left hover:bg-muted/50 active:bg-muted transition-colors">
-                    <p className="text-[11px] font-bold text-foreground">{route.flag}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">{route.from} → {route.to}</p>
-                    {route.hot && <span className="text-[8px] bg-destructive/10 text-destructive px-1.5 py-px rounded-full font-semibold mt-1 inline-block">🔥 Populaire</span>}
-                  </button>
+                    {mission.description && <p className="text-[11px] text-muted-foreground line-clamp-1 pl-9">{mission.description}</p>}
+                  </motion.div>
                 ))}
               </div>
-            </div>
+            ) : (
+              <EmptyOffers modeConfig={modeConfig} onAction={() => navigate("/routier/mission")} />
+            )
+          ) : activeTab === "all" ? (
+            (() => {
+              const modes = ["routier", "maritime", "aerien", "bagages_accompagnes"];
+              const modeLabels: Record<string, string> = {
+                routier: "Routier", maritime: "Maritime", aerien: "Aérien", bagages_accompagnes: "GP",
+              };
+              const modeIcons: Record<string, typeof Package> = {
+                routier: Truck, maritime: Ship, aerien: Plane, bagages_accompagnes: Luggage,
+              };
+              const top4 = modes
+                .map((mode) => {
+                  const modeOffers = offers
+                    .filter((o) => o.transport_type === mode || (mode === "bagages_accompagnes" && (o.transport_type === "bagages_accompagnes" || o.transport_type === "navette")))
+                    .sort((a, b) => (b.gp_profiles?.rating || 0) - (a.gp_profiles?.rating || 0));
+                  return modeOffers[0] ? { ...modeOffers[0], _mode: mode } : null;
+                })
+                .filter(Boolean);
 
-            {/* Mode-specific trust items */}
-            <div>
-              <h2 className="text-sm font-bold text-foreground mb-1.5 tracking-tight">
-                {activeTab === "routier" ? "Avantages Routier" :
-                 activeTab === "maritime" ? "Avantages Maritime" :
-                 activeTab === "aerien" ? "Avantages Aérien" :
-                 "Avantages GP"}
-              </h2>
-              <div className="grid grid-cols-2 gap-1.5">
-                {trustItems.map((item, idx) =>
-                <div key={idx} className="bg-card border border-border rounded-xl p-2.5">
-                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center mb-1.5 ${item.color}`}>
-                      <item.icon className="w-3.5 h-3.5" />
-                    </div>
-                    <p className="text-[11px] font-semibold text-foreground leading-tight">{item.title}</p>
-                    <p className="text-[9px] text-muted-foreground mt-0.5 leading-snug">{item.desc}</p>
-                  </div>
-                )}
-              </div>
+              return top4.length > 0 ? (
+                <div className="space-y-1.5">
+                  {top4.map((offer: any, idx: number) => {
+                    const ModeIcon = modeIcons[offer._mode] || Package;
+                    return (
+                      <div key={offer.id} className="relative">
+                        <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full border border-border/50">
+                          <ModeIcon className="w-2.5 h-2.5 text-muted-foreground" />
+                          <span className="text-[9px] font-semibold text-muted-foreground">{modeLabels[offer._mode]}</span>
+                        </div>
+                        <HomeOfferCard offer={offer} index={idx} />
+                      </div>
+                    );
+                  })}
+                  <button
+                    onClick={goToOffres}
+                    className="w-full py-2.5 text-xs font-semibold text-primary flex items-center justify-center gap-1 hover:bg-primary/5 rounded-xl transition-colors border border-dashed border-primary/20"
+                  >
+                    Voir toutes les offres <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <EmptyOffers modeConfig={modeConfig} onAction={() => setActiveTab("bagages")} />
+              );
+            })()
+          ) : filteredOffers.length > 0 ? (
+            <div className="space-y-1.5">
+              {filteredOffers.slice(0, 6).map((offer, idx) => (
+                <HomeOfferCard key={offer.id} offer={offer} index={idx} />
+              ))}
+              {filteredOffers.length > 6 && (
+                <button onClick={goToOffres} className="w-full py-2 text-xs font-semibold text-primary flex items-center justify-center gap-1 hover:bg-primary/5 rounded-xl transition-colors">
+                  +{filteredOffers.length - 6} autres offres <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
+          ) : (
+            <EmptyOffers modeConfig={modeConfig} onAction={() => setActiveTab("all")} />
+          )}
+        </div>
 
-            {/* Mode-specific CTA */}
-            <div className="bg-card border border-border rounded-xl p-3 text-center">
-              <p className="text-[13px] font-bold text-foreground mb-0.5">
-                {activeTab === "routier" ? "Besoin d'un transport sur mesure ?" :
-                 activeTab === "maritime" ? "Expédiez par conteneur ou groupage" :
-                 activeTab === "aerien" ? "Fret aérien express disponible" :
-                 "Trouvez un GP de confiance"}
-              </p>
-              <p className="text-[11px] text-muted-foreground mb-2.5">
-                {activeTab === "routier" ? "Créez une mission et recevez des propositions" :
-                 activeTab === "maritime" ? "Solutions LCL, FCL et véhicules" :
-                 activeTab === "aerien" ? "Livraison rapide porte à porte" :
-                 "Envoi de bagages accompagnés en toute sécurité"}
-              </p>
-              <button
-                onClick={handleMainAction}
-                className="px-5 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-lg">
-                {modeConfig.searchButtonLabel}
-              </button>
-            </div>
-          </div>
+        {/* ── BOTTOM SECTIONS ── */}
+        {activeTab === "all" ? (
+          <>
+            {/* Popular routes carousel */}
+            <PopularRoutesSection routes={popularRoutes} onSelect={handleRouteSelect} tabId="all" />
+
+            {/* Canvas carousel */}
+            <KonnektCanvasCarousel />
+
+            {/* Trust */}
+            <TrustSection items={trustItems} title="💎 Pourquoi Konnekt ?" />
+          </>
+        ) : (
+          <>
+            {/* Popular routes */}
+            <PopularRoutesSection routes={popularRoutes} onSelect={handleRouteSelect} tabId={activeTab} />
+
+            {/* Trust */}
+            <TrustSection
+              items={trustItems}
+              title={
+                activeTab === "routier" ? "🚛 Avantages Routier" :
+                activeTab === "maritime" ? "🚢 Avantages Maritime" :
+                activeTab === "aerien" ? "✈️ Avantages Aérien" :
+                "🧳 Avantages GP"
+              }
+            />
+
+            {/* CTA */}
+            <ModeCTA activeTab={activeTab} modeConfig={modeConfig} onClick={handleMainAction} />
+          </>
         )}
+
+        {/* Bottom spacing for mobile nav */}
+        <div className="h-4" />
       </div>
 
       {/* Offers Popup */}
@@ -769,13 +885,13 @@ export function ClientAppHome({
       <RequestDetailsPopup
         open={!!requestPopup}
         onClose={() => setRequestPopup(null)}
-        type={requestPopup?.type || 'custom'}
+        type={requestPopup?.type || "custom"}
         item={requestPopup?.item}
-        navigate={navigate} />
-      
+        navigate={navigate}
+      />
 
       {/* City Picker Drawer */}
-      <Drawer open={!!activePicker} onOpenChange={(open) => {if (!open) setActivePicker(null);}}>
+      <Drawer open={!!activePicker} onOpenChange={(open) => { if (!open) setActivePicker(null); }}>
         <DrawerContent className="max-h-[85vh]">
           <DrawerHeader className="pb-2">
             <DrawerTitle>
@@ -791,32 +907,32 @@ export function ClientAppHome({
                 value={cityQuery}
                 onChange={(e) => setCityQuery(e.target.value)}
                 className="w-full h-11 pl-10 pr-4 rounded-xl border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30"
-                autoFocus />
-              
+                autoFocus
+              />
             </div>
           </div>
           <div className="overflow-y-auto overscroll-contain px-2 pb-6" style={{ maxHeight: "55vh", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
-            {filteredCities.slice(0, 30).map((city) =>
-            <button
-              key={`${city.city}-${city.country}`}
-              onClick={() => handleCitySelect(city.city)}
-              className="w-full flex items-center gap-3 py-2.5 px-3 rounded-lg text-left hover:bg-muted/60 active:bg-muted transition-colors">
-              
+            {filteredCities.slice(0, 30).map((city) => (
+              <button
+                key={`${city.city}-${city.country}`}
+                onClick={() => handleCitySelect(city.city)}
+                className="w-full flex items-center gap-3 py-2.5 px-3 rounded-lg text-left hover:bg-muted/60 active:bg-muted transition-colors"
+              >
                 <span className="text-lg">{city.flag}</span>
                 <span className="text-sm font-medium flex-1">{city.city}</span>
               </button>
-            )}
-            {filteredCities.length === 0 && cityQuery &&
-            <button
-              onClick={() => handleCitySelect(cityQuery)}
-              className="w-full py-3 text-sm text-primary font-medium text-center">
-              
+            ))}
+            {filteredCities.length === 0 && cityQuery && (
+              <button
+                onClick={() => handleCitySelect(cityQuery)}
+                className="w-full py-3 text-sm text-primary font-medium text-center"
+              >
                 Utiliser "{cityQuery}"
               </button>
-            }
+            )}
           </div>
         </DrawerContent>
       </Drawer>
-    </div>);
-
+    </div>
+  );
 }
