@@ -264,7 +264,9 @@ export default function GPApercuPage() {
         status={gpProfile.status}
         hasIdDocument={!!gpProfile.id_document_url}
         hasSelfie={!!gpProfile.selfie_url}
-        hasBusinessReg={!!gpProfile.business_registration_url} />
+        hasBusinessReg={!!gpProfile.business_registration_url}
+        subscription={(gpProfile as any).subscription}
+        gpId={gpProfile.id} />
 
       }
 
