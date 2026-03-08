@@ -224,6 +224,7 @@ const App = () => (
             <Route path="/gp/performances" element={<GPPerformancesPage />} />
             <Route path="/gp/premium" element={<GPPremiumPage />} />
             <Route path="/gp/auto-accept" element={<GPAutoAcceptPage />} />
+            <Route path="/gp/facturation" element={<GPFacturationPage />} />
             <Route path="/transporter/profile" element={<TransporterProfile />} />
             
             {/* ============================================
