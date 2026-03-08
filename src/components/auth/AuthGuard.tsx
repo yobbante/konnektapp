@@ -56,6 +56,7 @@ const TRANSPORTER_ROUTES = [
   "/gp/order",
   "/gp/distribution",
   "/gp/ktp-geotrack",
+  "/gp/performances",
   "/transporter/profile",
 ];
 
