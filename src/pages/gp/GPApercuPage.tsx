@@ -469,7 +469,7 @@ export default function GPApercuPage() {
           }
 
             {/* ── QUICK ACTIONS — sticky ── */}
-            <div className="sticky top-[calc(52px+var(--safe-top,0px))] z-30 bg-background py-2 -mx-4 px-4">
+            <div className="py-2">
               <div className="grid grid-cols-4 gap-2">
                 <QuickAction icon={ScanLine} label="Scanner" primary onClick={() => setScanSheetOpen(true)} />
                 <QuickAction icon={Package} label="Demandes" badge={pendingCount} onClick={() => navigate("/gp/demandes")} />
