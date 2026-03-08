@@ -95,13 +95,15 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
 
       if (data && data.length > 0) {
         const gpIds = [...new Set(data.map(o => o.gp_id))];
-        const [profilesRes, ktpRes] = await Promise.all([
+        const [profilesRes, ktpRes, subsRes] = await Promise.all([
           supabase.from("public_gp_profiles").select("id, business_name, rating, default_currency").in("id", gpIds),
           supabase.from("ktp_status").select("gp_id, ktp_level, trust_score").in("gp_id", gpIds),
+          supabase.from("gp_profiles").select("id, subscription").in("id", gpIds),
         ]);
         const profileMap = new Map(profilesRes.data?.map(p => [p.id, p]) || []);
         const ktpMap = new Map(ktpRes.data?.map(k => [k.gp_id, k]) || []);
-        setOffers(data.map(o => ({ ...o, gp_profile: profileMap.get(o.gp_id), ktp: ktpMap.get(o.gp_id) })));
+        const subsMap = new Map(subsRes.data?.map(s => [s.id, s.subscription]) || []);
+        setOffers(data.map(o => ({ ...o, gp_profile: profileMap.get(o.gp_id), ktp: ktpMap.get(o.gp_id), subscription: subsMap.get(o.gp_id) || "free" })));
       } else {
         setOffers([]);
       }
@@ -124,9 +126,13 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
     if (searchDest) {
       result = result.filter(o => o.destination_city?.toLowerCase().includes(searchDest.toLowerCase()));
     }
-    // Sort by KTP then trust score
+    // Sort: Premium/Pro first, then by KTP level, then trust score
+    const subPriority: Record<string, number> = { pro: 2, premium: 1, free: 0 };
     const ktpPriority: Record<string, number> = { pro: 3, verified: 2, basic: 1 };
     return result.sort((a: any, b: any) => {
+      const aSub = subPriority[a.subscription] || 0;
+      const bSub = subPriority[b.subscription] || 0;
+      if (bSub !== aSub) return bSub - aSub;
       const aP = ktpPriority[a.ktp?.ktp_level] || 0;
       const bP = ktpPriority[b.ktp?.ktp_level] || 0;
       if (bP !== aP) return bP - aP;
