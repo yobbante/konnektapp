@@ -345,20 +345,7 @@ export default function GPParametresPage() {
           <ToggleRow icon={Bell} iconColor="text-orange-500" iconBg="bg-orange-500/10" label="Statuts commandes" desc="Mises à jour" checked={notifPrefs.order_status_alerts} onToggle={() => handleToggle("order_status_alerts")} />
         </SettingsSection>
 
-        {/* ═══ 6. APPARENCE & LANGUE ═══ */}
-        <SettingsSection title="Apparence & Langue">
-          <div className="p-3">
-            <div className="flex items-center gap-3 mb-2">
-              <Palette className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium">Thème</span>
-            </div>
-            <ThemeToggle />
-          </div>
-          <Separator />
-          <SettingsRow icon={Languages} iconColor="text-indigo-500" iconBg="bg-indigo-500/10" label="Langue" desc="Français" onClick={() => toast({ title: "Bientôt disponible", description: "Le choix de langue sera disponible prochainement." })} />
-        </SettingsSection>
-
-        {/* ═══ 7. ABONNEMENT & FACTURATION ═══ */}
+        {/* ═══ 6. ABONNEMENT & FACTURATION ═══ */}
         <SettingsSection title="Abonnement & Facturation">
           <SettingsRow 
             icon={Crown} 
@@ -399,6 +386,19 @@ export default function GPParametresPage() {
 
         {/* Premium CTA — progressive */}
         <PremiumCTABanner variant="banner" context="dashboard" subscription={(gpProfile as any)?.subscription} />
+
+        {/* ═══ 7. APPARENCE & LANGUE ═══ */}
+        <SettingsSection title="Apparence & Langue">
+          <div className="p-3">
+            <div className="flex items-center gap-3 mb-2">
+              <Palette className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium">Thème</span>
+            </div>
+            <ThemeToggle />
+          </div>
+          <Separator />
+          <SettingsRow icon={Languages} iconColor="text-indigo-500" iconBg="bg-indigo-500/10" label="Langue" desc="Français" onClick={() => toast({ title: "Bientôt disponible", description: "Le choix de langue sera disponible prochainement." })} />
+        </SettingsSection>
 
         {/* ═══ 8. AIDE & LÉGAL ═══ */}
         <SettingsSection title="Aide & Légal">
