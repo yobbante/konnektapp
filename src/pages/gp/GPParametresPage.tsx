@@ -393,7 +393,7 @@ export default function GPParametresPage() {
             iconBg="bg-emerald-500/10" 
             label="Auto-acceptation" 
             desc={isPremium && (gpProfile as any).auto_accept_enabled ? "Activée ✅" : isPremium ? "Désactivée" : "🔒 Premium"} 
-            onClick={() => isPremium ? navigate("/gp/auto-accept") : navigate("/gp/premium")} 
+            onClick={() => navigate("/gp/auto-accept")} 
           />
         </SettingsSection>
 
