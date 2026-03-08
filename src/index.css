@@ -358,3 +358,10 @@
 /* Hide scrollbar utility */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Leaflet custom marker fix */
+.custom-marker { background: none !important; border: none !important; }
+.leaflet-popup-content-wrapper { border-radius: 0.75rem !important; box-shadow: 0 4px 20px rgba(0,0,0,0.12) !important; }
+.leaflet-popup-content { margin: 8px 12px !important; }
+.leaflet-popup-tip { display: none !important; }
+.routier-popup .leaflet-popup-content-wrapper { border-left: 3px solid hsl(var(--success)) !important; }
