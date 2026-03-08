@@ -42,6 +42,18 @@ export function SmartVoyageForm({
   const [loading, setLoading] = useState(false);
   const [tripType, setTripType] = useState<"aller" | "retour">("aller");
 
+  interface NavetteRoute {
+    id: string;
+    origin_city: string;
+    origin_country: string;
+    destination_city: string;
+    destination_country: string;
+    is_primary: boolean;
+  }
+
+  const [navettes, setNavettes] = useState<NavetteRoute[]>([]);
+  const [selectedNavetteIdx, setSelectedNavetteIdx] = useState(0);
+
   const [gpData, setGpData] = useState<{
     baseOriginCity: string;
     baseOriginCountry: string;
