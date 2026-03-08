@@ -60,7 +60,9 @@ export function InteractiveAuthForm({
     fullName: "",
     phone: prefillPhone || "",
     country: prefillCountry,
+    city: "",
   });
+  const [cityInput, setCityInput] = useState("");
 
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [phoneError, setPhoneError] = useState<string | null>(null);
