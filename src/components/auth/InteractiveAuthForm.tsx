@@ -682,7 +682,7 @@ export function InteractiveAuthForm({
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setRegisterStep("phone")}
+              onClick={() => setRegisterStep("credentials")}
               className="w-full p-5 rounded-2xl border-2 border-border bg-card hover:border-primary hover:bg-primary/5 transition-all"
             >
               <div className="flex items-center gap-4">
