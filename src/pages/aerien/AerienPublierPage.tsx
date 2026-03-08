@@ -18,6 +18,7 @@ export default function AerienPublierPage() {
   const { toast } = useToast();
   const [gpProfile, setGpProfile] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [navettes, setNavettes] = useState<Array<{ origin_city: string; origin_country: string; destination_city: string; destination_country: string }>>([]);
 
   const [form, setForm] = useState({
     originCity: "",
@@ -34,6 +35,8 @@ export default function AerienPublierPage() {
     description: "",
   });
 
+  const isPremiumOrPro = gpProfile?.subscription === "premium" || gpProfile?.subscription === "pro";
+
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -43,10 +46,17 @@ export default function AerienPublierPage() {
         .in("gp_type", ["aerien", "agence"]).maybeSingle();
       if (!gp) { navigate("/transporteur/inscription"); return; }
       setGpProfile(gp);
-      // Prefill from base navette
       if (gp.base_origin_city) setForm(f => ({ ...f, originCity: gp.base_origin_city }));
       if (gp.base_destination_city) setForm(f => ({ ...f, destinationCity: gp.base_destination_city }));
       if (gp.default_currency) setForm(f => ({ ...f, currency: gp.default_currency }));
+
+      // Load navettes for subscribers
+      if (gp.subscription === "premium" || gp.subscription === "pro") {
+        const { data: navData } = await supabase.from("gp_navettes")
+          .select("origin_city, origin_country, destination_city, destination_country")
+          .eq("gp_id", gp.id).eq("is_active", true);
+        setNavettes(navData || []);
+      }
     })();
   }, []);
 
