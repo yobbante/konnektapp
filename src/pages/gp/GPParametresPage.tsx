@@ -397,10 +397,8 @@ export default function GPParametresPage() {
           />
         </SettingsSection>
 
-        {/* ═══ PREMIUM CTA (inline, pas section dédiée) ═══ */}
-        {!isPremium && (
-          <PremiumCTABanner variant="banner" context="dashboard" isPremium={isPremium} />
-        )}
+        {/* Premium CTA — progressive */}
+        <PremiumCTABanner variant="banner" context="dashboard" subscription={(gpProfile as any)?.subscription} />
 
         {/* ═══ 8. AIDE & LÉGAL ═══ */}
         <SettingsSection title="Aide & Légal">

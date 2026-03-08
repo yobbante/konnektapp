@@ -51,10 +51,8 @@ export default function GPWalletPage() {
           onActivateKYC={() => navigate("/gp/profil-public")}
         />
 
-        {/* Premium CTA in wallet */}
-        {!isGPPremium((gpProfile as any).subscription) && (
-          <PremiumCTABanner variant="card" context="wallet" isPremium={isGPPremium((gpProfile as any).subscription)} />
-        )}
+        {/* Premium CTA — progressive */}
+        <PremiumCTABanner variant="card" context="wallet" subscription={(gpProfile as any).subscription} />
       </div>
 
       {gpProfile && (

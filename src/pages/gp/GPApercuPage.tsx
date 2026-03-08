@@ -406,6 +406,8 @@ export default function GPApercuPage() {
 
         {!isPending &&
         <>
+            {/* ── PREMIUM/PRO CTA — top of dashboard ── */}
+            <PremiumCTABanner variant="banner" context="dashboard" subscription={(gpProfile as any)?.subscription} gpId={gpProfile.id} />
 
             {/* ── URGENT ALERTS BLOCK ── */}
             {urgentCount > 0 &&
@@ -641,10 +643,7 @@ export default function GPApercuPage() {
               </div>
             )}
 
-            {/* ── PREMIUM CTA (only for non-subscribers) ── */}
-            {!isGPPremium((gpProfile as any)?.subscription) && (
-              <PremiumCTABanner variant="banner" context="dashboard" isPremium={false} gpId={gpProfile.id} />
-            )}
+            {/* Premium CTA moved to top of page */}
 
             {/* ── DEPARTURES ── */}
             <div className="space-y-2">

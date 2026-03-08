@@ -357,12 +357,10 @@ export function GPDashboardLayout({
                 <MenuButton icon={Settings} label="Réglages" onClick={() => { setShowMenu(false); navigate("/gp/parametres"); }} />
                 <MenuButton icon={LogOut} label="Déconnexion" variant="destructive" onClick={() => { setShowMenu(false); handleSignOut(); }} />
               </div>
-              {/* Premium CTA in menu — hidden for subscribers */}
-              {!isGPPremium((gpProfile as any).subscription) && (
-                <div className="pb-3">
-                  <PremiumCTABanner variant="compact" context="menu" isPremium={false} />
-                </div>
-              )}
+              {/* Premium CTA — progressive */}
+              <div className="pb-3">
+                <PremiumCTABanner variant="compact" context="menu" subscription={(gpProfile as any).subscription} />
+              </div>
             </SheetContent>
           </Sheet>
         </div>
