@@ -145,7 +145,7 @@ export default function RoutierApercuPage() {
 
   return (
     <RoutierDashboardLayout gpProfile={gpProfile} pendingCount={pendingCount} activeOrdersCount={totalActive}>
-      <div className="px-3 py-3 space-y-3 pb-24">
+      <div className="px-3 py-2 space-y-2 pb-20">
 
         {/* ── QUICK ACTIONS — Row of 4 ── */}
         <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
