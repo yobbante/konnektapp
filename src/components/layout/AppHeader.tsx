@@ -147,30 +147,28 @@ export function AppHeader({
 
             {/* Combined Scan + QR button */}
             {isAuthenticated && (
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setScanOpen(true)}
-                className={cn(
-                  "relative flex items-center gap-1.5 h-8 px-2.5 rounded-full transition-all",
-                  "bg-primary/10 hover:bg-primary/20 border border-primary/20"
-                )}
-              >
-                <ScanLine className="w-4 h-4 text-primary" />
-                <div className="w-px h-3.5 bg-primary/20" />
-                <Fingerprint className="w-3.5 h-3.5 text-primary/70" />
-                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              </motion.button>
-            )}
-
-            {/* QR Badge (hidden trigger — opens identity dialog) */}
-            {isAuthenticated && userId && (
-              <div className="hidden">
-                <HeaderQRBadge
-                  userId={userId}
-                  label={userName}
-                  subLabel="Client Konnekt"
-                  variant="client"
-                />
+              <div className="relative flex items-center">
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setScanOpen(true)}
+                  className={cn(
+                    "flex items-center gap-1.5 h-8 pl-2.5 pr-1 rounded-l-full transition-all",
+                    "bg-primary/10 hover:bg-primary/20 border border-r-0 border-primary/20"
+                  )}
+                  title="Scanner"
+                >
+                  <ScanLine className="w-4 h-4 text-primary" />
+                </motion.button>
+                <div className="relative">
+                  <HeaderQRBadge
+                    userId={userId || undefined}
+                    label={userName}
+                    subLabel="Client Konnekt"
+                    variant="client"
+                    className="!rounded-l-none !rounded-r-full border border-primary/20 bg-primary/10 hover:bg-primary/20 !w-auto h-8 px-2"
+                  />
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                </div>
               </div>
             )}
             
