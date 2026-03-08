@@ -180,14 +180,14 @@ export default function GPPremiumPage() {
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mx-auto shadow-lg shadow-amber-500/25">
               <Crown className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-xl font-bold">GP Premium</h2>
+            <h2 className="text-xl font-bold">GP {selectedPlan === "pro" ? "Pro" : "Premium"}</h2>
           </div>
 
           <Card className="border-amber-500/30 bg-amber-500/5">
             <CardContent className="p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Abonnement mensuel</span>
-                <span className="text-lg font-bold text-amber-600">9 900 FCFA</span>
+                <span className="text-lg font-bold text-amber-600">{selectedPlan === "pro" ? "19 900" : "9 900"} FCFA</span>
               </div>
               <Separator className="bg-amber-500/15" />
               <div className="space-y-2">
@@ -207,9 +207,9 @@ export default function GPPremiumPage() {
           </Card>
 
           <div className="space-y-2">
-            <p className="text-xs font-semibold">Inclus dans Premium :</p>
+            <p className="text-xs font-semibold">Inclus dans {selectedPlan === "pro" ? "Pro" : "Premium"} :</p>
             <div className="grid grid-cols-1 gap-1.5">
-              {PREMIUM_FEATURES.filter(f => f.highlight).map((f, i) => (
+              {(selectedPlan === "pro" ? PRO_FEATURES.filter(f => !f.separator) : PREMIUM_FEATURES.filter(f => f.highlight)).map((f, i) => (
                 <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
                   <CheckCircle2 className="w-3.5 h-3.5 text-accent flex-shrink-0" />
                   {f.label}
@@ -225,7 +225,7 @@ export default function GPPremiumPage() {
               disabled={upgrading}
             >
               <Crown className="w-4 h-4" />
-              Confirmer — 9 900 FCFA/mois
+              Confirmer — {selectedPlan === "pro" ? "19 900" : "9 900"} FCFA/mois
             </Button>
             <Button
               variant="ghost"
