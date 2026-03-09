@@ -93,8 +93,8 @@ export default function RoutierMissionDetailTransporteurPage() {
         pickup_date: mission.pickup_date_start,
         status: mission.status,
         created_at: mission.created_at,
-        photo_url: mission.photo_url,
-        has_insurance: mission.insurance_required,
+        photo_url: mission.photo_urls?.[0] || null,
+        has_insurance: (mission as any).insurance_required,
         _source: "mission",
       });
 

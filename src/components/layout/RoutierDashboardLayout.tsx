@@ -254,39 +254,13 @@ export function RoutierDashboardLayout({
 
       {/* STICKY SUB-HEADER — Quick nav tabs */}
       <div className="sticky top-[calc(52px+var(--safe-top,0px))] z-30 bg-card/95 backdrop-blur-md border-b border-border/50">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
+        <div className="flex items-center gap-1 px-2 py-1.5 overflow-x-auto no-scrollbar">
+          <SubNavTab label="Aperçu" active={currentTab === "apercu"} onClick={() => navigate("/routier/apercu")} />
+          <SubNavTab label="Missions" active={currentTab === "missions"} badge={pendingCount + activeOrdersCount} onClick={() => navigate("/routier/demandes")} />
+          <SubNavTab label="Négociations" active={location.pathname.includes("/routier/negotiations")} onClick={() => navigate("/routier/negotiations")} />
+          <SubNavTab label="Carte" active={currentTab === "carte"} onClick={() => navigate("/routier/carte")} />
+          <SubNavTab label="Historique" onClick={() => navigate("/routier/historique")} />
+        </div>
       </div>
 
       <main className="flex-1 pb-20">
