@@ -140,6 +140,7 @@ export function GPCreateOfferDialog({ open, onClose, gpProfile, onSuccess }: GPC
           destination_country: formData.destinationCountry,
           departure_date: formData.departureDate,
           arrival_date: formData.arrivalDate || null,
+          expires_at: effectiveExpiresAt,
           price_per_kg: parseInt(formData.pricePerKg),
           total_capacity: parseFloat(formData.totalCapacity),
           available_capacity: parseFloat(formData.totalCapacity),
