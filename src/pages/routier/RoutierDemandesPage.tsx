@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TransportPageLoader } from "@/components/ui/TransportLoader";
 import { RoutierMissionsTab } from "@/components/routier/RoutierMissionsTab";
+import { RoutierOpportunitesTab } from "@/components/routier/RoutierOpportunitesTab";
 import { useToast } from "@/hooks/use-toast";
 import { RefusalReasonDialog, RefusalReason } from "@/components/routier/RefusalReasonDialog";
 import { format } from "date-fns";
