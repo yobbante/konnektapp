@@ -335,7 +335,7 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
       {selectedMission && (
         <div
           className="absolute bottom-0 left-0 right-0 z-[1000] bg-background/95 backdrop-blur-md border-t border-border/50 p-3 pointer-events-auto animate-in slide-in-from-bottom-4 duration-200 cursor-pointer"
-          onClick={() => navigate(`/routier/mission/${selectedMission.id}`)}
+          onClick={() => navigate(`/routier/detail-mission/${selectedMission.id}`)}
         >
           <div className="flex items-start gap-3">
             <div className="w-14 h-14 rounded-xl bg-muted/40 flex items-center justify-center flex-shrink-0">

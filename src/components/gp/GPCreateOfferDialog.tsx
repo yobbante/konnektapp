@@ -131,9 +131,9 @@ export function GPCreateOfferDialog({ open, onClose, gpProfile, onSuccess }: GPC
     try {
       const { error } = await supabase
         .from("gp_offers")
-        .insert({
+        .insert([{
           gp_id: gpProfile.id,
-          transport_type: transportType, // Type forcé par le profil
+          transport_type: transportType as any,
           origin_city: formData.originCity,
           origin_country: formData.originCountry,
           destination_city: formData.destinationCity,
@@ -149,7 +149,7 @@ export function GPCreateOfferDialog({ open, onClose, gpProfile, onSuccess }: GPC
           description: formData.description || null,
           conditions: formData.conditions || null,
           status: 'active',
-        });
+        }]);
 
       if (error) throw error;
 
