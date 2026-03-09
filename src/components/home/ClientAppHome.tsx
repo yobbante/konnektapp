@@ -810,7 +810,7 @@ export function ClientAppHome({
                     const ModeIcon = modeIcons[mode] || Package;
                     return (
                       <div key={offer.id} className="relative">
-                        <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full border border-border/50">
+                        <div className="absolute top-1.5 left-10 z-10 flex items-center gap-1 bg-background/90 backdrop-blur-sm px-1.5 py-0.5 rounded-full border border-border/50">
                           <ModeIcon className="w-2.5 h-2.5 text-muted-foreground" />
                           <span className="text-[9px] font-semibold text-muted-foreground">{modeLabels[mode] || mode}</span>
                         </div>
@@ -843,7 +843,7 @@ export function ClientAppHome({
                 const sub = offer.gp_profiles?.subscription;
                 return (
                   <div key={offer.id} className="relative">
-                        <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full border border-border/50">
+                        <div className="absolute top-1.5 left-10 z-10 flex items-center gap-1 bg-background/90 backdrop-blur-sm px-1.5 py-0.5 rounded-full border border-border/50">
                           <ModeIcon className="w-2.5 h-2.5 text-muted-foreground" />
                           <span className="text-[9px] font-semibold text-muted-foreground">{modeLabels[offer._mode]}</span>
                           {(sub === "premium" || sub === "pro") && <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full ${sub === "pro" ? "bg-amber-500/15 text-amber-600" : "bg-violet-500/15 text-violet-600"}`}>{sub === "pro" ? "PRO" : "PREMIUM"}</span>}
