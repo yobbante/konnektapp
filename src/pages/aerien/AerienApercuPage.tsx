@@ -1,9 +1,6 @@
 /**
- * AerienApercuPage — Smart Dashboard Aérien Cargo (Compact)
- * 
- * 3 tiers: GP (bagage), Independent, Shipping Partner
- * 2 modes: Offres publiées + Confier fret
- * Violet theme via .theme-aerien
+ * AerienApercuPage — Air Cargo Dashboard with air_departures integration
+ * Shows published departures with fill gauges, weight tiers, and surcharges
  */
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
@@ -11,8 +8,7 @@ import { motion } from "framer-motion";
 import {
   Package, Plane, Bell, ChevronRight,
   RefreshCw, Wallet, Plus, ScanLine,
-  History, CheckCircle2, Activity,
-  AlertTriangle, Calendar, ArrowRight
+  History, Calendar, Weight
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -52,7 +48,6 @@ export default function AerienApercuPage() {
   const loadProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate("/auth"); return; }
-    // Accept aerien or agence type profiles for air cargo
     const { data: gp } = await supabase
       .from("gp_profiles").select("*").eq("user_id", user.id)
       .in("gp_type", ["aerien", "agence"]).maybeSingle();
@@ -70,7 +65,7 @@ export default function AerienApercuPage() {
         supabase.from("orders").select("id, order_number, origin_city, destination_city, weight, status, total_price, currency, created_at, description")
           .eq("gp_id", gpProfile.id).not("status", "eq", "cancelled").order("created_at", { ascending: false }),
         supabase.from("gp_wallets").select("balance, pending_balance, currency").eq("gp_id", gpProfile.id).maybeSingle(),
-        supabase.from("gp_offers").select("id, origin_city, destination_city, departure_date, available_capacity, total_capacity, price_per_kg, currency, status, description")
+        supabase.from("air_departures" as any).select("*")
           .eq("gp_id", gpProfile.id).eq("status", "active").order("departure_date", { ascending: true }),
         supabase.from("freight_requests").select("id", { count: "exact" }).in("status", ["open", "has_proposals"]).eq("freight_mode", "air"),
       ]);
@@ -84,20 +79,13 @@ export default function AerienApercuPage() {
         wallet: walletRes.data ? { balance: walletRes.data.balance, pending: walletRes.data.pending_balance, currency: walletRes.data.currency || "EUR" } : null,
         activeShipments: active.slice(0, 8),
         pendingShipments: pending.slice(0, 5),
-        stats: {
-          delivered: delivered.length,
-          successRate: orders.length > 0 ? Math.round(delivered.length / orders.length * 100) : 0,
-          total: orders.length,
-        },
-        departures: departuresRes.data || [],
+        stats: { delivered: delivered.length, successRate: orders.length > 0 ? Math.round(delivered.length / orders.length * 100) : 0, total: orders.length },
+        departures: (departuresRes.data as any[]) || [],
         freightRequests: freightRes.count || 0,
       });
     } catch (err) {
       console.error("Aérien dashboard load error:", err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+    } finally { setLoading(false); setRefreshing(false); }
   }, [gpProfile]);
 
   const handleQuickStatusUpdate = async (orderId: string, newStatus: string) => {
@@ -126,7 +114,7 @@ export default function AerienApercuPage() {
         {/* HEADER */}
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-bold">Aerien Cargo</h2>
+            <h2 className="text-sm font-bold">Aérien Cargo</h2>
             <p className="text-[10px] text-muted-foreground">Fret aérien, cargo & express</p>
           </div>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => loadAll(true)} disabled={refreshing}>
@@ -158,19 +146,16 @@ export default function AerienApercuPage() {
           <QuickAction icon={History} label="Historique" onClick={() => navigate("/aerien/historique")} />
         </div>
 
-        {/* AIR SERVICE TYPES */}
+        {/* AIR SERVICES */}
         <div className="space-y-1.5">
-          <h3 className="text-xs font-bold flex items-center gap-1.5">
-            <Plane className="w-3.5 h-3.5 text-primary" />
-            Services aériens
-          </h3>
+          <h3 className="text-xs font-bold flex items-center gap-1.5"><Plane className="w-3.5 h-3.5 text-primary" /> Services aériens</h3>
           <div className="grid grid-cols-2 gap-2">
             {[
-              { title: "Cargo leger", desc: "Reservation au kg", path: "/aerien/publier" },
+              { title: "Cargo léger", desc: "Réservation au kg", path: "/aerien/publier" },
               { title: "Fret express", desc: "Livraison rapide", path: "/aerien/publier" },
-              { title: "Confier fret", desc: "Gestion complete", path: "/aerien/demande-fret" },
+              { title: "Confier fret", desc: "Gestion complète", path: "/aerien/demande-fret" },
               { title: "Marketplace", desc: `${data.freightRequests} demandes`, path: "/aerien/marketplace" },
-            ].map((s) => (
+            ].map(s => (
               <Card key={s.title} className="cursor-pointer active:scale-[0.98] transition-all border-primary/15 hover:border-primary/40" onClick={() => navigate(s.path)}>
                 <CardContent className="p-2.5 flex items-center gap-2">
                   <div className="min-w-0">
@@ -207,7 +192,7 @@ export default function AerienApercuPage() {
           </Card>
         )}
 
-        {/* PUBLISHED DEPARTURES */}
+        {/* PUBLISHED DEPARTURES from air_departures */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
@@ -232,7 +217,13 @@ export default function AerienApercuPage() {
           ) : (
             <div className="space-y-1.5">
               {data.departures.map((dep: any) => {
-                const fillPercent = dep.total_capacity > 0 ? Math.round(((dep.total_capacity - dep.available_capacity) / dep.total_capacity) * 100) : 0;
+                const fillPercent = dep.total_capacity_kg > 0
+                  ? Math.round(((dep.total_capacity_kg - dep.available_capacity_kg) / dep.total_capacity_kg) * 100)
+                  : 0;
+                const tiers = dep.weight_tiers || [];
+                const hasTiers = Array.isArray(tiers) && tiers.length > 0;
+                const surchargesTotal = (dep.fuel_surcharge || 0) + (dep.security_surcharge || 0) + (dep.handling_fee || 0) + (dep.documentation_fee || 0);
+
                 return (
                   <Card key={dep.id} className="cursor-pointer active:scale-[0.99] transition-all border-primary/20">
                     <CardContent className="p-2.5">
@@ -241,14 +232,36 @@ export default function AerienApercuPage() {
                           <Plane className="w-4 h-4 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold truncate">{dep.origin_city} → {dep.destination_city}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-xs font-semibold truncate">{dep.origin_city} → {dep.destination_city}</p>
+                            {dep.airline && <Badge variant="secondary" className="text-[8px] h-3.5">{dep.airline}</Badge>}
+                          </div>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="text-[9px] text-muted-foreground flex items-center gap-0.5">
                               <Calendar className="w-2.5 h-2.5" />
                               {dep.departure_date && format(new Date(dep.departure_date), "d MMM yyyy", { locale: fr })}
                             </span>
-                            <span className="text-[9px] text-muted-foreground">·</span>
-                            <span className="text-[9px] font-medium text-primary">{dep.price_per_kg} {dep.currency}/kg</span>
+                            {dep.cargo_cutoff_date && (
+                              <>
+                                <span className="text-[9px] text-muted-foreground">·</span>
+                                <span className="text-[9px] text-destructive/80">Cut-off {format(new Date(dep.cargo_cutoff_date), "d MMM", { locale: fr })}</span>
+                              </>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            {hasTiers ? (
+                              <span className="text-[9px] font-medium text-primary">
+                                {Math.min(...tiers.map((t: any) => t.price_per_kg))}–{Math.max(...tiers.map((t: any) => t.price_per_kg))} {dep.currency}/kg
+                              </span>
+                            ) : (
+                              <span className="text-[9px] font-medium text-primary">{dep.price_per_kg} {dep.currency}/kg</span>
+                            )}
+                            {surchargesTotal > 0 && (
+                              <span className="text-[8px] text-muted-foreground">+ {surchargesTotal.toLocaleString()} frais</span>
+                            )}
+                            {dep.transit_time_days && (
+                              <span className="text-[8px] text-muted-foreground">· {dep.transit_time_days}j</span>
+                            )}
                           </div>
                         </div>
                         <div className="text-right shrink-0">
@@ -259,6 +272,9 @@ export default function AerienApercuPage() {
                               style={{ width: `${Math.max(5, fillPercent)}%` }}
                             />
                           </div>
+                          <p className="text-[8px] text-muted-foreground mt-0.5">
+                            <Weight className="w-2.5 h-2.5 inline" /> {Math.round(dep.available_capacity_kg)} kg
+                          </p>
                         </div>
                       </div>
                     </CardContent>
