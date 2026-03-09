@@ -212,8 +212,8 @@ export default function GPOrderDetail() {
       const { error } = await supabase.from("orders").update(updates).eq("id", order.id);
       if (error) throw error;
       await supabase.from("order_status_history").insert({ order_id: order.id, status: newStatus, changed_by: user.id, changed_by_type: "gp" });
-      await supabase.from("notifications").insert({ user_id: order.client_id, type: "order_update", title: `📦 ${order.order_number}`, message: `Statut mis à jour: ${getOrderStatusLabel(newStatus)}`, related_type: "order", related_id: order.id });
-      toast({ title: "✅ Statut mis à jour", description: `Commande marquée comme "${getOrderStatusLabel(newStatus)}"` });
+      await supabase.from("notifications").insert({ user_id: order.client_id, type: "order_update", title: `${order.order_number}`, message: `Statut mis à jour: ${getOrderStatusLabel(newStatus)}`, related_type: "order", related_id: order.id });
+      toast({ title: "Statut mis a jour", description: `Commande marquée comme "${getOrderStatusLabel(newStatus)}"` });
       loadOrderDetails();
     } catch (error: any) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
@@ -420,7 +420,7 @@ export default function GPOrderDetail() {
                 {logisticsOptions?.pickup_enabled && (
                   <div className="p-2.5 bg-muted/50 rounded-lg space-y-0.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-medium">📦 Enlèvement</span>
+                      <span className="text-[11px] font-medium">Enlevement</span>
                       <Badge variant="outline" className="text-[9px] h-5">{logisticsOptions.pickup_status || "pending"}</Badge>
                     </div>
                     <p className="text-xs">{logisticsOptions.pickup_address}</p>
@@ -430,7 +430,7 @@ export default function GPOrderDetail() {
                 {logisticsOptions?.delivery_enabled && (
                   <div className="p-2.5 bg-muted/50 rounded-lg space-y-0.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-medium">🎯 Livraison dernier km</span>
+                      <span className="text-[11px] font-medium">Livraison dernier km</span>
                       <Badge variant="outline" className="text-[9px] h-5">{logisticsOptions.delivery_status || "pending"}</Badge>
                     </div>
                     <p className="text-xs">{logisticsOptions.delivery_address}</p>
@@ -541,9 +541,9 @@ export default function GPOrderDetail() {
                       <div className="mt-2 flex items-center justify-between p-2.5 bg-muted/50 rounded-lg">
                         <span className="text-[11px] text-muted-foreground">Paiement</span>
                         <Badge variant={escrow.status === "released" ? "default" : "secondary"} className="text-[10px]">
-                          {escrow.status === "held" && "🔒 Séquestre"}
-                          {escrow.status === "released" && "✅ Libéré"}
-                          {escrow.status === "pending" && "⏳ En attente"}
+                          {escrow.status === "held" && "Sequestre"}
+                          {escrow.status === "released" && "Libere"}
+                          {escrow.status === "pending" && "En attente"}
                         </Badge>
                       </div>
                     )}

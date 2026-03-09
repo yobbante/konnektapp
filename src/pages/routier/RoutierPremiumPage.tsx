@@ -149,7 +149,7 @@ export default function RoutierPremiumPage() {
           className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto">
           <CheckCircle2 className="w-10 h-10 text-emerald-500" />
         </motion.div>
-        <h2 className="text-2xl font-bold">🎉 Bienvenue {selectedPlan === "pro" ? "Pro" : "Premium"} !</h2>
+        <h2 className="text-2xl font-bold">Bienvenue {selectedPlan === "pro" ? "Pro" : "Premium"}</h2>
         <p className="text-sm text-muted-foreground">Votre abonnement est actif.</p>
         <Badge className="bg-emerald-500 text-white border-none gap-1.5 text-sm px-4 py-1.5">
           <Truck className="w-4 h-4" /> Routier {selectedPlan === "pro" ? "Pro" : "Premium"}
@@ -223,7 +223,7 @@ export default function RoutierPremiumPage() {
 
         <div className="bg-muted/50 rounded-xl p-4 text-center">
           <p className="text-xs text-muted-foreground">
-            💡 Un seul trajet peut couvrir le coût de votre abonnement mensuel.
+            Un seul trajet peut couvrir le cout de votre abonnement mensuel.
           </p>
         </div>
 
@@ -367,7 +367,7 @@ export default function RoutierPremiumPage() {
 
             {/* Dashboard détail */}
             <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-lg p-3 space-y-1.5">
-              <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wider">📊 Dashboard inclus</p>
+              <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wider">Dashboard inclus</p>
               {PREMIUM_STATS.map((s, i) => (
                 <div key={i} className="flex items-center gap-2 text-[11px] text-muted-foreground">
                   <div className="w-1 h-1 rounded-full bg-emerald-500 flex-shrink-0" />
@@ -438,7 +438,7 @@ export default function RoutierPremiumPage() {
 
             {/* Analytics Pro détail */}
             <div className="bg-primary/5 border border-primary/15 rounded-lg p-3 space-y-1.5">
-              <p className="text-[10px] font-semibold text-primary uppercase tracking-wider">📊 Analytics Pro</p>
+              <p className="text-[10px] font-semibold text-primary uppercase tracking-wider">Analytics Pro</p>
               {PRO_ANALYTICS.map((s, i) => (
                 <div key={i} className="flex items-center gap-2 text-[11px] text-muted-foreground">
                   <div className="w-1 h-1 rounded-full bg-primary flex-shrink-0" />
@@ -474,7 +474,7 @@ export default function RoutierPremiumPage() {
 
         {/* ═══ ROI CALLOUT ═══ */}
         <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 text-center space-y-2">
-          <p className="text-sm font-semibold">💰 Rentabilisé en 1 trajet</p>
+          <p className="text-sm font-semibold">Rentabilise en 1 trajet</p>
           <p className="text-[11px] text-muted-foreground leading-relaxed">
             Un transporteur routier gagne en moyenne 40–150€+ par trajet.
             L'abonnement Premium (9 900 FCFA) ou Pro (19 900 FCFA) est couvert dès votre premier trajet.

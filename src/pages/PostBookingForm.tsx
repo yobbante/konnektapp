@@ -244,7 +244,7 @@ export default function PostBookingForm() {
       }
 
       toast({ 
-        title: "🎉 Réservation confirmée !", 
+        title: "Reservation confirmee", 
         description: "Téléchargez votre feuille logistique." 
       });
       navigate(`/order/${orderId}/qrcode`);
