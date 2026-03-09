@@ -3,7 +3,7 @@
  * Supports: Routier, Maritime, Aérien (not GP bagages)
  * Features: SearchableCitySelect, auto country, addresses, end date, smart photo picker
  */
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, Send, Truck, Ship, Plane, Package, MapPin, Calendar, Weight, 
@@ -17,6 +17,15 @@ import { SearchableCitySelect, WORLD_CITIES } from "@/components/gp/SearchableCi
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { type SizeCategory } from "@/lib/routierUtils";
+
+const SIZE_OPTIONS: { label: SizeCategory; range: string; weight: string; color: string; bg: string }[] = [
+  { label: "S", range: "0-50 kg", weight: "25", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700" },
+  { label: "M", range: "50-100 kg", weight: "75", color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700" },
+  { label: "L", range: "100-200 kg", weight: "150", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700" },
+  { label: "XL", range: "200-300 kg", weight: "250", color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-100 dark:bg-orange-900/30 border-orange-300 dark:border-orange-700" },
+  { label: "FRET", range: "> 300 kg", weight: "500", color: "text-red-700 dark:text-red-400", bg: "bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700" },
+];
 
 interface MissionRequestSheetProps {
   open: boolean;
@@ -446,28 +455,45 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
                   </div>
                 </div>
 
-                {/* Weight + Date row */}
-                <div className="flex gap-3">
-                  <div className="flex-1 space-y-2">
+                {/* Size + Date row */}
+                <div className="space-y-3">
+                  <div className="space-y-2">
                     <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                      <Weight className="w-3.5 h-3.5" /> Poids (kg)
+                      <Weight className="w-3.5 h-3.5" /> Taille du colis
                     </label>
-                    <Input
-                      type="number"
-                      value={weightKg}
-                      onChange={(e) => setWeightKg(e.target.value)}
-                      placeholder="Estimé"
-                    />
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {SIZE_OPTIONS.map((size) => {
+                        const isSelected = weightKg === size.weight;
+                        return (
+                          <button
+                            key={size.label}
+                            type="button"
+                            onClick={() => setWeightKg(size.weight)}
+                            className={cn(
+                              "flex flex-col items-center py-2 px-1 rounded-xl border transition-all text-center",
+                              isSelected
+                                ? `${size.bg} border-2 shadow-sm`
+                                : "bg-muted/30 border-border hover:bg-muted/60"
+                            )}
+                          >
+                            <span className={cn("text-sm font-extrabold", isSelected ? size.color : "text-foreground")}>{size.label}</span>
+                            <span className="text-[8px] text-muted-foreground leading-tight mt-0.5">{size.range}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className="flex-1 space-y-2">
-                    <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5" /> Date début
-                    </label>
-                    <Input
-                      type="date"
-                      value={pickupDate}
-                      onChange={(e) => setPickupDate(e.target.value)}
-                    />
+                  <div className="flex gap-3">
+                    <div className="flex-1 space-y-2">
+                      <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5" /> Date début
+                      </label>
+                      <Input
+                        type="date"
+                        value={pickupDate}
+                        onChange={(e) => setPickupDate(e.target.value)}
+                      />
+                    </div>
                   </div>
                 </div>
 
