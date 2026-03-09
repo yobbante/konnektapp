@@ -701,8 +701,8 @@ export function ClientAppHome({
         {/* ── QUICK ACTIONS (only on "all" tab) ── */}
         {activeTab === "all" && <QuickActionsGrid navigate={navigate} activeTab={activeTab} />}
 
-        {/* ── SMART ACTION BAR ── */}
-        <SmartActionBar
+        {/* ── SMART ACTION BAR (only on "all" tab) ── */}
+        {activeTab === "all" && <SmartActionBar
           userId={userId}
           recentOrders={recentOrders}
           unreadMessages={unreadMessages}
