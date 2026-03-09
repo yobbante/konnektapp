@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     const userId = claimsData.claims.sub;
 
     const supabase = createClient(supabaseUrl, serviceKey);
-    const { order_id, idempotency_key } = await req.json();
+    const { order_id, idempotency_key, mission_id } = await req.json();
 
     if (!order_id) {
       return new Response(JSON.stringify({ error: "order_id required" }), {
@@ -117,6 +117,7 @@ Deno.serve(async (req) => {
       currency: order.currency || "XOF",
       status: "held",
       held_at: new Date().toISOString(),
+      mission_id: mission_id || null,
     });
 
     // 4. Ledger entry: escrow_lock
