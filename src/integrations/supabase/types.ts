@@ -5040,6 +5040,22 @@ export type Database = {
       }
       evaluate_ktp_level: { Args: { p_trust_score: number }; Returns: string }
       expire_routier_missions: { Args: never; Returns: number }
+      get_corridor_opportunities: {
+        Args: never
+        Returns: {
+          corridor_key: string
+          destination_city: string
+          destination_country: string
+          earliest_pickup: string
+          latest_pickup: string
+          mission_count: number
+          mission_ids: string[]
+          origin_city: string
+          origin_country: string
+          total_estimated_revenue: number
+          total_weight_kg: number
+        }[]
+      }
       get_ktp_commission_rate: {
         Args: { p_trust_score: number }
         Returns: number
