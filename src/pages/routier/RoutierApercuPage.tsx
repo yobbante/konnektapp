@@ -232,7 +232,7 @@ export default function RoutierApercuPage() {
             <div className="space-y-2">
               {data.missionRequests.slice(0, 2).map((m: any, i: number) => {
               const size = getSizeFromWeight(m.weight_kg || 0);
-              const freight = freightTypeLabels[m.freight_type] || { label: m.freight_type, emoji: "📦" };
+              const freight = freightTypeLabels[m.freight_type] || { label: m.freight_type, icon: "package" };
               const price = m.client_budget || m.estimated_price || 0;
               const isUrgent = m.urgency === "urgent" || m.urgency === "express";
               return (
