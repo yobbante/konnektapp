@@ -309,7 +309,7 @@ export default function BookingConfirmation() {
                 )}
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Frais de service</span>
-                  <Badge variant="secondary" className="text-[10px] font-medium">0% jusqu'au 31/01/2027 🎁</Badge>
+                  <Badge variant="secondary" className="text-[10px] font-medium">0% jusqu'au 01/01/2027</Badge>
                 </div>
                 <div className="flex justify-between items-center pt-2.5 border-t">
                   <span className="font-semibold text-sm">Total à payer</span>
