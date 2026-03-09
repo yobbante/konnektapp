@@ -81,6 +81,7 @@ interface MissionPoint {
   weight?: number;
   status?: string;
   price?: number;
+  photo_url?: string;
   type: "active" | "available" | "pending";
 }
 
