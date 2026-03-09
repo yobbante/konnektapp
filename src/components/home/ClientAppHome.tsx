@@ -210,9 +210,9 @@ const TYPE_MAP: Record<string, string[]> = {
 function QuickActionsGrid({ navigate, activeTab }: { navigate: (path: string) => void; activeTab: string }) {
   const actions = useMemo(() => {
     const base = [
-      { icon: Send, label: "Envoyer", to: "/envoyer", color: "text-primary bg-primary/10" },
-      { icon: ScanLine, label: "Suivi", to: "/tracking", color: "text-blue-500 bg-blue-500/10" },
-      { icon: FileText, label: "Demandes", to: "/mes-demandes", color: "text-purple-500 bg-purple-500/10" },
+      { icon: ScanLine, label: "Scan", to: "/scan", color: "text-primary bg-primary/10" },
+      { icon: Search, label: "Suivi", to: "/tracking", color: "text-blue-500 bg-blue-500/10" },
+      { icon: FileText, label: "Demandes", to: "/reservations?tab=demandes", color: "text-purple-500 bg-purple-500/10" },
       { icon: Wallet, label: "Portefeuille", to: "/portefeuille", color: "text-emerald-500 bg-emerald-500/10" },
     ];
     return base;
