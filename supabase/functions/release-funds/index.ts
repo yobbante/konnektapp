@@ -12,7 +12,33 @@ Deno.serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // AuthN: require a valid JWT
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const authClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsErr } = await authClient.auth.getClaims(token);
+    const userId = claimsData?.claims?.sub;
+    if (claimsErr || !userId) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Service client used ONLY after explicit authorization checks (bypasses RLS)
     const supabase = createClient(supabaseUrl, serviceKey);
 
     const { order_id, action } = await req.json();
@@ -38,7 +64,38 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check for open disputes
+    // AuthZ: only the order client or an admin/moderator can release funds
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .in("role", ["admin", "moderator"])
+      .limit(1);
+    const isAdmin = !!roles && roles.length > 0;
+
+    if (order.client_id !== userId && !isAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Safety: only allow release once delivery is confirmed
+    if (!["delivery_confirmed", "delivered"].includes(String(order.status))) {
+      return new Response(JSON.stringify({ error: "Order not eligible for release" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Prevent double release
+    if (order.payment_status === "released") {
+      return new Response(JSON.stringify({ error: "Already released" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { data: disputes } = await supabase
       .from("disputes")
       .select("id")
