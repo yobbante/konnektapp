@@ -160,9 +160,7 @@ export default function ReservationsPage() {
       <div className="flex-1 overflow-y-auto overscroll-contain pb-8" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Tab: Colis pour vous */}
         {activeTab === "colis" && userId && (
-          <div className="pt-2">
-            <RecipientTrackingCard userId={userId} />
-          </div>
+          <RecipientTrackingCard userId={userId} listMode />
         )}
 
         {/* Tab: Demandes personnalisées */}
