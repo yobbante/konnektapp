@@ -245,7 +245,7 @@ export function RecipientTrackingCard({ userId, listMode = false }: RecipientTra
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 mb-0.5">
                 <Badge variant="secondary" className="text-[10px] py-0 px-1.5 bg-violet-500/20 text-violet-600">
-                  📦 Pour vous
+                  Pour vous
                 </Badge>
                 <p className="text-sm font-bold text-foreground truncate">
                   {activeCount} colis en route

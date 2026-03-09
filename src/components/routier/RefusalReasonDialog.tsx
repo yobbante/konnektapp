@@ -148,7 +148,7 @@ export function RefusalReasonDialog({
 
         {/* Info text */}
         <p className="text-xs text-muted-foreground text-center">
-          📊 Ces données sont anonymisées et servent à améliorer le calcul des prix.
+          Ces donnees sont anonymisees et servent a ameliorer le calcul des prix.
         </p>
       </DialogContent>
     </Dialog>

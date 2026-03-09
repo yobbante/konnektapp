@@ -64,7 +64,7 @@ export function MissionStatusUpdater({
 
       if (error) throw error;
 
-      toast({ title: `✅ Statut mis à jour: ${WORKFLOW_STEPS.find(s => s.key === nextStatus)?.label}` });
+      toast({ title: `Statut mis a jour: ${WORKFLOW_STEPS.find(s => s.key === nextStatus)?.label}` });
       onStatusChange?.();
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
@@ -129,7 +129,7 @@ export function MissionStatusUpdater({
 
         {currentStatus === "delivery_confirmed" && (
           <div className="text-center text-green-600 font-medium text-sm">
-            ✅ Mission terminée — fonds en cours de libération
+            Mission terminee — fonds en cours de liberation
           </div>
         )}
       </CardContent>
