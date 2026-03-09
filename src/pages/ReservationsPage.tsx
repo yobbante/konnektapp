@@ -10,6 +10,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { RecipientTrackingCard } from "@/components/client/RecipientTrackingCard";
 import { OrderDetailSheet, getTransportIcon } from "@/components/client/OrderDetailSheet";
+import { ClientMissionsView } from "@/components/routier/ClientMissionsView";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
