@@ -257,7 +257,50 @@ export default function GPBagagesInternationalDashboard() {
   const pendingOrders = orders.filter(o => o.status === "pending");
   const activeOrders = orders.filter(o => ["accepted", "collected", "in_transit"].includes(o.status));
   const completedOrders = orders.filter(o => o.status === "delivered");
-  const upcomingVoyages = voyages.filter(v => v.status === "active" && new Date(v.departure_date) > new Date());
+  const now = new Date();
+  const upcomingVoyages = voyages.filter(v => 
+    v.status === "active" && 
+    new Date(v.departure_date) > now &&
+    (!v.expires_at || new Date(v.expires_at) > now)
+  );
+  const expiredVoyages = voyages.filter(v => 
+    v.status === "expired" || 
+    (v.expires_at && new Date(v.expires_at) <= now && v.status === "active")
+  );
+
+  const handleRelance = async (voyage: VoyageOffer) => {
+    try {
+      const newDeparture = new Date(voyage.departure_date);
+      newDeparture.setDate(newDeparture.getDate() + 30);
+      const newDepartureStr = newDeparture.toISOString().split("T")[0];
+      const newExpiresAt = new Date(newDepartureStr).toISOString();
+
+      const { error } = await supabase.from("gp_offers").insert({
+        gp_id: (gpProfile as GPProfile).id,
+        transport_type: "bagages_international",
+        origin_city: voyage.origin_city,
+        origin_country: voyage.origin_country,
+        destination_city: voyage.destination_city,
+        destination_country: voyage.destination_country,
+        departure_date: newDepartureStr,
+        expires_at: newExpiresAt,
+        price_per_kg: voyage.price_per_kg,
+        currency: voyage.currency,
+        total_capacity: voyage.total_capacity,
+        available_capacity: voyage.total_capacity,
+        flight_number: voyage.flight_number,
+        airline: voyage.airline,
+        baggage_types_accepted: voyage.baggage_types_accepted,
+        baggage_restrictions: voyage.baggage_restrictions,
+        status: "active",
+      });
+      if (error) throw error;
+      toast({ title: "Voyage relancé", description: `Nouveau départ le ${format(newDeparture, "d MMMM yyyy", { locale: fr })}` });
+      loadData();
+    } catch {
+      toast({ title: "Erreur", description: "Impossible de relancer le voyage", variant: "destructive" });
+    }
+  };
 
   return (
     <div className="min-h-screen pb-24 bg-background">
