@@ -204,41 +204,62 @@ export function GPCreateOfferDialog({ open, onClose, gpProfile, onSuccess }: GPC
           {/* Route */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Ville de départ *</Label>
+              <Label>Départ *</Label>
               <div className="flex gap-2">
-                <Input
-                  placeholder="Ex: Dakar"
-                  value={formData.originCity}
-                  onChange={(e) => setFormData({ ...formData, originCity: e.target.value })}
-                  className="flex-1"
-                />
+                <div className="flex-1">
+                  <SearchableCitySelect
+                    value={formData.originCity}
+                    countryCode={formData.originCountry}
+                    onSelect={(city, countryCode) =>
+                      setFormData((p) => ({
+                        ...p,
+                        originCity: city,
+                        originCountry: countryCode === "XX" ? p.originCountry : countryCode,
+                      }))
+                    }
+                    placeholder="Ville de départ"
+                  />
+                </div>
                 <select
                   value={formData.originCountry}
-                  onChange={(e) => setFormData({ ...formData, originCountry: e.target.value })}
+                  onChange={(e) => setFormData((p) => ({ ...p, originCountry: e.target.value }))}
                   className="w-24 h-11 px-2 rounded-lg border border-input bg-background"
                 >
                   {countries.map((c) => (
-                    <option key={c.code} value={c.code}>{c.code}</option>
+                    <option key={c.code} value={c.code}>
+                      {c.code}
+                    </option>
                   ))}
                 </select>
               </div>
             </div>
+
             <div className="space-y-2">
-              <Label>Ville d'arrivée *</Label>
+              <Label>Arrivée *</Label>
               <div className="flex gap-2">
-                <Input
-                  placeholder="Ex: Abidjan"
-                  value={formData.destinationCity}
-                  onChange={(e) => setFormData({ ...formData, destinationCity: e.target.value })}
-                  className="flex-1"
-                />
+                <div className="flex-1">
+                  <SearchableCitySelect
+                    value={formData.destinationCity}
+                    countryCode={formData.destinationCountry}
+                    onSelect={(city, countryCode) =>
+                      setFormData((p) => ({
+                        ...p,
+                        destinationCity: city,
+                        destinationCountry: countryCode === "XX" ? p.destinationCountry : countryCode,
+                      }))
+                    }
+                    placeholder="Ville d'arrivée"
+                  />
+                </div>
                 <select
                   value={formData.destinationCountry}
-                  onChange={(e) => setFormData({ ...formData, destinationCountry: e.target.value })}
+                  onChange={(e) => setFormData((p) => ({ ...p, destinationCountry: e.target.value }))}
                   className="w-24 h-11 px-2 rounded-lg border border-input bg-background"
                 >
                   {countries.map((c) => (
-                    <option key={c.code} value={c.code}>{c.code}</option>
+                    <option key={c.code} value={c.code}>
+                      {c.code}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -246,14 +267,22 @@ export function GPCreateOfferDialog({ open, onClose, gpProfile, onSuccess }: GPC
           </div>
 
           {/* Dates */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Date de départ *</Label>
               <Input
                 type="datetime-local"
                 value={formData.departureDate}
                 min={new Date().toISOString().slice(0, 16)}
-                onChange={(e) => setFormData({ ...formData, departureDate: e.target.value })}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setFormData((p) => ({
+                    ...p,
+                    departureDate: next,
+                    // default expiration to departure date
+                    expiresAt: p.expiresAt || next,
+                  }));
+                }}
               />
             </div>
             <div className="space-y-2">
@@ -263,6 +292,16 @@ export function GPCreateOfferDialog({ open, onClose, gpProfile, onSuccess }: GPC
                 value={formData.arrivalDate}
                 min={formData.departureDate}
                 onChange={(e) => setFormData({ ...formData, arrivalDate: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Date de fin (annonce) *</Label>
+              <Input
+                type="datetime-local"
+                value={formData.expiresAt}
+                min={new Date().toISOString().slice(0, 16)}
+                max={formData.departureDate || undefined}
+                onChange={(e) => setFormData((p) => ({ ...p, expiresAt: e.target.value }))}
               />
             </div>
           </div>
