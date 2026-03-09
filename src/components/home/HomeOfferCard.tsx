@@ -9,6 +9,8 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 interface HomeOfferCardProps {
   offer: any;
   index: number;
+  modeLabel?: string;
+  subscriptionBadge?: string;
 }
 
 const getOfferIcon = (type: string) => {
@@ -18,7 +20,7 @@ const getOfferIcon = (type: string) => {
   return Luggage;
 };
 
-export function HomeOfferCard({ offer, index }: HomeOfferCardProps) {
+export function HomeOfferCard({ offer, index, modeLabel, subscriptionBadge }: HomeOfferCardProps) {
   const departDate = offer.departure_date ? new Date(offer.departure_date) : null;
   const OfferIcon = getOfferIcon(offer.transport_type);
   const currencySymbol = CURRENCY_SYMBOLS[offer.currency] || offer.currency || "F";
@@ -44,7 +46,7 @@ export function HomeOfferCard({ offer, index }: HomeOfferCardProps) {
             <ArrowRight className="w-2.5 h-2.5 text-muted-foreground/50 flex-shrink-0" />
             <span className="text-xs font-semibold text-foreground truncate">{offer.destination_city}</span>
           </div>
-          <div className="flex items-center gap-1 mt-0.5">
+          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
             <span className="text-[9px] text-muted-foreground truncate max-w-[70px]">
               {offer.gp_profiles?.business_name || "GP"}
             </span>
@@ -62,6 +64,16 @@ export function HomeOfferCard({ offer, index }: HomeOfferCardProps) {
             {offer.available_capacity > 0 && (
               <span className="text-[8px] text-primary/80 font-medium">
                 {offer.available_capacity}kg
+              </span>
+            )}
+            {modeLabel && (
+              <span className="text-[8px] text-muted-foreground bg-muted/60 px-1.5 py-px rounded-full font-medium">
+                {modeLabel}
+              </span>
+            )}
+            {subscriptionBadge && (
+              <span className={`text-[8px] font-bold px-1.5 py-px rounded-full ${subscriptionBadge === "pro" ? "bg-amber-500/15 text-amber-600" : "bg-violet-500/15 text-violet-600"}`}>
+                {subscriptionBadge === "pro" ? "PRO" : "PREMIUM"}
               </span>
             )}
           </div>
