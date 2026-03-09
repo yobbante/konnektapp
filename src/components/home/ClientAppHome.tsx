@@ -693,8 +693,6 @@ export function ClientAppHome({
           }
         </div>
 
-        {/* ── QUICK ACTIONS ── */}
-        <QuickActionsGrid navigate={navigate} activeTab={activeTab} />
 
         {/* ── SMART ACTION BAR ── */}
         <SmartActionBar
