@@ -56,7 +56,8 @@ const TRANSPORT_TABS = [
 { id: "routier", label: "Routier", icon: Car },
 { id: "maritime", label: "Maritime", icon: Ship },
 { id: "aerien", label: "Aérien", icon: Plane },
-{ id: "bagages", label: "GP", icon: Luggage }];
+{ id: "bagages", label: "GP", icon: Luggage },
+{ id: "mobility", label: "Mobility", icon: Users }];
 
 
 const MODE_CONFIG: Record<string, {
@@ -124,6 +125,17 @@ const MODE_CONFIG: Record<string, {
     emptyDesc: "Créez une mission et recevez des propositions",
     icon: Truck,
     gradient: "from-orange-500/10 to-amber-500/5"
+  },
+  mobility: {
+    subtitle: "Navettes, chauffeurs privés, transport de groupe",
+    searchPlaceholderOrigin: "Point de départ",
+    searchPlaceholderDest: "Destination",
+    searchButtonLabel: "Trouver un trajet",
+    offersTitle: "Trajets disponibles",
+    emptyLabel: "Aucun trajet Mobility",
+    emptyDesc: "Les partenaires publient régulièrement des trajets",
+    icon: Car,
+    gradient: "from-transport-mobility/10 to-primary/5"
   }
 };
 
