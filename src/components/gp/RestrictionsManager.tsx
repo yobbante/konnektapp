@@ -218,7 +218,7 @@ export function RestrictionsManager({
       if (error) throw error;
 
       toast({
-        title: "✅ Restrictions enregistrées",
+        title: "Restrictions enregistrees",
         description: "Vos préférences ont été mises à jour",
       });
     } catch (error: any) {

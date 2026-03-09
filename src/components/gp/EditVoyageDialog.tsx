@@ -131,7 +131,7 @@ export function EditVoyageDialog({ open, onClose, voyage, onSuccess }: EditVoyag
       if (error) throw error;
 
       toast({
-        title: "✅ Voyage modifié",
+        title: "Voyage modifie",
         description: "Les modifications ont été enregistrées",
       });
       onSuccess();

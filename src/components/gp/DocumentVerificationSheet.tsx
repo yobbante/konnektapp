@@ -155,7 +155,7 @@ export function DocumentVerificationSheet({ open, onClose, gpId, onSuccess, onAu
           kyc_level: 1,
           verified_at: new Date().toISOString(),
         }).eq("id", gpId);
-        toast({ title: "🎉 Compte activé automatiquement !", description: "Toutes les vérifications sont complètes." });
+        toast({ title: "Compte active automatiquement", description: "Toutes les verifications sont completes." });
         onAutoActivated?.();
       }
     } catch { /* silent */ }
@@ -200,7 +200,7 @@ export function DocumentVerificationSheet({ open, onClose, gpId, onSuccess, onAu
 
       setStep("done");
       onSuccess?.(urlData.publicUrl);
-      toast({ title: "Document enregistré ✅", description: "Passeport/CNI validé." });
+      toast({ title: "Document enregistre", description: "Passeport/CNI valide." });
 
       // Try auto-activation after a small delay to let DB update propagate
       setTimeout(async () => {

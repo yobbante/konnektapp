@@ -174,7 +174,7 @@ export function CreateBaggageVoyageDialog({
       if (error) throw error;
 
       toast({
-        title: "✈️ Voyage créé !",
+        title: "Voyage cree",
         description: `${currentRoute.origin.city} → ${currentRoute.destination.city}`,
       });
       onSuccess();

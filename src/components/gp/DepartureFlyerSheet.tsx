@@ -55,7 +55,7 @@ export function DepartureFlyerSheet({ open, onClose, data }: DepartureFlyerSheet
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
           title: `Départ ${data.originCity} → ${data.destinationCity}`,
-          text: `🚀 Départ ${data.originCity} → ${data.destinationCity} le ${data.departureDate} — Réservez sur Konnekt !`,
+          text: `Depart ${data.originCity} → ${data.destinationCity} le ${data.departureDate} — Reservez sur Konnekt !`,
           files: [file],
         });
       } else {

@@ -173,7 +173,7 @@ export function GPNavetteManager({ gpId, subscription }: Props) {
           reviewed_at: new Date().toISOString(),
         });
 
-        toast({ title: "✅ Navette modifiée", description: "Changement appliqué automatiquement" });
+        toast({ title: "Navette modifiee", description: "Changement applique automatiquement" });
       } else {
         // Standard: submit request for admin review
         await supabase.from("gp_navette_change_requests").insert({

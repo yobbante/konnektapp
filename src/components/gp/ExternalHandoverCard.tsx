@@ -43,7 +43,7 @@ export function ExternalHandoverCard({
   };
 
   const shareLink = async () => {
-    const text = `📦 Votre colis ${orderNumber} est prêt !\n\nConfirmez la réception ici:\n${deliveryUrl}\n\nCode de remise: ${deliveryCode}`;
+    const text = `Votre colis ${orderNumber} est pret !\n\nConfirmez la reception ici:\n${deliveryUrl}\n\nCode de remise: ${deliveryCode}`;
 
     if (navigator.share) {
       try {
