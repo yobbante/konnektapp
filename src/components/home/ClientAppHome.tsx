@@ -402,15 +402,8 @@ export function ClientAppHome({
   const isRoutier = activeTab === "routier";
 
   // Search
-  const lastSearch = useMemo(() => {
-    try {
-      const saved = localStorage.getItem("kkt_last_search");
-      return saved ? JSON.parse(saved) : null;
-    } catch {return null;}
-  }, []);
-
-  const [searchOrigin, setSearchOrigin] = useState(lastSearch?.origin || userCity || "");
-  const [searchDest, setSearchDest] = useState(lastSearch?.destination || "");
+  const [searchOrigin, setSearchOrigin] = useState(userCity || "");
+  const [searchDest, setSearchDest] = useState("");
   const [searchDate, setSearchDate] = useState("");
   const [activePicker, setActivePicker] = useState<"origin" | "dest" | null>(null);
   const [cityQuery, setCityQuery] = useState("");
@@ -454,9 +447,6 @@ export function ClientAppHome({
   };
 
   const openOffresPopup = (origin?: string, dest?: string, tab?: string) => {
-    if (searchOrigin || searchDest || origin || dest) {
-      localStorage.setItem("kkt_last_search", JSON.stringify({ origin: origin || searchOrigin, destination: dest || searchDest }));
-    }
     setOffresPopupSearch({ origin: origin || searchOrigin, dest: dest || searchDest, tab: tab || (activeTab !== "all" ? activeTab : undefined) });
     setOffresPopupOpen(true);
   };
