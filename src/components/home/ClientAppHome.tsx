@@ -279,28 +279,28 @@ function PopularRoutesSection({ routes, onSelect, tabId
     bagages: "Trajets GP populaires"
   };
 
-  return (
-    <div className="px-4 pb-4">
-      <h2 className="text-sm font-bold text-foreground mb-2 tracking-tight">{titleMap[tabId] || titleMap.all}</h2>
-      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-        {routes.map((route, idx) =>
-        <motion.button
-          key={idx}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => onSelect(route.from, route.to)}
-          className="flex-shrink-0 bg-card border border-border rounded-xl px-3 py-2.5 text-left hover:border-primary/30 active:bg-muted/40 transition-all min-w-[120px]">
-          
-            <p className="text-[10px] font-bold text-primary/70 tracking-wider leading-tight">{route.flag}</p>
-            <p className="text-[10px] text-muted-foreground mt-1">{route.from} → {route.to}</p>
-            {route.hot &&
-          <span className="text-[8px] bg-destructive/10 text-destructive px-1.5 py-px rounded-full font-semibold mt-1.5 inline-flex items-center gap-0.5">
-                <CircleDot className="w-2 h-2" /> Populaire
-              </span>
-          }
-          </motion.button>
-        )}
-      </div>
-    </div>);
+  return;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 }
 
