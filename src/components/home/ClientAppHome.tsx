@@ -808,13 +808,9 @@ export function ClientAppHome({
                   {searchResults.map((offer: any, idx: number) => {
                     const mode = offer.transport_type === "navette" ? "bagages_accompagnes" : offer.transport_type;
                     const ModeIcon = modeIcons[mode] || Package;
-                    return (
-                      <div key={offer.id} className="relative">
-                        <div className="absolute top-1.5 left-10 z-10 flex items-center gap-1 bg-background/90 backdrop-blur-sm px-1.5 py-0.5 rounded-full border border-border/50">
-                          <ModeIcon className="w-2.5 h-2.5 text-muted-foreground" />
-                          <span className="text-[9px] font-semibold text-muted-foreground">{modeLabels[mode] || mode}</span>
-                        </div>
-                        <HomeOfferCard offer={offer} index={idx} />
+                     return (
+                      <div key={offer.id}>
+                        <HomeOfferCard offer={offer} index={idx} modeLabel={modeLabels[mode] || mode} />
                       </div>);
                   })}
                   <button
@@ -842,13 +838,8 @@ export function ClientAppHome({
                 const ModeIcon = modeIcons[offer._mode] || Package;
                 const sub = offer.gp_profiles?.subscription;
                 return (
-                  <div key={offer.id} className="relative">
-                        <div className="absolute top-1.5 left-10 z-10 flex items-center gap-1 bg-background/90 backdrop-blur-sm px-1.5 py-0.5 rounded-full border border-border/50">
-                          <ModeIcon className="w-2.5 h-2.5 text-muted-foreground" />
-                          <span className="text-[9px] font-semibold text-muted-foreground">{modeLabels[offer._mode]}</span>
-                          {(sub === "premium" || sub === "pro") && <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full ${sub === "pro" ? "bg-amber-500/15 text-amber-600" : "bg-violet-500/15 text-violet-600"}`}>{sub === "pro" ? "PRO" : "PREMIUM"}</span>}
-                        </div>
-                        <HomeOfferCard offer={offer} index={idx} />
+                  <div key={offer.id}>
+                        <HomeOfferCard offer={offer} index={idx} modeLabel={modeLabels[offer._mode]} subscriptionBadge={(sub === "premium" || sub === "pro") ? sub : undefined} />
                       </div>);
 
               })}
