@@ -164,23 +164,37 @@ export default function AerienPublierPage() {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label className="text-[10px]">Ville départ</Label>
-                <Input className="h-8 text-xs" placeholder="Paris" value={form.originCity}
-                  onChange={e => setForm(f => ({ ...f, originCity: e.target.value }))} />
+                <SearchableCitySelect
+                  value={form.originCity}
+                  countryCode={form.originCountry}
+                  onSelect={(city, countryCode) => setForm((f) => ({
+                    ...f,
+                    originCity: city,
+                    originCountry: countryCode === "XX" ? f.originCountry : countryCode,
+                  }))}
+                  placeholder="Paris"
+                />
               </div>
               <div>
                 <Label className="text-[10px]">Pays départ</Label>
-                <Input className="h-8 text-xs" value={form.originCountry}
-                  onChange={e => setForm(f => ({ ...f, originCountry: e.target.value }))} />
+                <Input className="h-11 text-xs" value={form.originCountry} disabled />
               </div>
               <div>
                 <Label className="text-[10px]">Ville arrivée</Label>
-                <Input className="h-8 text-xs" placeholder="Dakar" value={form.destinationCity}
-                  onChange={e => setForm(f => ({ ...f, destinationCity: e.target.value }))} />
+                <SearchableCitySelect
+                  value={form.destinationCity}
+                  countryCode={form.destinationCountry}
+                  onSelect={(city, countryCode) => setForm((f) => ({
+                    ...f,
+                    destinationCity: city,
+                    destinationCountry: countryCode === "XX" ? f.destinationCountry : countryCode,
+                  }))}
+                  placeholder="Dakar"
+                />
               </div>
               <div>
                 <Label className="text-[10px]">Pays arrivée</Label>
-                <Input className="h-8 text-xs" value={form.destinationCountry}
-                  onChange={e => setForm(f => ({ ...f, destinationCountry: e.target.value }))} />
+                <Input className="h-11 text-xs" value={form.destinationCountry} disabled />
               </div>
             </div>
           </CardContent>
