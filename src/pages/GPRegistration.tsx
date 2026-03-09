@@ -313,7 +313,7 @@ export default function GPRegistration() {
         .insert([{
           user_id: userId,
           business_name: businessData.businessName,
-          gp_type: activityType,
+          gp_type: activityType as any,
           phone: accountData.phone,
           whatsapp: businessData.whatsapp || null,
           address: businessData.address || null,
