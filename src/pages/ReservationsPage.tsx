@@ -166,65 +166,77 @@ export default function ReservationsPage() {
 
         {/* Tab: Demandes personnalisées */}
         {activeTab === "demandes" && (
-          <div className="px-4 pt-3 space-y-2">
+          <div className="px-4 pt-3 space-y-4">
+            {/* Routier Missions with full negotiation */}
+            <ClientMissionsView />
+
+            {/* Custom requests (GP/Fret) */}
             {loading ? (
-              <div className="flex items-center justify-center py-20">
+              <div className="flex items-center justify-center py-10">
                 <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               </div>
-            ) : customRequests.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+            ) : customRequests.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  📦 Demandes personnalisées ({customRequests.length})
+                </h3>
+                {customRequests.map((req, i) => {
+                  const cfg = STATUS_CONFIG[req.status] || { label: req.status, color: "bg-muted text-muted-foreground" };
+                  return (
+                    <motion.div
+                      key={req.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.03 }}
+                      onClick={() => navigate(`/quote-confirmation?requestId=${req.id}`)}
+                      className="bg-card border border-border rounded-xl p-3 active:scale-[0.98] transition-transform cursor-pointer"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-primary/10">
+                          <FileText className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm font-bold text-foreground truncate">
+                              {req.origin_city} → {req.destination_city}
+                            </p>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${cfg.color}`}>
+                              {cfg.label}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">
+                              #{req.request_number?.slice(-6)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
+                            {req.shipment_type && <span className="capitalize">{req.shipment_type}</span>}
+                            {req.weight_estimate && <span>{req.weight_estimate} kg</span>}
+                            {req.transport_type && <span className="capitalize">{req.transport_type}</span>}
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            {format(new Date(req.created_at), "d MMM yyyy", { locale: fr })}
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Empty state when no missions AND no custom requests */}
+            {!loading && customRequests.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
                 <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mb-3">
                   <FileText className="w-7 h-7 text-muted-foreground" />
                 </div>
-                <p className="text-sm font-semibold text-foreground">Aucune demande</p>
+                <p className="text-sm font-semibold text-foreground">Aucune demande personnalisée</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Vos demandes personnalisées apparaîtront ici
+                  Vos demandes GP et fret apparaîtront ici
                 </p>
               </div>
-            ) : (
-              customRequests.map((req, i) => {
-                const cfg = STATUS_CONFIG[req.status] || { label: req.status, color: "bg-muted text-muted-foreground" };
-                return (
-                  <motion.div
-                    key={req.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.03 }}
-                    onClick={() => navigate(`/quote-confirmation?requestId=${req.id}`)}
-                    className="bg-card border border-border rounded-xl p-3 active:scale-[0.98] transition-transform cursor-pointer"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-primary/10">
-                        <FileText className="w-5 h-5 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm font-bold text-foreground truncate">
-                            {req.origin_city} → {req.destination_city}
-                          </p>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${cfg.color}`}>
-                            {cfg.label}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">
-                            #{req.request_number?.slice(-6)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
-                          {req.shipment_type && <span className="capitalize">{req.shipment_type}</span>}
-                          {req.weight_estimate && <span>{req.weight_estimate} kg</span>}
-                          {req.transport_type && <span className="capitalize">{req.transport_type}</span>}
-                        </div>
-                        <p className="text-[10px] text-muted-foreground mt-1">
-                          {format(new Date(req.created_at), "d MMM yyyy", { locale: fr })}
-                        </p>
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })
             )}
           </div>
         )}
