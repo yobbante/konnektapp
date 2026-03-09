@@ -110,7 +110,7 @@ export function CreateBaggageVoyageDialog({
     } else if (open) {
       setTripType("aller");
     }
-    setFormData({ departureDate: "", arrivalDate: "", totalCapacity: "23", flightNumber: "", airline: "" });
+    setFormData({ departureDate: "", arrivalDate: "", expiresAt: "", totalCapacity: "23", flightNumber: "", airline: "" });
   }, [open, lastVoyage, gpData]);
 
   if (!gpData) return null;
