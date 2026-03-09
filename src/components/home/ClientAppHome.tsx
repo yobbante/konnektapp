@@ -708,7 +708,7 @@ export function ClientAppHome({
           unreadMessages={unreadMessages}
           activeOrdersCount={activeOrdersCount}
           pendingRecipientFeedback={pendingRecipientFeedback}
-        />
+        />}
 
         {/* ── OFFERS / MISSIONS ── */}
         <div className="px-4 pb-2">
