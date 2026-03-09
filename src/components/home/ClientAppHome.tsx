@@ -447,9 +447,6 @@ export function ClientAppHome({
   };
 
   const openOffresPopup = (origin?: string, dest?: string, tab?: string) => {
-    if (searchOrigin || searchDest || origin || dest) {
-      localStorage.setItem("kkt_last_search", JSON.stringify({ origin: origin || searchOrigin, destination: dest || searchDest }));
-    }
     setOffresPopupSearch({ origin: origin || searchOrigin, dest: dest || searchDest, tab: tab || (activeTab !== "all" ? activeTab : undefined) });
     setOffresPopupOpen(true);
   };
