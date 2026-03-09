@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Package, Scale, Clock, Check, X, Truck, 
-  ChevronDown, AlertCircle, RefreshCw, MapPin, Car
+  ChevronDown, AlertCircle, RefreshCw, MapPin, Car, TrendingUp
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { RoutierDashboardLayout } from "@/components/layout/RoutierDashboardLayout";
