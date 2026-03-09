@@ -100,6 +100,7 @@ export default function AerienPublierPage() {
         destination_country: form.destinationCountry,
         departure_date: form.departureDate,
         arrival_date: form.arrivalDate || null,
+        expires_at: effectiveExpiresAt,
         total_capacity: capacity,
         available_capacity: capacity,
         price_per_kg: parseFloat(form.pricePerKg),
