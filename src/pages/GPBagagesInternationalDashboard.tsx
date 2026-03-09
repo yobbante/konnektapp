@@ -446,6 +446,38 @@ export default function GPBagagesInternationalDashboard() {
                 />
               ))
             )}
+
+            {/* Expired Voyages */}
+            {expiredVoyages.length > 0 && (
+              <div className="space-y-3 mt-6">
+                <p className="text-sm font-medium text-muted-foreground">Expirés ({expiredVoyages.length})</p>
+                {expiredVoyages.map((voyage) => (
+                  <Card key={voyage.id} className="opacity-60 border-dashed">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Plane className="w-4 h-4 text-muted-foreground" />
+                          <p className="text-sm">{voyage.origin_city} → {voyage.destination_city}</p>
+                        </div>
+                        <Badge variant="secondary">Expirée</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Départ : {format(new Date(voyage.departure_date), "d MMM yyyy", { locale: fr })}
+                      </p>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => handleRelance(voyage)}
+                      >
+                        <RefreshCw className="w-4 h-4 mr-1" />
+                        Relancer (+30 jours)
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           {/* Demandes Tab */}
