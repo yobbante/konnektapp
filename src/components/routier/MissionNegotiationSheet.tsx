@@ -140,7 +140,7 @@ export function MissionNegotiationSheet({
         }
       }
 
-      toast({ title: action === "accept" ? "✅ Mission acceptée !" : "💬 Contre-proposition envoyée" });
+      toast({ title: action === "accept" ? "Mission acceptee" : "Contre-proposition envoyee" });
 
       // If accepted, convert mission to order + escrow
       if (action === "accept") {
@@ -205,7 +205,7 @@ export function MissionNegotiationSheet({
       }
 
       toast({
-        title: action === "accept" ? "✅ Offre acceptée !" : action === "counter" ? "💬 Réponse envoyée" : "Offre refusée",
+        title: action === "accept" ? "Offre acceptee" : action === "counter" ? "Reponse envoyee" : "Offre refusee",
       });
 
       // If client accepts, convert mission to order + escrow
@@ -306,7 +306,7 @@ export function MissionNegotiationSheet({
             {negotiation?.agreed_price && (
               <div className="flex items-center justify-between p-3 rounded-lg border-2 border-green-500 bg-green-500/10">
                 <div>
-                  <p className="text-xs text-green-700">Prix convenu ✓</p>
+                  <p className="text-xs text-green-700">Prix convenu</p>
                   <p className="font-bold text-green-700 text-lg">{negotiation.agreed_price.toLocaleString()} {mission.currency}</p>
                 </div>
                 <Badge className="bg-green-500">Accord</Badge>
