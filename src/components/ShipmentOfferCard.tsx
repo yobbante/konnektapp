@@ -49,7 +49,7 @@ const transportConfig: Record<TransportType, { icon: any; label: string; color: 
   maritime: { icon: Ship, label: "Maritime", color: "bg-cyan-500/10 text-cyan-600 border-cyan-500/20", gradient: "from-cyan-500 to-teal-500" },
   aerien: { icon: Plane, label: "Aérien", color: "bg-purple-500/10 text-purple-600 border-purple-500/20", gradient: "from-purple-500 to-pink-500" },
   voyageur: { icon: Briefcase, label: "GP", color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20", gradient: "from-emerald-500 to-green-500" },
-  bagages_international: { icon: Plane, label: "Bagages Int.", color: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20", gradient: "from-indigo-500 to-violet-500" },
+  bagages_international: { icon: Plane, label: "GP via Bagages", color: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20", gradient: "from-indigo-500 to-violet-500" },
 };
 
 export function ShipmentOfferCard({

@@ -82,7 +82,7 @@ export const transportConfig: Record<TransportType, TransportConfig> = {
   },
   bagages_international: {
     type: "bagages_international",
-    title: "GP Via Bagages",
+    title: "GP via Bagages",
     description: "International",
     longDescription: "Transport de bagages accompagnés lors de voyages internationaux (diaspora)",
     icon: Luggage,

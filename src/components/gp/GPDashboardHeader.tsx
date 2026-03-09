@@ -57,7 +57,7 @@ export function GPDashboardHeader({ gpProfile, onSignOut }: GPDashboardHeaderPro
     gpProfile.kyc_level || 0
   );
   const gpTypeLabel = gpProfile.gp_type === "bagages_international" 
-    ? "GP Bagages" 
+    ? "GP via Bagages" 
     : gpProfile.gp_type === "routier" 
       ? "Routier" 
       : gpProfile.gp_type;
