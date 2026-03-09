@@ -12,7 +12,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { transportTypes, TransportType, transportConfig } from "@/lib/transportTypes";
+import { transportTypes, TransportType } from "@/lib/transportTypes";
+import { SearchableCitySelect } from "@/components/gp/SearchableCitySelect";
 
 interface GPCreateOfferDialogProps {
   open: boolean;
