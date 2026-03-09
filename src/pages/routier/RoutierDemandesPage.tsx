@@ -162,14 +162,19 @@ export default function RoutierDemandesPage() {
         )}
 
         {/* Tabs: Missions Marketplace + Classic Orders */}
-        <Tabs defaultValue="missions" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="missions" className="gap-1">🚛 Missions</TabsTrigger>
-            <TabsTrigger value="classic" className="gap-1">
+        <Tabs defaultValue="opportunites" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="opportunites" className="gap-1 text-xs">🎯 Opportunités</TabsTrigger>
+            <TabsTrigger value="missions" className="gap-1 text-xs">🚛 Missions</TabsTrigger>
+            <TabsTrigger value="classic" className="gap-1 text-xs">
               📦 Commandes
               {requests.length > 0 && <Badge variant="destructive" className="ml-1 h-4 min-w-4 px-1 text-[10px]">{requests.length}</Badge>}
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="opportunites" className="mt-4">
+            <RoutierOpportunitesTab gpId={gpProfile.id} />
+          </TabsContent>
 
           <TabsContent value="missions" className="mt-4">
             <RoutierMissionsTab gpId={gpProfile.id} />
