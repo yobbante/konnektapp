@@ -20,6 +20,7 @@ import { RefusalReasonDialog, RefusalReason } from "@/components/routier/Refusal
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { estimateDistance, calculateRoutierPrice, formatPriceFCFA, getSizeFromWeight } from "@/lib/routierUtils";
 
 interface FreightRequest {
   id: string;
@@ -46,13 +47,7 @@ const getVehicleType = (description: string, weight: number) => {
   return { type: "Fourgonnette" };
 };
 
-const estimateDistance = (origin: string, dest: string): number => {
-  const key = `${origin.toLowerCase()}-${dest.toLowerCase()}`;
-  const distances: Record<string, number> = {
-    "dakar-abidjan": 2450, "dakar-bamako": 1250, "abidjan-bamako": 1100, "dakar-conakry": 950,
-  };
-  return distances[key] || Math.floor(Math.random() * 400) + 80;
-};
+// Distance estimation now imported from routierUtils
 
 export default function RoutierDemandesPage() {
   const navigate = useNavigate();
