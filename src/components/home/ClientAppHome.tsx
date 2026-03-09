@@ -226,12 +226,12 @@ function QuickActionsGrid({ navigate, activeTab }: { navigate: (path: string) =>
             key={a.label}
             whileTap={{ scale: 0.92 }}
             onClick={() => navigate(a.to)}
-            className="flex flex-col items-center gap-1.5 py-2.5 rounded-xl bg-card border border-border hover:border-primary/20 transition-colors"
+            className="flex flex-col items-center gap-1 py-2 rounded-xl bg-card border border-border hover:border-primary/20 transition-colors"
           >
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${a.color}`}>
-              <a.icon className="w-4.5 h-4.5" />
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${a.color}`}>
+              <a.icon className="w-4 h-4" />
             </div>
-            <span className="text-[10px] font-semibold text-foreground leading-tight">{a.label}</span>
+            <span className="text-[9px] font-semibold text-foreground leading-tight">{a.label}</span>
           </motion.button>
         ))}
       </div>
@@ -698,8 +698,8 @@ export function ClientAppHome({
           )}
         </div>
 
-        {/* ── QUICK ACTIONS ── */}
-        <QuickActionsGrid navigate={navigate} activeTab={activeTab} />
+        {/* ── QUICK ACTIONS (only on "all" tab) ── */}
+        {activeTab === "all" && <QuickActionsGrid navigate={navigate} activeTab={activeTab} />}
 
         {/* ── SMART ACTION BAR ── */}
         <SmartActionBar
