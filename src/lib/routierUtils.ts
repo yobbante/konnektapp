@@ -182,3 +182,36 @@ export function getPriceTiersForDistance(distanceKm: number): Array<{
     { category: "XL", weightRange: "200-300 kg", price: Math.round(basePrice * 5.5) },
   ];
 }
+
+// ── Distance estimation (client-side, for UI) ────────────────
+const KNOWN_DISTANCES: Record<string, number> = {
+  "dakar-saint-louis": 260,
+  "dakar-thiès": 70,
+  "dakar-mbour": 83,
+  "dakar-kaolack": 192,
+  "dakar-touba": 194,
+  "dakar-tambacounda": 467,
+  "dakar-ziguinchor": 455,
+  "dakar-abidjan": 2450,
+  "dakar-bamako": 1250,
+  "dakar-conakry": 950,
+  "abidjan-bamako": 1100,
+  "thiès-mbour": 36,
+  "thiès-kaolack": 130,
+  "kaolack-tambacounda": 280,
+  "touba-kaolack": 120,
+  "saint-louis-touba": 200,
+};
+
+/**
+ * Estimate distance between two cities (symmetric lookup)
+ */
+export function estimateDistance(origin: string, destination: string): number {
+  const a = origin.toLowerCase().trim();
+  const b = destination.toLowerCase().trim();
+  if (a === b) return 15; // same city
+
+  const key1 = `${a}-${b}`;
+  const key2 = `${b}-${a}`;
+  return KNOWN_DISTANCES[key1] || KNOWN_DISTANCES[key2] || Math.floor(Math.random() * 300) + 80;
+}
