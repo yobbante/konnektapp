@@ -172,7 +172,13 @@ const POPULAR_ROUTES_BY_MODE: Record<string, {from: string;to: string;flag: stri
   { from: "Paris", to: "Dakar", flag: "FR-SN", hot: true },
   { from: "Paris", to: "Abidjan", flag: "FR-CI", hot: true },
   { from: "Bruxelles", to: "Kinshasa", flag: "BE-CD" },
-  { from: "Casablanca", to: "Paris", flag: "MA-FR" }]
+  { from: "Casablanca", to: "Paris", flag: "MA-FR" }],
+
+  mobility: [
+  { from: "Dakar", to: "Saint-Louis", flag: "SN-SN", hot: true },
+  { from: "Abidjan", to: "Yamoussoukro", flag: "CI-CI", hot: true },
+  { from: "Dakar", to: "Thiès", flag: "SN-SN" },
+  { from: "Douala", to: "Yaoundé", flag: "CM-CM" }]
 
 };
 

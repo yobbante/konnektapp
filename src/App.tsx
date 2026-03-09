@@ -99,6 +99,12 @@ import AerienRegistration from "./pages/aerien/AerienRegistration";
 import AerienWalletPage from "./pages/aerien/AerienWalletPage";
 import AerienPremiumPage from "./pages/aerien/AerienPremiumPage";
 import AerienParametresPage from "./pages/aerien/AerienParametresPage";
+// Mobility pages
+import MobilityRegistration from "./pages/mobility/MobilityRegistration";
+import MobilityApercuPage from "./pages/mobility/MobilityApercuPage";
+import MobilityPublierPage from "./pages/mobility/MobilityPublierPage";
+import MobilityBookingPage from "./pages/mobility/MobilityBookingPage";
+import MobilitySearchResults from "./pages/mobility/MobilitySearchResults";
 // Coursier pages
 import CoursierRegistration from "./pages/coursier/CoursierRegistration";
 // Agence pages
@@ -322,6 +328,18 @@ const App = () => (
                 AGENCE ROUTES - Transitaire & logistique
             ============================================ */}
             <Route path="/agence/inscription" element={<AgenceRegistration />} />
+            
+            {/* ============================================
+                MOBILITY ROUTES - Transport de personnes
+            ============================================ */}
+            <Route path="/mobility/inscription" element={<MobilityRegistration />} />
+            <Route path="/mobility/dashboard" element={<Navigate to="/mobility/apercu" replace />} />
+            <Route path="/mobility/apercu" element={<MobilityApercuPage />} />
+            <Route path="/mobility/publier" element={<MobilityPublierPage />} />
+            <Route path="/mobility/reserver" element={<MobilityBookingPage />} />
+            <Route path="/mobility/recherche" element={<MobilitySearchResults />} />
+            <Route path="/mobility/wallet" element={<MobilityApercuPage />} />
+            <Route path="/mobility/vehicules" element={<MobilityApercuPage />} />
             
             {/* ============================================
                 ADMIN ROUTES - Dashboard admin
