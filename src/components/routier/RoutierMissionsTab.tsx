@@ -181,7 +181,7 @@ export function RoutierMissionsTab({ gpId }: RoutierMissionsTabProps) {
           <AnimatePresence>
             {filteredMissions.map((m, idx) => {
               const size = getSizeFromWeight(m.weight_kg || 0);
-              const freight = freightTypeLabels[m.freight_type] || { label: m.freight_type, emoji: "📦" };
+              const freight = freightTypeLabels[m.freight_type] || { label: m.freight_type, icon: "package" };
               const urgency = urgencyConfig[m.urgency] || urgencyConfig.standard;
               const isExpanded = expandedId === m.id;
               const price = m.client_budget || m.estimated_price || 0;
@@ -240,8 +240,8 @@ export function RoutierMissionsTab({ gpId }: RoutierMissionsTabProps) {
                           </div>
 
                           <div className="flex items-center gap-1.5">
-                            {/* Freight emoji */}
-                            <span className="text-sm" title={freight.label}>{freight.emoji}</span>
+                            {/* Freight type */}
+                            <span className="text-[10px] text-muted-foreground" title={freight.label}>{freight.label}</span>
 
                             {/* Urgency badge */}
                             {m.urgency !== "standard" && (
