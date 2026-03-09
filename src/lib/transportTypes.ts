@@ -1,7 +1,7 @@
-import { Zap, Truck, Ship, Plane, Briefcase, Building2, Bike, Luggage, LucideIcon } from "lucide-react";
+import { Zap, Truck, Ship, Plane, Briefcase, Building2, Bike, Luggage, Car, LucideIcon } from "lucide-react";
 
 // Types de transport centralisés pour toute l'application
-export type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence" | "bagages_international";
+export type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence" | "bagages_international" | "mobility";
 
 export interface TransportConfig {
   type: TransportType;
@@ -90,6 +90,17 @@ export const transportConfig: Record<TransportType, TransportConfig> = {
     bgColor: "bg-transport-bagages/10 border-transport-bagages/30",
     requiredDocs: ["id_document", "passport"],
   },
+  mobility: {
+    type: "mobility",
+    title: "Mobility",
+    description: "Transport de personnes",
+    longDescription: "Navettes inter-ville, chauffeurs privés premium, transport diaspora planifié",
+    icon: Car,
+    color: "text-transport-mobility",
+    bgColor: "bg-transport-mobility/10 border-transport-mobility/30",
+    requiredDocs: ["id_document", "driving_license", "vehicle_registration", "insurance"],
+    services: ["shuttle", "private_driver", "group_mission", "premium"],
+  },
 };
 
 // Liste des types dans l'ordre d'affichage pour l'inscription (tous activés)
@@ -100,6 +111,7 @@ export const transportTypes: TransportConfig[] = [
   transportConfig.aerien,
   transportConfig.express,
   transportConfig.agence,
+  transportConfig.mobility,
 ];
 
 // Liste complète incluant les types pour clients
@@ -111,6 +123,7 @@ export const allTransportTypes: TransportConfig[] = [
   transportConfig.routier,
   transportConfig.maritime,
   transportConfig.aerien,
+  transportConfig.mobility,
 ];
 
 // Types masqués pour la v1 (aucun maintenant)
