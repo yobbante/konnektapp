@@ -23,11 +23,12 @@ export default function AerienPublierPage() {
 
   const [form, setForm] = useState({
     originCity: "",
-    originCountry: "France",
+    originCountry: "FR",
     destinationCity: "",
-    destinationCountry: "Sénégal",
+    destinationCountry: "SN",
     departureDate: "",
     arrivalDate: "",
+    expiresAt: "",
     totalCapacity: "",
     pricePerKg: "",
     currency: "EUR",
