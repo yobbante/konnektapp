@@ -235,14 +235,21 @@ export function CreateBaggageVoyageDialog({
           </div>
 
           {/* Dates */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs flex items-center gap-1"><Calendar className="w-3 h-3" /> Départ *</Label>
               <Input
                 type="datetime-local"
                 value={formData.departureDate}
                 min={new Date().toISOString().slice(0, 16)}
-                onChange={(e) => setFormData({ ...formData, departureDate: e.target.value })}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setFormData((p) => ({
+                    ...p,
+                    departureDate: next,
+                    expiresAt: p.expiresAt || next,
+                  }));
+                }}
                 className="h-10"
               />
             </div>
@@ -253,6 +260,17 @@ export function CreateBaggageVoyageDialog({
                 value={formData.arrivalDate}
                 min={formData.departureDate}
                 onChange={(e) => setFormData({ ...formData, arrivalDate: e.target.value })}
+                className="h-10"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs flex items-center gap-1"><Clock className="w-3 h-3" /> Fin annonce *</Label>
+              <Input
+                type="datetime-local"
+                value={formData.expiresAt}
+                min={new Date().toISOString().slice(0, 16)}
+                max={formData.departureDate || undefined}
+                onChange={(e) => setFormData((p) => ({ ...p, expiresAt: e.target.value }))}
                 className="h-10"
               />
             </div>
