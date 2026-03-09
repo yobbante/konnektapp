@@ -398,5 +398,24 @@ function MenuButton({ icon: Icon, label, badge, locked, variant, onClick
       </div>
       <span className={cn("text-[11px] font-medium", variant === "destructive" ? "text-destructive" : "text-foreground")}>{label}</span>
     </button>);
+}
 
+/* ─── Sub Navigation Tab ─── */
+function SubNavTab({ label, active, badge, onClick }: { label: string; active?: boolean; badge?: number; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors relative",
+        active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      )}
+    >
+      {label}
+      {!!badge && badge > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-destructive text-destructive-foreground text-[8px] font-bold rounded-full flex items-center justify-center">
+          {badge > 9 ? "9+" : badge}
+        </span>
+      )}
+    </button>
+  );
 }
