@@ -69,6 +69,25 @@ export default function AerienPublierPage() {
       return;
     }
 
+    const departureDate = new Date(form.departureDate);
+    if (departureDate <= new Date()) {
+      toast({ title: "Date invalide", description: "La date de départ doit être dans le futur", variant: "destructive" });
+      return;
+    }
+
+    const effectiveExpiresAt = form.expiresAt || form.departureDate;
+    const expiresDate = new Date(effectiveExpiresAt);
+
+    if (expiresDate <= new Date()) {
+      toast({ title: "Date invalide", description: "La date de fin doit être dans le futur", variant: "destructive" });
+      return;
+    }
+
+    if (expiresDate > departureDate) {
+      toast({ title: "Date invalide", description: "La date de fin doit être avant le départ", variant: "destructive" });
+      return;
+    }
+
     setLoading(true);
     try {
       const capacity = parseFloat(form.totalCapacity);
