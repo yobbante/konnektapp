@@ -121,28 +121,6 @@ export function AppHeader({
 
           {/* Right Side — Compact action cluster */}
           <div className="flex items-center gap-1">
-            {/* Wallet shortcut */}
-            {isAuthenticated && isHome && (
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => navigate("/wallet")}
-                className="rounded-full w-8 h-8"
-              >
-                <Wallet className="w-4 h-4 text-muted-foreground" />
-              </Button>
-            )}
-
-            {/* Colis shortcut */}
-            {isAuthenticated && isHome && (
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => navigate("/mes-colis")}
-                className="rounded-full w-8 h-8"
-              >
-                <Package className="w-4 h-4 text-muted-foreground" />
-              </Button>
             )}
 
             {/* Combined Scan + QR button */}
