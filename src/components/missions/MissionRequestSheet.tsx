@@ -461,6 +461,18 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
                   <p className="text-sm text-foreground">{description}</p>
                 </div>
 
+                {/* Photo previews in confirm */}
+                {photoPreviews.length > 0 && (
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-semibold text-muted-foreground">Photos ({photoPreviews.length})</p>
+                    <div className="flex gap-2 overflow-x-auto">
+                      {photoPreviews.map((src, i) => (
+                        <img key={i} src={src} alt="" className="w-14 h-14 rounded-lg object-cover border border-border flex-shrink-0" />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex gap-3 pt-2">
                   <Button variant="outline" onClick={() => setStep("details")} className="flex-1">
                     Modifier
