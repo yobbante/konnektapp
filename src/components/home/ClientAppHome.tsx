@@ -694,13 +694,15 @@ export function ClientAppHome({
         </div>
 
 
-        {/* ── SMART ACTION BAR ── */}
-        <SmartActionBar
-          userId={userId}
-          recentOrders={recentOrders}
-          unreadMessages={unreadMessages}
-          activeOrdersCount={activeOrdersCount}
-          pendingRecipientFeedback={pendingRecipientFeedback} />
+        {/* ── SMART ACTION BAR (only on "all" tab) ── */}
+        {activeTab === "all" && (
+          <SmartActionBar
+            userId={userId}
+            recentOrders={recentOrders}
+            unreadMessages={unreadMessages}
+            activeOrdersCount={activeOrdersCount}
+            pendingRecipientFeedback={pendingRecipientFeedback} />
+        )}
         
 
         {/* ── OFFERS / MISSIONS ── */}
