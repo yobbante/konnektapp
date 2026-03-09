@@ -328,7 +328,7 @@ export function RoutierDashboardLayout({
             <span className={cn("text-[10px] font-bold mt-0.5", currentTab === "scan" ? "text-primary" : "text-muted-foreground")}>Scan</span>
           </button>
 
-          <NavItem icon={MessageCircle} label="Messages" active={currentTab === "messages"} onClick={() => navigate("/routier/messages")} />
+          <NavItem icon={Map} label="Carte" active={currentTab === "carte"} onClick={() => navigate("/routier/carte")} />
 
           {/* Profil — opens menu sheet */}
           <Sheet open={showMenu} onOpenChange={setShowMenu}>
