@@ -474,11 +474,11 @@ export function ClientAppHome({
     const today = new Date().toISOString().split("T")[0];
     supabase.
     from("gp_offers").
-    select("*, gp_profiles(business_name, rating, total_reviews)").
+    select("*, gp_profiles(business_name, rating, total_reviews, subscription)").
     eq("status", "active").
     gte("departure_date", today).
     order("departure_date", { ascending: true }).
-    limit(12).
+    limit(50).
     then(({ data }) => {if (data) setOffers(data);});
   }, []);
 
