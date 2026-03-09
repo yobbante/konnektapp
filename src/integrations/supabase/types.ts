@@ -2834,6 +2834,506 @@ export type Database = {
           },
         ]
       }
+      mobility_bookings: {
+        Row: {
+          boarding_code: string | null
+          booking_number: string
+          client_id: string
+          commission_amount: number | null
+          completed_at: string | null
+          created_at: string | null
+          currency: string | null
+          departure_date: string
+          departure_time: string
+          destination_city: string
+          id: string
+          mobility_profile_id: string
+          offer_id: string | null
+          origin_city: string
+          passenger_count: number
+          passenger_names: string[] | null
+          payment_status: string | null
+          proposal_id: string | null
+          qr_code_data: string | null
+          scanned_at: string | null
+          status: Database["public"]["Enums"]["mobility_status"] | null
+          total_price: number
+          updated_at: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          boarding_code?: string | null
+          booking_number: string
+          client_id: string
+          commission_amount?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          departure_date: string
+          departure_time: string
+          destination_city: string
+          id?: string
+          mobility_profile_id: string
+          offer_id?: string | null
+          origin_city: string
+          passenger_count?: number
+          passenger_names?: string[] | null
+          payment_status?: string | null
+          proposal_id?: string | null
+          qr_code_data?: string | null
+          scanned_at?: string | null
+          status?: Database["public"]["Enums"]["mobility_status"] | null
+          total_price: number
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          boarding_code?: string | null
+          booking_number?: string
+          client_id?: string
+          commission_amount?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          departure_date?: string
+          departure_time?: string
+          destination_city?: string
+          id?: string
+          mobility_profile_id?: string
+          offer_id?: string | null
+          origin_city?: string
+          passenger_count?: number
+          passenger_names?: string[] | null
+          payment_status?: string | null
+          proposal_id?: string | null
+          qr_code_data?: string | null
+          scanned_at?: string | null
+          status?: Database["public"]["Enums"]["mobility_status"] | null
+          total_price?: number
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mobility_bookings_mobility_profile_id_fkey"
+            columns: ["mobility_profile_id"]
+            isOneToOne: false
+            referencedRelation: "mobility_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mobility_bookings_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "mobility_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mobility_bookings_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "mobility_proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mobility_bookings_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "mobility_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mobility_offers: {
+        Row: {
+          available_seats: number
+          cancellation_policy: string | null
+          created_at: string | null
+          currency: string | null
+          departure_date: string
+          departure_time: string
+          destination_address: string | null
+          destination_city: string
+          destination_country: string
+          estimated_duration_minutes: number | null
+          id: string
+          luggage_policy: string | null
+          mobility_profile_id: string
+          mobility_type: Database["public"]["Enums"]["mobility_type"]
+          origin_address: string | null
+          origin_city: string
+          origin_country: string
+          price_per_seat: number
+          special_requirements: string[] | null
+          status: Database["public"]["Enums"]["offer_status"] | null
+          total_seats: number
+          updated_at: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          available_seats: number
+          cancellation_policy?: string | null
+          created_at?: string | null
+          currency?: string | null
+          departure_date: string
+          departure_time: string
+          destination_address?: string | null
+          destination_city: string
+          destination_country?: string
+          estimated_duration_minutes?: number | null
+          id?: string
+          luggage_policy?: string | null
+          mobility_profile_id: string
+          mobility_type: Database["public"]["Enums"]["mobility_type"]
+          origin_address?: string | null
+          origin_city: string
+          origin_country?: string
+          price_per_seat: number
+          special_requirements?: string[] | null
+          status?: Database["public"]["Enums"]["offer_status"] | null
+          total_seats: number
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          available_seats?: number
+          cancellation_policy?: string | null
+          created_at?: string | null
+          currency?: string | null
+          departure_date?: string
+          departure_time?: string
+          destination_address?: string | null
+          destination_city?: string
+          destination_country?: string
+          estimated_duration_minutes?: number | null
+          id?: string
+          luggage_policy?: string | null
+          mobility_profile_id?: string
+          mobility_type?: Database["public"]["Enums"]["mobility_type"]
+          origin_address?: string | null
+          origin_city?: string
+          origin_country?: string
+          price_per_seat?: number
+          special_requirements?: string[] | null
+          status?: Database["public"]["Enums"]["offer_status"] | null
+          total_seats?: number
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mobility_offers_mobility_profile_id_fkey"
+            columns: ["mobility_profile_id"]
+            isOneToOne: false
+            referencedRelation: "mobility_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mobility_offers_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "mobility_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mobility_profiles: {
+        Row: {
+          base_city: string
+          base_country: string
+          business_name: string
+          company_registration: string | null
+          created_at: string | null
+          default_currency: string | null
+          id: string
+          insurance_document_url: string | null
+          license_expiry: string | null
+          license_number: string
+          minimum_fare: number | null
+          mobility_types: Database["public"]["Enums"]["mobility_type"][]
+          price_per_km: number | null
+          rating: number | null
+          service_zones: string[] | null
+          status: Database["public"]["Enums"]["gp_status"] | null
+          total_reviews: number | null
+          total_trips: number | null
+          updated_at: string | null
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          base_city: string
+          base_country?: string
+          business_name: string
+          company_registration?: string | null
+          created_at?: string | null
+          default_currency?: string | null
+          id?: string
+          insurance_document_url?: string | null
+          license_expiry?: string | null
+          license_number: string
+          minimum_fare?: number | null
+          mobility_types?: Database["public"]["Enums"]["mobility_type"][]
+          price_per_km?: number | null
+          rating?: number | null
+          service_zones?: string[] | null
+          status?: Database["public"]["Enums"]["gp_status"] | null
+          total_reviews?: number | null
+          total_trips?: number | null
+          updated_at?: string | null
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          base_city?: string
+          base_country?: string
+          business_name?: string
+          company_registration?: string | null
+          created_at?: string | null
+          default_currency?: string | null
+          id?: string
+          insurance_document_url?: string | null
+          license_expiry?: string | null
+          license_number?: string
+          minimum_fare?: number | null
+          mobility_types?: Database["public"]["Enums"]["mobility_type"][]
+          price_per_km?: number | null
+          rating?: number | null
+          service_zones?: string[] | null
+          status?: Database["public"]["Enums"]["gp_status"] | null
+          total_reviews?: number | null
+          total_trips?: number | null
+          updated_at?: string | null
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
+      mobility_proposals: {
+        Row: {
+          created_at: string | null
+          currency: string | null
+          estimated_duration_minutes: number | null
+          id: string
+          message: string | null
+          mobility_profile_id: string
+          pickup_time: string | null
+          price_proposed: number
+          request_id: string
+          status: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          currency?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          message?: string | null
+          mobility_profile_id: string
+          pickup_time?: string | null
+          price_proposed: number
+          request_id: string
+          status?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          message?: string | null
+          mobility_profile_id?: string
+          pickup_time?: string | null
+          price_proposed?: number
+          request_id?: string
+          status?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mobility_proposals_mobility_profile_id_fkey"
+            columns: ["mobility_profile_id"]
+            isOneToOne: false
+            referencedRelation: "mobility_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mobility_proposals_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "mobility_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mobility_proposals_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "mobility_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mobility_requests: {
+        Row: {
+          accepted_proposal_id: string | null
+          budget_proposed: number | null
+          client_id: string
+          created_at: string | null
+          currency: string | null
+          destination_address: string | null
+          destination_city: string
+          destination_country: string
+          expires_at: string | null
+          id: string
+          luggage_description: string | null
+          mobility_type: Database["public"]["Enums"]["mobility_type"]
+          notes: string | null
+          origin_address: string | null
+          origin_city: string
+          origin_country: string
+          passenger_count: number
+          pickup_date: string
+          pickup_time: string | null
+          request_number: string
+          special_requirements: string[] | null
+          status: string | null
+          updated_at: string | null
+          vehicle_type_preferred:
+            | Database["public"]["Enums"]["vehicle_type"]
+            | null
+        }
+        Insert: {
+          accepted_proposal_id?: string | null
+          budget_proposed?: number | null
+          client_id: string
+          created_at?: string | null
+          currency?: string | null
+          destination_address?: string | null
+          destination_city: string
+          destination_country?: string
+          expires_at?: string | null
+          id?: string
+          luggage_description?: string | null
+          mobility_type: Database["public"]["Enums"]["mobility_type"]
+          notes?: string | null
+          origin_address?: string | null
+          origin_city: string
+          origin_country?: string
+          passenger_count: number
+          pickup_date: string
+          pickup_time?: string | null
+          request_number: string
+          special_requirements?: string[] | null
+          status?: string | null
+          updated_at?: string | null
+          vehicle_type_preferred?:
+            | Database["public"]["Enums"]["vehicle_type"]
+            | null
+        }
+        Update: {
+          accepted_proposal_id?: string | null
+          budget_proposed?: number | null
+          client_id?: string
+          created_at?: string | null
+          currency?: string | null
+          destination_address?: string | null
+          destination_city?: string
+          destination_country?: string
+          expires_at?: string | null
+          id?: string
+          luggage_description?: string | null
+          mobility_type?: Database["public"]["Enums"]["mobility_type"]
+          notes?: string | null
+          origin_address?: string | null
+          origin_city?: string
+          origin_country?: string
+          passenger_count?: number
+          pickup_date?: string
+          pickup_time?: string | null
+          request_number?: string
+          special_requirements?: string[] | null
+          status?: string | null
+          updated_at?: string | null
+          vehicle_type_preferred?:
+            | Database["public"]["Enums"]["vehicle_type"]
+            | null
+        }
+        Relationships: []
+      }
+      mobility_vehicles: {
+        Row: {
+          brand: string
+          color: string | null
+          created_at: string | null
+          has_ac: boolean | null
+          has_wifi: boolean | null
+          id: string
+          insurance_url: string | null
+          is_active: boolean | null
+          license_plate: string
+          luggage_capacity: string | null
+          mobility_profile_id: string
+          model: string
+          passenger_capacity: number
+          registration_url: string | null
+          technical_control_url: string | null
+          updated_at: string | null
+          vehicle_type: Database["public"]["Enums"]["vehicle_type"]
+          wheelchair_accessible: boolean | null
+          year: number | null
+        }
+        Insert: {
+          brand: string
+          color?: string | null
+          created_at?: string | null
+          has_ac?: boolean | null
+          has_wifi?: boolean | null
+          id?: string
+          insurance_url?: string | null
+          is_active?: boolean | null
+          license_plate: string
+          luggage_capacity?: string | null
+          mobility_profile_id: string
+          model: string
+          passenger_capacity: number
+          registration_url?: string | null
+          technical_control_url?: string | null
+          updated_at?: string | null
+          vehicle_type: Database["public"]["Enums"]["vehicle_type"]
+          wheelchair_accessible?: boolean | null
+          year?: number | null
+        }
+        Update: {
+          brand?: string
+          color?: string | null
+          created_at?: string | null
+          has_ac?: boolean | null
+          has_wifi?: boolean | null
+          id?: string
+          insurance_url?: string | null
+          is_active?: boolean | null
+          license_plate?: string
+          luggage_capacity?: string | null
+          mobility_profile_id?: string
+          model?: string
+          passenger_capacity?: number
+          registration_url?: string | null
+          technical_control_url?: string | null
+          updated_at?: string | null
+          vehicle_type?: Database["public"]["Enums"]["vehicle_type"]
+          wheelchair_accessible?: boolean | null
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mobility_vehicles_mobility_profile_id_fkey"
+            columns: ["mobility_profile_id"]
+            isOneToOne: false
+            referencedRelation: "mobility_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_preferences: {
         Row: {
           created_at: string
@@ -5435,6 +5935,8 @@ export type Database = {
         | "agence"
         | "bagages_international"
       mission_urgency: "standard" | "express" | "immediate"
+      mobility_status: "active" | "completed" | "cancelled" | "in_progress"
+      mobility_type: "shuttle" | "private_driver" | "group_mission" | "premium"
       negotiation_status:
         | "pending"
         | "counter_proposed"
@@ -5488,6 +5990,7 @@ export type Database = {
         | "transporter_suspended"
         | "client_standard"
         | "client_premium"
+      vehicle_type: "sedan" | "suv" | "minibus" | "bus" | "van" | "luxury"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -5660,6 +6163,8 @@ export const Constants = {
         "bagages_international",
       ],
       mission_urgency: ["standard", "express", "immediate"],
+      mobility_status: ["active", "completed", "cancelled", "in_progress"],
+      mobility_type: ["shuttle", "private_driver", "group_mission", "premium"],
       negotiation_status: [
         "pending",
         "counter_proposed",
@@ -5719,6 +6224,7 @@ export const Constants = {
         "client_standard",
         "client_premium",
       ],
+      vehicle_type: ["sedan", "suv", "minibus", "bus", "van", "luxury"],
     },
   },
 } as const
