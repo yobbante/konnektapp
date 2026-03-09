@@ -47,25 +47,22 @@ export function HomeOfferCard({ offer, index, modeLabel, subscriptionBadge }: Ho
             <ArrowRight className="w-2.5 h-2.5 text-muted-foreground/50 flex-shrink-0" />
             <span className="text-xs font-semibold text-foreground truncate">{offer.destination_city}</span>
           </div>
-          {/* GP name + rating + date + capacity */}
-          <div className="flex items-center gap-1 mt-0.5">
-            <span className="text-[9px] text-muted-foreground truncate max-w-[70px]">
-              {offer.gp_profiles?.business_name || "GP"}
-            </span>
-            {offer.gp_profiles?.rating > 0 && (
-              <span className="flex items-center gap-px text-[9px] text-amber-600">
-                <Star className="w-2 h-2 fill-amber-500" />
-                {offer.gp_profiles.rating.toFixed(1)}
-              </span>
-            )}
+          {/* Date + rating + capacity */}
+          <div className="flex items-center gap-1.5 mt-0.5">
             {departDate && (
-              <span className="text-[8px] text-muted-foreground bg-muted/50 px-1 py-px rounded-full">
+              <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
                 {departDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
               </span>
             )}
+            {offer.gp_profiles?.rating > 0 && (
+              <span className="flex items-center gap-px text-[9px] text-amber-600">
+                <Star className="w-2.5 h-2.5 fill-amber-500" />
+                {offer.gp_profiles.rating.toFixed(1)}
+              </span>
+            )}
             {offer.available_capacity > 0 && (
-              <span className="text-[8px] text-primary/80 font-medium">
-                {offer.available_capacity}kg
+              <span className="text-[9px] text-muted-foreground font-medium">
+                {offer.available_capacity}kg dispo
               </span>
             )}
           </div>
