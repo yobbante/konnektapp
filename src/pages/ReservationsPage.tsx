@@ -37,7 +37,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
 };
 
 const ACTIVE_STATUSES = ['pending', 'accepted', 'collected', 'paid_held', 'checked_in', 'weight_pending_payment', 'scheduled_departure', 'in_transit', 'arrived_destination', 'delivery_pending'];
-const DELIVERED_STATUSES = ['delivered', 'delivery_confirmed'];
+const DELIVERED_STATUSES = ['delivered', 'delivery_confirmed', 'released'];
 const CANCELLED_STATUSES = ['cancelled', 'rejected', 'expired'];
 
 type TabId = "actives" | "annulees" | "livrees" | "colis" | "demandes";

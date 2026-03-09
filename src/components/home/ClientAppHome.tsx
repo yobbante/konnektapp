@@ -203,7 +203,7 @@ const TYPE_MAP: Record<string, string[]> = {
   aerien: ["aerien"],
   maritime: ["maritime"],
   routier: ["routier"],
-  bagages: ["bagages_accompagnes", "navette"]
+  bagages: ["bagages_accompagnes", "bagages_international", "navette"]
 };
 
 // ── Quick Actions Grid ──
@@ -751,12 +751,12 @@ export function ClientAppHome({
 
           activeTab === "all" ?
           (() => {
-            const modes = ["routier", "maritime", "aerien", "bagages_accompagnes"];
+            const modes = ["routier", "maritime", "aerien", "bagages_international"];
             const modeLabels: Record<string, string> = {
-              routier: "Routier", maritime: "Maritime", aerien: "Aérien", bagages_accompagnes: "GP via Bagages", bagages_international: "GP via Bagages", navette: "GP via Bagages"
+              routier: "Routier", maritime: "Maritime", aerien: "Aérien", bagages_international: "GP via Bagages", bagages_accompagnes: "GP via Bagages", navette: "GP via Bagages"
             };
             const modeIcons: Record<string, typeof Package> = {
-              routier: Truck, maritime: Ship, aerien: Plane, bagages_accompagnes: Luggage
+              routier: Truck, maritime: Ship, aerien: Plane, bagages_international: Luggage, bagages_accompagnes: Luggage
             };
 
             // Helper: premium/pro score boost + rating
@@ -781,7 +781,7 @@ export function ClientAppHome({
               return searchResults.length > 0 ?
                 <div className="space-y-1.5">
                   {searchResults.map((offer: any, idx: number) => {
-                    const mode = offer.transport_type === "navette" ? "bagages_accompagnes" : offer.transport_type;
+                    const mode = (offer.transport_type === "navette" || offer.transport_type === "bagages_accompagnes") ? "bagages_international" : offer.transport_type;
                     const ModeIcon = modeIcons[mode] || Package;
                      return (
                       <div key={offer.id}>
@@ -801,7 +801,7 @@ export function ClientAppHome({
             const top4 = modes.
             map((mode) => {
               const modeOffers = offers.
-              filter((o) => o.transport_type === mode || mode === "bagages_accompagnes" && (o.transport_type === "bagages_accompagnes" || o.transport_type === "navette")).
+              filter((o) => o.transport_type === mode || mode === "bagages_international" && (o.transport_type === "bagages_international" || o.transport_type === "bagages_accompagnes" || o.transport_type === "navette")).
               sort((a, b) => scoreOffer(b) - scoreOffer(a));
               return modeOffers[0] ? { ...modeOffers[0], _mode: mode } : null;
             }).
