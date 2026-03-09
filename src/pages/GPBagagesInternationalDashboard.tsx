@@ -315,7 +315,7 @@ export default function GPBagagesInternationalDashboard() {
               <h1 className="text-xl font-bold">{gpProfile.business_name}</h1>
               <p className="text-sm opacity-80 flex items-center gap-1">
                 <Plane className="w-3 h-3" />
-                GP Via Bagages International
+                GP via Bagages
               </p>
             </div>
           </div>

@@ -259,7 +259,7 @@ export default function AdminSearchResults() {
                             <div className="flex items-center gap-2 mt-0.5">
                               <Badge className={`text-xs ${statusConf.color}`}>{statusConf.label}</Badge>
                               <span className="text-xs text-muted-foreground capitalize">
-                                {gp.gp_type === "bagages_international" ? "GP Bagages" : gp.gp_type}
+                                {gp.gp_type === "bagages_international" ? "GP via Bagages" : gp.gp_type}
                               </span>
                             </div>
                           </div>

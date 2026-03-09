@@ -257,7 +257,7 @@ export default function OfferDetail() {
             <div className="flex items-center justify-between mb-6">
               <Badge className={`gap-1.5 px-3 py-1 ${config.color} bg-background/80`}>
                 <TypeIcon className="w-3.5 h-3.5" />
-                {offer.transport_type === "bagages_international" ? "GP Bagages" : offer.transport_type}
+                {offer.transport_type === "bagages_international" ? "GP via Bagages" : offer.transport_type}
               </Badge>
               <Badge variant="outline" className="bg-success/10 text-success border-success/30">
                 <CheckCircle className="w-3 h-3 mr-1" />

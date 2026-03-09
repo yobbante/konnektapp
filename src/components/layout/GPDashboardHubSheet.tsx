@@ -153,7 +153,7 @@ export function GPDashboardHubSheet({
                 {gpProfile?.business_name || "Dashboard GP"}
               </SheetTitle>
               <p className="text-sm text-muted-foreground">
-                {gpProfile?.gp_type === "bagages_international" ? "GP Bagages International" : 
+                {gpProfile?.gp_type === "bagages_international" ? "GP via Bagages" : 
                  gpProfile?.gp_type === "routier" ? "Transport Routier" : "Transporteur"}
               </p>
             </div>
