@@ -338,8 +338,16 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
           onClick={() => navigate(`/routier/detail-mission/${selectedMission.id}`)}
         >
           <div className="flex items-start gap-3">
-            <div className="w-14 h-14 rounded-xl bg-muted/40 flex items-center justify-center flex-shrink-0">
-              <Package className="w-7 h-7 text-muted-foreground/30" />
+            <div className="w-14 h-14 rounded-xl bg-muted/40 flex items-center justify-center flex-shrink-0 overflow-hidden">
+              {selectedMission.photo_url ? (
+                <img 
+                  src={selectedMission.photo_url} 
+                  alt="Photo colis" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Package className="w-7 h-7 text-muted-foreground/30" />
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
