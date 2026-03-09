@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { SearchableCitySelect } from "@/components/gp/SearchableCitySelect";
 
 export default function AerienPublierPage() {
   const navigate = useNavigate();
