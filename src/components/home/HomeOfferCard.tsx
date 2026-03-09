@@ -39,14 +39,16 @@ export function HomeOfferCard({ offer, index, modeLabel, subscriptionBadge }: Ho
           <OfferIcon className="w-3.5 h-3.5 text-primary" />
         </div>
 
-        {/* Center: route + meta */}
+        {/* Center: route + GP name + mode */}
         <div className="flex-1 min-w-0">
+          {/* Route */}
           <div className="flex items-center gap-1">
             <span className="text-xs font-semibold text-foreground truncate">{offer.origin_city}</span>
             <ArrowRight className="w-2.5 h-2.5 text-muted-foreground/50 flex-shrink-0" />
             <span className="text-xs font-semibold text-foreground truncate">{offer.destination_city}</span>
           </div>
-          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+          {/* GP name + rating + date + capacity */}
+          <div className="flex items-center gap-1 mt-0.5">
             <span className="text-[9px] text-muted-foreground truncate max-w-[70px]">
               {offer.gp_profiles?.business_name || "GP"}
             </span>
@@ -66,17 +68,22 @@ export function HomeOfferCard({ offer, index, modeLabel, subscriptionBadge }: Ho
                 {offer.available_capacity}kg
               </span>
             )}
-            {modeLabel && (
-              <span className="text-[8px] text-muted-foreground bg-muted/60 px-1.5 py-px rounded-full font-medium">
-                {modeLabel}
-              </span>
-            )}
-            {subscriptionBadge && (
-              <span className={`text-[8px] font-bold px-1.5 py-px rounded-full ${subscriptionBadge === "pro" ? "bg-amber-500/15 text-amber-600" : "bg-violet-500/15 text-violet-600"}`}>
-                {subscriptionBadge === "pro" ? "PRO" : "PREMIUM"}
-              </span>
-            )}
           </div>
+          {/* Mode label + subscription badge (below GP name) */}
+          {(modeLabel || subscriptionBadge) && (
+            <div className="flex items-center gap-1 mt-0.5">
+              {modeLabel && (
+                <span className="text-[8px] text-muted-foreground bg-muted/60 px-1.5 py-px rounded-full font-medium">
+                  {modeLabel}
+                </span>
+              )}
+              {subscriptionBadge && (
+                <span className={`text-[8px] font-bold px-1.5 py-px rounded-full ${subscriptionBadge === "pro" ? "bg-amber-500/15 text-amber-600" : "bg-violet-500/15 text-violet-600"}`}>
+                  {subscriptionBadge === "pro" ? "PRO" : "PREMIUM"}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Price - always visible */}
