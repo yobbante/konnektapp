@@ -51,9 +51,10 @@ const TERMINAL_STATUSES = ["delivered", "released", "cancelled", "delivery_confi
 
 interface RecipientTrackingCardProps {
   userId: string;
+  listMode?: boolean;
 }
 
-export function RecipientTrackingCard({ userId }: RecipientTrackingCardProps) {
+export function RecipientTrackingCard({ userId, listMode = false }: RecipientTrackingCardProps) {
   const [parcels, setParcels] = useState<IncomingParcel[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedParcel, setSelectedParcel] = useState<IncomingParcel | null>(null);
@@ -108,12 +109,110 @@ export function RecipientTrackingCard({ userId }: RecipientTrackingCardProps) {
     }
   };
 
-  if (loading || parcels.length === 0) return null;
+  if (loading && listMode) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (loading || parcels.length === 0) {
+    if (listMode) {
+      return (
+        <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mb-3">
+            <Package className="w-7 h-7 text-muted-foreground" />
+          </div>
+          <p className="text-sm font-semibold text-foreground">Aucun colis pour vous</p>
+          <p className="text-xs text-muted-foreground mt-1">Les colis qui vous sont destinés apparaîtront ici</p>
+        </div>
+      );
+    }
+    return null;
+  }
 
   const activeCount = parcels.filter(p => !TERMINAL_STATUSES.includes(p.status)).length;
 
-  if (activeCount === 0) return null;
+  if (activeCount === 0 && !listMode) return null;
 
+  // List mode: show individual cards like the "actives" tab
+  if (listMode) {
+    const activeParcels = parcels.filter(p => !TERMINAL_STATUSES.includes(p.status));
+    if (activeParcels.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mb-3">
+            <Package className="w-7 h-7 text-muted-foreground" />
+          </div>
+          <p className="text-sm font-semibold text-foreground">Aucun colis pour vous</p>
+          <p className="text-xs text-muted-foreground mt-1">Les colis qui vous sont destinés apparaîtront ici</p>
+        </div>
+      );
+    }
+    return (
+      <>
+        <div className="px-4 pt-3 space-y-2">
+          {activeParcels.map((parcel, i) => {
+            const statusInfo = STATUS_MAP[parcel.status] || { label: parcel.status, color: "bg-muted text-muted-foreground", icon: Clock };
+            const StatusIcon = statusInfo.icon;
+            return (
+              <motion.div
+                key={parcel.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.03 }}
+                onClick={() => setSelectedParcel(parcel)}
+                className="bg-card border border-border rounded-xl p-3 active:scale-[0.98] transition-transform cursor-pointer"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-violet-500/10">
+                    <StatusIcon className="w-5 h-5 text-violet-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-bold text-foreground truncate">
+                        {parcel.origin_city} → {parcel.destination_city}
+                      </p>
+                      <Eye className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusInfo.color}`}>
+                        {statusInfo.label}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        #{parcel.order_number?.slice(-6)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
+                      <span className="flex items-center gap-1"><User className="w-3 h-3" /> {parcel.sender_name}</span>
+                      {parcel.weight && <span>{parcel.weight} kg</span>}
+                      {parcel.gp_business_name && <span className="truncate">· {parcel.gp_business_name}</span>}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {selectedParcel && (
+          <div
+            className="fixed inset-0 z-[80] bg-background"
+            style={{ paddingTop: 'env(safe-area-inset-top)' }}
+          >
+            <RecipientParcelDetails
+              parcels={activeParcels}
+              onClose={() => setSelectedParcel(null)}
+              navigate={navigate}
+            />
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // Banner mode (default): compact summary card
   return (
     <>
       <motion.div
