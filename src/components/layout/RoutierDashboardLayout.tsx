@@ -254,39 +254,13 @@ export function RoutierDashboardLayout({
 
       {/* STICKY SUB-HEADER — Quick nav tabs */}
       <div className="sticky top-[calc(52px+var(--safe-top,0px))] z-30 bg-card/95 backdrop-blur-md border-b border-border/50">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
+        <div className="flex items-center gap-1 px-2 py-1.5 overflow-x-auto no-scrollbar">
+          <SubNavTab label="Aperçu" active={currentTab === "apercu"} onClick={() => navigate("/routier/apercu")} />
+          <SubNavTab label="Missions" active={currentTab === "missions"} badge={pendingCount + activeOrdersCount} onClick={() => navigate("/routier/demandes")} />
+          <SubNavTab label="Négociations" active={location.pathname.includes("/routier/negotiations")} onClick={() => navigate("/routier/negotiations")} />
+          <SubNavTab label="Carte" active={currentTab === "carte"} onClick={() => navigate("/routier/carte")} />
+          <SubNavTab label="Historique" onClick={() => navigate("/routier/historique")} />
+        </div>
       </div>
 
       <main className="flex-1 pb-20">
@@ -424,5 +398,24 @@ function MenuButton({ icon: Icon, label, badge, locked, variant, onClick
       </div>
       <span className={cn("text-[11px] font-medium", variant === "destructive" ? "text-destructive" : "text-foreground")}>{label}</span>
     </button>);
+}
 
+/* ─── Sub Navigation Tab ─── */
+function SubNavTab({ label, active, badge, onClick }: { label: string; active?: boolean; badge?: number; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors relative",
+        active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      )}
+    >
+      {label}
+      {!!badge && badge > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-destructive text-destructive-foreground text-[8px] font-bold rounded-full flex items-center justify-center">
+          {badge > 9 ? "9+" : badge}
+        </span>
+      )}
+    </button>
+  );
 }

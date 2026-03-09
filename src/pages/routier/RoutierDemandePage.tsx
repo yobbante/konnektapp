@@ -562,7 +562,7 @@ export default function RoutierDemandePage() {
                 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label className="text-xs text-muted-foreground mb-1 block">Date début</Label>
+                    <Label className="text-xs text-muted-foreground mb-1 block">Date prise en charge</Label>
                     <Input
                       type="date"
                       value={formData.pickupDateStart}
