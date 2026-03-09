@@ -173,7 +173,6 @@ export default function AerienApercuPage() {
             ].map((s) => (
               <Card key={s.title} className="cursor-pointer active:scale-[0.98] transition-all border-primary/15 hover:border-primary/40" onClick={() => navigate(s.path)}>
                 <CardContent className="p-2.5 flex items-center gap-2">
-                  <span className="text-lg">{s.icon}</span>
                   <div className="min-w-0">
                     <p className="text-[11px] font-semibold truncate">{s.title}</p>
                     <p className="text-[9px] text-muted-foreground">{s.desc}</p>
