@@ -778,7 +778,7 @@ export function ClientAppHome({
           (() => {
             const modes = ["routier", "maritime", "aerien", "bagages_accompagnes"];
             const modeLabels: Record<string, string> = {
-              routier: "Routier", maritime: "Maritime", aerien: "Aérien", bagages_accompagnes: "GP"
+              routier: "Routier", maritime: "Maritime", aerien: "Aérien", bagages_accompagnes: "GP via Bagages", bagages_international: "GP via Bagages", navette: "GP via Bagages"
             };
             const modeIcons: Record<string, typeof Package> = {
               routier: Truck, maritime: Ship, aerien: Plane, bagages_accompagnes: Luggage
