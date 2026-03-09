@@ -51,7 +51,9 @@ const TABS: { id: TabId; label: string; icon: typeof Clock }[] = [
 
 export default function ReservationsPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TabId>("actives");
+  const [searchParams] = useSearchParams();
+  const initialTab = (searchParams.get("tab") as TabId) || "actives";
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [orders, setOrders] = useState<any[]>([]);
   const [customRequests, setCustomRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
