@@ -2,11 +2,11 @@
  * MissionRequestSheet — Full mission request form
  * Supports: Routier, Maritime, Aérien (not GP bagages)
  */
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, Send, Truck, Ship, Plane, Package, MapPin, Calendar, Weight, 
-  ChevronRight, CheckCircle2, Info
+  ChevronRight, CheckCircle2, Info, Camera, ImageIcon, Trash2
 } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -30,10 +30,13 @@ const MODES: { id: TransportMode; icon: React.ElementType; label: string; desc: 
   { id: "aerien", icon: Plane, label: "Aérien", desc: "Cargo & fret aérien express", color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-500/10 border-violet-500/20" },
 ];
 
+const MAX_PHOTOS = 5;
+
 export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetProps) {
   const [step, setStep] = useState<Step>("mode");
   const [mode, setMode] = useState<TransportMode | null>(null);
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form fields
   const [originCity, setOriginCity] = useState("");
@@ -45,6 +48,8 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
   const [pickupDate, setPickupDate] = useState("");
   const [budgetMax, setBudgetMax] = useState("");
   const [isUrgent, setIsUrgent] = useState(false);
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
 
   const resetForm = () => {
     setStep("mode");
@@ -52,6 +57,7 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
     setOriginCity(""); setOriginCountry(""); setDestCity(""); setDestCountry("");
     setDescription(""); setWeightKg(""); setPickupDate(""); setBudgetMax("");
     setIsUrgent(false);
+    setPhotos([]); setPhotoPreviews([]);
   };
 
   const handleClose = () => {
