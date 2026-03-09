@@ -71,6 +71,7 @@ export function GPCreateOfferDialog({ open, onClose, gpProfile, onSuccess }: GPC
         destinationCountry: "CI",
         departureDate: "",
         arrivalDate: "",
+        expiresAt: "",
         pricePerKg: "",
         totalCapacity: "",
         minWeight: "0.5",
