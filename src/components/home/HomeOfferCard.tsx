@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight, Plane, Ship, Car, Luggage, Star, Truck } from "lucide-react";
+import { ArrowRight, Plane, Ship, Truck, Luggage, Star } from "lucide-react";
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   EUR: "€", USD: "$", GBP: "£", XOF: " CFA", XAF: " CFA", MAD: " DH", CAD: "$CA", GNF: " FG",
@@ -18,14 +18,6 @@ const getOfferIcon = (type: string) => {
   return Luggage;
 };
 
-const getTransportLabel = (type: string) => {
-  if (type === "maritime") return "Maritime";
-  if (type === "routier") return "Routier";
-  if (type === "aerien") return "Aérien";
-  if (type === "bagages_international" || type === "navette" || type === "bagages_accompagnes") return "GP via Bagages";
-  return "GP";
-};
-
 export function HomeOfferCard({ offer, index }: HomeOfferCardProps) {
   const departDate = offer.departure_date ? new Date(offer.departure_date) : null;
   const OfferIcon = getOfferIcon(offer.transport_type);
@@ -34,55 +26,55 @@ export function HomeOfferCard({ offer, index }: HomeOfferCardProps) {
   return (
     <Link to={`/offres/${offer.id}`} className="block">
       <motion.div
-        initial={{ opacity: 0, y: 6 }}
+        initial={{ opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.025, duration: 0.2 }}
-        whileTap={{ scale: 0.97 }}
-        className="bg-card border border-border rounded-xl p-3 hover:border-primary/30 active:bg-muted/40 transition-all"
+        transition={{ delay: index * 0.02, duration: 0.15 }}
+        whileTap={{ scale: 0.98 }}
+        className="bg-card border border-border rounded-xl px-2.5 py-2 flex items-center gap-2 hover:border-primary/30 active:bg-muted/40 transition-all"
       >
-        {/* Row 1: Route + Price */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <div className="w-8 h-8 rounded-lg bg-primary/8 flex items-center justify-center flex-shrink-0">
-              <OfferIcon className="w-4 h-4 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1">
-                <span className="text-[13px] font-semibold text-foreground truncate">{offer.origin_city}</span>
-                <ArrowRight className="w-3 h-3 text-muted-foreground/60 flex-shrink-0" />
-                <span className="text-[13px] font-semibold text-foreground truncate">{offer.destination_city}</span>
-              </div>
-              <span className="text-[10px] text-muted-foreground truncate block">
-                {offer.gp_profiles?.business_name || "GP"}
-              </span>
-            </div>
+        {/* Icon */}
+        <div className="w-7 h-7 rounded-lg bg-primary/8 flex items-center justify-center flex-shrink-0">
+          <OfferIcon className="w-3.5 h-3.5 text-primary" />
+        </div>
+
+        {/* Center: route + meta */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1">
+            <span className="text-xs font-semibold text-foreground truncate">{offer.origin_city}</span>
+            <ArrowRight className="w-2.5 h-2.5 text-muted-foreground/50 flex-shrink-0" />
+            <span className="text-xs font-semibold text-foreground truncate">{offer.destination_city}</span>
           </div>
-          <div className="text-right flex-shrink-0 pl-2">
-            <span className="text-sm font-extrabold text-primary leading-none tracking-tight whitespace-nowrap">
-              {offer.price_per_kg?.toLocaleString()}<span className="text-[10px] font-bold">{currencySymbol}</span>
+          <div className="flex items-center gap-1 mt-0.5">
+            <span className="text-[9px] text-muted-foreground truncate max-w-[70px]">
+              {offer.gp_profiles?.business_name || "GP"}
             </span>
-            <span className="text-[9px] text-muted-foreground block leading-tight">/kg</span>
+            {offer.gp_profiles?.rating > 0 && (
+              <span className="flex items-center gap-px text-[9px] text-amber-600">
+                <Star className="w-2 h-2 fill-amber-500" />
+                {offer.gp_profiles.rating.toFixed(1)}
+              </span>
+            )}
+            {departDate && (
+              <span className="text-[8px] text-muted-foreground bg-muted/50 px-1 py-px rounded-full">
+                {departDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+              </span>
+            )}
+            {offer.available_capacity > 0 && (
+              <span className="text-[8px] text-primary/80 font-medium">
+                {offer.available_capacity}kg
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Row 2: Metadata badges */}
-        <div className="flex items-center gap-1.5 mt-1.5 pl-10 flex-wrap">
-          {offer.gp_profiles?.rating > 0 && (
-            <span className="flex items-center gap-0.5 text-[9px] text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded-full">
-              <Star className="w-2.5 h-2.5 fill-amber-500" />
-              {offer.gp_profiles.rating.toFixed(1)}
-            </span>
-          )}
-          {departDate && (
-            <span className="text-[9px] text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded-full">
-              {departDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-            </span>
-          )}
-          {offer.available_capacity > 0 && (
-            <span className="text-[9px] text-primary bg-primary/8 px-1.5 py-0.5 rounded-full font-medium">
-              {offer.available_capacity}kg
-            </span>
-          )}
+        {/* Price - always visible */}
+        <div className="flex-shrink-0 bg-primary/8 rounded-lg px-2 py-1 text-center">
+          <span className="text-[13px] font-extrabold text-primary leading-none whitespace-nowrap">
+            {offer.price_per_kg?.toLocaleString()}
+          </span>
+          <span className="text-[8px] text-primary/70 block leading-tight font-semibold">
+            {currencySymbol.trim()}/kg
+          </span>
         </div>
       </motion.div>
     </Link>
