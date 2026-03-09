@@ -193,7 +193,7 @@ export function SmartVoyageForm({
       };
 
   const currencySymbol = getCurrencySymbol(gpData.currency as any);
-  const getFlag = (code: string) => FLAGS[code] || "🌍";
+  const getFlag = (code: string) => FLAGS[code] || "";
   const minDate = format(addDays(new Date(), 1), "yyyy-MM-dd");
 
   const handleSubmit = async () => {

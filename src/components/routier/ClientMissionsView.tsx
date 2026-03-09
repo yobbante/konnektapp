@@ -1,32 +1,31 @@
 /**
- * ClientMissionsView - Client sees their routier missions + negotiations
- * Shows mission status, active negotiations, and accepted missions
+ * ClientMissionsView - Client sees their routier missions as compact linear cards
+ * Click to open full detail sheet with negotiations
  */
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Truck, Clock, MapPin, Package, Scale, MessageCircle,
-  Check, X, RefreshCw, ChevronRight, Zap
+  Check, X, RefreshCw, ChevronRight, Zap, ArrowRight
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MissionNegotiationSheet } from "./MissionNegotiationSheet";
+import { MissionDetailSheet } from "./MissionDetailSheet";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
 const statusConfig: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   open: { label: "En recherche", color: "bg-amber-500/10 text-amber-700", icon: Clock },
-  matching: { label: "Matching...", color: "bg-blue-500/10 text-blue-700", icon: Zap },
-  negotiating: { label: "En négociation", color: "bg-purple-500/10 text-purple-700", icon: MessageCircle },
-  accepted: { label: "Acceptée", color: "bg-green-500/10 text-green-700", icon: Check },
+  matching: { label: "Matching", color: "bg-blue-500/10 text-blue-700", icon: Zap },
+  negotiating: { label: "En negociation", color: "bg-purple-500/10 text-purple-700", icon: MessageCircle },
+  accepted: { label: "Acceptee", color: "bg-green-500/10 text-green-700", icon: Check },
   in_progress: { label: "En cours", color: "bg-blue-500/10 text-blue-700", icon: Truck },
-  completed: { label: "Terminée", color: "bg-green-500/10 text-green-700", icon: Check },
-  cancelled: { label: "Annulée", color: "bg-destructive/10 text-destructive", icon: X },
-  expired: { label: "Expirée", color: "bg-muted text-muted-foreground", icon: Clock },
+  completed: { label: "Terminee", color: "bg-green-500/10 text-green-700", icon: Check },
+  cancelled: { label: "Annulee", color: "bg-destructive/10 text-destructive", icon: X },
+  expired: { label: "Expiree", color: "bg-muted text-muted-foreground", icon: Clock },
 };
 
 export function ClientMissionsView() {
@@ -37,6 +36,8 @@ export function ClientMissionsView() {
   const [selectedMission, setSelectedMission] = useState<any | null>(null);
   const [selectedNegotiation, setSelectedNegotiation] = useState<any | null>(null);
   const [negotiationOpen, setNegotiationOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailMission, setDetailMission] = useState<any | null>(null);
 
   const loadMissions = useCallback(async () => {
     try {
@@ -53,7 +54,6 @@ export function ClientMissionsView() {
       if (error) throw error;
       setMissions(data || []);
 
-      // Load negotiations for each mission
       if (data && data.length > 0) {
         const missionIds = data.map(m => m.id);
         const { data: negs } = await supabase
@@ -80,7 +80,6 @@ export function ClientMissionsView() {
 
   useEffect(() => { loadMissions(); }, [loadMissions]);
 
-  // Realtime
   useEffect(() => {
     const channel = supabase
       .channel("client-missions-rt")
@@ -90,137 +89,144 @@ export function ClientMissionsView() {
     return () => { supabase.removeChannel(channel); };
   }, [loadMissions]);
 
+  const openDetail = (mission: any) => {
+    setDetailMission(mission);
+    setDetailOpen(true);
+  };
+
   const openNegotiation = (mission: any, negotiation: any) => {
     setSelectedMission(mission);
     setSelectedNegotiation(negotiation);
     setNegotiationOpen(true);
   };
 
+  const isExpiredMission = (m: any) => {
+    if (m.status === "expired" || m.status === "cancelled") return true;
+    const negs = negotiations[m.id] || [];
+    return negs.length > 0 && negs.every(n => n.status === "rejected" || n.status === "expired");
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <RefreshCw className="w-5 h-5 animate-spin text-muted-foreground" />
+      <div className="flex items-center justify-center py-8">
+        <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   if (missions.length === 0) {
     return (
-      <Card className="border-dashed">
-        <CardContent className="py-12 text-center">
-          <Truck className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
-          <h3 className="font-semibold mb-1">Aucune mission routier</h3>
-          <p className="text-sm text-muted-foreground">
-            Demandez une mission pour trouver un transporteur.
-          </p>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
+        <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mb-3">
+          <Truck className="w-6 h-6 text-muted-foreground" />
+        </div>
+        <p className="text-sm font-semibold text-foreground">Aucune mission routier</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          Demandez une mission pour trouver un transporteur.
+        </p>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-        🚛 Missions routier ({missions.length})
+    <div className="space-y-2">
+      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+        <Truck className="w-3.5 h-3.5" />
+        Missions routier ({missions.length})
       </h3>
 
-      <AnimatePresence>
-        {missions.map(m => {
-          const config = statusConfig[m.status] || statusConfig.open;
-          const StatusIcon = config.icon;
-          const missionNegs = negotiations[m.id] || [];
-          const pendingNeg = missionNegs.find(n => n.status === "counter_proposed" && n.gp_counter_price && !n.client_responded_at);
+      <div className="space-y-1.5">
+        <AnimatePresence>
+          {missions.map((m, i) => {
+            const config = statusConfig[m.status] || statusConfig.open;
+            const StatusIcon = config.icon;
+            const missionNegs = negotiations[m.id] || [];
+            const pendingCount = missionNegs.filter(n => n.status === "counter_proposed" && n.gp_counter_price && !n.client_responded_at).length;
+            const expired = isExpiredMission(m);
 
-          return (
-            <motion.div key={m.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-              <Card className={cn(
-                "overflow-hidden transition-all",
-                pendingNeg && "ring-2 ring-primary shadow-md"
-              )}>
-                <CardContent className="p-4">
-                  {/* Route */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-                    <span className="font-semibold text-sm">{m.origin_city}</span>
-                    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="font-semibold text-sm">{m.destination_city}</span>
+            return (
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.03 }}
+                onClick={() => openDetail(m)}
+                className={cn(
+                  "bg-card border border-border rounded-lg p-3 active:scale-[0.98] transition-all cursor-pointer",
+                  expired && "opacity-50 grayscale",
+                  pendingCount > 0 && !expired && "border-primary/40"
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  {/* Icon */}
+                  <div className={cn(
+                    "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0",
+                    expired ? "bg-muted" : "bg-primary/10"
+                  )}>
+                    <Truck className={cn("w-4 h-4", expired ? "text-muted-foreground" : "text-primary")} />
                   </div>
 
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Badge className={cn("text-xs gap-1", config.color)}>
-                        <StatusIcon className="w-3 h-3" />
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {m.origin_city} <ArrowRight className="w-3 h-3 inline text-muted-foreground mx-0.5" /> {m.destination_city}
+                      </p>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <Badge className={cn("text-[10px] gap-0.5 px-1.5 py-0", config.color)} variant="secondary">
+                        <StatusIcon className="w-2.5 h-2.5" />
                         {config.label}
                       </Badge>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-[10px] text-muted-foreground">
                         {format(new Date(m.created_at), "d MMM", { locale: fr })}
                       </span>
+                      {missionNegs.length > 0 && (
+                        <span className="text-[10px] text-muted-foreground">
+                          {missionNegs.length} offre{missionNegs.length > 1 ? "s" : ""}
+                        </span>
+                      )}
                     </div>
-                    <span className="font-bold text-sm">
-                      {(m.client_budget || m.estimated_price)?.toLocaleString()} {m.currency}
-                    </span>
-                  </div>
-
-                  {/* Details */}
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
-                    <span className="flex items-center gap-1"><Scale className="w-3 h-3" />{m.weight_kg} kg</span>
-                    <span className="flex items-center gap-1"><Package className="w-3 h-3" />{m.freight_type}</span>
-                    {m.vehicle_type_required && <span>🚚 {m.vehicle_type_required}</span>}
-                  </div>
-
-                  {/* Negotiations */}
-                  {missionNegs.length > 0 && (
-                    <div className="space-y-2 mb-3">
-                      <p className="text-xs font-medium text-muted-foreground">
-                        {missionNegs.length} proposition{missionNegs.length > 1 ? "s" : ""}
-                      </p>
-                      {missionNegs.slice(0, 3).map(neg => (
-                        <button
-                          key={neg.id}
-                          onClick={() => openNegotiation(m, neg)}
-                          className={cn(
-                            "w-full p-2.5 rounded-lg border text-left text-sm transition-all",
-                            neg.status === "accepted" ? "border-green-500 bg-green-500/5" :
-                            neg.status === "counter_proposed" && !neg.client_responded_at ? "border-primary bg-primary/5 animate-pulse" :
-                            "border-border"
-                          )}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">
-                              {neg.gp_counter_price?.toLocaleString() || neg.initial_client_price?.toLocaleString()} {m.currency}
-                            </span>
-                            <Badge variant={neg.status === "accepted" ? "default" : "secondary"} className="text-[10px]">
-                              {neg.status === "accepted" ? "✓ Accepté" :
-                               neg.status === "counter_proposed" && !neg.client_responded_at ? "À répondre" :
-                               neg.status === "rejected" ? "Refusé" : "En cours"}
-                            </Badge>
-                          </div>
-                          {neg.gp_message && (
-                            <p className="text-xs text-muted-foreground mt-1 truncate">"{neg.gp_message}"</p>
-                          )}
-                        </button>
-                      ))}
+                    <div className="flex items-center justify-between mt-1">
+                      <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                        <span>{m.weight_kg} kg</span>
+                        <span className="capitalize">{m.freight_type}</span>
+                      </div>
+                      <span className={cn("text-xs font-bold", expired ? "text-muted-foreground" : "text-foreground")}>
+                        {(m.client_budget || m.estimated_price)?.toLocaleString()} {m.currency}
+                      </span>
                     </div>
-                  )}
+                  </div>
+                </div>
 
-                  {/* Pending action indicator */}
-                  {pendingNeg && (
-                    <Button
-                      size="sm"
-                      className="w-full"
-                      onClick={() => openNegotiation(m, pendingNeg)}
-                    >
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      Répondre à la contre-proposition
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-          );
-        })}
-      </AnimatePresence>
+                {/* Pending action indicator */}
+                {pendingCount > 0 && !expired && (
+                  <div className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-primary">
+                    <MessageCircle className="w-3 h-3" />
+                    {pendingCount} contre-proposition{pendingCount > 1 ? "s" : ""} en attente
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </div>
 
+      {/* Detail sheet */}
+      <MissionDetailSheet
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        mission={detailMission}
+        negotiations={detailMission ? (negotiations[detailMission.id] || []) : []}
+        onOpenNegotiation={(neg) => {
+          setDetailOpen(false);
+          setTimeout(() => openNegotiation(detailMission, neg), 200);
+        }}
+        onRefresh={loadMissions}
+      />
+
+      {/* Negotiation sheet */}
       <MissionNegotiationSheet
         open={negotiationOpen}
         onOpenChange={setNegotiationOpen}

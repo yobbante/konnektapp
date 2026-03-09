@@ -145,7 +145,7 @@ export function WeightCorrectionDialog({
             conversation_id: conv.id,
             sender_id: user.id,
             sender_type: "gp",
-            content: `⚖️ Poids ajusté\n\nLe poids de votre colis a été vérifié lors du dépôt.\n\n📦 Poids déclaré: ${currentWeight} kg\n📦 Poids réel: ${actualWeight} kg\n💰 Nouveau total: ${newTotalPrice.toLocaleString()} ${currency}\n\n💡 Seul le prix du poids a été recalculé. Assurance et logistique inchangés.`,
+            content: `Poids ajuste\n\nLe poids de votre colis a ete verifie lors du depot.\n\nPoids declare: ${currentWeight} kg\nPoids reel: ${actualWeight} kg\nNouveau total: ${newTotalPrice.toLocaleString()} ${currency}\n\nSeul le prix du poids a ete recalcule. Assurance et logistique inchanges.`,
           });
 
           await supabase
@@ -156,7 +156,7 @@ export function WeightCorrectionDialog({
       }
 
       toast({
-        title: "✅ Poids ajusté",
+        title: "Poids ajuste",
         description: `Nouveau total: ${newTotalPrice.toLocaleString()} ${currency}`,
       });
 

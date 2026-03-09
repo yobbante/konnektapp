@@ -177,8 +177,9 @@ export default function ReservationsPage() {
               </div>
             ) : customRequests.length > 0 && (
               <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                  📦 Demandes personnalisées ({customRequests.length})
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Package className="w-3.5 h-3.5" />
+                  Demandes personnalisees ({customRequests.length})
                 </h3>
                 {customRequests.map((req, i) => {
                   const cfg = STATUS_CONFIG[req.status] || { label: req.status, color: "bg-muted text-muted-foreground" };

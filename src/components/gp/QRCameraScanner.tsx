@@ -112,7 +112,7 @@ export function QRCameraScanner({ onScan, onClose, isOpen }: QRCameraScannerProp
       navigator.vibrate(100);
     }
     
-    toast({ title: "✅ Code scanné", description: code });
+    toast({ title: "Code scanne", description: code });
     stopScanner();
     onScan(code);
     onClose?.();

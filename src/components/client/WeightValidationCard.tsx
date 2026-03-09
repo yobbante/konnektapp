@@ -117,7 +117,7 @@ export function WeightValidationCard({
                 {validation.fixed_insurance > 0 && (
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-[11px] sm:text-xs text-muted-foreground">
-                      🛡️ Assurance (inchangée)
+                      Assurance (inchangee)
                     </span>
                     <DualCurrencyDisplay
                       inline
@@ -133,7 +133,7 @@ export function WeightValidationCard({
                 {validation.fixed_logistics > 0 && (
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-[11px] sm:text-xs text-muted-foreground">
-                      🚚 Logistique (inchangée)
+                      Logistique (inchangee)
                     </span>
                     <DualCurrencyDisplay
                       inline

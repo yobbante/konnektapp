@@ -171,11 +171,11 @@ export default function GPParametresPage() {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label className="text-[10px] text-muted-foreground">📍 {originLabel}</Label>
+                  <Label className="text-[10px] text-muted-foreground">{originLabel}</Label>
                   <Input className="h-8 text-sm" value={profileForm.deposit_address} onChange={e => setProfileForm(p => ({ ...p, deposit_address: e.target.value }))} />
                 </div>
                 <div>
-                  <Label className="text-[10px] text-muted-foreground">📍 {destLabel}</Label>
+                  <Label className="text-[10px] text-muted-foreground">{destLabel}</Label>
                   <Input className="h-8 text-sm" value={profileForm.reception_address} onChange={e => setProfileForm(p => ({ ...p, reception_address: e.target.value }))} />
                 </div>
               </div>
@@ -255,7 +255,7 @@ export default function GPParametresPage() {
           <Separator />
           <SettingsRow icon={BarChart3} iconColor="text-amber-500" iconBg="bg-amber-500/10" label="Performances" desc={isPremium ? "Statistiques" : "Découvrir"} onClick={() => navigate("/gp/performances")} />
           <Separator />
-          <SettingsRow icon={Zap} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Auto-acceptation" desc={isPremium && gpProfile.auto_accept_enabled ? "Activée ✅" : isPremium ? "Désactivée" : "Découvrir"} onClick={() => navigate("/gp/auto-accept")} />
+          <SettingsRow icon={Zap} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Auto-acceptation" desc={isPremium && gpProfile.auto_accept_enabled ? "Activee" : isPremium ? "Desactivee" : "Decouvrir"} onClick={() => navigate("/gp/auto-accept")} />
         </SettingsSection>
 
         {/* ═══ 4. SÉCURITÉ & FINANCES (fusionné) ═══ */}

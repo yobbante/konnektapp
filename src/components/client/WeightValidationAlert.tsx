@@ -192,7 +192,7 @@ export function WeightValidationAlert({
         status: "collected",
         changed_by: user?.id || "",
         changed_by_type: "client",
-        notes: `✅ CLIENT CONFIRME le nouveau poids: ${selectedValidation.actual_weight} kg. Différence: ${selectedValidation.weight_price_difference > 0 ? "+" : ""}${selectedValidation.weight_price_difference} ${selectedValidation.currency}. Nouveau total: ${selectedValidation.new_total} ${selectedValidation.currency}. Assurance/logistique inchangés.`
+        notes: `CLIENT CONFIRME le nouveau poids: ${selectedValidation.actual_weight} kg. Difference: ${selectedValidation.weight_price_difference > 0 ? "+" : ""}${selectedValidation.weight_price_difference} ${selectedValidation.currency}. Nouveau total: ${selectedValidation.new_total} ${selectedValidation.currency}. Assurance/logistique inchanges.`
       });
 
       // Notify GP
@@ -203,14 +203,14 @@ export function WeightValidationAlert({
         await supabase.from("notifications").insert({
           user_id: gpProfile.user_id,
           type: "weight_validation_accepted",
-          title: "✅ Poids validé par le client",
-          message: `Le client a accepté le nouveau poids pour ${selectedValidation.order_number}. Le colis peut maintenant être pris en charge.`,
+           title: "Poids valide par le client",
+           message: `Le client a accepte le nouveau poids pour ${selectedValidation.order_number}. Le colis peut maintenant etre pris en charge.`,
           related_type: "order",
           related_id: selectedValidation.order_id
         });
       }
       toast({
-        title: "✅ Modification validée",
+        title: "Modification validee",
         description: `Votre colis est désormais pris en charge. Nouveau total: ${selectedValidation.new_total.toLocaleString()} ${selectedValidation.currency}`
       });
       setSelectedValidation(null);
@@ -253,7 +253,7 @@ export function WeightValidationAlert({
         status: "cancelled",
         changed_by: user?.id || "",
         changed_by_type: "client",
-        notes: `❌ CLIENT REFUSE la modification de poids. Commande annulée. Poids déclaré: ${selectedValidation.declared_weight} kg, Poids mesuré: ${selectedValidation.actual_weight} kg. Le colis ne doit PAS être pris en charge.`
+        notes: `CLIENT REFUSE la modification de poids. Commande annulee. Poids declare: ${selectedValidation.declared_weight} kg, Poids mesure: ${selectedValidation.actual_weight} kg. Le colis ne doit PAS etre pris en charge.`
       });
 
       // CRITICAL: Notify GP with blocking message
@@ -264,8 +264,8 @@ export function WeightValidationAlert({
         await supabase.from("notifications").insert({
           user_id: gpProfile.user_id,
           type: "weight_validation_refused",
-          title: "❌ ENVOI ANNULÉ - Client a refusé",
-          message: `Le client a refusé la modification de poids pour ${selectedValidation.order_number}. ⛔ NE CHARGEZ PAS CE COLIS. Konnekt Logistique viendra le récupérer chez vous.`,
+           title: "ENVOI ANNULE - Client a refuse",
+           message: `Le client a refuse la modification de poids pour ${selectedValidation.order_number}. NE CHARGEZ PAS CE COLIS. Konnekt Logistique viendra le recuperer chez vous.`,
           related_type: "order",
           related_id: selectedValidation.order_id
         });
@@ -275,7 +275,7 @@ export function WeightValidationAlert({
       // This would trigger escrow refund logic
 
       toast({
-        title: "❌ Envoi annulé",
+        title: "Envoi annule",
         description: "Vous serez remboursé intégralement. Konnekt Logistique vous ramènera votre colis.",
         variant: "destructive"
       });

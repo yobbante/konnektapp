@@ -136,7 +136,7 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
       const statusLabel = statusLabels[p.status] || p.status;
       items.push({
         id: `incoming-${p.id}`, priority: "critical", icon: Package,
-        label: "📦 Colis pour vous",
+        label: "Colis pour vous",
         description: `${p.order_number} · ${p.origin_city} → ${p.destination_city || ""} · ${statusLabel}`,
         onClick: () => navigate(`/tracking?order=${p.id}`),
         color: "text-primary", bgColor: "bg-primary/10", borderColor: "border-primary/30",
@@ -164,7 +164,7 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
         description: `${o.order_number} → ${o.destination_city}`,
         onClick: () => setRatingOrder(o),
         color: "text-amber-600 dark:text-amber-400", bgColor: "bg-amber-500/10", borderColor: "border-amber-500/30",
-        badge: "⭐",
+        badge: "",
         reviewData: { orderId: o.id, gpId: o.gp_id, gpName: o.gp_name },
       });
     });

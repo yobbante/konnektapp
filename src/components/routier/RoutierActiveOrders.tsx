@@ -62,7 +62,7 @@ export function RoutierActiveOrders({ gpId }: RoutierActiveOrdersProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold">🚛 Transports en cours</h2>
+          <h2 className="text-lg font-bold">Transports en cours</h2>
           <p className="text-xs text-muted-foreground">{orders.length} transport{orders.length !== 1 ? "s" : ""} actif{orders.length !== 1 ? "s" : ""}</p>
         </div>
         <Button variant="ghost" size="icon" onClick={() => loadOrders(true)} disabled={refreshing}>

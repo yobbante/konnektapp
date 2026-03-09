@@ -179,7 +179,7 @@ export function FlatRatePricing({ gpId, readOnly = false }: FlatRatePricingProps
       if (error) throw error;
 
       toast({
-        title: "✅ Tarifs enregistrés",
+        title: "Tarifs enregistres",
         description: "Vos tarifs forfaitaires ont été mis à jour",
       });
 
@@ -237,7 +237,7 @@ export function FlatRatePricing({ gpId, readOnly = false }: FlatRatePricingProps
       if (pricingError) throw pricingError;
 
       toast({
-        title: "✅ Article ajouté",
+        title: "Article ajoute",
         description: `${newItemName} a été ajouté à vos tarifs forfaitaires`,
       });
 
@@ -272,7 +272,7 @@ export function FlatRatePricing({ gpId, readOnly = false }: FlatRatePricingProps
       if (pricingError) throw pricingError;
 
       toast({
-        title: "✅ Article supprimé",
+        title: "Article supprime",
         description: "L'article a été retiré de vos tarifs forfaitaires",
       });
 

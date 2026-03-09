@@ -110,7 +110,7 @@ export function NoMatchFeedback({
 
         {/* Info */}
         <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-warning/20">
-          💡 Plus le créneau est large, plus vous avez de chances de trouver un transporteur.
+          Plus le creneau est large, plus vous avez de chances de trouver un transporteur.
         </p>
       </CardContent>
     </Card>

@@ -141,7 +141,7 @@ export function RoutierMissionDetailsSheet({
         await supabase.from("notifications").insert({
           user_id: mission.client_id,
           type: "order_update",
-          title: "✅ Mission acceptée",
+           title: "Mission acceptee",
           message: `Un transporteur a accepté votre demande ${mission.order_number}`,
           related_type: "order",
           related_id: mission.id,
@@ -149,7 +149,7 @@ export function RoutierMissionDetailsSheet({
       }
 
       toast({
-        title: "✅ Mission acceptée",
+        title: "Mission acceptee",
         description: "Le client a été notifié",
       });
 

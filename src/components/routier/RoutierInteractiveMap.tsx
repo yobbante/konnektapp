@@ -209,7 +209,7 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
     if (pts.length === 0) {
       addLayer(L.marker([14.5, -4.0], {
         icon: L.divIcon({
-          html: `<div style="background:#fff;border-radius:12px;padding:8px 14px;box-shadow:0 2px 8px rgba(0,0,0,0.1);font-size:12px;font-weight:600;color:#999;white-space:nowrap;">📦 Aucune mission</div>`,
+          html: `<div style="background:#fff;border-radius:12px;padding:8px 14px;box-shadow:0 2px 8px rgba(0,0,0,0.1);font-size:12px;font-weight:600;color:#999;white-space:nowrap;">Aucune mission</div>`,
           className: "mission-chip-icon", iconSize: [0, 0],
         }),
       }));

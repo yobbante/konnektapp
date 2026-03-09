@@ -142,7 +142,7 @@ export function CustomRequestsTab({ gpId, gpType = "bagages_international", onBa
   const handleQuoteSuccess = () => {
     fetchRequests();
     toast({
-      title: "✅ Offre envoyée",
+      title: "Offre envoyee",
       description: "Votre proposition a été envoyée au client",
     });
   };

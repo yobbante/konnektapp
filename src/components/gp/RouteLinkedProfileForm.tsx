@@ -184,7 +184,7 @@ export function RouteLinkedProfileForm({
     }));
   };
 
-  const getCountryInfo = (code: string) => COUNTRIES[code] || { name: code, flag: "🌍" };
+  const getCountryInfo = (code: string) => COUNTRIES[code] || { name: code, flag: "" };
   const originFlag = getCountryInfo(data.originCountry).flag;
   const destFlag = getCountryInfo(data.destinationCountry).flag;
 

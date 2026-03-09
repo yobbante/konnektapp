@@ -248,7 +248,7 @@ function GPInfoSection({ order, onMessage }: { order: any; onMessage: () => void
         <div className="flex-1">
           <p className="text-sm font-semibold text-foreground">{gp.business_name}</p>
           {gp.rating && (
-            <p className="text-[10px] text-muted-foreground">⭐ {gp.rating.toFixed(1)}</p>
+            <p className="text-[10px] text-muted-foreground">{gp.rating.toFixed(1)}/5</p>
           )}
         </div>
       </div>

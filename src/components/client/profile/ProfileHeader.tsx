@@ -9,9 +9,9 @@ import { Progress } from "@/components/ui/progress";
 export type ClientKYCLevel = 0 | 1 | 2;
 
 const KYC_CONFIG: Record<ClientKYCLevel, { label: string; badge: string; color: string; bg: string }> = {
-  0: { label: "Starter", badge: "🔘", color: "text-muted-foreground", bg: "bg-muted" },
-  1: { label: "Vérifié", badge: "✅", color: "text-emerald-600", bg: "bg-emerald-500/10" },
-  2: { label: "Confirmé", badge: "🏆", color: "text-amber-600", bg: "bg-amber-500/10" },
+  0: { label: "Starter", badge: "", color: "text-muted-foreground", bg: "bg-muted" },
+  1: { label: "Verifie", badge: "", color: "text-emerald-600", bg: "bg-emerald-500/10" },
+  2: { label: "Confirme", badge: "", color: "text-amber-600", bg: "bg-amber-500/10" },
 };
 
 interface ProfileHeaderProps {

@@ -151,7 +151,7 @@ export default function GPDistributionPage() {
       }
 
       toast({
-        title: "✅ Colis remis",
+        title: "Colis remis",
         description: `Commande #${item.order_number.slice(-6)} confirmée`,
       });
 
@@ -308,7 +308,7 @@ export default function GPDistributionPage() {
               disabled={delivering}
               className="bg-green-600 hover:bg-green-700"
             >
-              {delivering ? "Confirmation..." : "✅ Confirmer remise"}
+              {delivering ? "Confirmation..." : "Confirmer remise"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

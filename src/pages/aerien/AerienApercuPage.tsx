@@ -126,7 +126,7 @@ export default function AerienApercuPage() {
         {/* HEADER */}
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-bold">✈️ Aérien Cargo</h2>
+            <h2 className="text-sm font-bold">Aerien Cargo</h2>
             <p className="text-[10px] text-muted-foreground">Fret aérien, cargo & express</p>
           </div>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => loadAll(true)} disabled={refreshing}>
@@ -166,14 +166,13 @@ export default function AerienApercuPage() {
           </h3>
           <div className="grid grid-cols-2 gap-2">
             {[
-              { icon: "📦", title: "Cargo léger", desc: "Réservation au kg", path: "/aerien/publier" },
-              { icon: "✈️", title: "Fret express", desc: "Livraison rapide", path: "/aerien/publier" },
-              { icon: "🌍", title: "Confier fret", desc: "Gestion complète", path: "/aerien/demande-fret" },
-              { icon: "📋", title: "Marketplace", desc: `${data.freightRequests} demandes`, path: "/aerien/marketplace" },
+              { title: "Cargo leger", desc: "Reservation au kg", path: "/aerien/publier" },
+              { title: "Fret express", desc: "Livraison rapide", path: "/aerien/publier" },
+              { title: "Confier fret", desc: "Gestion complete", path: "/aerien/demande-fret" },
+              { title: "Marketplace", desc: `${data.freightRequests} demandes`, path: "/aerien/marketplace" },
             ].map((s) => (
               <Card key={s.title} className="cursor-pointer active:scale-[0.98] transition-all border-primary/15 hover:border-primary/40" onClick={() => navigate(s.path)}>
                 <CardContent className="p-2.5 flex items-center gap-2">
-                  <span className="text-lg">{s.icon}</span>
                   <div className="min-w-0">
                     <p className="text-[11px] font-semibold truncate">{s.title}</p>
                     <p className="text-[9px] text-muted-foreground">{s.desc}</p>

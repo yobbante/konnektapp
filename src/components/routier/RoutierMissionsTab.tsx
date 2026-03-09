@@ -301,7 +301,7 @@ export function RoutierMissionsTab({ gpId }: RoutierMissionsTabProps) {
                               )}
 
                               {m.delivery_to_door && (
-                                <Badge variant="secondary" className="text-[10px]">🏠 Livraison à domicile</Badge>
+                                <Badge variant="secondary" className="text-[10px]">Livraison a domicile</Badge>
                               )}
 
                               <Button className="w-full" onClick={(e) => { e.stopPropagation(); openNegotiation(m); }}>
