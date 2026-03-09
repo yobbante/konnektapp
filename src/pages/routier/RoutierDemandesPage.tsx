@@ -158,15 +158,18 @@ export default function RoutierDemandesPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="opportunites" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 h-8">
+          <TabsList className="grid w-full grid-cols-4 h-8">
             <TabsTrigger value="opportunites" className="text-[11px] h-7 gap-1">
               <Truck className="w-3 h-3" /> Corridors
+            </TabsTrigger>
+            <TabsTrigger value="pricing" className="text-[11px] h-7 gap-1">
+              <TrendingUp className="w-3 h-3" /> Prix
             </TabsTrigger>
             <TabsTrigger value="missions" className="text-[11px] h-7 gap-1">
               <Package className="w-3 h-3" /> Missions
             </TabsTrigger>
             <TabsTrigger value="classic" className="text-[11px] h-7 gap-1">
-              <MapPin className="w-3 h-3" /> Commandes
+              <MapPin className="w-3 h-3" /> Direct
               {requests.length > 0 && <Badge variant="destructive" className="ml-0.5 h-3.5 min-w-3.5 px-1 text-[8px]">{requests.length}</Badge>}
             </TabsTrigger>
           </TabsList>
