@@ -135,6 +135,21 @@ export function CreateBaggageVoyageDialog({
       return;
     }
 
+    // Expiration: defaults to departure date (offer hidden after this date)
+    const effectiveExpiresAt = formData.expiresAt || formData.departureDate;
+    const expiresDate = new Date(effectiveExpiresAt);
+    const departureDate = new Date(formData.departureDate);
+
+    if (expiresDate <= new Date()) {
+      toast({ title: "Date invalide", description: "La date de fin doit être dans le futur", variant: "destructive" });
+      return;
+    }
+
+    if (expiresDate > departureDate) {
+      toast({ title: "Date invalide", description: "La date de fin doit être avant le départ", variant: "destructive" });
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase.from("gp_offers").insert({
