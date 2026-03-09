@@ -271,7 +271,7 @@ export default function RoutierApercuPage() {
                                     {m.weight_kg} kg
                                   </span>
                                   <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground bg-muted rounded-md px-1.5 py-0.5">
-                                    {freight.emoji} {freight.label}
+                                    {freight.label}
                                   </span>
                                   {isUrgent &&
                                 <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-destructive bg-destructive/10 rounded-md px-1.5 py-0.5">
