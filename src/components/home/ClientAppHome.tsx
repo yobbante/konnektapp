@@ -221,12 +221,20 @@ function QuickActionsGrid({ navigate, activeTab }: {navigate: (path: string) => 
   return (
     <div className="px-4 pb-3">
       <div className="grid grid-cols-4 gap-2">
-        {actions.map((a) => {}
-
-
-
-
-
+        {actions.map((a) => (
+          <button
+            key={a.label}
+            onClick={() => navigate(a.to)}
+            className="flex flex-col items-center gap-1 py-2">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${a.color}`}>
+              <a.icon className="w-4 h-4" />
+            </div>
+            <span className="text-[9px] font-semibold text-foreground">{a.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>);
+}
 
 
 
@@ -279,29 +287,25 @@ function PopularRoutesSection({ routes, onSelect, tabId
     bagages: "Trajets GP populaires"
   };
 
-  return;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  return (
+    <div className="px-4 pb-4">
+      <h2 className="text-sm font-bold text-foreground mb-2 tracking-tight">{titleMap[tabId] || "Routes populaires"}</h2>
+      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+        {routes.map((route, idx) => (
+          <button
+            key={`${route.from}-${route.to}-${idx}`}
+            onClick={() => onSelect(route.from, route.to)}
+            className="flex-shrink-0 bg-card border border-border rounded-xl px-3 py-2 flex items-center gap-2 hover:border-primary/30 transition-colors">
+            <span className="text-xs font-medium text-foreground whitespace-nowrap">{route.from}</span>
+            <ArrowRight className="w-3 h-3 text-muted-foreground" />
+            <span className="text-xs font-medium text-foreground whitespace-nowrap">{route.to}</span>
+            {route.hot && <span className="text-[8px] bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded-full font-bold">HOT</span>}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 }
 
 // ── Trust Items ──
