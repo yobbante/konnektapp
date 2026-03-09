@@ -557,23 +557,6 @@ export function ClientAppHome({
       </AnimatePresence>
 
       <div className="flex-1 overflow-y-auto" ref={scrollRef}>
-        {/* ── GREETING ── */}
-        <div className="px-4 pt-3 pb-1">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-lg font-bold text-foreground leading-tight">
-                {greeting}{firstName ? `, ${firstName}` : ""}
-              </h1>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{modeConfig.subtitle}</p>
-            </div>
-            {activeOrdersCount > 0 &&
-            <Link to="/reservations" className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 rounded-xl px-2.5 py-1.5">
-                <Package className="w-3.5 h-3.5 text-primary" />
-                <span className="text-[11px] font-bold text-primary">{activeOrdersCount}</span>
-              </Link>
-            }
-          </div>
-        </div>
 
         {/* Alerts */}
         {userId && <div className="px-4"><WeightValidationAlert userId={userId} /></div>}
