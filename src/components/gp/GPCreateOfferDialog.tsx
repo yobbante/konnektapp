@@ -149,7 +149,7 @@ export function GPCreateOfferDialog({ open, onClose, gpProfile, onSuccess }: GPC
           description: formData.description || null,
           conditions: formData.conditions || null,
           status: 'active',
-        });
+        }]);
 
       if (error) throw error;
 
