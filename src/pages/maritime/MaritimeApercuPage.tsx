@@ -67,7 +67,7 @@ export default function MaritimeApercuPage() {
         supabase.from("orders").select("id, order_number, origin_city, destination_city, weight, status, total_price, currency, created_at, description")
           .eq("gp_id", gpProfile.id).not("status", "eq", "cancelled").order("created_at", { ascending: false }),
         supabase.from("gp_wallets").select("balance, pending_balance, currency").eq("gp_id", gpProfile.id).maybeSingle(),
-        supabase.from("gp_offers").select("id, origin_city, destination_city, departure_date, available_capacity, total_capacity, price_per_kg, currency, status, description")
+        supabase.from("maritime_departures").select("*")
           .eq("gp_id", gpProfile.id).eq("status", "active").order("departure_date", { ascending: true }),
       ]);
 
