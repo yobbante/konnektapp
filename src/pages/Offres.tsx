@@ -32,6 +32,7 @@ interface Offer {
   destination_city: string;
   destination_country: string;
   departure_date: string;
+  expires_at?: string | null;
   price_per_kg: number;
   currency: string;
   transport_type: TransportType;
