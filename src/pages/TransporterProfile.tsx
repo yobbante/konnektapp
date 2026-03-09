@@ -67,7 +67,7 @@ const gpTypeLabels: Record<string, string> = {
   aerien: "Aérien",
   voyageur: "Voyageur (GP)",
   agence: "Agence",
-  bagages_international: "GP Bagages Int.",
+  bagages_international: "GP via Bagages",
 };
 
 export default function TransporterProfile() {

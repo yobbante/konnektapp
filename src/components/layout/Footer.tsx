@@ -3,7 +3,7 @@ import { Package, Mail, Phone, MapPin, Facebook, Instagram, Linkedin, Twitter } 
 
 const footerLinks = {
   services: [
-    { label: "GP Bagages", href: "/offres" },
+    { label: "GP via Bagages", href: "/offres" },
     { label: "Fret Maritime", href: "/offres" },
     { label: "Fret Aérien", href: "/offres" },
     { label: "Transport Routier", href: "/offres" },

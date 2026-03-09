@@ -44,7 +44,7 @@ export function getTransportLabel(gpType?: string) {
     case "routier": return "Routier";
     case "maritime": return "Maritime";
     case "express": return "GP Express";
-    case "bagages_international": return "Bagages Int.";
+    case "bagages_international": return "GP via Bagages";
     case "voyageur": return "Voyageur";
     case "agence": return "Agence";
     default: return "Transport";
