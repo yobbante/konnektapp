@@ -1,13 +1,13 @@
 /**
  * RoutierOpportunitesTab — Corridor opportunities (Matching Logistique Intelligent)
- * Groups open missions by corridor and shows estimated revenue to transporters
+ * Corporate, compact, no emojis
  */
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  TrendingUp, MapPin, Package, Scale, Calendar,
-  RefreshCw, Zap, ArrowRight, ChevronDown, ChevronUp,
-  MessageCircle, Truck
+  TrendingUp, Package, Scale, Calendar,
+  RefreshCw, ChevronDown, ChevronUp,
+  MessageCircle, Truck, ArrowRight
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -103,57 +103,44 @@ export function RoutierOpportunitesTab({ gpId }: RoutierOpportunitesTabProps) {
     setNegotiationOpen(true);
   };
 
-  // Fill rate indicator
   const getFillRate = (count: number) => {
-    if (count >= 5) return { label: "Très rentable", color: "text-emerald-700", bg: "bg-emerald-100 dark:bg-emerald-900/30", pct: 90 };
-    if (count >= 3) return { label: "Rentable", color: "text-blue-700", bg: "bg-blue-100 dark:bg-blue-900/30", pct: 70 };
-    if (count >= 2) return { label: "Intéressant", color: "text-amber-700", bg: "bg-amber-100 dark:bg-amber-900/30", pct: 50 };
-    return { label: "En formation", color: "text-muted-foreground", bg: "bg-muted", pct: 25 };
+    if (count >= 5) return { label: "Optimal", pct: 90 };
+    if (count >= 3) return { label: "Rentable", pct: 70 };
+    if (count >= 2) return { label: "Viable", pct: 50 };
+    return { label: "En cours", pct: 25 };
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
+      <div className="flex items-center justify-center py-12">
+        <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      {/* Header info */}
-      <div className="rounded-xl border border-border bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-950/20 dark:to-blue-950/20 p-3">
-        <div className="flex items-center gap-2 mb-1">
-          <TrendingUp className="w-4 h-4 text-emerald-600" />
-          <span className="text-sm font-bold">Matching Intelligent</span>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Corridors avec plusieurs colis regroupés. Plus le corridor est rempli, plus le trajet est rentable.
-        </p>
-      </div>
-
-      {/* Corridor count + refresh */}
+    <div className="space-y-2">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">
-          {corridors.length} corridor{corridors.length !== 1 ? "s" : ""} actif{corridors.length !== 1 ? "s" : ""}
-        </p>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => loadCorridors(true)} disabled={refreshing}>
-          <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
+        <div className="flex items-center gap-1.5">
+          <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            {corridors.length} corridor{corridors.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => loadCorridors(true)} disabled={refreshing}>
+          <RefreshCw className={cn("w-3 h-3", refreshing && "animate-spin")} />
         </Button>
       </div>
 
       {corridors.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="py-12 text-center">
-            <Zap className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
-            <h3 className="font-semibold mb-1 text-sm">Aucune opportunité pour le moment</h3>
-            <p className="text-xs text-muted-foreground">
-              Les corridors apparaîtront quand des colis seront regroupés sur un même trajet
-            </p>
-          </CardContent>
-        </Card>
+        <div className="py-8 text-center">
+          <Truck className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
+          <p className="text-xs text-muted-foreground">Aucun corridor actif</p>
+          <p className="text-[10px] text-muted-foreground/60 mt-0.5">Les regroupements apparaîtront avec les demandes</p>
+        </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <AnimatePresence>
             {corridors.map((corridor, idx) => {
               const fill = getFillRate(corridor.mission_count);
@@ -163,95 +150,73 @@ export function RoutierOpportunitesTab({ gpId }: RoutierOpportunitesTabProps) {
               return (
                 <motion.div
                   key={corridor.corridor_key}
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.04 }}
+                  transition={{ delay: idx * 0.03 }}
                 >
                   <Card
                     className={cn(
-                      "overflow-hidden cursor-pointer transition-all hover:shadow-md",
-                      isExpanded && "ring-2 ring-emerald-500 shadow-lg"
+                      "overflow-hidden cursor-pointer transition-all",
+                      isExpanded && "ring-1 ring-primary shadow-md"
                     )}
                     onClick={() => toggleCorridor(corridor)}
                   >
                     <CardContent className="p-0">
-                      <div className="p-3">
-                        {/* Route header */}
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 mb-0.5">
-                              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
-                              <span className="text-sm font-bold truncate">{corridor.origin_city}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />
-                              <span className="text-sm font-bold truncate">{corridor.destination_city}</span>
-                            </div>
+                      <div className="p-2.5">
+                        {/* Route + Revenue */}
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                            <span className="text-xs font-bold truncate">{corridor.origin_city}</span>
+                            <ArrowRight className="w-3 h-3 text-muted-foreground shrink-0" />
+                            <span className="text-xs font-bold truncate">{corridor.destination_city}</span>
+                            <div className="w-2 h-2 rounded-full bg-primary shrink-0" />
                           </div>
-
-                          {/* Revenue */}
-                          <div className="text-right shrink-0">
-                            <p className="text-lg font-black text-emerald-600">
-                              {corridor.total_estimated_revenue.toLocaleString("fr-FR")}
-                              <span className="text-[10px] font-semibold ml-0.5">CFA</span>
-                            </p>
-                            <p className="text-[10px] text-muted-foreground">revenu estimé</p>
-                          </div>
+                          <span className="text-sm font-black text-emerald-600 shrink-0">
+                            {corridor.total_estimated_revenue.toLocaleString("fr-FR")}
+                            <span className="text-[9px] font-semibold ml-0.5">CFA</span>
+                          </span>
                         </div>
 
-                        {/* Fill rate bar */}
-                        <div className="mb-2">
-                          <div className="flex items-center justify-between mb-1">
-                            <Badge className={cn("text-[9px] h-4 px-1.5 font-semibold", fill.bg, fill.color)}>
-                              {fill.label}
-                            </Badge>
-                            <span className="text-[10px] text-muted-foreground">{fill.pct}% rempli</span>
-                          </div>
-                          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                        {/* Fill bar */}
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
                             <motion.div
-                              className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full"
+                              className="h-full bg-emerald-500 rounded-full"
                               initial={{ width: 0 }}
                               animate={{ width: `${fill.pct}%` }}
-                              transition={{ duration: 0.8, ease: "easeOut" }}
+                              transition={{ duration: 0.6 }}
                             />
                           </div>
+                          <span className="text-[9px] text-muted-foreground w-12 text-right">{fill.label}</span>
                         </div>
 
-                        {/* Stats row */}
-                        <div className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-3">
-                            <span className="flex items-center gap-1 text-muted-foreground">
-                              <Package className="w-3 h-3" />
-                              {corridor.mission_count} colis
+                        {/* Meta row */}
+                        <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                          <div className="flex items-center gap-2.5">
+                            <span className="flex items-center gap-0.5">
+                              <Package className="w-2.5 h-2.5" />
+                              {corridor.mission_count}
                             </span>
-                            <span className="flex items-center gap-1 text-muted-foreground">
-                              <Scale className="w-3 h-3" />
+                            <span className="flex items-center gap-0.5">
+                              <Scale className="w-2.5 h-2.5" />
                               {formatWeightShort(corridor.total_weight_kg)}
                             </span>
+                            {corridor.earliest_pickup && (
+                              <span className="flex items-center gap-0.5">
+                                <Calendar className="w-2.5 h-2.5" />
+                                {format(new Date(corridor.earliest_pickup), "d MMM", { locale: fr })}
+                              </span>
+                            )}
                           </div>
-                          <div className="flex items-center gap-1.5">
-                            <Badge className={cn("text-[10px] h-5 px-2 font-bold", sizeInfo.bg, sizeInfo.color)}>
-                              {sizeInfo.label}
-                            </Badge>
-                            {isExpanded ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+                          <div className="flex items-center gap-1">
+                            <Badge variant="outline" className="text-[8px] h-3.5 px-1 font-bold">{sizeInfo.label}</Badge>
+                            {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                           </div>
-                        </div>
-
-                        {/* Dates */}
-                        <div className="flex items-center gap-1 mt-1.5 text-[10px] text-muted-foreground">
-                          <Calendar className="w-3 h-3" />
-                          {corridor.earliest_pickup && (
-                            <span>
-                              {format(new Date(corridor.earliest_pickup), "d MMM", { locale: fr })}
-                              {corridor.latest_pickup && corridor.latest_pickup !== corridor.earliest_pickup && (
-                                <> — {format(new Date(corridor.latest_pickup), "d MMM", { locale: fr })}</>
-                              )}
-                            </span>
-                          )}
                         </div>
                       </div>
 
-                      {/* Expanded: individual missions */}
+                      {/* Expanded missions */}
                       <AnimatePresence>
                         {isExpanded && (
                           <motion.div
@@ -260,14 +225,10 @@ export function RoutierOpportunitesTab({ gpId }: RoutierOpportunitesTabProps) {
                             exit={{ height: 0, opacity: 0 }}
                             className="overflow-hidden"
                           >
-                            <div className="px-3 pb-3 pt-2 border-t bg-muted/30 space-y-2">
-                              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                                Colis sur ce corridor
-                              </p>
-
+                            <div className="px-2.5 pb-2.5 pt-1.5 border-t bg-muted/30 space-y-1.5">
                               {loadingMissions ? (
-                                <div className="flex items-center justify-center py-6">
-                                  <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground" />
+                                <div className="flex items-center justify-center py-4">
+                                  <RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" />
                                 </div>
                               ) : (
                                 corridorMissions.map((m) => {
@@ -275,33 +236,26 @@ export function RoutierOpportunitesTab({ gpId }: RoutierOpportunitesTabProps) {
                                   return (
                                     <div
                                       key={m.id}
-                                      className="flex items-center justify-between p-2.5 rounded-lg bg-background border border-border/50"
+                                      className="flex items-center justify-between p-2 rounded bg-background border border-border/50"
                                     >
                                       <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-1.5">
-                                          <Package className="w-3 h-3 text-muted-foreground" />
-                                          <span className="text-xs font-medium truncate">
-                                            {m.freight_type} · {formatWeightShort(m.weight_kg || 0)}
-                                          </span>
-                                        </div>
+                                        <span className="text-[11px] font-medium">
+                                          {m.freight_type} · {formatWeightShort(m.weight_kg || 0)}
+                                        </span>
                                         {m.merchandise_description && (
-                                          <p className="text-[10px] text-muted-foreground truncate mt-0.5 ml-4">
-                                            {m.merchandise_description}
-                                          </p>
+                                          <p className="text-[9px] text-muted-foreground truncate">{m.merchandise_description}</p>
                                         )}
                                       </div>
-                                      <div className="flex items-center gap-2 shrink-0">
-                                        <span className="text-xs font-bold text-primary">
-                                          {price.toLocaleString("fr-FR")} CFA
-                                        </span>
+                                      <div className="flex items-center gap-1.5 shrink-0">
+                                        <span className="text-[11px] font-bold text-primary">{price.toLocaleString("fr-FR")}</span>
                                         <Button
                                           size="sm"
                                           variant="outline"
-                                          className="h-7 text-[10px] px-2"
+                                          className="h-6 text-[9px] px-1.5"
                                           onClick={(e) => { e.stopPropagation(); openNegotiation(m); }}
                                         >
-                                          <MessageCircle className="w-3 h-3 mr-1" />
-                                          Négocier
+                                          <MessageCircle className="w-2.5 h-2.5 mr-0.5" />
+                                          Offre
                                         </Button>
                                       </div>
                                     </div>
@@ -309,18 +263,17 @@ export function RoutierOpportunitesTab({ gpId }: RoutierOpportunitesTabProps) {
                                 })
                               )}
 
-                              {/* CTA: Take entire corridor */}
                               {corridorMissions.length > 1 && (
                                 <Button
-                                  className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2"
+                                  size="sm"
+                                  className="w-full h-7 text-[11px] gap-1"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    // Take first mission to start negotiation for the corridor
                                     if (corridorMissions.length > 0) openNegotiation(corridorMissions[0]);
                                   }}
                                 >
-                                  <Truck className="w-4 h-4" />
-                                  Prendre tout le corridor ({corridorMissions.length} colis)
+                                  <Truck className="w-3 h-3" />
+                                  Prendre le corridor ({corridorMissions.length} colis)
                                 </Button>
                               )}
                             </div>
