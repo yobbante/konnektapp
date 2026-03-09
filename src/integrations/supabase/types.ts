@@ -166,6 +166,51 @@ export type Database = {
           },
         ]
       }
+      corridor_pricing_snapshots: {
+        Row: {
+          avg_price_per_kg: number
+          corridor_key: string
+          created_at: string
+          demand_index: number
+          destination_city: string
+          fill_rate_pct: number
+          id: string
+          mission_count: number
+          origin_city: string
+          snapshot_at: string
+          suggested_price_per_kg: number
+          total_weight_kg: number
+        }
+        Insert: {
+          avg_price_per_kg?: number
+          corridor_key: string
+          created_at?: string
+          demand_index?: number
+          destination_city: string
+          fill_rate_pct?: number
+          id?: string
+          mission_count?: number
+          origin_city: string
+          snapshot_at?: string
+          suggested_price_per_kg?: number
+          total_weight_kg?: number
+        }
+        Update: {
+          avg_price_per_kg?: number
+          corridor_key?: string
+          created_at?: string
+          demand_index?: number
+          destination_city?: string
+          fill_rate_pct?: number
+          id?: string
+          mission_count?: number
+          origin_city?: string
+          snapshot_at?: string
+          suggested_price_per_kg?: number
+          total_weight_kg?: number
+        }
+        Relationships: []
+      }
       custom_request_responses: {
         Row: {
           available_pickup_date: string | null
@@ -5095,6 +5140,23 @@ export type Database = {
           smart_departure_at: string
           total_estimated_revenue: number
           total_weight_kg: number
+        }[]
+      }
+      get_corridor_pricing: {
+        Args: never
+        Returns: {
+          avg_price_per_kg: number
+          corridor_key: string
+          demand_index: number
+          destination_city: string
+          fill_rate_pct: number
+          is_hub_corridor: boolean
+          mission_count: number
+          origin_city: string
+          suggested_price_per_kg: number
+          total_revenue: number
+          total_weight_kg: number
+          trend: string
         }[]
       }
       get_ktp_commission_rate: {
