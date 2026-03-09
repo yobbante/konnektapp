@@ -2,11 +2,11 @@
  * MissionRequestSheet — Full mission request form
  * Supports: Routier, Maritime, Aérien (not GP bagages)
  */
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, Send, Truck, Ship, Plane, Package, MapPin, Calendar, Weight, 
-  ChevronRight, CheckCircle2, Info
+  ChevronRight, CheckCircle2, Info, Camera, ImageIcon, Trash2
 } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -30,10 +30,13 @@ const MODES: { id: TransportMode; icon: React.ElementType; label: string; desc: 
   { id: "aerien", icon: Plane, label: "Aérien", desc: "Cargo & fret aérien express", color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-500/10 border-violet-500/20" },
 ];
 
+const MAX_PHOTOS = 5;
+
 export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetProps) {
   const [step, setStep] = useState<Step>("mode");
   const [mode, setMode] = useState<TransportMode | null>(null);
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form fields
   const [originCity, setOriginCity] = useState("");
@@ -45,6 +48,8 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
   const [pickupDate, setPickupDate] = useState("");
   const [budgetMax, setBudgetMax] = useState("");
   const [isUrgent, setIsUrgent] = useState(false);
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
 
   const resetForm = () => {
     setStep("mode");
@@ -52,11 +57,47 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
     setOriginCity(""); setOriginCountry(""); setDestCity(""); setDestCountry("");
     setDescription(""); setWeightKg(""); setPickupDate(""); setBudgetMax("");
     setIsUrgent(false);
+    setPhotos([]); setPhotoPreviews([]);
   };
 
   const handleClose = () => {
     onOpenChange(false);
     setTimeout(resetForm, 300);
+  };
+
+  const handleAddPhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const remaining = MAX_PHOTOS - photos.length;
+    const newFiles = files.slice(0, remaining);
+    
+    setPhotos(prev => [...prev, ...newFiles]);
+    newFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setPhotoPreviews(prev => [...prev, ev.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index));
+    setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadPhotos = async (userId: string): Promise<string[]> => {
+    const urls: string[] = [];
+    for (const file of photos) {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage.from("mission-photos").upload(path, file);
+      if (!error) {
+        const { data } = supabase.storage.from("mission-photos").getPublicUrl(path);
+        urls.push(data.publicUrl);
+      }
+    }
+    return urls;
   };
 
   const canSubmit = originCity.trim() && destCity.trim() && description.trim();
@@ -71,6 +112,9 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
         toast.error("Connectez-vous pour envoyer une demande");
         return;
       }
+
+      // Upload photos
+      const photoUrls = photos.length > 0 ? await uploadPhotos(session.user.id) : [];
 
       if (mode === "routier") {
         const { error } = await supabase.from("routier_missions").insert([{
@@ -87,6 +131,7 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
           urgency: isUrgent ? "express" as const : "standard" as const,
           mission_number: `MSN-${Date.now()}`,
           status: "open",
+          photo_urls: photoUrls,
         }]);
         if (error) throw error;
       } else {
@@ -314,6 +359,45 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
                   <span className="text-sm font-medium">⚡ Urgent</span>
                 </button>
 
+                {/* Photos (routier only) */}
+                {mode === "routier" && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                      <Camera className="w-3.5 h-3.5" /> Photos de la marchandise
+                    </label>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleAddPhotos}
+                    />
+                    <div className="flex gap-2 flex-wrap">
+                      {photoPreviews.map((src, i) => (
+                        <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-border">
+                          <img src={src} alt="" className="w-full h-full object-cover" />
+                          <button
+                            onClick={() => handleRemovePhoto(i)}
+                            className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-destructive/90 flex items-center justify-center"
+                          >
+                            <X className="w-3 h-3 text-destructive-foreground" />
+                          </button>
+                        </div>
+                      ))}
+                      {photos.length < MAX_PHOTOS && (
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          className="w-16 h-16 rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors"
+                        >
+                          <ImageIcon className="w-5 h-5" />
+                          <span className="text-[9px] mt-0.5">{photos.length}/{MAX_PHOTOS}</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Actions */}
                 <div className="flex gap-3 pt-2">
                   <Button variant="outline" onClick={() => { setStep("mode"); setMode(null); }} className="flex-1">
@@ -376,6 +460,18 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
                   <p className="text-xs font-semibold text-muted-foreground mb-1">Description</p>
                   <p className="text-sm text-foreground">{description}</p>
                 </div>
+
+                {/* Photo previews in confirm */}
+                {photoPreviews.length > 0 && (
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-semibold text-muted-foreground">Photos ({photoPreviews.length})</p>
+                    <div className="flex gap-2 overflow-x-auto">
+                      {photoPreviews.map((src, i) => (
+                        <img key={i} src={src} alt="" className="w-14 h-14 rounded-lg object-cover border border-border flex-shrink-0" />
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex gap-3 pt-2">
                   <Button variant="outline" onClick={() => setStep("details")} className="flex-1">

@@ -3706,6 +3706,7 @@ export type Database = {
           origin_address: string | null
           origin_city: string
           origin_country: string
+          photo_urls: string[] | null
           pickup_date_end: string | null
           pickup_date_start: string
           status: string
@@ -3738,6 +3739,7 @@ export type Database = {
           origin_address?: string | null
           origin_city: string
           origin_country?: string
+          photo_urls?: string[] | null
           pickup_date_end?: string | null
           pickup_date_start: string
           status?: string
@@ -3770,6 +3772,7 @@ export type Database = {
           origin_address?: string | null
           origin_city?: string
           origin_country?: string
+          photo_urls?: string[] | null
           pickup_date_end?: string | null
           pickup_date_start?: string
           status?: string
