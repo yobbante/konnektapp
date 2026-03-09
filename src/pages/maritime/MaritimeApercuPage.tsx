@@ -229,7 +229,9 @@ export default function MaritimeApercuPage() {
           ) : (
             <div className="space-y-1.5">
               {data.departures.map((dep: any) => {
-                const fillPercent = dep.total_capacity > 0 ? Math.round(((dep.total_capacity - dep.available_capacity) / dep.total_capacity) * 100) : 0;
+                const fillPercent = dep.total_capacity_m3 > 0 ? Math.round(((dep.total_capacity_m3 - dep.available_capacity_m3) / dep.total_capacity_m3) * 100) : 0;
+                const isLCL = dep.maritime_type === "lcl";
+                const typeLabel = dep.maritime_type?.toUpperCase() || "LCL";
                 return (
                   <Card key={dep.id} className="cursor-pointer active:scale-[0.99] transition-all border-primary/20">
                     <CardContent className="p-2.5">
@@ -238,24 +240,36 @@ export default function MaritimeApercuPage() {
                           <Ship className="w-4 h-4 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold truncate">{dep.origin_city} → {dep.destination_city}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-xs font-semibold truncate">{dep.origin_port} → {dep.destination_port}</p>
+                            <Badge variant="outline" className="text-[8px] h-3.5 px-1 border-primary/30 text-primary">{typeLabel}</Badge>
+                          </div>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="text-[9px] text-muted-foreground flex items-center gap-0.5">
                               <Calendar className="w-2.5 h-2.5" />
                               {dep.departure_date && format(new Date(dep.departure_date), "d MMM yyyy", { locale: fr })}
                             </span>
                             <span className="text-[9px] text-muted-foreground">·</span>
-                            <span className="text-[9px] font-medium text-primary">{dep.price_per_kg} {dep.currency}/m³</span>
+                            <span className="text-[9px] font-medium text-primary">
+                              {isLCL ? `${dep.price_per_m3?.toLocaleString()} ${dep.currency}/m³` : `${dep.price_total?.toLocaleString()} ${dep.currency}`}
+                            </span>
+                            {dep.transit_days && (
+                              <>
+                                <span className="text-[9px] text-muted-foreground">·</span>
+                                <span className="text-[9px] text-muted-foreground">{dep.transit_days}j</span>
+                              </>
+                            )}
                           </div>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-[10px] font-bold text-primary">{fillPercent}% rempli</p>
+                          <p className="text-[10px] font-bold text-primary">{fillPercent}%</p>
                           <div className="w-14 h-1.5 bg-muted rounded-full mt-0.5 overflow-hidden">
                             <div
-                              className={cn("h-full rounded-full transition-all", fillPercent >= 80 ? "bg-destructive" : fillPercent >= 50 ? "bg-warning" : "bg-primary")}
+                              className={cn("h-full rounded-full transition-all", fillPercent >= 80 ? "bg-destructive" : fillPercent >= 50 ? "bg-accent" : "bg-primary")}
                               style={{ width: `${Math.max(5, fillPercent)}%` }}
                             />
                           </div>
+                          <p className="text-[8px] text-muted-foreground mt-0.5">{dep.available_capacity_m3} m³ dispo</p>
                         </div>
                       </div>
                     </CardContent>
