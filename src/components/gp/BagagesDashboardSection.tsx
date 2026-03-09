@@ -136,7 +136,7 @@ export function BagagesDashboardSection({
       }
 
       toast({
-        title: "✅ Bagage accepté",
+        title: "Bagage accepte",
         description: "Le client sera notifié de votre acceptation",
       });
       onRefresh();
@@ -185,7 +185,7 @@ export function BagagesDashboardSection({
       if (error) throw error;
 
       toast({
-        title: "🎉 Bagage livré !",
+        title: "Bagage livre",
         description: "Mission terminée avec succès",
       });
       onRefresh();

@@ -166,7 +166,7 @@ export function PostDeliveryFlow({ order, role, onClose, onNavigate }: PostDeliv
                 transition={{ delay: 0.3 }}
               >
                 <h2 className="text-2xl font-bold text-foreground">
-                  {role === "client" ? "Colis livré ! 🎉" : "Colis reçu ! 📦"}
+                  {role === "client" ? "Colis livre !" : "Colis recu !"}
                 </h2>
                 <p className="text-muted-foreground mt-1">
                   {role === "client"

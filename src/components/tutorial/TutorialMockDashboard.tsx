@@ -50,9 +50,9 @@ export function TutorialMockDashboard({ mockState, role }: Props) {
                 mockState.escrow.status === "locked" ? "default" :
                 mockState.escrow.status === "released" ? "secondary" : "outline"
               } className="text-[10px]">
-                {mockState.escrow.status === "locked" ? "🔒 Verrouillé" :
-                 mockState.escrow.status === "released" ? "✅ Libéré" :
-                 mockState.escrow.status === "refunded" ? "↩ Remboursé" : "⏳ En attente"}
+                {mockState.escrow.status === "locked" ? "Verrouille" :
+                 mockState.escrow.status === "released" ? "Libere" :
+                 mockState.escrow.status === "refunded" ? "Rembourse" : "En attente"}
               </Badge>
             </div>
             <p className="text-lg font-bold mt-1">{mockState.escrow.amount.toLocaleString()} FCFA</p>
