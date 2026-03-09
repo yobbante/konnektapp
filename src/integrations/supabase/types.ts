@@ -3757,6 +3757,36 @@ export type Database = {
           },
         ]
       }
+      routier_distance_bands: {
+        Row: {
+          base_price_fcfa: number
+          created_at: string
+          id: string
+          is_active: boolean
+          max_km: number
+          min_km: number
+          updated_at: string
+        }
+        Insert: {
+          base_price_fcfa: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_km: number
+          min_km: number
+          updated_at?: string
+        }
+        Update: {
+          base_price_fcfa?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_km?: number
+          min_km?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       routier_missions: {
         Row: {
           accepted_negotiation_id: string | null
@@ -3910,6 +3940,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      routier_pricing_config: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          key: string
+          label: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key: string
+          label: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key?: string
+          label?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: []
+      }
+      routier_size_coefficients: {
+        Row: {
+          category: string
+          coefficient: number
+          created_at: string
+          id: string
+          is_active: boolean
+          max_weight_kg: number
+          min_weight_kg: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          coefficient?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_weight_kg: number
+          min_weight_kg?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          coefficient?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_weight_kg?: number
+          min_weight_kg?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       sanctions: {
         Row: {
@@ -5090,6 +5189,25 @@ export type Database = {
           _target_user_id: string
         }
         Returns: boolean
+      }
+      calculate_routier_price: {
+        Args: {
+          p_distance_km: number
+          p_quantity?: number
+          p_volume_m3?: number
+          p_weight_kg: number
+        }
+        Returns: {
+          base_price: number
+          coefficient: number
+          is_freight: boolean
+          pricing_method: string
+          quantity: number
+          size_category: string
+          total_price: number
+          unit_price: number
+          weight_supplement: number
+        }[]
       }
       can_perform_scan_action: {
         Args: { p_action: string; p_order_id: string; p_user_role: string }
