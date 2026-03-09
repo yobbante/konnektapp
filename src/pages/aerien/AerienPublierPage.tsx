@@ -220,13 +220,28 @@ export default function AerienPublierPage() {
               <div>
                 <Label className="text-[10px]">Date départ</Label>
                 <Input type="date" className="h-8 text-xs" value={form.departureDate}
-                  onChange={e => setForm(f => ({ ...f, departureDate: e.target.value }))} />
+                  onChange={e => {
+                    const next = e.target.value;
+                    setForm(f => ({ ...f, departureDate: next, expiresAt: f.expiresAt || next }));
+                  }} />
               </div>
               <div>
                 <Label className="text-[10px]">Date arrivée</Label>
                 <Input type="date" className="h-8 text-xs" value={form.arrivalDate}
                   onChange={e => setForm(f => ({ ...f, arrivalDate: e.target.value }))} />
               </div>
+            </div>
+
+            <div>
+              <Label className="text-[10px]">Date fin annonce</Label>
+              <Input
+                type="date"
+                className="h-8 text-xs"
+                value={form.expiresAt}
+                min={new Date().toISOString().split("T")[0]}
+                max={form.departureDate || undefined}
+                onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value }))}
+              />
             </div>
           </CardContent>
         </Card>
