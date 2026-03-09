@@ -491,12 +491,14 @@ export function ClientAppHome({
     if (searchDest) {
       result = result.filter((o) => o.destination_city?.toLowerCase().includes(searchDest.toLowerCase()));
     }
-    return result.sort((a, b) => {
-      const ratingA = a.gp_profiles?.rating || 0;
-      const ratingB = b.gp_profiles?.rating || 0;
-      if (ratingB !== ratingA) return ratingB - ratingA;
-      return new Date(a.departure_date).getTime() - new Date(b.departure_date).getTime();
-    });
+    // If no search active, show all offers for this tab
+    // Rank by subscription boost + rating (same as "all" tab logic)
+    const scoreOffer = (o: any) => {
+      const sub = o.gp_profiles?.subscription || "free";
+      const subBoost = sub === "pro" ? 1000 : sub === "premium" ? 500 : 0;
+      return subBoost + (o.gp_profiles?.rating || 0);
+    };
+    return result.sort((a, b) => scoreOffer(b) - scoreOffer(a));
   }, [offers, activeTab, searchOrigin, searchDest]);
 
   const activeOrders = recentOrders.filter((o) => ACTIVE_STATUSES.includes(o.status));
