@@ -51,6 +51,7 @@ const TERMINAL_STATUSES = ["delivered", "released", "cancelled", "delivery_confi
 
 interface RecipientTrackingCardProps {
   userId: string;
+  listMode?: boolean;
 }
 
 export function RecipientTrackingCard({ userId }: RecipientTrackingCardProps) {
