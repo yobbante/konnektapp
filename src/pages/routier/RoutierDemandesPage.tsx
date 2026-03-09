@@ -178,6 +178,10 @@ export default function RoutierDemandesPage() {
             <RoutierOpportunitesTab gpId={gpProfile.id} />
           </TabsContent>
 
+          <TabsContent value="pricing" className="mt-2">
+            <RoutierPricingDashboard />
+          </TabsContent>
+
           <TabsContent value="missions" className="mt-2">
             <RoutierMissionsTab gpId={gpProfile.id} />
           </TabsContent>
