@@ -70,6 +70,7 @@ export function CreateBaggageVoyageDialog({
   const [formData, setFormData] = useState({
     departureDate: "",
     arrivalDate: "",
+    expiresAt: "",
     totalCapacity: "23",
     flightNumber: "",
     airline: "",
