@@ -121,7 +121,7 @@ export default function RoutierMissionDetailTransporteurPage() {
   if (loading) {
     return (
       <RoutierDashboardLayout gpProfile={defaultGp}>
-        <TransportPageLoader mode="routier" />
+        <TransportPageLoader />
       </RoutierDashboardLayout>
     );
   }

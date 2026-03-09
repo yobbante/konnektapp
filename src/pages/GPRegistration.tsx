@@ -310,7 +310,7 @@ export default function GPRegistration() {
       // Créer le profil GP
       const { error: gpError } = await supabase
         .from("gp_profiles")
-        .insert({
+        .insert([{
           user_id: userId,
           business_name: businessData.businessName,
           gp_type: activityType,
@@ -336,7 +336,7 @@ export default function GPRegistration() {
           international_destinations: coverageZones
             .filter(z => z.country && !["SN", "CI", "ML", "BF", "GN", "CM", "TG", "BJ", "GH", "NG"].includes(z.country))
             .map(z => z.country),
-        });
+        }]);
 
       if (gpError) {
         if (gpError.message?.includes("idx_gp_profiles_phone_unique")) {

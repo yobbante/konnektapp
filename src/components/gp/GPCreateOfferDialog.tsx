@@ -133,7 +133,7 @@ export function GPCreateOfferDialog({ open, onClose, gpProfile, onSuccess }: GPC
         .from("gp_offers")
         .insert([{
           gp_id: gpProfile.id,
-          transport_type: transportType, // Type forcé par le profil
+          transport_type: transportType as any,
           origin_city: formData.originCity,
           origin_country: formData.originCountry,
           destination_city: formData.destinationCity,

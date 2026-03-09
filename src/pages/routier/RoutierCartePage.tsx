@@ -63,7 +63,7 @@ export default function RoutierCartePage() {
   if (loading) {
     return (
       <RoutierDashboardLayout gpProfile={defaultGp}>
-        <TransportPageLoader mode="routier" />
+        <TransportPageLoader />
       </RoutierDashboardLayout>
     );
   }
@@ -76,7 +76,6 @@ export default function RoutierCartePage() {
           missionRequests={missionRequests}
           pendingMissions={pendingMissions}
           stats={{ delivered: 0, successRate: 0, avgRating: 0 }}
-          navigateToDetail="/routier/detail-mission"
         />
       </div>
     </RoutierDashboardLayout>
