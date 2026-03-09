@@ -68,10 +68,12 @@ export default function MobilityBookingPage() {
 
     setSubmitting(true);
     try {
-      const totalPrice = passengerCount * (trip?.price_per_seat || 0);
-      const commission = totalPrice * 0.08; // 8% commission
+      const totalPriceCalc = passengerCount * (trip?.price_per_seat || 0);
+      const commission = totalPriceCalc * 0.08;
+      const bookingNum = "MOB-" + new Date().toISOString().slice(0, 10).replace(/-/g, "") + "-" + Math.random().toString(36).slice(2, 8).toUpperCase();
 
       const { data: bk, error } = await supabase.from("mobility_bookings").insert({
+        booking_number: bookingNum,
         offer_id: tripId,
         client_id: user.id,
         mobility_profile_id: trip.mobility_profile_id,
@@ -82,10 +84,10 @@ export default function MobilityBookingPage() {
         departure_time: trip.departure_time,
         passenger_count: passengerCount,
         passenger_names: passengerNames.filter(n => n),
-        total_price: totalPrice,
-        currency: trip.currency,
+        total_price: totalPriceCalc,
+        currency: trip.currency || "XOF",
         commission_amount: commission,
-        status: "pending",
+        status: "active" as any,
         payment_status: "pending",
       }).select().single();
 

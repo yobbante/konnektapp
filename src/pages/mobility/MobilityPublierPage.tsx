@@ -78,7 +78,7 @@ export default function MobilityPublierPage() {
         departure_date: departureDate,
         departure_time: departureTime,
         estimated_duration_minutes: duration ? parseInt(duration) : null,
-        mobility_type: mobilityType,
+        mobility_type: mobilityType as any,
         total_seats: parseInt(totalSeats),
         available_seats: parseInt(totalSeats),
         price_per_seat: parseFloat(pricePerSeat),

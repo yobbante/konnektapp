@@ -98,10 +98,10 @@ export default function MobilityRegistration() {
       const { data: profile, error: profErr } = await supabase.from("mobility_profiles").insert({
         user_id: user.id,
         business_name: businessName || driverName,
-        license_number: licenseNumber,
+        license_number: licenseNumber || "PENDING",
         base_city: city,
         base_country: country,
-        mobility_types: selectedServices,
+        mobility_types: selectedServices as any,
         price_per_km: pricePerKm ? parseFloat(pricePerKm) : null,
         minimum_fare: minimumFare ? parseFloat(minimumFare) : null,
         default_currency: "XOF",
@@ -112,9 +112,9 @@ export default function MobilityRegistration() {
       // Create vehicle
       const { error: vehErr } = await supabase.from("mobility_vehicles").insert({
         mobility_profile_id: profile.id,
-        vehicle_type: vehicleType,
+        vehicle_type: vehicleType as any,
         brand: vehicleBrand,
-        model: vehicleModel,
+        model: vehicleModel || "N/A",
         year: vehicleYear ? parseInt(vehicleYear) : null,
         license_plate: vehiclePlate,
         passenger_capacity: parseInt(passengerCapacity) || 4,
@@ -132,7 +132,7 @@ export default function MobilityRegistration() {
           city,
           country_code: country,
           phone: phone || driverPhone,
-          gp_type: "mobility",
+          gp_type: "mobility" as any,
         });
       }
 
