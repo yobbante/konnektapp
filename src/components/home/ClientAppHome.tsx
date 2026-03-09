@@ -298,7 +298,6 @@ function PopularRoutesSection({ routes, onSelect, tabId
     </div>
   );
 }
-}
 
 // ── Trust Items ──
 function TrustSection({ items, title
