@@ -1276,6 +1276,7 @@ export type Database = {
           description: string | null
           destination_city: string
           destination_country: string
+          expires_at: string | null
           explicit_restrictions: string[] | null
           flight_number: string | null
           gp_id: string
@@ -1306,6 +1307,7 @@ export type Database = {
           description?: string | null
           destination_city: string
           destination_country: string
+          expires_at?: string | null
           explicit_restrictions?: string[] | null
           flight_number?: string | null
           gp_id: string
@@ -1336,6 +1338,7 @@ export type Database = {
           description?: string | null
           destination_city?: string
           destination_country?: string
+          expires_at?: string | null
           explicit_restrictions?: string[] | null
           flight_number?: string | null
           gp_id?: string

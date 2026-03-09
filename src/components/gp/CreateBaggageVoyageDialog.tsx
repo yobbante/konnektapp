@@ -70,6 +70,7 @@ export function CreateBaggageVoyageDialog({
   const [formData, setFormData] = useState({
     departureDate: "",
     arrivalDate: "",
+    expiresAt: "",
     totalCapacity: "23",
     flightNumber: "",
     airline: "",
@@ -109,7 +110,7 @@ export function CreateBaggageVoyageDialog({
     } else if (open) {
       setTripType("aller");
     }
-    setFormData({ departureDate: "", arrivalDate: "", totalCapacity: "23", flightNumber: "", airline: "" });
+    setFormData({ departureDate: "", arrivalDate: "", expiresAt: "", totalCapacity: "23", flightNumber: "", airline: "" });
   }, [open, lastVoyage, gpData]);
 
   if (!gpData) return null;
@@ -134,6 +135,21 @@ export function CreateBaggageVoyageDialog({
       return;
     }
 
+    // Expiration: defaults to departure date (offer hidden after this date)
+    const effectiveExpiresAt = formData.expiresAt || formData.departureDate;
+    const expiresDate = new Date(effectiveExpiresAt);
+    const departureDate = new Date(formData.departureDate);
+
+    if (expiresDate <= new Date()) {
+      toast({ title: "Date invalide", description: "La date de fin doit être dans le futur", variant: "destructive" });
+      return;
+    }
+
+    if (expiresDate > departureDate) {
+      toast({ title: "Date invalide", description: "La date de fin doit être avant le départ", variant: "destructive" });
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase.from("gp_offers").insert({
@@ -145,6 +161,7 @@ export function CreateBaggageVoyageDialog({
         destination_country: currentRoute.destination.country,
         departure_date: formData.departureDate,
         arrival_date: formData.arrivalDate || null,
+        expires_at: effectiveExpiresAt,
         price_per_kg: gpData.basePricePerKg,
         currency: gpData.currency,
         total_capacity: parseFloat(formData.totalCapacity),
@@ -218,14 +235,21 @@ export function CreateBaggageVoyageDialog({
           </div>
 
           {/* Dates */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs flex items-center gap-1"><Calendar className="w-3 h-3" /> Départ *</Label>
               <Input
                 type="datetime-local"
                 value={formData.departureDate}
                 min={new Date().toISOString().slice(0, 16)}
-                onChange={(e) => setFormData({ ...formData, departureDate: e.target.value })}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setFormData((p) => ({
+                    ...p,
+                    departureDate: next,
+                    expiresAt: p.expiresAt || next,
+                  }));
+                }}
                 className="h-10"
               />
             </div>
@@ -236,6 +260,17 @@ export function CreateBaggageVoyageDialog({
                 value={formData.arrivalDate}
                 min={formData.departureDate}
                 onChange={(e) => setFormData({ ...formData, arrivalDate: e.target.value })}
+                className="h-10"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs flex items-center gap-1"><Clock className="w-3 h-3" /> Fin annonce *</Label>
+              <Input
+                type="datetime-local"
+                value={formData.expiresAt}
+                min={new Date().toISOString().slice(0, 16)}
+                max={formData.departureDate || undefined}
+                onChange={(e) => setFormData((p) => ({ ...p, expiresAt: e.target.value }))}
                 className="h-10"
               />
             </div>

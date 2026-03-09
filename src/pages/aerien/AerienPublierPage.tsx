@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { SearchableCitySelect } from "@/components/gp/SearchableCitySelect";
 
 export default function AerienPublierPage() {
   const navigate = useNavigate();
@@ -22,11 +23,12 @@ export default function AerienPublierPage() {
 
   const [form, setForm] = useState({
     originCity: "",
-    originCountry: "France",
+    originCountry: "FR",
     destinationCity: "",
-    destinationCountry: "Sénégal",
+    destinationCountry: "SN",
     departureDate: "",
     arrivalDate: "",
+    expiresAt: "",
     totalCapacity: "",
     pricePerKg: "",
     currency: "EUR",
@@ -67,6 +69,25 @@ export default function AerienPublierPage() {
       return;
     }
 
+    const departureDate = new Date(form.departureDate);
+    if (departureDate <= new Date()) {
+      toast({ title: "Date invalide", description: "La date de départ doit être dans le futur", variant: "destructive" });
+      return;
+    }
+
+    const effectiveExpiresAt = form.expiresAt || form.departureDate;
+    const expiresDate = new Date(effectiveExpiresAt);
+
+    if (expiresDate <= new Date()) {
+      toast({ title: "Date invalide", description: "La date de fin doit être dans le futur", variant: "destructive" });
+      return;
+    }
+
+    if (expiresDate > departureDate) {
+      toast({ title: "Date invalide", description: "La date de fin doit être avant le départ", variant: "destructive" });
+      return;
+    }
+
     setLoading(true);
     try {
       const capacity = parseFloat(form.totalCapacity);
@@ -79,6 +100,7 @@ export default function AerienPublierPage() {
         destination_country: form.destinationCountry,
         departure_date: form.departureDate,
         arrival_date: form.arrivalDate || null,
+        expires_at: effectiveExpiresAt,
         total_capacity: capacity,
         available_capacity: capacity,
         price_per_kg: parseFloat(form.pricePerKg),
@@ -142,23 +164,37 @@ export default function AerienPublierPage() {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label className="text-[10px]">Ville départ</Label>
-                <Input className="h-8 text-xs" placeholder="Paris" value={form.originCity}
-                  onChange={e => setForm(f => ({ ...f, originCity: e.target.value }))} />
+                <SearchableCitySelect
+                  value={form.originCity}
+                  countryCode={form.originCountry}
+                  onSelect={(city, countryCode) => setForm((f) => ({
+                    ...f,
+                    originCity: city,
+                    originCountry: countryCode === "XX" ? f.originCountry : countryCode,
+                  }))}
+                  placeholder="Paris"
+                />
               </div>
               <div>
                 <Label className="text-[10px]">Pays départ</Label>
-                <Input className="h-8 text-xs" value={form.originCountry}
-                  onChange={e => setForm(f => ({ ...f, originCountry: e.target.value }))} />
+                <Input className="h-11 text-xs" value={form.originCountry} disabled />
               </div>
               <div>
                 <Label className="text-[10px]">Ville arrivée</Label>
-                <Input className="h-8 text-xs" placeholder="Dakar" value={form.destinationCity}
-                  onChange={e => setForm(f => ({ ...f, destinationCity: e.target.value }))} />
+                <SearchableCitySelect
+                  value={form.destinationCity}
+                  countryCode={form.destinationCountry}
+                  onSelect={(city, countryCode) => setForm((f) => ({
+                    ...f,
+                    destinationCity: city,
+                    destinationCountry: countryCode === "XX" ? f.destinationCountry : countryCode,
+                  }))}
+                  placeholder="Dakar"
+                />
               </div>
               <div>
                 <Label className="text-[10px]">Pays arrivée</Label>
-                <Input className="h-8 text-xs" value={form.destinationCountry}
-                  onChange={e => setForm(f => ({ ...f, destinationCountry: e.target.value }))} />
+                <Input className="h-11 text-xs" value={form.destinationCountry} disabled />
               </div>
             </div>
           </CardContent>
@@ -184,13 +220,28 @@ export default function AerienPublierPage() {
               <div>
                 <Label className="text-[10px]">Date départ</Label>
                 <Input type="date" className="h-8 text-xs" value={form.departureDate}
-                  onChange={e => setForm(f => ({ ...f, departureDate: e.target.value }))} />
+                  onChange={e => {
+                    const next = e.target.value;
+                    setForm(f => ({ ...f, departureDate: next, expiresAt: f.expiresAt || next }));
+                  }} />
               </div>
               <div>
                 <Label className="text-[10px]">Date arrivée</Label>
                 <Input type="date" className="h-8 text-xs" value={form.arrivalDate}
                   onChange={e => setForm(f => ({ ...f, arrivalDate: e.target.value }))} />
               </div>
+            </div>
+
+            <div>
+              <Label className="text-[10px]">Date fin annonce</Label>
+              <Input
+                type="date"
+                className="h-8 text-xs"
+                value={form.expiresAt}
+                min={new Date().toISOString().split("T")[0]}
+                max={form.departureDate || undefined}
+                onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value }))}
+              />
             </div>
           </CardContent>
         </Card>
