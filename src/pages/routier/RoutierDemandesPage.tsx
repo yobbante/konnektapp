@@ -222,6 +222,7 @@ export default function RoutierDemandesPage() {
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
                                   <Badge variant="outline" className="text-[9px] h-4 px-1">{vehicle.type}</Badge>
+                                  <Badge variant="outline" className={cn("text-[8px] h-3.5 px-1 font-bold", sizeInfo.color, sizeInfo.bg)}>{sizeInfo.label}</Badge>
                                   <span className="text-[10px] text-muted-foreground">~{distance} km</span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
