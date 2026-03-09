@@ -239,14 +239,6 @@ function QuickActionsGrid({ navigate, activeTab }: {navigate: (path: string) => 
 
 
 
-
-
-        )}
-      </div>
-    </div>);
-
-}
-
 // ── Tab-Specific Header Banner ──
 function TabBanner({ tab, modeConfig }: {tab: string;modeConfig: typeof MODE_CONFIG["all"];}) {
   if (tab === "all") return null;
