@@ -54,7 +54,7 @@ interface RecipientTrackingCardProps {
   listMode?: boolean;
 }
 
-export function RecipientTrackingCard({ userId }: RecipientTrackingCardProps) {
+export function RecipientTrackingCard({ userId, listMode = false }: RecipientTrackingCardProps) {
   const [parcels, setParcels] = useState<IncomingParcel[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedParcel, setSelectedParcel] = useState<IncomingParcel | null>(null);
