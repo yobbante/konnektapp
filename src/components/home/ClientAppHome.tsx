@@ -221,23 +221,23 @@ function QuickActionsGrid({ navigate, activeTab }: {navigate: (path: string) => 
   return (
     <div className="px-4 pb-3">
       <div className="grid grid-cols-4 gap-2">
-        {actions.map((a) => {}
-
-
-
-
-
-
-
-
-
-
-
-        )}
+        {actions.map((a) => (
+          <button
+            key={a.label}
+            onClick={() => navigate(a.to)}
+            className="flex flex-col items-center gap-1 py-2">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${a.color}`}>
+              <a.icon className="w-4 h-4" />
+            </div>
+            <span className="text-[9px] font-semibold text-foreground">{a.label}</span>
+          </button>
+        ))}
       </div>
     </div>);
-
 }
+
+
+
 
 // ── Tab-Specific Header Banner ──
 function TabBanner({ tab, modeConfig }: {tab: string;modeConfig: typeof MODE_CONFIG["all"];}) {
@@ -279,29 +279,24 @@ function PopularRoutesSection({ routes, onSelect, tabId
     bagages: "Trajets GP populaires"
   };
 
-  return;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  return (
+    <div className="px-4 pb-4">
+      <h2 className="text-sm font-bold text-foreground mb-2 tracking-tight">{titleMap[tabId] || "Routes populaires"}</h2>
+      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+        {routes.map((route, idx) => (
+          <button
+            key={`${route.from}-${route.to}-${idx}`}
+            onClick={() => onSelect(route.from, route.to)}
+            className="flex-shrink-0 bg-card border border-border rounded-xl px-3 py-2 flex items-center gap-2 hover:border-primary/30 transition-colors">
+            <span className="text-xs font-medium text-foreground whitespace-nowrap">{route.from}</span>
+            <ArrowRight className="w-3 h-3 text-muted-foreground" />
+            <span className="text-xs font-medium text-foreground whitespace-nowrap">{route.to}</span>
+            {route.hot && <span className="text-[8px] bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded-full font-bold">HOT</span>}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // ── Trust Items ──
@@ -474,11 +469,11 @@ export function ClientAppHome({
     const today = new Date().toISOString().split("T")[0];
     supabase.
     from("gp_offers").
-    select("*, gp_profiles(business_name, rating, total_reviews)").
+    select("*, gp_profiles(business_name, rating, total_reviews, subscription)").
     eq("status", "active").
     gte("departure_date", today).
     order("departure_date", { ascending: true }).
-    limit(12).
+    limit(50).
     then(({ data }) => {if (data) setOffers(data);});
   }, []);
 
@@ -788,11 +783,55 @@ export function ClientAppHome({
             const modeIcons: Record<string, typeof Package> = {
               routier: Truck, maritime: Ship, aerien: Plane, bagages_accompagnes: Luggage
             };
+
+            // Helper: premium/pro score boost + rating
+            const scoreOffer = (o: any) => {
+              const sub = o.gp_profiles?.subscription || "free";
+              const subBoost = sub === "pro" ? 1000 : sub === "premium" ? 500 : 0;
+              return subBoost + (o.gp_profiles?.rating || 0);
+            };
+
+            // If search is active, show filtered results across all types
+            const hasSearch = searchOrigin || searchDest;
+            if (hasSearch) {
+              const searchResults = offers
+                .filter((o) => {
+                  if (searchOrigin && !o.origin_city?.toLowerCase().includes(searchOrigin.toLowerCase())) return false;
+                  if (searchDest && !o.destination_city?.toLowerCase().includes(searchDest.toLowerCase())) return false;
+                  return true;
+                })
+                .sort((a, b) => scoreOffer(b) - scoreOffer(a))
+                .slice(0, 6);
+
+              return searchResults.length > 0 ?
+                <div className="space-y-1.5">
+                  {searchResults.map((offer: any, idx: number) => {
+                    const mode = offer.transport_type === "navette" ? "bagages_accompagnes" : offer.transport_type;
+                    const ModeIcon = modeIcons[mode] || Package;
+                    return (
+                      <div key={offer.id} className="relative">
+                        <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full border border-border/50">
+                          <ModeIcon className="w-2.5 h-2.5 text-muted-foreground" />
+                          <span className="text-[9px] font-semibold text-muted-foreground">{modeLabels[mode] || mode}</span>
+                        </div>
+                        <HomeOfferCard offer={offer} index={idx} />
+                      </div>);
+                  })}
+                  <button
+                    onClick={goToOffres}
+                    className="w-full py-2.5 text-xs font-semibold text-primary flex items-center justify-center gap-1 hover:bg-primary/5 rounded-xl transition-colors border border-dashed border-primary/20">
+                    Voir toutes les offres <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div> :
+                <EmptyOffers modeConfig={modeConfig} onAction={goToOffres} />;
+            }
+
+            // Default: 1 best offer per type (premium/pro first, then highest rating)
             const top4 = modes.
             map((mode) => {
               const modeOffers = offers.
               filter((o) => o.transport_type === mode || mode === "bagages_accompagnes" && (o.transport_type === "bagages_accompagnes" || o.transport_type === "navette")).
-              sort((a, b) => (b.gp_profiles?.rating || 0) - (a.gp_profiles?.rating || 0));
+              sort((a, b) => scoreOffer(b) - scoreOffer(a));
               return modeOffers[0] ? { ...modeOffers[0], _mode: mode } : null;
             }).
             filter(Boolean);
@@ -801,11 +840,13 @@ export function ClientAppHome({
             <div className="space-y-1.5">
                   {top4.map((offer: any, idx: number) => {
                 const ModeIcon = modeIcons[offer._mode] || Package;
+                const sub = offer.gp_profiles?.subscription;
                 return (
                   <div key={offer.id} className="relative">
                         <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full border border-border/50">
                           <ModeIcon className="w-2.5 h-2.5 text-muted-foreground" />
                           <span className="text-[9px] font-semibold text-muted-foreground">{modeLabels[offer._mode]}</span>
+                          {(sub === "premium" || sub === "pro") && <Star className="w-2.5 h-2.5 text-amber-500" />}
                         </div>
                         <HomeOfferCard offer={offer} index={idx} />
                       </div>);
