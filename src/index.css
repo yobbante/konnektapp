@@ -76,6 +76,7 @@
     --transport-aerien: 280 70% 55%;
     --transport-voyageur: 38 92% 50%;
     --transport-agence: 260 70% 55%;
+    --transport-mobility: 340 65% 55%;
 
     /* Role-based Dashboard Header Colors (simplified) */
     --dashboard-header-admin: 240 75% 28%;

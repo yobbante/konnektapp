@@ -22,6 +22,7 @@ const badgeVariants = cva(
         maritime: "border-transparent bg-transport-maritime/15 text-transport-maritime border border-transport-maritime/30",
         aerien: "border-transparent bg-transport-aerien/15 text-transport-aerien border border-transport-aerien/30",
         voyageur: "border-transparent bg-transport-voyageur/15 text-transport-voyageur border border-transport-voyageur/30",
+        mobility: "border-transparent bg-transport-mobility/15 text-transport-mobility border border-transport-mobility/30",
         // Status badges
         available: "bg-success/10 text-success border border-success/20",
         complete: "bg-muted text-muted-foreground border border-border",

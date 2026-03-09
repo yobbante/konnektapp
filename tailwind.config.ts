@@ -91,6 +91,7 @@ export default {
           voyageur: "hsl(var(--transport-voyageur))",
           agence: "hsl(var(--transport-agence))",
           bagages: "hsl(280 60% 55%)",
+          mobility: "hsl(var(--transport-mobility))",
         },
       },
       borderRadius: {
