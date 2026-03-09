@@ -122,7 +122,7 @@ export function GPOverviewTab({ gpId, gpProfile }: GPOverviewTabProps) {
 
   const currencySymbol = getCurrencySymbol(data.currency as any);
   const isPending = gpProfile.status === "pending";
-  const getFlag = (code: string) => FLAGS[code] || "🌍";
+  const getFlag = (code: string) => FLAGS[code] || "";
 
   return (
     <div className="px-4 py-4 space-y-4">

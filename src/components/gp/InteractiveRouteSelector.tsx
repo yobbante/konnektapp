@@ -107,7 +107,7 @@ export function InteractiveRouteSelector({
   onDestinationChange,
 }: InteractiveRouteSelectorProps) {
   const getCountryInfo = (code: string) => 
-    COUNTRIES[code] || { name: code, flag: "🌍" };
+    COUNTRIES[code] || { name: code, flag: "" };
 
   const handleSwap = () => {
     const tempCity = originCity;

@@ -120,7 +120,7 @@ export function CreateBaggageVoyageDialog({
     : { origin: { city: gpData.baseDestCity, country: gpData.baseDestCountry }, destination: { city: gpData.baseOriginCity, country: gpData.baseOriginCountry } };
 
   const currencySymbol = getCurrencySymbol(gpData.currency as any);
-  const getFlag = (code: string) => FLAGS[code] || "🌍";
+  const getFlag = (code: string) => FLAGS[code] || "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
