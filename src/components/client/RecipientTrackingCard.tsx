@@ -279,7 +279,6 @@ export function RecipientTrackingCard({ userId, listMode = false }: RecipientTra
       )}
     </>
   );
-  );
 }
 
 /** Full-screen details for recipient */
