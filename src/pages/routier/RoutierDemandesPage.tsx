@@ -20,6 +20,7 @@ import { RefusalReasonDialog, RefusalReason } from "@/components/routier/Refusal
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { estimateDistance, calculateRoutierPrice, formatPriceFCFA, getSizeFromWeight } from "@/lib/routierUtils";
 
 interface FreightRequest {
   id: string;
@@ -46,13 +47,7 @@ const getVehicleType = (description: string, weight: number) => {
   return { type: "Fourgonnette" };
 };
 
-const estimateDistance = (origin: string, dest: string): number => {
-  const key = `${origin.toLowerCase()}-${dest.toLowerCase()}`;
-  const distances: Record<string, number> = {
-    "dakar-abidjan": 2450, "dakar-bamako": 1250, "abidjan-bamako": 1100, "dakar-conakry": 950,
-  };
-  return distances[key] || Math.floor(Math.random() * 400) + 80;
-};
+// Distance estimation now imported from routierUtils
 
 export default function RoutierDemandesPage() {
   const navigate = useNavigate();
@@ -205,6 +200,8 @@ export default function RoutierDemandesPage() {
                   {requests.map((req) => {
                     const vehicle = getVehicleType(req.description, req.weight);
                     const distance = estimateDistance(req.origin_city, req.destination_city);
+                    const pricing = calculateRoutierPrice(distance, req.weight);
+                    const sizeInfo = getSizeFromWeight(req.weight);
                     const isExpanded = expandedId === req.id;
 
                     return (
@@ -225,6 +222,7 @@ export default function RoutierDemandesPage() {
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
                                   <Badge variant="outline" className="text-[9px] h-4 px-1">{vehicle.type}</Badge>
+                                  <Badge variant="outline" className={cn("text-[8px] h-3.5 px-1 font-bold", sizeInfo.color, sizeInfo.bg)}>{sizeInfo.label}</Badge>
                                   <span className="text-[10px] text-muted-foreground">~{distance} km</span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
@@ -246,6 +244,23 @@ export default function RoutierDemandesPage() {
                                       <div className="flex items-center gap-1">
                                         <Clock className="w-3 h-3 text-muted-foreground" />
                                         <span className="text-muted-foreground">{format(new Date(req.created_at), "d MMM HH:mm", { locale: fr })}</span>
+                                      </div>
+                                    </div>
+                                    {/* Pricing breakdown */}
+                                    <div className="p-1.5 bg-background rounded border border-border/50 text-[10px] space-y-0.5">
+                                      <div className="flex justify-between text-muted-foreground">
+                                        <span>Base ({sizeInfo.label}, ~{distance} km)</span>
+                                        <span>{pricing.unitPrice.toLocaleString("fr-FR")} FCFA</span>
+                                      </div>
+                                      {pricing.weightSupplement > 0 && (
+                                        <div className="flex justify-between text-muted-foreground">
+                                          <span>Suppl. poids</span>
+                                          <span>+{pricing.weightSupplement.toLocaleString("fr-FR")} FCFA</span>
+                                        </div>
+                                      )}
+                                      <div className="flex justify-between font-bold text-foreground pt-0.5 border-t border-border/30">
+                                        <span>Tarif estimé</span>
+                                        <span>{pricing.totalPrice.toLocaleString("fr-FR")} FCFA</span>
                                       </div>
                                     </div>
                                     {req.description && (
