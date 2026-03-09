@@ -1,5 +1,5 @@
 /**
- * RoutierOpportunitesTab — Corridor opportunities (Matching Logistique Intelligent)
+ * RoutierOpportunitesTab — Corridor opportunities with hub badges + smart departure countdown
  * Corporate, compact, no emojis
  */
 import { useState, useEffect, useCallback } from "react";
@@ -7,13 +7,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, Package, Scale, Calendar,
   RefreshCw, ChevronDown, ChevronUp,
-  MessageCircle, Truck, ArrowRight
+  MessageCircle, Truck, ArrowRight, Clock,
+  Building2, Timer
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
+import { format, formatDistanceToNow, differenceInMinutes } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { getSizeFromWeight, formatWeightShort } from "@/lib/routierUtils";
@@ -35,6 +36,8 @@ interface CorridorOpportunity {
   earliest_pickup: string;
   latest_pickup: string;
   mission_ids: string[];
+  is_hub_corridor: boolean;
+  smart_departure_at: string | null;
 }
 
 export function RoutierOpportunitesTab({ gpId }: RoutierOpportunitesTabProps) {
@@ -47,6 +50,13 @@ export function RoutierOpportunitesTab({ gpId }: RoutierOpportunitesTabProps) {
   const [selectedMission, setSelectedMission] = useState<any | null>(null);
   const [selectedNegotiation, setSelectedNegotiation] = useState<any | null>(null);
   const [negotiationOpen, setNegotiationOpen] = useState(false);
+  const [now, setNow] = useState(new Date());
+
+  // Tick every minute for countdown
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   const loadCorridors = useCallback(async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true);
@@ -110,6 +120,17 @@ export function RoutierOpportunitesTab({ gpId }: RoutierOpportunitesTabProps) {
     return { label: "En cours", pct: 25 };
   };
 
+  const getCountdown = (departureAt: string | null) => {
+    if (!departureAt) return null;
+    const departure = new Date(departureAt);
+    const minutesLeft = differenceInMinutes(departure, now);
+    if (minutesLeft <= 0) return { label: "Départ imminent", urgent: true };
+    if (minutesLeft < 60) return { label: `${minutesLeft} min`, urgent: true };
+    const hours = Math.floor(minutesLeft / 60);
+    const mins = minutesLeft % 60;
+    return { label: `${hours}h${mins > 0 ? String(mins).padStart(2, "0") : ""}`, urgent: hours < 2 };
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -146,6 +167,7 @@ export function RoutierOpportunitesTab({ gpId }: RoutierOpportunitesTabProps) {
               const fill = getFillRate(corridor.mission_count);
               const sizeInfo = getSizeFromWeight(corridor.total_weight_kg);
               const isExpanded = expandedCorridor === corridor.corridor_key;
+              const countdown = getCountdown(corridor.smart_departure_at);
 
               return (
                 <motion.div
@@ -157,12 +179,39 @@ export function RoutierOpportunitesTab({ gpId }: RoutierOpportunitesTabProps) {
                   <Card
                     className={cn(
                       "overflow-hidden cursor-pointer transition-all",
-                      isExpanded && "ring-1 ring-primary shadow-md"
+                      isExpanded && "ring-1 ring-primary shadow-md",
+                      corridor.is_hub_corridor && "border-emerald-300 dark:border-emerald-700"
                     )}
                     onClick={() => toggleCorridor(corridor)}
                   >
                     <CardContent className="p-0">
                       <div className="p-2.5">
+                        {/* Hub badge + countdown row */}
+                        {(corridor.is_hub_corridor || countdown) && (
+                          <div className="flex items-center justify-between mb-1">
+                            {corridor.is_hub_corridor && (
+                              <Badge variant="outline" className="text-[8px] h-4 px-1.5 gap-0.5 border-emerald-300 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20">
+                                <Building2 className="w-2.5 h-2.5" />
+                                Hub
+                              </Badge>
+                            )}
+                            {countdown && (
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "text-[8px] h-4 px-1.5 gap-0.5 ml-auto",
+                                  countdown.urgent
+                                    ? "border-amber-300 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20"
+                                    : "border-border text-muted-foreground"
+                                )}
+                              >
+                                <Timer className="w-2.5 h-2.5" />
+                                {countdown.label}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+
                         {/* Route + Revenue */}
                         <div className="flex items-center justify-between gap-2 mb-1.5">
                           <div className="flex items-center gap-1.5 min-w-0 flex-1">
@@ -226,6 +275,19 @@ export function RoutierOpportunitesTab({ gpId }: RoutierOpportunitesTabProps) {
                             className="overflow-hidden"
                           >
                             <div className="px-2.5 pb-2.5 pt-1.5 border-t bg-muted/30 space-y-1.5">
+                              {/* Smart departure info */}
+                              {countdown && (
+                                <div className={cn(
+                                  "flex items-center gap-2 p-1.5 rounded text-[10px]",
+                                  countdown.urgent
+                                    ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300"
+                                    : "bg-muted text-muted-foreground"
+                                )}>
+                                  <Timer className="w-3 h-3 shrink-0" />
+                                  <span>Départ dans <strong>{countdown.label}</strong> — des colis peuvent encore rejoindre ce corridor</span>
+                                </div>
+                              )}
+
                               {loadingMissions ? (
                                 <div className="flex items-center justify-center py-4">
                                   <RefreshCw className="w-3 h-3 animate-spin text-muted-foreground" />
