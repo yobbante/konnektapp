@@ -1,17 +1,19 @@
 /**
  * MissionRequestSheet — Full mission request form
  * Supports: Routier, Maritime, Aérien (not GP bagages)
+ * Features: SearchableCitySelect, auto country, addresses, end date, smart photo picker
  */
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, Send, Truck, Ship, Plane, Package, MapPin, Calendar, Weight, 
-  ChevronRight, CheckCircle2, Info, Camera, ImageIcon, Trash2
+  ChevronRight, CheckCircle2, Info, Camera, ImageIcon, FileUp, Clock
 } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { SearchableCitySelect, WORLD_CITIES } from "@/components/gp/SearchableCitySelect";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -32,6 +34,20 @@ const MODES: { id: TransportMode; icon: React.ElementType; label: string; desc: 
 
 const MAX_PHOTOS = 5;
 
+// Country code to full name
+const COUNTRY_MAP: Record<string, string> = {
+  SN: "Sénégal", FR: "France", CI: "Côte d'Ivoire", CM: "Cameroun", ML: "Mali",
+  US: "États-Unis", CA: "Canada", AE: "Émirats Arabes Unis", GB: "Royaume-Uni",
+  BE: "Belgique", MA: "Maroc", TN: "Tunisie", GA: "Gabon", CG: "Congo",
+  DE: "Allemagne", ES: "Espagne", IT: "Italie", CH: "Suisse", NL: "Pays-Bas",
+  GN: "Guinée", BF: "Burkina Faso", TG: "Togo", BJ: "Bénin", GH: "Ghana",
+  NG: "Nigeria", NE: "Niger", TD: "Tchad", CD: "RD Congo", GQ: "Guinée Équatoriale",
+  TR: "Turquie", LB: "Liban", SA: "Arabie Saoudite", QA: "Qatar", EG: "Égypte",
+  PT: "Portugal", DZ: "Algérie", CN: "Chine", HK: "Hong Kong", JP: "Japon",
+  IN: "Inde", BR: "Brésil", AU: "Australie", ZA: "Afrique du Sud", MR: "Mauritanie",
+  CV: "Cap-Vert", GM: "Gambie", GW: "Guinée-Bissau", SL: "Sierra Leone", LR: "Liberia",
+};
+
 export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetProps) {
   const [step, setStep] = useState<Step>("mode");
   const [mode, setMode] = useState<TransportMode | null>(null);
@@ -41,28 +57,44 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
   // Form fields
   const [originCity, setOriginCity] = useState("");
   const [originCountry, setOriginCountry] = useState("");
+  const [originAddress, setOriginAddress] = useState("");
   const [destCity, setDestCity] = useState("");
   const [destCountry, setDestCountry] = useState("");
+  const [destAddress, setDestAddress] = useState("");
   const [description, setDescription] = useState("");
   const [weightKg, setWeightKg] = useState("");
   const [pickupDate, setPickupDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [budgetMax, setBudgetMax] = useState("");
   const [isUrgent, setIsUrgent] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [showPhotoOptions, setShowPhotoOptions] = useState(false);
 
   const resetForm = () => {
     setStep("mode");
     setMode(null);
-    setOriginCity(""); setOriginCountry(""); setDestCity(""); setDestCountry("");
-    setDescription(""); setWeightKg(""); setPickupDate(""); setBudgetMax("");
-    setIsUrgent(false);
-    setPhotos([]); setPhotoPreviews([]);
+    setOriginCity(""); setOriginCountry(""); setOriginAddress("");
+    setDestCity(""); setDestCountry(""); setDestAddress("");
+    setDescription(""); setWeightKg(""); setPickupDate(""); setEndDate("");
+    setBudgetMax(""); setIsUrgent(false);
+    setPhotos([]); setPhotoPreviews([]); setShowPhotoOptions(false);
   };
 
   const handleClose = () => {
     onOpenChange(false);
     setTimeout(resetForm, 300);
+  };
+
+  const handleCitySelect = (type: "origin" | "dest", city: string, countryCode: string) => {
+    const countryName = COUNTRY_MAP[countryCode] || countryCode;
+    if (type === "origin") {
+      setOriginCity(city);
+      setOriginCountry(countryName);
+    } else {
+      setDestCity(city);
+      setDestCountry(countryName);
+    }
   };
 
   const handleAddPhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,11 +111,30 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
       reader.readAsDataURL(file);
     });
     if (fileInputRef.current) fileInputRef.current.value = "";
+    setShowPhotoOptions(false);
   };
 
   const handleRemovePhoto = (index: number) => {
     setPhotos(prev => prev.filter((_, i) => i !== index));
     setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const openCamera = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.setAttribute("capture", "environment");
+      fileInputRef.current.click();
+      // Remove capture after click so library mode works next time
+      setTimeout(() => fileInputRef.current?.removeAttribute("capture"), 500);
+    }
+    setShowPhotoOptions(false);
+  };
+
+  const openLibrary = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.removeAttribute("capture");
+      fileInputRef.current.click();
+    }
+    setShowPhotoOptions(false);
   };
 
   const uploadPhotos = async (userId: string): Promise<string[]> => {
@@ -113,25 +164,31 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
         return;
       }
 
-      // Upload photos
       const photoUrls = photos.length > 0 ? await uploadPhotos(session.user.id) : [];
+
+      // Calculate expires_at from endDate
+      const expiresAt = endDate ? new Date(endDate + "T23:59:59").toISOString() : null;
 
       if (mode === "routier") {
         const { error } = await supabase.from("routier_missions").insert([{
           client_id: session.user.id,
           origin_city: originCity.trim(),
           origin_country: originCountry.trim() || "Sénégal",
+          origin_address: originAddress.trim() || null,
           destination_city: destCity.trim(),
           destination_country: destCountry.trim() || "Sénégal",
+          destination_address: destAddress.trim() || null,
           freight_type: "Marchandise",
           merchandise_description: description.trim(),
           weight_kg: weightKg ? parseFloat(weightKg) : 0,
           pickup_date_start: pickupDate || new Date().toISOString().split("T")[0],
+          pickup_date_end: endDate || null,
           client_budget: budgetMax ? parseFloat(budgetMax) : null,
           urgency: isUrgent ? "express" as const : "standard" as const,
           mission_number: `MSN-${Date.now()}`,
           status: "open",
           photo_urls: photoUrls,
+          expires_at: expiresAt,
         }]);
         if (error) throw error;
       } else {
@@ -145,6 +202,7 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
           merchandise_description: description.trim(),
           weight_kg: weightKg ? parseFloat(weightKg) : null,
           pickup_date_from: pickupDate || null,
+          pickup_date_to: endDate || null,
           declared_value: budgetMax ? parseFloat(budgetMax) : null,
           is_urgent: isUrgent,
           request_number: `FRT-${Date.now()}`,
@@ -252,46 +310,50 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
                   {selectedMode.label}
                 </div>
 
-                {/* Origin */}
+                {/* Origin city + address */}
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5" /> Départ
+                    <MapPin className="w-3.5 h-3.5" /> Ville de collecte
                   </label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={originCity}
-                      onChange={(e) => setOriginCity(e.target.value)}
-                      placeholder="Ville"
-                      className="flex-1"
-                    />
-                    <Input
-                      value={originCountry}
-                      onChange={(e) => setOriginCountry(e.target.value)}
-                      placeholder="Pays"
-                      className="w-28"
-                    />
-                  </div>
+                  <SearchableCitySelect
+                    value={originCity}
+                    countryCode={WORLD_CITIES.find(c => c.city === originCity)?.country || "SN"}
+                    onSelect={(city, code) => handleCitySelect("origin", city, code)}
+                    placeholder="Rechercher ville de départ..."
+                    label="Ville de collecte"
+                  />
+                  {originCountry && (
+                    <p className="text-[11px] text-muted-foreground ml-1">📍 {originCountry}</p>
+                  )}
+                  <Input
+                    value={originAddress}
+                    onChange={(e) => setOriginAddress(e.target.value)}
+                    placeholder="Adresse de collecte (optionnel)"
+                    className="text-sm"
+                  />
                 </div>
 
-                {/* Destination */}
+                {/* Destination city + address */}
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5" /> Destination
+                    <MapPin className="w-3.5 h-3.5" /> Ville de livraison
                   </label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={destCity}
-                      onChange={(e) => setDestCity(e.target.value)}
-                      placeholder="Ville"
-                      className="flex-1"
-                    />
-                    <Input
-                      value={destCountry}
-                      onChange={(e) => setDestCountry(e.target.value)}
-                      placeholder="Pays"
-                      className="w-28"
-                    />
-                  </div>
+                  <SearchableCitySelect
+                    value={destCity}
+                    countryCode={WORLD_CITIES.find(c => c.city === destCity)?.country || "SN"}
+                    onSelect={(city, code) => handleCitySelect("dest", city, code)}
+                    placeholder="Rechercher ville d'arrivée..."
+                    label="Ville de livraison"
+                  />
+                  {destCountry && (
+                    <p className="text-[11px] text-muted-foreground ml-1">📍 {destCountry}</p>
+                  )}
+                  <Input
+                    value={destAddress}
+                    onChange={(e) => setDestAddress(e.target.value)}
+                    placeholder="Adresse de livraison (optionnel)"
+                    className="text-sm"
+                  />
                 </div>
 
                 {/* Description */}
@@ -305,6 +367,83 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
                     placeholder="Ex: 2 palettes de matériaux de construction, 50 cartons de vêtements..."
                     className="min-h-[80px] resize-none"
                   />
+                </div>
+
+                {/* Smart Photo Picker — below description */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                    <Camera className="w-3.5 h-3.5" /> Photos ({photos.length}/{MAX_PHOTOS})
+                  </label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleAddPhotos}
+                  />
+
+                  <div className="flex gap-2 flex-wrap">
+                    {photoPreviews.map((src, i) => (
+                      <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-border">
+                        <img src={src} alt="" className="w-full h-full object-cover" />
+                        <button
+                          onClick={() => handleRemovePhoto(i)}
+                          className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-destructive/90 flex items-center justify-center"
+                        >
+                          <X className="w-3 h-3 text-destructive-foreground" />
+                        </button>
+                      </div>
+                    ))}
+
+                    {photos.length < MAX_PHOTOS && (
+                      <div className="relative">
+                        <button
+                          onClick={() => setShowPhotoOptions(!showPhotoOptions)}
+                          className="w-16 h-16 rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors"
+                        >
+                          <Camera className="w-5 h-5" />
+                          <span className="text-[9px] mt-0.5">Ajouter</span>
+                        </button>
+
+                        {/* Smart photo options popover */}
+                        <AnimatePresence>
+                          {showPhotoOptions && (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.9, y: 4 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.9, y: 4 }}
+                              className="absolute bottom-full left-0 mb-2 z-50 bg-popover border border-border rounded-xl shadow-lg overflow-hidden min-w-[160px]"
+                            >
+                              <button
+                                onClick={openCamera}
+                                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-muted transition-colors"
+                              >
+                                <Camera className="w-4 h-4 text-primary" />
+                                Prendre une photo
+                              </button>
+                              <div className="h-px bg-border" />
+                              <button
+                                onClick={openLibrary}
+                                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-muted transition-colors"
+                              >
+                                <ImageIcon className="w-4 h-4 text-primary" />
+                                Galerie photos
+                              </button>
+                              <div className="h-px bg-border" />
+                              <button
+                                onClick={openLibrary}
+                                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-muted transition-colors"
+                              >
+                                <FileUp className="w-4 h-4 text-primary" />
+                                Fichiers
+                              </button>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Weight + Date row */}
@@ -322,7 +461,7 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
                   </div>
                   <div className="flex-1 space-y-2">
                     <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5" /> Date souhaitée
+                      <Calendar className="w-3.5 h-3.5" /> Date début
                     </label>
                     <Input
                       type="date"
@@ -330,6 +469,22 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
                       onChange={(e) => setPickupDate(e.target.value)}
                     />
                   </div>
+                </div>
+
+                {/* End date */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" /> Date de fin (expiration de l'annonce)
+                  </label>
+                  <Input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    min={pickupDate || new Date().toISOString().split("T")[0]}
+                  />
+                  <p className="text-[10px] text-muted-foreground ml-1">
+                    L'annonce sera automatiquement désactivée à cette date. Les négociations en cours pourront continuer.
+                  </p>
                 </div>
 
                 {/* Budget */}
@@ -358,45 +513,6 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
                   </div>
                   <span className="text-sm font-medium">⚡ Urgent</span>
                 </button>
-
-                {/* Photos (routier only) */}
-                {mode === "routier" && (
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                      <Camera className="w-3.5 h-3.5" /> Photos de la marchandise
-                    </label>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="hidden"
-                      onChange={handleAddPhotos}
-                    />
-                    <div className="flex gap-2 flex-wrap">
-                      {photoPreviews.map((src, i) => (
-                        <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-border">
-                          <img src={src} alt="" className="w-full h-full object-cover" />
-                          <button
-                            onClick={() => handleRemovePhoto(i)}
-                            className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-destructive/90 flex items-center justify-center"
-                          >
-                            <X className="w-3 h-3 text-destructive-foreground" />
-                          </button>
-                        </div>
-                      ))}
-                      {photos.length < MAX_PHOTOS && (
-                        <button
-                          onClick={() => fileInputRef.current?.click()}
-                          className="w-16 h-16 rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors"
-                        >
-                          <ImageIcon className="w-5 h-5" />
-                          <span className="text-[9px] mt-0.5">{photos.length}/{MAX_PHOTOS}</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
 
                 {/* Actions */}
                 <div className="flex gap-3 pt-2">
@@ -435,6 +551,12 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
                       <span className="text-muted-foreground">Trajet</span>
                       <span className="font-medium text-foreground">{originCity} → {destCity}</span>
                     </div>
+                    {(originAddress || destAddress) && (
+                      <div className="space-y-1 text-xs text-muted-foreground">
+                        {originAddress && <p>📦 Collecte : {originAddress}</p>}
+                        {destAddress && <p>🏠 Livraison : {destAddress}</p>}
+                      </div>
+                    )}
                     {weightKg && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Poids</span>
@@ -443,8 +565,14 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
                     )}
                     {pickupDate && (
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Date</span>
+                        <span className="text-muted-foreground">Date début</span>
                         <span className="font-medium text-foreground">{new Date(pickupDate).toLocaleDateString("fr-FR")}</span>
+                      </div>
+                    )}
+                    {endDate && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Date fin</span>
+                        <span className="font-medium text-foreground">{new Date(endDate).toLocaleDateString("fr-FR")}</span>
                       </div>
                     )}
                     {budgetMax && (
