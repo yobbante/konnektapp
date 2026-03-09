@@ -161,6 +161,7 @@ export function CreateBaggageVoyageDialog({
         destination_country: currentRoute.destination.country,
         departure_date: formData.departureDate,
         arrival_date: formData.arrivalDate || null,
+        expires_at: effectiveExpiresAt,
         price_per_kg: gpData.basePricePerKg,
         currency: gpData.currency,
         total_capacity: parseFloat(formData.totalCapacity),
