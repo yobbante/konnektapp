@@ -6,7 +6,7 @@ import {
   Settings, LogOut, MapPin, Car, Plus,
   History, Wallet, Route, DollarSign,
   ChevronRight, Eye, EyeOff, Shield, ShieldX,
-  ListChecks, BarChart3, Crown, Rocket } from
+  ListChecks, BarChart3, Crown, Rocket, Map } from
 "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -84,6 +84,7 @@ export function RoutierDashboardLayout({
   const getActiveTab = () => {
     const path = location.pathname;
     if (path.includes("/routier/demandes") || path.includes("/routier/en-cours")) return "missions";
+    if (path.includes("/routier/carte") || path.includes("/routier/detail-mission")) return "carte";
     if (path.includes("/routier/messages")) return "messages";
     if (path.includes("/routier/scan")) return "scan";
     if (path.includes("/routier/profil-public") || path.includes("/routier/parametres") || path.includes("/routier/historique") || path.includes("/routier/vehicules") || path.includes("/routier/wallet") || path.includes("/routier/tarification") || path.includes("/routier/performances")) return "profil";
