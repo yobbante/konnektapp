@@ -105,6 +105,28 @@ export function GPCreateOfferDialog({ open, onClose, gpProfile, onSuccess }: GPC
       return;
     }
 
+    // Expiration: defaults to departure date (offer hidden after this date)
+    const effectiveExpiresAt = formData.expiresAt || formData.departureDate;
+    const expiresDate = new Date(effectiveExpiresAt);
+
+    if (expiresDate <= new Date()) {
+      toast({
+        title: "Erreur",
+        description: "La date de fin doit être dans le futur",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (expiresDate > departureDate) {
+      toast({
+        title: "Erreur",
+        description: "La date de fin doit être avant la date de départ",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase
