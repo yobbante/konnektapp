@@ -246,6 +246,23 @@ export default function RoutierDemandesPage() {
                                         <span className="text-muted-foreground">{format(new Date(req.created_at), "d MMM HH:mm", { locale: fr })}</span>
                                       </div>
                                     </div>
+                                    {/* Pricing breakdown */}
+                                    <div className="p-1.5 bg-background rounded border border-border/50 text-[10px] space-y-0.5">
+                                      <div className="flex justify-between text-muted-foreground">
+                                        <span>Base ({sizeInfo.label}, ~{distance} km)</span>
+                                        <span>{pricing.unitPrice.toLocaleString("fr-FR")} FCFA</span>
+                                      </div>
+                                      {pricing.weightSupplement > 0 && (
+                                        <div className="flex justify-between text-muted-foreground">
+                                          <span>Suppl. poids</span>
+                                          <span>+{pricing.weightSupplement.toLocaleString("fr-FR")} FCFA</span>
+                                        </div>
+                                      )}
+                                      <div className="flex justify-between font-bold text-foreground pt-0.5 border-t border-border/30">
+                                        <span>Tarif estimé</span>
+                                        <span>{pricing.totalPrice.toLocaleString("fr-FR")} FCFA</span>
+                                      </div>
+                                    </div>
                                     {req.description && (
                                       <p className="text-[10px] text-muted-foreground p-1.5 bg-background rounded">{req.description}</p>
                                     )}
