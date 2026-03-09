@@ -24,7 +24,7 @@ const FAQ_CATEGORIES = [
     title: "Paiements & Tarifs",
     items: [
       { q: "Comment fonctionne le paiement ?", a: "Le paiement est sécurisé via un système d'escrow (séquestre). Votre argent est bloqué jusqu'à la confirmation de livraison, puis libéré au transporteur. Vous pouvez payer par Wallet Konnekt, Wave ou Orange Money." },
-      { q: "Y a-t-il des frais de service ?", a: "Konnekt applique une commission transparente de 0% pour les clients. Les frais de service sont à la charge du transporteur." },
+      { q: "Y a-t-il des frais de service ?", a: "Konnekt applique une commission transparente de 0% pour les clients jusqu'au 01/01/2027. Apres cette date, des frais de service seront introduits. Les frais de commission restent a la charge du transporteur." },
       { q: "Comment fonctionne le supplément de poids ?", a: "Si le poids réel de votre colis dépasse le poids déclaré lors de la réservation, un supplément proportionnel vous sera demandé avant l'expédition." },
       { q: "Comment obtenir un remboursement ?", a: "En cas de litige résolu en votre faveur, le remboursement est effectué automatiquement sur votre Wallet Konnekt dans un délai de 48h." },
     ],

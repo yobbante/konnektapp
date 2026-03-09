@@ -216,7 +216,7 @@ export function EscrowPaymentFlow({
                 <span className="text-muted-foreground">Frais de service client</span>
                 <div className="flex items-center gap-2">
                   <Badge variant="success">0%</Badge>
-                  <span className="text-xs text-muted-foreground">jusqu'au 31/01/2027</span>
+                  <span className="text-xs text-muted-foreground">jusqu'au 01/01/2027</span>
                 </div>
               </div>
             </div>

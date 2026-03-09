@@ -278,7 +278,7 @@ export function FloatingRecap({
                   {/* Client fee promo */}
                   <div className="flex justify-between items-center text-sm text-muted-foreground">
                     <span className="flex items-center gap-1.5"><Receipt className="w-3 h-3" />Frais</span>
-                    <span className="text-xs font-medium text-green-600 dark:text-green-400">0% jusqu'au 31/01/2027</span>
+                    <span className="text-xs font-medium text-green-600 dark:text-green-400">0% jusqu'au 01/01/2027</span>
                   </div>
 
                   {/* TVA info — extracted from platform commission */}

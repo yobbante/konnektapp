@@ -38,7 +38,7 @@ export function useRoutierMissionConversion() {
       }
 
       toast({
-        title: "🚛 Mission convertie en commande",
+        title: "Mission convertie en commande",
         description: "Le paiement est sécurisé. Le transport peut commencer.",
       });
 
