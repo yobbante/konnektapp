@@ -234,6 +234,7 @@ export function SmartVoyageForm({
         destination_country: currentRoute.destination.country,
         departure_date: form.departureDate,
         arrival_date: form.arrivalDate || null,
+        expires_at: new Date(form.departureDate).toISOString(),
         price_per_kg: gpData.basePricePerKg,
         currency: gpData.currency,
         total_capacity: totalCapacity,

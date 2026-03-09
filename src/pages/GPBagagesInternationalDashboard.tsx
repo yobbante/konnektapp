@@ -49,6 +49,7 @@ interface VoyageOffer {
   price_per_kg: number;
   currency: string;
   status: string;
+  expires_at: string | null;
   baggage_types_accepted: string[] | null;
   baggage_restrictions: string | null;
   flight_number: string | null;
