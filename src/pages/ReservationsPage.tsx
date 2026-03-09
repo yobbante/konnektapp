@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Package, Truck, ChevronRight,
@@ -51,7 +51,9 @@ const TABS: { id: TabId; label: string; icon: typeof Clock }[] = [
 
 export default function ReservationsPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TabId>("actives");
+  const [searchParams] = useSearchParams();
+  const initialTab = (searchParams.get("tab") as TabId) || "actives";
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [orders, setOrders] = useState<any[]>([]);
   const [customRequests, setCustomRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
