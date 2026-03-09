@@ -788,11 +788,55 @@ export function ClientAppHome({
             const modeIcons: Record<string, typeof Package> = {
               routier: Truck, maritime: Ship, aerien: Plane, bagages_accompagnes: Luggage
             };
+
+            // Helper: premium/pro score boost + rating
+            const scoreOffer = (o: any) => {
+              const sub = o.gp_profiles?.subscription || "free";
+              const subBoost = sub === "pro" ? 1000 : sub === "premium" ? 500 : 0;
+              return subBoost + (o.gp_profiles?.rating || 0);
+            };
+
+            // If search is active, show filtered results across all types
+            const hasSearch = searchOrigin || searchDest;
+            if (hasSearch) {
+              const searchResults = offers
+                .filter((o) => {
+                  if (searchOrigin && !o.origin_city?.toLowerCase().includes(searchOrigin.toLowerCase())) return false;
+                  if (searchDest && !o.destination_city?.toLowerCase().includes(searchDest.toLowerCase())) return false;
+                  return true;
+                })
+                .sort((a, b) => scoreOffer(b) - scoreOffer(a))
+                .slice(0, 6);
+
+              return searchResults.length > 0 ?
+                <div className="space-y-1.5">
+                  {searchResults.map((offer: any, idx: number) => {
+                    const mode = offer.transport_type === "navette" ? "bagages_accompagnes" : offer.transport_type;
+                    const ModeIcon = modeIcons[mode] || Package;
+                    return (
+                      <div key={offer.id} className="relative">
+                        <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full border border-border/50">
+                          <ModeIcon className="w-2.5 h-2.5 text-muted-foreground" />
+                          <span className="text-[9px] font-semibold text-muted-foreground">{modeLabels[mode] || mode}</span>
+                        </div>
+                        <HomeOfferCard offer={offer} index={idx} />
+                      </div>);
+                  })}
+                  <button
+                    onClick={goToOffres}
+                    className="w-full py-2.5 text-xs font-semibold text-primary flex items-center justify-center gap-1 hover:bg-primary/5 rounded-xl transition-colors border border-dashed border-primary/20">
+                    Voir toutes les offres <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div> :
+                <EmptyOffers modeConfig={modeConfig} onAction={goToOffres} />;
+            }
+
+            // Default: 1 best offer per type (premium/pro first, then highest rating)
             const top4 = modes.
             map((mode) => {
               const modeOffers = offers.
               filter((o) => o.transport_type === mode || mode === "bagages_accompagnes" && (o.transport_type === "bagages_accompagnes" || o.transport_type === "navette")).
-              sort((a, b) => (b.gp_profiles?.rating || 0) - (a.gp_profiles?.rating || 0));
+              sort((a, b) => scoreOffer(b) - scoreOffer(a));
               return modeOffers[0] ? { ...modeOffers[0], _mode: mode } : null;
             }).
             filter(Boolean);
@@ -801,11 +845,13 @@ export function ClientAppHome({
             <div className="space-y-1.5">
                   {top4.map((offer: any, idx: number) => {
                 const ModeIcon = modeIcons[offer._mode] || Package;
+                const sub = offer.gp_profiles?.subscription;
                 return (
                   <div key={offer.id} className="relative">
                         <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full border border-border/50">
                           <ModeIcon className="w-2.5 h-2.5 text-muted-foreground" />
                           <span className="text-[9px] font-semibold text-muted-foreground">{modeLabels[offer._mode]}</span>
+                          {(sub === "premium" || sub === "pro") && <Star className="w-2.5 h-2.5 text-amber-500" />}
                         </div>
                         <HomeOfferCard offer={offer} index={idx} />
                       </div>);
