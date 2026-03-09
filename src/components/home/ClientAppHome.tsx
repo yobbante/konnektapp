@@ -438,6 +438,7 @@ export function ClientAppHome({
 
   const modeConfig = MODE_CONFIG[activeTab] || MODE_CONFIG.all;
   const isRoutier = activeTab === "routier";
+  const isMobility = activeTab === "mobility";
 
   // Search
   const [searchOrigin, setSearchOrigin] = useState(userCity || "");
