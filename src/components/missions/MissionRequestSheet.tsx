@@ -65,6 +65,41 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
     setTimeout(resetForm, 300);
   };
 
+  const handleAddPhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const remaining = MAX_PHOTOS - photos.length;
+    const newFiles = files.slice(0, remaining);
+    
+    setPhotos(prev => [...prev, ...newFiles]);
+    newFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setPhotoPreviews(prev => [...prev, ev.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index));
+    setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadPhotos = async (userId: string): Promise<string[]> => {
+    const urls: string[] = [];
+    for (const file of photos) {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage.from("mission-photos").upload(path, file);
+      if (!error) {
+        const { data } = supabase.storage.from("mission-photos").getPublicUrl(path);
+        urls.push(data.publicUrl);
+      }
+    }
+    return urls;
+  };
+
   const canSubmit = originCity.trim() && destCity.trim() && description.trim();
 
   const handleSubmit = async () => {
@@ -77,6 +112,9 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
         toast.error("Connectez-vous pour envoyer une demande");
         return;
       }
+
+      // Upload photos
+      const photoUrls = photos.length > 0 ? await uploadPhotos(session.user.id) : [];
 
       if (mode === "routier") {
         const { error } = await supabase.from("routier_missions").insert([{
@@ -93,6 +131,7 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
           urgency: isUrgent ? "express" as const : "standard" as const,
           mission_number: `MSN-${Date.now()}`,
           status: "open",
+          photo_urls: photoUrls,
         }]);
         if (error) throw error;
       } else {
