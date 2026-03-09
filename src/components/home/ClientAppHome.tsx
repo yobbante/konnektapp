@@ -479,6 +479,12 @@ export function ClientAppHome({
       if (searchDate) params.set("date", searchDate);
       if (routierWeight) params.set("weight", routierWeight);
       navigate(`/routier/mission?${params.toString()}`);
+    } else if (isMobility) {
+      const params = new URLSearchParams();
+      if (searchOrigin) params.set("from", searchOrigin);
+      if (searchDest) params.set("to", searchDest);
+      if (searchDate) params.set("date", searchDate);
+      navigate(`/mobility/recherche?${params.toString()}`);
     } else {
       openOffresPopup();
     }
