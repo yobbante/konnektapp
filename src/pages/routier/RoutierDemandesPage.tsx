@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TransportPageLoader } from "@/components/ui/TransportLoader";
 import { RoutierMissionsTab } from "@/components/routier/RoutierMissionsTab";
 import { RoutierOpportunitesTab } from "@/components/routier/RoutierOpportunitesTab";
+import { RoutierPricingDashboard } from "@/components/routier/RoutierPricingDashboard";
 import { useToast } from "@/hooks/use-toast";
 import { RefusalReasonDialog, RefusalReason } from "@/components/routier/RefusalReasonDialog";
 import { format } from "date-fns";
