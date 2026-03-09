@@ -2235,6 +2235,36 @@ export type Database = {
           },
         ]
       }
+      logistics_hubs: {
+        Row: {
+          city: string
+          country: string
+          created_at: string
+          id: string
+          is_active: boolean
+          priority_level: number
+          region: string | null
+        }
+        Insert: {
+          city: string
+          country?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          priority_level?: number
+          region?: string | null
+        }
+        Update: {
+          city?: string
+          country?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          priority_level?: number
+          region?: string | null
+        }
+        Relationships: []
+      }
       logistics_pricing_config: {
         Row: {
           base_price: number
@@ -3689,6 +3719,7 @@ export type Database = {
           client_budget: number | null
           client_id: string
           constraints: string[] | null
+          corridor_group_id: string | null
           created_at: string
           currency: string | null
           delivery_to_door: boolean | null
@@ -3709,6 +3740,8 @@ export type Database = {
           photo_urls: string[] | null
           pickup_date_end: string | null
           pickup_date_start: string
+          smart_departure_at: string | null
+          smart_departure_enabled: boolean | null
           status: string
           updated_at: string
           urgency: Database["public"]["Enums"]["mission_urgency"] | null
@@ -3722,6 +3755,7 @@ export type Database = {
           client_budget?: number | null
           client_id: string
           constraints?: string[] | null
+          corridor_group_id?: string | null
           created_at?: string
           currency?: string | null
           delivery_to_door?: boolean | null
@@ -3742,6 +3776,8 @@ export type Database = {
           photo_urls?: string[] | null
           pickup_date_end?: string | null
           pickup_date_start: string
+          smart_departure_at?: string | null
+          smart_departure_enabled?: boolean | null
           status?: string
           updated_at?: string
           urgency?: Database["public"]["Enums"]["mission_urgency"] | null
@@ -3755,6 +3791,7 @@ export type Database = {
           client_budget?: number | null
           client_id?: string
           constraints?: string[] | null
+          corridor_group_id?: string | null
           created_at?: string
           currency?: string | null
           delivery_to_door?: boolean | null
@@ -3775,6 +3812,8 @@ export type Database = {
           photo_urls?: string[] | null
           pickup_date_end?: string | null
           pickup_date_start?: string
+          smart_departure_at?: string | null
+          smart_departure_enabled?: boolean | null
           status?: string
           updated_at?: string
           urgency?: Database["public"]["Enums"]["mission_urgency"] | null
@@ -5047,11 +5086,13 @@ export type Database = {
           destination_city: string
           destination_country: string
           earliest_pickup: string
+          is_hub_corridor: boolean
           latest_pickup: string
           mission_count: number
           mission_ids: string[]
           origin_city: string
           origin_country: string
+          smart_departure_at: string
           total_estimated_revenue: number
           total_weight_kg: number
         }[]
