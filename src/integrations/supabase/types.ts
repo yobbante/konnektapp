@@ -3787,6 +3787,60 @@ export type Database = {
         }
         Relationships: []
       }
+      routier_gp_pricing: {
+        Row: {
+          created_at: string
+          currency: string
+          gp_id: string
+          id: string
+          is_active: boolean
+          min_price: number
+          price_per_kg: number
+          price_per_km: number
+          price_per_m3: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          gp_id: string
+          id?: string
+          is_active?: boolean
+          min_price?: number
+          price_per_kg?: number
+          price_per_km?: number
+          price_per_m3?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          gp_id?: string
+          id?: string
+          is_active?: boolean
+          min_price?: number
+          price_per_kg?: number
+          price_per_km?: number
+          price_per_m3?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routier_gp_pricing_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: true
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routier_gp_pricing_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: true
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       routier_missions: {
         Row: {
           accepted_negotiation_id: string | null
