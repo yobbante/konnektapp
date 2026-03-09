@@ -121,7 +121,6 @@ export function AppHeader({
 
           {/* Right Side — Compact action cluster */}
           <div className="flex items-center gap-1">
-            )}
 
             {/* Combined Scan + QR button */}
             {isAuthenticated && (
