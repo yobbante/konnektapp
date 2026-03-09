@@ -49,6 +49,7 @@ interface VoyageOffer {
   price_per_kg: number;
   currency: string;
   status: string;
+  expires_at: string | null;
   baggage_types_accepted: string[] | null;
   baggage_restrictions: string | null;
   flight_number: string | null;
@@ -256,7 +257,50 @@ export default function GPBagagesInternationalDashboard() {
   const pendingOrders = orders.filter(o => o.status === "pending");
   const activeOrders = orders.filter(o => ["accepted", "collected", "in_transit"].includes(o.status));
   const completedOrders = orders.filter(o => o.status === "delivered");
-  const upcomingVoyages = voyages.filter(v => v.status === "active" && new Date(v.departure_date) > new Date());
+  const now = new Date();
+  const upcomingVoyages = voyages.filter(v => 
+    v.status === "active" && 
+    new Date(v.departure_date) > now &&
+    (!v.expires_at || new Date(v.expires_at) > now)
+  );
+  const expiredVoyages = voyages.filter(v => 
+    v.status === "expired" || 
+    (v.expires_at && new Date(v.expires_at) <= now && v.status === "active")
+  );
+
+  const handleRelance = async (voyage: VoyageOffer) => {
+    try {
+      const newDeparture = new Date(voyage.departure_date);
+      newDeparture.setDate(newDeparture.getDate() + 30);
+      const newDepartureStr = newDeparture.toISOString().split("T")[0];
+      const newExpiresAt = new Date(newDepartureStr).toISOString();
+
+      const { error } = await supabase.from("gp_offers").insert({
+        gp_id: (gpProfile as GPProfile).id,
+        transport_type: "bagages_international",
+        origin_city: voyage.origin_city,
+        origin_country: voyage.origin_country,
+        destination_city: voyage.destination_city,
+        destination_country: voyage.destination_country,
+        departure_date: newDepartureStr,
+        expires_at: newExpiresAt,
+        price_per_kg: voyage.price_per_kg,
+        currency: voyage.currency,
+        total_capacity: voyage.total_capacity,
+        available_capacity: voyage.total_capacity,
+        flight_number: voyage.flight_number,
+        airline: voyage.airline,
+        baggage_types_accepted: voyage.baggage_types_accepted,
+        baggage_restrictions: voyage.baggage_restrictions,
+        status: "active",
+      });
+      if (error) throw error;
+      toast({ title: "Voyage relancé", description: `Nouveau départ le ${format(newDeparture, "d MMMM yyyy", { locale: fr })}` });
+      loadData();
+    } catch {
+      toast({ title: "Erreur", description: "Impossible de relancer le voyage", variant: "destructive" });
+    }
+  };
 
   return (
     <div className="min-h-screen pb-24 bg-background">
@@ -401,6 +445,38 @@ export default function GPBagagesInternationalDashboard() {
                   }}
                 />
               ))
+            )}
+
+            {/* Expired Voyages */}
+            {expiredVoyages.length > 0 && (
+              <div className="space-y-3 mt-6">
+                <p className="text-sm font-medium text-muted-foreground">Expirés ({expiredVoyages.length})</p>
+                {expiredVoyages.map((voyage) => (
+                  <Card key={voyage.id} className="opacity-60 border-dashed">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Plane className="w-4 h-4 text-muted-foreground" />
+                          <p className="text-sm">{voyage.origin_city} → {voyage.destination_city}</p>
+                        </div>
+                        <Badge variant="secondary">Expirée</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Départ : {format(new Date(voyage.departure_date), "d MMM yyyy", { locale: fr })}
+                      </p>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => handleRelance(voyage)}
+                      >
+                        <RefreshCw className="w-4 h-4 mr-1" />
+                        Relancer (+30 jours)
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             )}
           </TabsContent>
 
