@@ -60,6 +60,7 @@ export default function ReservationsPage() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [recipientCount, setRecipientCount] = useState(0);
 
   useEffect(() => {
     loadData();
@@ -71,7 +72,7 @@ export default function ReservationsPage() {
       if (!user) return;
       setUserId(user.id);
 
-      const [ordersRes, requestsRes] = await Promise.all([
+      const [ordersRes, requestsRes, recipientRes] = await Promise.all([
         supabase
           .from("orders")
           .select(`
@@ -88,10 +89,16 @@ export default function ReservationsPage() {
           .eq("client_id", user.id)
           .order("created_at", { ascending: false })
           .limit(50),
+        supabase
+          .from("orders")
+          .select("id", { count: "exact", head: true })
+          .eq("recipient_user_id", user.id)
+          .not("status", "in", '("cancelled","released")'),
       ]);
 
       if (ordersRes.data) setOrders(ordersRes.data);
       if (requestsRes.data) setCustomRequests(requestsRes.data);
+      setRecipientCount(recipientRes.count ?? 0);
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
@@ -117,7 +124,7 @@ export default function ReservationsPage() {
     if (tabId === "livrees") return orders.filter(o => DELIVERED_STATUSES.includes(o.status)).length;
     if (tabId === "annulees") return orders.filter(o => CANCELLED_STATUSES.includes(o.status)).length;
     if (tabId === "demandes") return customRequests.length;
-    if (tabId === "colis") return 0; // count handled internally by RecipientTrackingCard
+    if (tabId === "colis") return recipientCount;
     return 0;
   };
 
