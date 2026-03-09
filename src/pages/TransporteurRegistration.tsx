@@ -5,7 +5,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plane, Truck, Ship, Package, ChevronRight, Shield, Star, Zap, Lock, Building } from "lucide-react";
+import { Plane, Truck, Ship, Package, ChevronRight, Shield, Star, Zap, Lock, Building, Car } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { MiniLoader } from "@/components/ui/MiniLoader";
@@ -29,6 +29,7 @@ const transportTypes: TransportTypeOption[] = [
   { id: "maritime", label: "Maritime", sub: "Conteneurs & groupage", icon: Ship, route: "/maritime/inscription", color: "bg-blue-600 text-white", available: true },
   { id: "express", label: "Coursier", sub: "Livraison express locale", icon: Package, route: "/coursier/inscription", color: "bg-orange-500 text-white", available: true },
   { id: "agence", label: "Agence", sub: "Transitaire & logistique", icon: Building, route: "/agence/inscription", color: "bg-emerald-600 text-white", available: true },
+  { id: "mobility", label: "Mobility", sub: "Transport de personnes", icon: Car, route: "/mobility/inscription", color: "bg-transport-mobility text-white", available: true },
 ];
 
 export default function TransporteurRegistration() {
