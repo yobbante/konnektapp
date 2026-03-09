@@ -232,7 +232,7 @@ export default function RoutierApercuPage() {
             <div className="space-y-2">
               {data.missionRequests.slice(0, 2).map((m: any, i: number) => {
               const size = getSizeFromWeight(m.weight_kg || 0);
-              const freight = freightTypeLabels[m.freight_type] || { label: m.freight_type, emoji: "📦" };
+              const freight = freightTypeLabels[m.freight_type] || { label: m.freight_type, icon: "package" };
               const price = m.client_budget || m.estimated_price || 0;
               const isUrgent = m.urgency === "urgent" || m.urgency === "express";
               return (
@@ -271,7 +271,7 @@ export default function RoutierApercuPage() {
                                     {m.weight_kg} kg
                                   </span>
                                   <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground bg-muted rounded-md px-1.5 py-0.5">
-                                    {freight.emoji} {freight.label}
+                                    {freight.label}
                                   </span>
                                   {isUrgent &&
                                 <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-destructive bg-destructive/10 rounded-md px-1.5 py-0.5">
