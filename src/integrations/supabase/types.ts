@@ -14,6 +14,120 @@ export type Database = {
   }
   public: {
     Tables: {
+      air_departures: {
+        Row: {
+          airline: string | null
+          arrival_date: string | null
+          available_capacity_kg: number
+          cargo_cutoff_date: string | null
+          cargo_restrictions: string | null
+          cargo_types_accepted: string[] | null
+          created_at: string
+          currency: string
+          departure_date: string
+          description: string | null
+          destination_airport: string | null
+          destination_city: string
+          destination_country: string
+          documentation_fee: number
+          flight_number: string | null
+          fuel_surcharge: number
+          gp_id: string
+          handling_fee: number
+          id: string
+          min_weight_kg: number
+          origin_airport: string | null
+          origin_city: string
+          origin_country: string
+          price_per_kg: number
+          security_surcharge: number
+          status: string
+          total_capacity_kg: number
+          transit_time_days: number | null
+          updated_at: string
+          weight_tiers: Json | null
+        }
+        Insert: {
+          airline?: string | null
+          arrival_date?: string | null
+          available_capacity_kg?: number
+          cargo_cutoff_date?: string | null
+          cargo_restrictions?: string | null
+          cargo_types_accepted?: string[] | null
+          created_at?: string
+          currency?: string
+          departure_date: string
+          description?: string | null
+          destination_airport?: string | null
+          destination_city: string
+          destination_country?: string
+          documentation_fee?: number
+          flight_number?: string | null
+          fuel_surcharge?: number
+          gp_id: string
+          handling_fee?: number
+          id?: string
+          min_weight_kg?: number
+          origin_airport?: string | null
+          origin_city: string
+          origin_country?: string
+          price_per_kg?: number
+          security_surcharge?: number
+          status?: string
+          total_capacity_kg?: number
+          transit_time_days?: number | null
+          updated_at?: string
+          weight_tiers?: Json | null
+        }
+        Update: {
+          airline?: string | null
+          arrival_date?: string | null
+          available_capacity_kg?: number
+          cargo_cutoff_date?: string | null
+          cargo_restrictions?: string | null
+          cargo_types_accepted?: string[] | null
+          created_at?: string
+          currency?: string
+          departure_date?: string
+          description?: string | null
+          destination_airport?: string | null
+          destination_city?: string
+          destination_country?: string
+          documentation_fee?: number
+          flight_number?: string | null
+          fuel_surcharge?: number
+          gp_id?: string
+          handling_fee?: number
+          id?: string
+          min_weight_kg?: number
+          origin_airport?: string | null
+          origin_city?: string
+          origin_country?: string
+          price_per_kg?: number
+          security_surcharge?: number
+          status?: string
+          total_capacity_kg?: number
+          transit_time_days?: number | null
+          updated_at?: string
+          weight_tiers?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "air_departures_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "air_departures_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_loyalty: {
         Row: {
           available_points: number
