@@ -6,8 +6,8 @@ import {
   Clock, ChevronRight, FileText, Truck, Calendar,
   Search, Plane, Ship, Car, Luggage, Globe, Shield, Zap, Award,
   TrendingUp, Users, ArrowUpDown, Weight, Route, Sparkles,
-  Send, ScanLine, Wallet, Star, CircleDot
-} from "lucide-react";
+  Send, ScanLine, Wallet, Star, CircleDot } from
+"lucide-react";
 import { RecipientTrackingCard } from "@/components/client/RecipientTrackingCard";
 import { KonnektCanvasCarousel } from "./KonnektCanvasCarousel";
 import { WeightValidationAlert } from "@/components/client/WeightValidationAlert";
@@ -20,8 +20,8 @@ import { SmartActionBar } from "./SmartActionBar";
 import { FullScreenOffresPopup } from "./FullScreenOffresPopup";
 import { PostDeliveryFlow, usePostDeliveryDetection } from "@/components/delivery/PostDeliveryFlow";
 import {
-  Drawer, DrawerContent, DrawerHeader, DrawerTitle
-} from "@/components/ui/drawer";
+  Drawer, DrawerContent, DrawerHeader, DrawerTitle } from
+"@/components/ui/drawer";
 
 interface ClientAppHomeProps {
   userName?: string;
@@ -34,7 +34,7 @@ interface ClientAppHomeProps {
   userCity?: string;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+const STATUS_CONFIG: Record<string, {label: string;color: string;}> = {
   pending: { label: "En attente", color: "bg-amber-500/20 text-amber-600" },
   accepted: { label: "Accepté", color: "bg-green-500/20 text-green-600" },
   collected: { label: "Collecté", color: "bg-blue-500/20 text-blue-600" },
@@ -48,16 +48,16 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   delivered: { label: "Livré", color: "bg-green-500/20 text-green-700" },
   delivery_confirmed: { label: "Livré ✓", color: "bg-emerald-500/20 text-emerald-700" },
   open: { label: "Ouverte", color: "bg-amber-500/20 text-amber-600" },
-  responded: { label: "Réponses reçues", color: "bg-purple-500/20 text-purple-600" },
+  responded: { label: "Réponses reçues", color: "bg-purple-500/20 text-purple-600" }
 };
 
 const TRANSPORT_TABS = [
-  { id: "all", label: "Tout", icon: Globe },
-  { id: "routier", label: "Routier", icon: Car },
-  { id: "maritime", label: "Maritime", icon: Ship },
-  { id: "aerien", label: "Aérien", icon: Plane },
-  { id: "bagages", label: "GP", icon: Luggage },
-];
+{ id: "all", label: "Tout", icon: Globe },
+{ id: "routier", label: "Routier", icon: Car },
+{ id: "maritime", label: "Maritime", icon: Ship },
+{ id: "aerien", label: "Aérien", icon: Plane },
+{ id: "bagages", label: "GP", icon: Luggage }];
+
 
 const MODE_CONFIG: Record<string, {
   subtitle: string;
@@ -79,7 +79,7 @@ const MODE_CONFIG: Record<string, {
     emptyLabel: "Aucune offre pour le moment",
     emptyDesc: "Les transporteurs publient régulièrement de nouvelles offres",
     icon: Package,
-    gradient: "from-primary/10 to-accent/5",
+    gradient: "from-primary/10 to-accent/5"
   },
   bagages: {
     subtitle: "Bagages accompagnés par GP de confiance",
@@ -90,7 +90,7 @@ const MODE_CONFIG: Record<string, {
     emptyLabel: "Aucun GP disponible",
     emptyDesc: "Revenez bientôt ou créez une demande personnalisée",
     icon: Luggage,
-    gradient: "from-purple-500/10 to-primary/5",
+    gradient: "from-purple-500/10 to-primary/5"
   },
   aerien: {
     subtitle: "Fret aérien express, livraison rapide",
@@ -101,7 +101,7 @@ const MODE_CONFIG: Record<string, {
     emptyLabel: "Aucune offre aérienne",
     emptyDesc: "Les agents cargo publient régulièrement des offres",
     icon: Plane,
-    gradient: "from-sky-500/10 to-blue-500/5",
+    gradient: "from-sky-500/10 to-blue-500/5"
   },
   maritime: {
     subtitle: "Conteneurs & groupage maritime",
@@ -112,7 +112,7 @@ const MODE_CONFIG: Record<string, {
     emptyLabel: "Aucune offre maritime",
     emptyDesc: "Solutions LCL et FCL en préparation",
     icon: Ship,
-    gradient: "from-cyan-500/10 to-teal-500/5",
+    gradient: "from-cyan-500/10 to-teal-500/5"
   },
   routier: {
     subtitle: "Transport routier inter-villes & inter-pays",
@@ -123,78 +123,78 @@ const MODE_CONFIG: Record<string, {
     emptyLabel: "Aucune mission disponible",
     emptyDesc: "Créez une mission et recevez des propositions",
     icon: Truck,
-    gradient: "from-orange-500/10 to-amber-500/5",
-  },
+    gradient: "from-orange-500/10 to-amber-500/5"
+  }
 };
 
-const POPULAR_ROUTES_BY_MODE: Record<string, { from: string; to: string; flag: string; hot?: boolean }[]> = {
+const POPULAR_ROUTES_BY_MODE: Record<string, {from: string;to: string;flag: string;hot?: boolean;}[]> = {
   all: [
-    { from: "Paris", to: "Dakar", flag: "FR-SN", hot: true },
-    { from: "Dakar", to: "Marseille", flag: "SN-FR" },
-    { from: "Abidjan", to: "Paris", flag: "CI-FR", hot: true },
-    { from: "Dakar", to: "Montréal", flag: "SN-CA" },
-    { from: "Abidjan", to: "Bamako", flag: "CI-ML" },
-    { from: "Casablanca", to: "Paris", flag: "MA-FR" },
-  ],
+  { from: "Paris", to: "Dakar", flag: "FR-SN", hot: true },
+  { from: "Dakar", to: "Marseille", flag: "SN-FR" },
+  { from: "Abidjan", to: "Paris", flag: "CI-FR", hot: true },
+  { from: "Dakar", to: "Montréal", flag: "SN-CA" },
+  { from: "Abidjan", to: "Bamako", flag: "CI-ML" },
+  { from: "Casablanca", to: "Paris", flag: "MA-FR" }],
+
   bagages: [
-    { from: "Paris", to: "Dakar", flag: "FR-SN", hot: true },
-    { from: "Abidjan", to: "Paris", flag: "CI-FR", hot: true },
-    { from: "Dakar", to: "Marseille", flag: "SN-FR" },
-    { from: "Casablanca", to: "Paris", flag: "MA-FR" },
-  ],
+  { from: "Paris", to: "Dakar", flag: "FR-SN", hot: true },
+  { from: "Abidjan", to: "Paris", flag: "CI-FR", hot: true },
+  { from: "Dakar", to: "Marseille", flag: "SN-FR" },
+  { from: "Casablanca", to: "Paris", flag: "MA-FR" }],
+
   routier: [
-    { from: "Dakar", to: "Bamako", flag: "SN-ML", hot: true },
-    { from: "Abidjan", to: "Ouagadougou", flag: "CI-BF", hot: true },
-    { from: "Lomé", to: "Cotonou", flag: "TG-BJ" },
-    { from: "Douala", to: "Libreville", flag: "CM-GA" },
-    { from: "Accra", to: "Lomé", flag: "GH-TG" },
-    { from: "Abidjan", to: "Dakar", flag: "CI-SN" },
-  ],
+  { from: "Dakar", to: "Bamako", flag: "SN-ML", hot: true },
+  { from: "Abidjan", to: "Ouagadougou", flag: "CI-BF", hot: true },
+  { from: "Lomé", to: "Cotonou", flag: "TG-BJ" },
+  { from: "Douala", to: "Libreville", flag: "CM-GA" },
+  { from: "Accra", to: "Lomé", flag: "GH-TG" },
+  { from: "Abidjan", to: "Dakar", flag: "CI-SN" }],
+
   maritime: [
-    { from: "Dakar", to: "Marseille", flag: "SN-FR", hot: true },
-    { from: "Abidjan", to: "Le Havre", flag: "CI-FR", hot: true },
-    { from: "Douala", to: "Anvers", flag: "CM-BE" },
-    { from: "Lomé", to: "Rotterdam", flag: "TG-NL" },
-  ],
+  { from: "Dakar", to: "Marseille", flag: "SN-FR", hot: true },
+  { from: "Abidjan", to: "Le Havre", flag: "CI-FR", hot: true },
+  { from: "Douala", to: "Anvers", flag: "CM-BE" },
+  { from: "Lomé", to: "Rotterdam", flag: "TG-NL" }],
+
   aerien: [
-    { from: "Paris", to: "Dakar", flag: "FR-SN", hot: true },
-    { from: "Paris", to: "Abidjan", flag: "FR-CI", hot: true },
-    { from: "Bruxelles", to: "Kinshasa", flag: "BE-CD" },
-    { from: "Casablanca", to: "Paris", flag: "MA-FR" },
-  ],
+  { from: "Paris", to: "Dakar", flag: "FR-SN", hot: true },
+  { from: "Paris", to: "Abidjan", flag: "FR-CI", hot: true },
+  { from: "Bruxelles", to: "Kinshasa", flag: "BE-CD" },
+  { from: "Casablanca", to: "Paris", flag: "MA-FR" }]
+
 };
 
-const TRUST_ITEMS_BY_MODE: Record<string, { icon: typeof Shield; title: string; desc: string; color: string }[]> = {
+const TRUST_ITEMS_BY_MODE: Record<string, {icon: typeof Shield;title: string;desc: string;color: string;}[]> = {
   default: [
-    { icon: Shield, title: "Paiement sécurisé", desc: "Escrow protégé jusqu'à livraison", color: "text-emerald-500 bg-emerald-500/10" },
-    { icon: Globe, title: "Multi-corridors", desc: "Afrique, Europe, Amériques", color: "text-blue-500 bg-blue-500/10" },
-    { icon: Zap, title: "Suivi temps réel", desc: "QR code + notifications push", color: "text-amber-500 bg-amber-500/10" },
-    { icon: Award, title: "GP vérifiés", desc: "KYC complet + avis clients", color: "text-purple-500 bg-purple-500/10" },
-  ],
+  { icon: Shield, title: "Paiement sécurisé", desc: "Escrow protégé jusqu'à livraison", color: "text-emerald-500 bg-emerald-500/10" },
+  { icon: Globe, title: "Multi-corridors", desc: "Afrique, Europe, Amériques", color: "text-blue-500 bg-blue-500/10" },
+  { icon: Zap, title: "Suivi temps réel", desc: "QR code + notifications push", color: "text-amber-500 bg-amber-500/10" },
+  { icon: Award, title: "GP vérifiés", desc: "KYC complet + avis clients", color: "text-purple-500 bg-purple-500/10" }],
+
   routier: [
-    { icon: Shield, title: "Escrow sécurisé", desc: "Paiement garanti à la livraison", color: "text-emerald-500 bg-emerald-500/10" },
-    { icon: Truck, title: "Flotte vérifiée", desc: "Véhicules certifiés & assurés", color: "text-blue-500 bg-blue-500/10" },
-    { icon: Zap, title: "Négociation directe", desc: "Propositions en temps réel", color: "text-amber-500 bg-amber-500/10" },
-    { icon: Route, title: "Corridors routiers", desc: "Afrique de l'Ouest & Centrale", color: "text-purple-500 bg-purple-500/10" },
-  ],
+  { icon: Shield, title: "Escrow sécurisé", desc: "Paiement garanti à la livraison", color: "text-emerald-500 bg-emerald-500/10" },
+  { icon: Truck, title: "Flotte vérifiée", desc: "Véhicules certifiés & assurés", color: "text-blue-500 bg-blue-500/10" },
+  { icon: Zap, title: "Négociation directe", desc: "Propositions en temps réel", color: "text-amber-500 bg-amber-500/10" },
+  { icon: Route, title: "Corridors routiers", desc: "Afrique de l'Ouest & Centrale", color: "text-purple-500 bg-purple-500/10" }],
+
   maritime: [
-    { icon: Shield, title: "Assurance cargo", desc: "Protection marchandises incluse", color: "text-emerald-500 bg-emerald-500/10" },
-    { icon: Ship, title: "Groupage & FCL", desc: "LCL ou conteneur complet", color: "text-blue-500 bg-blue-500/10" },
-    { icon: TrendingUp, title: "Suivi embarquement", desc: "Tracking port à port", color: "text-amber-500 bg-amber-500/10" },
-    { icon: Users, title: "Transitaires vérifiés", desc: "Partenaires certifiés", color: "text-purple-500 bg-purple-500/10" },
-  ],
+  { icon: Shield, title: "Assurance cargo", desc: "Protection marchandises incluse", color: "text-emerald-500 bg-emerald-500/10" },
+  { icon: Ship, title: "Groupage & FCL", desc: "LCL ou conteneur complet", color: "text-blue-500 bg-blue-500/10" },
+  { icon: TrendingUp, title: "Suivi embarquement", desc: "Tracking port à port", color: "text-amber-500 bg-amber-500/10" },
+  { icon: Users, title: "Transitaires vérifiés", desc: "Partenaires certifiés", color: "text-purple-500 bg-purple-500/10" }],
+
   aerien: [
-    { icon: Zap, title: "Livraison express", desc: "2-5 jours porte à porte", color: "text-amber-500 bg-amber-500/10" },
-    { icon: Shield, title: "Colis sécurisé", desc: "Assurance incluse", color: "text-emerald-500 bg-emerald-500/10" },
-    { icon: Plane, title: "Vols directs", desc: "Réseau aérien étendu", color: "text-blue-500 bg-blue-500/10" },
-    { icon: Award, title: "Agents certifiés", desc: "Fret aérien homologué", color: "text-purple-500 bg-purple-500/10" },
-  ],
+  { icon: Zap, title: "Livraison express", desc: "2-5 jours porte à porte", color: "text-amber-500 bg-amber-500/10" },
+  { icon: Shield, title: "Colis sécurisé", desc: "Assurance incluse", color: "text-emerald-500 bg-emerald-500/10" },
+  { icon: Plane, title: "Vols directs", desc: "Réseau aérien étendu", color: "text-blue-500 bg-blue-500/10" },
+  { icon: Award, title: "Agents certifiés", desc: "Fret aérien homologué", color: "text-purple-500 bg-purple-500/10" }],
+
   bagages: [
-    { icon: Shield, title: "Escrow protégé", desc: "Paiement sécurisé", color: "text-emerald-500 bg-emerald-500/10" },
-    { icon: Luggage, title: "Bagages accompagnés", desc: "Suivi personnalisé", color: "text-blue-500 bg-blue-500/10" },
-    { icon: Award, title: "GP notés", desc: "Avis clients vérifiés", color: "text-amber-500 bg-amber-500/10" },
-    { icon: Globe, title: "Réseau mondial", desc: "Afrique, Europe, Amériques", color: "text-purple-500 bg-purple-500/10" },
-  ],
+  { icon: Shield, title: "Escrow protégé", desc: "Paiement sécurisé", color: "text-emerald-500 bg-emerald-500/10" },
+  { icon: Luggage, title: "Bagages accompagnés", desc: "Suivi personnalisé", color: "text-blue-500 bg-blue-500/10" },
+  { icon: Award, title: "GP notés", desc: "Avis clients vérifiés", color: "text-amber-500 bg-amber-500/10" },
+  { icon: Globe, title: "Réseau mondial", desc: "Afrique, Europe, Amériques", color: "text-purple-500 bg-purple-500/10" }]
+
 };
 
 const ACTIVE_STATUSES = ["pending", "accepted", "collected", "paid_held", "checked_in", "weight_pending_payment", "scheduled_departure", "in_transit", "arrived_destination", "delivery_pending"];
@@ -203,44 +203,44 @@ const TYPE_MAP: Record<string, string[]> = {
   aerien: ["aerien"],
   maritime: ["maritime"],
   routier: ["routier"],
-  bagages: ["bagages_accompagnes", "navette"],
+  bagages: ["bagages_accompagnes", "navette"]
 };
 
 // ── Quick Actions Grid ──
-function QuickActionsGrid({ navigate, activeTab }: { navigate: (path: string) => void; activeTab: string }) {
+function QuickActionsGrid({ navigate, activeTab }: {navigate: (path: string) => void;activeTab: string;}) {
   const actions = useMemo(() => {
     const base = [
-      { icon: ScanLine, label: "Scan", to: "/scan", color: "text-primary bg-primary/10" },
-      { icon: Search, label: "Suivi", to: "/tracking", color: "text-blue-500 bg-blue-500/10" },
-      { icon: FileText, label: "Demandes", to: "/reservations?tab=demandes", color: "text-purple-500 bg-purple-500/10" },
-      { icon: Wallet, label: "Portefeuille", to: "/portefeuille", color: "text-emerald-500 bg-emerald-500/10" },
-    ];
+    { icon: Send, label: "Envoyer", to: "/envoyer", color: "text-primary bg-primary/10" },
+    { icon: ScanLine, label: "Suivi", to: "/tracking", color: "text-blue-500 bg-blue-500/10" },
+    { icon: FileText, label: "Demandes", to: "/mes-demandes", color: "text-purple-500 bg-purple-500/10" },
+    { icon: Wallet, label: "Portefeuille", to: "/portefeuille", color: "text-emerald-500 bg-emerald-500/10" }];
+
     return base;
   }, [activeTab]);
 
   return (
     <div className="px-4 pb-3">
       <div className="grid grid-cols-4 gap-2">
-        {actions.map((a) => (
-          <motion.button
-            key={a.label}
-            whileTap={{ scale: 0.92 }}
-            onClick={() => navigate(a.to)}
-            className="flex flex-col items-center gap-1 py-2 rounded-xl bg-card border border-border hover:border-primary/20 transition-colors"
-          >
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${a.color}`}>
-              <a.icon className="w-4 h-4" />
-            </div>
-            <span className="text-[9px] font-semibold text-foreground leading-tight">{a.label}</span>
-          </motion.button>
-        ))}
+        {actions.map((a) => {}
+
+
+
+
+
+
+
+
+
+
+
+        )}
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 // ── Tab-Specific Header Banner ──
-function TabBanner({ tab, modeConfig }: { tab: string; modeConfig: typeof MODE_CONFIG["all"] }) {
+function TabBanner({ tab, modeConfig }: {tab: string;modeConfig: typeof MODE_CONFIG["all"];}) {
   if (tab === "all") return null;
 
   const tabData = TRANSPORT_TABS.find((t) => t.id === tab);
@@ -250,8 +250,8 @@ function TabBanner({ tab, modeConfig }: { tab: string; modeConfig: typeof MODE_C
     <motion.div
       initial={{ opacity: 0, y: -5 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`mx-4 mb-3 p-3 rounded-xl bg-gradient-to-r ${modeConfig.gradient} border border-border`}
-    >
+      className={`mx-4 mb-3 p-3 rounded-xl bg-gradient-to-r ${modeConfig.gradient} border border-border`}>
+      
       <div className="flex items-center gap-2.5">
         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
           <tabData.icon className="w-4 h-4 text-primary" />
@@ -261,91 +261,91 @@ function TabBanner({ tab, modeConfig }: { tab: string; modeConfig: typeof MODE_C
           <p className="text-[11px] text-muted-foreground leading-snug">{modeConfig.subtitle}</p>
         </div>
       </div>
-    </motion.div>
-  );
+    </motion.div>);
+
 }
 
 // ── Popular Routes ──
-function PopularRoutesSection({ routes, onSelect, tabId }: {
-  routes: typeof POPULAR_ROUTES_BY_MODE["all"];
-  onSelect: (from: string, to: string) => void;
-  tabId: string;
-}) {
+function PopularRoutesSection({ routes, onSelect, tabId
+
+
+
+}: {routes: typeof POPULAR_ROUTES_BY_MODE["all"];onSelect: (from: string, to: string) => void;tabId: string;}) {
   const titleMap: Record<string, string> = {
     all: "Routes populaires",
     routier: "Corridors populaires",
     maritime: "Routes maritimes",
     aerien: "Liaisons aeriennes",
-    bagages: "Trajets GP populaires",
+    bagages: "Trajets GP populaires"
   };
 
   return (
     <div className="px-4 pb-4">
       <h2 className="text-sm font-bold text-foreground mb-2 tracking-tight">{titleMap[tabId] || titleMap.all}</h2>
       <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-        {routes.map((route, idx) => (
-          <motion.button
-            key={idx}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => onSelect(route.from, route.to)}
-            className="flex-shrink-0 bg-card border border-border rounded-xl px-3 py-2.5 text-left hover:border-primary/30 active:bg-muted/40 transition-all min-w-[120px]"
-          >
+        {routes.map((route, idx) =>
+        <motion.button
+          key={idx}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => onSelect(route.from, route.to)}
+          className="flex-shrink-0 bg-card border border-border rounded-xl px-3 py-2.5 text-left hover:border-primary/30 active:bg-muted/40 transition-all min-w-[120px]">
+          
             <p className="text-[10px] font-bold text-primary/70 tracking-wider leading-tight">{route.flag}</p>
             <p className="text-[10px] text-muted-foreground mt-1">{route.from} → {route.to}</p>
-            {route.hot && (
-              <span className="text-[8px] bg-destructive/10 text-destructive px-1.5 py-px rounded-full font-semibold mt-1.5 inline-flex items-center gap-0.5">
+            {route.hot &&
+          <span className="text-[8px] bg-destructive/10 text-destructive px-1.5 py-px rounded-full font-semibold mt-1.5 inline-flex items-center gap-0.5">
                 <CircleDot className="w-2 h-2" /> Populaire
               </span>
-            )}
+          }
           </motion.button>
-        ))}
+        )}
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 // ── Trust Items ──
-function TrustSection({ items, title }: {
-  items: typeof TRUST_ITEMS_BY_MODE["default"];
-  title: string;
-}) {
+function TrustSection({ items, title
+
+
+}: {items: typeof TRUST_ITEMS_BY_MODE["default"];title: string;}) {
   return (
     <div className="px-4 pb-5">
       <h2 className="text-sm font-bold text-foreground mb-2 tracking-tight">{title}</h2>
       <div className="grid grid-cols-2 gap-2">
-        {items.map((item, idx) => (
-          <motion.div
-            key={idx}
-            initial={{ opacity: 0, y: 8 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: idx * 0.05 }}
-            className="bg-card border border-border rounded-xl p-3"
-          >
+        {items.map((item, idx) =>
+        <motion.div
+          key={idx}
+          initial={{ opacity: 0, y: 8 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: idx * 0.05 }}
+          className="bg-card border border-border rounded-xl p-3">
+          
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${item.color}`}>
               <item.icon className="w-4 h-4" />
             </div>
             <p className="text-xs font-semibold text-foreground leading-tight">{item.title}</p>
             <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">{item.desc}</p>
           </motion.div>
-        ))}
+        )}
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 // ── Mode CTA Banner ──
-function ModeCTA({ activeTab, modeConfig, onClick }: {
-  activeTab: string;
-  modeConfig: typeof MODE_CONFIG["all"];
-  onClick: () => void;
-}) {
-  const ctaMap: Record<string, { title: string; desc: string }> = {
+function ModeCTA({ activeTab, modeConfig, onClick
+
+
+
+}: {activeTab: string;modeConfig: typeof MODE_CONFIG["all"];onClick: () => void;}) {
+  const ctaMap: Record<string, {title: string;desc: string;}> = {
     routier: { title: "Besoin d'un transport sur mesure ?", desc: "Créez une mission et recevez des propositions de transporteurs vérifiés" },
     maritime: { title: "Expédiez par conteneur", desc: "Solutions LCL, FCL et véhicules — devis personnalisé" },
     aerien: { title: "Fret aérien express", desc: "Livraison rapide 2-5 jours, porte à porte" },
     bagages: { title: "Trouvez un GP de confiance", desc: "Envoi de bagages accompagnés en toute sécurité" },
-    all: { title: "Envoyez votre premier colis", desc: "Comparez les offres et choisissez le meilleur transporteur" },
+    all: { title: "Envoyez votre premier colis", desc: "Comparez les offres et choisissez le meilleur transporteur" }
   };
   const cta = ctaMap[activeTab] || ctaMap.all;
 
@@ -358,17 +358,17 @@ function ModeCTA({ activeTab, modeConfig, onClick }: {
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={onClick}
-          className="px-6 py-2.5 bg-primary text-primary-foreground text-xs font-bold rounded-xl shadow-sm"
-        >
+          className="px-6 py-2.5 bg-primary text-primary-foreground text-xs font-bold rounded-xl shadow-sm">
+          
           {modeConfig.searchButtonLabel}
         </motion.button>
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 // ── Empty State ──
-function EmptyOffers({ modeConfig, onAction }: { modeConfig: typeof MODE_CONFIG["all"]; onAction: () => void }) {
+function EmptyOffers({ modeConfig, onAction }: {modeConfig: typeof MODE_CONFIG["all"];onAction: () => void;}) {
   return (
     <div className="bg-muted/30 border border-dashed border-border rounded-2xl p-8 text-center">
       <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
@@ -379,8 +379,8 @@ function EmptyOffers({ modeConfig, onAction }: { modeConfig: typeof MODE_CONFIG[
       <button onClick={onAction} className="text-xs text-primary font-semibold">
         Voir toutes les offres →
       </button>
-    </div>
-  );
+    </div>);
+
 }
 
 // ═════════════════════════════════════════════════
@@ -389,7 +389,7 @@ function EmptyOffers({ modeConfig, onAction }: { modeConfig: typeof MODE_CONFIG[
 
 export function ClientAppHome({
   userName, recentOrders = [], customRequests = [], movingRequests = [],
-  unreadMessages = 0, activeOrdersCount = 0, userId, userCity,
+  unreadMessages = 0, activeOrdersCount = 0, userId, userCity
 }: ClientAppHomeProps) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -397,10 +397,10 @@ export function ClientAppHome({
   const greeting = new Date().getHours() < 12 ? "Bonjour" : new Date().getHours() < 18 ? "Bon après-midi" : "Bonsoir";
 
   const [fullScreenOrderId, setFullScreenOrderId] = useState<string | null>(null);
-  const [requestPopup, setRequestPopup] = useState<{ type: "custom" | "moving"; item: any } | null>(null);
+  const [requestPopup, setRequestPopup] = useState<{type: "custom" | "moving";item: any;} | null>(null);
   const [activeTab, setActiveTab] = useState("all");
   const [offresPopupOpen, setOffresPopupOpen] = useState(false);
-  const [offresPopupSearch, setOffresPopupSearch] = useState<{ origin?: string; dest?: string; tab?: string }>({});
+  const [offresPopupSearch, setOffresPopupSearch] = useState<{origin?: string;dest?: string;tab?: string;}>({});
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const modeConfig = MODE_CONFIG[activeTab] || MODE_CONFIG.all;
@@ -411,7 +411,7 @@ export function ClientAppHome({
     try {
       const saved = localStorage.getItem("kkt_last_search");
       return saved ? JSON.parse(saved) : null;
-    } catch { return null; }
+    } catch {return null;}
   }, []);
 
   const [searchOrigin, setSearchOrigin] = useState(lastSearch?.origin || userCity || "");
@@ -421,7 +421,7 @@ export function ClientAppHome({
   const [cityQuery, setCityQuery] = useState("");
   const [routierWeight, setRoutierWeight] = useState("");
 
-  useEffect(() => { if (userCity && !searchOrigin) setSearchOrigin(userCity); }, [userCity]);
+  useEffect(() => {if (userCity && !searchOrigin) setSearchOrigin(userCity);}, [userCity]);
 
   useEffect(() => {
     if (searchParams.get("offres") === "1") {
@@ -472,27 +472,27 @@ export function ClientAppHome({
   const [offers, setOffers] = useState<any[]>([]);
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
-    supabase
-      .from("gp_offers")
-      .select("*, gp_profiles(business_name, rating, total_reviews)")
-      .eq("status", "active")
-      .gte("departure_date", today)
-      .order("departure_date", { ascending: true })
-      .limit(12)
-      .then(({ data }) => { if (data) setOffers(data); });
+    supabase.
+    from("gp_offers").
+    select("*, gp_profiles(business_name, rating, total_reviews)").
+    eq("status", "active").
+    gte("departure_date", today).
+    order("departure_date", { ascending: true }).
+    limit(12).
+    then(({ data }) => {if (data) setOffers(data);});
   }, []);
 
   // Routier missions
   const [routierMissions, setRoutierMissions] = useState<any[]>([]);
   useEffect(() => {
     if (!isRoutier) return;
-    supabase
-      .from("routier_missions")
-      .select("*")
-      .eq("status", "open")
-      .order("created_at", { ascending: false })
-      .limit(6)
-      .then(({ data }) => { if (data) setRoutierMissions(data); });
+    supabase.
+    from("routier_missions").
+    select("*").
+    eq("status", "open").
+    order("created_at", { ascending: false }).
+    limit(6).
+    then(({ data }) => {if (data) setRoutierMissions(data);});
   }, [isRoutier]);
 
   const filteredOffers = useMemo(() => {
@@ -520,8 +520,8 @@ export function ClientAppHome({
   const trustItems = TRUST_ITEMS_BY_MODE[activeTab] || TRUST_ITEMS_BY_MODE.default;
 
   const handleCitySelect = (city: string) => {
-    if (activePicker === "origin") setSearchOrigin(city);
-    else setSearchDest(city);
+    if (activePicker === "origin") setSearchOrigin(city);else
+    setSearchDest(city);
     setActivePicker(null);
     setCityQuery("");
   };
@@ -537,31 +537,48 @@ export function ClientAppHome({
       className="flex flex-col relative bg-background"
       style={{
         height: "calc(100vh - 60px - 64px - env(safe-area-inset-top) - env(safe-area-inset-bottom))",
-        minHeight: "400px",
-      }}
-    >
+        minHeight: "400px"
+      }}>
+      
       {/* Post-Delivery Flow */}
       <AnimatePresence>
-        {deliveredOrder && (
-          <PostDeliveryFlow
-            order={deliveredOrder}
-            role={deliveryRole}
-            onClose={() => dismissDelivery(deliveredOrder.id)}
-            onNavigate={navigate}
-          />
-        )}
+        {deliveredOrder &&
+        <PostDeliveryFlow
+          order={deliveredOrder}
+          role={deliveryRole}
+          onClose={() => dismissDelivery(deliveredOrder.id)}
+          onNavigate={navigate} />
+
+        }
       </AnimatePresence>
 
       {/* Full-Screen Order Overlay */}
       <AnimatePresence>
-        {selectedOrder && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-background" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+        {selectedOrder &&
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-background" style={{ paddingTop: "env(safe-area-inset-top)" }}>
             <FullScreenOrderDetails order={selectedOrder} onClose={() => setFullScreenOrderId(null)} navigate={navigate} />
           </motion.div>
-        )}
+        }
       </AnimatePresence>
 
       <div className="flex-1 overflow-y-auto" ref={scrollRef}>
+        {/* ── GREETING ── */}
+        <div className="px-4 pt-3 pb-1">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-lg font-bold text-foreground leading-tight">
+                {greeting}{firstName ? `, ${firstName}` : ""}
+              </h1>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{modeConfig.subtitle}</p>
+            </div>
+            {activeOrdersCount > 0 &&
+            <Link to="/reservations" className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 rounded-xl px-2.5 py-1.5">
+                <Package className="w-3.5 h-3.5 text-primary" />
+                <span className="text-[11px] font-bold text-primary">{activeOrdersCount}</span>
+              </Link>
+            }
+          </div>
+        </div>
 
         {/* Alerts */}
         {userId && <div className="px-4"><WeightValidationAlert userId={userId} /></div>}
@@ -580,15 +597,15 @@ export function ClientAppHome({
                       scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
                     }}
                     className={`relative flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold transition-all border-b-2 ${
-                      isActive
-                        ? "text-primary border-primary"
-                        : "text-muted-foreground border-transparent hover:text-foreground"
-                    }`}
-                  >
+                    isActive ?
+                    "text-primary border-primary" :
+                    "text-muted-foreground border-transparent hover:text-foreground"}`
+                    }>
+                    
                     <tab.icon className={`w-4 h-4 ${isActive ? "text-primary" : ""}`} />
                     <span>{tab.label}</span>
-                  </button>
-                );
+                  </button>);
+
               })}
             </div>
           </div>
@@ -602,13 +619,13 @@ export function ClientAppHome({
         {/* ── SEARCH ENGINE ── */}
         <div className="px-4 pb-3">
           <div className={`bg-card border overflow-hidden shadow-sm relative rounded-2xl ${
-            isRoutier ? "border-primary/40" : "border-border"
-          }`}>
+          isRoutier ? "border-primary/40" : "border-border"}`
+          }>
             {/* Origin */}
             <button
-              onClick={() => { setCityQuery(""); setActivePicker("origin"); }}
-              className="w-full flex items-center gap-3 px-3.5 py-3 text-left border-b border-border/40"
-            >
+              onClick={() => {setCityQuery("");setActivePicker("origin");}}
+              className="w-full flex items-center gap-3 px-3.5 py-3 text-left border-b border-border/40">
+              
               <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <MapPin className="w-3.5 h-3.5 text-primary" />
               </div>
@@ -619,21 +636,21 @@ export function ClientAppHome({
             </button>
 
             {/* Swap button */}
-            {(searchOrigin || searchDest) && (
-              <button
-                onClick={swapOriginDest}
-                className="absolute right-3 top-[48px] -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-background border border-border shadow-sm flex items-center justify-center hover:bg-muted transition-colors"
-                aria-label="Interchanger"
-              >
+            {(searchOrigin || searchDest) &&
+            <button
+              onClick={swapOriginDest}
+              className="absolute right-3 top-[48px] -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-background border border-border shadow-sm flex items-center justify-center hover:bg-muted transition-colors"
+              aria-label="Interchanger">
+              
                 <ArrowUpDown className="w-3 h-3 text-muted-foreground" />
               </button>
-            )}
+            }
 
             {/* Destination */}
             <button
-              onClick={() => { setCityQuery(""); setActivePicker("dest"); }}
-              className="w-full flex items-center gap-3 px-3.5 py-3 text-left border-b border-border/40"
-            >
+              onClick={() => {setCityQuery("");setActivePicker("dest");}}
+              className="w-full flex items-center gap-3 px-3.5 py-3 text-left border-b border-border/40">
+              
               <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
                 <Search className="w-3.5 h-3.5 text-muted-foreground" />
               </div>
@@ -644,21 +661,21 @@ export function ClientAppHome({
             </button>
 
             {/* Routier: weight */}
-            {isRoutier && (
-              <div className="flex items-center gap-3 px-3.5 py-3 border-b border-border/40">
+            {isRoutier &&
+            <div className="flex items-center gap-3 px-3.5 py-3 border-b border-border/40">
                 <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
                   <Weight className="w-3.5 h-3.5 text-muted-foreground" />
                 </div>
                 <input
-                  type="number"
-                  placeholder="Poids estimé (kg)"
-                  value={routierWeight}
-                  onChange={(e) => setRoutierWeight(e.target.value)}
-                  className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-                  min="1"
-                />
+                type="number"
+                placeholder="Poids estimé (kg)"
+                value={routierWeight}
+                onChange={(e) => setRoutierWeight(e.target.value)}
+                className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                min="1" />
+              
               </div>
-            )}
+            }
 
             {/* Date */}
             <div className="flex items-center gap-3 px-3.5 py-3">
@@ -670,69 +687,69 @@ export function ClientAppHome({
                 value={searchDate}
                 onChange={(e) => setSearchDate(e.target.value)}
                 className="flex-1 bg-transparent text-sm text-foreground outline-none"
-                style={{ colorScheme: "dark" }}
-              />
+                style={{ colorScheme: "dark" }} />
+              
             </div>
 
             {/* Search button */}
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={handleMainAction}
-              className="w-full font-bold text-center py-3.5 text-sm bg-primary text-primary-foreground rounded-b-2xl flex items-center justify-center gap-2"
-            >
+              className="w-full font-bold text-center py-3.5 text-sm bg-primary text-primary-foreground rounded-b-2xl flex items-center justify-center gap-2">
+              
               <Search className="w-4 h-4" />
               {modeConfig.searchButtonLabel}
             </motion.button>
           </div>
 
           {/* Routier: custom mission shortcut */}
-          {isRoutier && (
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={() => navigate("/routier/mission")}
-              className="w-full mt-2 py-2.5 border-2 border-dashed border-primary/30 text-primary text-xs font-semibold flex items-center justify-center gap-2 rounded-xl hover:bg-primary/5 transition-colors"
-            >
+          {isRoutier &&
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={() => navigate("/routier/mission")}
+            className="w-full mt-2 py-2.5 border-2 border-dashed border-primary/30 text-primary text-xs font-semibold flex items-center justify-center gap-2 rounded-xl hover:bg-primary/5 transition-colors">
+            
               <FileText className="w-4 h-4" />
               Créer une mission personnalisée
             </motion.button>
-          )}
+          }
         </div>
 
-        {/* ── QUICK ACTIONS (only on "all" tab) ── */}
-        {activeTab === "all" && <QuickActionsGrid navigate={navigate} activeTab={activeTab} />}
+        {/* ── QUICK ACTIONS ── */}
+        <QuickActionsGrid navigate={navigate} activeTab={activeTab} />
 
-        {/* ── SMART ACTION BAR (only on "all" tab) ── */}
-        {activeTab === "all" && <SmartActionBar
+        {/* ── SMART ACTION BAR ── */}
+        <SmartActionBar
           userId={userId}
           recentOrders={recentOrders}
           unreadMessages={unreadMessages}
           activeOrdersCount={activeOrdersCount}
-          pendingRecipientFeedback={pendingRecipientFeedback}
-        />}
+          pendingRecipientFeedback={pendingRecipientFeedback} />
+        
 
         {/* ── OFFERS / MISSIONS ── */}
         <div className="px-4 pb-2">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-sm font-bold text-foreground tracking-tight">{modeConfig.offersTitle}</h2>
-            {!isRoutier && (
-              <button onClick={goToOffres} className="text-xs text-primary font-medium flex items-center gap-0.5 hover:underline">
+            {!isRoutier &&
+            <button onClick={goToOffres} className="text-xs text-primary font-medium flex items-center gap-0.5 hover:underline">
                 Tout voir <ChevronRight className="w-3 h-3" />
               </button>
-            )}
+            }
           </div>
         </div>
 
         <div className="px-4 pb-4">
-          {isRoutier ? (
-            routierMissions.length > 0 ? (
-              <div className="space-y-2">
-                {routierMissions.map((mission) => (
-                  <motion.div
-                    key={mission.id}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-card border border-border rounded-xl p-3 space-y-1.5 hover:border-primary/30 transition-colors"
-                  >
+          {isRoutier ?
+          routierMissions.length > 0 ?
+          <div className="space-y-2">
+                {routierMissions.map((mission) =>
+            <motion.div
+              key={mission.id}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-card border border-border rounded-xl p-3 space-y-1.5 hover:border-primary/30 transition-colors">
+              
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center">
@@ -748,82 +765,82 @@ export function ClientAppHome({
                       <span>{mission.total_weight_kg} kg</span>
                       <span>•</span>
                       <span>{mission.vehicle_type_required || "Tout véhicule"}</span>
-                      {mission.budget_max && (
-                        <>
+                      {mission.budget_max &&
+                <>
                           <span>•</span>
                           <span className="font-semibold text-foreground">{mission.budget_max?.toLocaleString()} FCFA</span>
                         </>
-                      )}
+                }
                     </div>
                     {mission.description && <p className="text-[11px] text-muted-foreground line-clamp-1 pl-9">{mission.description}</p>}
                   </motion.div>
-                ))}
-              </div>
-            ) : (
-              <EmptyOffers modeConfig={modeConfig} onAction={() => navigate("/routier/mission")} />
-            )
-          ) : activeTab === "all" ? (
-            (() => {
-              const modes = ["routier", "maritime", "aerien", "bagages_accompagnes"];
-              const modeLabels: Record<string, string> = {
-                routier: "Routier", maritime: "Maritime", aerien: "Aérien", bagages_accompagnes: "GP",
-              };
-              const modeIcons: Record<string, typeof Package> = {
-                routier: Truck, maritime: Ship, aerien: Plane, bagages_accompagnes: Luggage,
-              };
-              const top4 = modes
-                .map((mode) => {
-                  const modeOffers = offers
-                    .filter((o) => o.transport_type === mode || (mode === "bagages_accompagnes" && (o.transport_type === "bagages_accompagnes" || o.transport_type === "navette")))
-                    .sort((a, b) => (b.gp_profiles?.rating || 0) - (a.gp_profiles?.rating || 0));
-                  return modeOffers[0] ? { ...modeOffers[0], _mode: mode } : null;
-                })
-                .filter(Boolean);
+            )}
+              </div> :
 
-              return top4.length > 0 ? (
-                <div className="space-y-1.5">
+          <EmptyOffers modeConfig={modeConfig} onAction={() => navigate("/routier/mission")} /> :
+
+          activeTab === "all" ?
+          (() => {
+            const modes = ["routier", "maritime", "aerien", "bagages_accompagnes"];
+            const modeLabels: Record<string, string> = {
+              routier: "Routier", maritime: "Maritime", aerien: "Aérien", bagages_accompagnes: "GP"
+            };
+            const modeIcons: Record<string, typeof Package> = {
+              routier: Truck, maritime: Ship, aerien: Plane, bagages_accompagnes: Luggage
+            };
+            const top4 = modes.
+            map((mode) => {
+              const modeOffers = offers.
+              filter((o) => o.transport_type === mode || mode === "bagages_accompagnes" && (o.transport_type === "bagages_accompagnes" || o.transport_type === "navette")).
+              sort((a, b) => (b.gp_profiles?.rating || 0) - (a.gp_profiles?.rating || 0));
+              return modeOffers[0] ? { ...modeOffers[0], _mode: mode } : null;
+            }).
+            filter(Boolean);
+
+            return top4.length > 0 ?
+            <div className="space-y-1.5">
                   {top4.map((offer: any, idx: number) => {
-                    const ModeIcon = modeIcons[offer._mode] || Package;
-                    return (
-                      <div key={offer.id} className="relative">
+                const ModeIcon = modeIcons[offer._mode] || Package;
+                return (
+                  <div key={offer.id} className="relative">
                         <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full border border-border/50">
                           <ModeIcon className="w-2.5 h-2.5 text-muted-foreground" />
                           <span className="text-[9px] font-semibold text-muted-foreground">{modeLabels[offer._mode]}</span>
                         </div>
                         <HomeOfferCard offer={offer} index={idx} />
-                      </div>
-                    );
-                  })}
+                      </div>);
+
+              })}
                   <button
-                    onClick={goToOffres}
-                    className="w-full py-2.5 text-xs font-semibold text-primary flex items-center justify-center gap-1 hover:bg-primary/5 rounded-xl transition-colors border border-dashed border-primary/20"
-                  >
+                onClick={goToOffres}
+                className="w-full py-2.5 text-xs font-semibold text-primary flex items-center justify-center gap-1 hover:bg-primary/5 rounded-xl transition-colors border border-dashed border-primary/20">
+                
                     Voir toutes les offres <ChevronRight className="w-3.5 h-3.5" />
                   </button>
-                </div>
-              ) : (
-                <EmptyOffers modeConfig={modeConfig} onAction={() => setActiveTab("bagages")} />
-              );
-            })()
-          ) : filteredOffers.length > 0 ? (
-            <div className="space-y-1.5">
-              {filteredOffers.slice(0, 6).map((offer, idx) => (
-                <HomeOfferCard key={offer.id} offer={offer} index={idx} />
-              ))}
-              {filteredOffers.length > 6 && (
-                <button onClick={goToOffres} className="w-full py-2 text-xs font-semibold text-primary flex items-center justify-center gap-1 hover:bg-primary/5 rounded-xl transition-colors">
+                </div> :
+
+            <EmptyOffers modeConfig={modeConfig} onAction={() => setActiveTab("bagages")} />;
+
+          })() :
+          filteredOffers.length > 0 ?
+          <div className="space-y-1.5">
+              {filteredOffers.slice(0, 6).map((offer, idx) =>
+            <HomeOfferCard key={offer.id} offer={offer} index={idx} />
+            )}
+              {filteredOffers.length > 6 &&
+            <button onClick={goToOffres} className="w-full py-2 text-xs font-semibold text-primary flex items-center justify-center gap-1 hover:bg-primary/5 rounded-xl transition-colors">
                   +{filteredOffers.length - 6} autres offres <ChevronRight className="w-3.5 h-3.5" />
                 </button>
-              )}
-            </div>
-          ) : (
-            <EmptyOffers modeConfig={modeConfig} onAction={() => setActiveTab("all")} />
-          )}
+            }
+            </div> :
+
+          <EmptyOffers modeConfig={modeConfig} onAction={() => setActiveTab("all")} />
+          }
         </div>
 
         {/* ── BOTTOM SECTIONS ── */}
-        {activeTab === "all" ? (
-          <>
+        {activeTab === "all" ?
+        <>
             {/* Popular routes carousel */}
             <PopularRoutesSection routes={popularRoutes} onSelect={handleRouteSelect} tabId="all" />
 
@@ -832,27 +849,27 @@ export function ClientAppHome({
 
             {/* Trust */}
             <TrustSection items={trustItems} title="Pourquoi Konnekt" />
-          </>
-        ) : (
-          <>
+          </> :
+
+        <>
             {/* Popular routes */}
             <PopularRoutesSection routes={popularRoutes} onSelect={handleRouteSelect} tabId={activeTab} />
 
             {/* Trust */}
             <TrustSection
-              items={trustItems}
-              title={
-                activeTab === "routier" ? "Avantages Routier" :
-                activeTab === "maritime" ? "Avantages Maritime" :
-                activeTab === "aerien" ? "Avantages Aerien" :
-                "Avantages GP"
-              }
-            />
+            items={trustItems}
+            title={
+            activeTab === "routier" ? "Avantages Routier" :
+            activeTab === "maritime" ? "Avantages Maritime" :
+            activeTab === "aerien" ? "Avantages Aerien" :
+            "Avantages GP"
+            } />
+          
 
             {/* CTA */}
             <ModeCTA activeTab={activeTab} modeConfig={modeConfig} onClick={handleMainAction} />
           </>
-        )}
+        }
 
         {/* Bottom spacing for mobile nav */}
         <div className="h-4" />
@@ -864,8 +881,8 @@ export function ClientAppHome({
         onClose={() => setOffresPopupOpen(false)}
         initialOrigin={offresPopupSearch.origin}
         initialDestination={offresPopupSearch.dest}
-        initialTab={offresPopupSearch.tab}
-      />
+        initialTab={offresPopupSearch.tab} />
+      
 
       {/* Request Popup */}
       <RequestDetailsPopup
@@ -873,11 +890,11 @@ export function ClientAppHome({
         onClose={() => setRequestPopup(null)}
         type={requestPopup?.type || "custom"}
         item={requestPopup?.item}
-        navigate={navigate}
-      />
+        navigate={navigate} />
+      
 
       {/* City Picker Drawer */}
-      <Drawer open={!!activePicker} onOpenChange={(open) => { if (!open) setActivePicker(null); }}>
+      <Drawer open={!!activePicker} onOpenChange={(open) => {if (!open) setActivePicker(null);}}>
         <DrawerContent className="max-h-[85vh]">
           <DrawerHeader className="pb-2">
             <DrawerTitle>
@@ -893,32 +910,32 @@ export function ClientAppHome({
                 value={cityQuery}
                 onChange={(e) => setCityQuery(e.target.value)}
                 className="w-full h-11 pl-10 pr-4 rounded-xl border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30"
-                autoFocus
-              />
+                autoFocus />
+              
             </div>
           </div>
           <div className="overflow-y-auto overscroll-contain px-2 pb-6" style={{ maxHeight: "55vh", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
-            {filteredCities.slice(0, 30).map((city) => (
-              <button
-                key={`${city.city}-${city.country}`}
-                onClick={() => handleCitySelect(city.city)}
-                className="w-full flex items-center gap-3 py-2.5 px-3 rounded-lg text-left hover:bg-muted/60 active:bg-muted transition-colors"
-              >
+            {filteredCities.slice(0, 30).map((city) =>
+            <button
+              key={`${city.city}-${city.country}`}
+              onClick={() => handleCitySelect(city.city)}
+              className="w-full flex items-center gap-3 py-2.5 px-3 rounded-lg text-left hover:bg-muted/60 active:bg-muted transition-colors">
+              
                 <MapPin className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm font-medium flex-1">{city.city}</span>
               </button>
-            ))}
-            {filteredCities.length === 0 && cityQuery && (
-              <button
-                onClick={() => handleCitySelect(cityQuery)}
-                className="w-full py-3 text-sm text-primary font-medium text-center"
-              >
+            )}
+            {filteredCities.length === 0 && cityQuery &&
+            <button
+              onClick={() => handleCitySelect(cityQuery)}
+              className="w-full py-3 text-sm text-primary font-medium text-center">
+              
                 Utiliser "{cityQuery}"
               </button>
-            )}
+            }
           </div>
         </DrawerContent>
       </Drawer>
-    </div>
-  );
+    </div>);
+
 }
