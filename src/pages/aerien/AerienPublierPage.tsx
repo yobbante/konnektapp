@@ -129,7 +129,7 @@ export default function AerienPublierPage() {
       const { error } = await supabase.from("air_departures" as any).insert({
         gp_id: gpProfile.id,
         origin_city: form.originCity, origin_country: form.originCountry, origin_airport: form.originAirport || null,
-        destination_city: form.destinationCity, destination_country: form.destinCountry, destination_airport: form.destinationAirport || null,
+        destination_city: form.destinationCity, destination_country: form.destinationCountry, destination_airport: form.destinationAirport || null,
         airline: form.airline || null, flight_number: form.flightNumber || null,
         departure_date: form.departureDate, arrival_date: form.arrivalDate || null,
         cargo_cutoff_date: form.cargoCutoffDate || null,
