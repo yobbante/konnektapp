@@ -781,7 +781,7 @@ export function ClientAppHome({
               return searchResults.length > 0 ?
                 <div className="space-y-1.5">
                   {searchResults.map((offer: any, idx: number) => {
-                    const mode = offer.transport_type === "navette" ? "bagages_accompagnes" : offer.transport_type;
+                    const mode = (offer.transport_type === "navette" || offer.transport_type === "bagages_accompagnes") ? "bagages_international" : offer.transport_type;
                     const ModeIcon = modeIcons[mode] || Package;
                      return (
                       <div key={offer.id}>
