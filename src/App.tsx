@@ -83,6 +83,7 @@ import RoutierPublierPage from "./pages/routier/RoutierPublierPage";
 import RoutierMessagesPage from "./pages/routier/RoutierMessagesPage";
 import RoutierCartePage from "./pages/routier/RoutierCartePage";
 import RoutierMissionDetailTransporteurPage from "./pages/routier/RoutierMissionDetailTransporteurPage";
+import RoutierNegotiationsPage from "./pages/routier/RoutierNegotiationsPage";
 // Maritime pages
 import MaritimeApercuPage from "./pages/maritime/MaritimeApercuPage";
 import MaritimePublierPage from "./pages/maritime/MaritimePublierPage";
@@ -269,6 +270,7 @@ const App = () => (
             <Route path="/routier/messages" element={<RoutierMessagesPage />} />
             <Route path="/routier/carte" element={<RoutierCartePage />} />
             <Route path="/routier/detail-mission/:id" element={<RoutierMissionDetailTransporteurPage />} />
+            <Route path="/routier/negotiations" element={<RoutierNegotiationsPage />} />
             {/* Client-facing routier mission request */}
             <Route path="/routier/mission/:id" element={<RoutierMissionDetailPage />} />
             <Route path="/routier/mission" element={<RoutierMissionRequestPage />} />
