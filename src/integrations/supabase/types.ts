@@ -2630,6 +2630,105 @@ export type Database = {
           },
         ]
       }
+      maritime_departures: {
+        Row: {
+          arrival_date: string | null
+          available_capacity_m3: number
+          bookings_count: number | null
+          cargo_cutoff_date: string | null
+          cargo_types_accepted: string[] | null
+          conditions: string | null
+          container_type: string | null
+          created_at: string
+          currency: string
+          departure_date: string
+          description: string | null
+          destination_country: string
+          destination_port: string
+          gp_id: string
+          id: string
+          maritime_type: string
+          min_volume_m3: number | null
+          origin_country: string
+          origin_port: string
+          price_per_m3: number | null
+          price_total: number | null
+          status: string
+          total_capacity_m3: number
+          transit_days: number | null
+          updated_at: string
+        }
+        Insert: {
+          arrival_date?: string | null
+          available_capacity_m3?: number
+          bookings_count?: number | null
+          cargo_cutoff_date?: string | null
+          cargo_types_accepted?: string[] | null
+          conditions?: string | null
+          container_type?: string | null
+          created_at?: string
+          currency?: string
+          departure_date: string
+          description?: string | null
+          destination_country?: string
+          destination_port: string
+          gp_id: string
+          id?: string
+          maritime_type?: string
+          min_volume_m3?: number | null
+          origin_country?: string
+          origin_port: string
+          price_per_m3?: number | null
+          price_total?: number | null
+          status?: string
+          total_capacity_m3?: number
+          transit_days?: number | null
+          updated_at?: string
+        }
+        Update: {
+          arrival_date?: string | null
+          available_capacity_m3?: number
+          bookings_count?: number | null
+          cargo_cutoff_date?: string | null
+          cargo_types_accepted?: string[] | null
+          conditions?: string | null
+          container_type?: string | null
+          created_at?: string
+          currency?: string
+          departure_date?: string
+          description?: string | null
+          destination_country?: string
+          destination_port?: string
+          gp_id?: string
+          id?: string
+          maritime_type?: string
+          min_volume_m3?: number | null
+          origin_country?: string
+          origin_port?: string
+          price_per_m3?: number | null
+          price_total?: number | null
+          status?: string
+          total_capacity_m3?: number
+          transit_days?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maritime_departures_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maritime_departures_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_templates: {
         Row: {
           category: string
