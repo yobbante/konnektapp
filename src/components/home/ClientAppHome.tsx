@@ -259,40 +259,15 @@ function QuickActionsGrid({ navigate, activeTab }: {navigate: (path: string) => 
 
 // ── Tab-Specific Header Banner ──
 function TabBanner({ tab, modeConfig }: {tab: string;modeConfig: typeof MODE_CONFIG["all"];}) {
-  const [expanded, setExpanded] = useState(false);
-  if (tab === "all") return null;
-
-  const tabData = TRANSPORT_TABS.find((t) => t.id === tab);
-  if (!tabData) return null;
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      onClick={() => setExpanded(!expanded)}
-      className="mx-4 mb-2 cursor-pointer"
+      className="mx-4 mb-2"
     >
-      <div className="flex items-center justify-between py-1.5 px-3 bg-muted/40 rounded-lg border border-border/50 hover:bg-muted/60 transition-colors">
+      <div className="flex items-center justify-between py-1.5 px-3 bg-muted/40 rounded-lg border border-border/50">
         <p className="text-[11px] text-muted-foreground">{modeConfig.subtitle}</p>
       </div>
-      {expanded && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          className="mt-2 px-3 py-2 bg-card border border-border rounded-lg"
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <tabData.icon className="w-3.5 h-3.5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-xs font-bold text-foreground">{tabData.label}</h3>
-              <p className="text-[10px] text-muted-foreground leading-snug mt-0.5">{modeConfig.subtitle}</p>
-            </div>
-          </div>
-        </motion.div>
-      )}
     </motion.div>
   );
 }
