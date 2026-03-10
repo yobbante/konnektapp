@@ -274,12 +274,6 @@ function TabBanner({ tab, modeConfig }: {tab: string;modeConfig: typeof MODE_CON
     >
       <div className="flex items-center justify-between py-1.5 px-3 bg-muted/40 rounded-lg border border-border/50 hover:bg-muted/60 transition-colors">
         <p className="text-[11px] text-muted-foreground">{modeConfig.subtitle}</p>
-        <motion.div
-          animate={{ rotate: expanded ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-        </motion.div>
       </div>
       {expanded && (
         <motion.div
