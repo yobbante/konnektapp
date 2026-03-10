@@ -49,6 +49,7 @@ export function InteractiveAuthForm({
   prefillPhone = "",
   prefillCountry = "SN",
 }: InteractiveAuthFormProps) {
+  const navigate = useNavigate();
   // If phone is pre-filled from entry flow, skip to credentials for register
   const hasEntryPhone = !!prefillPhone;
   
