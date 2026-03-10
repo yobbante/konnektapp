@@ -52,12 +52,12 @@ const STATUS_CONFIG: Record<string, {label: string;color: string;}> = {
 };
 
 const TRANSPORT_TABS = [
+{ id: "mobility", label: "Mobility", icon: Users },
 { id: "all", label: "Tout", icon: Globe },
 { id: "routier", label: "Routier", icon: Car },
 { id: "maritime", label: "Maritime", icon: Ship },
 { id: "aerien", label: "Aérien", icon: Plane },
-{ id: "bagages", label: "GP", icon: Luggage },
-{ id: "mobility", label: "Mobility", icon: Users }];
+{ id: "bagages", label: "GP", icon: Luggage }];
 
 
 const MODE_CONFIG: Record<string, {
