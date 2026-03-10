@@ -152,7 +152,7 @@ export default function MobilityRegistration() {
       }
 
       toast({ title: "Inscription réussie !", description: "Votre profil Mobility a été créé." });
-      navigate("/mobility/apercu");
+      navigate("/mobility/dashboard");
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
     } finally {

@@ -31,10 +31,10 @@ interface FullScreenOffresPopupProps {
 
 const FILTER_TABS = [
   { id: "all", label: "Tout", icon: Package },
-  { id: "bagages", label: "GP", icon: Luggage },
-  { id: "aerien", label: "Aérien", icon: Plane },
-  { id: "maritime", label: "Maritime", icon: Ship },
   { id: "routier", label: "Routier", icon: Truck },
+  { id: "maritime", label: "Maritime", icon: Ship },
+  { id: "aerien", label: "Aérien", icon: Plane },
+  { id: "bagages", label: "GP", icon: Luggage },
 ];
 
 const TYPE_MAP: Record<string, string[]> = {

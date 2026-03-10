@@ -666,17 +666,6 @@ export function ClientAppHome({
             </motion.button>
           </div>
 
-          {/* Routier: custom mission shortcut */}
-          {isRoutier &&
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={() => navigate("/routier/mission")}
-            className="w-full mt-2 py-2.5 border-2 border-dashed border-primary/30 text-primary text-xs font-semibold flex items-center justify-center gap-2 rounded-xl hover:bg-primary/5 transition-colors">
-            
-              <FileText className="w-4 h-4" />
-              Créer une mission personnalisée
-            </motion.button>
-          }
         </div>
 
 

@@ -95,14 +95,14 @@ export function AppHeader({
               <Link to="/" className="flex items-center gap-1.5">
                 <motion.div 
                   whileTap={{ scale: 0.95 }}
-                  className={`w-8 h-8 rounded-lg ${logoBackground} flex items-center justify-center shadow-sm`}
+                  className={`w-10 h-10 rounded-xl ${logoBackground} flex items-center justify-center shadow-sm`}
                 >
-                  <Package className={`w-5 h-5 ${logoColor}`} />
+                  <Package className={`w-6 h-6 ${logoColor}`} />
                 </motion.div>
                 {!title && (
-                  <div className="flex items-center gap-1">
-                    <span className="font-bold text-foreground text-sm tracking-tight">Konnekt</span>
-                    {countryFlag && <span className="text-xs">{countryFlag}</span>}
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-foreground text-base tracking-tight">Konnekt</span>
+                    {countryFlag && <span className="text-sm">{countryFlag}</span>}
                   </div>
                 )}
               </Link>
