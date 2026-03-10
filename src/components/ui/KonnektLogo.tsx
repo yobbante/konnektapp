@@ -1,14 +1,16 @@
 /**
  * KonnektLogo — SVG connected-dots network logo
- * Matches the PWA icon style: teal nodes connected by lines forming a K shape
+ * 4 dots forming a stylized K: vertical backbone + two diagonal arms
  */
 interface KonnektLogoProps {
   size?: number;
   className?: string;
   color?: string;
+  adaptDark?: boolean;
 }
 
-export function KonnektLogo({ size = 24, className = "", color = "hsl(168, 60%, 42%)" }: KonnektLogoProps) {
+export function KonnektLogo({ size = 24, className = "", color, adaptDark = false }: KonnektLogoProps) {
+  const fill = color || "hsl(168, 60%, 42%)";
   return (
     <svg
       width={size}
@@ -18,18 +20,14 @@ export function KonnektLogo({ size = 24, className = "", color = "hsl(168, 60%, 
       fill="none"
     >
       {/* Lines connecting nodes */}
-      <line x1={-18} y1={-28} x2={-18} y2={0} stroke={color} strokeWidth={3} strokeLinecap="round" />
-      <line x1={-18} y1={0} x2={-18} y2={28} stroke={color} strokeWidth={3} strokeLinecap="round" />
-      <line x1={-18} y1={0} x2={8} y2={0} stroke={color} strokeWidth={3} strokeLinecap="round" />
-      <line x1={8} y1={0} x2={24} y2={-20} stroke={color} strokeWidth={3} strokeLinecap="round" />
-      <line x1={8} y1={0} x2={24} y2={20} stroke={color} strokeWidth={3} strokeLinecap="round" />
-      {/* Nodes */}
-      <circle cx={-18} cy={-28} r={5} fill={color} />
-      <circle cx={-18} cy={0} r={6} fill={color} />
-      <circle cx={-18} cy={28} r={5} fill={color} />
-      <circle cx={8} cy={0} r={4} fill={color} />
-      <circle cx={24} cy={-20} r={4.5} fill={color} />
-      <circle cx={24} cy={20} r={4.5} fill={color} />
+      <line x1={-20} y1={-30} x2={-20} y2={30} stroke={fill} strokeWidth={3.5} strokeLinecap="round" />
+      <line x1={-20} y1={0} x2={22} y2={-28} stroke={fill} strokeWidth={3.5} strokeLinecap="round" />
+      <line x1={-20} y1={0} x2={22} y2={28} stroke={fill} strokeWidth={3.5} strokeLinecap="round" />
+      {/* 4 Nodes */}
+      <circle cx={-20} cy={-30} r={7} fill={fill} />
+      <circle cx={-20} cy={30} r={7} fill={fill} />
+      <circle cx={22} cy={-28} r={6} fill={fill} />
+      <circle cx={22} cy={28} r={6} fill={fill} />
     </svg>
   );
 }
