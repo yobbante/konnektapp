@@ -59,6 +59,7 @@ export default function TransporteurRegistration() {
   const handleSelectType = (type: TransportTypeOption) => {
     if (!type.available) return;
     setSelectedType(type.id);
+    // For mobility, allow unauthenticated access
     setTimeout(() => navigate(type.route), 150);
   };
 
