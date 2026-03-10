@@ -102,7 +102,12 @@ export default function MobilityRegistration() {
     setSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Non connecté");
+      if (!user) {
+        // Save form data and redirect to auth
+        sessionStorage.setItem("pending_mobility_registration", "true");
+        navigate("/auth?mode=signup");
+        return;
+      }
 
       // Create mobility profile
       const { data: profile, error: profErr } = await supabase.from("mobility_profiles").insert({

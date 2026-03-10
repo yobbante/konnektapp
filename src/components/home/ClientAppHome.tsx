@@ -443,12 +443,8 @@ export function ClientAppHome({
 
   const handleMainAction = () => {
     if (isRoutier) {
-      const params = new URLSearchParams();
-      if (searchOrigin) params.set("origin", searchOrigin);
-      if (searchDest) params.set("destination", searchDest);
-      if (searchDate) params.set("date", searchDate);
-      if (routierWeight) params.set("weight", routierWeight);
-      navigate(`/routier/mission?${params.toString()}`);
+      // Search routier departures via the offers popup
+      openOffresPopup(searchOrigin, searchDest, "routier");
     } else if (isMobility) {
       const params = new URLSearchParams();
       if (searchOrigin) params.set("from", searchOrigin);
