@@ -67,21 +67,31 @@ export default function MobilityRegistration() {
   useEffect(() => {
     const check = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { navigate("/auth"); return; }
-      const { data: existing } = await supabase.from("mobility_profiles").select("id").eq("user_id", user.id).maybeSingle();
-      if (existing) {
-        toast({ title: "Profil existant", description: "Vous avez déjà un profil Mobility." });
-        navigate("/mobility/apercu");
-        return;
+      if (user) {
+        const { data: existing } = await supabase.from("mobility_profiles").select("id").eq("user_id", user.id).maybeSingle();
+        if (existing) {
+          toast({ title: "Profil existant", description: "Vous avez déjà un profil Mobility." });
+          navigate("/mobility/apercu");
+          return;
+        }
+        // Pre-fill from profile
+        const { data: profile } = await supabase.from("profiles").select("full_name, phone, residence_city, country_code").eq("user_id", user.id).maybeSingle();
+        if (profile) {
+          setDriverName(profile.full_name || "");
+          setPhone(profile.phone || "");
+          setDriverPhone(profile.phone || "");
+          setCity(profile.residence_city || "");
+          setCountry(profile.country_code || "SN");
+        }
       }
-      // Pre-fill from profile
-      const { data: profile } = await supabase.from("profiles").select("full_name, phone, residence_city, country_code").eq("user_id", user.id).maybeSingle();
-      if (profile) {
-        setDriverName(profile.full_name || "");
-        setPhone(profile.phone || "");
-        setDriverPhone(profile.phone || "");
-        setCity(profile.residence_city || "");
-        setCountry(profile.country_code || "SN");
+      // Pre-fill from entry flow session data
+      const entryCity = sessionStorage.getItem("entry_city");
+      const entryPhone = sessionStorage.getItem("entry_phone");
+      const entryCountry = sessionStorage.getItem("entry_country");
+      if (entryCity && !city) setCity(entryCity);
+      if (entryPhone && !phone) { setPhone(entryPhone); setDriverPhone(entryPhone); }
+      if (entryCountry) {
+        try { const parsed = JSON.parse(entryCountry); if (parsed?.code) setCountry(parsed.code); } catch {}
       }
       setLoading(false);
     };
