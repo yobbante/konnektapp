@@ -640,22 +640,6 @@ export function ClientAppHome({
               {searchDest && <span className="text-[9px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">Modifier</span>}
             </button>
 
-            {/* Routier: weight */}
-            {isRoutier &&
-            <div className="flex items-center gap-3 px-3.5 py-3 border-b border-border/40">
-                <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                  <Weight className="w-3.5 h-3.5 text-muted-foreground" />
-                </div>
-                <input
-                type="number"
-                placeholder="Poids estimé (kg)"
-                value={routierWeight}
-                onChange={(e) => setRoutierWeight(e.target.value)}
-                className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-                min="1" />
-              
-              </div>
-            }
 
             {/* Date */}
             <div className="flex items-center gap-3 px-3.5 py-3">
