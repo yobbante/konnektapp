@@ -241,14 +241,14 @@ export function InteractiveAuthForm({
   };
 
   const resetToRegister = () => {
-    onModeChange("register");
-    setRegisterStep("country");
-    setPhoneError(null);
-    setFormData({ email: "", password: "", fullName: "", phone: "", country: "SN", city: "" });
-    setSelectedCountry("SN");
-    setCityInput("");
-    setTouched({});
-    setCheckingPhone(false);
+    // Redirect to the unified entry flow (country selection → phone → role)
+    localStorage.removeItem("konnekt_entry_completed");
+    sessionStorage.removeItem("app_loaded");
+    sessionStorage.removeItem("entry_phone");
+    sessionStorage.removeItem("entry_country");
+    sessionStorage.removeItem("entry_city");
+    sessionStorage.removeItem("entry_role");
+    navigate("/");
   };
 
   return (
