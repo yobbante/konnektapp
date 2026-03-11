@@ -60,11 +60,11 @@ export function AdminOverviewModule({ stats, onNavigate }: Props) {
       ],
     },
     {
-      title: "👥 Utilisateurs",
+      title: "👥 Utilisateurs & Transporteurs",
       items: [
         { label: "Clients", value: stats.totalClients, icon: Users, color: "text-pink-500", bg: "bg-pink-500/10", module: "clients" },
-        { label: "GP actifs", value: stats.gpActifs, icon: Users, color: "text-violet-500", bg: "bg-violet-500/10", module: "gp" },
-        { label: "GP en attente", value: stats.gpPending, icon: Users, color: "text-amber-500", bg: "bg-amber-500/10", module: "kyc", alert: stats.gpPending > 0 },
+        { label: "Transporteurs", value: stats.gpActifs, icon: Users, color: "text-violet-500", bg: "bg-violet-500/10", module: "transporteurs" },
+        { label: "En attente", value: stats.gpPending, icon: Users, color: "text-amber-500", bg: "bg-amber-500/10", module: "kyc", alert: stats.gpPending > 0 },
         { label: "Note moyenne", value: stats.avgRating.toFixed(1), icon: Star, color: "text-amber-500", bg: "bg-amber-500/10", module: "reputation" },
       ],
     },

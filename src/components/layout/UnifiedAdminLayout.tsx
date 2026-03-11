@@ -18,9 +18,9 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 export type AdminModule =
-  | "overview" | "colis" | "gp" | "finance" | "scan"
+  | "overview" | "colis" | "gp" | "transporteurs" | "finance" | "scan"
   | "litiges" | "assurance" | "manuel" | "taux" | "parametres" | "kyc"
-  | "clients" | "demandes" | "reputation" | "support";
+  | "clients" | "demandes" | "reputation" | "support" | "mobility";
 
 interface ModuleItem {
   id: AdminModule;
@@ -34,7 +34,7 @@ const ALL_MODULES: ModuleItem[] = [
   // Core
   { id: "overview", label: "Overview", icon: LayoutDashboard, color: "text-blue-500", group: "core" },
   { id: "colis", label: "Colis", icon: Package, color: "text-emerald-500", group: "core" },
-  { id: "gp", label: "GP", icon: Users, color: "text-violet-500", group: "core" },
+  { id: "transporteurs", label: "Transporteurs", icon: Users, color: "text-violet-500", group: "core" },
   { id: "clients", label: "Clients", icon: UserRound, color: "text-pink-500", group: "core" },
   // Operations
   { id: "finance", label: "Finance", icon: Wallet, color: "text-amber-500", group: "ops" },
@@ -52,7 +52,7 @@ const ALL_MODULES: ModuleItem[] = [
   { id: "parametres", label: "Paramètres", icon: Settings, color: "text-gray-500", group: "config" },
 ];
 
-const BOTTOM_NAV_ITEMS: AdminModule[] = ["overview", "colis", "scan", "finance", "gp"];
+const BOTTOM_NAV_ITEMS: AdminModule[] = ["overview", "colis", "scan", "finance", "transporteurs"];
 
 const GROUP_LABELS: Record<string, string> = {
   core: "Principal",

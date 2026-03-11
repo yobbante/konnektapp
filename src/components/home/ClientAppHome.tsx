@@ -221,7 +221,8 @@ const TYPE_MAP: Record<string, string[]> = {
   aerien: ["aerien"],
   maritime: ["maritime"],
   routier: ["routier"],
-  bagages: ["bagages_accompagnes", "bagages_international", "navette"]
+  bagages: ["bagages_international", "bagages_accompagnes", "navette", "voyageur"],
+  mobility: ["mobility"],
 };
 
 // ── Quick Actions Grid ──

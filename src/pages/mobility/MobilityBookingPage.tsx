@@ -3,7 +3,7 @@
  */
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Car, ChevronLeft, MapPin, Calendar, Clock, Users, CreditCard, Check, Ticket } from "lucide-react";
+import { Car, ChevronLeft, MapPin, Calendar, Clock, Users, CreditCard, Check, Ticket, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -71,8 +71,13 @@ export default function MobilityBookingPage() {
       const totalPriceCalc = passengerCount * (trip?.price_per_seat || 0);
       const commission = totalPriceCalc * 0.08;
       const bookingNum = "MOB-" + new Date().toISOString().slice(0, 10).replace(/-/g, "") + "-" + Math.random().toString(36).slice(2, 8).toUpperCase();
+      const boardingCode = Math.random().toString(36).slice(2, 8).toUpperCase();
+
+      // Generate a temporary ID for QR data (will be replaced by actual ID after insert)
+      const tempId = crypto.randomUUID();
 
       const { data: bk, error } = await supabase.from("mobility_bookings").insert({
+        id: tempId,
         booking_number: bookingNum,
         offer_id: tripId,
         client_id: user.id,
@@ -87,6 +92,8 @@ export default function MobilityBookingPage() {
         total_price: totalPriceCalc,
         currency: trip.currency || "XOF",
         commission_amount: commission,
+        qr_code_data: `KONNEKT-MOB-${tempId}`,
+        boarding_code: boardingCode,
         status: "active" as any,
         payment_status: "pending",
       }).select().single();
@@ -158,7 +165,10 @@ export default function MobilityBookingPage() {
             <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <Ticket className="w-4 h-4" /> Code d'embarquement : <span className="font-mono font-bold">{booking.boarding_code || "—"}</span>
             </div>
-            <Button className="w-full" onClick={() => navigate("/reservations")}>
+            <Button className="w-full bg-transport-mobility" onClick={() => navigate(`/mobility/ticket?id=${booking.id}`)}>
+              <QrCode className="w-4 h-4 mr-2" /> Voir mon ticket QR
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => navigate("/reservations")}>
               Voir mes réservations
             </Button>
           </div>
