@@ -196,6 +196,9 @@ export default function AdminDashboard() {
           onUpdateStatus={updateGPStatus}
         />
       )}
+      {activeModule === "transporteurs" && (
+        <AdminTransporteursModule searchQuery={searchQuery} />
+      )}
       {activeModule === "clients" && <AdminClientsModule />}
       {activeModule === "finance" && (
         <AdminFinanceModule
