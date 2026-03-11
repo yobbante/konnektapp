@@ -52,7 +52,7 @@ const ALL_MODULES: ModuleItem[] = [
   { id: "parametres", label: "Paramètres", icon: Settings, color: "text-gray-500", group: "config" },
 ];
 
-const BOTTOM_NAV_ITEMS: AdminModule[] = ["overview", "colis", "scan", "finance", "gp"];
+const BOTTOM_NAV_ITEMS: AdminModule[] = ["overview", "colis", "scan", "finance", "transporteurs"];
 
 const GROUP_LABELS: Record<string, string> = {
   core: "Principal",
