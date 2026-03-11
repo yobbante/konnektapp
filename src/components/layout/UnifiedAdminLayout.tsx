@@ -18,9 +18,9 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 export type AdminModule =
-  | "overview" | "colis" | "gp" | "finance" | "scan"
+  | "overview" | "colis" | "gp" | "transporteurs" | "finance" | "scan"
   | "litiges" | "assurance" | "manuel" | "taux" | "parametres" | "kyc"
-  | "clients" | "demandes" | "reputation" | "support";
+  | "clients" | "demandes" | "reputation" | "support" | "mobility";
 
 interface ModuleItem {
   id: AdminModule;
