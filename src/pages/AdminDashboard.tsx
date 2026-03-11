@@ -14,6 +14,7 @@ import { UnifiedAdminLayout, type AdminModule } from "@/components/layout/Unifie
 import { AdminOverviewModule, type AdminGlobalStats } from "@/components/admin/modules/AdminOverviewModule";
 import { AdminColisModule } from "@/components/admin/modules/AdminColisModule";
 import { AdminGPModule } from "@/components/admin/modules/AdminGPModule";
+import { AdminTransporteursModule } from "@/components/admin/modules/AdminTransporteursModule";
 import { AdminClientsModule } from "@/components/admin/modules/AdminClientsModule";
 import { AdminFinanceModule } from "@/components/admin/modules/AdminFinanceModule";
 import { AdminDemandesModule } from "@/components/admin/modules/AdminDemandesModule";
