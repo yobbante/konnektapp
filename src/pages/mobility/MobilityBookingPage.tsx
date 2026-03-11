@@ -71,8 +71,13 @@ export default function MobilityBookingPage() {
       const totalPriceCalc = passengerCount * (trip?.price_per_seat || 0);
       const commission = totalPriceCalc * 0.08;
       const bookingNum = "MOB-" + new Date().toISOString().slice(0, 10).replace(/-/g, "") + "-" + Math.random().toString(36).slice(2, 8).toUpperCase();
+      const boardingCode = Math.random().toString(36).slice(2, 8).toUpperCase();
+
+      // Generate a temporary ID for QR data (will be replaced by actual ID after insert)
+      const tempId = crypto.randomUUID();
 
       const { data: bk, error } = await supabase.from("mobility_bookings").insert({
+        id: tempId,
         booking_number: bookingNum,
         offer_id: tripId,
         client_id: user.id,
@@ -87,6 +92,8 @@ export default function MobilityBookingPage() {
         total_price: totalPriceCalc,
         currency: trip.currency || "XOF",
         commission_amount: commission,
+        qr_code_data: `KONNEKT-MOB-${tempId}`,
+        boarding_code: boardingCode,
         status: "active" as any,
         payment_status: "pending",
       }).select().single();
