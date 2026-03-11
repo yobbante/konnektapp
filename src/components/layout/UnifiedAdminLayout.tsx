@@ -34,7 +34,7 @@ const ALL_MODULES: ModuleItem[] = [
   // Core
   { id: "overview", label: "Overview", icon: LayoutDashboard, color: "text-blue-500", group: "core" },
   { id: "colis", label: "Colis", icon: Package, color: "text-emerald-500", group: "core" },
-  { id: "gp", label: "GP", icon: Users, color: "text-violet-500", group: "core" },
+  { id: "transporteurs", label: "Transporteurs", icon: Users, color: "text-violet-500", group: "core" },
   { id: "clients", label: "Clients", icon: UserRound, color: "text-pink-500", group: "core" },
   // Operations
   { id: "finance", label: "Finance", icon: Wallet, color: "text-amber-500", group: "ops" },
