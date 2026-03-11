@@ -165,7 +165,10 @@ export default function MobilityBookingPage() {
             <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <Ticket className="w-4 h-4" /> Code d'embarquement : <span className="font-mono font-bold">{booking.boarding_code || "—"}</span>
             </div>
-            <Button className="w-full" onClick={() => navigate("/reservations")}>
+            <Button className="w-full bg-transport-mobility" onClick={() => navigate(`/mobility/ticket?id=${booking.id}`)}>
+              <QrCode className="w-4 h-4 mr-2" /> Voir mon ticket QR
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => navigate("/reservations")}>
               Voir mes réservations
             </Button>
           </div>
