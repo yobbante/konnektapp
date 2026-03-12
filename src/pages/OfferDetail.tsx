@@ -549,7 +549,7 @@ export default function OfferDetail() {
                 onClick={handleBook} 
                 className="px-8 gap-2 shadow-lg shadow-primary/20"
               >
-                Réserver maintenant
+                {isMobility ? "Réserver une place" : "Réserver maintenant"}
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </motion.div>
