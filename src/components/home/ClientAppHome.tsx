@@ -759,12 +759,12 @@ export function ClientAppHome({
 
           activeTab === "all" ?
           (() => {
-            const modes = ["routier", "maritime", "aerien", "bagages_international"];
+            const modes = ["mobility", "routier", "maritime", "aerien", "bagages_international"];
             const modeLabels: Record<string, string> = {
-              routier: "Routier", maritime: "Maritime", aerien: "Aérien", bagages_international: "GP via Bagages", bagages_accompagnes: "GP via Bagages", navette: "GP via Bagages"
+              routier: "Routier", maritime: "Maritime", aerien: "Aérien", bagages_international: "GP via Bagages", bagages_accompagnes: "GP via Bagages", navette: "GP via Bagages", mobility: "Mobility"
             };
             const modeIcons: Record<string, typeof Package> = {
-              routier: Truck, maritime: Ship, aerien: Plane, bagages_international: Luggage, bagages_accompagnes: Luggage
+              routier: Truck, maritime: Ship, aerien: Plane, bagages_international: Luggage, bagages_accompagnes: Luggage, mobility: Car
             };
 
             // Helper: premium/pro score boost + rating
