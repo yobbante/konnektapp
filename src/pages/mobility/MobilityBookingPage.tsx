@@ -3,7 +3,7 @@
  */
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Car, ChevronLeft, MapPin, Calendar, Clock, Users, CreditCard, Check, Ticket, QrCode } from "lucide-react";
+import { Bus, ChevronLeft, MapPin, Calendar, Clock, Users, CreditCard, Check, Ticket, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -179,7 +179,7 @@ export default function MobilityBookingPage() {
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
                   <div className="w-12 h-12 rounded-xl bg-transport-mobility/10 flex items-center justify-center shrink-0">
-                    <Car className="w-6 h-6 text-transport-mobility" />
+                    <Bus className="w-6 h-6 text-transport-mobility" />
                   </div>
                   <div className="flex-1">
                     <p className="font-bold">{trip.origin_city} → {trip.destination_city}</p>

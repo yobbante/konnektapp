@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Car, Building2, User, Shield, ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { Bus, Building2, User, Shield, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -244,7 +244,7 @@ export default function MobilityRegistration() {
               <>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 rounded-xl bg-transport-mobility/10 flex items-center justify-center">
-                    <Car className="w-6 h-6 text-transport-mobility" />
+                    <Bus className="w-6 h-6 text-transport-mobility" />
                   </div>
                   <div>
                     <h2 className="font-bold">Véhicule</h2>
