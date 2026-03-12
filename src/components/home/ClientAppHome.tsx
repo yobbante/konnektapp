@@ -770,7 +770,7 @@ export function ClientAppHome({
                   return true;
                 })
                 .sort((a, b) => scoreOffer(b) - scoreOffer(a))
-                .slice(0, 6);
+                .slice(0, 4);
 
               return searchResults.length > 0 ?
                 <div className="space-y-1.5">
