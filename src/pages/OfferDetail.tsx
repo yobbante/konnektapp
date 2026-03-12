@@ -20,7 +20,9 @@ import { fr } from "date-fns/locale";
 import { RealTimeTrackingMap } from "@/components/tracking/RealTimeTrackingMap";
 import { MiniLoader } from "@/components/ui/MiniLoader";
 
-type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "bagages_international";
+import { Bus } from "lucide-react";
+
+type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "bagages_international" | "mobility";
 
 const transportConfig: Record<TransportType, { icon: React.ElementType; color: string; gradient: string }> = {
   express: { icon: Zap, color: "text-orange-500", gradient: "from-orange-500/20 to-amber-500/20" },
@@ -29,6 +31,7 @@ const transportConfig: Record<TransportType, { icon: React.ElementType; color: s
   aerien: { icon: Plane, color: "text-purple-500", gradient: "from-purple-500/20 to-pink-500/20" },
   voyageur: { icon: Briefcase, color: "text-green-500", gradient: "from-green-500/20 to-emerald-500/20" },
   bagages_international: { icon: Luggage, color: "text-primary", gradient: "from-primary/20 to-primary/10" },
+  mobility: { icon: Bus, color: "text-emerald-500", gradient: "from-emerald-500/20 to-green-500/20" },
 };
 
 interface GPOffer {
@@ -94,15 +97,38 @@ export default function OfferDetail() {
           .maybeSingle();
         if (gpData) setGpProfile(gpData);
       } else {
-        // Fallback: check mobility_offers and redirect
+        // Fallback: check mobility_offers and display as offer
         const { data: mobData } = await supabase
           .from("mobility_offers")
-          .select("id")
+          .select("*, mobility_profiles(business_name, rating, total_trips, verified_at)")
           .eq("id", id)
           .maybeSingle();
         if (mobData) {
-          navigate(`/mobility/booking?trip=${id}`, { replace: true });
-          return;
+          setOffer({
+            id: mobData.id,
+            origin_city: mobData.origin_city,
+            origin_country: mobData.origin_country,
+            destination_city: mobData.destination_city,
+            destination_country: mobData.destination_country,
+            departure_date: mobData.departure_date,
+            arrival_date: null,
+            price_per_kg: mobData.price_per_seat,
+            currency: mobData.currency || "XOF",
+            transport_type: "mobility",
+            available_capacity: mobData.available_seats,
+            total_capacity: mobData.total_seats,
+            description: mobData.luggage_policy,
+            conditions: mobData.cancellation_policy,
+            gp_id: mobData.mobility_profile_id,
+          });
+          if (mobData.mobility_profiles) {
+            setGpProfile({
+              business_name: mobData.mobility_profiles.business_name,
+              rating: mobData.mobility_profiles.rating || 0,
+              total_deliveries: mobData.mobility_profiles.total_trips || 0,
+              verified_at: mobData.mobility_profiles.verified_at,
+            });
+          }
         }
       }
     } catch (error) {
@@ -191,10 +217,13 @@ export default function OfferDetail() {
     );
   }
 
+  const isMobility = offer.transport_type === "mobility";
   const config = transportConfig[offer.transport_type as TransportType] || transportConfig.routier;
   const TypeIcon = config.icon;
   const capacityPercentage = ((offer.total_capacity - offer.available_capacity) / offer.total_capacity) * 100;
   const currencySymbol = getCurrencySymbol(offer.currency || "FCFA");
+  const capacityUnit = isMobility ? "places" : "kg";
+  const priceUnit = isMobility ? "/siège" : "/kg";
 
   return (
     <div className="min-h-screen bg-background">
@@ -262,7 +291,7 @@ export default function OfferDetail() {
             <div className="flex items-center justify-between mb-6">
               <Badge className={`gap-1.5 px-3 py-1 ${config.color} bg-background/80`}>
                 <TypeIcon className="w-3.5 h-3.5" />
-                {offer.transport_type === "bagages_international" ? "GP via Bagages" : offer.transport_type}
+                {offer.transport_type === "bagages_international" ? "GP via Bagages" : offer.transport_type === "mobility" ? "Mobilité" : offer.transport_type}
               </Badge>
               <Badge variant="outline" className="bg-success/10 text-success border-success/30">
                 <CheckCircle className="w-3 h-3 mr-1" />
@@ -344,7 +373,7 @@ export default function OfferDetail() {
                     <Star className="w-3 h-3 text-warning fill-warning" />
                     <span className="font-medium">{gpProfile?.rating?.toFixed(1) || "0.0"}</span>
                   </div>
-                  <span className="text-muted-foreground">{gpProfile?.total_deliveries || 0} livraisons</span>
+                  <span className="text-muted-foreground">{gpProfile?.total_deliveries || 0} {isMobility ? "trajets" : "livraisons"}</span>
                 </div>
               </div>
               <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -406,8 +435,8 @@ export default function OfferDetail() {
             <h3 className="font-semibold">Capacité disponible</h3>
           </div>
           <div className="flex items-center justify-between mb-3">
-            <span className="text-2xl font-bold text-primary">{offer.available_capacity} kg</span>
-            <span className="text-sm text-muted-foreground">sur {offer.total_capacity} kg</span>
+            <span className="text-2xl font-bold text-primary">{offer.available_capacity} {capacityUnit}</span>
+            <span className="text-sm text-muted-foreground">sur {offer.total_capacity} {capacityUnit}</span>
           </div>
           <div className="h-3 bg-muted rounded-full overflow-hidden">
             <motion.div 
@@ -500,10 +529,10 @@ export default function OfferDetail() {
         <div className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-muted-foreground">Prix par kg</p>
+              <p className="text-xs text-muted-foreground">Prix {isMobility ? "par siège" : "par kg"}</p>
               <div className="flex items-baseline gap-1">
                 <span className="text-2xl font-bold text-primary">{offer.price_per_kg.toLocaleString()}</span>
-                <span className="text-sm text-muted-foreground">{currencySymbol}</span>
+                <span className="text-sm text-muted-foreground">{currencySymbol}{priceUnit}</span>
               </div>
             </div>
             <motion.div whileTap={{ scale: 0.95 }}>
