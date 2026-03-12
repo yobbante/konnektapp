@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import konnektLogo from "@/assets/konnekt-logo-new.png";
+import konnektLogo from "@/assets/konnekt-logo-transparent.png";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Globe, ArrowRight, MapPin, ChevronLeft, ChevronDown, LogIn } from "lucide-react";
 import { Input } from "@/components/ui/input";
