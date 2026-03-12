@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Package, Truck, ChevronRight,
-  Clock, CheckCircle, XCircle, FileText, Inbox
+  Package, Truck, ChevronRight, Bus, QrCode, Ticket,
+  Clock, CheckCircle, XCircle, FileText, Inbox, MapPin, Calendar, Users
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/layout/AppHeader";
@@ -11,43 +11,49 @@ import { MobileNav } from "@/components/layout/MobileNav";
 import { RecipientTrackingCard } from "@/components/client/RecipientTrackingCard";
 import { OrderDetailSheet, getTransportIcon } from "@/components/client/OrderDetailSheet";
 import { ClientMissionsView } from "@/components/routier/ClientMissionsView";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  pending: { label: "En attente", color: "bg-amber-500/20 text-amber-600" },
-  accepted: { label: "Accepté", color: "bg-green-500/20 text-green-600" },
-  collected: { label: "Collecté", color: "bg-blue-500/20 text-blue-600" },
-  paid_held: { label: "Paiement reçu", color: "bg-emerald-500/20 text-emerald-600" },
-  checked_in: { label: "Déposé", color: "bg-indigo-500/20 text-indigo-600" },
-  weight_pending_payment: { label: "Supplément requis", color: "bg-orange-500/20 text-orange-600" },
-  scheduled_departure: { label: "Départ programmé", color: "bg-violet-500/20 text-violet-600" },
-  in_transit: { label: "En transit", color: "bg-blue-500/20 text-blue-600" },
-  arrived_destination: { label: "Arrivé", color: "bg-teal-500/20 text-teal-600" },
-  delivery_pending: { label: "Livraison en cours", color: "bg-cyan-500/20 text-cyan-600" },
-  delivered: { label: "Livré", color: "bg-green-500/20 text-green-700" },
-  delivery_confirmed: { label: "Livré", color: "bg-emerald-500/20 text-emerald-700" },
-  cancelled: { label: "Annulée", color: "bg-destructive/20 text-destructive" },
-  rejected: { label: "Refusée", color: "bg-destructive/20 text-destructive" },
-  expired: { label: "Expirée", color: "bg-muted text-muted-foreground" },
+const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
+  pending: { label: "En attente", color: "bg-amber-500/15 text-amber-600", icon: Clock },
+  accepted: { label: "Accepté", color: "bg-green-500/15 text-green-600", icon: CheckCircle },
+  collected: { label: "Collecté", color: "bg-blue-500/15 text-blue-600", icon: Package },
+  paid_held: { label: "Paiement reçu", color: "bg-emerald-500/15 text-emerald-600", icon: CheckCircle },
+  checked_in: { label: "Déposé", color: "bg-indigo-500/15 text-indigo-600", icon: Package },
+  weight_pending_payment: { label: "Supplément requis", color: "bg-orange-500/15 text-orange-600", icon: Clock },
+  scheduled_departure: { label: "Départ programmé", color: "bg-violet-500/15 text-violet-600", icon: Truck },
+  in_transit: { label: "En transit", color: "bg-blue-500/15 text-blue-600", icon: Truck },
+  arrived_destination: { label: "Arrivé", color: "bg-teal-500/15 text-teal-600", icon: MapPin },
+  delivery_pending: { label: "Livraison en cours", color: "bg-cyan-500/15 text-cyan-600", icon: Truck },
+  delivered: { label: "Livré", color: "bg-green-500/15 text-green-700", icon: CheckCircle },
+  delivery_confirmed: { label: "Livré", color: "bg-emerald-500/15 text-emerald-700", icon: CheckCircle },
+  released: { label: "Terminée", color: "bg-green-500/15 text-green-700", icon: CheckCircle },
+  cancelled: { label: "Annulée", color: "bg-destructive/15 text-destructive", icon: XCircle },
+  rejected: { label: "Refusée", color: "bg-destructive/15 text-destructive", icon: XCircle },
+  expired: { label: "Expirée", color: "bg-muted text-muted-foreground", icon: Clock },
   // Custom request statuses
-  open: { label: "Ouverte", color: "bg-amber-500/20 text-amber-600" },
-  has_responses: { label: "Réponses reçues", color: "bg-blue-500/20 text-blue-600" },
-  closed: { label: "Fermée", color: "bg-muted text-muted-foreground" },
+  open: { label: "Ouverte", color: "bg-amber-500/15 text-amber-600", icon: Clock },
+  has_responses: { label: "Réponses reçues", color: "bg-blue-500/15 text-blue-600", icon: FileText },
+  closed: { label: "Fermée", color: "bg-muted text-muted-foreground", icon: XCircle },
+  // Mobility statuses
+  active: { label: "Actif", color: "bg-emerald-500/15 text-emerald-600", icon: CheckCircle },
+  confirmed: { label: "Confirmé", color: "bg-green-500/15 text-green-600", icon: CheckCircle },
+  completed: { label: "Terminé", color: "bg-muted text-muted-foreground", icon: CheckCircle },
 };
 
 const ACTIVE_STATUSES = ['pending', 'accepted', 'collected', 'paid_held', 'checked_in', 'weight_pending_payment', 'scheduled_departure', 'in_transit', 'arrived_destination', 'delivery_pending'];
 const DELIVERED_STATUSES = ['delivered', 'delivery_confirmed', 'released'];
 const CANCELLED_STATUSES = ['cancelled', 'rejected', 'expired'];
 
-type TabId = "actives" | "annulees" | "livrees" | "colis" | "demandes";
+type TabId = "actives" | "tickets" | "colis" | "demandes" | "historique";
 
 const TABS: { id: TabId; label: string; icon: typeof Clock }[] = [
-  { id: "actives", label: "Actives", icon: Clock },
-  { id: "colis", label: "Colis pour vous", icon: Package },
+  { id: "actives", label: "En cours", icon: Clock },
+  { id: "tickets", label: "Tickets", icon: Ticket },
+  { id: "colis", label: "Colis", icon: Package },
   { id: "demandes", label: "Demandes", icon: FileText },
-  { id: "livrees", label: "Livrées", icon: CheckCircle },
-  { id: "annulees", label: "Annulées", icon: XCircle },
+  { id: "historique", label: "Historique", icon: CheckCircle },
 ];
 
 export default function ReservationsPage() {
@@ -57,6 +63,7 @@ export default function ReservationsPage() {
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [orders, setOrders] = useState<any[]>([]);
   const [customRequests, setCustomRequests] = useState<any[]>([]);
+  const [mobilityBookings, setMobilityBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -72,7 +79,7 @@ export default function ReservationsPage() {
       if (!user) return;
       setUserId(user.id);
 
-      const [ordersRes, requestsRes, recipientRes] = await Promise.all([
+      const [ordersRes, requestsRes, recipientRes, mobilityRes] = await Promise.all([
         supabase
           .from("orders")
           .select(`
@@ -94,11 +101,17 @@ export default function ReservationsPage() {
           .select("id", { count: "exact", head: true })
           .eq("recipient_user_id", user.id)
           .not("status", "in", '("cancelled","released")'),
+        supabase
+          .from("mobility_bookings")
+          .select("*, mobility_profiles:mobility_profile_id(business_name)")
+          .eq("client_id", user.id)
+          .order("created_at", { ascending: false }),
       ]);
 
       if (ordersRes.data) setOrders(ordersRes.data);
       if (requestsRes.data) setCustomRequests(requestsRes.data);
       setRecipientCount(recipientRes.count ?? 0);
+      if (mobilityRes.data) setMobilityBookings(mobilityRes.data);
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
@@ -106,12 +119,8 @@ export default function ReservationsPage() {
     }
   };
 
-  const filteredOrders = orders.filter((o) => {
-    if (activeTab === "actives") return ACTIVE_STATUSES.includes(o.status);
-    if (activeTab === "livrees") return DELIVERED_STATUSES.includes(o.status);
-    if (activeTab === "annulees") return CANCELLED_STATUSES.includes(o.status);
-    return false;
-  });
+  const activeOrders = orders.filter(o => ACTIVE_STATUSES.includes(o.status));
+  const historyOrders = orders.filter(o => DELIVERED_STATUSES.includes(o.status) || CANCELLED_STATUSES.includes(o.status));
 
   const getOrderIcon = (order: any) => {
     if (CANCELLED_STATUSES.includes(order.status)) return XCircle;
@@ -120,21 +129,193 @@ export default function ReservationsPage() {
   };
 
   const getTabCount = (tabId: TabId) => {
-    if (tabId === "actives") return orders.filter(o => ACTIVE_STATUSES.includes(o.status)).length;
-    if (tabId === "livrees") return orders.filter(o => DELIVERED_STATUSES.includes(o.status)).length;
-    if (tabId === "annulees") return orders.filter(o => CANCELLED_STATUSES.includes(o.status)).length;
+    if (tabId === "actives") return activeOrders.length;
+    if (tabId === "historique") return historyOrders.length;
     if (tabId === "demandes") return customRequests.length;
     if (tabId === "colis") return recipientCount;
+    if (tabId === "tickets") return mobilityBookings.length;
     return 0;
+  };
+
+  const renderOrderCard = (order: any, i: number) => {
+    const cfg = STATUS_CONFIG[order.status] || { label: order.status, color: "bg-muted text-muted-foreground", icon: Clock };
+    const Icon = getOrderIcon(order);
+    const isActive = ACTIVE_STATUSES.includes(order.status);
+    const isCancelled = CANCELLED_STATUSES.includes(order.status);
+    const isDelivered = DELIVERED_STATUSES.includes(order.status);
+
+    return (
+      <motion.div
+        key={order.id}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: i * 0.03 }}
+        onClick={() => setSelectedOrder(order)}
+        className={`bg-card border rounded-2xl p-3.5 active:scale-[0.98] transition-all cursor-pointer ${
+          isActive ? "border-primary/20 shadow-sm" : "border-border"
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
+            isCancelled ? 'bg-destructive/10' :
+            isDelivered ? 'bg-green-500/10' : 'bg-primary/10'
+          }`}>
+            <Icon className={`w-5 h-5 ${
+              isCancelled ? 'text-destructive' :
+              isDelivered ? 'text-green-600' : 'text-primary'
+            }`} />
+          </div>
+          <div className="flex-1 min-w-0">
+            {/* Route */}
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-bold text-foreground truncate">
+                {order.origin_city} → {order.destination_city}
+              </p>
+              <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            </div>
+
+            {/* Status + order number */}
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${cfg.color}`}>
+                {cfg.label}
+              </span>
+              <span className="text-[10px] text-muted-foreground font-mono">
+                #{order.order_number?.slice(-6)}
+              </span>
+            </div>
+
+            {/* Details row */}
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              {order.weight > 0 && (
+                <span className="text-[11px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
+                  {order.weight} kg
+                </span>
+              )}
+              {order.total_price > 0 && (
+                <span className="text-[11px] font-semibold text-foreground bg-muted/50 px-1.5 py-0.5 rounded">
+                  {order.total_price.toLocaleString()} {order.currency || "FCFA"}
+                </span>
+              )}
+              {order.gp_profiles?.gp_type && (
+                <span className="text-[10px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded uppercase">
+                  {order.gp_profiles.gp_type}
+                </span>
+              )}
+            </div>
+
+            {/* GP name + date */}
+            <div className="flex items-center justify-between mt-1.5">
+              {order.gp_profiles?.business_name && (
+                <span className="text-[10px] text-muted-foreground truncate max-w-[60%]">
+                  {order.gp_profiles.business_name}
+                </span>
+              )}
+              <span className="text-[10px] text-muted-foreground">
+                {format(new Date(order.created_at), "d MMM yyyy", { locale: fr })}
+              </span>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
+  const renderMobilityCard = (booking: any, i: number) => {
+    const status = booking.status || "active";
+    const cfg = STATUS_CONFIG[status] || { label: status, color: "bg-muted text-muted-foreground", icon: Clock };
+    const isScanned = !!booking.scanned_at;
+
+    return (
+      <motion.div
+        key={booking.id}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: i * 0.03 }}
+        className="bg-card border border-border rounded-2xl overflow-hidden"
+      >
+        {/* Top colored strip */}
+        <div className="h-1 bg-gradient-to-r from-emerald-500 to-green-500" />
+        
+        <div className="p-3.5">
+          <div className="flex items-start gap-3">
+            <div className="w-11 h-11 rounded-xl bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+              <Bus className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              {/* Route */}
+              <p className="text-sm font-bold text-foreground truncate">
+                {booking.origin_city} → {booking.destination_city}
+              </p>
+
+              {/* Status */}
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${cfg.color}`}>
+                  {isScanned ? "Scanné ✓" : cfg.label}
+                </span>
+                <span className="text-[10px] text-muted-foreground font-mono">
+                  {booking.booking_number}
+                </span>
+              </div>
+
+              {/* Details */}
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <span className="text-[11px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  {format(new Date(booking.departure_date), "d MMM", { locale: fr })}
+                </span>
+                <span className="text-[11px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
+                  {booking.departure_time?.slice(0, 5)}
+                </span>
+                <span className="text-[11px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded flex items-center gap-1">
+                  <Users className="w-3 h-3" />
+                  {booking.passenger_count} {booking.passenger_count > 1 ? "passagers" : "passager"}
+                </span>
+              </div>
+
+              {/* Price + transporteur */}
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-xs font-bold text-emerald-600">
+                  {booking.total_price?.toLocaleString()} {booking.currency || "XOF"}
+                </span>
+                {booking.mobility_profiles?.business_name && (
+                  <span className="text-[10px] text-muted-foreground truncate max-w-[45%]">
+                    {booking.mobility_profiles.business_name}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* QR Ticket Button */}
+          <div className="mt-3 flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1 gap-1.5 text-xs h-9 border-emerald-500/30 text-emerald-600 hover:bg-emerald-50"
+              onClick={() => navigate(`/mobility/ticket?id=${booking.id}`)}
+            >
+              <QrCode className="w-3.5 h-3.5" />
+              Voir mon ticket QR
+            </Button>
+            {booking.boarding_code && (
+              <div className="flex items-center gap-1 px-3 bg-muted/50 rounded-lg">
+                <Ticket className="w-3 h-3 text-muted-foreground" />
+                <span className="text-[11px] font-mono font-bold text-foreground">{booking.boarding_code}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    );
   };
 
   return (
     <div className="min-h-screen bg-background flex flex-col pb-20">
       <AppHeader title="Mes réservations" showBack />
 
-      {/* Tabs - scrollable */}
-      <div className="px-4 pt-3 pb-2 border-b border-border/50">
-        <div className="flex gap-1 bg-muted/50 rounded-xl p-1 overflow-x-auto no-scrollbar">
+      {/* Tabs */}
+      <div className="px-3 pt-3 pb-2 border-b border-border/50">
+        <div className="flex gap-0.5 bg-muted/50 rounded-xl p-1 overflow-x-auto no-scrollbar">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             const count = getTabCount(tab.id);
@@ -143,7 +324,7 @@ export default function ReservationsPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
+                className={`flex items-center justify-center gap-1 py-2 px-2.5 rounded-lg text-[11px] font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
                   isActive
                     ? "bg-card text-foreground shadow-sm"
                     : "text-muted-foreground"
@@ -152,7 +333,7 @@ export default function ReservationsPage() {
                 <tab.icon className="w-3.5 h-3.5" />
                 {tab.label}
                 {count > 0 && (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                  <span className={`text-[9px] min-w-[18px] text-center px-1 py-0.5 rounded-full font-bold leading-none ${
                     isActive ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
                   }`}>
                     {count}
@@ -166,6 +347,39 @@ export default function ReservationsPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto overscroll-contain pb-8" style={{ WebkitOverflowScrolling: 'touch' }}>
+        
+        {/* Tab: Tickets Mobilité */}
+        {activeTab === "tickets" && (
+          <div className="px-4 pt-3 space-y-3">
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : mobilityBookings.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4">
+                  <Ticket className="w-8 h-8 text-emerald-500" />
+                </div>
+                <p className="text-sm font-bold text-foreground">Aucun ticket de transport</p>
+                <p className="text-xs text-muted-foreground mt-1.5 max-w-[250px]">
+                  Réservez une place sur une navette pour obtenir votre ticket QR ici
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-4 gap-1.5"
+                  onClick={() => navigate("/")}
+                >
+                  <Bus className="w-3.5 h-3.5" />
+                  Explorer les trajets
+                </Button>
+              </div>
+            ) : (
+              mobilityBookings.map((bk, i) => renderMobilityCard(bk, i))
+            )}
+          </div>
+        )}
+
         {/* Tab: Colis pour vous */}
         {activeTab === "colis" && userId && (
           <RecipientTrackingCard userId={userId} listMode />
@@ -174,10 +388,8 @@ export default function ReservationsPage() {
         {/* Tab: Demandes personnalisées */}
         {activeTab === "demandes" && (
           <div className="px-4 pt-3 space-y-4">
-            {/* Routier Missions with full negotiation */}
             <ClientMissionsView />
 
-            {/* Custom requests (GP/Fret) */}
             {loading ? (
               <div className="flex items-center justify-center py-10">
                 <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -186,10 +398,10 @@ export default function ReservationsPage() {
               <div className="space-y-2">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <Package className="w-3.5 h-3.5" />
-                  Demandes personnalisees ({customRequests.length})
+                  Demandes personnalisées ({customRequests.length})
                 </h3>
                 {customRequests.map((req, i) => {
-                  const cfg = STATUS_CONFIG[req.status] || { label: req.status, color: "bg-muted text-muted-foreground" };
+                  const cfg = STATUS_CONFIG[req.status] || { label: req.status, color: "bg-muted text-muted-foreground", icon: Clock };
                   return (
                     <motion.div
                       key={req.id}
@@ -197,10 +409,10 @@ export default function ReservationsPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.03 }}
                       onClick={() => navigate(`/quote-confirmation?requestId=${req.id}`)}
-                      className="bg-card border border-border rounded-xl p-3 active:scale-[0.98] transition-transform cursor-pointer"
+                      className="bg-card border border-border rounded-2xl p-3.5 active:scale-[0.98] transition-transform cursor-pointer"
                     >
                       <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-primary/10">
+                        <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-primary/10">
                           <FileText className="w-5 h-5 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -210,20 +422,32 @@ export default function ReservationsPage() {
                             </p>
                             <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                           </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${cfg.color}`}>
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${cfg.color}`}>
                               {cfg.label}
                             </span>
-                            <span className="text-[10px] text-muted-foreground">
+                            <span className="text-[10px] text-muted-foreground font-mono">
                               #{req.request_number?.slice(-6)}
                             </span>
                           </div>
-                          <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
-                            {req.shipment_type && <span className="capitalize">{req.shipment_type}</span>}
-                            {req.weight_estimate && <span>{req.weight_estimate} kg</span>}
-                            {req.transport_type && <span className="capitalize">{req.transport_type}</span>}
+                          <div className="flex items-center gap-2 mt-2 flex-wrap">
+                            {req.shipment_type && (
+                              <span className="text-[11px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded capitalize">
+                                {req.shipment_type}
+                              </span>
+                            )}
+                            {req.weight_estimate && (
+                              <span className="text-[11px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
+                                {req.weight_estimate} kg
+                              </span>
+                            )}
+                            {req.transport_type && (
+                              <span className="text-[11px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded capitalize">
+                                {req.transport_type}
+                              </span>
+                            )}
                           </div>
-                          <p className="text-[10px] text-muted-foreground mt-1">
+                          <p className="text-[10px] text-muted-foreground mt-1.5">
                             {format(new Date(req.created_at), "d MMM yyyy", { locale: fr })}
                           </p>
                         </div>
@@ -234,13 +458,12 @@ export default function ReservationsPage() {
               </div>
             )}
 
-            {/* Empty state when no missions AND no custom requests */}
             {!loading && customRequests.length === 0 && (
               <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
                 <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mb-3">
                   <FileText className="w-7 h-7 text-muted-foreground" />
                 </div>
-                <p className="text-sm font-semibold text-foreground">Aucune demande personnalisée</p>
+                <p className="text-sm font-bold text-foreground">Aucune demande</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Vos demandes GP et fret apparaîtront ici
                 </p>
@@ -249,91 +472,51 @@ export default function ReservationsPage() {
           </div>
         )}
 
-        {/* Tab: Orders (actives, livrees, annulees) */}
-        {(activeTab === "actives" || activeTab === "livrees" || activeTab === "annulees") && (
+        {/* Tab: En cours */}
+        {activeTab === "actives" && (
           <>
-            {/* Colis pour vous reminder on actives tab */}
             {loading ? (
               <div className="flex items-center justify-center py-20">
                 <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               </div>
-            ) : filteredOrders.length === 0 ? (
+            ) : activeOrders.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mb-3">
-                  {activeTab === "actives" && <Package className="w-7 h-7 text-muted-foreground" />}
-                  {activeTab === "livrees" && <CheckCircle className="w-7 h-7 text-muted-foreground" />}
-                  {activeTab === "annulees" && <XCircle className="w-7 h-7 text-muted-foreground" />}
+                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+                  <Package className="w-8 h-8 text-primary" />
                 </div>
-                <p className="text-sm font-semibold text-foreground">
-                  {activeTab === "actives" && "Aucune réservation active"}
-                  {activeTab === "livrees" && "Aucune livraison effectuée"}
-                  {activeTab === "annulees" && "Aucune réservation annulée"}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {activeTab === "actives" && "Vos envois en cours apparaîtront ici"}
-                  {activeTab === "livrees" && "Vos colis livrés s'afficheront ici"}
-                  {activeTab === "annulees" && "Les réservations annulées seront listées ici"}
+                <p className="text-sm font-bold text-foreground">Aucune réservation en cours</p>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Vos envois actifs apparaîtront ici
                 </p>
               </div>
             ) : (
-              <div className="px-4 pt-3 space-y-2">
-                {filteredOrders.map((order, i) => {
-                  const cfg = STATUS_CONFIG[order.status] || { label: order.status, color: "bg-muted text-muted-foreground" };
-                  const Icon = getOrderIcon(order);
+              <div className="px-4 pt-3 space-y-2.5">
+                {activeOrders.map((order, i) => renderOrderCard(order, i))}
+              </div>
+            )}
+          </>
+        )}
 
-                  return (
-                    <motion.div
-                      key={order.id}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.03 }}
-                      onClick={() => setSelectedOrder(order)}
-                      className="bg-card border border-border rounded-xl p-3 active:scale-[0.98] transition-transform cursor-pointer"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                          CANCELLED_STATUSES.includes(order.status) ? 'bg-destructive/10' :
-                          DELIVERED_STATUSES.includes(order.status) ? 'bg-green-500/10' : 'bg-primary/10'
-                        }`}>
-                          <Icon className={`w-5 h-5 ${
-                            CANCELLED_STATUSES.includes(order.status) ? 'text-destructive' :
-                            DELIVERED_STATUSES.includes(order.status) ? 'text-green-600' : 'text-primary'
-                          }`} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-sm font-bold text-foreground truncate">
-                              {order.origin_city} → {order.destination_city}
-                            </p>
-                            <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                          </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${cfg.color}`}>
-                              {cfg.label}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground">
-                              #{order.order_number?.slice(-6)}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
-                            {order.weight && <span>{order.weight} kg</span>}
-                            {order.total_price && (
-                              <span className="font-medium text-foreground">
-                                {order.total_price.toLocaleString()} {order.currency || "FCFA"}
-                              </span>
-                            )}
-                            {order.gp_profiles?.business_name && (
-                              <span className="truncate">· {order.gp_profiles.business_name}</span>
-                            )}
-                          </div>
-                          <p className="text-[10px] text-muted-foreground mt-1">
-                            {format(new Date(order.created_at), "d MMM yyyy", { locale: fr })}
-                          </p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
+        {/* Tab: Historique (livrées + annulées) */}
+        {activeTab === "historique" && (
+          <>
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : historyOrders.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mb-4">
+                  <CheckCircle className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-bold text-foreground">Aucun historique</p>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Vos commandes livrées et annulées apparaîtront ici
+                </p>
+              </div>
+            ) : (
+              <div className="px-4 pt-3 space-y-2.5">
+                {historyOrders.map((order, i) => renderOrderCard(order, i))}
               </div>
             )}
           </>
