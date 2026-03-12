@@ -107,6 +107,7 @@ import MobilityBookingPage from "./pages/mobility/MobilityBookingPage";
 import MobilitySearchResults from "./pages/mobility/MobilitySearchResults";
 import MobilityTicketPage from "./pages/mobility/MobilityTicketPage";
 import MobilityScanTicketPage from "./pages/mobility/MobilityScanTicketPage";
+import MobilityParametresPage from "./pages/mobility/MobilityParametresPage";
 // Coursier pages
 import CoursierRegistration from "./pages/coursier/CoursierRegistration";
 // Agence pages
