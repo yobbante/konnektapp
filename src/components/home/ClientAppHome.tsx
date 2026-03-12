@@ -716,7 +716,13 @@ export function ClientAppHome({
           {isRoutier ?
           routierOffers.length > 0 ?
           <div className="space-y-1.5">
-                {routierOffers.map((offer, idx) => {
+                {routierOffers
+                  .sort((a: any, b: any) => {
+                    const subScore = (o: any) => { const s = o.gp_profiles?.subscription || "free"; return s === "pro" ? 1000 : s === "premium" ? 500 : 0; };
+                    return (subScore(b) + (b.gp_profiles?.rating || 0)) - (subScore(a) + (a.gp_profiles?.rating || 0));
+                  })
+                  .slice(0, 4)
+                  .map((offer, idx) => {
                   const sub = offer.gp_profiles?.subscription;
                   return (
                     <HomeOfferCard
@@ -728,6 +734,11 @@ export function ClientAppHome({
                     />
                   );
                 })}
+                {routierOffers.length > 4 && (
+                  <button onClick={goToOffres} className="w-full py-2.5 text-xs font-semibold text-primary flex items-center justify-center gap-1 hover:bg-primary/5 rounded-xl transition-colors border border-dashed border-primary/20">
+                    Voir toutes les offres <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div> :
 
           <EmptyOffers modeConfig={modeConfig} onAction={goToOffres} /> :
