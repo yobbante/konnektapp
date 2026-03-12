@@ -240,7 +240,7 @@ export function MobileNav() {
 }
 
 // ─── GP Mobile Nav (unchanged) ───
-import { BarChart3, Package, User } from "lucide-react";
+import { BarChart3, Package, User, Search } from "lucide-react";
 
 const gpNavItems = [
   { icon: Home, label: "Accueil", tab: "overview" },
