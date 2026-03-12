@@ -42,6 +42,7 @@ const TYPE_MAP: Record<string, string[]> = {
   aerien: ["aerien"],
   maritime: ["maritime"],
   routier: ["routier"],
+  mobility: ["mobility"],
   bagages: ["bagages_accompagnes", "navette", "bagages_international", "voyageur"],
 };
 
