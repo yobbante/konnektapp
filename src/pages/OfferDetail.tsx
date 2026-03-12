@@ -20,7 +20,9 @@ import { fr } from "date-fns/locale";
 import { RealTimeTrackingMap } from "@/components/tracking/RealTimeTrackingMap";
 import { MiniLoader } from "@/components/ui/MiniLoader";
 
-type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "bagages_international";
+import { Bus } from "lucide-react";
+
+type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "bagages_international" | "mobility";
 
 const transportConfig: Record<TransportType, { icon: React.ElementType; color: string; gradient: string }> = {
   express: { icon: Zap, color: "text-orange-500", gradient: "from-orange-500/20 to-amber-500/20" },
@@ -29,6 +31,7 @@ const transportConfig: Record<TransportType, { icon: React.ElementType; color: s
   aerien: { icon: Plane, color: "text-purple-500", gradient: "from-purple-500/20 to-pink-500/20" },
   voyageur: { icon: Briefcase, color: "text-green-500", gradient: "from-green-500/20 to-emerald-500/20" },
   bagages_international: { icon: Luggage, color: "text-primary", gradient: "from-primary/20 to-primary/10" },
+  mobility: { icon: Bus, color: "text-emerald-500", gradient: "from-emerald-500/20 to-green-500/20" },
 };
 
 interface GPOffer {
