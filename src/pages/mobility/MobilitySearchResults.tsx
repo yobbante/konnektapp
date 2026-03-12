@@ -61,7 +61,7 @@ export default function MobilitySearchResults() {
           <div className="py-12 text-center"><MiniLoader /></div>
         ) : results.length === 0 ? (
           <div className="py-12 text-center">
-            <Car className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+            <Bus className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
             <p className="font-semibold">Aucun trajet trouvé</p>
             <p className="text-sm text-muted-foreground mt-1">Modifiez vos critères ou revenez plus tard</p>
           </div>

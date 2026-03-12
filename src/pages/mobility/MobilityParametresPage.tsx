@@ -185,7 +185,7 @@ export default function MobilityParametresPage() {
         <SettingsSection title="Opérations">
           <SettingsRow icon={Route} iconColor="text-transport-mobility" iconBg="bg-transport-mobility/10" label="Mes trajets" desc="Gérer mes lignes" onClick={() => navigate("/mobility/apercu")} />
           <Separator />
-          <SettingsRow icon={Car} iconColor="text-transport-mobility" iconBg="bg-transport-mobility/10" label="Mes véhicules" desc="Flotte et documents" onClick={() => navigate("/mobility/vehicules")} />
+          <SettingsRow icon={Bus} iconColor="text-transport-mobility" iconBg="bg-transport-mobility/10" label="Mes véhicules" desc="Flotte et documents" onClick={() => navigate("/mobility/vehicules")} />
           <Separator />
           <SettingsRow icon={Calendar} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Horaires" desc="Planning des départs" onClick={() => navigate("/mobility/apercu")} />
           <Separator />

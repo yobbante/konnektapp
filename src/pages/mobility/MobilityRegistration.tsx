@@ -244,7 +244,7 @@ export default function MobilityRegistration() {
               <>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 rounded-xl bg-transport-mobility/10 flex items-center justify-center">
-                    <Car className="w-6 h-6 text-transport-mobility" />
+                    <Bus className="w-6 h-6 text-transport-mobility" />
                   </div>
                   <div>
                     <h2 className="font-bold">Véhicule</h2>
