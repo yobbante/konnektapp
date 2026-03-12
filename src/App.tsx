@@ -108,6 +108,7 @@ import MobilitySearchResults from "./pages/mobility/MobilitySearchResults";
 import MobilityTicketPage from "./pages/mobility/MobilityTicketPage";
 import MobilityScanTicketPage from "./pages/mobility/MobilityScanTicketPage";
 import MobilityParametresPage from "./pages/mobility/MobilityParametresPage";
+import MobilityWalletPage from "./pages/mobility/MobilityWalletPage";
 // Coursier pages
 import CoursierRegistration from "./pages/coursier/CoursierRegistration";
 // Agence pages
