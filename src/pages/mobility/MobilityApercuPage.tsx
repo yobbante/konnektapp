@@ -246,7 +246,7 @@ export default function MobilityApercuPage() {
           <div className="space-y-2 mt-4">
             {[
               { label: "Mon portefeuille", icon: Wallet, route: "/mobility/wallet" },
-              { label: "Mes véhicules", icon: Car, route: "/mobility/vehicules" },
+              { label: "Mes véhicules", icon: Bus, route: "/mobility/vehicules" },
               { label: "Statistiques", icon: BarChart3, route: "#" },
             ].map(item => (
               <button
