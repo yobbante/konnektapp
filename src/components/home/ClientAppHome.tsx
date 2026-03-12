@@ -464,18 +464,42 @@ export function ClientAppHome({
 
   const goToOffres = () => openOffresPopup();
 
-  // Offers (GP)
+  // Offers (GP + Mobility)
   const [offers, setOffers] = useState<any[]>([]);
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
-    supabase.
-    from("gp_offers").
-    select("*, gp_profiles(business_name, rating, total_reviews, subscription)").
-    eq("status", "active").
-    gte("departure_date", today).
-    order("departure_date", { ascending: true }).
-    limit(50).
-    then(({ data }) => {if (data) setOffers(data);});
+    Promise.all([
+      supabase
+        .from("gp_offers")
+        .select("*, gp_profiles(business_name, rating, total_reviews, subscription)")
+        .eq("status", "active")
+        .gte("departure_date", today)
+        .order("departure_date", { ascending: true })
+        .limit(50),
+      supabase
+        .from("mobility_offers")
+        .select("*, mobility_profiles(business_name, rating)")
+        .eq("status", "active")
+        .gte("departure_date", today)
+        .order("departure_date", { ascending: true })
+        .limit(20),
+    ]).then(([gpRes, mobRes]) => {
+      const gpOffers = gpRes.data || [];
+      const mobOffers = (mobRes.data || []).map((mo: any) => ({
+        ...mo,
+        transport_type: "mobility",
+        price_per_kg: mo.price_per_seat,
+        available_capacity: mo.available_seats,
+        total_capacity: mo.total_seats,
+        gp_profiles: mo.mobility_profiles ? {
+          business_name: mo.mobility_profiles.business_name,
+          rating: mo.mobility_profiles.rating || 0,
+          total_reviews: 0,
+          subscription: "free",
+        } : null,
+      }));
+      setOffers([...gpOffers, ...mobOffers]);
+    });
   }, []);
 
   // Routier missions
@@ -735,12 +759,12 @@ export function ClientAppHome({
 
           activeTab === "all" ?
           (() => {
-            const modes = ["routier", "maritime", "aerien", "bagages_international"];
+            const modes = ["mobility", "routier", "maritime", "aerien", "bagages_international"];
             const modeLabels: Record<string, string> = {
-              routier: "Routier", maritime: "Maritime", aerien: "Aérien", bagages_international: "GP via Bagages", bagages_accompagnes: "GP via Bagages", navette: "GP via Bagages"
+              routier: "Routier", maritime: "Maritime", aerien: "Aérien", bagages_international: "GP via Bagages", bagages_accompagnes: "GP via Bagages", navette: "GP via Bagages", mobility: "Mobility"
             };
             const modeIcons: Record<string, typeof Package> = {
-              routier: Truck, maritime: Ship, aerien: Plane, bagages_international: Luggage, bagages_accompagnes: Luggage
+              routier: Truck, maritime: Ship, aerien: Plane, bagages_international: Luggage, bagages_accompagnes: Luggage, mobility: Car
             };
 
             // Helper: premium/pro score boost + rating

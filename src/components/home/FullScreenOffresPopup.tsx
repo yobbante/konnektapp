@@ -82,19 +82,35 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
   const fetchOffers = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("gp_offers")
-        .select("id, origin_city, origin_country, destination_city, destination_country, departure_date, price_per_kg, currency, transport_type, available_capacity, total_capacity, status, gp_id")
-        .eq("status", "active")
-        .gte("departure_date", new Date().toISOString().split("T")[0])
-        .gt("available_capacity", 0)
-        .order("departure_date", { ascending: true })
-        .limit(50);
+      const today = new Date().toISOString().split("T")[0];
+      const [gpRes, mobRes] = await Promise.all([
+        supabase
+          .from("gp_offers")
+          .select("id, origin_city, origin_country, destination_city, destination_country, departure_date, price_per_kg, currency, transport_type, available_capacity, total_capacity, status, gp_id")
+          .eq("status", "active")
+          .gte("departure_date", today)
+          .gt("available_capacity", 0)
+          .order("departure_date", { ascending: true })
+          .limit(50),
+        supabase
+          .from("mobility_offers")
+          .select("id, origin_city, origin_country, destination_city, destination_country, departure_date, price_per_seat, currency, available_seats, total_seats, status, mobility_profile_id, mobility_type, departure_time")
+          .eq("status", "active")
+          .gte("departure_date", today)
+          .gt("available_seats", 0)
+          .order("departure_date", { ascending: true })
+          .limit(20),
+      ]);
 
-      if (error) throw error;
+      if (gpRes.error) throw gpRes.error;
 
-      if (data && data.length > 0) {
-        const gpIds = [...new Set(data.map(o => o.gp_id))];
+      const gpData = gpRes.data || [];
+      const mobData = mobRes.data || [];
+
+      // Enrich GP offers
+      let enrichedGp: any[] = [];
+      if (gpData.length > 0) {
+        const gpIds = [...new Set(gpData.map(o => o.gp_id))];
         const [profilesRes, ktpRes, subsRes] = await Promise.all([
           supabase.from("public_gp_profiles").select("id, business_name, rating, default_currency").in("id", gpIds),
           supabase.from("ktp_status").select("gp_id, ktp_level, trust_score").in("gp_id", gpIds),
@@ -103,10 +119,32 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
         const profileMap = new Map(profilesRes.data?.map(p => [p.id, p]) || []);
         const ktpMap = new Map(ktpRes.data?.map(k => [k.gp_id, k]) || []);
         const subsMap = new Map(subsRes.data?.map(s => [s.id, s.subscription]) || []);
-        setOffers(data.map(o => ({ ...o, gp_profile: profileMap.get(o.gp_id), ktp: ktpMap.get(o.gp_id), subscription: subsMap.get(o.gp_id) || "free" })));
-      } else {
-        setOffers([]);
+        enrichedGp = gpData.map(o => ({ ...o, gp_profile: profileMap.get(o.gp_id), ktp: ktpMap.get(o.gp_id), subscription: subsMap.get(o.gp_id) || "free" }));
       }
+
+      // Enrich Mobility offers
+      let enrichedMob: any[] = [];
+      if (mobData.length > 0) {
+        const mobIds = [...new Set(mobData.map(o => o.mobility_profile_id))];
+        const { data: mobProfiles } = await supabase.from("mobility_profiles").select("id, business_name, rating").in("id", mobIds);
+        const mobProfileMap = new Map(mobProfiles?.map(p => [p.id, p]) || []);
+        enrichedMob = mobData.map(o => ({
+          ...o,
+          transport_type: "mobility",
+          price_per_kg: o.price_per_seat,
+          available_capacity: o.available_seats,
+          total_capacity: o.total_seats,
+          gp_id: o.mobility_profile_id,
+          gp_profile: mobProfileMap.get(o.mobility_profile_id) ? {
+            business_name: mobProfileMap.get(o.mobility_profile_id)!.business_name,
+            rating: mobProfileMap.get(o.mobility_profile_id)!.rating || 0,
+          } : null,
+          ktp: null,
+          subscription: "free",
+        }));
+      }
+
+      setOffers([...enrichedGp, ...enrichedMob]);
     } catch {
       setOffers([]);
     } finally {
