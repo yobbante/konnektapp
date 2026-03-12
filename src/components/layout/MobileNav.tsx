@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Search, CalendarCheck, Menu, Send } from "lucide-react";
+import { Home, MessageCircle, CalendarCheck, Menu, Send } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
