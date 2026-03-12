@@ -62,6 +62,16 @@ const TRANSPORTER_ROUTES = [
   "/transporter/profile",
 ];
 
+const MOBILITY_ROUTES = [
+  "/mobility/dashboard",
+  "/mobility/apercu",
+  "/mobility/publier",
+  "/mobility/scan-ticket",
+  "/mobility/wallet",
+  "/mobility/vehicules",
+  "/mobility/ticket",
+];
+
 // Routes EXCLUSIVEMENT client — un GP n'y a JAMAIS accès
 const CLIENT_ONLY_ROUTES = [
   "/profil",
