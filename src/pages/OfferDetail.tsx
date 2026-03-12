@@ -373,7 +373,7 @@ export default function OfferDetail() {
                     <Star className="w-3 h-3 text-warning fill-warning" />
                     <span className="font-medium">{gpProfile?.rating?.toFixed(1) || "0.0"}</span>
                   </div>
-                  <span className="text-muted-foreground">{gpProfile?.total_deliveries || 0} livraisons</span>
+                  <span className="text-muted-foreground">{gpProfile?.total_deliveries || 0} {isMobility ? "trajets" : "livraisons"}</span>
                 </div>
               </div>
               <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
