@@ -65,7 +65,7 @@ export function HomeOfferCard({ offer, index, modeLabel, subscriptionBadge }: Ho
             )}
             {offer.available_capacity > 0 && (
               <span className="text-[9px] text-muted-foreground font-medium">
-                {offer.available_capacity}kg dispo
+                {offer.available_capacity}{isMobility ? " places" : "kg"} dispo
               </span>
             )}
           </div>
