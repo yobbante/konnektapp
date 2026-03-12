@@ -5,8 +5,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Settings, User, Bell, Shield, LogOut, Phone, Edit3, Save, X,
-  MessageCircle, Key, Wallet, Bus, MapPin, Palette, Languages,
+  Settings, User, Bell, Shield, LogOut, Edit3, Save, X,
+  Key, Wallet, Bus, MapPin, Palette, Languages,
   HelpCircle, FileText, Info, Trash2, BadgeCheck, Mail,
   Car, Route, Calendar, Users,
 } from "lucide-react";
