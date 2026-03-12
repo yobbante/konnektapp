@@ -96,9 +96,9 @@ export function AppHeader({
               <Link to="/" className="flex items-center gap-1.5">
                 <motion.div 
                   whileTap={{ scale: 0.95 }}
-                  className="w-10 h-10 rounded-xl bg-card dark:bg-muted flex items-center justify-center shadow-sm border border-border/50"
+                  className="w-9 h-9 flex items-center justify-center"
                 >
-                  <img src={konnektLogo} alt="Konnekt" className="w-7 h-7 object-contain" />
+                  <img src={konnektLogo} alt="Konnekt" className="w-8 h-8 object-contain drop-shadow-sm" />
                 </motion.div>
                 {!title && (
                   <div className="flex items-center gap-1.5">

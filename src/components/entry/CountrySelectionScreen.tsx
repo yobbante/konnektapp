@@ -193,8 +193,8 @@ export function CountrySelectionScreen({ onSelect }: CountrySelectionScreenProps
           animate={{ opacity: 1, y: 0 }}
           className="mb-6 flex flex-col items-center"
         >
-          <div className="w-20 h-20 rounded-2xl bg-card dark:bg-muted border border-border/50 flex items-center justify-center mb-4 shadow-sm">
-            <img src={konnektLogo} alt="Konnekt" className="w-14 h-14 object-contain" />
+          <div className="w-20 h-20 flex items-center justify-center mb-4">
+            <img src={konnektLogo} alt="Konnekt" className="w-16 h-16 object-contain drop-shadow-lg" />
           </div>
         </motion.div>
 
