@@ -97,15 +97,38 @@ export default function OfferDetail() {
           .maybeSingle();
         if (gpData) setGpProfile(gpData);
       } else {
-        // Fallback: check mobility_offers and redirect
+        // Fallback: check mobility_offers and display as offer
         const { data: mobData } = await supabase
           .from("mobility_offers")
-          .select("id")
+          .select("*, mobility_profiles(business_name, rating, total_trips, verified_at)")
           .eq("id", id)
           .maybeSingle();
         if (mobData) {
-          navigate(`/mobility/booking?trip=${id}`, { replace: true });
-          return;
+          setOffer({
+            id: mobData.id,
+            origin_city: mobData.origin_city,
+            origin_country: mobData.origin_country,
+            destination_city: mobData.destination_city,
+            destination_country: mobData.destination_country,
+            departure_date: mobData.departure_date,
+            arrival_date: null,
+            price_per_kg: mobData.price_per_seat,
+            currency: mobData.currency || "XOF",
+            transport_type: "mobility",
+            available_capacity: mobData.available_seats,
+            total_capacity: mobData.total_seats,
+            description: mobData.luggage_policy,
+            conditions: mobData.cancellation_policy,
+            gp_id: mobData.mobility_profile_id,
+          });
+          if (mobData.mobility_profiles) {
+            setGpProfile({
+              business_name: mobData.mobility_profiles.business_name,
+              rating: mobData.mobility_profiles.rating || 0,
+              total_deliveries: mobData.mobility_profiles.total_trips || 0,
+              verified_at: mobData.mobility_profiles.verified_at,
+            });
+          }
         }
       }
     } catch (error) {
