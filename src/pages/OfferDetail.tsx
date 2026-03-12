@@ -142,10 +142,13 @@ export default function OfferDetail() {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
+      const returnPath = offer?.transport_type === "mobility" 
+        ? `/mobility/reserver?trip=${id}`
+        : `/reservation/gp/${offer?.gp_id}?offer=${id}`;
       sessionStorage.setItem("pending_booking_state", JSON.stringify({
         offerId: id,
         gpId: offer?.gp_id,
-        returnPath: `/reservation/gp/${offer?.gp_id}?offer=${id}`,
+        returnPath,
         timestamp: Date.now(),
       }));
       
@@ -158,7 +161,12 @@ export default function OfferDetail() {
     }
 
     if (!offer) return;
-    navigate(`/reservation/gp/${offer.gp_id}?offer=${id}`);
+    
+    if (offer.transport_type === "mobility") {
+      navigate(`/mobility/reserver?trip=${id}`);
+    } else {
+      navigate(`/reservation/gp/${offer.gp_id}?offer=${id}`);
+    }
   };
 
   const handleShare = async () => {
@@ -541,7 +549,7 @@ export default function OfferDetail() {
                 onClick={handleBook} 
                 className="px-8 gap-2 shadow-lg shadow-primary/20"
               >
-                Réserver maintenant
+                {isMobility ? "Réserver une place" : "Réserver maintenant"}
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </motion.div>
