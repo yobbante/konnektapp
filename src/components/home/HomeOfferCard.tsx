@@ -26,7 +26,7 @@ export function HomeOfferCard({ offer, index, modeLabel, subscriptionBadge }: Ho
   const OfferIcon = getOfferIcon(offer.transport_type);
   const currencySymbol = CURRENCY_SYMBOLS[offer.currency] || offer.currency || "F";
   const isMobility = offer.transport_type === "mobility";
-  const linkTo = isMobility ? `/mobility/booking?trip=${offer.id}` : `/offres/${offer.id}`;
+  const linkTo = `/offres/${offer.id}`;
 
   return (
     <Link to={linkTo} className="block">
