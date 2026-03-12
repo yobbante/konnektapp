@@ -61,9 +61,6 @@ export default function MobilityParametresPage() {
       setNotifPrefs(prefsData);
       setProfileForm({
         business_name: p.business_name || "",
-        phone: p.phone || "",
-        whatsapp_phone: p.whatsapp_phone || "",
-        description: p.description || "",
         base_city: p.base_city || "",
       });
     } catch (error) {
