@@ -3,7 +3,7 @@
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Car, ChevronLeft, MapPin, Calendar, Clock, Users, Luggage, Check } from "lucide-react";
+import { Bus, ChevronLeft, MapPin, Calendar, Clock, Users, Luggage, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
