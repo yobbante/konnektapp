@@ -134,7 +134,7 @@ const MODE_CONFIG: Record<string, {
     offersTitle: "Trajets disponibles",
     emptyLabel: "Aucun trajet Mobility",
     emptyDesc: "Les partenaires publient régulièrement des trajets",
-    icon: Car,
+    icon: Bus,
     gradient: "from-transport-mobility/10 to-primary/5"
   }
 };
