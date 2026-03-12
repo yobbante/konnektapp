@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Package, ArrowRight, Star, Loader2, Heart, Calendar, MapPin, Search,
-  Zap, Truck, Ship, Plane, Luggage, X, ChevronRight, Shield
+  Zap, Truck, Ship, Plane, Luggage, X, ChevronRight, Shield, Bus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +30,7 @@ interface FullScreenOffresPopupProps {
 }
 
 const FILTER_TABS = [
+  { id: "mobility", label: "Mobility", icon: Bus },
   { id: "all", label: "Tout", icon: Package },
   { id: "routier", label: "Routier", icon: Truck },
   { id: "maritime", label: "Maritime", icon: Ship },
@@ -41,6 +42,7 @@ const TYPE_MAP: Record<string, string[]> = {
   aerien: ["aerien"],
   maritime: ["maritime"],
   routier: ["routier"],
+  mobility: ["mobility"],
   bagages: ["bagages_accompagnes", "navette", "bagages_international", "voyageur"],
 };
 
@@ -51,6 +53,7 @@ const TRANSPORT_CONFIG: Record<string, { icon: typeof Package; label: string; co
   routier: { icon: Truck, label: "Routier", color: "text-blue-500" },
   maritime: { icon: Ship, label: "Maritime", color: "text-cyan-500" },
   aerien: { icon: Plane, label: "Aérien", color: "text-purple-500" },
+  mobility: { icon: Bus, label: "Mobility", color: "text-rose-500" },
   agence: { icon: Package, label: "Agence", color: "text-muted-foreground" },
   navette: { icon: Luggage, label: "GP", color: "text-primary" },
   bagages_accompagnes: { icon: Luggage, label: "GP", color: "text-primary" },
@@ -319,7 +322,9 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
                         {offer.price_per_kg?.toLocaleString()}
                         <span className="text-[11px] font-bold">{CURRENCY_SYMBOLS[offer.currency] || offer.currency || "F"}</span>
                       </span>
-                      <span className="text-[9px] text-muted-foreground block">/kg</span>
+                        <span className="text-[9px] text-muted-foreground block">
+                          {offer.transport_type === "mobility" ? "/siège" : "/kg"}
+                        </span>
                     </div>
                   </motion.button>
                 );

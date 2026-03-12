@@ -5,8 +5,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Car, Plus, Calendar, Users, MapPin, Clock, ChevronRight, Wallet,
-  ScanLine, Ticket, TrendingUp, Bell, Settings, Star, BarChart3
+  Bus, Plus, Calendar, Users, MapPin, Clock, ChevronRight, Wallet,
+  ScanLine, Ticket, TrendingUp, Bell, Settings, Star, BarChart3,
+  Menu, LogOut, MessageCircle, RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -72,8 +73,8 @@ export default function MobilityApercuPage() {
     return d.toDateString() === today.toDateString();
   });
 
-  const TABS: { id: DashTab; icon: typeof Car; label: string }[] = [
-    { id: "home", icon: Car, label: "Accueil" },
+  const TABS: { id: DashTab; icon: typeof Bus; label: string }[] = [
+    { id: "home", icon: Bus, label: "Accueil" },
     { id: "trips", icon: Calendar, label: "Trajets" },
     { id: "scan", icon: ScanLine, label: "Scan" },
     { id: "bookings", icon: Ticket, label: "Tickets" },
@@ -82,18 +83,39 @@ export default function MobilityApercuPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <div className="bg-transport-mobility text-white p-4 pt-safe">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold">Konnekt Mobility</h1>
-            <p className="text-sm opacity-80">{profile?.business_name}</p>
-          </div>
+      {/* Header — GP-style */}
+      <div className="bg-transport-mobility text-white px-4 pt-safe">
+        <div className="flex items-center justify-between py-3">
           <div className="flex items-center gap-2">
-            <Badge className="bg-white/20 text-white border-0">
-              {profile?.status === "verified" ? "Vérifié ✓" : "En attente"}
-            </Badge>
+            <Bus className="w-5 h-5" />
+            <div>
+              <h1 className="text-[15px] font-bold leading-tight">Konnekt Mobility</h1>
+              <p className="text-[11px] opacity-80 leading-tight">{profile?.business_name}</p>
+            </div>
           </div>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => navigate("/mobility/publier")}
+              className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+            <button className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center relative">
+              <Bell className="w-4 h-4" />
+              {pendingBookings > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-[9px] font-bold flex items-center justify-center">
+                  {pendingBookings}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+        {/* Status bar */}
+        <div className="flex items-center gap-2 pb-3">
+          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${profile?.status === "verified" ? "bg-white/20" : "bg-amber-400/30 text-amber-100"}`}>
+            {profile?.status === "verified" ? "Vérifié" : "En attente de vérification"}
+          </span>
+          <span className="text-[10px] opacity-70">{activeTrips.length} trajet(s) actif(s)</span>
         </div>
       </div>
 
@@ -104,7 +126,7 @@ export default function MobilityApercuPage() {
           <div className="grid grid-cols-2 gap-3">
             <Card className="border-transport-mobility/20">
               <CardContent className="p-3 text-center">
-                <Car className="w-5 h-5 mx-auto text-transport-mobility mb-1" />
+                <Bus className="w-5 h-5 mx-auto text-transport-mobility mb-1" />
                 <p className="text-2xl font-bold">{activeTrips.length}</p>
                 <p className="text-[10px] text-muted-foreground">Trajets actifs</p>
               </CardContent>
@@ -224,7 +246,7 @@ export default function MobilityApercuPage() {
           <div className="space-y-2 mt-4">
             {[
               { label: "Mon portefeuille", icon: Wallet, route: "/mobility/wallet" },
-              { label: "Mes véhicules", icon: Car, route: "/mobility/vehicules" },
+              { label: "Mes véhicules", icon: Bus, route: "/mobility/vehicules" },
               { label: "Statistiques", icon: BarChart3, route: "#" },
             ].map(item => (
               <button
@@ -362,7 +384,7 @@ export default function MobilityApercuPage() {
             <CardContent className="p-4 space-y-3">
               <div className="text-center">
                 <div className="w-16 h-16 rounded-full bg-transport-mobility/10 flex items-center justify-center mx-auto mb-2">
-                  <Car className="w-8 h-8 text-transport-mobility" />
+                  <Bus className="w-8 h-8 text-transport-mobility" />
                 </div>
                 <h2 className="font-bold text-lg">{profile?.business_name}</h2>
                 <p className="text-sm text-muted-foreground">{profile?.base_city}, {profile?.country_code}</p>
@@ -382,7 +404,7 @@ export default function MobilityApercuPage() {
           <div className="space-y-2">
             {[
               { label: "Mon portefeuille", icon: Wallet, route: "/mobility/wallet" },
-              { label: "Mes véhicules", icon: Car, route: "/mobility/vehicules" },
+              { label: "Mes véhicules", icon: Bus, route: "/mobility/vehicules" },
               { label: "Notifications", icon: Bell, route: "#" },
             ].map(item => (
               <button

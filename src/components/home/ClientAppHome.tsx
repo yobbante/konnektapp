@@ -6,7 +6,7 @@ import {
   Clock, ChevronRight, FileText, Truck, Calendar,
   Search, Plane, Ship, Car, Luggage, Globe, Shield, Zap, Award,
   TrendingUp, Users, ArrowUpDown, Weight, Route, Sparkles,
-  Send, ScanLine, Wallet, Star, CircleDot } from
+  Send, ScanLine, Wallet, Star, CircleDot, Bus } from
 "lucide-react";
 import { RecipientTrackingCard } from "@/components/client/RecipientTrackingCard";
 import { KonnektCanvasCarousel } from "./KonnektCanvasCarousel";
@@ -52,7 +52,7 @@ const STATUS_CONFIG: Record<string, {label: string;color: string;}> = {
 };
 
 const TRANSPORT_TABS = [
-{ id: "mobility", label: "Mobility", icon: Users },
+{ id: "mobility", label: "Mobility", icon: Bus },
 { id: "all", label: "Tout", icon: Globe },
 { id: "routier", label: "Routier", icon: Car },
 { id: "maritime", label: "Maritime", icon: Ship },
@@ -134,7 +134,7 @@ const MODE_CONFIG: Record<string, {
     offersTitle: "Trajets disponibles",
     emptyLabel: "Aucun trajet Mobility",
     emptyDesc: "Les partenaires publient régulièrement des trajets",
-    icon: Car,
+    icon: Bus,
     gradient: "from-transport-mobility/10 to-primary/5"
   }
 };
@@ -447,11 +447,7 @@ export function ClientAppHome({
       // Search routier departures via the offers popup
       openOffresPopup(searchOrigin, searchDest, "routier");
     } else if (isMobility) {
-      const params = new URLSearchParams();
-      if (searchOrigin) params.set("from", searchOrigin);
-      if (searchDest) params.set("to", searchDest);
-      if (searchDate) params.set("date", searchDate);
-      navigate(`/mobility/recherche?${params.toString()}`);
+      openOffresPopup(searchOrigin, searchDest, "mobility");
     } else {
       openOffresPopup();
     }
