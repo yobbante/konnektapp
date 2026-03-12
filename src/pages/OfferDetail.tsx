@@ -529,10 +529,10 @@ export default function OfferDetail() {
         <div className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-muted-foreground">Prix par kg</p>
+              <p className="text-xs text-muted-foreground">Prix {isMobility ? "par siège" : "par kg"}</p>
               <div className="flex items-baseline gap-1">
                 <span className="text-2xl font-bold text-primary">{offer.price_per_kg.toLocaleString()}</span>
-                <span className="text-sm text-muted-foreground">{currencySymbol}</span>
+                <span className="text-sm text-muted-foreground">{currencySymbol}{priceUnit}</span>
               </div>
             </div>
             <motion.div whileTap={{ scale: 0.95 }}>
