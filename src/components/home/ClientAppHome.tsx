@@ -715,42 +715,19 @@ export function ClientAppHome({
         <div className="px-4 pb-4">
           {isRoutier ?
           routierOffers.length > 0 ?
-          <div className="space-y-2">
-                {routierOffers.map((offer) =>
-            <motion.div
-              key={offer.id}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-card border border-border rounded-xl p-3 space-y-1.5 hover:border-primary/30 transition-colors cursor-pointer"
-              onClick={() => navigate(`/offre/${offer.id}`)}>
-              
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Truck className="w-3.5 h-3.5 text-primary" />
-                        </div>
-                        <span className="text-sm font-semibold text-foreground">
-                          {offer.origin_city} → {offer.destination_city}
-                        </span>
-                      </div>
-                      <span className="text-xs font-bold text-primary">{offer.price_per_kg?.toLocaleString()} {offer.currency}/kg</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground pl-9">
-                      <span>{new Date(offer.departure_date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}</span>
-                      <span>•</span>
-                      <span>{offer.available_capacity}/{offer.total_capacity} kg dispo</span>
-                      {offer.gp_profiles?.business_name && <>
-                        <span>•</span>
-                        <span>{offer.gp_profiles.business_name}</span>
-                      </>}
-                    </div>
-                    {offer.gp_profiles?.subscription && offer.gp_profiles.subscription !== "free" && (
-                      <div className="pl-9">
-                        <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium capitalize">{offer.gp_profiles.subscription}</span>
-                      </div>
-                    )}
-                  </motion.div>
-            )}
+          <div className="space-y-1.5">
+                {routierOffers.map((offer, idx) => {
+                  const sub = offer.gp_profiles?.subscription;
+                  return (
+                    <HomeOfferCard
+                      key={offer.id}
+                      offer={offer}
+                      index={idx}
+                      modeLabel="Routier"
+                      subscriptionBadge={(sub === "premium" || sub === "pro") ? sub : undefined}
+                    />
+                  );
+                })}
               </div> :
 
           <EmptyOffers modeConfig={modeConfig} onAction={goToOffres} /> :
