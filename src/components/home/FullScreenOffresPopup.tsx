@@ -30,6 +30,7 @@ interface FullScreenOffresPopupProps {
 }
 
 const FILTER_TABS = [
+  { id: "mobility", label: "Mobility", icon: Bus },
   { id: "all", label: "Tout", icon: Package },
   { id: "routier", label: "Routier", icon: Truck },
   { id: "maritime", label: "Maritime", icon: Ship },
