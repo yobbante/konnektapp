@@ -120,6 +120,10 @@ const isTransporterRoute = (pathname: string): boolean => {
   return TRANSPORTER_ROUTES.some(route => pathname.startsWith(route));
 };
 
+const isMobilityRoute = (pathname: string): boolean => {
+  return MOBILITY_ROUTES.some(route => pathname.startsWith(route));
+};
+
 const isClientRoute = (pathname: string): boolean => {
   return CLIENT_ROUTES.some(route => pathname.startsWith(route));
 };
