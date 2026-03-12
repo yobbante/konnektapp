@@ -93,19 +93,16 @@ export function AppHeader({
                 <ChevronLeft className="w-5 h-5" />
               </Button>
             ) : (
-              <Link to="/" className="flex items-center gap-1.5">
+              <Link to="/" className="flex items-center gap-1">
                 <motion.div 
                   whileTap={{ scale: 0.95 }}
-                  className="w-9 h-9 flex items-center justify-center"
+                  className="flex items-center gap-0.5"
                 >
-                  <img src={konnektLogo} alt="Konnekt" className="w-8 h-8 object-contain drop-shadow-sm" />
+                  <span className="font-extrabold text-primary text-xl tracking-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                    Konnekt
+                  </span>
+                  {!title && countryFlag && <span className="text-sm ml-1">{countryFlag}</span>}
                 </motion.div>
-                {!title && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-foreground text-base tracking-tight">Konnekt</span>
-                    {countryFlag && <span className="text-sm">{countryFlag}</span>}
-                  </div>
-                )}
               </Link>
             )}
             
