@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Menu, ChevronLeft, LogIn, ScanLine, Wallet, Package } from "lucide-react";
-import konnektLogo from "@/assets/konnekt-logo-transparent.png";
+
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { useUserRole } from "@/hooks/useUserRole";
