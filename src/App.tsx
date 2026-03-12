@@ -121,6 +121,7 @@ import OrderHistory from "./pages/OrderHistory";
 // Additional pages
 import TransporteurRegistration from "./pages/TransporteurRegistration";
 import LegalDocuments from "./pages/LegalDocuments";
+import FreightMarketplace from "./pages/FreightMarketplace";
 import UnifiedProfile from "./pages/UnifiedProfile";
 import ClientProfileComplete from "./pages/ClientProfileComplete";
 import ClientWallet from "./pages/ClientWallet";
