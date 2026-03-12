@@ -128,20 +128,6 @@ export default function MobilityParametresPage() {
                 <Input className="h-8 text-sm" value={profileForm.business_name} onChange={e => setProfileForm(p => ({ ...p, business_name: e.target.value }))} />
               </div>
               <div>
-                <Label className="text-[10px] text-muted-foreground">Description</Label>
-                <Textarea value={profileForm.description} onChange={e => setProfileForm(p => ({ ...p, description: e.target.value }))} rows={2} className="text-sm" />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-[10px] text-muted-foreground">Téléphone</Label>
-                  <Input className="h-8 text-sm" value={profileForm.phone} onChange={e => setProfileForm(p => ({ ...p, phone: e.target.value }))} />
-                </div>
-                <div>
-                  <Label className="text-[10px] text-muted-foreground">WhatsApp</Label>
-                  <Input className="h-8 text-sm" value={profileForm.whatsapp_phone} onChange={e => setProfileForm(p => ({ ...p, whatsapp_phone: e.target.value }))} />
-                </div>
-              </div>
-              <div>
                 <Label className="text-[10px] text-muted-foreground">Ville de base</Label>
                 <Input className="h-8 text-sm" value={profileForm.base_city} onChange={e => setProfileForm(p => ({ ...p, base_city: e.target.value }))} />
               </div>
