@@ -8,7 +8,7 @@ import {
   Settings, User, Bell, Shield, LogOut, Edit3, Save, X,
   Key, Wallet, Bus, MapPin, Palette, Languages,
   HelpCircle, FileText, Info, Trash2, BadgeCheck, Mail,
-  Car, Route, Calendar, Users,
+  Route, Calendar, Users,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageLoader } from "@/components/ui/PageLoader";
