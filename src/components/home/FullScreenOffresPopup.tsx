@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Package, ArrowRight, Star, Loader2, Heart, Calendar, MapPin, Search,
-  Zap, Truck, Ship, Plane, Luggage, X, ChevronRight, Shield
+  Zap, Truck, Ship, Plane, Luggage, X, ChevronRight, Shield, Bus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
