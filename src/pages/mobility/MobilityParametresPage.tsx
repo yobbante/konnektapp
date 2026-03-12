@@ -38,8 +38,7 @@ export default function MobilityParametresPage() {
   const [showPwdDialog, setShowPwdDialog] = useState(false);
   const [showForgotPwd, setShowForgotPwd] = useState(false);
   const [profileForm, setProfileForm] = useState({
-    business_name: "", phone: "", whatsapp_phone: "",
-    description: "", base_city: "",
+    business_name: "", base_city: "",
   });
   const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs>(defaultNotificationPrefs);
 
