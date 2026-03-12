@@ -498,17 +498,18 @@ export function ClientAppHome({
     });
   }, []);
 
-  // Routier missions
-  const [routierMissions, setRoutierMissions] = useState<any[]>([]);
+  // Routier offers (from gp_offers with transport_type routier)
+  const [routierOffers, setRoutierOffers] = useState<any[]>([]);
   useEffect(() => {
     if (!isRoutier) return;
     supabase.
-    from("routier_missions").
-    select("*").
-    eq("status", "open").
-    order("created_at", { ascending: false }).
+    from("gp_offers").
+    select("*, gp_profiles(business_name, rating, subscription)").
+    eq("transport_type", "routier").
+    eq("status", "active").
+    order("departure_date", { ascending: true }).
     limit(6).
-    then(({ data }) => {if (data) setRoutierMissions(data);});
+    then(({ data }) => {if (data) setRoutierOffers(data);});
   }, [isRoutier]);
 
   const filteredOffers = useMemo(() => {
