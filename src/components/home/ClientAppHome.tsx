@@ -52,7 +52,7 @@ const STATUS_CONFIG: Record<string, {label: string;color: string;}> = {
 };
 
 const TRANSPORT_TABS = [
-{ id: "mobility", label: "Mobility", icon: Users },
+{ id: "mobility", label: "Mobility", icon: Bus },
 { id: "all", label: "Tout", icon: Globe },
 { id: "routier", label: "Routier", icon: Car },
 { id: "maritime", label: "Maritime", icon: Ship },
