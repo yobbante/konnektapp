@@ -51,8 +51,9 @@ export default function MobilityBookingPage() {
 
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const { data: prof } = await supabase.from("profiles").select("phone").eq("user_id", user.id).maybeSingle();
+      const { data: prof } = await supabase.from("profiles").select("phone, full_name").eq("user_id", user.id).maybeSingle();
       if (prof?.phone) setPhone(prof.phone);
+      if (prof?.full_name) setPassengerNames([prof.full_name]);
     }
     setLoading(false);
   };
