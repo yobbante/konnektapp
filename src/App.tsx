@@ -175,6 +175,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/offres" element={<Offres />} />
             <Route path="/offres/:id" element={<OfferDetail />} />
+            <Route path="/freight-board" element={<FreightMarketplace />} />
             <Route path="/tracking" element={<Tracking />} />
             <Route path="/gp/:gpId" element={<GPProfile />} />
             <Route path="/client/transporteurs/:gpId" element={<ClientTransporterProfile />} />
