@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight, Plane, Ship, Truck, Luggage, Star } from "lucide-react";
+import { ArrowRight, Plane, Ship, Truck, Luggage, Star, Bus } from "lucide-react";
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   EUR: "€", USD: "$", GBP: "£", XOF: " CFA", XAF: " CFA", MAD: " DH", CAD: "$CA", GNF: " FG",
