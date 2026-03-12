@@ -82,10 +82,10 @@ export function MobileNav() {
       return;
     }
 
-    // Offres button - navigate to home with offres param
-    if ('isOffres' in item && item.isOffres) {
+    // Messages button - navigate to messaging
+    if ('isMessages' in item && item.isMessages) {
       e.preventDefault();
-      navigate("/?offres=1");
+      navigate("/messages");
       return;
     }
 
