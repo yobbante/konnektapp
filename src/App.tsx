@@ -107,6 +107,7 @@ import MobilityBookingPage from "./pages/mobility/MobilityBookingPage";
 import MobilitySearchResults from "./pages/mobility/MobilitySearchResults";
 import MobilityTicketPage from "./pages/mobility/MobilityTicketPage";
 import MobilityScanTicketPage from "./pages/mobility/MobilityScanTicketPage";
+import MobilityParametresPage from "./pages/mobility/MobilityParametresPage";
 // Coursier pages
 import CoursierRegistration from "./pages/coursier/CoursierRegistration";
 // Agence pages
@@ -342,6 +343,7 @@ const App = () => (
             <Route path="/mobility/recherche" element={<MobilitySearchResults />} />
             <Route path="/mobility/ticket" element={<MobilityTicketPage />} />
             <Route path="/mobility/scan-ticket" element={<MobilityScanTicketPage />} />
+            <Route path="/mobility/parametres" element={<MobilityParametresPage />} />
             <Route path="/mobility/wallet" element={<MobilityApercuPage />} />
             <Route path="/mobility/vehicules" element={<MobilityApercuPage />} />
             
