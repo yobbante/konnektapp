@@ -6,7 +6,7 @@ import {
   Clock, ChevronRight, FileText, Truck, Calendar,
   Search, Plane, Ship, Car, Luggage, Globe, Shield, Zap, Award,
   TrendingUp, Users, ArrowUpDown, Weight, Route, Sparkles,
-  Send, ScanLine, Wallet, Star, CircleDot, Bus } from
+  Send, ScanLine, Wallet, Star, CircleDot, Bus, BarChart3 } from
 "lucide-react";
 import { RecipientTrackingCard } from "@/components/client/RecipientTrackingCard";
 import { KonnektCanvasCarousel } from "./KonnektCanvasCarousel";
