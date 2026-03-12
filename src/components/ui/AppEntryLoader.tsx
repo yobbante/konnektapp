@@ -5,7 +5,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import konnektLogo from "@/assets/konnekt-logo-new.png";
+import konnektLogo from "@/assets/konnekt-logo-transparent.png";
 
 interface AppEntryLoaderProps {
   onComplete?: () => void;
