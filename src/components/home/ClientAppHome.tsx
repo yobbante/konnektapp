@@ -835,7 +835,7 @@ export function ClientAppHome({
             )}
               {filteredOffers.length > 4 &&
             <button onClick={goToOffres} className="w-full py-2 text-xs font-semibold text-primary flex items-center justify-center gap-1 hover:bg-primary/5 rounded-xl transition-colors">
-                  +{filteredOffers.length - 6} autres offres <ChevronRight className="w-3.5 h-3.5" />
+                  +{filteredOffers.length - 4} autres offres <ChevronRight className="w-3.5 h-3.5" />
                 </button>
             }
             </div> :
