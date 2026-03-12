@@ -73,8 +73,8 @@ export default function MobilityApercuPage() {
     return d.toDateString() === today.toDateString();
   });
 
-  const TABS: { id: DashTab; icon: typeof Car; label: string }[] = [
-    { id: "home", icon: Car, label: "Accueil" },
+  const TABS: { id: DashTab; icon: typeof Bus; label: string }[] = [
+    { id: "home", icon: Bus, label: "Accueil" },
     { id: "trips", icon: Calendar, label: "Trajets" },
     { id: "scan", icon: ScanLine, label: "Scan" },
     { id: "bookings", icon: Ticket, label: "Tickets" },
