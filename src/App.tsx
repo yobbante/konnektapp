@@ -121,6 +121,7 @@ import OrderHistory from "./pages/OrderHistory";
 // Additional pages
 import TransporteurRegistration from "./pages/TransporteurRegistration";
 import LegalDocuments from "./pages/LegalDocuments";
+import FreightMarketplace from "./pages/FreightMarketplace";
 import UnifiedProfile from "./pages/UnifiedProfile";
 import ClientProfileComplete from "./pages/ClientProfileComplete";
 import ClientWallet from "./pages/ClientWallet";
@@ -174,6 +175,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/offres" element={<Offres />} />
             <Route path="/offres/:id" element={<OfferDetail />} />
+            <Route path="/freight-board" element={<FreightMarketplace />} />
             <Route path="/tracking" element={<Tracking />} />
             <Route path="/gp/:gpId" element={<GPProfile />} />
             <Route path="/client/transporteurs/:gpId" element={<ClientTransporterProfile />} />
