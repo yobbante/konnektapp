@@ -158,8 +158,6 @@ export default function MobilityParametresPage() {
               </div>
               <Separator />
               <div className="px-3 py-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
-                <InfoPair icon={Phone} label="Tél." value={profile.phone || "—"} />
-                <InfoPair icon={MessageCircle} label="WhatsApp" value={profile.whatsapp_phone || "—"} />
                 <InfoPair icon={MapPin} label="Ville" value={profile.base_city || "—"} />
                 <InfoPair icon={Bus} label="Type" value={profile.service_type === "private_driver" ? "Chauffeur privé" : "Navette"} />
               </div>
