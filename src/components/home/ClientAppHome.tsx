@@ -879,19 +879,38 @@ export function ClientAppHome({
             {/* Popular routes */}
             <PopularRoutesSection routes={popularRoutes} onSelect={handleRouteSelect} tabId={activeTab} />
 
-            {/* Trust */}
+            {/* Trust / Advantages */}
             <TrustSection
             items={trustItems}
             title={
             activeTab === "routier" ? "Avantages Routier" :
             activeTab === "maritime" ? "Avantages Maritime" :
             activeTab === "aerien" ? "Avantages Aerien" :
+            activeTab === "mobility" ? "Avantages Mobility" :
             "Avantages GP"
             } />
           
-
-            {/* CTA */}
-            <ModeCTA activeTab={activeTab} modeConfig={modeConfig} onClick={handleMainAction} />
+            {/* Mobility-specific CTA */}
+            {isMobility ? (
+              <div className="px-4 pb-4">
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => navigate("/mobility/search")}
+                  className="w-full bg-gradient-to-r from-primary to-accent rounded-2xl p-4 flex items-center gap-3 shadow-lg"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-primary-foreground/20 flex items-center justify-center shrink-0">
+                    <Bus className="w-5 h-5 text-primary-foreground" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-bold text-primary-foreground">Réserver un ticket</p>
+                    <p className="text-[10px] text-primary-foreground/70">Navettes inter-villes · Chauffeurs privés · Transport de groupe</p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-primary-foreground shrink-0" />
+                </motion.button>
+              </div>
+            ) : (
+              <ModeCTA activeTab={activeTab} modeConfig={modeConfig} onClick={handleMainAction} />
+            )}
           </>
         }
 
