@@ -5,8 +5,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Car, Plus, Calendar, Users, MapPin, Clock, ChevronRight, Wallet,
-  ScanLine, Ticket, TrendingUp, Bell, Settings, Star, BarChart3
+  Bus, Plus, Calendar, Users, MapPin, Clock, ChevronRight, Wallet,
+  ScanLine, Ticket, TrendingUp, Bell, Settings, Star, BarChart3,
+  Menu, LogOut, MessageCircle, RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
