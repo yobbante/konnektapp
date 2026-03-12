@@ -384,7 +384,7 @@ export default function MobilityApercuPage() {
             <CardContent className="p-4 space-y-3">
               <div className="text-center">
                 <div className="w-16 h-16 rounded-full bg-transport-mobility/10 flex items-center justify-center mx-auto mb-2">
-                  <Car className="w-8 h-8 text-transport-mobility" />
+                  <Bus className="w-8 h-8 text-transport-mobility" />
                 </div>
                 <h2 className="font-bold text-lg">{profile?.business_name}</h2>
                 <p className="text-sm text-muted-foreground">{profile?.base_city}, {profile?.country_code}</p>
