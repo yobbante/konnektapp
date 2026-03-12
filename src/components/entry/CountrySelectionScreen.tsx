@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import konnektLogo from "@/assets/konnekt-logo.png";
+import konnektLogo from "@/assets/konnekt-logo-new.png";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Globe, ArrowRight, MapPin, ChevronLeft, ChevronDown, LogIn } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -193,7 +193,9 @@ export function CountrySelectionScreen({ onSelect }: CountrySelectionScreenProps
           animate={{ opacity: 1, y: 0 }}
           className="mb-6 flex flex-col items-center"
         >
-          <img src={konnektLogo} alt="Konnekt" className="w-20 h-20 rounded-2xl mb-4 object-contain" />
+          <div className="w-20 h-20 rounded-2xl bg-card dark:bg-muted border border-border/50 flex items-center justify-center mb-4 shadow-sm">
+            <img src={konnektLogo} alt="Konnekt" className="w-14 h-14 object-contain" />
+          </div>
         </motion.div>
 
         <h1 className="text-3xl font-extrabold text-center mb-2 tracking-tight">KONNEKT</h1>
