@@ -176,15 +176,65 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
       // Check if user is GP BEFORE public route early return
       // GP users must be redirected even from public routes like "/"
-      const { data: gpProfileEarly } = await supabase
-        .from("gp_profiles")
-        .select("id, price_locked_at")
-        .eq("user_id", userId)
-        .maybeSingle();
+      const [gpRes, mobilityRes] = await Promise.all([
+        supabase
+          .from("gp_profiles")
+          .select("id, price_locked_at")
+          .eq("user_id", userId)
+          .maybeSingle(),
+        supabase
+          .from("mobility_profiles")
+          .select("id, status")
+          .eq("user_id", userId)
+          .maybeSingle(),
+      ]);
+
+      const gpProfileEarly = gpRes.data;
+      const mobilityProfile = mobilityRes.data;
 
       const isGPEarly = !!gpProfileEarly;
       // GP registration is only complete when pricing is locked
       const isGPRegistrationComplete = isGPEarly && !!gpProfileEarly?.price_locked_at;
+      const isMobilityTransporter = !!mobilityProfile;
+
+      // ── MOBILITY TRANSPORTER: redirect to mobility dashboard, block client routes ──
+      if (isMobilityTransporter && !isGPEarly) {
+        // If on mobility registration page, let them stay
+        if (pathname.startsWith("/mobility/inscription")) {
+          return;
+        }
+        // Redirect from public/client routes to mobility dashboard
+        if (pathname === "/" || pathname === "/offres" || isClientOnlyRoute(pathname) || isClientRoute(pathname)) {
+          navigate("/mobility/apercu", { replace: true });
+          return;
+        }
+        // Allow mobility routes
+        if (isMobilityRoute(pathname)) {
+          return;
+        }
+        // Block GP transporter routes
+        if (isTransporterRoute(pathname)) {
+          navigate("/mobility/apercu", { replace: true });
+          return;
+        }
+        // For other non-public, non-admin routes, redirect to mobility
+        if (!isPublicRoute(pathname) && !isAdminRoute(pathname)) {
+          // Check admin access before blocking
+          const { data: rolesData } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", userId);
+          const roles = rolesData?.map(r => r.role) || [];
+          const hasAdminAccess = roles.includes("admin") || roles.includes("moderator");
+          if (!hasAdminAccess) {
+            navigate("/mobility/apercu", { replace: true });
+            return;
+          }
+        }
+        if (isPublicRoute(pathname) && pathname !== "/" && pathname !== "/offres") {
+          return;
+        }
+      }
 
       // ── GP with INCOMPLETE registration on public routes → let them stay (e.g. on /gp/bagages/inscription) ──
       if (isGPEarly && !isGPRegistrationComplete) {
@@ -230,7 +280,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
       // Enforce strict route access
       if (isAdminRoute(pathname) && !hasAdminAccess) {
         console.warn("Access denied: Admin route requires admin/moderator role");
-        navigate(isGP ? "/gp/dashboard" : "/client/dashboard", { replace: true });
+        navigate(isGP ? "/gp/dashboard" : isMobilityTransporter ? "/mobility/apercu" : "/client/dashboard", { replace: true });
         return;
       }
 
@@ -250,7 +300,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
       if (isTransporterRoute(pathname) && !isGP && !hasAdminAccess) {
         console.warn("Access denied: Transporter route requires GP profile");
-        navigate("/client/dashboard", { replace: true });
+        navigate(isMobilityTransporter ? "/mobility/apercu" : "/client/dashboard", { replace: true });
         return;
       }
 
