@@ -3473,6 +3473,51 @@ export type Database = {
         }
         Relationships: []
       }
+      mobility_transactions: {
+        Row: {
+          amount: number
+          booking_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          type: string
+          wallet_id: string
+        }
+        Insert: {
+          amount: number
+          booking_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          type: string
+          wallet_id: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          type?: string
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mobility_transactions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "mobility_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mobility_transactions_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "mobility_wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mobility_vehicles: {
         Row: {
           brand: string
@@ -3542,6 +3587,56 @@ export type Database = {
             foreignKeyName: "mobility_vehicles_mobility_profile_id_fkey"
             columns: ["mobility_profile_id"]
             isOneToOne: false
+            referencedRelation: "mobility_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mobility_wallets: {
+        Row: {
+          balance: number
+          commission_rate: number
+          created_at: string
+          currency: string
+          id: string
+          mobility_profile_id: string
+          pending_balance: number
+          total_earned: number
+          total_withdrawn: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          commission_rate?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          mobility_profile_id: string
+          pending_balance?: number
+          total_earned?: number
+          total_withdrawn?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          commission_rate?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          mobility_profile_id?: string
+          pending_balance?: number
+          total_earned?: number
+          total_withdrawn?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mobility_wallets_mobility_profile_id_fkey"
+            columns: ["mobility_profile_id"]
+            isOneToOne: true
             referencedRelation: "mobility_profiles"
             referencedColumns: ["id"]
           },
