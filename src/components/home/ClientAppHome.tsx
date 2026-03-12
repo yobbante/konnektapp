@@ -120,9 +120,9 @@ const MODE_CONFIG: Record<string, {
     searchPlaceholderOrigin: "Point de collecte",
     searchPlaceholderDest: "Point de livraison",
     searchButtonLabel: "Trouver un transporteur",
-    offersTitle: "Missions routieres",
-    emptyLabel: "Aucune mission disponible",
-    emptyDesc: "Créez une mission et recevez des propositions",
+    offersTitle: "Offres routières",
+    emptyLabel: "Aucune offre routière",
+    emptyDesc: "Les transporteurs publient régulièrement des offres de transport routier",
     icon: Truck,
     gradient: "from-orange-500/10 to-amber-500/5"
   },
