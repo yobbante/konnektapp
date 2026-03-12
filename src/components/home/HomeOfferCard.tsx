@@ -17,6 +17,7 @@ const getOfferIcon = (type: string) => {
   if (type === "maritime") return Ship;
   if (type === "routier") return Truck;
   if (type === "aerien") return Plane;
+  if (type === "mobility") return Bus;
   return Luggage;
 };
 

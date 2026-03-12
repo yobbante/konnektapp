@@ -53,6 +53,7 @@ const TRANSPORT_CONFIG: Record<string, { icon: typeof Package; label: string; co
   routier: { icon: Truck, label: "Routier", color: "text-blue-500" },
   maritime: { icon: Ship, label: "Maritime", color: "text-cyan-500" },
   aerien: { icon: Plane, label: "Aérien", color: "text-purple-500" },
+  mobility: { icon: Bus, label: "Mobility", color: "text-rose-500" },
   agence: { icon: Package, label: "Agence", color: "text-muted-foreground" },
   navette: { icon: Luggage, label: "GP", color: "text-primary" },
   bagages_accompagnes: { icon: Luggage, label: "GP", color: "text-primary" },

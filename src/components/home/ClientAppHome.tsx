@@ -447,11 +447,7 @@ export function ClientAppHome({
       // Search routier departures via the offers popup
       openOffresPopup(searchOrigin, searchDest, "routier");
     } else if (isMobility) {
-      const params = new URLSearchParams();
-      if (searchOrigin) params.set("from", searchOrigin);
-      if (searchDest) params.set("to", searchDest);
-      if (searchDate) params.set("date", searchDate);
-      navigate(`/mobility/recherche?${params.toString()}`);
+      openOffresPopup(searchOrigin, searchDest, "mobility");
     } else {
       openOffresPopup();
     }
