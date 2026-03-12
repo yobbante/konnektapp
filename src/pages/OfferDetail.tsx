@@ -217,10 +217,13 @@ export default function OfferDetail() {
     );
   }
 
+  const isMobility = offer.transport_type === "mobility";
   const config = transportConfig[offer.transport_type as TransportType] || transportConfig.routier;
   const TypeIcon = config.icon;
   const capacityPercentage = ((offer.total_capacity - offer.available_capacity) / offer.total_capacity) * 100;
   const currencySymbol = getCurrencySymbol(offer.currency || "FCFA");
+  const capacityUnit = isMobility ? "places" : "kg";
+  const priceUnit = isMobility ? "/siège" : "/kg";
 
   return (
     <div className="min-h-screen bg-background">
