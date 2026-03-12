@@ -435,8 +435,8 @@ export default function OfferDetail() {
             <h3 className="font-semibold">Capacité disponible</h3>
           </div>
           <div className="flex items-center justify-between mb-3">
-            <span className="text-2xl font-bold text-primary">{offer.available_capacity} kg</span>
-            <span className="text-sm text-muted-foreground">sur {offer.total_capacity} kg</span>
+            <span className="text-2xl font-bold text-primary">{offer.available_capacity} {capacityUnit}</span>
+            <span className="text-sm text-muted-foreground">sur {offer.total_capacity} {capacityUnit}</span>
           </div>
           <div className="h-3 bg-muted rounded-full overflow-hidden">
             <motion.div 
