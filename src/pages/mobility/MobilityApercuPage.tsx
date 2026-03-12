@@ -126,7 +126,7 @@ export default function MobilityApercuPage() {
           <div className="grid grid-cols-2 gap-3">
             <Card className="border-transport-mobility/20">
               <CardContent className="p-3 text-center">
-                <Car className="w-5 h-5 mx-auto text-transport-mobility mb-1" />
+                <Bus className="w-5 h-5 mx-auto text-transport-mobility mb-1" />
                 <p className="text-2xl font-bold">{activeTrips.length}</p>
                 <p className="text-[10px] text-muted-foreground">Trajets actifs</p>
               </CardContent>
