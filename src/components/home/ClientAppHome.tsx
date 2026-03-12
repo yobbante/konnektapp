@@ -120,9 +120,9 @@ const MODE_CONFIG: Record<string, {
     searchPlaceholderOrigin: "Point de collecte",
     searchPlaceholderDest: "Point de livraison",
     searchButtonLabel: "Trouver un transporteur",
-    offersTitle: "Missions routieres",
-    emptyLabel: "Aucune mission disponible",
-    emptyDesc: "Créez une mission et recevez des propositions",
+    offersTitle: "Offres routières",
+    emptyLabel: "Aucune offre routière",
+    emptyDesc: "Les transporteurs publient régulièrement des offres de transport routier",
     icon: Truck,
     gradient: "from-orange-500/10 to-amber-500/5"
   },
@@ -498,17 +498,18 @@ export function ClientAppHome({
     });
   }, []);
 
-  // Routier missions
-  const [routierMissions, setRoutierMissions] = useState<any[]>([]);
+  // Routier offers (from gp_offers with transport_type routier)
+  const [routierOffers, setRoutierOffers] = useState<any[]>([]);
   useEffect(() => {
     if (!isRoutier) return;
     supabase.
-    from("routier_missions").
-    select("*").
-    eq("status", "open").
-    order("created_at", { ascending: false }).
+    from("gp_offers").
+    select("*, gp_profiles(business_name, rating, subscription)").
+    eq("transport_type", "routier").
+    eq("status", "active").
+    order("departure_date", { ascending: true }).
     limit(6).
-    then(({ data }) => {if (data) setRoutierMissions(data);});
+    then(({ data }) => {if (data) setRoutierOffers(data);});
   }, [isRoutier]);
 
   const filteredOffers = useMemo(() => {
@@ -705,53 +706,54 @@ export function ClientAppHome({
         <div className="px-4 pb-2">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-sm font-bold text-foreground tracking-tight">{modeConfig.offersTitle}</h2>
-            {!isRoutier &&
             <button onClick={goToOffres} className="text-xs text-primary font-medium flex items-center gap-0.5 hover:underline">
                 Tout voir <ChevronRight className="w-3 h-3" />
               </button>
-            }
           </div>
         </div>
 
         <div className="px-4 pb-4">
           {isRoutier ?
-          routierMissions.length > 0 ?
+          routierOffers.length > 0 ?
           <div className="space-y-2">
-                {routierMissions.map((mission) =>
+                {routierOffers.map((offer) =>
             <motion.div
-              key={mission.id}
+              key={offer.id}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-card border border-border rounded-xl p-3 space-y-1.5 hover:border-primary/30 transition-colors">
+              className="bg-card border border-border rounded-xl p-3 space-y-1.5 hover:border-primary/30 transition-colors cursor-pointer"
+              onClick={() => navigate(`/offre/${offer.id}`)}>
               
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                          <Truck className="w-3.5 h-3.5 text-orange-500" />
+                        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Truck className="w-3.5 h-3.5 text-primary" />
                         </div>
                         <span className="text-sm font-semibold text-foreground">
-                          {mission.origin_city} → {mission.destination_city}
+                          {offer.origin_city} → {offer.destination_city}
                         </span>
                       </div>
-                      <span className="text-[10px] bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded-full font-medium">Ouvert</span>
+                      <span className="text-xs font-bold text-primary">{offer.price_per_kg?.toLocaleString()} {offer.currency}/kg</span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground pl-9">
-                      <span>{mission.total_weight_kg} kg</span>
+                      <span>{new Date(offer.departure_date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}</span>
                       <span>•</span>
-                      <span>{mission.vehicle_type_required || "Tout véhicule"}</span>
-                      {mission.budget_max &&
-                <>
-                          <span>•</span>
-                          <span className="font-semibold text-foreground">{mission.budget_max?.toLocaleString()} FCFA</span>
-                        </>
-                }
+                      <span>{offer.available_capacity}/{offer.total_capacity} kg dispo</span>
+                      {offer.gp_profiles?.business_name && <>
+                        <span>•</span>
+                        <span>{offer.gp_profiles.business_name}</span>
+                      </>}
                     </div>
-                    {mission.description && <p className="text-[11px] text-muted-foreground line-clamp-1 pl-9">{mission.description}</p>}
+                    {offer.gp_profiles?.subscription && offer.gp_profiles.subscription !== "free" && (
+                      <div className="pl-9">
+                        <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium capitalize">{offer.gp_profiles.subscription}</span>
+                      </div>
+                    )}
                   </motion.div>
             )}
               </div> :
 
-          <EmptyOffers modeConfig={modeConfig} onAction={() => navigate("/routier/mission")} /> :
+          <EmptyOffers modeConfig={modeConfig} onAction={goToOffres} /> :
 
           activeTab === "all" ?
           (() => {
