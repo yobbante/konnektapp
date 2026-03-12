@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Search, CalendarCheck, Menu, Send } from "lucide-react";
+import { Home, MessageCircle, CalendarCheck, Menu, Send } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -61,7 +61,7 @@ export function MobileNav() {
 
   const navItems = [
     { href: "/", icon: Home, label: "Accueil", isHome: true },
-    { href: "/?offres=1", icon: Search, label: "Offres", isOffres: true },
+    { href: "/messages", icon: MessageCircle, label: "Messages", isMessages: true },
     { href: "#mission", icon: Send, label: "Mission", isMission: true },
     { href: "/reservations", icon: CalendarCheck, label: "Réservations", requiresAuth: true },
     { href: "#menu", icon: Menu, label: "Menu", isMenu: true },
@@ -82,10 +82,10 @@ export function MobileNav() {
       return;
     }
 
-    // Offres button - navigate to home with offres param
-    if ('isOffres' in item && item.isOffres) {
+    // Messages button - navigate to messaging
+    if ('isMessages' in item && item.isMessages) {
       e.preventDefault();
-      navigate("/?offres=1");
+      navigate("/messages");
       return;
     }
 
@@ -240,7 +240,7 @@ export function MobileNav() {
 }
 
 // ─── GP Mobile Nav (unchanged) ───
-import { BarChart3, Package, User } from "lucide-react";
+import { BarChart3, Package, User, Search } from "lucide-react";
 
 const gpNavItems = [
   { icon: Home, label: "Accueil", tab: "overview" },
