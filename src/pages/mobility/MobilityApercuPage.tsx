@@ -83,18 +83,39 @@ export default function MobilityApercuPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <div className="bg-transport-mobility text-white p-4 pt-safe">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold">Konnekt Mobility</h1>
-            <p className="text-sm opacity-80">{profile?.business_name}</p>
-          </div>
+      {/* Header — GP-style */}
+      <div className="bg-transport-mobility text-white px-4 pt-safe">
+        <div className="flex items-center justify-between py-3">
           <div className="flex items-center gap-2">
-            <Badge className="bg-white/20 text-white border-0">
-              {profile?.status === "verified" ? "Vérifié ✓" : "En attente"}
-            </Badge>
+            <Bus className="w-5 h-5" />
+            <div>
+              <h1 className="text-[15px] font-bold leading-tight">Konnekt Mobility</h1>
+              <p className="text-[11px] opacity-80 leading-tight">{profile?.business_name}</p>
+            </div>
           </div>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => navigate("/mobility/publier")}
+              className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+            <button className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center relative">
+              <Bell className="w-4 h-4" />
+              {pendingBookings > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-[9px] font-bold flex items-center justify-center">
+                  {pendingBookings}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+        {/* Status bar */}
+        <div className="flex items-center gap-2 pb-3">
+          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${profile?.status === "verified" ? "bg-white/20" : "bg-amber-400/30 text-amber-100"}`}>
+            {profile?.status === "verified" ? "Vérifié" : "En attente de vérification"}
+          </span>
+          <span className="text-[10px] opacity-70">{activeTrips.length} trajet(s) actif(s)</span>
         </div>
       </div>
 
