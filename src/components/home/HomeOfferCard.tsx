@@ -90,7 +90,7 @@ export function HomeOfferCard({ offer, index, modeLabel, subscriptionBadge }: Ho
             {offer.price_per_kg?.toLocaleString()}
           </span>
           <span className="text-[8px] text-primary/70 block leading-tight font-semibold">
-            {currencySymbol.trim()}/kg
+            {offer.transport_type === "mobility" ? `${currencySymbol.trim()}/siège` : `${currencySymbol.trim()}/kg`}
           </span>
         </div>
       </motion.div>

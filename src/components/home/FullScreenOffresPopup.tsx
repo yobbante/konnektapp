@@ -322,7 +322,9 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
                         {offer.price_per_kg?.toLocaleString()}
                         <span className="text-[11px] font-bold">{CURRENCY_SYMBOLS[offer.currency] || offer.currency || "F"}</span>
                       </span>
-                      <span className="text-[9px] text-muted-foreground block">/kg</span>
+                        <span className="text-[9px] text-muted-foreground block">
+                          {offer.transport_type === "mobility" ? "/siège" : "/kg"}
+                        </span>
                     </div>
                   </motion.button>
                 );
