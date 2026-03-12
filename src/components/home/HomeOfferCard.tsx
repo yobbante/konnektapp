@@ -25,9 +25,11 @@ export function HomeOfferCard({ offer, index, modeLabel, subscriptionBadge }: Ho
   const departDate = offer.departure_date ? new Date(offer.departure_date) : null;
   const OfferIcon = getOfferIcon(offer.transport_type);
   const currencySymbol = CURRENCY_SYMBOLS[offer.currency] || offer.currency || "F";
+  const isMobility = offer.transport_type === "mobility";
+  const linkTo = isMobility ? `/mobility/booking?trip=${offer.id}` : `/offres/${offer.id}`;
 
   return (
-    <Link to={`/offres/${offer.id}`} className="block">
+    <Link to={linkTo} className="block">
       <motion.div
         initial={{ opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
@@ -63,7 +65,7 @@ export function HomeOfferCard({ offer, index, modeLabel, subscriptionBadge }: Ho
             )}
             {offer.available_capacity > 0 && (
               <span className="text-[9px] text-muted-foreground font-medium">
-                {offer.available_capacity}kg dispo
+                {offer.available_capacity}{isMobility ? " places" : "kg"} dispo
               </span>
             )}
           </div>

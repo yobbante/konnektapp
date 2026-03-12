@@ -77,28 +77,33 @@ export default function OfferDetail() {
     }
 
     try {
-      const { data: offerData, error: offerError } = await supabase
+      // Try gp_offers first
+      const { data: offerData } = await supabase
         .from("gp_offers")
         .select("*")
         .eq("id", id)
         .eq("status", "active")
         .maybeSingle();
 
-      if (offerError || !offerData) {
-        setLoading(false);
-        return;
-      }
-
-      setOffer(offerData);
-
-      const { data: gpData } = await supabase
-        .from("public_gp_profiles")
-        .select("business_name, rating, total_deliveries, verified_at")
-        .eq("id", offerData.gp_id)
-        .maybeSingle();
-
-      if (gpData) {
-        setGpProfile(gpData);
+      if (offerData) {
+        setOffer(offerData);
+        const { data: gpData } = await supabase
+          .from("public_gp_profiles")
+          .select("business_name, rating, total_deliveries, verified_at")
+          .eq("id", offerData.gp_id)
+          .maybeSingle();
+        if (gpData) setGpProfile(gpData);
+      } else {
+        // Fallback: check mobility_offers and redirect
+        const { data: mobData } = await supabase
+          .from("mobility_offers")
+          .select("id")
+          .eq("id", id)
+          .maybeSingle();
+        if (mobData) {
+          navigate(`/mobility/booking?trip=${id}`, { replace: true });
+          return;
+        }
       }
     } catch (error) {
       console.error("Error loading offer:", error);
