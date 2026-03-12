@@ -345,7 +345,7 @@ const App = () => (
             <Route path="/mobility/ticket" element={<MobilityTicketPage />} />
             <Route path="/mobility/scan-ticket" element={<MobilityScanTicketPage />} />
             <Route path="/mobility/parametres" element={<MobilityParametresPage />} />
-            <Route path="/mobility/wallet" element={<MobilityApercuPage />} />
+            <Route path="/mobility/wallet" element={<MobilityWalletPage />} />
             <Route path="/mobility/vehicules" element={<MobilityApercuPage />} />
             
             {/* ============================================
