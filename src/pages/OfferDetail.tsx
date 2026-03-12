@@ -142,10 +142,13 @@ export default function OfferDetail() {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
+      const returnPath = offer?.transport_type === "mobility" 
+        ? `/mobility/reserver?trip=${id}`
+        : `/reservation/gp/${offer?.gp_id}?offer=${id}`;
       sessionStorage.setItem("pending_booking_state", JSON.stringify({
         offerId: id,
         gpId: offer?.gp_id,
-        returnPath: `/reservation/gp/${offer?.gp_id}?offer=${id}`,
+        returnPath,
         timestamp: Date.now(),
       }));
       
@@ -158,7 +161,12 @@ export default function OfferDetail() {
     }
 
     if (!offer) return;
-    navigate(`/reservation/gp/${offer.gp_id}?offer=${id}`);
+    
+    if (offer.transport_type === "mobility") {
+      navigate(`/mobility/reserver?trip=${id}`);
+    } else {
+      navigate(`/reservation/gp/${offer.gp_id}?offer=${id}`);
+    }
   };
 
   const handleShare = async () => {
