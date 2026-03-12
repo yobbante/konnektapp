@@ -207,11 +207,17 @@ const TRUST_ITEMS_BY_MODE: Record<string, {icon: typeof Shield;title: string;des
   { icon: Plane, title: "Vols directs", desc: "Réseau aérien étendu", color: "text-blue-500 bg-blue-500/10" },
   { icon: Award, title: "Agents certifiés", desc: "Fret aérien homologué", color: "text-purple-500 bg-purple-500/10" }],
 
-  bagages: [
+   bagages: [
   { icon: Shield, title: "Escrow protégé", desc: "Paiement sécurisé", color: "text-emerald-500 bg-emerald-500/10" },
   { icon: Luggage, title: "Bagages accompagnés", desc: "Suivi personnalisé", color: "text-blue-500 bg-blue-500/10" },
   { icon: Award, title: "GP notés", desc: "Avis clients vérifiés", color: "text-amber-500 bg-amber-500/10" },
-  { icon: Globe, title: "Réseau mondial", desc: "Afrique, Europe, Amériques", color: "text-purple-500 bg-purple-500/10" }]
+  { icon: Globe, title: "Réseau mondial", desc: "Afrique, Europe, Amériques", color: "text-purple-500 bg-purple-500/10" }],
+
+  mobility: [
+  { icon: Shield, title: "Réservation sécurisée", desc: "Paiement garanti & QR ticket", color: "text-emerald-500 bg-emerald-500/10" },
+  { icon: Car, title: "Véhicules vérifiés", desc: "Flotte inspectée & assurée", color: "text-blue-500 bg-blue-500/10" },
+  { icon: Zap, title: "Départs fréquents", desc: "Navettes quotidiennes", color: "text-amber-500 bg-amber-500/10" },
+  { icon: Users, title: "Chauffeurs certifiés", desc: "Permis & expérience validés", color: "text-purple-500 bg-purple-500/10" }]
 
 };
 
