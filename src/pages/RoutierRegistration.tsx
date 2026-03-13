@@ -117,19 +117,11 @@ export default function RoutierRegistration() {
   });
   const [freightTypes, setFreightTypes] = useState<string[]>([]);
 
-  // Step 4: Tarifs
-  const [routierMinPrice, setRoutierMinPrice] = useState("");
-  const [routierPricePerKm, setRoutierPricePerKm] = useState("");
-  const [routierPricePerKg, setRoutierPricePerKg] = useState("");
-  const [routierPricePerM3, setRoutierPricePerM3] = useState("");
-  const [routierCurrency] = useState("XOF");
-
-  const TOTAL_STEPS = 4;
+  const TOTAL_STEPS = 3;
   const steps = [
     { num: 1, label: "Coordonnées" },
     { num: 2, label: "Profil" },
     { num: 3, label: "Véhicule" },
-    { num: 4, label: "Tarifs" },
   ];
 
   useEffect(() => {
