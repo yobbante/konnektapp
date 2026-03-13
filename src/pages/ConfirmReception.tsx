@@ -49,8 +49,8 @@ export default function ConfirmReception() {
           .eq("id", orderId);
       }
 
-      // 2. Release funds via edge function with delivery code verification
-      const { data, error: fnError } = await supabase.functions.invoke("confirm-delivery-release", {
+      // 2. Release funds via release-funds-v2 (unique point de release)
+      const { data, error: fnError } = await supabase.functions.invoke("release-funds-v2", {
         body: {
           order_id: orderId,
           delivery_code: deliveryCode.trim(),
