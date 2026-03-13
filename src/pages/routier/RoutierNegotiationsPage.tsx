@@ -98,11 +98,12 @@ export default function RoutierNegotiationsPage() {
       } as any).eq("id", neg.mission_id);
 
       try {
-        await supabase.rpc("convert_mission_to_order", {
+        const { data: orderId } = await supabase.rpc("convert_mission_to_order", {
           p_mission_id: neg.mission_id,
           p_gp_id: gpProfile.id,
           p_agreed_price: neg.client_final_price,
         });
+        if (orderId) console.log("[Routier] Order created:", orderId);
       } catch (e) { console.warn("Conversion:", e); }
 
       toast({ title: "✅ Accord conclu !" });
