@@ -230,12 +230,24 @@ export default function OfferDetail() {
   }
 
   const isMobility = offer.transport_type === "mobility";
+  const isRoutier = offer.transport_type === "routier";
   const config = transportConfig[offer.transport_type as TransportType] || transportConfig.routier;
   const TypeIcon = config.icon;
   const capacityPercentage = ((offer.total_capacity - offer.available_capacity) / offer.total_capacity) * 100;
   const currencySymbol = getCurrencySymbol(offer.currency || "FCFA");
   const capacityUnit = isMobility ? "places" : "kg";
   const priceUnit = isMobility ? "/siège" : "/kg";
+
+  // Routier size pricing
+  const routierSizes = isRoutier ? [
+    { label: "S", desc: "< 5kg", price: offer.price_s },
+    { label: "M", desc: "5-15kg", price: offer.price_m },
+    { label: "L", desc: "15-30kg", price: offer.price_l },
+    { label: "XL", desc: "> 30kg", price: offer.price_xl },
+  ] : [];
+  const routierMinPrice = isRoutier
+    ? Math.min(...[offer.price_s, offer.price_m, offer.price_l, offer.price_xl].filter((p): p is number => !!p && p > 0)) || offer.price_per_kg
+    : 0;
 
   return (
     <div className="min-h-screen bg-background">
