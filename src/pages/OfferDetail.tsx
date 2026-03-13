@@ -447,6 +447,33 @@ export default function OfferDetail() {
           />
         </motion.div>
 
+        {/* Routier Size Pricing Grid */}
+        {isRoutier && routierSizes.some(s => s.price && s.price > 0) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.18 }}
+            className="bg-card rounded-2xl border border-border p-4 mb-4"
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <Package className="w-5 h-5 text-primary" />
+              <h3 className="font-semibold">Tarifs par taille de colis</h3>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {routierSizes.map(s => (
+                <div key={s.label} className="text-center p-3 rounded-xl bg-muted/50 border border-border">
+                  <p className="text-sm font-bold text-primary">{s.label}</p>
+                  <p className="text-[10px] text-muted-foreground mb-1">{s.desc}</p>
+                  <p className="text-sm font-extrabold">
+                    {s.price && s.price > 0 ? `${s.price.toLocaleString()}` : "—"}
+                  </p>
+                  <p className="text-[9px] text-muted-foreground">FCFA</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
         {/* Capacity Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
