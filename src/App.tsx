@@ -81,7 +81,7 @@ import RoutierPerformancesPage from "./pages/routier/RoutierPerformancesPage";
 import RoutierAutoAcceptPage from "./pages/routier/RoutierAutoAcceptPage";
 import RoutierPublierPage from "./pages/routier/RoutierPublierPage";
 import RoutierMessagesPage from "./pages/routier/RoutierMessagesPage";
-import RoutierCartePage from "./pages/routier/RoutierCartePage";
+// RoutierCartePage removed — merged into RoutierApercuPage
 import RoutierMissionDetailTransporteurPage from "./pages/routier/RoutierMissionDetailTransporteurPage";
 import RoutierNegotiationsPage from "./pages/routier/RoutierNegotiationsPage";
 import RoutierBookingPage from "./pages/routier/RoutierBookingPage";
@@ -282,7 +282,7 @@ const App = () => (
             <Route path="/routier/auto-accept" element={<RoutierAutoAcceptPage />} />
             <Route path="/routier/publier" element={<RoutierPublierPage />} />
             <Route path="/routier/messages" element={<RoutierMessagesPage />} />
-            <Route path="/routier/carte" element={<RoutierCartePage />} />
+            <Route path="/routier/carte" element={<Navigate to="/routier/apercu" replace />} />
             <Route path="/routier/detail-mission/:id" element={<RoutierMissionDetailTransporteurPage />} />
             <Route path="/routier/negotiations" element={<RoutierNegotiationsPage />} />
             {/* Client-facing routier */}

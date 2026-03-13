@@ -83,9 +83,9 @@ export function RoutierDashboardLayout({
 
   const getActiveTab = () => {
     const path = location.pathname;
-    if (path.includes("/routier/demandes") || path.includes("/routier/en-cours")) return "missions";
-    if (path.includes("/routier/carte") || path.includes("/routier/detail-mission")) return "carte";
+    if (path.includes("/routier/demandes")) return "missions";
     if (path.includes("/routier/messages")) return "messages";
+    if (path.includes("/routier/detail-mission")) return "missions";
     if (path.includes("/routier/scan")) return "scan";
     if (path.includes("/routier/profil-public") || path.includes("/routier/parametres") || path.includes("/routier/historique") || path.includes("/routier/vehicules") || path.includes("/routier/wallet") || path.includes("/routier/tarification") || path.includes("/routier/performances")) return "profil";
     return "apercu";
@@ -258,7 +258,7 @@ export function RoutierDashboardLayout({
           <SubNavTab label="Aperçu" active={currentTab === "apercu"} onClick={() => navigate("/routier/apercu")} />
           <SubNavTab label="Missions" active={currentTab === "missions"} badge={pendingCount + activeOrdersCount} onClick={() => navigate("/routier/demandes")} />
           <SubNavTab label="Négociations" active={location.pathname.includes("/routier/negotiations")} onClick={() => navigate("/routier/negotiations")} />
-          <SubNavTab label="Carte" active={currentTab === "carte"} onClick={() => navigate("/routier/carte")} />
+          <SubNavTab label="En cours" active={location.pathname.includes("/routier/en-cours")} onClick={() => navigate("/routier/en-cours")} />
           <SubNavTab label="Historique" onClick={() => navigate("/routier/historique")} />
         </div>
       </div>
@@ -279,6 +279,7 @@ export function RoutierDashboardLayout({
           <NavItem icon={Package} label="Missions" active={currentTab === "missions"} badge={pendingCount + activeOrdersCount} locked={!isVerified} onClick={() => isVerified && navigate("/routier/demandes")} />
 
           {/* SCAN — Center */}
+
           <button
             onClick={() => isVerified && setShowScanSheet(true)}
             disabled={!isVerified}
@@ -302,7 +303,7 @@ export function RoutierDashboardLayout({
             <span className={cn("text-[10px] font-bold mt-0.5", currentTab === "scan" ? "text-primary" : "text-muted-foreground")}>Scan</span>
           </button>
 
-          <NavItem icon={Map} label="Carte" active={currentTab === "carte"} onClick={() => navigate("/routier/carte")} />
+          <NavItem icon={MessageCircle} label="Messages" active={currentTab === "messages"} onClick={() => navigate("/routier/messages")} />
 
           {/* Profil — opens menu sheet */}
           <Sheet open={showMenu} onOpenChange={setShowMenu}>
