@@ -284,11 +284,11 @@ const App = () => (
             <Route path="/routier/detail-mission/:id" element={<RoutierMissionDetailTransporteurPage />} />
             <Route path="/routier/negotiations" element={<RoutierNegotiationsPage />} />
             {/* Client-facing routier */}
-            <Route path="/routier/recherche" element={<RoutierSearchPage />} />
-            <Route path="/routier/resultats" element={<RoutierRouteResultsPage />} />
+            <Route path="/routier/recherche" element={<Navigate to="/offres?type=routier" replace />} />
+            <Route path="/routier/resultats" element={<Navigate to="/offres?type=routier" replace />} />
             <Route path="/routier/mission/:id" element={<RoutierMissionDetailPage />} />
             <Route path="/routier/mission" element={<RoutierMissionRequestPage />} />
-            <Route path="/routier/demande" element={<Navigate to="/routier/recherche" replace />} />
+            <Route path="/routier/demande" element={<Navigate to="/offres?type=routier" replace />} />
             <Route path="/routier/tarification" element={<Navigate to="/routier/apercu" replace />} />
             
             {/* ============================================

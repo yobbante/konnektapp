@@ -44,7 +44,7 @@ const transportOptions: TransportOption[] = [
     title: "Transport routier",
     subtitle: "Marketplace",
     description: "Comparez les transporteurs et leurs prix",
-    path: "/routier/recherche",
+    path: "/offres?type=routier",
     available: true,
     color: "bg-transport-routier/10 text-transport-routier border-transport-routier/30",
   },
