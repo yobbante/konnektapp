@@ -48,42 +48,16 @@ export function EscrowPaymentFlow({
     setStep("processing");
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Non authentifié");
-
-      // Create escrow transaction
-      // IMPORTANT: escrow_transactions.amount is an INTEGER → always store in the smallest currency unit
-      const minorUnitMultiplier = ["XOF", "XAF", "JPY", "KRW"].includes(currency.toUpperCase()) ? 1 : 100;
-      const amountForDb = Math.round(amount * minorUnitMultiplier);
-
-      const { data: escrow, error: escrowError } = await supabase
-        .from("escrow_transactions")
-        .insert({
+      // Call lock-escrow edge function — single source of truth for escrow locking
+      const { data, error: fnError } = await supabase.functions.invoke("lock-escrow", {
+        body: {
           order_id: orderId,
-          client_id: user.id,
-          gp_id: gpId,
-          amount: amountForDb,
-          currency: currency,
-          status: "held",
-          payment_method: selectedMethod,
-          payment_reference: `ESC-${Date.now()}`,
-          held_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+          idempotency_key: `lock-escrow-${orderId}-${Date.now()}`,
+        },
+      });
 
-      if (escrowError) throw escrowError;
-
-      // Update order with payment status
-      const { error: orderError } = await supabase
-        .from("orders")
-        .update({
-          payment_status: "held",
-          escrow_id: escrow.id,
-        })
-        .eq("id", orderId);
-
-      if (orderError) throw orderError;
+      if (fnError) throw new Error(fnError.message || "Erreur lors du verrouillage escrow");
+      if (data?.error) throw new Error(data.error);
 
       setStep("success");
       toast({

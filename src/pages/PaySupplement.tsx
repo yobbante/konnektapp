@@ -96,15 +96,46 @@ export default function PaySupplement() {
       }).eq("id", order.id);
       
       if (error) throw error;
+
+      // Sync escrow_transactions with new amount
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      await supabase.from("escrow_transactions").update({
+        amount: newTotal,
+      }).eq("order_id", order.id).eq("status", "held");
+
+      // Update client wallet escrow_balance with supplement delta
+      if (user) {
+        const { data: cw } = await supabase
+          .from("client_wallets")
+          .select("escrow_balance")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (cw) {
+          await supabase.from("client_wallets").update({
+            escrow_balance: (cw.escrow_balance || 0) + supplement,
+            updated_at: new Date().toISOString(),
+          }).eq("user_id", user.id);
+        }
+      }
       
       // Log in order history
-      const { data: { user } } = await supabase.auth.getUser();
       await supabase.from("order_status_history").insert({
         order_id: order.id,
         status: "checked_in",
         changed_by: user?.id,
         changed_by_type: "client",
         notes: `💳 Supplément de ${supplement.toLocaleString()} ${order.currency} payé via ${selectedMethod}. Poids: ${order.weight}kg → ${newWeight}kg. Transit débloqué.`,
+      });
+
+      // Log supplement in escrow_logs
+      await supabase.from("escrow_logs").insert({
+        order_id: order.id,
+        action: "supplement_paid",
+        previous_amount: order.total_price,
+        new_amount: newTotal,
+        commission_amount: 0,
+        actor: "client",
       });
       
       setPaid(true);
