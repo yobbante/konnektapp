@@ -156,7 +156,13 @@ export function MissionNegotiationSheet({
             p_agreed_price: agreedPrice,
           });
           if (convErr) console.warn("[Routier] Mission conversion warning:", convErr.message);
-          else console.log("[Routier] Order created:", orderId);
+          else {
+            console.log("[Routier] Order created:", orderId);
+            // Redirect GP to active orders
+            if (role === "gp" && orderId) {
+              window.location.href = "/routier/en-cours";
+            }
+          }
         } catch (convErr) {
           console.warn("[Routier] Conversion non-blocking error:", convErr);
         }
