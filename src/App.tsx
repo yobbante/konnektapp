@@ -282,7 +282,7 @@ const App = () => (
             <Route path="/routier/auto-accept" element={<RoutierAutoAcceptPage />} />
             <Route path="/routier/publier" element={<RoutierPublierPage />} />
             <Route path="/routier/messages" element={<RoutierMessagesPage />} />
-            <Route path="/routier/carte" element={<RoutierCartePage />} />
+            <Route path="/routier/carte" element={<Navigate to="/routier/apercu" replace />} />
             <Route path="/routier/detail-mission/:id" element={<RoutierMissionDetailTransporteurPage />} />
             <Route path="/routier/negotiations" element={<RoutierNegotiationsPage />} />
             {/* Client-facing routier */}
