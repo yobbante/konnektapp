@@ -458,12 +458,28 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <span className="text-base font-extrabold text-primary leading-none">
-                          {offer.price_per_kg?.toLocaleString()}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground block">
-                          {offer.currency || "CFA"}{isMobility ? "/siège" : "/kg"}
-                        </span>
+                        {offer.transport_type === "routier" ? (
+                          <>
+                            <span className="text-[9px] text-muted-foreground block">À partir de</span>
+                            <span className="text-base font-extrabold text-primary leading-none">
+                              {(() => {
+                                const prices = [offer.price_s, offer.price_m, offer.price_l, offer.price_xl].filter((p: number) => p && p > 0);
+                                const min = prices.length > 0 ? Math.min(...prices) : (offer.price_per_kg > 0 ? offer.price_per_kg * 25 : 0);
+                                return min > 0 ? min.toLocaleString() : "—";
+                              })()}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground block">FCFA</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-base font-extrabold text-primary leading-none">
+                              {offer.price_per_kg?.toLocaleString()}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground block">
+                              {offer.currency || "CFA"}{isMobility ? "/siège" : "/kg"}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
 
