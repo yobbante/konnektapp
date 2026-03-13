@@ -84,6 +84,8 @@ import RoutierMessagesPage from "./pages/routier/RoutierMessagesPage";
 import RoutierCartePage from "./pages/routier/RoutierCartePage";
 import RoutierMissionDetailTransporteurPage from "./pages/routier/RoutierMissionDetailTransporteurPage";
 import RoutierNegotiationsPage from "./pages/routier/RoutierNegotiationsPage";
+import RoutierSearchPage from "./pages/routier/RoutierSearchPage";
+import RoutierRouteResultsPage from "./pages/routier/RoutierRouteResultsPage";
 // Maritime pages
 import MaritimeApercuPage from "./pages/maritime/MaritimeApercuPage";
 import MaritimePublierPage from "./pages/maritime/MaritimePublierPage";
@@ -283,10 +285,12 @@ const App = () => (
             <Route path="/routier/carte" element={<RoutierCartePage />} />
             <Route path="/routier/detail-mission/:id" element={<RoutierMissionDetailTransporteurPage />} />
             <Route path="/routier/negotiations" element={<RoutierNegotiationsPage />} />
-            {/* Client-facing routier mission request */}
+            {/* Client-facing routier */}
+            <Route path="/routier/recherche" element={<RoutierSearchPage />} />
+            <Route path="/routier/resultats" element={<RoutierRouteResultsPage />} />
             <Route path="/routier/mission/:id" element={<RoutierMissionDetailPage />} />
             <Route path="/routier/mission" element={<RoutierMissionRequestPage />} />
-            <Route path="/routier/demande" element={<Navigate to="/routier/mission" replace />} />
+            <Route path="/routier/demande" element={<Navigate to="/routier/recherche" replace />} />
             <Route path="/routier/tarification" element={<Navigate to="/routier/apercu" replace />} />
             
             {/* ============================================
