@@ -373,7 +373,7 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
                   {selectedDate ? format(selectedDate, "d MMM yyyy", { locale: fr }) : "Date de départ"}
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto p-0 z-[9999]" align="start" side="bottom" sideOffset={4}>
                 <Calendar
                   mode="single"
                   selected={selectedDate}
