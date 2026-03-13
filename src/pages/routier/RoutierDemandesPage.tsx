@@ -248,18 +248,16 @@ export default function RoutierDemandesPage() {
                                     {/* Pricing breakdown */}
                                     <div className="p-1.5 bg-background rounded border border-border/50 text-[10px] space-y-0.5">
                                       <div className="flex justify-between text-muted-foreground">
-                                        <span>Base ({sizeInfo.label}, ~{distance} km)</span>
-                                        <span>{pricing.unitPrice.toLocaleString("fr-FR")} FCFA</span>
+                                        <span>Taille colis</span>
+                                        <span>{sizeInfo.label} ({sizeInfo.description})</span>
                                       </div>
-                                      {pricing.weightSupplement > 0 && (
-                                        <div className="flex justify-between text-muted-foreground">
-                                          <span>Suppl. poids</span>
-                                          <span>+{pricing.weightSupplement.toLocaleString("fr-FR")} FCFA</span>
-                                        </div>
-                                      )}
+                                      <div className="flex justify-between text-muted-foreground">
+                                        <span>Distance estimée</span>
+                                        <span>~{distance} km</span>
+                                      </div>
                                       <div className="flex justify-between font-bold text-foreground pt-0.5 border-t border-border/30">
-                                        <span>Tarif estimé</span>
-                                        <span>{pricing.totalPrice.toLocaleString("fr-FR")} FCFA</span>
+                                        <span>Budget client</span>
+                                        <span>{req.total_price.toLocaleString("fr-FR")} {req.currency}</span>
                                       </div>
                                     </div>
                                     {req.description && (
