@@ -41,6 +41,7 @@ interface DashboardData {
   pendingActions: {pendingOrders: number;marketplaceMissions: number;};
   navettes: any[];
   missionRequests: any[];
+  corridors: any[];
 }
 
 const STATUS_FLOW: Record<string, {label: string;next: string;nextLabel: string;color: string;bg: string;}> = {
