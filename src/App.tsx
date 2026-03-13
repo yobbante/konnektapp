@@ -290,6 +290,7 @@ const App = () => (
             <Route path="/routier/mission/:id" element={<RoutierMissionDetailPage />} />
             <Route path="/routier/mission" element={<RoutierMissionRequestPage />} />
             <Route path="/routier/demande" element={<Navigate to="/offres?type=routier" replace />} />
+            <Route path="/routier/reserver" element={<RoutierBookingPage />} />
             <Route path="/routier/tarification" element={<Navigate to="/routier/apercu" replace />} />
             
             {/* ============================================
