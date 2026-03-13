@@ -20,7 +20,7 @@ import { RefusalReasonDialog, RefusalReason } from "@/components/routier/Refusal
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { estimateDistance, calculateRoutierPrice, formatPriceFCFA, getSizeFromWeight } from "@/lib/routierUtils";
+import { estimateDistance, formatPriceFCFA, getSizeFromWeight } from "@/lib/routierUtils";
 
 interface FreightRequest {
   id: string;
