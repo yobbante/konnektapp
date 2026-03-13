@@ -1444,7 +1444,11 @@ export type Database = {
           min_weight: number | null
           origin_city: string
           origin_country: string
+          price_l: number | null
+          price_m: number | null
           price_per_kg: number
+          price_s: number | null
+          price_xl: number | null
           status: Database["public"]["Enums"]["offer_status"]
           total_capacity: number
           transport_type: Database["public"]["Enums"]["gp_type"]
@@ -1475,7 +1479,11 @@ export type Database = {
           min_weight?: number | null
           origin_city: string
           origin_country?: string
+          price_l?: number | null
+          price_m?: number | null
           price_per_kg: number
+          price_s?: number | null
+          price_xl?: number | null
           status?: Database["public"]["Enums"]["offer_status"]
           total_capacity: number
           transport_type: Database["public"]["Enums"]["gp_type"]
@@ -1506,7 +1514,11 @@ export type Database = {
           min_weight?: number | null
           origin_city?: string
           origin_country?: string
+          price_l?: number | null
+          price_m?: number | null
           price_per_kg?: number
+          price_s?: number | null
+          price_xl?: number | null
           status?: Database["public"]["Enums"]["offer_status"]
           total_capacity?: number
           transport_type?: Database["public"]["Enums"]["gp_type"]
@@ -4121,6 +4133,7 @@ export type Database = {
           recipient_user_id: string | null
           routier_mission_id: string | null
           security_flags: string[] | null
+          size_category: string | null
           status: Database["public"]["Enums"]["order_status"]
           total_price: number
           tracking_code: string | null
@@ -4177,6 +4190,7 @@ export type Database = {
           recipient_user_id?: string | null
           routier_mission_id?: string | null
           security_flags?: string[] | null
+          size_category?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           total_price: number
           tracking_code?: string | null
@@ -4233,6 +4247,7 @@ export type Database = {
           recipient_user_id?: string | null
           routier_mission_id?: string | null
           security_flags?: string[] | null
+          size_category?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           total_price?: number
           tracking_code?: string | null
@@ -4668,9 +4683,13 @@ export type Database = {
           id: string
           is_active: boolean
           min_price: number
+          price_l: number
+          price_m: number
           price_per_kg: number
           price_per_km: number
           price_per_m3: number
+          price_s: number
+          price_xl: number
           updated_at: string
         }
         Insert: {
@@ -4680,9 +4699,13 @@ export type Database = {
           id?: string
           is_active?: boolean
           min_price?: number
+          price_l?: number
+          price_m?: number
           price_per_kg?: number
           price_per_km?: number
           price_per_m3?: number
+          price_s?: number
+          price_xl?: number
           updated_at?: string
         }
         Update: {
@@ -4692,9 +4715,13 @@ export type Database = {
           id?: string
           is_active?: boolean
           min_price?: number
+          price_l?: number
+          price_m?: number
           price_per_kg?: number
           price_per_km?: number
           price_per_m3?: number
+          price_s?: number
+          price_xl?: number
           updated_at?: string
         }
         Relationships: [
@@ -4742,6 +4769,7 @@ export type Database = {
           photo_urls: string[] | null
           pickup_date_end: string | null
           pickup_date_start: string
+          size_category: string | null
           smart_departure_at: string | null
           smart_departure_enabled: boolean | null
           status: string
@@ -4778,6 +4806,7 @@ export type Database = {
           photo_urls?: string[] | null
           pickup_date_end?: string | null
           pickup_date_start: string
+          size_category?: string | null
           smart_departure_at?: string | null
           smart_departure_enabled?: boolean | null
           status?: string
@@ -4814,6 +4843,7 @@ export type Database = {
           photo_urls?: string[] | null
           pickup_date_end?: string | null
           pickup_date_start?: string
+          size_category?: string | null
           smart_departure_at?: string | null
           smart_departure_enabled?: boolean | null
           status?: string
@@ -4898,6 +4928,51 @@ export type Database = {
           label?: string
           updated_at?: string
           value?: number
+        }
+        Relationships: []
+      }
+      routier_recommended_prices: {
+        Row: {
+          avg_distance_km: number | null
+          created_at: string
+          destination_city: string
+          id: string
+          last_calculated_at: string
+          origin_city: string
+          recommended_price_l: number
+          recommended_price_m: number
+          recommended_price_s: number
+          recommended_price_xl: number
+          sample_count: number
+          updated_at: string
+        }
+        Insert: {
+          avg_distance_km?: number | null
+          created_at?: string
+          destination_city: string
+          id?: string
+          last_calculated_at?: string
+          origin_city: string
+          recommended_price_l?: number
+          recommended_price_m?: number
+          recommended_price_s?: number
+          recommended_price_xl?: number
+          sample_count?: number
+          updated_at?: string
+        }
+        Update: {
+          avg_distance_km?: number | null
+          created_at?: string
+          destination_city?: string
+          id?: string
+          last_calculated_at?: string
+          origin_city?: string
+          recommended_price_l?: number
+          recommended_price_m?: number
+          recommended_price_s?: number
+          recommended_price_xl?: number
+          sample_count?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -6225,6 +6300,16 @@ export type Database = {
       get_public_tracking: {
         Args: { p_order_identifier: string }
         Returns: Json
+      }
+      get_routier_recommended_prices: {
+        Args: { p_destination_city: string; p_origin_city: string }
+        Returns: {
+          recommended_price_l: number
+          recommended_price_m: number
+          recommended_price_s: number
+          recommended_price_xl: number
+          sample_count: number
+        }[]
       }
       has_admin_access: { Args: { _user_id: string }; Returns: boolean }
       has_permission: {
