@@ -279,6 +279,7 @@ export function RoutierDashboardLayout({
           <NavItem icon={Package} label="Missions" active={currentTab === "missions"} badge={pendingCount + activeOrdersCount} locked={!isVerified} onClick={() => isVerified && navigate("/routier/demandes")} />
 
           {/* SCAN — Center */}
+
           <button
             onClick={() => isVerified && setShowScanSheet(true)}
             disabled={!isVerified}
