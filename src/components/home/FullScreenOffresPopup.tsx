@@ -351,8 +351,8 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
           </div>
 
           {/* Mode tabs + Sort */}
-          <div className="flex items-center gap-1">
-            <div className="flex-1 flex justify-between">
+          <div className="flex items-center gap-1.5">
+            <div className="flex-1 flex gap-1 overflow-x-auto no-scrollbar">
               {FILTER_TABS.map(tab => {
                 const isActive = activeType === tab.id;
                 const count = tab.id === "all" ? offers.length : offers.filter(o => (TYPE_MAP[tab.id] || []).includes(o.transport_type)).length;
@@ -360,21 +360,15 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
                   <button
                     key={tab.id}
                     onClick={() => setActiveType(tab.id)}
-                    className={`relative flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg text-[9px] font-semibold transition-all ${
+                    className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold whitespace-nowrap transition-all border ${
                       isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground"
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-card text-muted-foreground border-border"
                     }`}
                   >
-                    <tab.icon className="w-4 h-4" />
-                    {isActive && (
-                      <span className="leading-none">{tab.label}</span>
-                    )}
-                    {count > 0 && (
-                      <span className={`absolute -top-1 -right-1 min-w-[14px] h-[14px] flex items-center justify-center rounded-full text-[8px] font-bold ${
-                        isActive ? "bg-primary-foreground text-primary" : "bg-muted text-muted-foreground"
-                      }`}>{count}</span>
-                    )}
+                    <tab.icon className="w-3 h-3" />
+                    {tab.label}
+                    {count > 0 && <span className="opacity-60">{count}</span>}
                   </button>
                 );
               })}
@@ -385,9 +379,10 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
                 const idx = SORT_OPTIONS.findIndex(s => s.value === sortBy);
                 setSortBy(SORT_OPTIONS[(idx + 1) % SORT_OPTIONS.length].value);
               }}
-              className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg text-[9px] font-medium text-muted-foreground shrink-0"
+              className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium bg-muted/60 text-muted-foreground border border-border shrink-0"
             >
-              <ArrowUpDown className="w-4 h-4" />
+              <ArrowUpDown className="w-3 h-3" />
+              {SORT_OPTIONS.find(s => s.value === sortBy)?.label}
             </button>
           </div>
         </div>
