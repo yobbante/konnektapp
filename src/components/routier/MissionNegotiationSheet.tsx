@@ -223,7 +223,11 @@ export function MissionNegotiationSheet({
             p_agreed_price: negotiation.gp_counter_price,
           });
           if (convErr) console.warn("[Routier] Mission conversion warning:", convErr.message);
-          else console.log("[Routier] Order created from client accept:", orderId);
+          else if (orderId) {
+            console.log("[Routier] Order created from client accept:", orderId);
+            // Redirect client to order details with deposit info
+            window.location.href = `/booking-confirmation/${orderId}`;
+          }
         } catch (convErr) {
           console.warn("[Routier] Conversion non-blocking error:", convErr);
         }
