@@ -118,6 +118,7 @@ export default function RoutierMissionRequestPage() {
         delivery_to_door: form.deliveryToDoor,
         freight_type: form.freightType || "colis",
         weight_kg: weightKg,
+        size_category: size.label,
         merchandise_description: form.description || null,
         constraints: form.constraints,
         vehicle_type_required: form.vehicleType,
