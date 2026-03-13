@@ -1,6 +1,6 @@
 /**
  * GPPremiumPage — Dedicated pricing page for GP Premium subscription
- * Inspired by Lovable pricing: clean cards, feature lists, clear CTAs
+ * Clean cards, feature lists, clear CTAs
  */
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";

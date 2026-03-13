@@ -234,11 +234,11 @@
   }
 
   body {
-    @apply bg-background text-foreground font-outfit antialiased;
+    @apply bg-background text-foreground font-sans antialiased;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-outfit font-semibold tracking-tight;
+    @apply font-sans font-semibold tracking-tight;
   }
 }
 

@@ -276,7 +276,7 @@ export function generateDepartureFlyer(data: FlyerData): Promise<string> {
     ctx.fillStyle = "rgba(255,255,255,0.3)";
     ctx.font = "14px 'Outfit', system-ui, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("konnektapp.lovable.app · Transport sécurisé · Paiement garanti", W / 2, footY + 10);
+    ctx.fillText("konnekt.app · Transport sécurisé · Paiement garanti", W / 2, footY + 10);
 
     // Export
     resolve(canvas.toDataURL("image/png", 1.0));

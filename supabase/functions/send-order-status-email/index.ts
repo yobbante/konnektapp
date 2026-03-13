@@ -199,7 +199,7 @@ const handler = async (req: Request): Promise<Response> => {
               </div>
               
               <center>
-                <a href="https://v1yobbante.lovable.app/tracking?order=${order.id}" class="cta-button">
+                <a href="https://konnekt.app/tracking?order=${order.id}" class="cta-button">
                   Suivre ma commande
                 </a>
               </center>
