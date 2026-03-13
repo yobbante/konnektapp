@@ -3265,11 +3265,13 @@ export type Database = {
           minimum_fare: number | null
           mobility_types: Database["public"]["Enums"]["mobility_type"][]
           price_per_km: number | null
+          provider_type: string
           rating: number | null
           service_zones: string[] | null
           status: Database["public"]["Enums"]["gp_status"] | null
           total_reviews: number | null
           total_trips: number | null
+          transport_license_url: string | null
           updated_at: string | null
           user_id: string
           verified_at: string | null
@@ -3288,11 +3290,13 @@ export type Database = {
           minimum_fare?: number | null
           mobility_types?: Database["public"]["Enums"]["mobility_type"][]
           price_per_km?: number | null
+          provider_type?: string
           rating?: number | null
           service_zones?: string[] | null
           status?: Database["public"]["Enums"]["gp_status"] | null
           total_reviews?: number | null
           total_trips?: number | null
+          transport_license_url?: string | null
           updated_at?: string | null
           user_id: string
           verified_at?: string | null
@@ -3311,11 +3315,13 @@ export type Database = {
           minimum_fare?: number | null
           mobility_types?: Database["public"]["Enums"]["mobility_type"][]
           price_per_km?: number | null
+          provider_type?: string
           rating?: number | null
           service_zones?: string[] | null
           status?: Database["public"]["Enums"]["gp_status"] | null
           total_reviews?: number | null
           total_trips?: number | null
+          transport_license_url?: string | null
           updated_at?: string | null
           user_id?: string
           verified_at?: string | null
@@ -3472,6 +3478,65 @@ export type Database = {
             | null
         }
         Relationships: []
+      }
+      mobility_shuttle_routes: {
+        Row: {
+          created_at: string | null
+          currency: string
+          days_of_week: number[] | null
+          departure_time: string
+          destination_city: string
+          destination_country: string
+          id: string
+          is_active: boolean
+          mobility_profile_id: string
+          origin_city: string
+          origin_country: string
+          price_per_seat: number
+          total_seats: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          currency?: string
+          days_of_week?: number[] | null
+          departure_time: string
+          destination_city: string
+          destination_country?: string
+          id?: string
+          is_active?: boolean
+          mobility_profile_id: string
+          origin_city: string
+          origin_country?: string
+          price_per_seat: number
+          total_seats?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string
+          days_of_week?: number[] | null
+          departure_time?: string
+          destination_city?: string
+          destination_country?: string
+          id?: string
+          is_active?: boolean
+          mobility_profile_id?: string
+          origin_city?: string
+          origin_country?: string
+          price_per_seat?: number
+          total_seats?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mobility_shuttle_routes_mobility_profile_id_fkey"
+            columns: ["mobility_profile_id"]
+            isOneToOne: false
+            referencedRelation: "mobility_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mobility_transactions: {
         Row: {
