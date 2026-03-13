@@ -1,6 +1,6 @@
 /**
  * RoutierInteractiveMap — Plain Leaflet interactive map
- * Overview: mission chips (📦 price + size) placed at origin city
+ * Overview: mission chips (📦 price + size) placed at origin city + corridor routes
  * Detail: curved road-style route with Départ/Arrivée labels + bottom card
  */
 import { useEffect, useRef, useMemo, useState, useCallback } from "react";
@@ -55,7 +55,6 @@ function getWeightLabel(w?: number): string {
 function generateCurvedRoute(a: [number, number], b: [number, number], steps = 30): [number, number][] {
   const midLat = (a[0] + b[0]) / 2;
   const midLng = (a[1] + b[1]) / 2;
-  // Offset perpendicular to the line for a curve
   const dLat = b[0] - a[0];
   const dLng = b[1] - a[1];
   const dist = Math.sqrt(dLat * dLat + dLng * dLng);
@@ -82,18 +81,29 @@ interface MissionPoint {
   status?: string;
   price?: number;
   photo_url?: string;
-  type: "active" | "available" | "pending";
+  type: "active" | "available" | "pending" | "corridor";
+}
+
+interface CorridorData {
+  corridor_key: string;
+  origin_city: string;
+  destination_city: string;
+  mission_count: number;
+  total_weight_kg: number;
+  total_estimated_revenue: number;
+  is_hub_corridor?: boolean;
 }
 
 interface Props {
   activeMissions: any[];
   missionRequests: any[];
   pendingMissions: any[];
+  corridors?: CorridorData[];
   stats: { delivered: number; successRate: number; avgRating: number };
 }
 
-const TYPE_COLORS: Record<string, string> = { active: "#2563eb", available: "#10b981", pending: "#f59e0b" };
-const TYPE_BG: Record<string, string> = { active: "#dbeafe", available: "#d1fae5", pending: "#fef3c7" };
+const TYPE_COLORS: Record<string, string> = { active: "#2563eb", available: "#10b981", pending: "#f59e0b", corridor: "#8b5cf6" };
+const TYPE_BG: Record<string, string> = { active: "#dbeafe", available: "#d1fae5", pending: "#fef3c7", corridor: "#ede9fe" };
 
 /* ─── Chip icon (overview) ─── */
 function createPriceChipIcon(m: MissionPoint) {
@@ -124,6 +134,35 @@ function createPriceChipIcon(m: MissionPoint) {
   });
 }
 
+/* ─── Corridor label chip ─── */
+function createCorridorChipIcon(corridor: CorridorData) {
+  const price = corridor.total_estimated_revenue
+    ? `${Math.round(corridor.total_estimated_revenue).toLocaleString()} CFA`
+    : "—";
+  const isHub = corridor.is_hub_corridor;
+
+  return L.divIcon({
+    html: `<div style="
+      display:inline-flex;align-items:center;gap:5px;
+      background:${isHub ? '#f0fdf4' : '#faf5ff'};border:2px solid ${isHub ? '#10b981' : '#8b5cf6'};border-radius:20px;
+      padding:5px 12px 5px 8px;box-shadow:0 3px 12px rgba(0,0,0,0.15);
+      cursor:pointer;white-space:nowrap;font-family:system-ui,sans-serif;
+    ">
+      <span style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:${isHub ? '#d1fae5' : '#ede9fe'};">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${isHub ? '#10b981' : '#8b5cf6'}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="3" width="15" height="13" rx="2" ry="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+          <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+        </svg>
+      </span>
+      <span style="font-size:11px;font-weight:800;color:${isHub ? '#059669' : '#7c3aed'};">${corridor.mission_count} colis</span>
+      <span style="font-size:11px;font-weight:700;color:#1a1a1a;">${price}</span>
+    </div>`,
+    className: "corridor-chip-icon",
+    iconSize: [0, 0],
+    iconAnchor: [-10, 20],
+  });
+}
+
 /* ─── Route endpoint label (detail view) ─── */
 function createEndpointIcon(label: string, isOrigin: boolean) {
   const icon = isOrigin
@@ -147,7 +186,7 @@ function createEndpointIcon(label: string, isOrigin: boolean) {
 }
 
 /* ─── Main Component ─── */
-export function RoutierInteractiveMap({ activeMissions, missionRequests, pendingMissions, stats }: Props) {
+export function RoutierInteractiveMap({ activeMissions, missionRequests, pendingMissions, corridors = [], stats }: Props) {
   const navigate = useNavigate();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -175,7 +214,6 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
     }).addTo(map);
     mapInstanceRef.current = map;
 
-    // Center on user's geolocation
     navigator.geolocation?.getCurrentPosition(
       (pos) => {
         map.setView([pos.coords.latitude, pos.coords.longitude], 7, { animate: true });
@@ -201,13 +239,51 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
     layersRef.current.push(layer);
   }, []);
 
-  // ── Overview: chips at origin city ──
+  // ── Overview: chips at origin city + corridor routes ──
   const showOverview = useCallback(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
     clearLayers();
     const pts: L.LatLng[] = [];
 
+    // Draw corridor routes first (underneath)
+    corridors.forEach((corridor) => {
+      const origin = getCityCoords(corridor.origin_city);
+      const dest = getCityCoords(corridor.destination_city);
+      if (!origin || !dest) return;
+
+      const curvedPts = generateCurvedRoute(origin, dest);
+      const isHub = corridor.is_hub_corridor;
+
+      // Route line
+      addLayer(L.polyline(curvedPts, {
+        color: isHub ? "#10b981" : "#8b5cf6",
+        weight: 3,
+        opacity: 0.35,
+        lineCap: "round",
+        lineJoin: "round",
+        dashArray: "6, 8",
+      }));
+
+      // Corridor label at midpoint
+      const midIdx = Math.floor(curvedPts.length / 2);
+      const midPt = curvedPts[midIdx];
+      const corridorMarker = L.marker(midPt, { icon: createCorridorChipIcon(corridor) });
+      corridorMarker.on("click", () => {
+        // Navigate to corridor details
+        navigate("/routier/demandes");
+      });
+      addLayer(corridorMarker);
+
+      // Origin/dest dots for corridors
+      addLayer(L.circleMarker(origin, { radius: 4, color: isHub ? "#10b981" : "#8b5cf6", fillColor: isHub ? "#10b981" : "#8b5cf6", fillOpacity: 0.6, weight: 1.5 }));
+      addLayer(L.circleMarker(dest, { radius: 4, color: isHub ? "#10b981" : "#8b5cf6", fillColor: isHub ? "#10b981" : "#8b5cf6", fillOpacity: 0.6, weight: 1.5 }));
+
+      pts.push(L.latLng(origin[0], origin[1]));
+      pts.push(L.latLng(dest[0], dest[1]));
+    });
+
+    // Individual mission chips
     allMissions.forEach((m) => {
       const origin = getCityCoords(m.origin_city);
       if (!origin) return;
@@ -229,7 +305,7 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
     } else {
       map.setView(pts[0], 7);
     }
-  }, [allMissions, clearLayers, addLayer]);
+  }, [allMissions, corridors, clearLayers, addLayer, navigate]);
 
   // ── Detail: curved route between origin → dest ──
   const showRoute = useCallback((mission: MissionPoint) => {
@@ -276,7 +352,7 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
   // Sync view
   useEffect(() => {
     if (!selectedMission) showOverview();
-  }, [allMissions, selectedMission, showOverview]);
+  }, [allMissions, corridors, selectedMission, showOverview]);
 
   useEffect(() => {
     if (selectedMission) showRoute(selectedMission);
@@ -284,7 +360,7 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
 
   return (
     <div className="relative z-0 rounded-xl overflow-hidden border border-border/50 shadow-sm isolate h-full">
-      {/* Top bar: LIVE badge left + mission counters center */}
+      {/* Top bar: mission counters */}
       <div className="absolute top-0 left-0 right-16 z-[1000] p-2.5 flex items-center gap-2 pointer-events-none">
         <div className="flex gap-1.5">
           {activeMissions.length > 0 && (
@@ -303,6 +379,12 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
             <div className="bg-amber-500/90 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center gap-1 pointer-events-auto">
               <MapPin className="w-3 h-3 text-white" />
               <span className="text-[10px] font-bold text-white">{pendingMissions.length}</span>
+            </div>
+          )}
+          {corridors.length > 0 && (
+            <div className="bg-violet-600/90 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center gap-1 pointer-events-auto">
+              <Truck className="w-3 h-3 text-white" />
+              <span className="text-[10px] font-bold text-white">{corridors.length} corridors</span>
             </div>
           )}
         </div>
@@ -406,7 +488,7 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
 
       {/* Legend (overview only) */}
       {!selectedMission && (
-        <div className="absolute bottom-2.5 left-2.5 z-[1000] bg-background/90 backdrop-blur-md rounded-lg px-2.5 py-1.5 flex gap-3 pointer-events-auto">
+        <div className="absolute bottom-2.5 left-2.5 z-[1000] bg-background/90 backdrop-blur-md rounded-lg px-2.5 py-1.5 flex gap-3 pointer-events-auto flex-wrap">
           <div className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-blue-600" />
             <span className="text-[9px] font-medium text-foreground/80">En cours</span>
@@ -419,6 +501,12 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
             <span className="w-2 h-2 rounded-full bg-amber-500" />
             <span className="text-[9px] font-medium text-foreground/80">En attente</span>
           </div>
+          {corridors.length > 0 && (
+            <div className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-violet-500" />
+              <span className="text-[9px] font-medium text-foreground/80">Corridors</span>
+            </div>
+          )}
         </div>
       )}
 
