@@ -81,7 +81,7 @@ export default function RoutierApercuPage() {
     if (refresh) setRefreshing(true);
     try {
       const [ordersRes, walletRes, vehiclesRes, navettesRes, missionsRes, corridorsRes] = await Promise.all([
-      supabase.from("orders").select("id, order_number, origin_city, destination_city, weight, status, total_price, currency, created_at, description, recipient_name, photo_urls").
+      supabase.from("orders").select("id, order_number, origin_city, destination_city, weight, status, total_price, currency, created_at, description, recipient_name").
       eq("gp_id", gpProfile.id).not("status", "eq", "cancelled").order("created_at", { ascending: false }),
       supabase.from("gp_wallets").select("balance, pending_balance, currency").eq("gp_id", gpProfile.id).maybeSingle(),
       supabase.from("vehicles").select("id, name, vehicle_type, is_active, max_weight_kg").eq("gp_id", gpProfile.id),
