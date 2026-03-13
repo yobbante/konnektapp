@@ -146,8 +146,12 @@ export default function OfferDetail() {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
-      const returnPath = offer?.transport_type === "mobility" 
+      const isRoutierOffer = offer?.transport_type === "routier";
+      const isMobilityOffer = offer?.transport_type === "mobility";
+      const returnPath = isMobilityOffer
         ? `/mobility/reserver?trip=${id}`
+        : isRoutierOffer
+        ? `/routier/reserver?offer=${id}&gp=${offer?.gp_id}`
         : `/reservation/gp/${offer?.gp_id}?offer=${id}`;
       sessionStorage.setItem("pending_booking_state", JSON.stringify({
         offerId: id,
@@ -168,6 +172,8 @@ export default function OfferDetail() {
     
     if (offer.transport_type === "mobility") {
       navigate(`/mobility/reserver?trip=${id}`);
+    } else if (offer.transport_type === "routier") {
+      navigate(`/routier/reserver?offer=${id}&gp=${offer.gp_id}`);
     } else {
       navigate(`/reservation/gp/${offer.gp_id}?offer=${id}`);
     }
