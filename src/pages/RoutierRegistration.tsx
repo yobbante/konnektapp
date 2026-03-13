@@ -185,10 +185,6 @@ export default function RoutierRegistration() {
       if (vehicles.length === 0) { toast({ title: "Ajoutez au moins un véhicule", variant: "destructive" }); return false; }
       return true;
     }
-    if (s === 4) {
-      if (!routierMinPrice || parseFloat(routierMinPrice) <= 0) { toast({ title: "Prix minimum requis", variant: "destructive" }); return false; }
-      return true;
-    }
     return true;
   };
 
