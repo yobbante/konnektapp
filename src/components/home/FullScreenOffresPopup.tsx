@@ -280,7 +280,7 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
     }
 
     return result;
-  }, [offers, activeType, searchOrigin, searchDest, sortBy]);
+  }, [offers, activeType, searchOrigin, searchDest, sortBy, selectedDate]);
 
   const lastMinuteCount = useMemo(() => filteredOffers.filter(o => isAfter(tomorrow, new Date(o.departure_date))).length, [filteredOffers, tomorrow]);
 
