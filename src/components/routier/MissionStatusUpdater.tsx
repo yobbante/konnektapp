@@ -23,7 +23,7 @@ interface MissionStatusUpdaterProps {
 
 const WORKFLOW_STEPS = [
   { key: "accepted", label: "Accepté", icon: Check, color: "bg-blue-500" },
-  { key: "collected", label: "Collecté", icon: Package, color: "bg-amber-500" },
+  { key: "checked_in", label: "Déposé", icon: Package, color: "bg-amber-500" },
   { key: "in_transit", label: "En route", icon: Truck, color: "bg-purple-500" },
   { key: "arrived_destination", label: "Arrivé", icon: MapPin, color: "bg-cyan-500" },
   { key: "delivery_pending", label: "Livraison", icon: Truck, color: "bg-orange-500" },
