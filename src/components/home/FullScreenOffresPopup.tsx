@@ -250,6 +250,13 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
       result = result.filter(o => o.destination_city?.toLowerCase().includes(searchDest.toLowerCase()));
     }
 
+    // Filter by date
+    if (selectedDate) {
+      result = result.filter(o => {
+        try { return isSameDay(new Date(o.departure_date), selectedDate); } catch { return true; }
+      });
+    }
+
     // Sort
     if (sortBy === "price") {
       result = [...result].sort((a, b) => (a.price_per_kg || 0) - (b.price_per_kg || 0));
