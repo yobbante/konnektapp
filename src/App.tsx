@@ -81,7 +81,7 @@ import RoutierPerformancesPage from "./pages/routier/RoutierPerformancesPage";
 import RoutierAutoAcceptPage from "./pages/routier/RoutierAutoAcceptPage";
 import RoutierPublierPage from "./pages/routier/RoutierPublierPage";
 import RoutierMessagesPage from "./pages/routier/RoutierMessagesPage";
-import RoutierCartePage from "./pages/routier/RoutierCartePage";
+// RoutierCartePage removed — merged into RoutierApercuPage
 import RoutierMissionDetailTransporteurPage from "./pages/routier/RoutierMissionDetailTransporteurPage";
 import RoutierNegotiationsPage from "./pages/routier/RoutierNegotiationsPage";
 import RoutierBookingPage from "./pages/routier/RoutierBookingPage";
