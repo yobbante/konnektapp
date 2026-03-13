@@ -1,16 +1,23 @@
+/**
+ * RoutierTarificationPage — Size-based pricing (S/M/L/XL)
+ * Transporter sets own prices with platform recommended prices shown
+ */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { DollarSign, Save, Info, Loader2 } from "lucide-react";
+import { DollarSign, Save, Info, Loader2, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { RoutierDashboardLayout } from "@/components/layout/RoutierDashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { TransportPageLoader } from "@/components/ui/TransportLoader";
 import { CurrencySelector, type CurrencyCode } from "@/components/ui/currency-selector";
-import { RoutierPricingSimulator } from "@/components/routier/RoutierPricingSimulator";
 import { useToast } from "@/hooks/use-toast";
+import { getAllSizeCategories, formatPriceFCFA } from "@/lib/routierUtils";
+
+const sizes = getAllSizeCategories();
 
 export default function RoutierTarificationPage() {
   const navigate = useNavigate();
@@ -18,18 +25,15 @@ export default function RoutierTarificationPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [gpProfile, setGpProfile] = useState<any>(null);
-
-  // Pricing state
   const [currency, setCurrency] = useState<CurrencyCode>("XOF");
-  const [minPrice, setMinPrice] = useState(0);
-  const [pricePerKm, setPricePerKm] = useState(0);
-  const [pricePerKg, setPricePerKg] = useState(0);
-  const [pricePerM3, setPricePerM3] = useState(0);
 
-  // Simulator state
-  const [simDistance, setSimDistance] = useState(150);
-  const [simWeight, setSimWeight] = useState(500);
-  const [simVolume, setSimVolume] = useState(2);
+  const [priceS, setPriceS] = useState(0);
+  const [priceM, setPriceM] = useState(0);
+  const [priceL, setPriceL] = useState(0);
+  const [priceXL, setPriceXL] = useState(0);
+
+  // Recommended prices (from platform)
+  const [recommended, setRecommended] = useState<{ s: number; m: number; l: number; xl: number } | null>(null);
 
   useEffect(() => { loadData(); }, []);
 
@@ -48,7 +52,6 @@ export default function RoutierTarificationPage() {
       if (!gp) { navigate("/routier/inscription"); return; }
       setGpProfile(gp);
 
-      // Load existing pricing
       const { data: pricing } = await supabase
         .from("routier_gp_pricing")
         .select("*")
@@ -57,12 +60,28 @@ export default function RoutierTarificationPage() {
 
       if (pricing) {
         setCurrency((pricing.currency || "XOF") as CurrencyCode);
-        setMinPrice(Number(pricing.min_price) || 0);
-        setPricePerKm(Number(pricing.price_per_km) || 0);
-        setPricePerKg(Number(pricing.price_per_kg) || 0);
-        setPricePerM3(Number(pricing.price_per_m3) || 0);
+        setPriceS(Number(pricing.price_s) || 0);
+        setPriceM(Number(pricing.price_m) || 0);
+        setPriceL(Number(pricing.price_l) || 0);
+        setPriceXL(Number(pricing.price_xl) || 0);
       } else {
         setCurrency((gp.default_currency || "XOF") as CurrencyCode);
+      }
+
+      // Load recommended prices for base route
+      if (gp.base_origin_city && gp.base_destination_city) {
+        const { data: rec } = await supabase.rpc("get_routier_recommended_prices", {
+          p_origin_city: gp.base_origin_city,
+          p_destination_city: gp.base_destination_city,
+        });
+        if (rec && rec.length > 0 && rec[0].sample_count > 0) {
+          setRecommended({
+            s: rec[0].recommended_price_s,
+            m: rec[0].recommended_price_m,
+            l: rec[0].recommended_price_l,
+            xl: rec[0].recommended_price_xl,
+          });
+        }
       }
     } catch (error) {
       console.error("Error loading data:", error);
@@ -73,34 +92,35 @@ export default function RoutierTarificationPage() {
 
   const handleSave = async () => {
     if (!gpProfile) return;
+    if (priceS <= 0 || priceM <= 0 || priceL <= 0 || priceXL <= 0) {
+      toast({ title: "Tous les prix sont requis", description: "Définissez un prix pour chaque taille", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     try {
-      const payload = {
-        gp_id: gpProfile.id,
-        min_price: minPrice,
-        price_per_km: pricePerKm,
-        price_per_kg: pricePerKg,
-        price_per_m3: pricePerM3,
-        currency,
-        updated_at: new Date().toISOString(),
-      };
-
       const { error } = await supabase
         .from("routier_gp_pricing")
-        .upsert(payload, { onConflict: "gp_id" });
+        .upsert({
+          gp_id: gpProfile.id,
+          price_s: priceS,
+          price_m: priceM,
+          price_l: priceL,
+          price_xl: priceXL,
+          currency,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "gp_id" });
 
       if (error) throw error;
 
-      // Sync currency to gp_profiles
       await supabase
         .from("gp_profiles")
         .update({ default_currency: currency })
         .eq("id", gpProfile.id);
 
-      toast({ title: "Tarification enregistree" });
+      toast({ title: "Tarification enregistrée" });
     } catch (error) {
       console.error(error);
-      toast({ title: "Erreur lors de l'enregistrement", variant: "destructive" });
+      toast({ title: "Erreur", variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -109,49 +129,76 @@ export default function RoutierTarificationPage() {
   if (loading) return <TransportPageLoader message="Chargement..." vehicle="truck" />;
   if (!gpProfile) return null;
 
+  const prices = [priceS, priceM, priceL, priceXL];
+  const recPrices = recommended ? [recommended.s, recommended.m, recommended.l, recommended.xl] : null;
+  const setters = [setPriceS, setPriceM, setPriceL, setPriceXL];
+
   return (
     <RoutierDashboardLayout gpProfile={gpProfile} pendingCount={0} activeOrdersCount={0}>
-      <div className="p-4 space-y-4 max-w-lg mx-auto">
-        <h2 className="text-lg font-bold">Tarification</h2>
+      <div className="p-4 space-y-4 max-w-lg mx-auto pb-24">
+        <h2 className="text-lg font-bold">Tarification par taille</h2>
+        <p className="text-xs text-muted-foreground -mt-2">
+          Définissez vos prix pour chaque catégorie de colis
+        </p>
 
         {/* Currency */}
         <Card>
-          <CardHeader className="py-3">
-            <CardTitle className="text-sm">Devise</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
+          <CardContent className="p-3">
+            <Label className="text-xs mb-2 block">Devise</Label>
             <CurrencySelector value={currency} onValueChange={(v) => setCurrency(v as CurrencyCode)} />
           </CardContent>
         </Card>
 
-        {/* Pricing grid */}
+        {/* Size pricing grid */}
         <Card>
           <CardHeader className="py-3">
             <CardTitle className="text-sm flex items-center gap-2">
               <DollarSign className="w-4 h-4" />
-              Grille tarifaire
+              Prix par taille de colis
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 pt-0">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Prix minimum par course ({currency})</Label>
-              <Input type="number" value={minPrice || ""} onChange={e => setMinPrice(+e.target.value)} placeholder="15000" className="h-8 text-sm" />
-              <p className="text-[11px] text-muted-foreground">Prix plancher, peu importe la distance</p>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Prix par km ({currency})</Label>
-              <Input type="number" value={pricePerKm || ""} onChange={e => setPricePerKm(+e.target.value)} placeholder="500" className="h-8 text-sm" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Prix par kg ({currency})</Label>
-                <Input type="number" value={pricePerKg || ""} onChange={e => setPricePerKg(+e.target.value)} placeholder="100" className="h-8 text-sm" />
+          <CardContent className="space-y-4 pt-0">
+            {sizes.map((size, i) => (
+              <div key={size.label} className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge className={`${size.bg} ${size.color} border-0 text-xs font-bold`}>
+                      {size.label}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">{size.description}</span>
+                  </div>
+                  {recPrices && recPrices[i] > 0 && (
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                      <TrendingUp className="w-3 h-3" />
+                      Recommandé: {formatPriceFCFA(recPrices[i])}
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    value={prices[i] || ""}
+                    onChange={e => setters[i](+e.target.value)}
+                    placeholder={recPrices && recPrices[i] > 0 ? String(recPrices[i]) : "0"}
+                    className="h-9 text-sm pr-16"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                    {currency}
+                  </span>
+                </div>
+                {recPrices && recPrices[i] > 0 && prices[i] > 0 && (
+                  <p className={`text-[10px] ${
+                    prices[i] < recPrices[i] * 0.8 ? "text-emerald-600" :
+                    prices[i] > recPrices[i] * 1.2 ? "text-amber-600" :
+                    "text-muted-foreground"
+                  }`}>
+                    {prices[i] < recPrices[i] * 0.8 && "Très compétitif"}
+                    {prices[i] >= recPrices[i] * 0.8 && prices[i] <= recPrices[i] * 1.2 && "Dans la moyenne"}
+                    {prices[i] > recPrices[i] * 1.2 && "Au-dessus du marché"}
+                  </p>
+                )}
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Prix par m3 ({currency})</Label>
-                <Input type="number" value={pricePerM3 || ""} onChange={e => setPricePerM3(+e.target.value)} placeholder="5000" className="h-8 text-sm" />
-              </div>
-            </div>
+            ))}
           </CardContent>
         </Card>
 
@@ -160,28 +207,29 @@ export default function RoutierTarificationPage() {
           <CardContent className="p-3 flex items-start gap-2">
             <Info className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
             <p className="text-xs text-muted-foreground">
-              Formule : max(minimum, km x prix/km + kg x prix/kg + m3 x prix/m3). Le prix est calcule automatiquement pour chaque commande.
+              Vous êtes libre de fixer vos prix. Le prix recommandé est calculé à partir de la moyenne des transporteurs sur ce corridor. 
+              Les clients voient vos prix et le prix recommandé Konnekt comme référence.
             </p>
           </CardContent>
         </Card>
 
-        {/* Simulator */}
-        <RoutierPricingSimulator
-          minPrice={minPrice}
-          pricePerKm={pricePerKm}
-          pricePerKg={pricePerKg}
-          pricePerM3={pricePerM3}
-          currency={currency}
-          simDistance={simDistance}
-          simWeight={simWeight}
-          simVolume={simVolume}
-          onSimDistanceChange={setSimDistance}
-          onSimWeightChange={setSimWeight}
-          onSimVolumeChange={setSimVolume}
-        />
+        {/* Preview */}
+        {priceS > 0 && (
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="p-3">
+              <p className="text-xs font-medium mb-2">Aperçu client</p>
+              <p className="text-lg font-bold text-primary">
+                À partir de {formatPriceFCFA(Math.min(priceS, priceM, priceL, priceXL))}
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                Ce prix apparaîtra sur les cartes de résultats
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Save */}
-        <Button className="w-full" onClick={handleSave} disabled={saving}>
+        <Button className="w-full h-11" onClick={handleSave} disabled={saving}>
           {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
           {saving ? "Enregistrement..." : "Enregistrer les tarifs"}
         </Button>
