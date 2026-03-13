@@ -258,7 +258,7 @@ export function RoutierDashboardLayout({
           <SubNavTab label="Aperçu" active={currentTab === "apercu"} onClick={() => navigate("/routier/apercu")} />
           <SubNavTab label="Missions" active={currentTab === "missions"} badge={pendingCount + activeOrdersCount} onClick={() => navigate("/routier/demandes")} />
           <SubNavTab label="Négociations" active={location.pathname.includes("/routier/negotiations")} onClick={() => navigate("/routier/negotiations")} />
-          <SubNavTab label="Carte" active={currentTab === "carte"} onClick={() => navigate("/routier/carte")} />
+          <SubNavTab label="En cours" active={location.pathname.includes("/routier/en-cours")} onClick={() => navigate("/routier/en-cours")} />
           <SubNavTab label="Historique" onClick={() => navigate("/routier/historique")} />
         </div>
       </div>
