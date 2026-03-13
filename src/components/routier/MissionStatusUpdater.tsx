@@ -51,7 +51,13 @@ export function MissionStatusUpdater({
     if (!nextStatus) return;
     setLoading(true);
     try {
-      // For delivery_pending, redirect to scan page
+      // For checked_in (deposit confirmation), redirect to scan page
+      if (nextStatus === "checked_in") {
+        navigate(`/gp/scan?order=${orderId}`);
+        return;
+      }
+
+      // For delivery steps, redirect to scan page
       if (nextStatus === "delivery_pending" || nextStatus === "delivery_confirmed") {
         navigate(`/gp/scan?order=${orderId}`);
         return;
@@ -64,7 +70,7 @@ export function MissionStatusUpdater({
 
       if (error) throw error;
 
-      toast({ title: `Statut mis a jour: ${WORKFLOW_STEPS.find(s => s.key === nextStatus)?.label}` });
+      toast({ title: `Statut mis à jour: ${WORKFLOW_STEPS.find(s => s.key === nextStatus)?.label}` });
       onStatusChange?.();
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
