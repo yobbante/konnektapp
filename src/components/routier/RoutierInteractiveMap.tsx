@@ -168,12 +168,22 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
     const map = L.map(mapRef.current, {
       center: [14.5, -4.0], zoom: 5,
       zoomControl: false, attributionControl: false,
-      scrollWheelZoom: false, dragging: true,
+      scrollWheelZoom: true, dragging: true,
     });
     L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
       subdomains: "abcd", maxZoom: 19,
     }).addTo(map);
     mapInstanceRef.current = map;
+
+    // Center on user's geolocation
+    navigator.geolocation?.getCurrentPosition(
+      (pos) => {
+        map.setView([pos.coords.latitude, pos.coords.longitude], 7, { animate: true });
+      },
+      () => {},
+      { enableHighAccuracy: false, timeout: 8000 }
+    );
+
     return () => { map.remove(); mapInstanceRef.current = null; };
   }, []);
 
