@@ -606,9 +606,7 @@ export default function RoutierRegistration() {
             </motion.div>
           )}
 
-              </Card>
-            </motion.div>
-          )}
+
         </AnimatePresence>
       </main>
 
