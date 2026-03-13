@@ -37,13 +37,12 @@ export default function RoutierSearchPage() {
   const loadRoutes = async () => {
     setLoading(true);
     try {
-      // Get active routier offers grouped by route
+      // Get active routier offers grouped by route (no date filter for prototype)
       const { data, error } = await supabase
         .from("gp_offers")
-        .select("origin_city, destination_city, price_s, price_m, price_l, price_xl, departure_date, gp_id")
+        .select("origin_city, destination_city, price_s, price_m, price_l, price_xl, price_per_kg, departure_date, gp_id")
         .eq("transport_type", "routier")
-        .eq("status", "active")
-        .gte("departure_date", new Date().toISOString().split("T")[0]);
+        .eq("status", "active");
 
       if (error) throw error;
 
