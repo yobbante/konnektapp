@@ -682,9 +682,9 @@ export default function SmartBookingPage() {
       }
 
       // For other modes (routier, maritime, aérien, express, voyageur):
-      // Direct payment — no escrow needed. Mark as paid and record in GP wallet.
+      // Direct payment — no escrow needed. Mark as paid.
       await supabase.from("orders").update({
-        financial_status: "direct_paid",
+        financial_status: "escrow_locked",
         payment_status: "paid",
       }).eq("id", orderData.id);
 
