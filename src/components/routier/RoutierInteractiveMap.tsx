@@ -424,11 +424,10 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
 
       <div
         ref={mapRef}
-        className="relative z-0"
+        className="relative z-0 w-full"
         style={{
-          height: selectedMission ? "280px" : "180px",
-          width: "100%",
-          transition: "height 0.3s ease",
+          height: "100%",
+          minHeight: "calc(100vh - 200px)",
         }}
       />
     </div>
