@@ -98,7 +98,7 @@ export function AppHeader({
                   whileTap={{ scale: 0.95 }}
                   className="flex items-center gap-0.5"
                 >
-                  <span className="font-extrabold text-primary text-xl tracking-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                  <span className="font-extrabold text-primary text-xl tracking-tight" style={{ fontFamily: 'Inter, sans-serif' }}>
                     Konnekt
                   </span>
                   {!title && countryFlag && <span className="text-sm ml-1">{countryFlag}</span>}
