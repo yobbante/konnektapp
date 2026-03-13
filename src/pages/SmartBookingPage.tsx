@@ -681,6 +681,39 @@ export default function SmartBookingPage() {
         return;
       }
 
+      // For other modes (routier, maritime, aérien, express, voyageur):
+      // Direct payment — no escrow needed. Mark as paid and record in GP wallet.
+      await supabase.from("orders").update({
+        financial_status: "direct_paid",
+        payment_status: "paid",
+      }).eq("id", orderData.id);
+
+      // Credit GP wallet pending_balance (will be moved to balance after delivery)
+      const { data: gpWallet } = await supabase
+        .from("gp_wallets")
+        .select("id, pending_balance")
+        .eq("gp_id", gpProfile.id)
+        .maybeSingle();
+
+      if (gpWallet) {
+        await supabase.from("gp_wallets").update({
+          pending_balance: (gpWallet.pending_balance || 0) + totalForCommission,
+          updated_at: new Date().toISOString(),
+        }).eq("id", gpWallet.id);
+      }
+
+      // Record in konnekt_ledger
+      await supabase.from("konnekt_ledger").insert({
+        type: "direct_payment",
+        order_id: orderData.id,
+        gp_id: gpProfile.id,
+        amount_fcfa: Math.round(getFCFAEquivalent(totalForCommission)),
+        currency_display: offer.currency,
+        amount_display: totalForCommission,
+        status: "completed",
+        description: `Paiement direct ${gpProfile.gp_type} — ${orderNumber}`,
+      });
+
       // Create auto conversation
       await createAutoConversationAfterBooking(userId, gpProfile.id, orderData.id, {
         orderNumber,
