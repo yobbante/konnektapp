@@ -200,7 +200,6 @@ export default function RoutierDemandesPage() {
                   {requests.map((req) => {
                     const vehicle = getVehicleType(req.description, req.weight);
                     const distance = estimateDistance(req.origin_city, req.destination_city);
-                    const pricing = calculateRoutierPrice(distance, req.weight);
                     const sizeInfo = getSizeFromWeight(req.weight);
                     const isExpanded = expandedId === req.id;
 
