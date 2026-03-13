@@ -13,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isAfter, addDays, isSameDay } from "date-fns";
@@ -471,7 +470,7 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
                     {/* Row 2: Date + Badges + Capacity gauge */}
                     <div className="mt-2 flex items-center gap-1.5 flex-wrap">
                       <span className="text-[10px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                        <Calendar className="w-2.5 h-2.5" />
+                        <CalendarIcon className="w-2.5 h-2.5" />
                         {formatDate(offer.departure_date)}
                       </span>
                       {isLastMinute && (
