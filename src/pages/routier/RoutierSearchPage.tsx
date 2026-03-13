@@ -186,6 +186,7 @@ export default function RoutierSearchPage() {
                     <p className="text-lg font-bold text-primary">
                       À partir de {formatPriceFCFA(route.min_price_s)}
                     </p>
+                    <p className="text-[10px] text-muted-foreground">par colis</p>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <Users className="w-3.5 h-3.5" />
