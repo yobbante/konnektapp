@@ -70,13 +70,14 @@ export default function MobilityBookingPage() {
     setSubmitting(true);
     try {
       const totalPriceCalc = passengerCount * (trip?.price_per_seat || 0);
-      const commission = totalPriceCalc * 0.08;
+      const commissionRate = 0.08;
+      const commission = Math.round(totalPriceCalc * commissionRate);
+      const netToTransporter = totalPriceCalc - commission;
       const bookingNum = "MOB-" + new Date().toISOString().slice(0, 10).replace(/-/g, "") + "-" + Math.random().toString(36).slice(2, 8).toUpperCase();
       const boardingCode = Math.random().toString(36).slice(2, 8).toUpperCase();
-
-      // Generate a temporary ID for QR data (will be replaced by actual ID after insert)
       const tempId = crypto.randomUUID();
 
+      // 1. Create the booking
       const { data: bk, error } = await supabase.from("mobility_bookings").insert({
         id: tempId,
         booking_number: bookingNum,
@@ -96,13 +97,56 @@ export default function MobilityBookingPage() {
         qr_code_data: `KONNEKT-MOB-${tempId}`,
         boarding_code: boardingCode,
         status: "active" as any,
-        payment_status: "pending",
+        payment_status: "paid",
       }).select().single();
 
       if (error) throw error;
+
+      // 2. Decrement available seats
+      await supabase.from("mobility_offers").update({
+        available_seats: Math.max(0, (trip.available_seats || 0) - passengerCount),
+      }).eq("id", tripId);
+
+      // 3. Credit transporter wallet (net = total - 8% commission)
+      const { data: wallet } = await supabase
+        .from("mobility_wallets")
+        .select("id, balance, pending_earnings, total_earned")
+        .eq("mobility_profile_id", trip.mobility_profile_id)
+        .maybeSingle();
+
+      if (wallet) {
+        await supabase.from("mobility_wallets").update({
+          pending_earnings: (wallet.pending_earnings || 0) + netToTransporter,
+          total_earned: (wallet.total_earned || 0) + netToTransporter,
+          updated_at: new Date().toISOString(),
+        }).eq("id", wallet.id);
+
+        // 4. Record transaction in mobility_transactions
+        await supabase.from("mobility_transactions").insert({
+          wallet_id: wallet.id,
+          type: "booking_earning",
+          amount: netToTransporter,
+          currency: trip.currency || "XOF",
+          description: `Réservation ${bookingNum} (${passengerCount} passager${passengerCount > 1 ? "s" : ""}) — ${trip.origin_city} → ${trip.destination_city}`,
+          reference: bookingNum,
+          booking_id: tempId,
+        });
+
+        // 5. Record commission separately
+        await supabase.from("mobility_transactions").insert({
+          wallet_id: wallet.id,
+          type: "commission",
+          amount: -commission,
+          currency: trip.currency || "XOF",
+          description: `Commission Konnekt 8% sur ${bookingNum}`,
+          reference: `COMM-${bookingNum}`,
+          booking_id: tempId,
+        });
+      }
+
       setBooking(bk);
       setStep("confirmation");
-      toast({ title: "Réservation créée !" });
+      toast({ title: "🎉 Réservation confirmée !" });
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
     } finally {
