@@ -6,16 +6,19 @@ import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
-  Package, ArrowRight, Star, Loader2, Calendar, MapPin, Search,
+  Package, ArrowRight, Star, Loader2, Calendar as CalendarIcon, MapPin, Search,
   Zap, Truck, Ship, Plane, Luggage, X, Shield, Bus,
   Flame, Award, TrendingDown, ArrowUpDown, BarChart3, Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
-import { format, isAfter, addDays } from "date-fns";
+import { format, isAfter, addDays, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import { KTPBadge } from "@/components/ktp/KTPBadge";
 import { type KTPLevel } from "@/hooks/useKTPStatus";
 
@@ -71,6 +74,7 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
   const [searchDest, setSearchDest] = useState(initialDestination || "");
   const [activeType, setActiveType] = useState<TransportType>((initialTab as TransportType) || "all");
   const [sortBy, setSortBy] = useState<SortKey>("relevance");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [offers, setOffers] = useState<any[]>([]);
   const [corridorPricing, setCorridorPricing] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -246,6 +250,13 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
       result = result.filter(o => o.destination_city?.toLowerCase().includes(searchDest.toLowerCase()));
     }
 
+    // Filter by date
+    if (selectedDate) {
+      result = result.filter(o => {
+        try { return isSameDay(new Date(o.departure_date), selectedDate); } catch { return true; }
+      });
+    }
+
     // Sort
     if (sortBy === "price") {
       result = [...result].sort((a, b) => (a.price_per_kg || 0) - (b.price_per_kg || 0));
@@ -269,7 +280,7 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
     }
 
     return result;
-  }, [offers, activeType, searchOrigin, searchDest, sortBy]);
+  }, [offers, activeType, searchOrigin, searchDest, sortBy, selectedDate]);
 
   const lastMinuteCount = useMemo(() => filteredOffers.filter(o => isAfter(tomorrow, new Date(o.departure_date))).length, [filteredOffers, tomorrow]);
 
@@ -348,6 +359,39 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
                 className="bg-transparent text-xs text-foreground outline-none w-full placeholder:text-muted-foreground"
               />
             </div>
+          </div>
+
+          {/* Date picker */}
+          <div className="flex gap-1.5">
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className={cn(
+                  "flex-1 flex items-center gap-1.5 bg-muted/40 rounded-lg px-2 py-1.5 text-xs transition-colors",
+                  selectedDate ? "text-foreground" : "text-muted-foreground"
+                )}>
+                  <CalendarIcon className="w-3 h-3 text-primary flex-shrink-0" />
+                  {selectedDate ? format(selectedDate, "d MMM yyyy", { locale: fr }) : "Date de départ"}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                  locale={fr}
+                />
+              </PopoverContent>
+            </Popover>
+            {selectedDate && (
+              <button
+                onClick={() => setSelectedDate(undefined)}
+                className="flex items-center gap-1 bg-muted/40 rounded-lg px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
           </div>
 
           {/* Mode tabs + Sort */}
