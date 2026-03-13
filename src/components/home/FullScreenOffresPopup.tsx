@@ -94,7 +94,7 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
       const [gpRes, mobRes, airRes, corridorRes] = await Promise.all([
         supabase
           .from("gp_offers")
-          .select("id, origin_city, origin_country, destination_city, destination_country, departure_date, price_per_kg, currency, transport_type, available_capacity, total_capacity, status, gp_id")
+          .select("id, origin_city, origin_country, destination_city, destination_country, departure_date, price_per_kg, currency, transport_type, available_capacity, total_capacity, status, gp_id, price_s, price_m, price_l, price_xl")
           .eq("status", "active")
           .gte("departure_date", today)
           .gt("available_capacity", 0)
