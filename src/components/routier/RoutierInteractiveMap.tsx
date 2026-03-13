@@ -168,12 +168,22 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
     const map = L.map(mapRef.current, {
       center: [14.5, -4.0], zoom: 5,
       zoomControl: false, attributionControl: false,
-      scrollWheelZoom: false, dragging: true,
+      scrollWheelZoom: true, dragging: true,
     });
     L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
       subdomains: "abcd", maxZoom: 19,
     }).addTo(map);
     mapInstanceRef.current = map;
+
+    // Center on user's geolocation
+    navigator.geolocation?.getCurrentPosition(
+      (pos) => {
+        map.setView([pos.coords.latitude, pos.coords.longitude], 7, { animate: true });
+      },
+      () => {},
+      { enableHighAccuracy: false, timeout: 8000 }
+    );
+
     return () => { map.remove(); mapInstanceRef.current = null; };
   }, []);
 
@@ -273,13 +283,9 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
   }, [selectedMission, showRoute]);
 
   return (
-    <div className="relative z-0 rounded-xl overflow-hidden border border-border/50 shadow-sm isolate">
+    <div className="relative z-0 rounded-xl overflow-hidden border border-border/50 shadow-sm isolate h-full">
       {/* Top bar: LIVE badge left + mission counters center */}
       <div className="absolute top-0 left-0 right-16 z-[1000] p-2.5 flex items-center gap-2 pointer-events-none">
-        <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md rounded-full px-2.5 py-1 pointer-events-auto">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-[10px] font-semibold text-white">LIVE</span>
-        </div>
         <div className="flex gap-1.5">
           {activeMissions.length > 0 && (
             <div className="bg-blue-600/90 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center gap-1 pointer-events-auto">
@@ -418,11 +424,10 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
 
       <div
         ref={mapRef}
-        className="relative z-0"
+        className="relative z-0 w-full"
         style={{
-          height: selectedMission ? "280px" : "180px",
-          width: "100%",
-          transition: "height 0.3s ease",
+          height: "100%",
+          minHeight: "calc(100vh - 200px)",
         }}
       />
     </div>
