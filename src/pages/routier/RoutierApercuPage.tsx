@@ -169,6 +169,7 @@ export default function RoutierApercuPage() {
             activeMissions={data.activeMissions}
             missionRequests={data.missionRequests}
             pendingMissions={data.pendingMissions}
+            corridors={data.corridors}
             stats={data.stats} />
           
         </motion.div>
