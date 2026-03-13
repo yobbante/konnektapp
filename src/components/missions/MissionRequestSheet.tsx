@@ -17,14 +17,14 @@ import { SearchableCitySelect, WORLD_CITIES } from "@/components/gp/SearchableCi
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { type SizeCategory } from "@/lib/routierUtils";
+type SizeCategoryExt = "S" | "M" | "L" | "XL" | "FRET";
 
-const SIZE_OPTIONS: { label: SizeCategory; range: string; weight: string; color: string; bg: string }[] = [
+const SIZE_OPTIONS: { label: SizeCategoryExt; range: string; weight: string; color: string; bg: string }[] = [
   { label: "S", range: "0-50 kg", weight: "25", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700" },
-  { label: "M", range: "50-100 kg", weight: "75", color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700" },
-  { label: "L", range: "100-200 kg", weight: "150", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700" },
-  { label: "XL", range: "200-300 kg", weight: "250", color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-100 dark:bg-orange-900/30 border-orange-300 dark:border-orange-700" },
-  { label: "FRET", range: "> 300 kg", weight: "500", color: "text-red-700 dark:text-red-400", bg: "bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700" },
+  { label: "M", range: "50-200 kg", weight: "125", color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700" },
+  { label: "L", range: "200-500 kg", weight: "350", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700" },
+  { label: "XL", range: "500-1000 kg", weight: "750", color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-100 dark:bg-orange-900/30 border-orange-300 dark:border-orange-700" },
+  { label: "FRET", range: "> 1000 kg", weight: "1500", color: "text-red-700 dark:text-red-400", bg: "bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700" },
 ];
 
 interface MissionRequestSheetProps {

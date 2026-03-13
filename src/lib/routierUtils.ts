@@ -1,28 +1,52 @@
 /**
  * Routier utilities — Size categories, pricing, weight formatting
- * Aligned with Konnekt routier pricing structure
+ * Hybrid model: transporter sets prices, platform shows recommended prices
  */
 
-// ── Size Categories ──────────────────────────────────────────
-export type SizeCategory = "S" | "M" | "L" | "XL" | "FRET";
+// ── Size Categories (aligned with user spec) ─────────────────
+export type SizeCategory = "S" | "M" | "L" | "XL";
 
 interface SizeBadgeInfo {
   label: SizeCategory;
   color: string;
   bg: string;
   description: string;
+  minKg: number;
+  maxKg: number;
+}
+
+const SIZE_DEFINITIONS: SizeBadgeInfo[] = [
+  { label: "S",  color: "text-emerald-700", bg: "bg-emerald-100 dark:bg-emerald-900/30", description: "0 – 50 kg",    minKg: 0,   maxKg: 50 },
+  { label: "M",  color: "text-blue-700",    bg: "bg-blue-100 dark:bg-blue-900/30",       description: "50 – 200 kg",  minKg: 50,  maxKg: 200 },
+  { label: "L",  color: "text-amber-700",   bg: "bg-amber-100 dark:bg-amber-900/30",     description: "200 – 500 kg", minKg: 200, maxKg: 500 },
+  { label: "XL", color: "text-orange-700",  bg: "bg-orange-100 dark:bg-orange-900/30",   description: "500 – 1000 kg", minKg: 500, maxKg: 1000 },
+];
+
+/**
+ * Get size category from weight
+ */
+export function getSizeFromWeight(weightKg: number): SizeBadgeInfo {
+  if (weightKg <= 50)  return SIZE_DEFINITIONS[0];
+  if (weightKg <= 200) return SIZE_DEFINITIONS[1];
+  if (weightKg <= 500) return SIZE_DEFINITIONS[2];
+  return SIZE_DEFINITIONS[3];
 }
 
 /**
- * Get size category from weight (aligned with routier pricing grid)
- * S: 0-50kg | M: 50-100kg | L: 100-200kg | XL: 200-300kg | FRET: >300kg
+ * Get all size definitions (for forms / display)
  */
-export function getSizeFromWeight(weightKg: number): SizeBadgeInfo {
-  if (weightKg <= 50) return { label: "S", color: "text-emerald-700", bg: "bg-emerald-100 dark:bg-emerald-900/30", description: "0-50 kg" };
-  if (weightKg <= 100) return { label: "M", color: "text-blue-700", bg: "bg-blue-100 dark:bg-blue-900/30", description: "50-100 kg" };
-  if (weightKg <= 200) return { label: "L", color: "text-amber-700", bg: "bg-amber-100 dark:bg-amber-900/30", description: "100-200 kg" };
-  if (weightKg <= 300) return { label: "XL", color: "text-orange-700", bg: "bg-orange-100 dark:bg-orange-900/30", description: "200-300 kg" };
-  return { label: "FRET", color: "text-red-700", bg: "bg-red-100 dark:bg-red-900/30", description: "> 300 kg" };
+export function getAllSizeCategories(): SizeBadgeInfo[] {
+  return SIZE_DEFINITIONS;
+}
+
+/**
+ * Map size category to price field name in DB
+ */
+export function getSizePriceField(size: SizeCategory): "price_s" | "price_m" | "price_l" | "price_xl" {
+  const map: Record<SizeCategory, "price_s" | "price_m" | "price_l" | "price_xl"> = {
+    S: "price_s", M: "price_m", L: "price_l", XL: "price_xl",
+  };
+  return map[size];
 }
 
 // ── Weight Formatting ────────────────────────────────────────
@@ -43,118 +67,24 @@ export const freightTypeLabels: Record<string, { label: string; icon: string }> 
   vehicules: { label: "Véhicules", icon: "car" },
 };
 
-// ── Distance Bands (client-side fallback, DB is source of truth) ──
-const DISTANCE_BANDS = [
-  { minKm: 0, maxKm: 50, basePriceFcfa: 1500 },
-  { minKm: 50, maxKm: 150, basePriceFcfa: 2500 },
-  { minKm: 150, maxKm: 300, basePriceFcfa: 4000 },
-  { minKm: 300, maxKm: 600, basePriceFcfa: 6500 },
-  { minKm: 600, maxKm: 1000, basePriceFcfa: 9000 },
-];
-
-// ── Size Coefficients (client-side fallback) ──
-const SIZE_COEFFICIENTS: Record<SizeCategory, number> = {
-  S: 1.0,
-  M: 2.0,
-  L: 3.5,
-  XL: 5.5,
-  FRET: 0, // handled separately
-};
-
-const WEIGHT_SUPPLEMENT_PER_KG = 200; // FCFA
-const FREIGHT_THRESHOLD_KG = 300;
-const FREIGHT_PRICE_PER_KG = 150;
-const FREIGHT_PRICE_PER_M3 = 25000;
-
-// ── Pricing result ───────────────────────────────────────────
+// ── Pricing result (hybrid model) ────────────────────────────
 export interface RoutierPriceResult {
   sizeCategory: SizeCategory;
-  basePrice: number;        // base price for S at this distance
-  coefficient: number;
-  unitPrice: number;         // base * coefficient
-  quantity: number;
-  weightSupplement: number;  // extra charge if exceeds category max
-  totalPrice: number;
-  isFreight: boolean;
-  pricingMethod: "standard" | "freight_weight" | "volume_or_weight";
+  transporterPrice: number;    // price set by transporter
+  recommendedPrice: number;    // platform recommended price
+  isPriceBelowRecommended: boolean;
+  isPriceAboveRecommended: boolean;
 }
 
 /**
- * Calculate routier price (client-side, for instant estimates)
- * Use the DB function `calculate_routier_price()` for authoritative pricing
+ * Get transporter price for a given size from an offer or pricing row
  */
-export function calculateRoutierPrice(
-  distanceKm: number,
-  weightKg: number,
-  quantity: number = 1,
-  volumeM3?: number
-): RoutierPriceResult {
-  // Freight mode for heavy loads
-  if (weightKg > FREIGHT_THRESHOLD_KG) {
-    let total: number;
-    let method: "freight_weight" | "volume_or_weight" = "freight_weight";
-
-    if (volumeM3 && volumeM3 > 0) {
-      total = Math.max(
-        Math.round(weightKg * FREIGHT_PRICE_PER_KG),
-        Math.round(volumeM3 * FREIGHT_PRICE_PER_M3)
-      );
-      method = "volume_or_weight";
-    } else {
-      total = Math.round(weightKg * FREIGHT_PRICE_PER_KG);
-    }
-
-    return {
-      sizeCategory: "FRET",
-      basePrice: 0,
-      coefficient: 0,
-      unitPrice: total,
-      quantity,
-      weightSupplement: 0,
-      totalPrice: total * quantity,
-      isFreight: true,
-      pricingMethod: method,
-    };
-  }
-
-  // Get base price from distance band
-  const band = DISTANCE_BANDS.find(b => distanceKm >= b.minKm && distanceKm < b.maxKm);
-  let basePrice: number;
-  if (band) {
-    basePrice = band.basePriceFcfa;
-  } else if (distanceKm >= 1000) {
-    basePrice = 9000 + Math.round((distanceKm - 1000) * 8);
-  } else {
-    basePrice = 1500; // fallback
-  }
-
-  // Get size category
-  const sizeInfo = getSizeFromWeight(weightKg);
-  const category = sizeInfo.label as SizeCategory;
-  const coefficient = SIZE_COEFFICIENTS[category] || 1.0;
-
-  // Category max weights
-  const categoryMaxWeights: Record<string, number> = { S: 50, M: 100, L: 200, XL: 300 };
-  const maxWeight = categoryMaxWeights[category] || 50;
-
-  // Calculate
-  const unitPrice = Math.round(basePrice * coefficient);
-  const weightSupplement = weightKg > maxWeight
-    ? Math.round((weightKg - maxWeight) * WEIGHT_SUPPLEMENT_PER_KG)
-    : 0;
-  const totalPrice = (unitPrice + weightSupplement) * quantity;
-
-  return {
-    sizeCategory: category,
-    basePrice,
-    coefficient,
-    unitPrice,
-    quantity,
-    weightSupplement,
-    totalPrice,
-    isFreight: false,
-    pricingMethod: "standard",
-  };
+export function getTransporterPriceForSize(
+  pricing: { price_s?: number | null; price_m?: number | null; price_l?: number | null; price_xl?: number | null },
+  size: SizeCategory
+): number {
+  const field = getSizePriceField(size);
+  return (pricing as any)?.[field] || 0;
 }
 
 /**
@@ -165,22 +95,18 @@ export function formatPriceFCFA(amount: number): string {
 }
 
 /**
- * Get all price tiers for a given distance (for comparison display)
+ * Get all price tiers from an offer (for display)
  */
-export function getPriceTiersForDistance(distanceKm: number): Array<{
+export function getOfferPriceTiers(offer: { price_s?: number | null; price_m?: number | null; price_l?: number | null; price_xl?: number | null }): Array<{
   category: SizeCategory;
   weightRange: string;
   price: number;
 }> {
-  const band = DISTANCE_BANDS.find(b => distanceKm >= b.minKm && distanceKm < b.maxKm);
-  const basePrice = band?.basePriceFcfa ?? 1500;
-
-  return [
-    { category: "S", weightRange: "0-50 kg", price: Math.round(basePrice * 1.0) },
-    { category: "M", weightRange: "50-100 kg", price: Math.round(basePrice * 2.0) },
-    { category: "L", weightRange: "100-200 kg", price: Math.round(basePrice * 3.5) },
-    { category: "XL", weightRange: "200-300 kg", price: Math.round(basePrice * 5.5) },
-  ];
+  return SIZE_DEFINITIONS.map(s => ({
+    category: s.label,
+    weightRange: s.description,
+    price: getTransporterPriceForSize(offer, s.label),
+  }));
 }
 
 // ── Distance estimation (client-side, for UI) ────────────────
@@ -209,8 +135,7 @@ const KNOWN_DISTANCES: Record<string, number> = {
 export function estimateDistance(origin: string, destination: string): number {
   const a = origin.toLowerCase().trim();
   const b = destination.toLowerCase().trim();
-  if (a === b) return 15; // same city
-
+  if (a === b) return 15;
   const key1 = `${a}-${b}`;
   const key2 = `${b}-${a}`;
   return KNOWN_DISTANCES[key1] || KNOWN_DISTANCES[key2] || Math.floor(Math.random() * 300) + 80;
