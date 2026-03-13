@@ -61,9 +61,9 @@ export function MobileNav() {
 
   const navItems = [
     { href: "/", icon: Home, label: "Accueil", isHome: true },
-    { href: "/messages", icon: MessageCircle, label: "Messages", isMessages: true },
-    { href: "#mission", icon: Send, label: "Mission", isMission: true },
     { href: "/reservations", icon: CalendarCheck, label: "Réservations", requiresAuth: true },
+    { href: "#mission", icon: Send, label: "Mission", isMission: true },
+    { href: "/messages", icon: MessageCircle, label: "Messages", isMessages: true },
     { href: "#menu", icon: Menu, label: "Menu", isMenu: true },
   ];
 
