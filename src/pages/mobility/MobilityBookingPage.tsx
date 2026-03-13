@@ -110,13 +110,13 @@ export default function MobilityBookingPage() {
       // 3. Credit transporter wallet (net = total - 8% commission)
       const { data: wallet } = await supabase
         .from("mobility_wallets")
-        .select("id, balance, pending_earnings, total_earned")
+        .select("id, balance, pending_balance, total_earned")
         .eq("mobility_profile_id", trip.mobility_profile_id)
         .maybeSingle();
 
       if (wallet) {
         await supabase.from("mobility_wallets").update({
-          pending_earnings: (wallet.pending_earnings || 0) + netToTransporter,
+          pending_balance: (wallet.pending_balance || 0) + netToTransporter,
           total_earned: (wallet.total_earned || 0) + netToTransporter,
           updated_at: new Date().toISOString(),
         }).eq("id", wallet.id);
@@ -126,9 +126,7 @@ export default function MobilityBookingPage() {
           wallet_id: wallet.id,
           type: "booking_earning",
           amount: netToTransporter,
-          currency: trip.currency || "XOF",
           description: `Réservation ${bookingNum} (${passengerCount} passager${passengerCount > 1 ? "s" : ""}) — ${trip.origin_city} → ${trip.destination_city}`,
-          reference: bookingNum,
           booking_id: tempId,
         });
 
@@ -137,9 +135,7 @@ export default function MobilityBookingPage() {
           wallet_id: wallet.id,
           type: "commission",
           amount: -commission,
-          currency: trip.currency || "XOF",
           description: `Commission Konnekt 8% sur ${bookingNum}`,
-          reference: `COMM-${bookingNum}`,
           booking_id: tempId,
         });
       }
