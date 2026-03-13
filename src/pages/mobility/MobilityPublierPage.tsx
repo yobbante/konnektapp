@@ -1,15 +1,16 @@
 /**
- * Publish a mobility trip
+ * Publish a mobility trip — with shuttle route quick-fill for agencies
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bus, ChevronLeft, MapPin, Calendar, Clock, Users, Luggage, Check } from "lucide-react";
+import { Bus, ChevronLeft, MapPin, Calendar, Clock, Users, Luggage, Check, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { MiniLoader } from "@/components/ui/MiniLoader";
@@ -28,6 +29,7 @@ export default function MobilityPublierPage() {
   const [submitting, setSubmitting] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [vehicles, setVehicles] = useState<any[]>([]);
+  const [shuttleRoutes, setShuttleRoutes] = useState<any[]>([]);
 
   const [originCity, setOriginCity] = useState("");
   const [destCity, setDestCity] = useState("");
@@ -56,10 +58,31 @@ export default function MobilityPublierPage() {
         setSelectedVehicle(vehs[0].id);
         setTotalSeats(String(vehs[0].passenger_capacity || 4));
       }
+
+      // Load shuttle routes for agencies
+      if (mp.provider_type === "agence") {
+        const { data: routes } = await supabase
+          .from("mobility_shuttle_routes")
+          .select("*")
+          .eq("mobility_profile_id", mp.id)
+          .eq("is_active", true);
+        setShuttleRoutes(routes || []);
+      }
+
       setLoading(false);
     };
     load();
   }, [navigate]);
+
+  const applyRoute = (route: any) => {
+    setOriginCity(route.origin_city);
+    setDestCity(route.destination_city);
+    setDepartureTime(route.departure_time?.slice(0, 5) || "");
+    setPricePerSeat(String(route.price_per_seat || ""));
+    setTotalSeats(String(route.total_seats || "15"));
+    setMobilityType("shuttle");
+    toast({ title: "Route appliquée", description: `${route.origin_city} → ${route.destination_city}` });
+  };
 
   const handlePublish = async () => {
     if (!originCity || !destCity || !departureDate || !departureTime || !pricePerSeat) {
@@ -101,6 +124,9 @@ export default function MobilityPublierPage() {
   const seats = parseInt(totalSeats) || 0;
   const price = parseFloat(pricePerSeat) || 0;
   const totalRevenue = seats * price;
+  const commission = Math.round(totalRevenue * 0.08);
+  const netRevenue = totalRevenue - commission;
+  const isAgence = profile?.provider_type === "agence";
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -109,11 +135,37 @@ export default function MobilityPublierPage() {
         <button onClick={() => navigate(-1)} className="p-2"><ChevronLeft className="w-5 h-5" /></button>
         <div>
           <h1 className="font-bold">Publier un trajet</h1>
-          <p className="text-xs text-muted-foreground">Konnekt Mobility</p>
+          <p className="text-xs text-muted-foreground">
+            {isAgence ? "Agence Mobility" : "Konnekt Mobility"}
+          </p>
         </div>
+        {isAgence && <Badge variant="outline" className="ml-auto text-[10px]">Agence</Badge>}
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Quick-fill from shuttle routes (agencies only) */}
+        {isAgence && shuttleRoutes.length > 0 && (
+          <Card className="border-transport-mobility/20 bg-transport-mobility/5">
+            <CardContent className="p-3 space-y-2">
+              <h3 className="font-semibold text-xs flex items-center gap-2">
+                <Repeat className="w-3.5 h-3.5 text-transport-mobility" /> Navettes régulières
+              </h3>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                {shuttleRoutes.map(route => (
+                  <button
+                    key={route.id}
+                    onClick={() => applyRoute(route)}
+                    className="flex-shrink-0 bg-background border border-border rounded-lg px-3 py-2 text-left hover:border-transport-mobility/50 transition-colors"
+                  >
+                    <p className="text-xs font-semibold">{route.origin_city} → {route.destination_city}</p>
+                    <p className="text-[10px] text-muted-foreground">{route.departure_time?.slice(0, 5)} · {route.price_per_seat?.toLocaleString()} FCFA · {route.total_seats} places</p>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Route */}
         <Card>
           <CardContent className="p-4 space-y-3">
@@ -168,9 +220,19 @@ export default function MobilityPublierPage() {
               <div><Label>Prix / siège (FCFA) *</Label><Input type="number" value={pricePerSeat} onChange={e => setPricePerSeat(e.target.value)} placeholder="5000" /></div>
             </div>
             {price > 0 && (
-              <div className="bg-transport-mobility/5 border border-transport-mobility/20 rounded-lg p-3 text-center">
-                <p className="text-xs text-muted-foreground">Revenu potentiel si complet</p>
-                <p className="text-lg font-bold text-transport-mobility">{totalRevenue.toLocaleString()} FCFA</p>
+              <div className="bg-transport-mobility/5 border border-transport-mobility/20 rounded-lg p-3 space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Revenu brut ({seats} × {price.toLocaleString()})</span>
+                  <span className="font-medium">{totalRevenue.toLocaleString()} FCFA</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Commission Konnekt (8%)</span>
+                  <span className="text-destructive">-{commission.toLocaleString()} FCFA</span>
+                </div>
+                <div className="border-t border-transport-mobility/20 pt-1 flex justify-between">
+                  <span className="text-xs font-semibold">Revenu net estimé</span>
+                  <span className="text-sm font-bold text-transport-mobility">{netRevenue.toLocaleString()} FCFA</span>
+                </div>
               </div>
             )}
           </CardContent>
