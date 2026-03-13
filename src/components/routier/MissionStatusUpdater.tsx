@@ -122,12 +122,14 @@ export function MissionStatusUpdater({
           <Button className="w-full" onClick={handleAdvance} disabled={loading}>
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin mr-2" />
-            ) : nextStatus === "delivery_pending" || nextStatus === "delivery_confirmed" ? (
+            ) : nextStatus === "checked_in" || nextStatus === "delivery_pending" || nextStatus === "delivery_confirmed" ? (
               <QrCode className="w-4 h-4 mr-2" />
             ) : (
               <Check className="w-4 h-4 mr-2" />
             )}
-            {nextStatus === "delivery_pending" || nextStatus === "delivery_confirmed"
+            {nextStatus === "checked_in"
+              ? "Scanner pour confirmer le dépôt"
+              : nextStatus === "delivery_pending" || nextStatus === "delivery_confirmed"
               ? "Scanner pour livraison"
               : `Passer à: ${WORKFLOW_STEPS.find(s => s.key === nextStatus)?.label}`}
           </Button>
