@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { 
   Truck, ArrowRight, ArrowLeft, MapPin,
   Eye, EyeOff, Building2, CheckCircle, Shield, Package,
-  Route, Home, DollarSign, UserCircle, Lock, Mail, User, Loader2
+  Route, Home, UserCircle, Lock, Mail, User, Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
