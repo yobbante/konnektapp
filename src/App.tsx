@@ -84,8 +84,6 @@ import RoutierMessagesPage from "./pages/routier/RoutierMessagesPage";
 import RoutierCartePage from "./pages/routier/RoutierCartePage";
 import RoutierMissionDetailTransporteurPage from "./pages/routier/RoutierMissionDetailTransporteurPage";
 import RoutierNegotiationsPage from "./pages/routier/RoutierNegotiationsPage";
-import RoutierSearchPage from "./pages/routier/RoutierSearchPage";
-import RoutierRouteResultsPage from "./pages/routier/RoutierRouteResultsPage";
 // Maritime pages
 import MaritimeApercuPage from "./pages/maritime/MaritimeApercuPage";
 import MaritimePublierPage from "./pages/maritime/MaritimePublierPage";
