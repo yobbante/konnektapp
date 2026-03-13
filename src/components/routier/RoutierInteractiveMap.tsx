@@ -156,9 +156,9 @@ export function RoutierInteractiveMap({ activeMissions, missionRequests, pending
 
   const allMissions = useMemo(() => {
     const out: MissionPoint[] = [];
-    activeMissions.forEach((m) => out.push({ id: m.id, origin_city: m.origin_city, destination_city: m.destination_city, weight: m.weight, status: m.status, price: m.total_price, type: "active" }));
-    pendingMissions.forEach((m) => out.push({ id: m.id, origin_city: m.origin_city, destination_city: m.destination_city, weight: m.weight, status: "pending", price: m.total_price, type: "pending" }));
-    missionRequests.forEach((m) => out.push({ id: m.id, origin_city: m.origin_city, destination_city: m.destination_city, weight: m.weight_kg, price: m.client_budget || m.estimated_price, type: "available" }));
+    activeMissions.forEach((m) => out.push({ id: m.id, origin_city: m.origin_city, destination_city: m.destination_city, weight: m.weight, status: m.status, price: m.total_price, photo_url: m.photo_urls?.[0] || null, type: "active" }));
+    pendingMissions.forEach((m) => out.push({ id: m.id, origin_city: m.origin_city, destination_city: m.destination_city, weight: m.weight, status: "pending", price: m.total_price, photo_url: m.photo_urls?.[0] || null, type: "pending" }));
+    missionRequests.forEach((m) => out.push({ id: m.id, origin_city: m.origin_city, destination_city: m.destination_city, weight: m.weight_kg, price: m.client_budget || m.estimated_price, photo_url: m.photo_urls?.[0] || null, type: "available" }));
     return out;
   }, [activeMissions, missionRequests, pendingMissions]);
 
