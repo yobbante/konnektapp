@@ -34,7 +34,7 @@ export default function RoutierEnCoursPage() {
         .from("orders")
         .select("*", { count: "exact", head: true })
         .eq("gp_id", gp.id)
-        .in("status", ["accepted", "collected", "in_transit", "arrived_destination", "delivery_pending"]);
+        .in("status", ["accepted", "collected", "checked_in", "in_transit", "arrived_destination", "delivery_pending"]);
 
       setActiveCount(count || 0);
     } catch (error) {
