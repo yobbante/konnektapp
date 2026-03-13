@@ -50,6 +50,10 @@ interface GPOffer {
   description: string | null;
   conditions: string | null;
   gp_id: string;
+  price_s?: number | null;
+  price_m?: number | null;
+  price_l?: number | null;
+  price_xl?: number | null;
 }
 
 interface GPProfile {
