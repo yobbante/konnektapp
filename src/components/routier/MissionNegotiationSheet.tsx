@@ -158,9 +158,13 @@ export function MissionNegotiationSheet({
           if (convErr) console.warn("[Routier] Mission conversion warning:", convErr.message);
           else {
             console.log("[Routier] Order created:", orderId);
-            // Redirect GP to active orders
+            // Redirect transporteur routier to active orders
             if (role === "gp" && orderId) {
               window.location.href = "/routier/en-cours";
+            }
+            // Redirect client to QR download page
+            if (role === "client" && orderId) {
+              window.location.href = `/routier/order-qr?order=${orderId}`;
             }
           }
         } catch (convErr) {
@@ -225,8 +229,8 @@ export function MissionNegotiationSheet({
           if (convErr) console.warn("[Routier] Mission conversion warning:", convErr.message);
           else if (orderId) {
             console.log("[Routier] Order created from client accept:", orderId);
-            // Redirect client to order details with deposit info
-            window.location.href = `/booking-confirmation/${orderId}`;
+            // Redirect client to QR download page
+            window.location.href = `/routier/order-qr?order=${orderId}`;
           }
         } catch (convErr) {
           console.warn("[Routier] Conversion non-blocking error:", convErr);
