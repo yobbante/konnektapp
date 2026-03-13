@@ -6,16 +6,19 @@ import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
-  Package, ArrowRight, Star, Loader2, Calendar, MapPin, Search,
+  Package, ArrowRight, Star, Loader2, Calendar as CalendarIcon, MapPin, Search,
   Zap, Truck, Ship, Plane, Luggage, X, Shield, Bus,
   Flame, Award, TrendingDown, ArrowUpDown, BarChart3, Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
-import { format, isAfter, addDays } from "date-fns";
+import { format, isAfter, addDays, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import { KTPBadge } from "@/components/ktp/KTPBadge";
 import { type KTPLevel } from "@/hooks/useKTPStatus";
 
