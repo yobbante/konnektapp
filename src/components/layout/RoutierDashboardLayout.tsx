@@ -83,9 +83,9 @@ export function RoutierDashboardLayout({
 
   const getActiveTab = () => {
     const path = location.pathname;
-    if (path.includes("/routier/demandes") || path.includes("/routier/en-cours")) return "missions";
-    if (path.includes("/routier/carte") || path.includes("/routier/detail-mission")) return "carte";
+    if (path.includes("/routier/demandes")) return "missions";
     if (path.includes("/routier/messages")) return "messages";
+    if (path.includes("/routier/detail-mission")) return "missions";
     if (path.includes("/routier/scan")) return "scan";
     if (path.includes("/routier/profil-public") || path.includes("/routier/parametres") || path.includes("/routier/historique") || path.includes("/routier/vehicules") || path.includes("/routier/wallet") || path.includes("/routier/tarification") || path.includes("/routier/performances")) return "profil";
     return "apercu";
