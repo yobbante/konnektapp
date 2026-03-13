@@ -156,15 +156,16 @@ export default function RoutierMissionDetailTransporteurPage() {
 
       // Try to create order
       try {
-        await supabase.rpc("convert_mission_to_order", {
+        const { data: orderId } = await supabase.rpc("convert_mission_to_order", {
           p_mission_id: order.id,
           p_gp_id: gpProfile.id,
           p_agreed_price: order.total_price,
         });
+        if (orderId) console.log("[Routier] Order created:", orderId);
       } catch (e) { console.warn("Conversion:", e); }
 
       toast({ title: "✅ Mission acceptée au prix client" });
-      navigate("/routier/demandes");
+      navigate("/routier/en-cours");
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
     } finally { setActionLoading(false); }
