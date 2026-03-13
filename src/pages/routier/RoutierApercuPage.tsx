@@ -111,7 +111,8 @@ export default function RoutierApercuPage() {
         },
         pendingActions: { pendingOrders: pending.length, marketplaceMissions: (missionsRes.data || []).length },
         navettes: navettesRes.data || [],
-        missionRequests: missionsRes.data || []
+        missionRequests: missionsRes.data || [],
+        corridors: (corridorsRes.data as any[]) || []
       });
     } catch (err) {
       console.error("Dashboard load error:", err);
