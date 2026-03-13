@@ -50,6 +50,10 @@ interface GPOffer {
   description: string | null;
   conditions: string | null;
   gp_id: string;
+  price_s?: number | null;
+  price_m?: number | null;
+  price_l?: number | null;
+  price_xl?: number | null;
 }
 
 interface GPProfile {
@@ -226,12 +230,24 @@ export default function OfferDetail() {
   }
 
   const isMobility = offer.transport_type === "mobility";
+  const isRoutier = offer.transport_type === "routier";
   const config = transportConfig[offer.transport_type as TransportType] || transportConfig.routier;
   const TypeIcon = config.icon;
   const capacityPercentage = ((offer.total_capacity - offer.available_capacity) / offer.total_capacity) * 100;
   const currencySymbol = getCurrencySymbol(offer.currency || "FCFA");
   const capacityUnit = isMobility ? "places" : "kg";
   const priceUnit = isMobility ? "/siège" : "/kg";
+
+  // Routier size pricing
+  const routierSizes = isRoutier ? [
+    { label: "S", desc: "< 5kg", price: offer.price_s },
+    { label: "M", desc: "5-15kg", price: offer.price_m },
+    { label: "L", desc: "15-30kg", price: offer.price_l },
+    { label: "XL", desc: "> 30kg", price: offer.price_xl },
+  ] : [];
+  const routierMinPrice = isRoutier
+    ? Math.min(...[offer.price_s, offer.price_m, offer.price_l, offer.price_xl].filter((p): p is number => !!p && p > 0)) || offer.price_per_kg
+    : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -431,6 +447,33 @@ export default function OfferDetail() {
           />
         </motion.div>
 
+        {/* Routier Size Pricing Grid */}
+        {isRoutier && routierSizes.some(s => s.price && s.price > 0) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.18 }}
+            className="bg-card rounded-2xl border border-border p-4 mb-4"
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <Package className="w-5 h-5 text-primary" />
+              <h3 className="font-semibold">Tarifs par taille de colis</h3>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {routierSizes.map(s => (
+                <div key={s.label} className="text-center p-3 rounded-xl bg-muted/50 border border-border">
+                  <p className="text-sm font-bold text-primary">{s.label}</p>
+                  <p className="text-[10px] text-muted-foreground mb-1">{s.desc}</p>
+                  <p className="text-sm font-extrabold">
+                    {s.price && s.price > 0 ? `${s.price.toLocaleString()}` : "—"}
+                  </p>
+                  <p className="text-[9px] text-muted-foreground">FCFA</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
         {/* Capacity Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -537,11 +580,23 @@ export default function OfferDetail() {
         <div className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-muted-foreground">Prix {isMobility ? "par siège" : "par kg"}</p>
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-primary">{offer.price_per_kg.toLocaleString()}</span>
-                <span className="text-sm text-muted-foreground">{currencySymbol}{priceUnit}</span>
-              </div>
+              {isRoutier ? (
+                <>
+                  <p className="text-xs text-muted-foreground">À partir de</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-bold text-primary">{routierMinPrice.toLocaleString()}</span>
+                    <span className="text-sm text-muted-foreground">FCFA</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-muted-foreground">Prix {isMobility ? "par siège" : "par kg"}</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-bold text-primary">{offer.price_per_kg.toLocaleString()}</span>
+                    <span className="text-sm text-muted-foreground">{currencySymbol}{priceUnit}</span>
+                  </div>
+                </>
+              )}
             </div>
             <motion.div whileTap={{ scale: 0.95 }}>
               <Button 

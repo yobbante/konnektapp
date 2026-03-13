@@ -27,9 +27,7 @@ export function HomeOfferCard({ offer, index, modeLabel, subscriptionBadge }: Ho
   const currencySymbol = CURRENCY_SYMBOLS[offer.currency] || offer.currency || "F";
   const isMobility = offer.transport_type === "mobility";
   const isRoutier = offer.transport_type === "routier";
-  const linkTo = isRoutier
-    ? `/routier/resultats?from=${encodeURIComponent(offer.origin_city)}&to=${encodeURIComponent(offer.destination_city)}`
-    : `/offres/${offer.id}`;
+  const linkTo = `/offres/${offer.id}`; // All modes go to standard offer detail
 
   // For routier: show lowest size price as "À partir de"
   const routierMinPrice = isRoutier
