@@ -57,6 +57,8 @@ function roundRect(
   ctx.closePath();
 }
 
+const FONT = "'Inter', system-ui, sans-serif";
+
 export function generateDepartureFlyer(data: FlyerData): Promise<string> {
   return new Promise((resolve) => {
     const W = 1080;
@@ -96,12 +98,12 @@ export function generateDepartureFlyer(data: FlyerData): Promise<string> {
 
     // ── KONNEKT logo ──
     ctx.fillStyle = "#FFFFFF";
-    ctx.font = "bold 42px 'Outfit', system-ui, sans-serif";
+    ctx.font = `bold 42px ${FONT}`;
     ctx.textAlign = "center";
     ctx.fillText("KONNEKT", W / 2, 80);
     
     ctx.fillStyle = "rgba(255,255,255,0.5)";
-    ctx.font = "16px 'Outfit', system-ui, sans-serif";
+    ctx.font = `16px ${FONT}`;
     ctx.fillText("Transport de colis · Rapide · Sécurisé", W / 2, 110);
 
     // ── Main card ──
@@ -126,7 +128,7 @@ export function generateDepartureFlyer(data: FlyerData): Promise<string> {
     ctx.fillStyle = badgeGrad;
     ctx.fill();
     ctx.fillStyle = "#FFFFFF";
-    ctx.font = "bold 20px 'Outfit', system-ui, sans-serif";
+    ctx.font = `bold 20px ${FONT}`;
     ctx.textAlign = "center";
     ctx.fillText("✈️  NOUVEAU DÉPART", W / 2, badgeY + 32);
 
@@ -158,14 +160,14 @@ export function generateDepartureFlyer(data: FlyerData): Promise<string> {
 
     // City names
     ctx.fillStyle = "#FFFFFF";
-    ctx.font = "bold 48px 'Outfit', system-ui, sans-serif";
+    ctx.font = `bold 48px ${FONT}`;
     ctx.textAlign = "center";
     ctx.fillText(data.originCity.toUpperCase(), W / 2 - 200, routeY + 60);
     ctx.fillText(data.destinationCity.toUpperCase(), W / 2 + 200, routeY + 60);
 
     // Country labels
     ctx.fillStyle = "rgba(255,255,255,0.5)";
-    ctx.font = "18px 'Outfit', system-ui, sans-serif";
+    ctx.font = `18px ${FONT}`;
     ctx.fillText(data.originCountry, W / 2 - 200, routeY + 88);
     ctx.fillText(data.destinationCountry, W / 2 + 200, routeY + 88);
 
@@ -179,12 +181,12 @@ export function generateDepartureFlyer(data: FlyerData): Promise<string> {
     ctx.stroke();
 
     ctx.fillStyle = "rgba(255,255,255,0.6)";
-    ctx.font = "16px 'Outfit', system-ui, sans-serif";
+    ctx.font = `16px ${FONT}`;
     ctx.textAlign = "center";
     ctx.fillText("DATE DE DÉPART", W / 2, dateY + 30);
 
     ctx.fillStyle = "#FFFFFF";
-    ctx.font = "bold 36px 'Outfit', system-ui, sans-serif";
+    ctx.font = `bold 36px ${FONT}`;
     ctx.fillText(formatDateFr(data.departureDate), W / 2, dateY + 70);
 
     // ── Info pills ──
@@ -210,30 +212,30 @@ export function generateDepartureFlyer(data: FlyerData): Promise<string> {
       ctx.stroke();
 
       ctx.fillStyle = "rgba(255,255,255,0.5)";
-      ctx.font = "14px 'Outfit', system-ui, sans-serif";
+      ctx.font = `14px ${FONT}`;
       ctx.textAlign = "center";
       ctx.fillText(pill.label, px + pillW / 2, pillY + 30);
 
       ctx.fillStyle = "#FFFFFF";
-      ctx.font = "bold 24px 'Outfit', system-ui, sans-serif";
+      ctx.font = `bold 24px ${FONT}`;
       ctx.fillText(pill.value, px + pillW / 2, pillY + 60);
     });
 
     // ── Business name ──
     const bizY = pillY + 130;
     ctx.fillStyle = "rgba(255,255,255,0.4)";
-    ctx.font = "16px 'Outfit', system-ui, sans-serif";
+    ctx.font = `16px ${FONT}`;
     ctx.textAlign = "center";
     ctx.fillText("Transporteur", W / 2, bizY);
 
     ctx.fillStyle = "#FFFFFF";
-    ctx.font = "bold 30px 'Outfit', system-ui, sans-serif";
+    ctx.font = `bold 30px ${FONT}`;
     ctx.fillText(data.businessName, W / 2, bizY + 40);
 
     // ── Phone ──
     if (data.phone) {
       ctx.fillStyle = "rgba(255,255,255,0.6)";
-      ctx.font = "22px 'Outfit', system-ui, sans-serif";
+      ctx.font = `22px ${FONT}`;
       ctx.fillText(`📞 ${data.phone}`, W / 2, bizY + 78);
     }
 
@@ -259,13 +261,13 @@ export function generateDepartureFlyer(data: FlyerData): Promise<string> {
     ctx.shadowOffsetY = 0;
 
     ctx.fillStyle = "#FFFFFF";
-    ctx.font = "bold 24px 'Outfit', system-ui, sans-serif";
+    ctx.font = `bold 24px ${FONT}`;
     ctx.textAlign = "center";
     ctx.fillText("Réserver sur Konnekt →", W / 2, ctaY + 44);
 
     // ── Booking URL ──
     ctx.fillStyle = "rgba(255,255,255,0.35)";
-    ctx.font = "16px 'Outfit', system-ui, sans-serif";
+    ctx.font = `16px ${FONT}`;
     ctx.fillText(data.bookingUrl, W / 2, ctaY + ctaH + 35);
 
     // ── Bottom branding ──
@@ -274,9 +276,9 @@ export function generateDepartureFlyer(data: FlyerData): Promise<string> {
     ctx.fillRect(50, footY - 20, W - 100, 1);
 
     ctx.fillStyle = "rgba(255,255,255,0.3)";
-    ctx.font = "14px 'Outfit', system-ui, sans-serif";
+    ctx.font = `14px ${FONT}`;
     ctx.textAlign = "center";
-    ctx.fillText("konnektapp.lovable.app · Transport sécurisé · Paiement garanti", W / 2, footY + 10);
+    ctx.fillText("konnekt.app · Transport sécurisé · Paiement garanti", W / 2, footY + 10);
 
     // Export
     resolve(canvas.toDataURL("image/png", 1.0));
