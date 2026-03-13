@@ -69,7 +69,6 @@ export default function RoutierRouteResultsPage() {
         .eq("status", "active")
         .ilike("origin_city", originCity)
         .ilike("destination_city", destCity)
-        .gte("departure_date", new Date().toISOString().split("T")[0])
         .order("departure_date", { ascending: true });
 
       if (offersError) throw offersError;

@@ -37,13 +37,12 @@ export default function RoutierSearchPage() {
   const loadRoutes = async () => {
     setLoading(true);
     try {
-      // Get active routier offers grouped by route
+      // Get active routier offers grouped by route (no date filter for prototype)
       const { data, error } = await supabase
         .from("gp_offers")
-        .select("origin_city, destination_city, price_s, price_m, price_l, price_xl, departure_date, gp_id")
+        .select("origin_city, destination_city, price_s, price_m, price_l, price_xl, price_per_kg, departure_date, gp_id")
         .eq("transport_type", "routier")
-        .eq("status", "active")
-        .gte("departure_date", new Date().toISOString().split("T")[0]);
+        .eq("status", "active");
 
       if (error) throw error;
 
@@ -53,9 +52,9 @@ export default function RoutierSearchPage() {
 
       (data || []).forEach((offer: any) => {
         const key = `${offer.origin_city}→${offer.destination_city}`;
-        const minPrice = Math.min(
-          ...[offer.price_s, offer.price_m, offer.price_l, offer.price_xl].filter((p: any) => p && p > 0)
-        );
+        const prices = [offer.price_s, offer.price_m, offer.price_l, offer.price_xl].filter((p: any) => p && p > 0);
+        // Fallback to price_per_kg if no size prices
+        const minPrice = prices.length > 0 ? Math.min(...prices) : (offer.price_per_kg > 0 ? offer.price_per_kg * 25 : 0);
 
         if (!groupMap.has(key)) {
           groupMap.set(key, {
