@@ -23,7 +23,7 @@ interface MissionStatusUpdaterProps {
 
 const WORKFLOW_STEPS = [
   { key: "accepted", label: "Accepté", icon: Check, color: "bg-blue-500" },
-  { key: "collected", label: "Collecté", icon: Package, color: "bg-amber-500" },
+  { key: "checked_in", label: "Déposé", icon: Package, color: "bg-amber-500" },
   { key: "in_transit", label: "En route", icon: Truck, color: "bg-purple-500" },
   { key: "arrived_destination", label: "Arrivé", icon: MapPin, color: "bg-cyan-500" },
   { key: "delivery_pending", label: "Livraison", icon: Truck, color: "bg-orange-500" },
@@ -51,7 +51,13 @@ export function MissionStatusUpdater({
     if (!nextStatus) return;
     setLoading(true);
     try {
-      // For delivery_pending, redirect to scan page
+      // For checked_in (deposit confirmation), redirect to scan page
+      if (nextStatus === "checked_in") {
+        navigate(`/gp/scan?order=${orderId}`);
+        return;
+      }
+
+      // For delivery steps, redirect to scan page
       if (nextStatus === "delivery_pending" || nextStatus === "delivery_confirmed") {
         navigate(`/gp/scan?order=${orderId}`);
         return;
@@ -64,7 +70,7 @@ export function MissionStatusUpdater({
 
       if (error) throw error;
 
-      toast({ title: `Statut mis a jour: ${WORKFLOW_STEPS.find(s => s.key === nextStatus)?.label}` });
+      toast({ title: `Statut mis à jour: ${WORKFLOW_STEPS.find(s => s.key === nextStatus)?.label}` });
       onStatusChange?.();
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
@@ -116,12 +122,14 @@ export function MissionStatusUpdater({
           <Button className="w-full" onClick={handleAdvance} disabled={loading}>
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin mr-2" />
-            ) : nextStatus === "delivery_pending" || nextStatus === "delivery_confirmed" ? (
+            ) : nextStatus === "checked_in" || nextStatus === "delivery_pending" || nextStatus === "delivery_confirmed" ? (
               <QrCode className="w-4 h-4 mr-2" />
             ) : (
               <Check className="w-4 h-4 mr-2" />
             )}
-            {nextStatus === "delivery_pending" || nextStatus === "delivery_confirmed"
+            {nextStatus === "checked_in"
+              ? "Scanner pour confirmer le dépôt"
+              : nextStatus === "delivery_pending" || nextStatus === "delivery_confirmed"
               ? "Scanner pour livraison"
               : `Passer à: ${WORKFLOW_STEPS.find(s => s.key === nextStatus)?.label}`}
           </Button>
