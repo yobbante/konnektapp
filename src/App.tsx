@@ -292,6 +292,7 @@ const App = () => (
             <Route path="/routier/mission" element={<RoutierMissionRequestPage />} />
             <Route path="/routier/demande" element={<Navigate to="/offres?type=routier" replace />} />
             <Route path="/routier/reserver" element={<RoutierBookingPage />} />
+            <Route path="/routier/order-qr" element={<RoutierOrderQRPage />} />
             <Route path="/routier/tarification" element={<Navigate to="/routier/apercu" replace />} />
             
             {/* ============================================
