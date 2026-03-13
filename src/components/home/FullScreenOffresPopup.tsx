@@ -74,6 +74,7 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
   const [searchDest, setSearchDest] = useState(initialDestination || "");
   const [activeType, setActiveType] = useState<TransportType>((initialTab as TransportType) || "all");
   const [sortBy, setSortBy] = useState<SortKey>("relevance");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [offers, setOffers] = useState<any[]>([]);
   const [corridorPricing, setCorridorPricing] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
