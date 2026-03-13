@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { 
   Truck, ArrowRight, ArrowLeft, MapPin,
   Eye, EyeOff, Building2, CheckCircle, Shield, Package,
-  Route, Home, DollarSign, UserCircle, Lock, Mail, User, Loader2
+  Route, Home, UserCircle, Lock, Mail, User, Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -117,19 +117,11 @@ export default function RoutierRegistration() {
   });
   const [freightTypes, setFreightTypes] = useState<string[]>([]);
 
-  // Step 4: Tarifs
-  const [routierMinPrice, setRoutierMinPrice] = useState("");
-  const [routierPricePerKm, setRoutierPricePerKm] = useState("");
-  const [routierPricePerKg, setRoutierPricePerKg] = useState("");
-  const [routierPricePerM3, setRoutierPricePerM3] = useState("");
-  const [routierCurrency] = useState("XOF");
-
-  const TOTAL_STEPS = 4;
+  const TOTAL_STEPS = 3;
   const steps = [
     { num: 1, label: "Coordonnées" },
     { num: 2, label: "Profil" },
     { num: 3, label: "Véhicule" },
-    { num: 4, label: "Tarifs" },
   ];
 
   useEffect(() => {
@@ -191,10 +183,6 @@ export default function RoutierRegistration() {
     }
     if (s === 3) {
       if (vehicles.length === 0) { toast({ title: "Ajoutez au moins un véhicule", variant: "destructive" }); return false; }
-      return true;
-    }
-    if (s === 4) {
-      if (!routierMinPrice || parseFloat(routierMinPrice) <= 0) { toast({ title: "Prix minimum requis", variant: "destructive" }); return false; }
       return true;
     }
     return true;
@@ -273,8 +261,7 @@ export default function RoutierRegistration() {
           city: city || "Dakar",
           country_code: country,
           status: "verified" as any,
-          default_currency: routierCurrency,
-          base_price_per_kg: routierPricePerKg ? parseFloat(routierPricePerKg) : null,
+          default_currency: "XOF",
           base_origin_city: city || null,
           address: entityType === "entreprise" ? companyAddress : null,
           zones_covered: [city].filter(Boolean),
@@ -619,88 +606,7 @@ export default function RoutierRegistration() {
             </motion.div>
           )}
 
-          {/* ─── Step 4: Tarification ─── */}
-          {step === 4 && (
-            <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <Card className="overflow-hidden">
-                <div className="bg-gradient-to-r from-primary to-primary/80 px-4 py-3 text-primary-foreground">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
-                      <DollarSign className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h2 className="font-bold text-sm">Tarification routière</h2>
-                      <p className="text-primary-foreground/80 text-[10px]">Distance + poids + volume</p>
-                    </div>
-                  </div>
-                </div>
-                <CardContent className="p-4 space-y-3">
-                  <div className="p-3 rounded-xl border-2 border-primary/30 bg-primary/5 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-primary" />
-                      <Label className="font-semibold text-xs">Prix minimum par course *</Label>
-                    </div>
-                    <div className="relative">
-                      <Input type="number" value={routierMinPrice} onChange={e => setRoutierMinPrice(e.target.value)} placeholder="15000" className="h-10 text-base font-medium" />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground">{routierCurrency}</span>
-                    </div>
-                  </div>
 
-                  <div className="p-3 rounded-xl border border-border bg-muted/30 space-y-1.5">
-                    <p className="text-xs font-semibold flex items-center gap-1.5"><Route className="w-3.5 h-3.5" /> Distance</p>
-                    <div className="relative">
-                      <Input type="number" value={routierPricePerKm} onChange={e => setRoutierPricePerKm(e.target.value)} className="h-9" placeholder="500" />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{routierCurrency}/km</span>
-                    </div>
-                  </div>
-
-                  <div className="p-3 rounded-xl border border-border bg-muted/30 space-y-2">
-                    <p className="text-xs font-semibold flex items-center gap-1.5"><Package className="w-3.5 h-3.5" /> Chargement</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-1">
-                        <Label className="text-[10px]">Prix / kg</Label>
-                        <div className="relative">
-                          <Input type="number" value={routierPricePerKg} onChange={e => setRoutierPricePerKg(e.target.value)} className="h-9" placeholder="100" />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{routierCurrency}/kg</span>
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[10px]">Prix / m³</Label>
-                        <div className="relative">
-                          <Input type="number" value={routierPricePerM3} onChange={e => setRoutierPricePerM3(e.target.value)} className="h-9" placeholder="5000" />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{routierCurrency}/m³</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {routierMinPrice && (
-                    <div className="p-3 rounded-xl bg-muted/50 border space-y-2">
-                      <p className="text-[10px] font-bold">📊 Simulation</p>
-                      <div className="text-[11px] space-y-1">
-                        <div className="flex justify-between py-0.5 border-b border-border/50">
-                          <span className="text-muted-foreground">Course minimum</span>
-                          <span className="font-bold">{parseInt(routierMinPrice || "0").toLocaleString()} {routierCurrency}</span>
-                        </div>
-                        {routierPricePerKm && (
-                          <div className="flex justify-between py-0.5">
-                            <span className="text-muted-foreground">70 km</span>
-                            <span className="font-bold">{Math.max(parseInt(routierMinPrice || "0"), parseInt(routierPricePerKm) * 70).toLocaleString()} {routierCurrency}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="p-2.5 rounded-xl bg-primary/5 border border-primary/20">
-                    <p className="text-[10px] text-foreground">
-                      <strong>💡</strong> Prix = max(minimum, km × prix/km + kg × prix/kg + m³ × prix/m³)
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
         </AnimatePresence>
       </main>
 
