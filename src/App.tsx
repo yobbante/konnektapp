@@ -93,6 +93,9 @@ import MaritimeParametresPage from "./pages/maritime/MaritimeParametresPage";
 import MaritimeRegistration from "./pages/maritime/MaritimeRegistration";
 import MaritimeWalletPage from "./pages/maritime/MaritimeWalletPage";
 import MaritimePremiumPage from "./pages/maritime/MaritimePremiumPage";
+import MaritimeDemandesPage from "./pages/maritime/MaritimeDemandesPage";
+import MaritimeBookingPage from "./pages/maritime/MaritimeBookingPage";
+import MaritimeMissionRequestPage from "./pages/maritime/MaritimeMissionRequestPage";
 // Aérien pages
 import AerienApercuPage from "./pages/aerien/AerienApercuPage";
 import AerienPublierPage from "./pages/aerien/AerienPublierPage";
@@ -303,14 +306,15 @@ const App = () => (
             <Route path="/maritime/apercu" element={<MaritimeApercuPage />} />
             <Route path="/maritime/publier" element={<MaritimePublierPage />} />
             <Route path="/maritime/parametres" element={<MaritimeParametresPage />} />
-            <Route path="/maritime/demandes" element={<MaritimeApercuPage />} />
-            <Route path="/maritime/en-cours" element={<MaritimeApercuPage />} />
+            <Route path="/maritime/demandes" element={<MaritimeDemandesPage />} />
+            <Route path="/maritime/en-cours" element={<MaritimeDemandesPage />} />
             <Route path="/maritime/historique" element={<MaritimeApercuPage />} />
             <Route path="/maritime/wallet" element={<MaritimeWalletPage />} />
             <Route path="/maritime/premium" element={<MaritimePremiumPage />} />
             <Route path="/maritime/profil-public" element={<MaritimeApercuPage />} />
             <Route path="/maritime/messages" element={<Navigate to="/messages" replace />} />
-            <Route path="/maritime/demande" element={<MaritimeApercuPage />} />
+            <Route path="/maritime/demande" element={<MaritimeMissionRequestPage />} />
+            <Route path="/maritime/reserver" element={<MaritimeBookingPage />} />
             
             {/* ============================================
                 AÉRIEN ROUTES - Dashboard fret aérien
