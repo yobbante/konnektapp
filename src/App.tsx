@@ -93,6 +93,9 @@ import MaritimeParametresPage from "./pages/maritime/MaritimeParametresPage";
 import MaritimeRegistration from "./pages/maritime/MaritimeRegistration";
 import MaritimeWalletPage from "./pages/maritime/MaritimeWalletPage";
 import MaritimePremiumPage from "./pages/maritime/MaritimePremiumPage";
+import MaritimeDemandesPage from "./pages/maritime/MaritimeDemandesPage";
+import MaritimeBookingPage from "./pages/maritime/MaritimeBookingPage";
+import MaritimeMissionRequestPage from "./pages/maritime/MaritimeMissionRequestPage";
 // Aérien pages
 import AerienApercuPage from "./pages/aerien/AerienApercuPage";
 import AerienPublierPage from "./pages/aerien/AerienPublierPage";
