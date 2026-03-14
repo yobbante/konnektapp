@@ -21,6 +21,8 @@ import { Button } from "@/components/ui/button";
 import { MaritimeDashboardLayout } from "@/components/layout/MaritimeDashboardLayout";
 import { TransportPageLoader } from "@/components/ui/TransportLoader";
 import { GPScanSheet } from "@/components/scan/GPScanSheet";
+import { MaritimeConsolidationCard } from "@/components/maritime/MaritimeConsolidationCard";
+import { MaritimeAutoRoutes } from "@/components/maritime/MaritimeAutoRoutes";
 import { getOrderStatusLabel, getOrderStatusColor } from "@/lib/transportTypes";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { useToast } from "@/hooks/use-toast";
