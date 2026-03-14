@@ -306,14 +306,15 @@ const App = () => (
             <Route path="/maritime/apercu" element={<MaritimeApercuPage />} />
             <Route path="/maritime/publier" element={<MaritimePublierPage />} />
             <Route path="/maritime/parametres" element={<MaritimeParametresPage />} />
-            <Route path="/maritime/demandes" element={<MaritimeApercuPage />} />
-            <Route path="/maritime/en-cours" element={<MaritimeApercuPage />} />
+            <Route path="/maritime/demandes" element={<MaritimeDemandesPage />} />
+            <Route path="/maritime/en-cours" element={<MaritimeDemandesPage />} />
             <Route path="/maritime/historique" element={<MaritimeApercuPage />} />
             <Route path="/maritime/wallet" element={<MaritimeWalletPage />} />
             <Route path="/maritime/premium" element={<MaritimePremiumPage />} />
             <Route path="/maritime/profil-public" element={<MaritimeApercuPage />} />
             <Route path="/maritime/messages" element={<Navigate to="/messages" replace />} />
-            <Route path="/maritime/demande" element={<MaritimeApercuPage />} />
+            <Route path="/maritime/demande" element={<MaritimeMissionRequestPage />} />
+            <Route path="/maritime/reserver" element={<MaritimeBookingPage />} />
             
             {/* ============================================
                 AÉRIEN ROUTES - Dashboard fret aérien
