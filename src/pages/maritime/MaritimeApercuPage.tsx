@@ -361,6 +361,12 @@ export default function MaritimeApercuPage() {
           </Card>
         )}
 
+        {/* SMART CONSOLIDATION */}
+        <MaritimeConsolidationCard gpId={gpProfile.id} onCreateDeparture={() => navigate("/maritime/publier")} />
+
+        {/* AUTO-ROUTES */}
+        <MaritimeAutoRoutes gpId={gpProfile.id} onCreateDeparture={(origin, dest) => navigate("/maritime/publier")} />
+
         {/* PERFORMANCE */}
         <div className="space-y-1.5">
           <h3 className="text-xs font-bold">Performance</h3>
