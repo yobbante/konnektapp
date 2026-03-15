@@ -10,6 +10,8 @@ import {
   RefreshCw, Wallet, Plus, ScanLine,
   History, Calendar, Weight
 } from "lucide-react";
+import { AerienConsolidationCard } from "@/components/air/AerienConsolidationCard";
+import { AerienAutoRoutes } from "@/components/air/AerienAutoRoutes";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
