@@ -327,13 +327,14 @@ const App = () => (
             <Route path="/aerien/apercu" element={<AerienApercuPage />} />
             <Route path="/aerien/publier" element={<AerienPublierPage />} />
             <Route path="/aerien/demande-fret" element={<AerienDemandeFretPage />} />
-            <Route path="/aerien/demande" element={<AerienApercuPage />} />
-            <Route path="/aerien/demandes" element={<AerienApercuPage />} />
+            <Route path="/aerien/demande" element={<AerienMissionRequestPage />} />
+            <Route path="/aerien/demandes" element={<AerienDemandesPage />} />
+            <Route path="/aerien/reserver" element={<AerienBookingPage />} />
             <Route path="/aerien/en-cours" element={<AerienApercuPage />} />
             <Route path="/aerien/historique" element={<AerienApercuPage />} />
             <Route path="/aerien/wallet" element={<AerienWalletPage />} />
             <Route path="/aerien/profil-public" element={<AerienApercuPage />} />
-            <Route path="/aerien/marketplace" element={<AerienApercuPage />} />
+            <Route path="/aerien/marketplace" element={<AerienDemandesPage />} />
             <Route path="/aerien/parametres" element={<AerienParametresPage />} />
             <Route path="/aerien/premium" element={<AerienPremiumPage />} />
             <Route path="/aerien/messages" element={<Navigate to="/messages" replace />} />
