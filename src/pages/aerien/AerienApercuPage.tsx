@@ -10,6 +10,8 @@ import {
   RefreshCw, Wallet, Plus, ScanLine,
   History, Calendar, Weight
 } from "lucide-react";
+import { AerienConsolidationCard } from "@/components/air/AerienConsolidationCard";
+import { AerienAutoRoutes } from "@/components/air/AerienAutoRoutes";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -284,6 +286,10 @@ export default function AerienApercuPage() {
             </div>
           )}
         </div>
+
+        {/* SMART CONSOLIDATION + AUTO ROUTES */}
+        <AerienConsolidationCard gpId={gpProfile.id} onCreateDeparture={() => navigate("/aerien/publier")} />
+        <AerienAutoRoutes gpId={gpProfile.id} onCreateDeparture={(origin, dest) => navigate("/aerien/publier")} />
 
         {/* PENDING ORDERS */}
         {data.pendingShipments.length > 0 && (
