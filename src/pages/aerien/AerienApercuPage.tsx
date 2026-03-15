@@ -287,6 +287,10 @@ export default function AerienApercuPage() {
           )}
         </div>
 
+        {/* SMART CONSOLIDATION + AUTO ROUTES */}
+        <AerienConsolidationCard gpId={gpProfile.id} onCreateDeparture={() => navigate("/aerien/publier")} />
+        <AerienAutoRoutes gpId={gpProfile.id} onCreateDeparture={(origin, dest) => navigate("/aerien/publier")} />
+
         {/* PENDING ORDERS */}
         {data.pendingShipments.length > 0 && (
           <div className="space-y-1.5">
