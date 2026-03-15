@@ -104,6 +104,9 @@ import AerienRegistration from "./pages/aerien/AerienRegistration";
 import AerienWalletPage from "./pages/aerien/AerienWalletPage";
 import AerienPremiumPage from "./pages/aerien/AerienPremiumPage";
 import AerienParametresPage from "./pages/aerien/AerienParametresPage";
+import AerienDemandesPage from "./pages/aerien/AerienDemandesPage";
+import AerienBookingPage from "./pages/aerien/AerienBookingPage";
+import AerienMissionRequestPage from "./pages/aerien/AerienMissionRequestPage";
 // Mobility pages
 import MobilityRegistration from "./pages/mobility/MobilityRegistration";
 import MobilityApercuPage from "./pages/mobility/MobilityApercuPage";
