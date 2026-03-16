@@ -159,7 +159,7 @@ export default function OfferDetail() {
             .eq("id", marData.gp_id)
             .maybeSingle();
           if (gpData) setGpProfile(gpData);
-          else setGpProfile({ business_name: marData.shipping_line || "Maritime", rating: 0, total_deliveries: 0, verified_at: null });
+          else setGpProfile({ business_name: "Maritime", rating: 0, total_deliveries: 0, verified_at: null });
           setLoading(false);
           return;
         }

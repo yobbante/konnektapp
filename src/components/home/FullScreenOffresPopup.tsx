@@ -186,7 +186,7 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
         available_capacity: m.available_capacity_m3,
         total_capacity: m.total_capacity_m3,
         gp_id: m.gp_id,
-        gp_profile: { business_name: m.shipping_line || "Maritime" },
+        gp_profile: { business_name: "Maritime" },
         ktp: null,
         subscription: "free",
         subType: m.maritime_type,
