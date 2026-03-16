@@ -88,6 +88,20 @@ export default function FreightMarketplace() {
     },
   });
 
+  // Fetch maritime departures
+  const { data: maritimeDepartures = [] } = useQuery({
+    queryKey: ["marketplace-maritime-departures"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("maritime_departures")
+        .select("*, gp_profiles!maritime_departures_gp_id_fkey(business_name, id)")
+        .eq("status", "active")
+        .gte("departure_date", today.split("T")[0])
+        .order("departure_date", { ascending: true });
+      return data || [];
+    },
+  });
+
   // Fetch corridor pricing snapshots for avg price indicator
   const { data: corridorPricing = [] } = useQuery({
     queryKey: ["marketplace-corridor-pricing"],
