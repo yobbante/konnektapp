@@ -65,17 +65,20 @@ interface GPProfile {
 
 export default function OfferDetail() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const source = searchParams.get("source"); // "air" | "maritime" | null
   const navigate = useNavigate();
   const { toast } = useToast();
   const [offer, setOffer] = useState<GPOffer | null>(null);
   const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [detectedType, setDetectedType] = useState<string | null>(null);
   
   const { isFavorite, toggleFavorite } = useFavorites();
 
   useEffect(() => {
     loadOffer();
-  }, [id]);
+  }, [id, source]);
 
   const loadOffer = async () => {
     if (!id) {
