@@ -320,6 +320,10 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
     onClose();
     if (offer.transport_type === "mobility") {
       navigate(`/mobility/reserver?trip=${offer.id}`);
+    } else if (offer._sourceTable === "air" || offer.transport_type === "aerien") {
+      navigate(`/offres/${offer.id}?source=air`);
+    } else if (offer._sourceTable === "maritime" || offer.transport_type === "maritime") {
+      navigate(`/offres/${offer.id}?source=maritime`);
     } else {
       navigate(`/offres/${offer.id}`);
     }
