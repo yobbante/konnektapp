@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   ArrowLeft, MapPin, Calendar, Clock, Star, Package, 
@@ -65,17 +65,20 @@ interface GPProfile {
 
 export default function OfferDetail() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const source = searchParams.get("source"); // "air" | "maritime" | null
   const navigate = useNavigate();
   const { toast } = useToast();
   const [offer, setOffer] = useState<GPOffer | null>(null);
   const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [detectedType, setDetectedType] = useState<string | null>(null);
   
   const { isFavorite, toggleFavorite } = useFavorites();
 
   useEffect(() => {
     loadOffer();
-  }, [id]);
+  }, [id, source]);
 
   const loadOffer = async () => {
     if (!id) {
@@ -84,6 +87,84 @@ export default function OfferDetail() {
     }
 
     try {
+      // If source=air, check air_departures first
+      if (source === "air") {
+        const { data: airData } = await supabase
+          .from("air_departures")
+          .select("*")
+          .eq("id", id)
+          .eq("status", "active")
+          .maybeSingle();
+        if (airData) {
+          setDetectedType("aerien");
+          setOffer({
+            id: airData.id,
+            origin_city: airData.origin_city,
+            origin_country: airData.origin_country,
+            destination_city: airData.destination_city,
+            destination_country: airData.destination_country,
+            departure_date: airData.departure_date,
+            arrival_date: airData.arrival_date,
+            price_per_kg: airData.price_per_kg,
+            currency: airData.currency,
+            transport_type: "aerien",
+            available_capacity: airData.available_capacity_kg,
+            total_capacity: airData.total_capacity_kg,
+            description: airData.description,
+            conditions: null,
+            gp_id: airData.gp_id,
+          });
+          const { data: gpData } = await supabase
+            .from("public_gp_profiles")
+            .select("business_name, rating, total_deliveries, verified_at")
+            .eq("id", airData.gp_id)
+            .maybeSingle();
+          if (gpData) setGpProfile(gpData);
+          else setGpProfile({ business_name: airData.airline || "Cargo Aérien", rating: 0, total_deliveries: 0, verified_at: null });
+          setLoading(false);
+          return;
+        }
+      }
+
+      // If source=maritime, check maritime_departures first
+      if (source === "maritime") {
+        const { data: marData } = await supabase
+          .from("maritime_departures")
+          .select("*")
+          .eq("id", id)
+          .eq("status", "active")
+          .maybeSingle();
+        if (marData) {
+          setDetectedType("maritime");
+          setOffer({
+            id: marData.id,
+            origin_city: marData.origin_port || marData.origin_country,
+            origin_country: marData.origin_country,
+            destination_city: marData.destination_port || marData.destination_country,
+            destination_country: marData.destination_country,
+            departure_date: marData.departure_date,
+            arrival_date: marData.arrival_date,
+            price_per_kg: marData.price_per_m3 || marData.price_total || 0,
+            currency: marData.currency,
+            transport_type: "maritime",
+            available_capacity: marData.available_capacity_m3,
+            total_capacity: marData.total_capacity_m3,
+            description: marData.description,
+            conditions: null,
+            gp_id: marData.gp_id,
+          });
+          const { data: gpData } = await supabase
+            .from("public_gp_profiles")
+            .select("business_name, rating, total_deliveries, verified_at")
+            .eq("id", marData.gp_id)
+            .maybeSingle();
+          if (gpData) setGpProfile(gpData);
+          else setGpProfile({ business_name: "Maritime", rating: 0, total_deliveries: 0, verified_at: null });
+          setLoading(false);
+          return;
+        }
+      }
+
       // Try gp_offers first
       const { data: offerData } = await supabase
         .from("gp_offers")
@@ -94,6 +175,7 @@ export default function OfferDetail() {
 
       if (offerData) {
         setOffer(offerData);
+        setDetectedType(offerData.transport_type);
         const { data: gpData } = await supabase
           .from("public_gp_profiles")
           .select("business_name, rating, total_deliveries, verified_at")
@@ -101,13 +183,14 @@ export default function OfferDetail() {
           .maybeSingle();
         if (gpData) setGpProfile(gpData);
       } else {
-        // Fallback: check mobility_offers and display as offer
+        // Fallback: check mobility_offers
         const { data: mobData } = await supabase
           .from("mobility_offers")
           .select("*, mobility_profiles(business_name, rating, total_trips, verified_at)")
           .eq("id", id)
           .maybeSingle();
         if (mobData) {
+          setDetectedType("mobility");
           setOffer({
             id: mobData.id,
             origin_city: mobData.origin_city,
@@ -133,6 +216,37 @@ export default function OfferDetail() {
               verified_at: mobData.mobility_profiles.verified_at,
             });
           }
+        } else {
+          // Last resort: check air_departures and maritime_departures
+          const { data: airFallback } = await supabase.from("air_departures").select("*").eq("id", id).eq("status", "active").maybeSingle();
+          if (airFallback) {
+            setDetectedType("aerien");
+            setOffer({
+              id: airFallback.id, origin_city: airFallback.origin_city, origin_country: airFallback.origin_country,
+              destination_city: airFallback.destination_city, destination_country: airFallback.destination_country,
+              departure_date: airFallback.departure_date, arrival_date: airFallback.arrival_date,
+              price_per_kg: airFallback.price_per_kg, currency: airFallback.currency, transport_type: "aerien",
+              available_capacity: airFallback.available_capacity_kg, total_capacity: airFallback.total_capacity_kg,
+              description: airFallback.description, conditions: null, gp_id: airFallback.gp_id,
+            });
+            const { data: gpData } = await supabase.from("public_gp_profiles").select("business_name, rating, total_deliveries, verified_at").eq("id", airFallback.gp_id).maybeSingle();
+            if (gpData) setGpProfile(gpData);
+          } else {
+            const { data: marFallback } = await supabase.from("maritime_departures").select("*").eq("id", id).eq("status", "active").maybeSingle();
+            if (marFallback) {
+              setDetectedType("maritime");
+              setOffer({
+                id: marFallback.id, origin_city: marFallback.origin_port || marFallback.origin_country, origin_country: marFallback.origin_country,
+                destination_city: marFallback.destination_port || marFallback.destination_country, destination_country: marFallback.destination_country,
+                departure_date: marFallback.departure_date, arrival_date: marFallback.arrival_date,
+                price_per_kg: marFallback.price_per_m3 || marFallback.price_total || 0, currency: marFallback.currency, transport_type: "maritime",
+                available_capacity: marFallback.available_capacity_m3, total_capacity: marFallback.total_capacity_m3,
+                description: marFallback.description, conditions: null, gp_id: marFallback.gp_id,
+              });
+              const { data: gpData } = await supabase.from("public_gp_profiles").select("business_name, rating, total_deliveries, verified_at").eq("id", marFallback.gp_id).maybeSingle();
+              if (gpData) setGpProfile(gpData);
+            }
+          }
         }
       }
     } catch (error) {
@@ -146,12 +260,15 @@ export default function OfferDetail() {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
-      const isRoutierOffer = offer?.transport_type === "routier";
-      const isMobilityOffer = offer?.transport_type === "mobility";
-      const returnPath = isMobilityOffer
+      const transportType = detectedType || offer?.transport_type;
+      const returnPath = transportType === "mobility"
         ? `/mobility/reserver?trip=${id}`
-        : isRoutierOffer
+        : transportType === "routier"
         ? `/routier/reserver?offer=${id}&gp=${offer?.gp_id}`
+        : transportType === "aerien"
+        ? `/aerien/reserver?departure=${id}`
+        : transportType === "maritime"
+        ? `/maritime/reserver?departure=${id}`
         : `/reservation/gp/${offer?.gp_id}?offer=${id}`;
       sessionStorage.setItem("pending_booking_state", JSON.stringify({
         offerId: id,
@@ -170,10 +287,15 @@ export default function OfferDetail() {
 
     if (!offer) return;
     
-    if (offer.transport_type === "mobility") {
+    const transportType = detectedType || offer.transport_type;
+    if (transportType === "mobility") {
       navigate(`/mobility/reserver?trip=${id}`);
-    } else if (offer.transport_type === "routier") {
+    } else if (transportType === "routier") {
       navigate(`/routier/reserver?offer=${id}&gp=${offer.gp_id}`);
+    } else if (transportType === "aerien") {
+      navigate(`/aerien/reserver?departure=${id}`);
+    } else if (transportType === "maritime") {
+      navigate(`/maritime/reserver?departure=${id}`);
     } else {
       navigate(`/reservation/gp/${offer.gp_id}?offer=${id}`);
     }

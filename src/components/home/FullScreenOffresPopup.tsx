@@ -91,7 +91,7 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
     setLoading(true);
     try {
       const today = new Date().toISOString().split("T")[0];
-      const [gpRes, mobRes, airRes, corridorRes] = await Promise.all([
+      const [gpRes, mobRes, airRes, marRes, corridorRes] = await Promise.all([
         supabase
           .from("gp_offers")
           .select("id, origin_city, origin_country, destination_city, destination_country, departure_date, price_per_kg, currency, transport_type, available_capacity, total_capacity, status, gp_id, price_s, price_m, price_l, price_xl")
@@ -111,6 +111,13 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
         supabase
           .from("air_departures")
           .select("id, origin_city, origin_country, destination_city, destination_country, departure_date, price_per_kg, currency, available_capacity_kg, total_capacity_kg, status, gp_id, airline")
+          .eq("status", "active")
+          .gte("departure_date", today)
+          .order("departure_date", { ascending: true })
+          .limit(20),
+        supabase
+          .from("maritime_departures")
+          .select("id, origin_port, origin_country, destination_port, destination_country, departure_date, price_per_m3, currency, available_capacity_m3, total_capacity_m3, status, gp_id, maritime_type, price_total")
           .eq("status", "active")
           .gte("departure_date", today)
           .order("departure_date", { ascending: true })
@@ -143,9 +150,10 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
         }));
       }
 
-      // Air departures → unified format
+      // Air departures → unified format (keep real ID for routing)
       const airData = (airRes.data || []).map((a: any) => ({
-        id: `air-${a.id}`,
+        id: a.id,
+        _sourceTable: "air",
         origin_city: a.origin_city,
         origin_country: a.origin_country,
         destination_city: a.destination_city,
@@ -161,6 +169,27 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
         ktp: null,
         subscription: "free",
         subType: a.airline,
+      }));
+
+      // Maritime departures → unified format
+      const marData = (marRes.data || []).map((m: any) => ({
+        id: m.id,
+        _sourceTable: "maritime",
+        origin_city: m.origin_port || m.origin_country,
+        origin_country: m.origin_country,
+        destination_city: m.destination_port || m.destination_country,
+        destination_country: m.destination_country,
+        departure_date: m.departure_date,
+        price_per_kg: m.maritime_type === "fcl" ? m.price_total : m.price_per_m3,
+        currency: m.currency,
+        transport_type: "maritime",
+        available_capacity: m.available_capacity_m3,
+        total_capacity: m.total_capacity_m3,
+        gp_id: m.gp_id,
+        gp_profile: { business_name: "Maritime" },
+        ktp: null,
+        subscription: "free",
+        subType: m.maritime_type,
       }));
 
       // Mobility → unified format
@@ -183,7 +212,7 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
         }));
       }
 
-      setOffers([...enrichedGp, ...airData, ...enrichedMob]);
+      setOffers([...enrichedGp, ...airData, ...marData, ...enrichedMob]);
       setCorridorPricing(corridorRes.data || []);
     } catch {
       setOffers([]);
@@ -291,6 +320,10 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
     onClose();
     if (offer.transport_type === "mobility") {
       navigate(`/mobility/reserver?trip=${offer.id}`);
+    } else if (offer._sourceTable === "air" || offer.transport_type === "aerien") {
+      navigate(`/offres/${offer.id}?source=air`);
+    } else if (offer._sourceTable === "maritime" || offer.transport_type === "maritime") {
+      navigate(`/offres/${offer.id}?source=maritime`);
     } else {
       navigate(`/offres/${offer.id}`);
     }
