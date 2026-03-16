@@ -117,7 +117,7 @@ export function FullScreenOffresPopup({ open, onClose, initialOrigin, initialDes
           .limit(20),
         supabase
           .from("maritime_departures")
-          .select("id, origin_port, origin_country, destination_port, destination_country, departure_date, price_per_m3, currency, available_capacity_m3, total_capacity_m3, status, gp_id, shipping_line, maritime_type, price_total")
+          .select("id, origin_port, origin_country, destination_port, destination_country, departure_date, price_per_m3, currency, available_capacity_m3, total_capacity_m3, status, gp_id, maritime_type, price_total")
           .eq("status", "active")
           .gte("departure_date", today)
           .order("departure_date", { ascending: true })
