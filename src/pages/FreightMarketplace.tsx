@@ -88,6 +88,20 @@ export default function FreightMarketplace() {
     },
   });
 
+  // Fetch maritime departures
+  const { data: maritimeDepartures = [] } = useQuery({
+    queryKey: ["marketplace-maritime-departures"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("maritime_departures")
+        .select("*, gp_profiles!maritime_departures_gp_id_fkey(business_name, id)")
+        .eq("status", "active")
+        .gte("departure_date", today.split("T")[0])
+        .order("departure_date", { ascending: true });
+      return data || [];
+    },
+  });
+
   // Fetch corridor pricing snapshots for avg price indicator
   const { data: corridorPricing = [] } = useQuery({
     queryKey: ["marketplace-corridor-pricing"],
@@ -154,8 +168,32 @@ export default function FreightMarketplace() {
       });
     });
 
+    // Maritime departures
+    maritimeDepartures.forEach((m: any) => {
+      const typeLabel = m.maritime_type === "fcl" ? "FCL" : m.maritime_type === "lcl" ? "LCL" : m.maritime_type === "vehicle" ? "RoRo" : "Maritime";
+      result.push({
+        id: `mar-${m.id}`,
+        mode: "maritime" as const,
+        modeLabel: "Maritime",
+        subType: typeLabel,
+        origin: `${m.origin_port}, ${m.origin_country}`,
+        destination: `${m.destination_port}, ${m.destination_country}`,
+        departureDate: m.departure_date,
+        capacityTotal: m.total_capacity_m3 || 0,
+        capacityRemaining: m.available_capacity_m3 || 0,
+        capacityUnit: "m³",
+        price: m.maritime_type === "fcl" ? (m.price_total || 0) : (m.price_per_m3 || 0),
+        priceUnit: m.maritime_type === "fcl" ? " total" : "/m³",
+        currency: m.currency || "XOF",
+        providerName: m.gp_profiles?.business_name || "Transitaire",
+        providerId: m.gp_profiles?.id || m.gp_id,
+        isLastMinute: isAfter(tomorrow, new Date(m.departure_date)),
+        offerId: m.id,
+      });
+    });
+
     return result;
-  }, [gpOffers, airDepartures]);
+  }, [gpOffers, airDepartures, maritimeDepartures]);
 
   // Mark best price per route
   const listingsWithBadges = useMemo(() => {
