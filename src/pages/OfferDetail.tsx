@@ -260,12 +260,15 @@ export default function OfferDetail() {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
-      const isRoutierOffer = offer?.transport_type === "routier";
-      const isMobilityOffer = offer?.transport_type === "mobility";
-      const returnPath = isMobilityOffer
+      const transportType = detectedType || offer?.transport_type;
+      const returnPath = transportType === "mobility"
         ? `/mobility/reserver?trip=${id}`
-        : isRoutierOffer
+        : transportType === "routier"
         ? `/routier/reserver?offer=${id}&gp=${offer?.gp_id}`
+        : transportType === "aerien"
+        ? `/aerien/reserver?departure=${id}`
+        : transportType === "maritime"
+        ? `/maritime/reserver?departure=${id}`
         : `/reservation/gp/${offer?.gp_id}?offer=${id}`;
       sessionStorage.setItem("pending_booking_state", JSON.stringify({
         offerId: id,
@@ -284,10 +287,15 @@ export default function OfferDetail() {
 
     if (!offer) return;
     
-    if (offer.transport_type === "mobility") {
+    const transportType = detectedType || offer.transport_type;
+    if (transportType === "mobility") {
       navigate(`/mobility/reserver?trip=${id}`);
-    } else if (offer.transport_type === "routier") {
+    } else if (transportType === "routier") {
       navigate(`/routier/reserver?offer=${id}&gp=${offer.gp_id}`);
+    } else if (transportType === "aerien") {
+      navigate(`/aerien/reserver?departure=${id}`);
+    } else if (transportType === "maritime") {
+      navigate(`/maritime/reserver?departure=${id}`);
     } else {
       navigate(`/reservation/gp/${offer.gp_id}?offer=${id}`);
     }
