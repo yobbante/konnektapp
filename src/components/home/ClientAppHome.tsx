@@ -921,7 +921,7 @@ export function ClientAppHome({
         }
 
         {/* Bottom spacing for mobile nav */}
-        <div className="h-4" />
+        <div className="h-24" />
       </div>
 
       {/* Offers Popup */}

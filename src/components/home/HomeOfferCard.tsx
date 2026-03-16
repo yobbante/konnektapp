@@ -92,26 +92,31 @@ export function HomeOfferCard({ offer, index, modeLabel, subscriptionBadge }: Ho
           )}
         </div>
 
-        {/* Price - always visible */}
-        <div className="flex-shrink-0 bg-primary/8 rounded-lg px-2 py-1 text-center">
-          {isRoutier ? (
-            <>
-              <span className="text-[8px] text-primary/70 block leading-tight font-semibold">À partir de</span>
-              <span className="text-[13px] font-extrabold text-primary leading-none whitespace-nowrap">
-                {routierMinPrice > 0 ? routierMinPrice.toLocaleString() : "—"}
-              </span>
-              <span className="text-[8px] text-primary/70 block leading-tight font-semibold">FCFA</span>
-            </>
-          ) : (
-            <>
-              <span className="text-[13px] font-extrabold text-primary leading-none whitespace-nowrap">
-                {offer.price_per_kg?.toLocaleString()}
-              </span>
-              <span className="text-[8px] text-primary/70 block leading-tight font-semibold">
-                {isMobility ? `${currencySymbol.trim()}/siège` : `${currencySymbol.trim()}/kg`}
-              </span>
-            </>
-          )}
+        {/* Price + Réserver */}
+        <div className="flex-shrink-0 flex flex-col items-center gap-1">
+          <div className="bg-primary/8 rounded-lg px-2 py-1 text-center">
+            {isRoutier ? (
+              <>
+                <span className="text-[8px] text-primary/70 block leading-tight font-semibold">À partir de</span>
+                <span className="text-[13px] font-extrabold text-primary leading-none whitespace-nowrap">
+                  {routierMinPrice > 0 ? routierMinPrice.toLocaleString() : "—"}
+                </span>
+                <span className="text-[8px] text-primary/70 block leading-tight font-semibold">FCFA</span>
+              </>
+            ) : (
+              <>
+                <span className="text-[13px] font-extrabold text-primary leading-none whitespace-nowrap">
+                  {offer.price_per_kg?.toLocaleString()}
+                </span>
+                <span className="text-[8px] text-primary/70 block leading-tight font-semibold">
+                  {isMobility ? `${currencySymbol.trim()}/siège` : `${currencySymbol.trim()}/kg`}
+                </span>
+              </>
+            )}
+          </div>
+          <span className="text-[8px] font-semibold text-primary/80 bg-primary/5 px-2 py-0.5 rounded-full">
+            Réserver
+          </span>
         </div>
       </motion.div>
     </Link>
