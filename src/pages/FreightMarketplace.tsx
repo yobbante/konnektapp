@@ -99,10 +99,11 @@ export default function FreightMarketplace() {
     enabled: !GP_ONLY_MODE,
   });
 
-  // Fetch maritime departures
+  // Fetch maritime departures (disabled in GP_ONLY_MODE)
   const { data: maritimeDepartures = [] } = useQuery({
     queryKey: ["marketplace-maritime-departures"],
     queryFn: async () => {
+      if (GP_ONLY_MODE) return [];
       const { data } = await supabase
         .from("maritime_departures")
         .select("*, gp_profiles!maritime_departures_gp_id_fkey(business_name, id)")
@@ -111,6 +112,7 @@ export default function FreightMarketplace() {
         .order("departure_date", { ascending: true });
       return data || [];
     },
+    enabled: !GP_ONLY_MODE,
   });
 
   // Fetch corridor pricing snapshots for avg price indicator
