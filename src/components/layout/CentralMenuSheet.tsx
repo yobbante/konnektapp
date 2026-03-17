@@ -136,7 +136,7 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
     // Client mode (default)
     const items: MenuItem[] = [
       { icon: Home, label: "Accueil", href: "/" },
-      { icon: Package, label: "Envoyer", href: "/envoyer" },
+      ...(!GP_ONLY_MODE ? [{ icon: Package, label: "Envoyer", href: "/envoyer" }] : []),
       { icon: Search, label: "Offres", href: "/offres" },
       { icon: MapPin, label: "Suivre", href: "/tracking" },
       { icon: Users, label: "Destinataires", href: "/destinataires" },
