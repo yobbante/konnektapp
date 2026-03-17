@@ -58,6 +58,16 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
     userType
   );
 
+  const {
+    callStatus,
+    callDuration,
+    incomingCall,
+    startCall,
+    acceptCall,
+    rejectCall,
+    endCall,
+  } = useAudioCall({ currentUserId, conversationId });
+
   useEffect(() => {
     loadConversationData();
     fetchMessages();
