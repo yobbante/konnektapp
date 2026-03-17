@@ -31,6 +31,7 @@ interface ChatHeaderProps {
   onBack: () => void;
   gpPhone?: string | null;
   gpSelfieUrl?: string | null;
+  onAudioCall?: () => void;
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
