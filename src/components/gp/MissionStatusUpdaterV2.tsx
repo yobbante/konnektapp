@@ -150,7 +150,7 @@ export function MissionStatusUpdaterV2({
         onStatusUpdated();
       } else {
         toast({
-          title: "⚠️ Action refusée",
+          title: "Action refusee",
           description: response.message || response.error,
           variant: "destructive",
         });
