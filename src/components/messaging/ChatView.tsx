@@ -61,7 +61,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
     fetchMessages();
     markMessagesAsRead();
     
-    // Subscribe to realtime messages
+    // Subscribe to realtime messages (INSERT + UPDATE for read receipts)
     const channel = supabase
       .channel(`messages-${conversationId}`)
       .on(
@@ -80,6 +80,25 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
             markMessageAsRead((payload.new as Message).id);
             notify({ sound: true, vibrate: [100] });
           }
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          // Update read_at for read receipts
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === (payload.new as Message).id
+                ? { ...msg, read_at: (payload.new as Message).read_at }
+                : msg
+            )
+          );
         }
       )
       .subscribe();
