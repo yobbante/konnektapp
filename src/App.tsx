@@ -263,6 +263,7 @@ const App = () => (
             <Route path="/gp/premium" element={<GPPremiumPage />} />
             <Route path="/gp/auto-accept" element={<GPAutoAcceptPage />} />
             <Route path="/gp/facturation" element={<GPFacturationPage />} />
+            <Route path="/gp/croissance" element={<GPGrowthTab />} />
             <Route path="/gp/navettes" element={<GPNavettesPage />} />
             <Route path="/aide" element={<AideFAQPage />} />
             <Route path="/cgu" element={<CGUPage />} />

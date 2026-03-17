@@ -806,6 +806,34 @@ export default function GPApercuPage() {
             )
             }
             </div>
+
+            {/* ── GROWTH & REFERRAL CTA ── */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold">Croissance</h3>
+                  <Gift className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <Button variant="ghost" size="sm" className="text-xs h-7 gap-1" onClick={() => navigate("/gp/croissance")}>
+                  Voir tout <ChevronRight className="w-3 h-3" />
+                </Button>
+              </div>
+              <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent cursor-pointer active:scale-[0.98] transition-all"
+                onClick={() => navigate("/gp/croissance")}>
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <TrendingUp className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold">Devenez micro-agent Konnekt</p>
+                      <p className="text-[10px] text-muted-foreground">Parrainage, partage, niveaux Super GP — boostez vos revenus</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </>
         }
       </div>
