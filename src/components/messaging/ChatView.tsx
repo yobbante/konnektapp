@@ -43,6 +43,8 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   const [templatesExpanded, setTemplatesExpanded] = useState(false);
   const [isGpVerified, setIsGpVerified] = useState(false);
   const [gpId, setGpId] = useState<string | null>(null);
+  const [gpPhone, setGpPhone] = useState<string | null>(null);
+  const [gpSelfieUrl, setGpSelfieUrl] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
