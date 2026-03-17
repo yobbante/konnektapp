@@ -128,6 +128,53 @@ export type Database = {
           },
         ]
       }
+      call_signals: {
+        Row: {
+          callee_id: string
+          callee_peer_id: string | null
+          caller_id: string
+          caller_peer_id: string | null
+          conversation_id: string
+          created_at: string
+          ended_at: string | null
+          id: string
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          callee_id: string
+          callee_peer_id?: string | null
+          caller_id: string
+          caller_peer_id?: string | null
+          conversation_id: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          callee_id?: string
+          callee_peer_id?: string | null
+          caller_id?: string
+          caller_peer_id?: string | null
+          conversation_id?: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_signals_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_loyalty: {
         Row: {
           available_points: number
