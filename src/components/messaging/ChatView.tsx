@@ -209,17 +209,18 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   };
 
   return (
-    <div className="flex flex-col h-full" style={{ height: '100dvh' }}>
+    <div className="flex flex-col" style={{ height: '100dvh', overflow: 'hidden' }}>
+      {/* Spacer for fixed header */}
+      <div className="flex-shrink-0" style={{ minHeight: '56px', paddingTop: 'var(--safe-top, 0px)' }} />
+      
       {/* Enhanced Header with verified badge and order info - FIXED */}
-      <div className="flex-shrink-0">
-        <ChatHeader
-          conversationId={conversationId}
-          contactName={contactName || "Contact"}
-          contactId={gpId || ""}
-          isGpVerified={isGpVerified}
-          onBack={onBack}
-        />
-      </div>
+      <ChatHeader
+        conversationId={conversationId}
+        contactName={contactName || "Contact"}
+        contactId={gpId || ""}
+        isGpVerified={isGpVerified}
+        onBack={onBack}
+      />
 
       {/* Messages - Fixed container with scrollable content */}
       <div 
@@ -324,7 +325,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
       <form 
         onSubmit={sendMessage} 
         className="p-3 border-t border-border bg-background flex-shrink-0"
-        style={{ paddingBottom: 'calc(12px + var(--safe-bottom, 0px))' }}
+        style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}
       >
         <div className="flex gap-2 items-end">
           <Input
