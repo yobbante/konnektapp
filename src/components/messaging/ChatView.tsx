@@ -243,8 +243,33 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
     }
   };
 
+  // Determine callee ID for audio call
+  const getCalleeId = async () => {
+    const { data: conv } = await supabase
+      .from("conversations")
+      .select("client_id, gp_profiles!inner(user_id)")
+      .eq("id", conversationId)
+      .single();
+    
+    if (!conv) return;
+    const gpUserId = (conv.gp_profiles as any)?.user_id;
+    const calleeId = currentUserId === conv.client_id ? gpUserId : conv.client_id;
+    if (calleeId) startCall(calleeId);
+  };
+
   return (
     <div className="flex flex-col" style={{ height: '100dvh', overflow: 'hidden' }}>
+      {/* Audio Call UI Overlay */}
+      <AudioCallUI
+        callStatus={callStatus}
+        callDuration={callDuration}
+        contactName={contactName || "Contact"}
+        incomingCall={incomingCall}
+        onAccept={acceptCall}
+        onReject={rejectCall}
+        onEnd={endCall}
+      />
+
       {/* Spacer for fixed header */}
       <div className="flex-shrink-0" style={{ minHeight: '56px', paddingTop: 'env(safe-area-inset-top, 0px)' }} />
       
@@ -257,6 +282,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
         onBack={onBack}
         gpPhone={gpPhone}
         gpSelfieUrl={gpSelfieUrl}
+        onAudioCall={getCalleeId}
       />
 
       {/* Messages - Fixed container with scrollable content */}
