@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Truck, ChevronRight, Bus, QrCode, Ticket,
-  Clock, CheckCircle, XCircle, FileText, Inbox, MapPin, Calendar, Users
+  Clock, CheckCircle, XCircle, FileText, Inbox, MapPin, Calendar, Users,
+  Star, Scale, Heart, Bell, AlertCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/layout/AppHeader";
@@ -11,40 +12,42 @@ import { MobileNav } from "@/components/layout/MobileNav";
 import { RecipientTrackingCard } from "@/components/client/RecipientTrackingCard";
 import { OrderDetailSheet, getTransportIcon } from "@/components/client/OrderDetailSheet";
 import { ClientMissionsView } from "@/components/routier/ClientMissionsView";
+import { RateOrderDialog } from "@/components/RateOrderDialog";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   pending: { label: "En attente", color: "bg-amber-500/15 text-amber-600", icon: Clock },
-  accepted: { label: "Accepté", color: "bg-green-500/15 text-green-600", icon: CheckCircle },
-  collected: { label: "Collecté", color: "bg-blue-500/15 text-blue-600", icon: Package },
-  paid_held: { label: "Paiement reçu", color: "bg-emerald-500/15 text-emerald-600", icon: CheckCircle },
-  checked_in: { label: "Déposé", color: "bg-indigo-500/15 text-indigo-600", icon: Package },
-  weight_pending_payment: { label: "Supplément requis", color: "bg-orange-500/15 text-orange-600", icon: Clock },
-  scheduled_departure: { label: "Départ programmé", color: "bg-violet-500/15 text-violet-600", icon: Truck },
+  accepted: { label: "Accept\u00e9", color: "bg-green-500/15 text-green-600", icon: CheckCircle },
+  collected: { label: "Collect\u00e9", color: "bg-blue-500/15 text-blue-600", icon: Package },
+  paid_held: { label: "Paiement re\u00e7u", color: "bg-emerald-500/15 text-emerald-600", icon: CheckCircle },
+  checked_in: { label: "D\u00e9pos\u00e9", color: "bg-indigo-500/15 text-indigo-600", icon: Package },
+  weight_pending_payment: { label: "Suppl\u00e9ment requis", color: "bg-orange-500/15 text-orange-600", icon: Clock },
+  scheduled_departure: { label: "D\u00e9part programm\u00e9", color: "bg-violet-500/15 text-violet-600", icon: Truck },
   in_transit: { label: "En transit", color: "bg-blue-500/15 text-blue-600", icon: Truck },
-  arrived_destination: { label: "Arrivé", color: "bg-teal-500/15 text-teal-600", icon: MapPin },
+  arrived_destination: { label: "Arriv\u00e9", color: "bg-teal-500/15 text-teal-600", icon: MapPin },
   delivery_pending: { label: "Livraison en cours", color: "bg-cyan-500/15 text-cyan-600", icon: Truck },
-  delivered: { label: "Livré", color: "bg-green-500/15 text-green-700", icon: CheckCircle },
-  delivery_confirmed: { label: "Livré", color: "bg-emerald-500/15 text-emerald-700", icon: CheckCircle },
-  released: { label: "Terminée", color: "bg-green-500/15 text-green-700", icon: CheckCircle },
-  cancelled: { label: "Annulée", color: "bg-destructive/15 text-destructive", icon: XCircle },
-  rejected: { label: "Refusée", color: "bg-destructive/15 text-destructive", icon: XCircle },
-  expired: { label: "Expirée", color: "bg-muted text-muted-foreground", icon: Clock },
-  // Custom request statuses
+  delivered: { label: "Livr\u00e9", color: "bg-green-500/15 text-green-700", icon: CheckCircle },
+  delivery_confirmed: { label: "Livr\u00e9", color: "bg-emerald-500/15 text-emerald-700", icon: CheckCircle },
+  released: { label: "Termin\u00e9e", color: "bg-green-500/15 text-green-700", icon: CheckCircle },
+  cancelled: { label: "Annul\u00e9e", color: "bg-destructive/15 text-destructive", icon: XCircle },
+  rejected: { label: "Refus\u00e9e", color: "bg-destructive/15 text-destructive", icon: XCircle },
+  expired: { label: "Expir\u00e9e", color: "bg-muted text-muted-foreground", icon: Clock },
   open: { label: "Ouverte", color: "bg-amber-500/15 text-amber-600", icon: Clock },
-  has_responses: { label: "Réponses reçues", color: "bg-blue-500/15 text-blue-600", icon: FileText },
-  closed: { label: "Fermée", color: "bg-muted text-muted-foreground", icon: XCircle },
-  // Mobility statuses
+  has_responses: { label: "R\u00e9ponses re\u00e7ues", color: "bg-blue-500/15 text-blue-600", icon: FileText },
+  closed: { label: "Ferm\u00e9e", color: "bg-muted text-muted-foreground", icon: XCircle },
   active: { label: "Actif", color: "bg-emerald-500/15 text-emerald-600", icon: CheckCircle },
-  confirmed: { label: "Confirmé", color: "bg-green-500/15 text-green-600", icon: CheckCircle },
-  completed: { label: "Terminé", color: "bg-muted text-muted-foreground", icon: CheckCircle },
+  confirmed: { label: "Confirm\u00e9", color: "bg-green-500/15 text-green-600", icon: CheckCircle },
+  completed: { label: "Termin\u00e9", color: "bg-muted text-muted-foreground", icon: CheckCircle },
 };
 
 const ACTIVE_STATUSES = ['pending', 'accepted', 'collected', 'paid_held', 'checked_in', 'weight_pending_payment', 'scheduled_departure', 'in_transit', 'arrived_destination', 'delivery_pending'];
 const DELIVERED_STATUSES = ['delivered', 'delivery_confirmed', 'released'];
 const CANCELLED_STATUSES = ['cancelled', 'rejected', 'expired'];
+
+// Statuses that indicate a recent important change the user should see
+const NOTIFICATION_STATUSES = ['accepted', 'collected', 'in_transit', 'arrived_destination', 'delivery_pending', 'delivered', 'delivery_confirmed', 'weight_pending_payment'];
 
 type TabId = "actives" | "tickets" | "colis" | "demandes" | "historique";
 
