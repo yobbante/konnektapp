@@ -477,42 +477,59 @@ export function ClientAppHome({
 
   const goToOffres = () => navigate("/freight-board?popup=1");
 
-  // Offers (GP + Mobility)
+  // Offers (GP only in GP_ONLY_MODE, otherwise GP + Mobility)
   const [offers, setOffers] = useState<any[]>([]);
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
-    Promise.all([
-      supabase
-        .from("gp_offers")
-        .select("*, gp_profiles(business_name, rating, total_reviews, subscription)")
-        .eq("status", "active")
-        .gte("departure_date", today)
-        .order("departure_date", { ascending: true })
-        .limit(50),
-      supabase
-        .from("mobility_offers")
-        .select("*, mobility_profiles(business_name, rating)")
-        .eq("status", "active")
-        .gte("departure_date", today)
-        .order("departure_date", { ascending: true })
-        .limit(20),
-    ]).then(([gpRes, mobRes]) => {
-      const gpOffers = gpRes.data || [];
-      const mobOffers = (mobRes.data || []).map((mo: any) => ({
-        ...mo,
-        transport_type: "mobility",
-        price_per_kg: mo.price_per_seat,
-        available_capacity: mo.available_seats,
-        total_capacity: mo.total_seats,
-        gp_profiles: mo.mobility_profiles ? {
-          business_name: mo.mobility_profiles.business_name,
-          rating: mo.mobility_profiles.rating || 0,
-          total_reviews: 0,
-          subscription: "free",
-        } : null,
-      }));
-      setOffers([...gpOffers, ...mobOffers]);
-    });
+    const gpQuery = GP_ONLY_MODE
+      ? supabase
+          .from("gp_offers")
+          .select("*, gp_profiles(business_name, rating, total_reviews, subscription)")
+          .eq("status", "active")
+          .in("transport_type", ["bagages_international", "bagages_accompagnes", "navette"])
+          .gte("departure_date", today)
+          .order("departure_date", { ascending: true })
+          .limit(50)
+      : supabase
+          .from("gp_offers")
+          .select("*, gp_profiles(business_name, rating, total_reviews, subscription)")
+          .eq("status", "active")
+          .gte("departure_date", today)
+          .order("departure_date", { ascending: true })
+          .limit(50);
+
+    if (GP_ONLY_MODE) {
+      gpQuery.then(({ data }) => {
+        setOffers(data || []);
+      });
+    } else {
+      Promise.all([
+        gpQuery,
+        supabase
+          .from("mobility_offers")
+          .select("*, mobility_profiles(business_name, rating)")
+          .eq("status", "active")
+          .gte("departure_date", today)
+          .order("departure_date", { ascending: true })
+          .limit(20),
+      ]).then(([gpRes, mobRes]) => {
+        const gpOffers = gpRes.data || [];
+        const mobOffers = (mobRes.data || []).map((mo: any) => ({
+          ...mo,
+          transport_type: "mobility",
+          price_per_kg: mo.price_per_seat,
+          available_capacity: mo.available_seats,
+          total_capacity: mo.total_seats,
+          gp_profiles: mo.mobility_profiles ? {
+            business_name: mo.mobility_profiles.business_name,
+            rating: mo.mobility_profiles.rating || 0,
+            total_reviews: 0,
+            subscription: "free",
+          } : null,
+        }));
+        setOffers([...gpOffers, ...mobOffers]);
+      });
+    }
   }, []);
 
   // Routier offers (from gp_offers with transport_type routier)
