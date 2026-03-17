@@ -198,7 +198,7 @@ export function QRCodeScanner({ gpId, scanType, onComplete }: QRCodeScannerProps
         });
 
         toast({
-          title: "⚠️ Poids modifié",
+          title: "Poids modifie",
           description: "En attente de validation client. Le colis ne peut pas encore être pris en charge.",
           variant: "default",
         });
