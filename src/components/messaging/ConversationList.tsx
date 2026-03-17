@@ -89,9 +89,17 @@ export function ConversationList({ userType, onSelectConversation, selectedId }:
 
       if (error) throw error;
 
+      // Filter out conversations linked to delivered/released/cancelled orders
+      const ARCHIVED_STATUSES = ['delivered', 'delivery_confirmed', 'released', 'cancelled'];
+      const activeConversations = (data || []).filter((conv: any) => {
+        const orderStatus = conv.orders?.status;
+        if (orderStatus && ARCHIVED_STATUSES.includes(orderStatus)) return false;
+        return true;
+      });
+
       // Fetch additional info for each conversation
       const enrichedConversations = await Promise.all(
-        (data || []).map(async (conv) => {
+        activeConversations.map(async (conv: any) => {
           // Get GP name
           const { data: gpProfile } = await supabase
             .from("gp_profiles")

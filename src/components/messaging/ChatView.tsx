@@ -209,7 +209,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   };
 
   return (
-    <div className="flex flex-col h-full" style={{ height: '100dvh' }}>
+    <div className="flex flex-col" style={{ height: '100dvh', overflow: 'hidden' }}>
       {/* Enhanced Header with verified badge and order info - FIXED */}
       <div className="flex-shrink-0">
         <ChatHeader
