@@ -5,15 +5,12 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
+import { GP_ONLY_MODE } from "@/config/featureFlags";
 
 /**
  * ShipmentTypeSelector - Point d'entrée universel "Envoyer un colis"
  * 
- * Règles PRV:
- * - Plein écran, non scrollable
- * - 1 décision = 1 choix
- * - Chaque type redirige vers un parcours distinct
- * - Mobile-first, app-like
+ * GP_ONLY_MODE: redirige directement vers /offres (GP bagages)
  */
 
 interface TransportOption {
@@ -27,7 +24,7 @@ interface TransportOption {
   color: string;
 }
 
-const transportOptions: TransportOption[] = [
+const allTransportOptions: TransportOption[] = [
   {
     id: "gp-bagages",
     icon: Briefcase,
@@ -70,11 +67,20 @@ const transportOptions: TransportOption[] = [
   },
 ];
 
+const transportOptions = GP_ONLY_MODE
+  ? allTransportOptions.filter((o) => o.id === "gp-bagages")
+  : allTransportOptions;
+
 export default function ShipmentTypeSelector() {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
+    // GP_ONLY_MODE: skip selector, go directly to GP flow
+    if (GP_ONLY_MODE) {
+      navigate("/offres", { replace: true });
+      return;
+    }
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);

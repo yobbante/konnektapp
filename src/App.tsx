@@ -1,3 +1,4 @@
+import { GP_ONLY_MODE } from "@/config/featureFlags";
 import { AppleToaster } from "@/components/ui/AppleToaster";
 import GPBagagesRegistration from "./pages/GPBagagesRegistration";
 import RoutierRegistration from "./pages/RoutierRegistration";
@@ -273,98 +274,103 @@ const App = () => (
             
             {/* ============================================
                 ROUTIER ROUTES - Dashboard transport routier
-                Note: Tarification exclue (prix calculé par système)
+                GP_ONLY_MODE: all redirected to home
             ============================================ */}
-            <Route path="/routier/inscription" element={<RoutierRegistration />} />
-            <Route path="/routier/dashboard" element={<Navigate to="/routier/apercu" replace />} />
-            <Route path="/routier/apercu" element={<RoutierApercuPage />} />
-            <Route path="/routier/demandes" element={<RoutierDemandesPage />} />
-            <Route path="/routier/en-cours" element={<RoutierEnCoursPage />} />
-            <Route path="/routier/historique" element={<RoutierHistoriquePage />} />
-            <Route path="/routier/vehicules" element={<RoutierVehiculesPage />} />
-            <Route path="/routier/profil-public" element={<RoutierProfilPublicPage />} />
-            <Route path="/routier/wallet" element={<RoutierWalletPage />} />
-            <Route path="/routier/parametres" element={<RoutierParametresPage />} />
-            <Route path="/routier/premium" element={<RoutierPremiumPage />} />
-            <Route path="/routier/performances" element={<RoutierPerformancesPage />} />
-            <Route path="/routier/auto-accept" element={<RoutierAutoAcceptPage />} />
-            <Route path="/routier/publier" element={<RoutierPublierPage />} />
-            <Route path="/routier/messages" element={<RoutierMessagesPage />} />
-            <Route path="/routier/carte" element={<Navigate to="/routier/apercu" replace />} />
-            <Route path="/routier/detail-mission/:id" element={<RoutierMissionDetailTransporteurPage />} />
-            <Route path="/routier/negotiations" element={<RoutierNegotiationsPage />} />
+            <Route path="/routier/inscription" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <RoutierRegistration />} />
+            <Route path="/routier/dashboard" element={<Navigate to={GP_ONLY_MODE ? "/" : "/routier/apercu"} replace />} />
+            <Route path="/routier/apercu" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <RoutierApercuPage />} />
+            <Route path="/routier/demandes" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <RoutierDemandesPage />} />
+            <Route path="/routier/en-cours" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <RoutierEnCoursPage />} />
+            <Route path="/routier/historique" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <RoutierHistoriquePage />} />
+            <Route path="/routier/vehicules" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <RoutierVehiculesPage />} />
+            <Route path="/routier/profil-public" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <RoutierProfilPublicPage />} />
+            <Route path="/routier/wallet" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <RoutierWalletPage />} />
+            <Route path="/routier/parametres" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <RoutierParametresPage />} />
+            <Route path="/routier/premium" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <RoutierPremiumPage />} />
+            <Route path="/routier/performances" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <RoutierPerformancesPage />} />
+            <Route path="/routier/auto-accept" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <RoutierAutoAcceptPage />} />
+            <Route path="/routier/publier" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <RoutierPublierPage />} />
+            <Route path="/routier/messages" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <RoutierMessagesPage />} />
+            <Route path="/routier/carte" element={<Navigate to={GP_ONLY_MODE ? "/" : "/routier/apercu"} replace />} />
+            <Route path="/routier/detail-mission/:id" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <RoutierMissionDetailTransporteurPage />} />
+            <Route path="/routier/negotiations" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <RoutierNegotiationsPage />} />
             {/* Client-facing routier */}
-            <Route path="/routier/recherche" element={<Navigate to="/freight-board?tab=routier" replace />} />
-            <Route path="/routier/resultats" element={<Navigate to="/freight-board?tab=routier" replace />} />
-            <Route path="/routier/mission/:id" element={<RoutierMissionDetailPage />} />
-            <Route path="/routier/mission" element={<RoutierMissionRequestPage />} />
-            <Route path="/routier/demande" element={<Navigate to="/freight-board?tab=routier" replace />} />
-            <Route path="/routier/reserver" element={<RoutierBookingPage />} />
-            <Route path="/routier/order-qr" element={<RoutierOrderQRPage />} />
-            <Route path="/routier/tarification" element={<Navigate to="/routier/apercu" replace />} />
+            <Route path="/routier/recherche" element={<Navigate to={GP_ONLY_MODE ? "/" : "/freight-board?tab=routier"} replace />} />
+            <Route path="/routier/resultats" element={<Navigate to={GP_ONLY_MODE ? "/" : "/freight-board?tab=routier"} replace />} />
+            <Route path="/routier/mission/:id" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <RoutierMissionDetailPage />} />
+            <Route path="/routier/mission" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <RoutierMissionRequestPage />} />
+            <Route path="/routier/demande" element={<Navigate to={GP_ONLY_MODE ? "/" : "/freight-board?tab=routier"} replace />} />
+            <Route path="/routier/reserver" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <RoutierBookingPage />} />
+            <Route path="/routier/order-qr" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <RoutierOrderQRPage />} />
+            <Route path="/routier/tarification" element={<Navigate to={GP_ONLY_MODE ? "/" : "/routier/apercu"} replace />} />
             
             {/* ============================================
                 MARITIME ROUTES - Dashboard fret maritime
+                GP_ONLY_MODE: all redirected to home
             ============================================ */}
-            <Route path="/maritime/inscription" element={<MaritimeRegistration />} />
-            <Route path="/maritime/dashboard" element={<Navigate to="/maritime/apercu" replace />} />
-            <Route path="/maritime/apercu" element={<MaritimeApercuPage />} />
-            <Route path="/maritime/publier" element={<MaritimePublierPage />} />
-            <Route path="/maritime/parametres" element={<MaritimeParametresPage />} />
-            <Route path="/maritime/demandes" element={<MaritimeDemandesPage />} />
-            <Route path="/maritime/en-cours" element={<MaritimeDemandesPage />} />
-            <Route path="/maritime/historique" element={<MaritimeApercuPage />} />
-            <Route path="/maritime/wallet" element={<MaritimeWalletPage />} />
-            <Route path="/maritime/premium" element={<MaritimePremiumPage />} />
-            <Route path="/maritime/profil-public" element={<MaritimeApercuPage />} />
-            <Route path="/maritime/messages" element={<Navigate to="/messages" replace />} />
-            <Route path="/maritime/demande" element={<MaritimeMissionRequestPage />} />
-            <Route path="/maritime/reserver" element={<MaritimeBookingPage />} />
+            <Route path="/maritime/inscription" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MaritimeRegistration />} />
+            <Route path="/maritime/dashboard" element={<Navigate to={GP_ONLY_MODE ? "/" : "/maritime/apercu"} replace />} />
+            <Route path="/maritime/apercu" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MaritimeApercuPage />} />
+            <Route path="/maritime/publier" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MaritimePublierPage />} />
+            <Route path="/maritime/parametres" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MaritimeParametresPage />} />
+            <Route path="/maritime/demandes" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MaritimeDemandesPage />} />
+            <Route path="/maritime/en-cours" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MaritimeDemandesPage />} />
+            <Route path="/maritime/historique" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MaritimeApercuPage />} />
+            <Route path="/maritime/wallet" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MaritimeWalletPage />} />
+            <Route path="/maritime/premium" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MaritimePremiumPage />} />
+            <Route path="/maritime/profil-public" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MaritimeApercuPage />} />
+            <Route path="/maritime/messages" element={<Navigate to={GP_ONLY_MODE ? "/" : "/messages"} replace />} />
+            <Route path="/maritime/demande" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MaritimeMissionRequestPage />} />
+            <Route path="/maritime/reserver" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MaritimeBookingPage />} />
             
             {/* ============================================
                 AÉRIEN ROUTES - Dashboard fret aérien
+                GP_ONLY_MODE: all redirected to home
             ============================================ */}
-            <Route path="/aerien/inscription" element={<AerienRegistration />} />
-            <Route path="/aerien/dashboard" element={<Navigate to="/aerien/apercu" replace />} />
-            <Route path="/aerien/apercu" element={<AerienApercuPage />} />
-            <Route path="/aerien/publier" element={<AerienPublierPage />} />
-            <Route path="/aerien/demande-fret" element={<AerienDemandeFretPage />} />
-            <Route path="/aerien/demande" element={<AerienMissionRequestPage />} />
-            <Route path="/aerien/demandes" element={<AerienDemandesPage />} />
-            <Route path="/aerien/reserver" element={<AerienBookingPage />} />
-            <Route path="/aerien/en-cours" element={<AerienApercuPage />} />
-            <Route path="/aerien/historique" element={<AerienApercuPage />} />
-            <Route path="/aerien/wallet" element={<AerienWalletPage />} />
-            <Route path="/aerien/profil-public" element={<AerienApercuPage />} />
-            <Route path="/aerien/marketplace" element={<AerienDemandesPage />} />
-            <Route path="/aerien/parametres" element={<AerienParametresPage />} />
-            <Route path="/aerien/premium" element={<AerienPremiumPage />} />
-            <Route path="/aerien/messages" element={<Navigate to="/messages" replace />} />
+            <Route path="/aerien/inscription" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <AerienRegistration />} />
+            <Route path="/aerien/dashboard" element={<Navigate to={GP_ONLY_MODE ? "/" : "/aerien/apercu"} replace />} />
+            <Route path="/aerien/apercu" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <AerienApercuPage />} />
+            <Route path="/aerien/publier" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <AerienPublierPage />} />
+            <Route path="/aerien/demande-fret" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <AerienDemandeFretPage />} />
+            <Route path="/aerien/demande" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <AerienMissionRequestPage />} />
+            <Route path="/aerien/demandes" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <AerienDemandesPage />} />
+            <Route path="/aerien/reserver" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <AerienBookingPage />} />
+            <Route path="/aerien/en-cours" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <AerienApercuPage />} />
+            <Route path="/aerien/historique" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <AerienApercuPage />} />
+            <Route path="/aerien/wallet" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <AerienWalletPage />} />
+            <Route path="/aerien/profil-public" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <AerienApercuPage />} />
+            <Route path="/aerien/marketplace" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <AerienDemandesPage />} />
+            <Route path="/aerien/parametres" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <AerienParametresPage />} />
+            <Route path="/aerien/premium" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <AerienPremiumPage />} />
+            <Route path="/aerien/messages" element={<Navigate to={GP_ONLY_MODE ? "/" : "/messages"} replace />} />
             
             {/* ============================================
                 COURSIER ROUTES - Livraison express locale
+                GP_ONLY_MODE: redirected to home
             ============================================ */}
-            <Route path="/coursier/inscription" element={<CoursierRegistration />} />
+            <Route path="/coursier/inscription" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <CoursierRegistration />} />
             
             {/* ============================================
                 AGENCE ROUTES - Transitaire & logistique
+                GP_ONLY_MODE: redirected to home
             ============================================ */}
-            <Route path="/agence/inscription" element={<AgenceRegistration />} />
+            <Route path="/agence/inscription" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <AgenceRegistration />} />
             
             {/* ============================================
                 MOBILITY ROUTES - Transport de personnes
+                GP_ONLY_MODE: all redirected to home
             ============================================ */}
-            <Route path="/mobility/inscription" element={<MobilityRegistration />} />
-            <Route path="/mobility/dashboard" element={<Navigate to="/mobility/apercu" replace />} />
-            <Route path="/mobility/apercu" element={<MobilityApercuPage />} />
-            <Route path="/mobility/publier" element={<MobilityPublierPage />} />
-            <Route path="/mobility/reserver" element={<MobilityBookingPage />} />
-            <Route path="/mobility/recherche" element={<MobilitySearchResults />} />
-            <Route path="/mobility/ticket" element={<MobilityTicketPage />} />
-            <Route path="/mobility/scan-ticket" element={<MobilityScanTicketPage />} />
-            <Route path="/mobility/parametres" element={<MobilityParametresPage />} />
-            <Route path="/mobility/wallet" element={<MobilityWalletPage />} />
-            <Route path="/mobility/vehicules" element={<MobilityApercuPage />} />
+            <Route path="/mobility/inscription" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MobilityRegistration />} />
+            <Route path="/mobility/dashboard" element={<Navigate to={GP_ONLY_MODE ? "/" : "/mobility/apercu"} replace />} />
+            <Route path="/mobility/apercu" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MobilityApercuPage />} />
+            <Route path="/mobility/publier" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MobilityPublierPage />} />
+            <Route path="/mobility/reserver" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MobilityBookingPage />} />
+            <Route path="/mobility/recherche" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MobilitySearchResults />} />
+            <Route path="/mobility/ticket" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MobilityTicketPage />} />
+            <Route path="/mobility/scan-ticket" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MobilityScanTicketPage />} />
+            <Route path="/mobility/parametres" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MobilityParametresPage />} />
+            <Route path="/mobility/wallet" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MobilityWalletPage />} />
+            <Route path="/mobility/vehicules" element={GP_ONLY_MODE ? <Navigate to="/" replace /> : <MobilityApercuPage />} />
             
             {/* ============================================
                 ADMIN ROUTES - Dashboard admin

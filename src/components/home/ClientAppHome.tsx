@@ -51,13 +51,19 @@ const STATUS_CONFIG: Record<string, {label: string;color: string;}> = {
   responded: { label: "Réponses reçues", color: "bg-purple-500/20 text-purple-600" }
 };
 
-const TRANSPORT_TABS = [
+import { GP_ONLY_MODE } from "@/config/featureFlags";
+
+const ALL_TRANSPORT_TABS = [
 { id: "mobility", label: "Mobility", icon: Bus },
 { id: "all", label: "Tout", icon: Globe },
 { id: "routier", label: "Routier", icon: Car },
 { id: "maritime", label: "Maritime", icon: Ship },
 { id: "aerien", label: "Aérien", icon: Plane },
 { id: "bagages", label: "GP", icon: Luggage }];
+
+const TRANSPORT_TABS = GP_ONLY_MODE
+  ? [{ id: "bagages", label: "GP", icon: Luggage }]
+  : ALL_TRANSPORT_TABS;
 
 
 const MODE_CONFIG: Record<string, {
@@ -407,7 +413,7 @@ export function ClientAppHome({
 
   const [fullScreenOrderId, setFullScreenOrderId] = useState<string | null>(null);
   const [requestPopup, setRequestPopup] = useState<{type: "custom" | "moving";item: any;} | null>(null);
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState(GP_ONLY_MODE ? "bagages" : "all");
   const [offresPopupOpen, setOffresPopupOpen] = useState(false);
   const [offresPopupSearch, setOffresPopupSearch] = useState<{origin?: string;dest?: string;tab?: string;}>({});
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -471,48 +477,66 @@ export function ClientAppHome({
 
   const goToOffres = () => navigate("/freight-board?popup=1");
 
-  // Offers (GP + Mobility)
+  // Offers (GP only in GP_ONLY_MODE, otherwise GP + Mobility)
   const [offers, setOffers] = useState<any[]>([]);
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
-    Promise.all([
-      supabase
-        .from("gp_offers")
-        .select("*, gp_profiles(business_name, rating, total_reviews, subscription)")
-        .eq("status", "active")
-        .gte("departure_date", today)
-        .order("departure_date", { ascending: true })
-        .limit(50),
-      supabase
-        .from("mobility_offers")
-        .select("*, mobility_profiles(business_name, rating)")
-        .eq("status", "active")
-        .gte("departure_date", today)
-        .order("departure_date", { ascending: true })
-        .limit(20),
-    ]).then(([gpRes, mobRes]) => {
-      const gpOffers = gpRes.data || [];
-      const mobOffers = (mobRes.data || []).map((mo: any) => ({
-        ...mo,
-        transport_type: "mobility",
-        price_per_kg: mo.price_per_seat,
-        available_capacity: mo.available_seats,
-        total_capacity: mo.total_seats,
-        gp_profiles: mo.mobility_profiles ? {
-          business_name: mo.mobility_profiles.business_name,
-          rating: mo.mobility_profiles.rating || 0,
-          total_reviews: 0,
-          subscription: "free",
-        } : null,
-      }));
-      setOffers([...gpOffers, ...mobOffers]);
-    });
+    const gpQuery = GP_ONLY_MODE
+      ? supabase
+          .from("gp_offers")
+          .select("*, gp_profiles(business_name, rating, total_reviews, subscription)")
+          .eq("status", "active")
+          .eq("transport_type", "bagages_international" as any)
+          .gte("departure_date", today)
+          .order("departure_date", { ascending: true })
+          .limit(50)
+      : supabase
+          .from("gp_offers")
+          .select("*, gp_profiles(business_name, rating, total_reviews, subscription)")
+          .eq("status", "active")
+          .gte("departure_date", today)
+          .order("departure_date", { ascending: true })
+          .limit(50);
+
+    if (GP_ONLY_MODE) {
+      gpQuery.then(({ data }) => {
+        setOffers(data || []);
+      });
+    } else {
+      Promise.all([
+        gpQuery,
+        supabase
+          .from("mobility_offers")
+          .select("*, mobility_profiles(business_name, rating)")
+          .eq("status", "active")
+          .gte("departure_date", today)
+          .order("departure_date", { ascending: true })
+          .limit(20),
+      ]).then(([gpRes, mobRes]) => {
+        const gpOffers = gpRes.data || [];
+        const mobOffers = (mobRes.data || []).map((mo: any) => ({
+          ...mo,
+          transport_type: "mobility",
+          price_per_kg: mo.price_per_seat,
+          available_capacity: mo.available_seats,
+          total_capacity: mo.total_seats,
+          gp_profiles: mo.mobility_profiles ? {
+            business_name: mo.mobility_profiles.business_name,
+            rating: mo.mobility_profiles.rating || 0,
+            total_reviews: 0,
+            subscription: "free",
+          } : null,
+        }));
+        setOffers([...gpOffers, ...mobOffers]);
+      });
+    }
   }, []);
 
   // Routier offers (from gp_offers with transport_type routier)
+  // Routier offers (disabled in GP_ONLY_MODE)
   const [routierOffers, setRoutierOffers] = useState<any[]>([]);
   useEffect(() => {
-    if (!isRoutier) return;
+    if (!isRoutier || GP_ONLY_MODE) return;
     supabase.
     from("gp_offers").
     select("*, gp_profiles(business_name, rating, subscription)").

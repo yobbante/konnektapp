@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
+import { GP_ONLY_MODE } from "@/config/featureFlags";
 
 type TransportMode = "all" | "aerien" | "maritime" | "routier" | "gp";
 type SortKey = "price" | "date" | "capacity";
@@ -44,18 +45,22 @@ interface MarketplaceListing {
   offerId: string;
 }
 
-const MODE_CONFIG: Record<string, { icon: any; color: string; bg: string; label: string }> = {
+const ALL_MODE_CONFIG: Record<string, { icon: any; color: string; bg: string; label: string }> = {
   aerien: { icon: Plane, color: "text-transport-aerien", bg: "bg-transport-aerien/10", label: "Aérien" },
   maritime: { icon: Ship, color: "text-transport-maritime", bg: "bg-transport-maritime/10", label: "Maritime" },
   routier: { icon: Truck, color: "text-transport-routier", bg: "bg-transport-routier/10", label: "Routier" },
   gp: { icon: Package, color: "text-transport-voyageur", bg: "bg-transport-voyageur/10", label: "GP Bagages" },
 };
 
+const MODE_CONFIG = GP_ONLY_MODE
+  ? { gp: ALL_MODE_CONFIG.gp }
+  : ALL_MODE_CONFIG;
+
 export default function FreightMarketplace() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isPopup = searchParams.get("popup") === "1";
-  const [modeFilter, setModeFilter] = useState<TransportMode>("all");
+  const [modeFilter, setModeFilter] = useState<TransportMode>(GP_ONLY_MODE ? "gp" : "all");
   const [routeSearch, setRouteSearch] = useState(
     [searchParams.get("origin"), searchParams.get("dest")].filter(Boolean).join(" ") || ""
   );
@@ -64,24 +69,29 @@ export default function FreightMarketplace() {
 
   const today = startOfDay(new Date()).toISOString();
 
-  // Fetch all GP offers (covers GP bagages, routier mode offers)
+  // Fetch GP offers (in GP_ONLY_MODE, filter to GP bagages types only)
   const { data: gpOffers = [] } = useQuery({
-    queryKey: ["marketplace-gp-offers"],
+    queryKey: ["marketplace-gp-offers", GP_ONLY_MODE],
     queryFn: async () => {
-      const { data } = await supabase
+      let query = supabase
         .from("gp_offers")
         .select("*, gp_profiles!gp_offers_gp_id_fkey(business_name, id)")
         .eq("status", "active")
         .gte("departure_date", today.split("T")[0])
         .order("departure_date", { ascending: true });
+      if (GP_ONLY_MODE) {
+        query = query.eq("transport_type", "bagages_international" as any);
+      }
+      const { data } = await query;
       return data || [];
     },
   });
 
-  // Fetch air departures
+  // Fetch air departures (disabled in GP_ONLY_MODE)
   const { data: airDepartures = [] } = useQuery({
     queryKey: ["marketplace-air-departures"],
     queryFn: async () => {
+      if (GP_ONLY_MODE) return [];
       const { data } = await supabase
         .from("air_departures")
         .select("*, gp_profiles!air_departures_gp_id_fkey(business_name, id)")
@@ -90,12 +100,14 @@ export default function FreightMarketplace() {
         .order("departure_date", { ascending: true });
       return data || [];
     },
+    enabled: !GP_ONLY_MODE,
   });
 
-  // Fetch maritime departures
+  // Fetch maritime departures (disabled in GP_ONLY_MODE)
   const { data: maritimeDepartures = [] } = useQuery({
     queryKey: ["marketplace-maritime-departures"],
     queryFn: async () => {
+      if (GP_ONLY_MODE) return [];
       const { data } = await supabase
         .from("maritime_departures")
         .select("*, gp_profiles!maritime_departures_gp_id_fkey(business_name, id)")
@@ -104,6 +116,7 @@ export default function FreightMarketplace() {
         .order("departure_date", { ascending: true });
       return data || [];
     },
+    enabled: !GP_ONLY_MODE,
   });
 
   // Fetch corridor pricing snapshots for avg price indicator
@@ -343,7 +356,7 @@ export default function FreightMarketplace() {
         <div className="container max-w-4xl px-4 py-3 space-y-3">
           {/* Mode filter tabs */}
           <div className="flex gap-1">
-            {(["all", "aerien", "maritime", "routier", "gp"] as TransportMode[]).map((mode) => {
+            {(GP_ONLY_MODE ? ["gp"] as TransportMode[] : ["all", "aerien", "maritime", "routier", "gp"] as TransportMode[]).map((mode) => {
               const config = mode === "all" ? null : MODE_CONFIG[mode];
               const Icon = config?.icon || BarChart3;
               const count = mode === "all" ? listings.length : listings.filter((l) => l.mode === mode).length;

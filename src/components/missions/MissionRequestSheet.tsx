@@ -33,12 +33,17 @@ interface MissionRequestSheetProps {
 }
 
 // ─── Constants ───
-const MODES: { id: TransportMode; icon: React.ElementType; label: string; desc: string; color: string; bg: string }[] = [
+import { GP_ONLY_MODE } from "@/config/featureFlags";
+
+const ALL_MODES: { id: TransportMode; icon: React.ElementType; label: string; desc: string; color: string; bg: string }[] = [
   { id: "routier", icon: Truck, label: "Routier", desc: "Transport terrestre, colis & marchandises", color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20" },
   { id: "aerien", icon: Plane, label: "Aérien", desc: "Cargo express & fret aérien", color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-500/10 border-violet-500/20" },
   { id: "maritime", icon: Ship, label: "Maritime", desc: "Conteneurs, groupage LCL & véhicules", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
   { id: "multi", icon: Globe, label: "Multi-corridor", desc: "Parcours combiné : Aérien + Routier, Maritime + Routier…", color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-500/10 border-amber-500/20" },
 ];
+
+// In GP_ONLY_MODE, the mission sheet should not open (all modes disabled)
+const MODES = GP_ONLY_MODE ? [] : ALL_MODES;
 
 const SIZE_OPTIONS: { label: SizeCategoryExt; range: string; weight: string; color: string; bg: string }[] = [
   { label: "S", range: "0-50 kg", weight: "25", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700" },
