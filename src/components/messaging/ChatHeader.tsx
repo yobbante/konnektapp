@@ -1,9 +1,16 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Phone, MoreVertical, Shield, Package, MapPin, ChevronDown, ChevronUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Phone, MoreVertical, Shield, Package, MapPin, ChevronDown, ChevronUp, AlertTriangle, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface OrderInfo {
   id: string;
@@ -22,6 +29,8 @@ interface ChatHeaderProps {
   contactId: string;
   isGpVerified?: boolean;
   onBack: () => void;
+  gpPhone?: string | null;
+  gpSelfieUrl?: string | null;
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -38,8 +47,11 @@ export function ChatHeader({
   contactName, 
   contactId,
   isGpVerified = false,
-  onBack 
+  onBack,
+  gpPhone,
+  gpSelfieUrl,
 }: ChatHeaderProps) {
+  const navigate = useNavigate();
   const [orderInfo, setOrderInfo] = useState<OrderInfo | null>(null);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -50,7 +62,6 @@ export function ChatHeader({
 
   const loadOrderInfo = async () => {
     try {
-      // Get conversation to find order_id
       const { data: conv } = await supabase
         .from("conversations")
         .select("order_id")
@@ -64,14 +75,30 @@ export function ChatHeader({
           .eq("id", conv.order_id)
           .single();
 
-        if (order) {
-          setOrderInfo(order);
-        }
+        if (order) setOrderInfo(order);
       }
     } catch (error) {
       console.error("Error loading order info:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCall = () => {
+    if (gpPhone) {
+      window.location.href = `tel:${gpPhone}`;
+    }
+  };
+
+  const handleViewProfile = () => {
+    if (contactId) {
+      navigate(`/client/transporteurs/${contactId}`, { state: { from: "/messages" } });
+    }
+  };
+
+  const handleReportDispute = () => {
+    if (orderInfo?.id) {
+      navigate(`/reservations?dispute=${orderInfo.id}`);
     }
   };
 
@@ -81,25 +108,37 @@ export function ChatHeader({
     <div className="border-b border-border bg-background flex-shrink-0 fixed top-0 left-0 right-0 z-50">
       {/* Main header */}
       <div 
-        className="flex items-center gap-3 px-3 py-2.5" 
-        style={{ paddingTop: 'calc(8px + var(--safe-top, 0px))' }}
+        className="flex items-center gap-2 px-2 py-2" 
+        style={{ paddingTop: 'calc(8px + env(safe-area-inset-top, 0px))' }}
       >
-        <Button variant="ghost" size="icon" onClick={onBack} className="h-9 w-9">
+        <Button variant="ghost" size="icon" onClick={onBack} className="h-9 w-9 flex-shrink-0">
           <ArrowLeft className="w-5 h-5" />
         </Button>
         
-        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 relative">
-          <span className="font-semibold text-primary text-sm">
-            {contactName?.charAt(0) || "?"}
-          </span>
+        {/* Avatar - clickable to profile */}
+        <button onClick={handleViewProfile} className="flex-shrink-0 relative">
+          {gpSelfieUrl ? (
+            <img 
+              src={gpSelfieUrl} 
+              alt={contactName} 
+              className="w-9 h-9 rounded-full object-cover border-2 border-background shadow-sm"
+            />
+          ) : (
+            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+              <span className="font-semibold text-primary text-sm">
+                {contactName?.charAt(0) || "?"}
+              </span>
+            </div>
+          )}
           {isGpVerified && (
             <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-primary rounded-full flex items-center justify-center border-2 border-background">
               <Shield className="w-2.5 h-2.5 text-primary-foreground" />
             </div>
           )}
-        </div>
+        </button>
         
-        <div className="flex-1 min-w-0">
+        {/* Name - clickable to profile */}
+        <button onClick={handleViewProfile} className="flex-1 min-w-0 text-left">
           <div className="flex items-center gap-1.5">
             <p className="font-medium text-sm truncate">{contactName || "Contact"}</p>
             {isGpVerified && (
@@ -108,15 +147,50 @@ export function ChatHeader({
               </Badge>
             )}
           </div>
-          <p className="text-xs text-muted-foreground">En ligne</p>
-        </div>
+          {orderInfo && (
+            <p className="text-[10px] text-muted-foreground truncate">
+              {orderInfo.order_number} · {orderInfo.origin_city} → {orderInfo.destination_city}
+            </p>
+          )}
+        </button>
         
-        <Button variant="ghost" size="icon" className="h-9 w-9">
+        {/* Call button */}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-9 w-9 flex-shrink-0"
+          onClick={handleCall}
+          disabled={!gpPhone}
+        >
           <Phone className="w-4 h-4" />
         </Button>
-        <Button variant="ghost" size="icon" className="h-9 w-9">
-          <MoreVertical className="w-4 h-4" />
-        </Button>
+
+        {/* Options menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0">
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={handleViewProfile}>
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Voir le profil
+            </DropdownMenuItem>
+            {gpPhone && (
+              <DropdownMenuItem onClick={handleCall}>
+                <Phone className="w-4 h-4 mr-2" />
+                Appeler
+              </DropdownMenuItem>
+            )}
+            {orderInfo && (
+              <DropdownMenuItem onClick={handleReportDispute} className="text-destructive">
+                <AlertTriangle className="w-4 h-4 mr-2" />
+                Signaler un litige
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Order summary banner */}
@@ -128,10 +202,10 @@ export function ChatHeader({
         >
           <button
             onClick={() => setShowOrderDetails(!showOrderDetails)}
-            className="w-full px-4 py-2 flex items-center justify-between bg-muted/30 hover:bg-muted/50 transition-colors"
+            className="w-full px-4 py-1.5 flex items-center justify-between bg-muted/30 hover:bg-muted/50 transition-colors"
           >
-            <div className="flex items-center gap-3">
-              <Package className="w-4 h-4 text-primary" />
+            <div className="flex items-center gap-2">
+              <Package className="w-3.5 h-3.5 text-primary" />
               <span className="text-xs font-medium">{orderInfo.order_number}</span>
               {statusInfo && (
                 <Badge variant="secondary" className={`${statusInfo.color} text-white text-[10px] h-4`}>
@@ -140,9 +214,9 @@ export function ChatHeader({
               )}
             </div>
             {showOrderDetails ? (
-              <ChevronUp className="w-4 h-4 text-muted-foreground" />
+              <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
             ) : (
-              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
             )}
           </button>
 
@@ -152,19 +226,19 @@ export function ChatHeader({
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="px-4 py-3 bg-muted/20 border-t border-border space-y-2"
+                className="px-4 py-2.5 bg-muted/20 border-t border-border space-y-1.5"
               >
                 <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="w-4 h-4 text-primary" />
+                  <MapPin className="w-3.5 h-3.5 text-primary" />
                   <span>{orderInfo.origin_city}</span>
                   <span className="text-muted-foreground">→</span>
                   <span>{orderInfo.destination_city}</span>
                 </div>
                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
                   <span>{orderInfo.weight} kg</span>
-                  <span>•</span>
+                  <span>·</span>
                   <span className="font-medium text-foreground">
-                    {orderInfo.total_price.toLocaleString()} {orderInfo.currency}
+                    {orderInfo.total_price?.toLocaleString()} {orderInfo.currency}
                   </span>
                 </div>
               </motion.div>
