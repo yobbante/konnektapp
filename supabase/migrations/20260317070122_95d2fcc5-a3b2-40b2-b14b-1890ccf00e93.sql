@@ -1,0 +1,1 @@
+ALTER TYPE public.gp_type ADD VALUE IF NOT EXISTS 'occasionnel';

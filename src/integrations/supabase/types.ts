@@ -6623,6 +6623,7 @@ export type Database = {
         | "voyageur"
         | "agence"
         | "bagages_international"
+        | "occasionnel"
       mission_urgency: "standard" | "express" | "immediate"
       mobility_status: "active" | "completed" | "cancelled" | "in_progress"
       mobility_type: "shuttle" | "private_driver" | "group_mission" | "premium"
@@ -6850,6 +6851,7 @@ export const Constants = {
         "voyageur",
         "agence",
         "bagages_international",
+        "occasionnel",
       ],
       mission_urgency: ["standard", "express", "immediate"],
       mobility_status: ["active", "completed", "cancelled", "in_progress"],
