@@ -858,23 +858,6 @@ export function ClientAppHome({
         {/* ── BOTTOM SECTIONS ── */}
         {activeTab === "all" ?
         <>
-            {/* Freight Board CTA */}
-            <div className="px-4 pb-3">
-              <motion.button
-                whileTap={{ scale: 0.98 }}
-                onClick={() => navigate("/freight-board")}
-                className="w-full bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border border-primary/20 rounded-2xl p-3.5 flex items-center gap-3 hover:border-primary/40 transition-all"
-              >
-                <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
-                  <BarChart3 className="w-5 h-5 text-primary" />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="text-sm font-bold text-foreground">Freight Board</p>
-                  <p className="text-[10px] text-muted-foreground">Bourse logistique · Prix en temps réel · Réservation directe</p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-primary shrink-0" />
-              </motion.button>
-            </div>
 
             {/* Popular routes carousel */}
             <PopularRoutesSection routes={popularRoutes} onSelect={handleRouteSelect} tabId="all" />
