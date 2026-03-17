@@ -122,10 +122,10 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-safe flex flex-col">
+    <div className="bg-background flex flex-col" style={{ height: '100dvh', overflow: 'hidden' }}>
       {!selectedConversation && <MobileHeader />}
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {selectedConversation ? (
           <ChatView
             conversationId={selectedConversation}
@@ -138,12 +138,12 @@ export default function MessagesPage() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex-1 flex flex-col overflow-hidden"
+            className="flex-1 flex flex-col min-h-0 overflow-hidden"
           >
-            <div className="px-4 py-4 flex-shrink-0 flex items-center justify-between">
+            <div className="px-4 py-3 flex-shrink-0 flex items-center justify-between">
               <div>
-                <h1 className="text-xl font-bold">Messages</h1>
-                <p className="text-sm text-muted-foreground">
+                <h1 className="text-lg font-bold">Messages</h1>
+                <p className="text-xs text-muted-foreground">
                   Vos conversations avec {currentUser.isGp ? "les clients" : "les transporteurs"}
                 </p>
               </div>
@@ -158,7 +158,7 @@ export default function MessagesPage() {
                 </Button>
               )}
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto min-h-0">
               <ConversationList
                 userType={currentUser.isGp ? "gp" : "client"}
                 onSelectConversation={handleSelectConversation}
@@ -171,7 +171,6 @@ export default function MessagesPage() {
 
       {!selectedConversation && <MobileNav />}
 
-      {/* Admin New Conversation Dialog */}
       <AdminNewConversationDialog
         open={showNewConversation}
         onClose={() => setShowNewConversation(false)}
