@@ -84,7 +84,7 @@ export function AerienNegotiationSheet({
         });
 
         if (error) throw error;
-        toast({ title: "✈️ Proposition envoyée !" });
+        toast({ title: "Proposition envoyee" });
       }
 
       onSuccess?.();
