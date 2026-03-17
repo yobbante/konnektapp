@@ -281,11 +281,8 @@ export default function FreightMarketplace() {
   };
 
   const handleBook = (listing: MarketplaceListing) => {
-    if (listing.mode === "gp" || listing.mode === "aerien") {
-      navigate(`/reservation/gp/${listing.providerId}?offer=${listing.offerId}`);
-    } else {
-      navigate(`/offres/${listing.offerId}`);
-    }
+    // Always open offer details first
+    navigate(`/offres/${listing.offerId}`);
   };
 
   return (
