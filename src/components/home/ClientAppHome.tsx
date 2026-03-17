@@ -91,7 +91,7 @@ const MODE_CONFIG: Record<string, {
   bagages: {
     subtitle: "Bagages accompagnés par GP de confiance",
     searchPlaceholderOrigin: "Ville d'envoi",
-    searchPlaceholderDest: "Ville de réception",
+    searchPlaceholderDest: "Ville de destination",
     searchButtonLabel: "Trouver un GP",
     offersTitle: "GP disponibles",
     emptyLabel: "Aucun GP disponible",
