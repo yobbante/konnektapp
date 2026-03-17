@@ -53,8 +53,12 @@ const MODE_CONFIG: Record<string, { icon: any; color: string; bg: string; label:
 
 export default function FreightMarketplace() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isPopup = searchParams.get("popup") === "1";
   const [modeFilter, setModeFilter] = useState<TransportMode>("all");
-  const [routeSearch, setRouteSearch] = useState("");
+  const [routeSearch, setRouteSearch] = useState(
+    [searchParams.get("origin"), searchParams.get("dest")].filter(Boolean).join(" ") || ""
+  );
   const [sortBy, setSortBy] = useState<SortKey>("date");
   const [showFilters, setShowFilters] = useState(false);
 
