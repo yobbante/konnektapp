@@ -51,13 +51,19 @@ const STATUS_CONFIG: Record<string, {label: string;color: string;}> = {
   responded: { label: "Réponses reçues", color: "bg-purple-500/20 text-purple-600" }
 };
 
-const TRANSPORT_TABS = [
+import { GP_ONLY_MODE } from "@/config/featureFlags";
+
+const ALL_TRANSPORT_TABS = [
 { id: "mobility", label: "Mobility", icon: Bus },
 { id: "all", label: "Tout", icon: Globe },
 { id: "routier", label: "Routier", icon: Car },
 { id: "maritime", label: "Maritime", icon: Ship },
 { id: "aerien", label: "Aérien", icon: Plane },
 { id: "bagages", label: "GP", icon: Luggage }];
+
+const TRANSPORT_TABS = GP_ONLY_MODE
+  ? [{ id: "bagages", label: "GP", icon: Luggage }]
+  : ALL_TRANSPORT_TABS;
 
 
 const MODE_CONFIG: Record<string, {
