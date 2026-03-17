@@ -182,7 +182,7 @@ const App = () => (
                 PUBLIC ROUTES - Accessibles sans authentification
             ============================================ */}
             <Route path="/" element={<Index />} />
-            <Route path="/offres" element={<Offres />} />
+            <Route path="/offres" element={<Navigate to="/freight-board" replace />} />
             <Route path="/offres/:id" element={<OfferDetail />} />
             <Route path="/freight-board" element={<FreightMarketplace />} />
             <Route path="/tracking" element={<Tracking />} />
@@ -294,11 +294,11 @@ const App = () => (
             <Route path="/routier/detail-mission/:id" element={<RoutierMissionDetailTransporteurPage />} />
             <Route path="/routier/negotiations" element={<RoutierNegotiationsPage />} />
             {/* Client-facing routier */}
-            <Route path="/routier/recherche" element={<Navigate to="/offres?type=routier" replace />} />
-            <Route path="/routier/resultats" element={<Navigate to="/offres?type=routier" replace />} />
+            <Route path="/routier/recherche" element={<Navigate to="/freight-board?tab=routier" replace />} />
+            <Route path="/routier/resultats" element={<Navigate to="/freight-board?tab=routier" replace />} />
             <Route path="/routier/mission/:id" element={<RoutierMissionDetailPage />} />
             <Route path="/routier/mission" element={<RoutierMissionRequestPage />} />
-            <Route path="/routier/demande" element={<Navigate to="/offres?type=routier" replace />} />
+            <Route path="/routier/demande" element={<Navigate to="/freight-board?tab=routier" replace />} />
             <Route path="/routier/reserver" element={<RoutierBookingPage />} />
             <Route path="/routier/order-qr" element={<RoutierOrderQRPage />} />
             <Route path="/routier/tarification" element={<Navigate to="/routier/apercu" replace />} />

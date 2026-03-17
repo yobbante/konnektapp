@@ -197,6 +197,19 @@ export default function ReservationsPage() {
 
   const getTabNotifCount = (tabId: TabId) => tabNotifications[tabId] || 0;
 
+  const TYPE_CARD_STYLE: Record<string, { iconColor: string; iconBg: string; borderColor: string }> = {
+    routier: { iconColor: "text-transport-routier", iconBg: "bg-transport-routier/10", borderColor: "border-transport-routier/25" },
+    maritime: { iconColor: "text-transport-maritime", iconBg: "bg-transport-maritime/10", borderColor: "border-transport-maritime/25" },
+    aerien: { iconColor: "text-transport-aerien", iconBg: "bg-transport-aerien/10", borderColor: "border-transport-aerien/25" },
+    mobility: { iconColor: "text-transport-mobility", iconBg: "bg-transport-mobility/10", borderColor: "border-transport-mobility/25" },
+  };
+  const GP_STYLE = { iconColor: "text-transport-voyageur", iconBg: "bg-transport-voyageur/10", borderColor: "border-transport-voyageur/25" };
+
+  const getTypeCardStyle = (gpType?: string) => {
+    if (!gpType) return GP_STYLE;
+    return TYPE_CARD_STYLE[gpType] || GP_STYLE;
+  };
+
   const renderOrderCard = (order: any, i: number) => {
     const cfg = STATUS_CONFIG[order.status] || { label: order.status, color: "bg-muted text-muted-foreground", icon: Clock };
     const Icon = getOrderIcon(order);
@@ -204,6 +217,7 @@ export default function ReservationsPage() {
     const isCancelled = CANCELLED_STATUSES.includes(order.status);
     const isDelivered = DELIVERED_STATUSES.includes(order.status);
     const isRecentChange = recentlyChangedOrders.has(order.id);
+    const typeStyle = getTypeCardStyle(order.gp_profiles?.gp_type);
 
     return (
       <motion.div
@@ -214,7 +228,9 @@ export default function ReservationsPage() {
         onClick={() => setSelectedOrder(order)}
         className={`bg-card border rounded-2xl p-3.5 active:scale-[0.98] transition-all cursor-pointer relative ${
           isRecentChange ? "border-primary/40 shadow-md ring-1 ring-primary/20" :
-          isActive ? "border-primary/20 shadow-sm" : "border-border"
+          isCancelled ? "border-destructive/20" :
+          isDelivered ? "border-green-500/20" :
+          typeStyle.borderColor
         }`}
       >
         {/* Notification dot for recent changes */}
@@ -224,11 +240,11 @@ export default function ReservationsPage() {
         <div className="flex items-start gap-3">
           <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
             isCancelled ? 'bg-destructive/10' :
-            isDelivered ? 'bg-green-500/10' : 'bg-primary/10'
+            isDelivered ? 'bg-green-500/10' : typeStyle.iconBg
           }`}>
             <Icon className={`w-5 h-5 ${
               isCancelled ? 'text-destructive' :
-              isDelivered ? 'text-green-600' : 'text-primary'
+              isDelivered ? 'text-green-600' : typeStyle.iconColor
             }`} />
           </div>
           <div className="flex-1 min-w-0">
@@ -265,7 +281,7 @@ export default function ReservationsPage() {
                 </span>
               )}
               {order.gp_profiles?.gp_type && (
-                <span className="text-[10px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded uppercase">
+                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${typeStyle.iconBg} ${typeStyle.iconColor} uppercase`}>
                   {order.gp_profiles.gp_type}
                 </span>
               )}

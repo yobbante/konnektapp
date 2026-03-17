@@ -701,8 +701,16 @@ export function ClientAppHome({
 
         </div>
 
-
-        {/* SmartActionBar moved to ReservationsPage */}
+        {/* SmartActionBar */}
+        {userId && (
+          <SmartActionBar
+            userId={userId}
+            recentOrders={recentOrders}
+            unreadMessages={unreadMessages}
+            activeOrdersCount={activeOrdersCount}
+            pendingRecipientFeedback={pendingRecipientFeedback}
+          />
+        )}
         
 
         {/* ── OFFERS / MISSIONS ── */}
