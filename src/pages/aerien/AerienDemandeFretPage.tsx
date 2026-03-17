@@ -224,10 +224,10 @@ export default function AerienDemandeFretPage() {
             </h3>
             <div className="space-y-2">
               {[
-                { key: "customsRequired", label: "Dédouanement requis", icon: "🏛️" },
-                { key: "insuranceRequired", label: "Assurance fret", icon: "🛡️" },
-                { key: "isFragile", label: "Marchandise fragile", icon: "⚠️" },
-                { key: "isUrgent", label: "Envoi urgent", icon: "⚡" },
+                { key: "customsRequired", label: "Dedouanement requis", icon: "" },
+                { key: "insuranceRequired", label: "Assurance fret", icon: "" },
+                { key: "isFragile", label: "Marchandise fragile", icon: "" },
+                { key: "isUrgent", label: "Envoi urgent", icon: "" },
               ].map(opt => (
                 <div key={opt.key} className="flex items-center justify-between">
                   <span className="text-xs flex items-center gap-1.5">{opt.icon} {opt.label}</span>
@@ -267,7 +267,7 @@ export default function AerienDemandeFretPage() {
         {/* Dates */}
         <Card>
           <CardContent className="p-3 space-y-2">
-            <h3 className="text-xs font-bold">📅 Dates souhaitées</h3>
+            <h3 className="text-xs font-bold">Dates souhaitees</h3>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label className="text-[10px]">À partir du</Label>
@@ -294,7 +294,7 @@ export default function AerienDemandeFretPage() {
         </Button>
 
         <p className="text-[10px] text-muted-foreground text-center">
-          💡 Les transporteurs aériens qualifiés recevront votre demande et vous proposeront des offres.
+          Les transporteurs aeriens qualifies recevront votre demande et vous proposeront des offres.
         </p>
       </div>
     </div>

@@ -325,7 +325,7 @@ export default function GPBagagesRegistration() {
 
       setPendingGpId(gpProfile.id);
       setPhase("pricing_gate");
-      toast({ title: "✅ Profil créé", description: "Définissez maintenant vos tarifs pour finaliser" });
+      toast({ title: "Profil cree", description: "Definissez maintenant vos tarifs pour finaliser" });
     } catch (error: any) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } finally { setLoading(false); }
@@ -373,7 +373,7 @@ export default function GPBagagesRegistration() {
         }
       }
 
-      toast({ title: "✈️ Inscription finalisée !", description: "Bienvenue dans l'espace GP Via Bagages" });
+      toast({ title: "Inscription finalisee", description: "Bienvenue dans l'espace GP Via Bagages" });
       navigate("/gp/dashboard");
     } catch (error: any) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });

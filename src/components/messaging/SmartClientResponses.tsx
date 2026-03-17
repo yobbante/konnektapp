@@ -147,23 +147,23 @@ export function SmartClientResponses({
       getResponse: async (ctx) => {
         switch (ctx.status) {
           case "pending":
-            return `⏳ En attente de confirmation\n\nVotre GP est en cours de traitement de votre demande.\nVous serez notifié dès acceptation.`;
+            return `En attente de confirmation.\n\nVotre GP est en cours de traitement de votre demande.\nVous serez notifie des acceptation.`;
           case "accepted":
-            return `✅ Votre GP a accepté la commande.\n\nLa remise du colis est en cours d'organisation.\n📍 Lieu de dépôt: ${ctx.gp_deposit_address || "À confirmer"}`;
+            return `Votre GP a accepte la commande.\n\nLa remise du colis est en cours d'organisation.\nLieu de depot: ${ctx.gp_deposit_address || "A confirmer"}`;
           case "collected":
-            return `📦 Colis collecté avec succès.\n\nIl est désormais sous la responsabilité du GP.\nPoids vérifié: ${ctx.weight} kg`;
+            return `Colis collecte avec succes.\n\nIl est desormais sous la responsabilite du GP.\nPoids verifie: ${ctx.weight} kg`;
           case "in_transit":
-            return `✈️ Votre colis est actuellement en transit.\n\nTrajet: ${ctx.origin_city} → ${ctx.destination_city}\nVous serez notifié à l'arrivée.`;
+            return `Votre colis est actuellement en transit.\n\nTrajet: ${ctx.origin_city} - ${ctx.destination_city}\nVous serez notifie a l'arrivee.`;
           case "arrived":
-            return `🛬 Le GP est arrivé à ${ctx.destination_city}.\n\nLa livraison finale est en cours d'organisation.`;
+            return `Le GP est arrive a ${ctx.destination_city}.\n\nLa livraison finale est en cours d'organisation.`;
           case "delivered":
-            return `🎉 Colis livré avec succès !\n\nMerci d'avoir utilisé Konnekt.\nN'hésitez pas à laisser un avis.`;
+            return `Colis livre avec succes !\n\nMerci d'avoir utilise Konnekt.\nN'hesitez pas a laisser un avis.`;
           default:
-            return `📦 Statut: ${STATUS_LABELS[ctx.status] || ctx.status}\nConsultez l'onglet "Suivi" pour plus de détails.`;
+            return `Statut: ${STATUS_LABELS[ctx.status] || ctx.status}\nConsultez l'onglet "Suivi" pour plus de details.`;
         }
       },
     },
-    // 2️⃣ « Quand dois-je déposer mon colis ? »
+    // 2. "Quand dois-je deposer mon colis ?"
     {
       id: "deposit_date",
       icon: Calendar,
@@ -171,31 +171,31 @@ export function SmartClientResponses({
       color: "bg-amber-500/10 text-amber-600",
       getResponse: async (ctx) => {
         if (ctx.status === "pending") {
-          return `⏳ La date de dépôt vous sera communiquée dès validation par le GP.\nUn QR code sera requis lors de la remise.`;
+          return `La date de depot vous sera communiquee des validation par le GP.\nUn QR code sera requis lors de la remise.`;
         }
         if (ctx.pickup_date) {
-          return `📅 Date de dépôt prévue:\n${format(new Date(ctx.pickup_date), "EEEE d MMMM yyyy", { locale: fr })}\n\n📍 Lieu: ${ctx.gp_deposit_address || "À confirmer"}\n⚠️ Un QR code sera requis lors de la remise.`;
+          return `Date de depot prevue:\n${format(new Date(ctx.pickup_date), "EEEE d MMMM yyyy", { locale: fr })}\n\nLieu: ${ctx.gp_deposit_address || "A confirmer"}\nUn QR code sera requis lors de la remise.`;
         }
-        return `📍 La date et le lieu de dépôt vous seront communiqués dès validation complète par le GP.\nUn QR code sera requis lors de la remise.`;
+        return `La date et le lieu de depot vous seront communiques des validation complete par le GP.\nUn QR code sera requis lors de la remise.`;
       },
     },
-    // 3️⃣ « Où dois-je déposer mon colis ? »
+    // 3. "Ou dois-je deposer mon colis ?"
     {
       id: "location",
       icon: MapPin,
-      message: "Où dois-je déposer mon colis ?",
+      message: "Ou dois-je deposer mon colis ?",
       color: "bg-green-500/10 text-green-600",
       getResponse: async (ctx) => {
         if (ctx.status === "pending") {
-          return `⏳ Le lieu de dépôt sera communiqué après acceptation par le GP.`;
+          return `Le lieu de depot sera communique apres acceptation par le GP.`;
         }
         if (ctx.gp_deposit_address) {
-          return `📍 Adresse de dépôt:\n${ctx.gp_deposit_address}\n\n⚠️ Cette information est partagée uniquement après acceptation du GP.`;
+          return `Adresse de depot:\n${ctx.gp_deposit_address}\n\nCette information est partagee uniquement apres acceptation du GP.`;
         }
-        return `📍 L'adresse exacte sera partagée par le GP ${ctx.gp_name}.\nContactez-le directement dans cette conversation.`;
+        return `L'adresse exacte sera partagee par le GP ${ctx.gp_name}.\nContactez-le directement dans cette conversation.`;
       },
     },
-    // 4️⃣ « Quand vais-je recevoir mon colis ? »
+    // 4. "Quand vais-je recevoir mon colis ?"
     {
       id: "delivery_date",
       icon: Clock,
@@ -203,34 +203,34 @@ export function SmartClientResponses({
       color: "bg-purple-500/10 text-purple-600",
       getResponse: async (ctx) => {
         if (ctx.status === "arrived") {
-          return `🛬 Le GP est arrivé à ${ctx.destination_city} !\n\nLa livraison finale est en cours d'organisation.\nVous serez contacté très prochainement.`;
+          return `Le GP est arrive a ${ctx.destination_city} !\n\nLa livraison finale est en cours d'organisation.\nVous serez contacte tres prochainement.`;
         }
         if (ctx.status === "delivered") {
-          return `🎉 Votre colis a déjà été livré le ${ctx.actual_delivery_date ? format(new Date(ctx.actual_delivery_date), "d MMMM", { locale: fr }) : "récemment"}.`;
+          return `Votre colis a deja ete livre le ${ctx.actual_delivery_date ? format(new Date(ctx.actual_delivery_date), "d MMMM", { locale: fr }) : "recemment"}.`;
         }
         if (ctx.delivery_date) {
-          return `⏳ Livraison estimée:\n${format(new Date(ctx.delivery_date), "EEEE d MMMM yyyy", { locale: fr })}\n\nLa date dépend du trajet du GP. Vous serez notifié dès son arrivée à destination.`;
+          return `Livraison estimee:\n${format(new Date(ctx.delivery_date), "EEEE d MMMM yyyy", { locale: fr })}\n\nLa date depend du trajet du GP. Vous serez notifie des son arrivee a destination.`;
         }
-        return `⏳ La date de réception dépend du trajet du GP.\nVous serez notifié dès son arrivée à destination.`;
+        return `La date de reception depend du trajet du GP.\nVous serez notifie des son arrivee a destination.`;
       },
     },
-    // 5️⃣ « Le GP est-il arrivé ? »
+    // 5. "Le GP est-il arrive ?"
     {
       id: "gp_arrived",
       icon: Truck,
-      message: "Le GP est-il arrivé ?",
+      message: "Le GP est-il arrive ?",
       color: "bg-indigo-500/10 text-indigo-600",
       getResponse: async (ctx) => {
         if (ctx.status === "arrived" || ctx.status === "delivered") {
-          return `🛬 Oui, le GP est arrivé à ${ctx.destination_city} !\n\nLa livraison finale ${ctx.status === "delivered" ? "a été effectuée" : "est en cours d'organisation"}.`;
+          return `Oui, le GP est arrive a ${ctx.destination_city} !\n\nLa livraison finale ${ctx.status === "delivered" ? "a ete effectuee" : "est en cours d'organisation"}.`;
         }
         if (ctx.status === "in_transit") {
-          return `✈️ Le GP est actuellement en transit.\nTrajet: ${ctx.origin_city} → ${ctx.destination_city}\n\nVous serez notifié dès son arrivée.`;
+          return `Le GP est actuellement en transit.\nTrajet: ${ctx.origin_city} - ${ctx.destination_city}\n\nVous serez notifie des son arrivee.`;
         }
-        return `⏳ Le GP n'est pas encore parti.\nStatut actuel: ${STATUS_LABELS[ctx.status] || ctx.status}`;
+        return `Le GP n'est pas encore parti.\nStatut actuel: ${STATUS_LABELS[ctx.status] || ctx.status}`;
       },
     },
-    // 6️⃣ « Puis-je envoyer quelqu'un à ma place ? »
+    // 6. "Puis-je envoyer quelqu'un a ma place ?"
     {
       id: "delegate",
       icon: User,

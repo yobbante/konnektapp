@@ -120,7 +120,7 @@ export default function AerienBookingPage() {
       });
 
       if (error) throw error;
-      toast({ title: "✈️ Demande envoyée !", description: "Les transporteurs cargo vont recevoir votre demande." });
+      toast({ title: "Demande envoyee", description: "Les transporteurs cargo vont recevoir votre demande." });
       setStep(7);
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });

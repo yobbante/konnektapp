@@ -191,14 +191,14 @@ export function QRCodeScanner({ gpId, scanType, onComplete }: QRCodeScannerProps
         await supabase.from("notifications").insert({
           user_id: scannedOrder.client_id,
           type: "weight_validation_required",
-          title: "⚠️ Validation requise - Modification de poids",
+          title: "Validation requise - Modification de poids",
           message: `Le transporteur a mesuré un poids différent pour ${scannedOrder.order_number}. Veuillez valider ou refuser depuis votre espace.`,
           related_type: "order",
           related_id: scannedOrder.id,
         });
 
         toast({
-          title: "⚠️ Poids modifié",
+          title: "Poids modifie",
           description: "En attente de validation client. Le colis ne peut pas encore être pris en charge.",
           variant: "default",
         });
@@ -229,14 +229,14 @@ export function QRCodeScanner({ gpId, scanType, onComplete }: QRCodeScannerProps
         await supabase.from("notifications").insert({
           user_id: scannedOrder.client_id,
           type: "order_update",
-          title: "📦 Colis reçu",
+          title: "Colis recu",
           message: `Votre colis ${scannedOrder.order_number} a été reçu par le transporteur`,
           related_type: "order",
           related_id: scannedOrder.id,
         });
 
         toast({
-          title: "✅ Colis confirmé",
+          title: "Colis confirme",
           description: "Statut mis à jour: Colis reçu",
         });
       }
@@ -285,14 +285,14 @@ export function QRCodeScanner({ gpId, scanType, onComplete }: QRCodeScannerProps
       await supabase.from("notifications").insert({
         user_id: scannedOrder.client_id,
         type: "order_update",
-        title: "🎉 Colis livré",
+        title: "Colis livre",
         message: `Votre colis ${scannedOrder.order_number} a été livré avec succès !`,
         related_type: "order",
         related_id: scannedOrder.id,
       });
 
       toast({
-        title: "🎉 Livraison confirmée",
+        title: "Livraison confirmee",
         description: "Mission terminée avec succès",
       });
 

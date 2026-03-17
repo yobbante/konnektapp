@@ -126,7 +126,7 @@ export default function OrderQRCodePage() {
       const link = document.createElement("a");
       link.download = `konnekt-${order.order_number}.png`;
       link.href = canvas.toDataURL("image/png"); link.click();
-      toast({ title: "✅ QR téléchargé" });
+      toast({ title: "QR telecharge" });
     };
     img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
   };
@@ -300,12 +300,12 @@ export default function OrderQRCodePage() {
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4 space-y-3">
           <h4 className="text-xs font-semibold text-white/50">Qui peut scanner ce QR ?</h4>
           {[
-            { emoji: "🚚", title: "Transporteur (GP)", desc: "Enregistrer le dépôt, ajuster le poids, confirmer la livraison avec code à 6 chiffres" },
-            { emoji: "📦", title: "Client (vous)", desc: "Voir le suivi en temps réel, confirmer la réception du colis" },
-            { emoji: "📸", title: "Caméra externe", desc: "Redirige vers la page de suivi public du colis" },
+            { icon: "T", title: "Transporteur (GP)", desc: "Enregistrer le depot, ajuster le poids, confirmer la livraison avec code a 6 chiffres" },
+            { icon: "C", title: "Client (vous)", desc: "Voir le suivi en temps reel, confirmer la reception du colis" },
+            { icon: "S", title: "Camera externe", desc: "Redirige vers la page de suivi public du colis" },
           ].map((item, i) => (
             <div key={i} className="flex items-start gap-2.5">
-              <span className="text-sm">{item.emoji}</span>
+              <span className="text-[10px] font-bold w-5 h-5 rounded-full bg-white/10 flex items-center justify-center">{item.icon}</span>
               <div>
                 <p className="text-[11px] font-semibold text-white/60">{item.title}</p>
                 <p className="text-[10px] text-white/30 leading-relaxed">{item.desc}</p>

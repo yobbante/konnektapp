@@ -165,7 +165,7 @@ export function SelfieVerificationSheet({ open, onClose, gpId, onSuccess, onAuto
           kyc_level: 1,
           verified_at: new Date().toISOString(),
         }).eq("id", gpId);
-        toast({ title: "🎉 Compte activé automatiquement !", description: "Toutes les vérifications sont complètes." });
+        toast({ title: "Compte active automatiquement", description: "Toutes les verifications sont completes." });
         onAutoActivated?.();
       }
     } catch { /* silent */ }

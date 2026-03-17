@@ -31,21 +31,47 @@ export function DepartureFlyerSheet({ open, onClose, data }: DepartureFlyerSheet
     }
   }, [open, data]);
 
+  const dataUrlToBlob = (dataUrl: string): Blob => {
+    const parts = dataUrl.split(",");
+    const mime = parts[0].match(/:(.*?);/)?.[1] || "image/png";
+    const byteString = atob(parts[1]);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([ab], { type: mime });
+  };
+
   const handleDownload = () => {
     if (!imageUrl || !data) return;
-    const link = document.createElement("a");
-    link.download = `Konnekt-${data.originCity}-${data.destinationCity}-${data.departureDate}.png`;
-    link.href = imageUrl;
-    link.click();
-    toast({ title: "Image téléchargée !" });
+    try {
+      const blob = dataUrlToBlob(imageUrl);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = `Konnekt-${data.originCity}-${data.destinationCity}-${data.departureDate}.png`;
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast({ title: "Image telechargee" });
+    } catch {
+      toast({ title: "Erreur lors du telechargement", variant: "destructive" });
+    }
   };
 
   const handleShare = async () => {
     if (!imageUrl || !data) return;
 
+    const shareText = [
+      `Je voyage de ${data.originCity} vers ${data.destinationCity} le ${data.departureDate}.`,
+      `Reservez votre colis sur Konnekt :`,
+      data.bookingUrl,
+    ].join("\n");
+
     try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
+      const blob = dataUrlToBlob(imageUrl);
       const file = new File(
         [blob],
         `Konnekt-${data.originCity}-${data.destinationCity}.png`,
@@ -54,19 +80,19 @@ export function DepartureFlyerSheet({ open, onClose, data }: DepartureFlyerSheet
 
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
-          title: `Départ ${data.originCity} → ${data.destinationCity}`,
-          text: `Depart ${data.originCity} → ${data.destinationCity} le ${data.departureDate} — Reservez sur Konnekt !`,
+          title: `Depart ${data.originCity} - ${data.destinationCity}`,
+          text: shareText,
           files: [file],
         });
-      } else {
-        // Fallback: download
-        handleDownload();
+        return;
       }
     } catch (err: any) {
-      if (err.name !== "AbortError") {
-        handleDownload();
-      }
+      if (err.name === "AbortError") return;
     }
+
+    // Fallback: open WhatsApp with text (no image)
+    const waUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+    window.open(waUrl, "_blank");
   };
 
   return (
@@ -86,7 +112,7 @@ export function DepartureFlyerSheet({ open, onClose, data }: DepartureFlyerSheet
         <div className="px-4 py-4 space-y-4 overflow-y-auto">
           {/* Subtitle */}
           <p className="text-xs text-muted-foreground text-center">
-            Téléchargez et partagez ce visuel sur vos groupes Facebook, WhatsApp, etc.
+            Telechargez et partagez ce visuel sur vos groupes Facebook, WhatsApp, etc.
           </p>
 
           {/* Preview */}
@@ -99,7 +125,7 @@ export function DepartureFlyerSheet({ open, onClose, data }: DepartureFlyerSheet
               >
                 <div className="text-center space-y-3">
                   <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-                  <p className="text-xs text-muted-foreground">Génération en cours...</p>
+                  <p className="text-xs text-muted-foreground">Generation en cours...</p>
                 </div>
               </motion.div>
             ) : imageUrl ? (
@@ -128,7 +154,7 @@ export function DepartureFlyerSheet({ open, onClose, data }: DepartureFlyerSheet
                 onClick={handleDownload}
               >
                 <Download className="w-4 h-4" />
-                Télécharger
+                Telecharger
               </Button>
               <Button
                 className="flex-1 h-12 rounded-xl font-semibold gap-2"

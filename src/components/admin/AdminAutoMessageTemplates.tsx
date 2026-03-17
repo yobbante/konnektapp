@@ -54,22 +54,22 @@ interface MessageTemplate {
 
 // Template categories with visual distinction
 const CATEGORIES = [
-  { value: "auto_booking", label: "Réservation auto", icon: "📦", color: "bg-blue-500" },
-  { value: "auto_acceptance", label: "Acceptation auto", icon: "✅", color: "bg-green-500" },
-  { value: "auto_status", label: "Changement statut", icon: "🔄", color: "bg-amber-500" },
-  { value: "auto_delivery", label: "Livraison", icon: "🚚", color: "bg-purple-500" },
-  { value: "status", label: "Statut commande", icon: "📋", color: "bg-slate-500" },
-  { value: "info", label: "Information", icon: "ℹ️", color: "bg-cyan-500" },
-  { value: "greeting", label: "Accueil", icon: "👋", color: "bg-pink-500" },
-  { value: "confirmation", label: "Confirmation", icon: "✓", color: "bg-emerald-500" },
-  { value: "problem", label: "Problème", icon: "⚠️", color: "bg-red-500" },
+  { value: "auto_booking", label: "Reservation auto", icon: "", color: "bg-blue-500" },
+  { value: "auto_acceptance", label: "Acceptation auto", icon: "", color: "bg-green-500" },
+  { value: "auto_status", label: "Changement statut", icon: "", color: "bg-amber-500" },
+  { value: "auto_delivery", label: "Livraison", icon: "", color: "bg-purple-500" },
+  { value: "status", label: "Statut commande", icon: "", color: "bg-slate-500" },
+  { value: "info", label: "Information", icon: "", color: "bg-cyan-500" },
+  { value: "greeting", label: "Accueil", icon: "", color: "bg-pink-500" },
+  { value: "confirmation", label: "Confirmation", icon: "", color: "bg-emerald-500" },
+  { value: "problem", label: "Probleme", icon: "", color: "bg-red-500" },
 ];
 
 const SENDER_TYPES = [
-  { value: "system", label: "Système (auto)", icon: "🤖" },
-  { value: "gp", label: "Transporteur", icon: "🚚" },
-  { value: "client", label: "Client", icon: "👤" },
-  { value: "admin", label: "Admin", icon: "👑" },
+  { value: "system", label: "Systeme (auto)", icon: "" },
+  { value: "gp", label: "Transporteur", icon: "" },
+  { value: "client", label: "Client", icon: "" },
+  { value: "admin", label: "Admin", icon: "" },
 ];
 
 // Available variables for templates
