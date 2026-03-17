@@ -383,15 +383,16 @@ export default function ReservationsPage() {
       <div className="px-3 pt-3 pb-2 border-b border-border/50">
         <div className="flex gap-0.5 bg-muted/50 rounded-xl p-1 overflow-x-auto no-scrollbar">
           {TABS.map((tab) => {
-            const isActive = activeTab === tab.id;
+            const isActiveTab = activeTab === tab.id;
             const count = getTabCount(tab.id);
+            const notifCount = getTabNotifCount(tab.id);
 
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center justify-center gap-1 py-2 px-2.5 rounded-lg text-[11px] font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
-                  isActive
+                className={`relative flex items-center justify-center gap-1 py-2 px-2.5 rounded-lg text-[11px] font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
+                  isActiveTab
                     ? "bg-card text-foreground shadow-sm"
                     : "text-muted-foreground"
                 }`}
@@ -400,10 +401,14 @@ export default function ReservationsPage() {
                 {tab.label}
                 {count > 0 && (
                   <span className={`text-[9px] min-w-[18px] text-center px-1 py-0.5 rounded-full font-bold leading-none ${
-                    isActive ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+                    isActiveTab ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
                   }`}>
                     {count}
                   </span>
+                )}
+                {/* Notification dot */}
+                {notifCount > 0 && !isActiveTab && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
                 )}
               </button>
             );
