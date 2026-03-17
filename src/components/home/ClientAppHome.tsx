@@ -702,15 +702,7 @@ export function ClientAppHome({
         </div>
 
 
-        {/* ── SMART ACTION BAR (only on "all" tab) ── */}
-        {activeTab === "all" && (
-          <SmartActionBar
-            userId={userId}
-            recentOrders={recentOrders}
-            unreadMessages={unreadMessages}
-            activeOrdersCount={activeOrdersCount}
-            pendingRecipientFeedback={pendingRecipientFeedback} />
-        )}
+        {/* SmartActionBar moved to ReservationsPage */}
         
 
         {/* ── OFFERS / MISSIONS ── */}

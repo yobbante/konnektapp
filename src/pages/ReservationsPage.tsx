@@ -547,6 +547,16 @@ export default function ReservationsPage() {
         {/* Tab: En cours */}
         {activeTab === "actives" && (
           <>
+            {/* Smart Action Bar */}
+            {userId && (
+              <div className="px-4 pt-3">
+                <SmartActionBar
+                  userId={userId}
+                  recentOrders={orders}
+                  activeOrdersCount={activeOrders.length}
+                />
+              </div>
+            )}
             {/* Pending actions: supplements, reviews */}
             {!loading && (supplementOrders.length > 0 || pendingReviews.length > 0) && (
               <div className="px-4 pt-3 space-y-2">

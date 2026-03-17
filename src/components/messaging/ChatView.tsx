@@ -300,13 +300,16 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
                       orderId={orderId || undefined}
                       isOwn={isOwn}
                     />
-                    {/* Read indicator for own messages */}
+                    {/* WhatsApp-style read receipts */}
                     {isOwn && (
-                      <div className="flex justify-end mt-0.5">
+                      <div className="flex items-center justify-end gap-1 mt-0.5">
+                        <span className="text-[9px] text-primary-foreground/50">
+                          {format(new Date(msg.created_at), "HH:mm", { locale: fr })}
+                        </span>
                         {msg.read_at ? (
-                          <CheckCheck className="w-3 h-3 text-primary-foreground/70" />
+                          <CheckCheck className="w-3.5 h-3.5 text-blue-400" />
                         ) : (
-                          <Check className="w-3 h-3 text-primary-foreground/50" />
+                          <CheckCheck className="w-3.5 h-3.5 text-primary-foreground/40" />
                         )}
                       </div>
                     )}
