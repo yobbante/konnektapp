@@ -104,11 +104,13 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
         // Check if GP is verified
         const { data: gpProfile } = await supabase
           .from("gp_profiles")
-          .select("verified_at")
+          .select("verified_at, phone, selfie_url")
           .eq("id", conv.gp_id)
           .single();
 
         setIsGpVerified(!!gpProfile?.verified_at);
+        setGpPhone(gpProfile?.phone || null);
+        setGpSelfieUrl(gpProfile?.selfie_url || null);
       }
       
       if (conv?.order_id) {
