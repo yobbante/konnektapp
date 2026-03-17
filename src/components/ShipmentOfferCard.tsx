@@ -291,7 +291,7 @@ export function ShipmentOfferCard({
             className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/50 to-transparent pointer-events-none flex items-end justify-center pb-6"
           >
             <Button variant="default" size="lg" className="shadow-xl pointer-events-auto">
-              Réserver maintenant
+              Voir les détails
               <ChevronRight className="w-5 h-5 ml-1" />
             </Button>
           </motion.div>
