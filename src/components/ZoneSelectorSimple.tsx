@@ -37,7 +37,7 @@ const zonePresets = [
   },
   { 
     value: "afrique", 
-    label: "🌍 Toute l'Afrique", 
+    label: "Toute l'Afrique", 
     zones: ["Afrique de l'Ouest", "Afrique du Nord", "Afrique Centrale", "Afrique de l'Est", "Afrique Australe"]
   },
   { 
