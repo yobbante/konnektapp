@@ -13,7 +13,7 @@ import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
-type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "bagages_international";
+type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "bagages_international" | "occasionnel";
 
 interface VehicleInfo {
   name?: string;
@@ -50,6 +50,7 @@ const transportConfig: Record<TransportType, { icon: any; label: string; color: 
   aerien: { icon: Plane, label: "Aérien", color: "bg-purple-500/10 text-purple-600 border-purple-500/20", gradient: "from-purple-500 to-pink-500" },
   voyageur: { icon: Briefcase, label: "GP", color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20", gradient: "from-emerald-500 to-green-500" },
   bagages_international: { icon: Plane, label: "GP via Bagages", color: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20", gradient: "from-indigo-500 to-violet-500" },
+  occasionnel: { icon: Briefcase, label: "GP Occasionnel", color: "bg-amber-500/10 text-amber-600 border-amber-500/20", gradient: "from-amber-500 to-orange-500" },
 };
 
 export function ShipmentOfferCard({

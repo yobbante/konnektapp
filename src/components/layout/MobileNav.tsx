@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, MessageCircle, CalendarCheck, Menu, Send } from "lucide-react";
+import { Home, MessageCircle, CalendarCheck, Menu, Send, Luggage } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -8,10 +8,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { ClientScanSheet } from "@/components/scan/ClientScanSheet";
 import { CentralMenuSheet } from "@/components/layout/CentralMenuSheet";
 import { MissionRequestSheet } from "@/components/missions/MissionRequestSheet";
+import { VoyageGagneSheet } from "@/components/voyage/VoyageGagneSheet";
+import { GP_ONLY_MODE } from "@/config/featureFlags";
 
 /**
- * MobileNav V6 — Konnekt
- * 5 items: Accueil, Offres, MISSION (center, circle), Réservations, Menu
+ * MobileNav V7 — Konnekt
+ * 5 items: Accueil, Réservations, VOYAGE & GAGNE (center), Messages, Menu
  */
 export function MobileNav() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -23,6 +25,7 @@ export function MobileNav() {
   const [userRole, setUserRole] = useState<'client' | 'transporter' | null>(null);
   const [scanOpen, setScanOpen] = useState(false);
   const [missionOpen, setMissionOpen] = useState(false);
+  const [voyageOpen, setVoyageOpen] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -36,7 +39,8 @@ export function MobileNav() {
           .eq("user_id", session.user.id)
           .maybeSingle();
         
-        setUserRole(gpProfile ? 'transporter' : 'client');
+        // Occasional GPs are treated as clients in nav
+        setUserRole(gpProfile && gpProfile.gp_type !== 'occasionnel' ? 'transporter' : 'client');
       } else {
         setUserRole(null);
       }
@@ -53,40 +57,52 @@ export function MobileNav() {
           .select("id, gp_type")
           .eq("user_id", session.user.id)
           .maybeSingle()
-          .then(({ data }) => setUserRole(data ? 'transporter' : 'client'));
+          .then(({ data }) => setUserRole(data && data.gp_type !== 'occasionnel' ? 'transporter' : 'client'));
       }
     });
     return () => subscription.unsubscribe();
   }, []);
 
-  // Import GP_ONLY_MODE
-  const gpOnlyMode = true; // Matches src/config/featureFlags.ts GP_ONLY_MODE
-
   const navItems = [
     { href: "/", icon: Home, label: "Accueil", isHome: true },
     { href: "/reservations", icon: CalendarCheck, label: "Réservations", requiresAuth: true },
-    // Hide Mission button in GP_ONLY_MODE (it's for routier/maritime/aerien)
-    ...(!gpOnlyMode ? [{ href: "#mission", icon: Send, label: "Mission", isMission: true }] : []),
+    // Central CTA: "Voyage & Gagne" in GP_ONLY_MODE, else Mission
+    ...(GP_ONLY_MODE 
+      ? [{ href: "#voyage", icon: Luggage, label: "Voyage", isVoyage: true }]
+      : [{ href: "#mission", icon: Send, label: "Mission", isMission: true }]
+    ),
     { href: "/messages", icon: MessageCircle, label: "Messages", isMessages: true },
     { href: "#menu", icon: Menu, label: "Menu", isMenu: true },
   ];
 
   const handleNavClick = useCallback((e: React.MouseEvent, item: typeof navItems[0]) => {
-    // Menu button - open central menu sheet
     if ('isMenu' in item && item.isMenu) {
       e.preventDefault();
       setMenuOpen(true);
       return;
     }
 
-    // Mission button - open mission request sheet
     if ('isMission' in item && item.isMission) {
       e.preventDefault();
       setMissionOpen(true);
       return;
     }
 
-    // Messages button - navigate to messaging
+    if ('isVoyage' in item && item.isVoyage) {
+      e.preventDefault();
+      if (!isAuthenticated) {
+        sessionStorage.setItem("pending_booking_state", JSON.stringify({
+          returnPath: "/",
+          timestamp: Date.now(),
+          openVoyage: true,
+        }));
+        navigate("/auth");
+        return;
+      }
+      setVoyageOpen(true);
+      return;
+    }
+
     if ('isMessages' in item && item.isMessages) {
       e.preventDefault();
       navigate("/messages");
@@ -119,7 +135,6 @@ export function MobileNav() {
     }
   }, [location.pathname, isAuthenticated, navigate]);
 
-  // Hide footer nav until user is authenticated
   if (!isAuthenticated) return null;
 
   return (
@@ -135,9 +150,47 @@ export function MobileNav() {
           {navItems.map((item) => {
             const isMenuActive = 'isMenu' in item && item.isMenu && menuOpen;
             const isMissionActive = 'isMission' in item && item.isMission && missionOpen;
+            const isVoyageActive = 'isVoyage' in item && item.isVoyage && voyageOpen;
             const isActive = location.pathname === item.href || 
               (item.href === "/" && location.pathname === "/") ||
-              isMenuActive || isMissionActive;
+              isMenuActive || isMissionActive || isVoyageActive;
+
+            // ─── VOYAGE & GAGNE BUTTON (center, circle) ───
+            if ('isVoyage' in item && item.isVoyage) {
+              return (
+                <button
+                  key="voyage"
+                  onClick={(e) => handleNavClick(e as any, item as any)}
+                  className="flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors relative"
+                >
+                  <motion.div 
+                    className={cn(
+                      "w-12 h-12 -mt-5 rounded-full flex items-center justify-center shadow-lg relative",
+                      voyageOpen
+                        ? "bg-amber-500"
+                        : "bg-gradient-to-br from-amber-400 to-orange-500"
+                    )}
+                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <Luggage className="w-5 h-5 text-white" />
+                    {!voyageOpen && (
+                      <motion.div
+                        className="absolute inset-0 rounded-full border-2 border-amber-400/30"
+                        animate={{ scale: [1, 1.2, 1], opacity: [0.6, 0, 0.6] }}
+                        transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                      />
+                    )}
+                  </motion.div>
+                  <span className={cn(
+                    "text-[10px] font-semibold",
+                    voyageOpen ? "text-amber-500" : "text-muted-foreground"
+                  )}>
+                    Voyage
+                  </span>
+                </button>
+              );
+            }
 
             // ─── MISSION BUTTON (center, circle) ───
             if ('isMission' in item && item.isMission) {
@@ -229,13 +282,9 @@ export function MobileNav() {
         </div>
       </nav>
 
-      {/* Client Scan Sheet - instant camera */}
       <ClientScanSheet open={scanOpen} onOpenChange={setScanOpen} />
-
-      {/* Mission Request Sheet */}
       <MissionRequestSheet open={missionOpen} onOpenChange={setMissionOpen} />
-      
-      {/* Central Menu Sheet */}
+      <VoyageGagneSheet open={voyageOpen} onOpenChange={setVoyageOpen} />
       <CentralMenuSheet open={menuOpen} onOpenChange={setMenuOpen}>
         <span />
       </CentralMenuSheet>

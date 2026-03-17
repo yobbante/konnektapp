@@ -22,7 +22,7 @@ import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { KTPBadge } from "@/components/ktp/KTPBadge";
 import { useKTPPublic, type KTPLevel } from "@/hooks/useKTPStatus";
 
-type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence" | "bagages_international";
+type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence" | "bagages_international" | "occasionnel";
 
 interface Offer {
   id: string;
@@ -53,6 +53,7 @@ interface Offer {
 // Transport configurations with gradients and colors
 const transportConfig: Record<TransportType, { icon: typeof Package; label: string; color: string; gradient: string }> = {
   bagages_international: { icon: Luggage, label: "GP via Bagages", color: "text-primary", gradient: "from-primary/20 to-primary/5" },
+  occasionnel: { icon: Luggage, label: "GP Occasionnel", color: "text-amber-500", gradient: "from-amber-500/20 to-orange-500/5" },
   voyageur: { icon: Briefcase, label: "GP", color: "text-green-500", gradient: "from-green-500/20 to-emerald-500/5" },
   express: { icon: Zap, label: "Express", color: "text-orange-500", gradient: "from-orange-500/20 to-amber-500/5" },
   routier: { icon: Truck, label: "Routier", color: "text-blue-500", gradient: "from-blue-500/20 to-cyan-500/5" },
