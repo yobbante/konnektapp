@@ -224,10 +224,10 @@ export default function AerienDemandeFretPage() {
             </h3>
             <div className="space-y-2">
               {[
-                { key: "customsRequired", label: "Dédouanement requis", icon: "🏛️" },
-                { key: "insuranceRequired", label: "Assurance fret", icon: "🛡️" },
-                { key: "isFragile", label: "Marchandise fragile", icon: "⚠️" },
-                { key: "isUrgent", label: "Envoi urgent", icon: "⚡" },
+                { key: "customsRequired", label: "Dedouanement requis", icon: "" },
+                { key: "insuranceRequired", label: "Assurance fret", icon: "" },
+                { key: "isFragile", label: "Marchandise fragile", icon: "" },
+                { key: "isUrgent", label: "Envoi urgent", icon: "" },
               ].map(opt => (
                 <div key={opt.key} className="flex items-center justify-between">
                   <span className="text-xs flex items-center gap-1.5">{opt.icon} {opt.label}</span>
