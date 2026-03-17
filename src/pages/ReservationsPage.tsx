@@ -316,7 +316,7 @@ export default function ReservationsPage() {
               {/* Status */}
               <div className="flex items-center gap-2 mt-1.5">
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${cfg.color}`}>
-                  {isScanned ? "Scanné ✓" : cfg.label}
+                  {isScanned ? "Scanne" : cfg.label}
                 </span>
                 <span className="text-[10px] text-muted-foreground font-mono">
                   {booking.booking_number}
