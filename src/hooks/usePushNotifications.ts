@@ -165,7 +165,7 @@ export function useRealtimePushNotifications({
         },
         (payload) => {
           const offer = payload.new;
-          showNotification("🚚 Nouvelle offre disponible !", {
+          showNotification("Nouvelle offre disponible", {
             body: `${offer.origin_city} → ${offer.destination_city} • ${offer.price_per_kg} FCFA/kg`,
             tag: `offer-${offer.id}`,
             data: { type: "offer", id: offer.id },
