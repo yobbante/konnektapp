@@ -171,12 +171,12 @@ export function SmartClientResponses({
       color: "bg-amber-500/10 text-amber-600",
       getResponse: async (ctx) => {
         if (ctx.status === "pending") {
-          return `⏳ La date de dépôt vous sera communiquée dès validation par le GP.\nUn QR code sera requis lors de la remise.`;
+          return `La date de depot vous sera communiquee des validation par le GP.\nUn QR code sera requis lors de la remise.`;
         }
         if (ctx.pickup_date) {
-          return `📅 Date de dépôt prévue:\n${format(new Date(ctx.pickup_date), "EEEE d MMMM yyyy", { locale: fr })}\n\n📍 Lieu: ${ctx.gp_deposit_address || "À confirmer"}\n⚠️ Un QR code sera requis lors de la remise.`;
+          return `Date de depot prevue:\n${format(new Date(ctx.pickup_date), "EEEE d MMMM yyyy", { locale: fr })}\n\nLieu: ${ctx.gp_deposit_address || "A confirmer"}\nUn QR code sera requis lors de la remise.`;
         }
-        return `📍 La date et le lieu de dépôt vous seront communiqués dès validation complète par le GP.\nUn QR code sera requis lors de la remise.`;
+        return `La date et le lieu de depot vous seront communiques des validation complete par le GP.\nUn QR code sera requis lors de la remise.`;
       },
     },
     // 3️⃣ « Où dois-je déposer mon colis ? »
