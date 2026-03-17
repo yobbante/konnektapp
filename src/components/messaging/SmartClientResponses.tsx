@@ -179,20 +179,20 @@ export function SmartClientResponses({
         return `La date et le lieu de depot vous seront communiques des validation complete par le GP.\nUn QR code sera requis lors de la remise.`;
       },
     },
-    // 3️⃣ « Où dois-je déposer mon colis ? »
+    // 3. "Ou dois-je deposer mon colis ?"
     {
       id: "location",
       icon: MapPin,
-      message: "Où dois-je déposer mon colis ?",
+      message: "Ou dois-je deposer mon colis ?",
       color: "bg-green-500/10 text-green-600",
       getResponse: async (ctx) => {
         if (ctx.status === "pending") {
-          return `⏳ Le lieu de dépôt sera communiqué après acceptation par le GP.`;
+          return `Le lieu de depot sera communique apres acceptation par le GP.`;
         }
         if (ctx.gp_deposit_address) {
-          return `📍 Adresse de dépôt:\n${ctx.gp_deposit_address}\n\n⚠️ Cette information est partagée uniquement après acceptation du GP.`;
+          return `Adresse de depot:\n${ctx.gp_deposit_address}\n\nCette information est partagee uniquement apres acceptation du GP.`;
         }
-        return `📍 L'adresse exacte sera partagée par le GP ${ctx.gp_name}.\nContactez-le directement dans cette conversation.`;
+        return `L'adresse exacte sera partagee par le GP ${ctx.gp_name}.\nContactez-le directement dans cette conversation.`;
       },
     },
     // 4️⃣ « Quand vais-je recevoir mon colis ? »
