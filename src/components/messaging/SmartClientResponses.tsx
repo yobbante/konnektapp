@@ -195,7 +195,7 @@ export function SmartClientResponses({
         return `L'adresse exacte sera partagee par le GP ${ctx.gp_name}.\nContactez-le directement dans cette conversation.`;
       },
     },
-    // 4️⃣ « Quand vais-je recevoir mon colis ? »
+    // 4. "Quand vais-je recevoir mon colis ?"
     {
       id: "delivery_date",
       icon: Clock,
@@ -203,31 +203,31 @@ export function SmartClientResponses({
       color: "bg-purple-500/10 text-purple-600",
       getResponse: async (ctx) => {
         if (ctx.status === "arrived") {
-          return `🛬 Le GP est arrivé à ${ctx.destination_city} !\n\nLa livraison finale est en cours d'organisation.\nVous serez contacté très prochainement.`;
+          return `Le GP est arrive a ${ctx.destination_city} !\n\nLa livraison finale est en cours d'organisation.\nVous serez contacte tres prochainement.`;
         }
         if (ctx.status === "delivered") {
-          return `🎉 Votre colis a déjà été livré le ${ctx.actual_delivery_date ? format(new Date(ctx.actual_delivery_date), "d MMMM", { locale: fr }) : "récemment"}.`;
+          return `Votre colis a deja ete livre le ${ctx.actual_delivery_date ? format(new Date(ctx.actual_delivery_date), "d MMMM", { locale: fr }) : "recemment"}.`;
         }
         if (ctx.delivery_date) {
-          return `⏳ Livraison estimée:\n${format(new Date(ctx.delivery_date), "EEEE d MMMM yyyy", { locale: fr })}\n\nLa date dépend du trajet du GP. Vous serez notifié dès son arrivée à destination.`;
+          return `Livraison estimee:\n${format(new Date(ctx.delivery_date), "EEEE d MMMM yyyy", { locale: fr })}\n\nLa date depend du trajet du GP. Vous serez notifie des son arrivee a destination.`;
         }
-        return `⏳ La date de réception dépend du trajet du GP.\nVous serez notifié dès son arrivée à destination.`;
+        return `La date de reception depend du trajet du GP.\nVous serez notifie des son arrivee a destination.`;
       },
     },
-    // 5️⃣ « Le GP est-il arrivé ? »
+    // 5. "Le GP est-il arrive ?"
     {
       id: "gp_arrived",
       icon: Truck,
-      message: "Le GP est-il arrivé ?",
+      message: "Le GP est-il arrive ?",
       color: "bg-indigo-500/10 text-indigo-600",
       getResponse: async (ctx) => {
         if (ctx.status === "arrived" || ctx.status === "delivered") {
-          return `🛬 Oui, le GP est arrivé à ${ctx.destination_city} !\n\nLa livraison finale ${ctx.status === "delivered" ? "a été effectuée" : "est en cours d'organisation"}.`;
+          return `Oui, le GP est arrive a ${ctx.destination_city} !\n\nLa livraison finale ${ctx.status === "delivered" ? "a ete effectuee" : "est en cours d'organisation"}.`;
         }
         if (ctx.status === "in_transit") {
-          return `✈️ Le GP est actuellement en transit.\nTrajet: ${ctx.origin_city} → ${ctx.destination_city}\n\nVous serez notifié dès son arrivée.`;
+          return `Le GP est actuellement en transit.\nTrajet: ${ctx.origin_city} - ${ctx.destination_city}\n\nVous serez notifie des son arrivee.`;
         }
-        return `⏳ Le GP n'est pas encore parti.\nStatut actuel: ${STATUS_LABELS[ctx.status] || ctx.status}`;
+        return `Le GP n'est pas encore parti.\nStatut actuel: ${STATUS_LABELS[ctx.status] || ctx.status}`;
       },
     },
     // 6️⃣ « Puis-je envoyer quelqu'un à ma place ? »
