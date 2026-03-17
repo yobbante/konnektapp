@@ -60,7 +60,7 @@ export default function FreightMarketplace() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isPopup = searchParams.get("popup") === "1";
-  const [modeFilter, setModeFilter] = useState<TransportMode>("all");
+  const [modeFilter, setModeFilter] = useState<TransportMode>(GP_ONLY_MODE ? "gp" : "all");
   const [routeSearch, setRouteSearch] = useState(
     [searchParams.get("origin"), searchParams.get("dest")].filter(Boolean).join(" ") || ""
   );
