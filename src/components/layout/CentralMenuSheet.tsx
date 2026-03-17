@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useThemeManager } from "@/hooks/useThemeManager";
 import { useState, useEffect } from "react";
+import { GP_ONLY_MODE } from "@/config/featureFlags";
 
 interface CentralMenuSheetProps {
   children: React.ReactNode;
