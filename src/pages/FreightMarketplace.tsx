@@ -276,7 +276,7 @@ export default function FreightMarketplace() {
   };
 
   return (
-    <div className={`bg-background pb-24 ${isPopup ? "min-h-screen" : "min-h-screen"}`}>
+    <div className={`bg-background pb-24 min-h-screen ${isPopup ? "animate-in fade-in slide-in-from-bottom-4 duration-200" : ""}`}>
       {/* Popup-style close bar */}
       {isPopup ? (
         <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 flex items-center justify-between" style={{ paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))' }}>
