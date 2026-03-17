@@ -22,7 +22,7 @@ import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { KTPBadge } from "@/components/ktp/KTPBadge";
 import { useKTPPublic, type KTPLevel } from "@/hooks/useKTPStatus";
 
-type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence" | "bagages_international";
+type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "agence" | "bagages_international" | "occasionnel";
 
 interface Offer {
   id: string;
