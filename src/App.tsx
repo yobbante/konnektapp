@@ -1,3 +1,4 @@
+import { GP_ONLY_MODE } from "@/config/featureFlags";
 import { AppleToaster } from "@/components/ui/AppleToaster";
 import GPBagagesRegistration from "./pages/GPBagagesRegistration";
 import RoutierRegistration from "./pages/RoutierRegistration";
