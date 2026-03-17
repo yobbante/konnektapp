@@ -352,7 +352,7 @@ export default function FreightMarketplace() {
         <div className="container max-w-4xl px-4 py-3 space-y-3">
           {/* Mode filter tabs */}
           <div className="flex gap-1">
-            {(["all", "aerien", "maritime", "routier", "gp"] as TransportMode[]).map((mode) => {
+            {(GP_ONLY_MODE ? ["gp"] as TransportMode[] : ["all", "aerien", "maritime", "routier", "gp"] as TransportMode[]).map((mode) => {
               const config = mode === "all" ? null : MODE_CONFIG[mode];
               const Icon = config?.icon || BarChart3;
               const count = mode === "all" ? listings.length : listings.filter((l) => l.mode === mode).length;
