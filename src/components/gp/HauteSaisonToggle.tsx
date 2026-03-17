@@ -124,7 +124,7 @@ export function HauteSaisonToggle({ gpId, basePricePerKg, currency, onPriceChang
       await supabase.from("gp_price_adjustment_history").insert({ gp_id: gpId, action: isActivating ? "activate_haute_saison" : "deactivate_haute_saison", old_price: oldPrice, new_price: newPrice, toggles_remaining: MAX_TOGGLES_PER_YEAR - newToggles });
 
       toast({
-        title: isActivating ? "🔥 Haute saison activée" : "✓ Tarif normal",
+        title: isActivating ? "Haute saison activee" : "Tarif normal",
         description: `${newPrice.toLocaleString()} ${currencySymbol}/kg — ${MAX_TOGGLES_PER_YEAR - newToggles} restant(s)`,
       });
       onPriceChange?.(newPrice);

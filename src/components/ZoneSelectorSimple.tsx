@@ -32,17 +32,17 @@ const zonePresets = [
   },
   { 
     value: "afrique_ouest", 
-    label: "🌍 Afrique de l'Ouest", 
+    label: "Afrique de l'Ouest", 
     zones: ["Sénégal", "Mali", "Côte d'Ivoire", "Guinée", "Burkina Faso", "Gambie", "Mauritanie", "Niger", "Togo", "Bénin", "Ghana", "Nigeria", "Guinée-Bissau"]
   },
   { 
     value: "afrique", 
-    label: "🌍 Toute l'Afrique", 
+    label: "Toute l'Afrique", 
     zones: ["Afrique de l'Ouest", "Afrique du Nord", "Afrique Centrale", "Afrique de l'Est", "Afrique Australe"]
   },
   { 
     value: "international", 
-    label: "✈️ International (Monde entier)", 
+    label: "International (Monde entier)", 
     zones: ["International"]
   },
 ];
@@ -256,7 +256,7 @@ export function ZoneSelectorSimple({
             ))}
             {selectedInternational.map((dest) => (
               <Badge key={dest} variant="gold" className="text-xs">
-                🌍 {dest}
+                {dest}
               </Badge>
             ))}
           </div>

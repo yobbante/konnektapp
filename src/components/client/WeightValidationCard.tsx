@@ -45,7 +45,7 @@ export function WeightValidationCard({
       <Alert variant="destructive" className="mb-2 border-destructive bg-destructive/10">
         <ShieldAlert className="h-4 w-4" />
         <AlertTitle className="font-bold">
-          ⚠️ Validation requise — Modification de poids
+          Validation requise — Modification de poids
         </AlertTitle>
         <AlertDescription className="text-xs">
           Le transporteur a mesuré un poids différent lors du dépôt. Votre réservation est bloquée.
@@ -167,7 +167,7 @@ export function WeightValidationCard({
               {/* Consequences info */}
               <div className="p-2.5 bg-amber-50 dark:bg-amber-500/10 rounded-lg mb-3 border border-amber-200 dark:border-amber-400/20">
                 <div className="text-[10px] text-amber-800 dark:text-amber-300 space-y-1">
-                  <span className="font-semibold block">⚠️ En cas de refus ou d'inaction :</span>
+                  <span className="font-semibold block">En cas de refus ou d'inaction :</span>
                   <span className="block">• L'envoi sera annulé et vous serez <strong>intégralement remboursé</strong>.</span>
                   <span className="block">• <strong>Konnekt Logistique</strong> vous ramènera votre colis.</span>
                   <span className="block">• Si vous ne répondez pas avant le départ du transporteur, l'envoi sera automatiquement annulé.</span>

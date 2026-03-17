@@ -165,7 +165,7 @@ export function useRealtimePushNotifications({
         },
         (payload) => {
           const offer = payload.new;
-          showNotification("🚚 Nouvelle offre disponible !", {
+          showNotification("Nouvelle offre disponible", {
             body: `${offer.origin_city} → ${offer.destination_city} • ${offer.price_per_kg} FCFA/kg`,
             tag: `offer-${offer.id}`,
             data: { type: "offer", id: offer.id },
@@ -202,7 +202,7 @@ export function useRealtimePushNotifications({
             
             const statusLabel = statusLabels[order.status] || order.status;
             
-            showNotification(`📦 Commande ${statusLabel}`, {
+            showNotification(`Commande ${statusLabel}`, {
               body: `Votre commande ${order.order_number} est maintenant ${statusLabel}`,
               tag: `order-${order.id}`,
               data: { type: "order", id: order.id },

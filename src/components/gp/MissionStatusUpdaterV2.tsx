@@ -146,11 +146,11 @@ export function MissionStatusUpdaterV2({
       if (response.status === "executed") {
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
-        toast({ title: response.message || "✅ Statut mis à jour" });
+        toast({ title: response.message?.replace(/[✅⚠️📦🚚📍]/g, '').trim() || "Statut mis a jour" });
         onStatusUpdated();
       } else {
         toast({
-          title: "⚠️ Action refusée",
+          title: "Action refusee",
           description: response.message || response.error,
           variant: "destructive",
         });
@@ -271,7 +271,7 @@ export function MissionStatusUpdaterV2({
         
         {hasDeliveryLogistics && currentStatus === "in_transit" && (
           <p className="text-xs text-muted-foreground text-center">
-            📍 Livraison dernier km par Konnekt
+            Livraison dernier km par Konnekt
           </p>
         )}
       </div>

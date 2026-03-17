@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Truck, ChevronRight, Bus, QrCode, Ticket,
-  Clock, CheckCircle, XCircle, FileText, Inbox, MapPin, Calendar, Users
+  Clock, CheckCircle, XCircle, FileText, Inbox, MapPin, Calendar, Users,
+  Star, Scale, Heart, Bell, AlertCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/layout/AppHeader";
@@ -11,40 +12,42 @@ import { MobileNav } from "@/components/layout/MobileNav";
 import { RecipientTrackingCard } from "@/components/client/RecipientTrackingCard";
 import { OrderDetailSheet, getTransportIcon } from "@/components/client/OrderDetailSheet";
 import { ClientMissionsView } from "@/components/routier/ClientMissionsView";
+import { RateOrderDialog } from "@/components/RateOrderDialog";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   pending: { label: "En attente", color: "bg-amber-500/15 text-amber-600", icon: Clock },
-  accepted: { label: "Accepté", color: "bg-green-500/15 text-green-600", icon: CheckCircle },
-  collected: { label: "Collecté", color: "bg-blue-500/15 text-blue-600", icon: Package },
-  paid_held: { label: "Paiement reçu", color: "bg-emerald-500/15 text-emerald-600", icon: CheckCircle },
-  checked_in: { label: "Déposé", color: "bg-indigo-500/15 text-indigo-600", icon: Package },
-  weight_pending_payment: { label: "Supplément requis", color: "bg-orange-500/15 text-orange-600", icon: Clock },
-  scheduled_departure: { label: "Départ programmé", color: "bg-violet-500/15 text-violet-600", icon: Truck },
+  accepted: { label: "Accept\u00e9", color: "bg-green-500/15 text-green-600", icon: CheckCircle },
+  collected: { label: "Collect\u00e9", color: "bg-blue-500/15 text-blue-600", icon: Package },
+  paid_held: { label: "Paiement re\u00e7u", color: "bg-emerald-500/15 text-emerald-600", icon: CheckCircle },
+  checked_in: { label: "D\u00e9pos\u00e9", color: "bg-indigo-500/15 text-indigo-600", icon: Package },
+  weight_pending_payment: { label: "Suppl\u00e9ment requis", color: "bg-orange-500/15 text-orange-600", icon: Clock },
+  scheduled_departure: { label: "D\u00e9part programm\u00e9", color: "bg-violet-500/15 text-violet-600", icon: Truck },
   in_transit: { label: "En transit", color: "bg-blue-500/15 text-blue-600", icon: Truck },
-  arrived_destination: { label: "Arrivé", color: "bg-teal-500/15 text-teal-600", icon: MapPin },
+  arrived_destination: { label: "Arriv\u00e9", color: "bg-teal-500/15 text-teal-600", icon: MapPin },
   delivery_pending: { label: "Livraison en cours", color: "bg-cyan-500/15 text-cyan-600", icon: Truck },
-  delivered: { label: "Livré", color: "bg-green-500/15 text-green-700", icon: CheckCircle },
-  delivery_confirmed: { label: "Livré", color: "bg-emerald-500/15 text-emerald-700", icon: CheckCircle },
-  released: { label: "Terminée", color: "bg-green-500/15 text-green-700", icon: CheckCircle },
-  cancelled: { label: "Annulée", color: "bg-destructive/15 text-destructive", icon: XCircle },
-  rejected: { label: "Refusée", color: "bg-destructive/15 text-destructive", icon: XCircle },
-  expired: { label: "Expirée", color: "bg-muted text-muted-foreground", icon: Clock },
-  // Custom request statuses
+  delivered: { label: "Livr\u00e9", color: "bg-green-500/15 text-green-700", icon: CheckCircle },
+  delivery_confirmed: { label: "Livr\u00e9", color: "bg-emerald-500/15 text-emerald-700", icon: CheckCircle },
+  released: { label: "Termin\u00e9e", color: "bg-green-500/15 text-green-700", icon: CheckCircle },
+  cancelled: { label: "Annul\u00e9e", color: "bg-destructive/15 text-destructive", icon: XCircle },
+  rejected: { label: "Refus\u00e9e", color: "bg-destructive/15 text-destructive", icon: XCircle },
+  expired: { label: "Expir\u00e9e", color: "bg-muted text-muted-foreground", icon: Clock },
   open: { label: "Ouverte", color: "bg-amber-500/15 text-amber-600", icon: Clock },
-  has_responses: { label: "Réponses reçues", color: "bg-blue-500/15 text-blue-600", icon: FileText },
-  closed: { label: "Fermée", color: "bg-muted text-muted-foreground", icon: XCircle },
-  // Mobility statuses
+  has_responses: { label: "R\u00e9ponses re\u00e7ues", color: "bg-blue-500/15 text-blue-600", icon: FileText },
+  closed: { label: "Ferm\u00e9e", color: "bg-muted text-muted-foreground", icon: XCircle },
   active: { label: "Actif", color: "bg-emerald-500/15 text-emerald-600", icon: CheckCircle },
-  confirmed: { label: "Confirmé", color: "bg-green-500/15 text-green-600", icon: CheckCircle },
-  completed: { label: "Terminé", color: "bg-muted text-muted-foreground", icon: CheckCircle },
+  confirmed: { label: "Confirm\u00e9", color: "bg-green-500/15 text-green-600", icon: CheckCircle },
+  completed: { label: "Termin\u00e9", color: "bg-muted text-muted-foreground", icon: CheckCircle },
 };
 
 const ACTIVE_STATUSES = ['pending', 'accepted', 'collected', 'paid_held', 'checked_in', 'weight_pending_payment', 'scheduled_departure', 'in_transit', 'arrived_destination', 'delivery_pending'];
 const DELIVERED_STATUSES = ['delivered', 'delivery_confirmed', 'released'];
 const CANCELLED_STATUSES = ['cancelled', 'rejected', 'expired'];
+
+// Statuses that indicate a recent important change the user should see
+const NOTIFICATION_STATUSES = ['accepted', 'collected', 'in_transit', 'arrived_destination', 'delivery_pending', 'delivered', 'delivery_confirmed', 'weight_pending_payment'];
 
 type TabId = "actives" | "tickets" | "colis" | "demandes" | "historique";
 
@@ -68,6 +71,11 @@ export default function ReservationsPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [recipientCount, setRecipientCount] = useState(0);
+  const [recentlyChangedOrders, setRecentlyChangedOrders] = useState<Set<string>>(new Set());
+  const [tabNotifications, setTabNotifications] = useState<Record<TabId, number>>({ actives: 0, tickets: 0, colis: 0, demandes: 0, historique: 0 });
+  const [pendingReviews, setPendingReviews] = useState<any[]>([]);
+  const [supplementOrders, setSupplementOrders] = useState<any[]>([]);
+  const [ratingOrder, setRatingOrder] = useState<any>(null);
 
   useEffect(() => {
     loadData();
@@ -84,7 +92,7 @@ export default function ReservationsPage() {
           .from("orders")
           .select(`
             id, origin_city, destination_city, origin_country, destination_country,
-            weight, status, order_number, total_price, currency, pickup_date, created_at,
+            weight, status, order_number, total_price, currency, pickup_date, created_at, updated_at,
             gp_id, price_per_kg, has_insurance, recipient_name, recipient_phone, tracking_code,
             gp_profiles(business_name, rating, gp_type, phone, whatsapp_phone, deposit_address, reception_address)
           `)
@@ -108,16 +116,65 @@ export default function ReservationsPage() {
           .order("created_at", { ascending: false }),
       ]);
 
-      if (ordersRes.data) setOrders(ordersRes.data);
+      const allOrders = ordersRes.data || [];
+      setOrders(allOrders);
       if (requestsRes.data) setCustomRequests(requestsRes.data);
       setRecipientCount(recipientRes.count ?? 0);
       if (mobilityRes.data) setMobilityBookings(mobilityRes.data);
+
+      // Detect recently changed orders (updated in last 2 hours & status is notable)
+      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+      const recentIds = new Set<string>();
+      let activeNotifs = 0;
+      let histNotifs = 0;
+
+      allOrders.forEach((o: any) => {
+        if (o.updated_at > twoHoursAgo && NOTIFICATION_STATUSES.includes(o.status)) {
+          recentIds.add(o.id);
+          if (ACTIVE_STATUSES.includes(o.status)) activeNotifs++;
+          if (DELIVERED_STATUSES.includes(o.status)) histNotifs++;
+        }
+      });
+      setRecentlyChangedOrders(recentIds);
+      setTabNotifications(prev => ({ ...prev, actives: activeNotifs, historique: histNotifs }));
+
+      // Supplements
+      setSupplementOrders(allOrders.filter((o: any) => o.status === "weight_pending_payment"));
+
+      // Pending reviews
+      const delivered = allOrders.filter((o: any) => DELIVERED_STATUSES.includes(o.status));
+      if (delivered.length > 0) {
+        const orderIds = delivered.map((o: any) => o.id);
+        const gpIds = [...new Set(delivered.map((o: any) => o.gp_id))];
+        const [reviewsRes, gpRes] = await Promise.all([
+          supabase.from("reviews").select("order_id").in("order_id", orderIds),
+          supabase.from("gp_profiles").select("id, business_name").in("id", gpIds),
+        ]);
+        const reviewedIds = new Set((reviewsRes.data || []).map((r: any) => r.order_id));
+        const gpNames: Record<string, string> = {};
+        (gpRes.data || []).forEach((gp: any) => { gpNames[gp.id] = gp.business_name; });
+        setPendingReviews(
+          delivered
+            .filter((o: any) => !reviewedIds.has(o.id))
+            .map((o: any) => ({ ...o, gp_name: gpNames[o.gp_id] || "Transporteur" }))
+        );
+      }
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  // Realtime subscription
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel("reservations-rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `client_id=eq.${userId}` }, () => loadData())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [userId]);
 
   const activeOrders = orders.filter(o => ACTIVE_STATUSES.includes(o.status));
   const historyOrders = orders.filter(o => DELIVERED_STATUSES.includes(o.status) || CANCELLED_STATUSES.includes(o.status));
@@ -137,12 +194,15 @@ export default function ReservationsPage() {
     return 0;
   };
 
+  const getTabNotifCount = (tabId: TabId) => tabNotifications[tabId] || 0;
+
   const renderOrderCard = (order: any, i: number) => {
     const cfg = STATUS_CONFIG[order.status] || { label: order.status, color: "bg-muted text-muted-foreground", icon: Clock };
     const Icon = getOrderIcon(order);
     const isActive = ACTIVE_STATUSES.includes(order.status);
     const isCancelled = CANCELLED_STATUSES.includes(order.status);
     const isDelivered = DELIVERED_STATUSES.includes(order.status);
+    const isRecentChange = recentlyChangedOrders.has(order.id);
 
     return (
       <motion.div
@@ -151,10 +211,15 @@ export default function ReservationsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: i * 0.03 }}
         onClick={() => setSelectedOrder(order)}
-        className={`bg-card border rounded-2xl p-3.5 active:scale-[0.98] transition-all cursor-pointer ${
+        className={`bg-card border rounded-2xl p-3.5 active:scale-[0.98] transition-all cursor-pointer relative ${
+          isRecentChange ? "border-primary/40 shadow-md ring-1 ring-primary/20" :
           isActive ? "border-primary/20 shadow-sm" : "border-border"
         }`}
       >
+        {/* Notification dot for recent changes */}
+        {isRecentChange && (
+          <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-primary animate-pulse" />
+        )}
         <div className="flex items-start gap-3">
           <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
             isCancelled ? 'bg-destructive/10' :
@@ -166,7 +231,6 @@ export default function ReservationsPage() {
             }`} />
           </div>
           <div className="flex-1 min-w-0">
-            {/* Route */}
             <div className="flex items-center justify-between gap-2">
               <p className="text-sm font-bold text-foreground truncate">
                 {order.origin_city} → {order.destination_city}
@@ -174,17 +238,20 @@ export default function ReservationsPage() {
               <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             </div>
 
-            {/* Status + order number */}
             <div className="flex items-center gap-2 mt-1.5">
               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${cfg.color}`}>
                 {cfg.label}
               </span>
+              {isRecentChange && (
+                <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                  MAJ
+                </span>
+              )}
               <span className="text-[10px] text-muted-foreground font-mono">
                 #{order.order_number?.slice(-6)}
               </span>
             </div>
 
-            {/* Details row */}
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               {order.weight > 0 && (
                 <span className="text-[11px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
@@ -203,7 +270,6 @@ export default function ReservationsPage() {
               )}
             </div>
 
-            {/* GP name + date */}
             <div className="flex items-center justify-between mt-1.5">
               {order.gp_profiles?.business_name && (
                 <span className="text-[10px] text-muted-foreground truncate max-w-[60%]">
@@ -250,7 +316,7 @@ export default function ReservationsPage() {
               {/* Status */}
               <div className="flex items-center gap-2 mt-1.5">
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${cfg.color}`}>
-                  {isScanned ? "Scanné ✓" : cfg.label}
+                  {isScanned ? "Scanne" : cfg.label}
                 </span>
                 <span className="text-[10px] text-muted-foreground font-mono">
                   {booking.booking_number}
@@ -317,15 +383,16 @@ export default function ReservationsPage() {
       <div className="px-3 pt-3 pb-2 border-b border-border/50">
         <div className="flex gap-0.5 bg-muted/50 rounded-xl p-1 overflow-x-auto no-scrollbar">
           {TABS.map((tab) => {
-            const isActive = activeTab === tab.id;
+            const isActiveTab = activeTab === tab.id;
             const count = getTabCount(tab.id);
+            const notifCount = getTabNotifCount(tab.id);
 
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center justify-center gap-1 py-2 px-2.5 rounded-lg text-[11px] font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
-                  isActive
+                className={`relative flex items-center justify-center gap-1 py-2 px-2.5 rounded-lg text-[11px] font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
+                  isActiveTab
                     ? "bg-card text-foreground shadow-sm"
                     : "text-muted-foreground"
                 }`}
@@ -334,10 +401,14 @@ export default function ReservationsPage() {
                 {tab.label}
                 {count > 0 && (
                   <span className={`text-[9px] min-w-[18px] text-center px-1 py-0.5 rounded-full font-bold leading-none ${
-                    isActive ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+                    isActiveTab ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
                   }`}>
                     {count}
                   </span>
+                )}
+                {/* Notification dot */}
+                {notifCount > 0 && !isActiveTab && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
                 )}
               </button>
             );
@@ -475,6 +546,44 @@ export default function ReservationsPage() {
         {/* Tab: En cours */}
         {activeTab === "actives" && (
           <>
+            {/* Pending actions: supplements, reviews */}
+            {!loading && (supplementOrders.length > 0 || pendingReviews.length > 0) && (
+              <div className="px-4 pt-3 space-y-2">
+                {supplementOrders.map((o) => (
+                  <button
+                    key={`supp-${o.id}`}
+                    onClick={() => navigate(`/supplement/${o.id}`)}
+                    className="w-full flex items-center gap-3 p-3 rounded-2xl border border-destructive/30 bg-destructive/5 active:scale-[0.98] transition-all"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+                      <Scale className="w-5 h-5 text-destructive" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-semibold text-destructive">Supplement requis</p>
+                      <p className="text-[11px] text-muted-foreground">{o.order_number} - Payez le supplement poids</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                ))}
+                {pendingReviews.slice(0, 2).map((o) => (
+                  <button
+                    key={`rev-${o.id}`}
+                    onClick={() => setRatingOrder(o)}
+                    className="w-full flex items-center gap-3 p-3 rounded-2xl border border-amber-500/30 bg-amber-500/5 active:scale-[0.98] transition-all"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                      <Star className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">Notez {o.gp_name}</p>
+                      <p className="text-[11px] text-muted-foreground">{o.order_number}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                ))}
+              </div>
+            )}
+
             {loading ? (
               <div className="flex items-center justify-center py-20">
                 <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -484,9 +593,9 @@ export default function ReservationsPage() {
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
                   <Package className="w-8 h-8 text-primary" />
                 </div>
-                <p className="text-sm font-bold text-foreground">Aucune réservation en cours</p>
+                <p className="text-sm font-bold text-foreground">Aucune reservation en cours</p>
                 <p className="text-xs text-muted-foreground mt-1.5">
-                  Vos envois actifs apparaîtront ici
+                  Vos envois actifs apparaitront ici
                 </p>
               </div>
             ) : (
@@ -529,6 +638,19 @@ export default function ReservationsPage() {
         open={!!selectedOrder}
         onClose={() => setSelectedOrder(null)}
       />
+      {ratingOrder && (
+        <RateOrderDialog
+          open={!!ratingOrder}
+          onOpenChange={(open) => { if (!open) setRatingOrder(null); }}
+          orderId={ratingOrder.id}
+          gpId={ratingOrder.gp_id}
+          gpName={ratingOrder.gp_name}
+          onSuccess={() => {
+            setPendingReviews(prev => prev.filter(r => r.id !== ratingOrder.id));
+            setRatingOrder(null);
+          }}
+        />
+      )}
     </div>
   );
 }

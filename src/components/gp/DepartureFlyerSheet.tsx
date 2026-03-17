@@ -1,8 +1,9 @@
 /**
  * DepartureFlyerSheet — Shows generated promo flyer with download & share
+ * No emojis. Professional design.
  */
-import { useState, useEffect } from "react";
-import { Download, Share2, X, Sparkles } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Download, Share2, X, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { useToast } from "@/hooks/use-toast";
@@ -19,45 +20,71 @@ export function DepartureFlyerSheet({ open, onClose, data }: DepartureFlyerSheet
   const { toast } = useToast();
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const blobRef = useRef<Blob | null>(null);
 
   useEffect(() => {
     if (open && data) {
       setGenerating(true);
       setImageUrl(null);
+      blobRef.current = null;
       generateDepartureFlyer(data).then((url) => {
         setImageUrl(url);
+        // Pre-convert to blob
+        try {
+          const parts = url.split(",");
+          const mime = parts[0].match(/:(.*?);/)?.[1] || "image/png";
+          const byteString = atob(parts[1]);
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+          }
+          blobRef.current = new Blob([ab], { type: mime });
+        } catch { /* fallback */ }
         setGenerating(false);
       });
     }
   }, [open, data]);
 
-  const dataUrlToBlob = (dataUrl: string): Blob => {
-    const parts = dataUrl.split(",");
-    const mime = parts[0].match(/:(.*?);/)?.[1] || "image/png";
-    const byteString = atob(parts[1]);
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
-    }
-    return new Blob([ab], { type: mime });
-  };
-
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!imageUrl || !data) return;
     try {
-      const blob = dataUrlToBlob(imageUrl);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.download = `Konnekt-${data.originCity}-${data.destinationCity}-${data.departureDate}.png`;
-      link.href = url;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      toast({ title: "Image telechargee" });
+      const blob = blobRef.current;
+      if (!blob) {
+        toast({ title: "Erreur de generation", variant: "destructive" });
+        return;
+      }
+
+      const fileName = `Konnekt-${data.originCity}-${data.destinationCity}-${data.departureDate}.png`;
+
+      // Try using the download attribute with an anchor
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = fileName;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      
+      // Use click() on next tick for mobile Safari compatibility
+      setTimeout(() => {
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(blobUrl);
+        }, 500);
+      }, 100);
+
+      toast({ title: "Telechargement lance" });
     } catch {
-      toast({ title: "Erreur lors du telechargement", variant: "destructive" });
+      // Fallback: open in new tab so user can long-press to save
+      if (imageUrl) {
+        const w = window.open();
+        if (w) {
+          w.document.write(`<img src="${imageUrl}" style="width:100%;max-width:600px" />`);
+          w.document.title = "Konnekt Flyer";
+        }
+      }
+      toast({ title: "Maintenez l'image pour enregistrer", variant: "default" });
     }
   };
 
@@ -71,20 +98,22 @@ export function DepartureFlyerSheet({ open, onClose, data }: DepartureFlyerSheet
     ].join("\n");
 
     try {
-      const blob = dataUrlToBlob(imageUrl);
-      const file = new File(
-        [blob],
-        `Konnekt-${data.originCity}-${data.destinationCity}.png`,
-        { type: "image/png" }
-      );
+      const blob = blobRef.current;
+      if (blob) {
+        const file = new File(
+          [blob],
+          `Konnekt-${data.originCity}-${data.destinationCity}.png`,
+          { type: "image/png" }
+        );
 
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          title: `Depart ${data.originCity} - ${data.destinationCity}`,
-          text: shareText,
-          files: [file],
-        });
-        return;
+        if (navigator.share && navigator.canShare?.({ files: [file] })) {
+          await navigator.share({
+            title: `Depart ${data.originCity} - ${data.destinationCity}`,
+            text: shareText,
+            files: [file],
+          });
+          return;
+        }
       }
     } catch (err: any) {
       if (err.name === "AbortError") return;
@@ -101,7 +130,7 @@ export function DepartureFlyerSheet({ open, onClose, data }: DepartureFlyerSheet
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
+            <Image className="w-5 h-5 text-primary" />
             <h3 className="font-bold text-sm">Votre visuel promo</h3>
           </div>
           <button onClick={onClose} className="p-1 rounded-full hover:bg-muted">
@@ -110,7 +139,6 @@ export function DepartureFlyerSheet({ open, onClose, data }: DepartureFlyerSheet
         </div>
 
         <div className="px-4 py-4 space-y-4 overflow-y-auto">
-          {/* Subtitle */}
           <p className="text-xs text-muted-foreground text-center">
             Telechargez et partagez ce visuel sur vos groupes Facebook, WhatsApp, etc.
           </p>
@@ -166,7 +194,6 @@ export function DepartureFlyerSheet({ open, onClose, data }: DepartureFlyerSheet
             </motion.div>
           )}
 
-          {/* Skip */}
           <button
             onClick={onClose}
             className="w-full text-center text-xs text-muted-foreground py-2 hover:text-foreground transition-colors"
