@@ -256,7 +256,7 @@ export function ZoneSelectorSimple({
             ))}
             {selectedInternational.map((dest) => (
               <Badge key={dest} variant="gold" className="text-xs">
-                🌍 {dest}
+                {dest}
               </Badge>
             ))}
           </div>
