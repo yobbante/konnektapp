@@ -449,25 +449,27 @@ export function ClientAppHome({
   }, [cityQuery]);
 
   const handleMainAction = () => {
-    const params = new URLSearchParams();
-    if (searchOrigin) params.set("origin", searchOrigin);
-    if (searchDest) params.set("dest", searchDest);
-    if (searchDate) params.set("date", searchDate);
-    const tabParam = isRoutier ? "routier" : isMobility ? "mobility" : (activeTab !== "all" ? activeTab : undefined);
-    if (tabParam) params.set("tab", tabParam);
-    navigate(`/freight-board${params.toString() ? `?${params}` : ""}`);
+    setOffresPopupSearch({
+      origin: searchOrigin || undefined,
+      dest: searchDest || undefined,
+      tab: isRoutier ? "routier" : isMobility ? "mobility" : (activeTab !== "all" ? activeTab : undefined),
+    });
+    setOffresPopupOpen(true);
   };
 
   const openOffresPopup = (origin?: string, dest?: string, tab?: string) => {
-    const params = new URLSearchParams();
-    if (origin || searchOrigin) params.set("origin", origin || searchOrigin);
-    if (dest || searchDest) params.set("dest", dest || searchDest);
-    const t = tab || (activeTab !== "all" ? activeTab : undefined);
-    if (t) params.set("tab", t);
-    navigate(`/freight-board${params.toString() ? `?${params}` : ""}`);
+    setOffresPopupSearch({
+      origin: origin || searchOrigin || undefined,
+      dest: dest || searchDest || undefined,
+      tab: tab || (activeTab !== "all" ? activeTab : undefined),
+    });
+    setOffresPopupOpen(true);
   };
 
-  const goToOffres = () => navigate("/freight-board");
+  const goToOffres = () => {
+    setOffresPopupSearch({});
+    setOffresPopupOpen(true);
+  };
 
   // Offers (GP + Mobility)
   const [offers, setOffers] = useState<any[]>([]);
