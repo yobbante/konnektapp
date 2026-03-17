@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { MessageCircle, User, Clock, Package } from "lucide-react";
+import { MessageCircle, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 
 interface Conversation {
@@ -20,6 +20,10 @@ interface Conversation {
   unread_count?: number;
   last_message?: string;
   expiresIn?: string | null;
+  // For grouped conversations
+  all_order_numbers?: string[];
+  all_conversation_ids?: string[];
+  total_unread?: number;
 }
 
 interface ConversationListProps {
@@ -43,13 +47,13 @@ const STATUS_DOT: Record<string, string> = {
 export function ConversationList({ userType, onSelectConversation, selectedId }: ConversationListProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchConversations();
     const channel = supabase
       .channel('conversations-updates')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, () => fetchConversations())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => fetchConversations())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, []);
@@ -58,7 +62,6 @@ export function ConversationList({ userType, onSelectConversation, selectedId }:
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      setCurrentUserId(user.id);
 
       let query = supabase
         .from("conversations")
@@ -112,6 +115,7 @@ export function ConversationList({ userType, onSelectConversation, selectedId }:
         return true;
       });
 
+      // Enrich conversations
       const enrichedConversations = await Promise.all(
         activeConversations.map(async (conv: any) => {
           const { data: gpProfile } = await supabase
@@ -163,7 +167,43 @@ export function ConversationList({ userType, onSelectConversation, selectedId }:
         })
       );
 
-      setConversations(enrichedConversations);
+      // Group conversations by GP (for client view) or by client (for GP view)
+      const groupKey = userType === "client" ? "gp_id" : "client_id";
+      const grouped = new Map<string, Conversation[]>();
+      
+      enrichedConversations.forEach((conv) => {
+        const key = conv[groupKey as keyof typeof conv] as string;
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key)!.push(conv);
+      });
+
+      // For each group, pick the most recent conversation as the "main" one
+      // but aggregate unread counts and order numbers
+      const mergedConversations: Conversation[] = [];
+      grouped.forEach((convs) => {
+        // Sort by last_message_at desc
+        convs.sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
+        const latest = convs[0];
+        const totalUnread = convs.reduce((sum, c) => sum + (c.unread_count || 0), 0);
+        const allOrderNumbers = convs
+          .map(c => c.order_number)
+          .filter(Boolean) as string[];
+
+        mergedConversations.push({
+          ...latest,
+          unread_count: totalUnread,
+          total_unread: totalUnread,
+          all_order_numbers: allOrderNumbers.length > 1 ? allOrderNumbers : undefined,
+          all_conversation_ids: convs.length > 1 ? convs.map(c => c.id) : undefined,
+        });
+      });
+
+      // Sort final list by last_message_at
+      mergedConversations.sort((a, b) => 
+        new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()
+      );
+
+      setConversations(mergedConversations);
     } catch (error) {
       console.error("Error fetching conversations:", error);
     } finally {
@@ -203,6 +243,7 @@ export function ConversationList({ userType, onSelectConversation, selectedId }:
         const contactName = userType === "client" ? conv.gp_name : conv.client_name;
         const hasUnread = (conv.unread_count || 0) > 0;
         const statusDot = conv.order_status ? STATUS_DOT[conv.order_status] : null;
+        const orderCount = conv.all_order_numbers?.length || (conv.order_number ? 1 : 0);
         
         return (
           <motion.button
@@ -216,7 +257,7 @@ export function ConversationList({ userType, onSelectConversation, selectedId }:
             }`}
           >
             <div className="flex items-center gap-3">
-              {/* Avatar with selfie or initials */}
+              {/* Avatar */}
               <div className="relative flex-shrink-0">
                 {conv.gp_selfie_url && userType === "client" ? (
                   <img 
@@ -231,14 +272,13 @@ export function ConversationList({ userType, onSelectConversation, selectedId }:
                     </span>
                   </div>
                 )}
-                {/* Status dot */}
                 {statusDot && (
                   <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full ${statusDot} border-2 border-background`} />
                 )}
               </div>
 
               <div className="flex-1 min-w-0">
-                {/* Row 1: Name + order number + time */}
+                {/* Row 1: Name + order numbers + time */}
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 min-w-0 flex-1">
                     <p className={`text-sm truncate ${hasUnread ? "font-bold text-foreground" : "font-medium text-foreground"}`}>
@@ -247,6 +287,11 @@ export function ConversationList({ userType, onSelectConversation, selectedId }:
                     {conv.order_number && (
                       <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md flex-shrink-0 font-mono">
                         {conv.order_number}
+                      </span>
+                    )}
+                    {orderCount > 1 && (
+                      <span className="text-[9px] text-muted-foreground bg-muted px-1 py-0.5 rounded flex-shrink-0">
+                        +{orderCount - 1}
                       </span>
                     )}
                   </div>
