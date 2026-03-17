@@ -8,12 +8,14 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
+import { useAudioCall } from "@/hooks/useAudioCall";
 import { TypingIndicator } from "./TypingIndicator";
 import { MessageTemplates } from "./MessageTemplates";
 import { SmartClientResponses } from "./SmartClientResponses";
 import { SmartGPResponses } from "./SmartGPResponses";
 import { ChatHeader } from "./ChatHeader";
 import { MessageContent } from "./MessageContent";
+import { AudioCallUI } from "./AudioCallUI";
 import { MiniLoader } from "@/components/ui/MiniLoader";
 
 interface Message {
