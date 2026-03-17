@@ -191,7 +191,7 @@ export function QRCodeScanner({ gpId, scanType, onComplete }: QRCodeScannerProps
         await supabase.from("notifications").insert({
           user_id: scannedOrder.client_id,
           type: "weight_validation_required",
-          title: "⚠️ Validation requise - Modification de poids",
+          title: "Validation requise - Modification de poids",
           message: `Le transporteur a mesuré un poids différent pour ${scannedOrder.order_number}. Veuillez valider ou refuser depuis votre espace.`,
           related_type: "order",
           related_id: scannedOrder.id,
