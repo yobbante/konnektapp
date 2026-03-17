@@ -32,7 +32,7 @@ const zonePresets = [
   },
   { 
     value: "afrique_ouest", 
-    label: "🌍 Afrique de l'Ouest", 
+    label: "Afrique de l'Ouest", 
     zones: ["Sénégal", "Mali", "Côte d'Ivoire", "Guinée", "Burkina Faso", "Gambie", "Mauritanie", "Niger", "Togo", "Bénin", "Ghana", "Nigeria", "Guinée-Bissau"]
   },
   { 
