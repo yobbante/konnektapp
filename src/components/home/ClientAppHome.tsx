@@ -533,9 +533,10 @@ export function ClientAppHome({
   }, []);
 
   // Routier offers (from gp_offers with transport_type routier)
+  // Routier offers (disabled in GP_ONLY_MODE)
   const [routierOffers, setRoutierOffers] = useState<any[]>([]);
   useEffect(() => {
-    if (!isRoutier) return;
+    if (!isRoutier || GP_ONLY_MODE) return;
     supabase.
     from("gp_offers").
     select("*, gp_profiles(business_name, rating, subscription)").

@@ -69,16 +69,20 @@ export default function FreightMarketplace() {
 
   const today = startOfDay(new Date()).toISOString();
 
-  // Fetch all GP offers (covers GP bagages, routier mode offers)
+  // Fetch GP offers (in GP_ONLY_MODE, filter to GP bagages types only)
   const { data: gpOffers = [] } = useQuery({
-    queryKey: ["marketplace-gp-offers"],
+    queryKey: ["marketplace-gp-offers", GP_ONLY_MODE],
     queryFn: async () => {
-      const { data } = await supabase
+      let query = supabase
         .from("gp_offers")
         .select("*, gp_profiles!gp_offers_gp_id_fkey(business_name, id)")
         .eq("status", "active")
         .gte("departure_date", today.split("T")[0])
         .order("departure_date", { ascending: true });
+      if (GP_ONLY_MODE) {
+        query = query.eq("transport_type", "bagages_international" as any);
+      }
+      const { data } = await query;
       return data || [];
     },
   });
