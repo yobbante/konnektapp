@@ -11,7 +11,7 @@ import {
   Package, Plane, Send, AlertTriangle, Clock, ChevronRight,
   Calendar, RefreshCw, Scale, Wallet, Plus, ScanLine,
   TrendingUp, Shield, History, Camera, FileText, Check,
-  Bell, Zap, Star, ArrowRight, CheckCircle2, Truck, Activity,
+  Bell, Zap, Star, ArrowRight, CheckCircle2, Truck, Activity, Gift,
   UserCheck, AlertOctagon, ShieldAlert, Lock, Crown, Rocket } from
 "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
