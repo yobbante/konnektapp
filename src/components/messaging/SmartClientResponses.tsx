@@ -147,19 +147,19 @@ export function SmartClientResponses({
       getResponse: async (ctx) => {
         switch (ctx.status) {
           case "pending":
-            return `⏳ En attente de confirmation\n\nVotre GP est en cours de traitement de votre demande.\nVous serez notifié dès acceptation.`;
+            return `En attente de confirmation.\n\nVotre GP est en cours de traitement de votre demande.\nVous serez notifie des acceptation.`;
           case "accepted":
-            return `✅ Votre GP a accepté la commande.\n\nLa remise du colis est en cours d'organisation.\n📍 Lieu de dépôt: ${ctx.gp_deposit_address || "À confirmer"}`;
+            return `Votre GP a accepte la commande.\n\nLa remise du colis est en cours d'organisation.\nLieu de depot: ${ctx.gp_deposit_address || "A confirmer"}`;
           case "collected":
-            return `📦 Colis collecté avec succès.\n\nIl est désormais sous la responsabilité du GP.\nPoids vérifié: ${ctx.weight} kg`;
+            return `Colis collecte avec succes.\n\nIl est desormais sous la responsabilite du GP.\nPoids verifie: ${ctx.weight} kg`;
           case "in_transit":
-            return `✈️ Votre colis est actuellement en transit.\n\nTrajet: ${ctx.origin_city} → ${ctx.destination_city}\nVous serez notifié à l'arrivée.`;
+            return `Votre colis est actuellement en transit.\n\nTrajet: ${ctx.origin_city} - ${ctx.destination_city}\nVous serez notifie a l'arrivee.`;
           case "arrived":
-            return `🛬 Le GP est arrivé à ${ctx.destination_city}.\n\nLa livraison finale est en cours d'organisation.`;
+            return `Le GP est arrive a ${ctx.destination_city}.\n\nLa livraison finale est en cours d'organisation.`;
           case "delivered":
-            return `🎉 Colis livré avec succès !\n\nMerci d'avoir utilisé Konnekt.\nN'hésitez pas à laisser un avis.`;
+            return `Colis livre avec succes !\n\nMerci d'avoir utilise Konnekt.\nN'hesitez pas a laisser un avis.`;
           default:
-            return `📦 Statut: ${STATUS_LABELS[ctx.status] || ctx.status}\nConsultez l'onglet "Suivi" pour plus de détails.`;
+            return `Statut: ${STATUS_LABELS[ctx.status] || ctx.status}\nConsultez l'onglet "Suivi" pour plus de details.`;
         }
       },
     },
