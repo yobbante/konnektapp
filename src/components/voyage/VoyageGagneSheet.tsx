@@ -303,9 +303,9 @@ export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) 
                     </label>
                     <SearchableCitySelect
                       value={originCity}
-                      onSelect={(city) => {
-                        const match = WORLD_CITIES.find(c => c.city === city);
-                        handleCitySelect(city, match?.country || "", "origin");
+                      countryCode={originCountry}
+                      onSelect={(city, country) => {
+                        handleCitySelect(city, country, "origin");
                       }}
                       placeholder="Ex: Paris"
                       className="h-10"
@@ -318,9 +318,9 @@ export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) 
                     </label>
                     <SearchableCitySelect
                       value={destCity}
-                      onSelect={(city) => {
-                        const match = WORLD_CITIES.find(c => c.city === city);
-                        handleCitySelect(city, match?.country || "", "dest");
+                      countryCode={destCountry}
+                      onSelect={(city, country) => {
+                        handleCitySelect(city, country, "dest");
                       }}
                       placeholder="Ex: Dakar"
                       className="h-10"
