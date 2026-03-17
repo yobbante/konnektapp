@@ -294,7 +294,7 @@ export default function AerienDemandeFretPage() {
         </Button>
 
         <p className="text-[10px] text-muted-foreground text-center">
-          💡 Les transporteurs aériens qualifiés recevront votre demande et vous proposeront des offres.
+          Les transporteurs aeriens qualifies recevront votre demande et vous proposeront des offres.
         </p>
       </div>
     </div>
