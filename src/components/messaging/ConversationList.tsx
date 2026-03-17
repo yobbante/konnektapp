@@ -62,7 +62,7 @@ export function ConversationList({ userType, onSelectConversation, selectedId }:
       // Build query based on userType for strict isolation
       let query = supabase
         .from("conversations")
-        .select("*")
+        .select("*, orders:order_id(status)")
         .order("last_message_at", { ascending: false });
 
       if (userType === "client") {
