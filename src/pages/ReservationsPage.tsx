@@ -415,6 +415,17 @@ export default function ReservationsPage() {
         </div>
       </div>
 
+      {/* Smart Action Bar — visible across all tabs */}
+      {userId && (
+        <div className="px-4 pt-3">
+          <SmartActionBar
+            userId={userId}
+            recentOrders={orders}
+            activeOrdersCount={activeOrders.length}
+          />
+        </div>
+      )}
+
       {/* Content */}
       <div className="flex-1 overflow-y-auto overscroll-contain pb-8" style={{ WebkitOverflowScrolling: 'touch' }}>
         
