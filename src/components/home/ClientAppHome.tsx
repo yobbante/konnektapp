@@ -620,7 +620,8 @@ export function ClientAppHome({
         {/* Alerts */}
         {userId && <div className="px-4"><WeightValidationAlert userId={userId} /></div>}
 
-        {/* ── TRANSPORT TABS (sticky) ── */}
+        {/* ── TRANSPORT TABS (hidden in GP_ONLY_MODE, shown when multiple tabs) ── */}
+        {!GP_ONLY_MODE && TRANSPORT_TABS.length > 1 && (
         <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border/50">
           <div className="px-2 pt-1 pb-0">
             <div className="flex gap-0">
@@ -647,6 +648,7 @@ export function ClientAppHome({
             </div>
           </div>
         </div>
+        )}
 
         {/* ── TAB BANNER (non-"all" tabs) ── */}
         <div className="pt-3">
