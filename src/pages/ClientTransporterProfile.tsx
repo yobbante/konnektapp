@@ -471,7 +471,7 @@ function ClientTransporterProfileContent() {
                   <ArrowLeft className="w-4 h-4 rotate-180 text-muted-foreground" />
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{nextOffer.destination_city}</span>
-                    <span className="text-lg">{countryFlags[nextOffer.destination_country] || "🌍"}</span>
+                    <span className="text-lg">{countryFlags[nextOffer.destination_country] || ""}</span>
                   </div>
                 </div>
 
