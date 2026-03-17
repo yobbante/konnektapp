@@ -32,7 +32,7 @@ export function DepartureInfoCard({
   destinationCity,
   destinationCountry,
 }: DepartureInfoCardProps) {
-  const getFlag = (code: string) => FLAGS[code] || "🌍";
+  
 
   return (
     <Card className="border-primary/10">

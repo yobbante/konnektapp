@@ -788,7 +788,7 @@ function ClientTransporterProfileContent() {
                       <span className="text-sm font-medium">
                         {offer.origin_city} → {offer.destination_city}
                       </span>
-                      <span>{countryFlags[offer.destination_country] || "🌍"}</span>
+                      <span>{countryFlags[offer.destination_country] || ""}</span>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-medium text-primary">
