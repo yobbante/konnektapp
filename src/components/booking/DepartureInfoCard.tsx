@@ -20,11 +20,7 @@ interface DepartureInfoCardProps {
   destinationCountry: string;
 }
 
-const FLAGS: Record<string, string> = {
-  FR: "🇫🇷", SN: "🇸🇳", CI: "🇨🇮", CM: "🇨🇲", ML: "🇲🇱", US: "🇺🇸", CA: "🇨🇦",
-  AE: "🇦🇪", GB: "🇬🇧", BE: "🇧🇪", MA: "🇲🇦", TN: "🇹🇳", GA: "🇬🇦", CG: "🇨🇬",
-  DE: "🇩🇪", ES: "🇪🇸", IT: "🇮🇹", CH: "🇨🇭", NL: "🇳🇱", GN: "🇬🇳",
-};
+import { getFlag } from "@/lib/countryFlags";
 
 export function DepartureInfoCard({
   departureDate,
