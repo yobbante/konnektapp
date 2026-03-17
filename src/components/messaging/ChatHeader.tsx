@@ -87,7 +87,9 @@ export function ChatHeader({
   };
 
   const handleCall = () => {
-    if (gpPhone) {
+    if (onAudioCall) {
+      onAudioCall();
+    } else if (gpPhone) {
       window.location.href = `tel:${gpPhone}`;
     }
   };
