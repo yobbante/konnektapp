@@ -1,7 +1,7 @@
 /**
  * generateDepartureFlyer — Generates a branded promotional image
- * for GP departures to share on Facebook groups etc.
  * Uses Canvas 2D API for deterministic, fast generation.
+ * No emojis. Professional design.
  */
 
 export interface FlyerData {
@@ -22,8 +22,8 @@ export interface FlyerData {
 
 function formatDateFr(dateStr: string): string {
   const date = new Date(dateStr);
-  const months = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+  const months = ["Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin",
+    "Juillet", "Aout", "Septembre", "Octobre", "Novembre", "Decembre"];
   const days = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
   return `${days[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
 }
@@ -50,7 +50,6 @@ function drawPlaneIcon(ctx: CanvasRenderingContext2D, cx: number, cy: number, si
   ctx.translate(cx, cy);
   ctx.scale(size / 24, size / 24);
   ctx.beginPath();
-  // Simple plane shape
   ctx.moveTo(12, -12);
   ctx.lineTo(8, -4);
   ctx.lineTo(-12, 2);
@@ -115,7 +114,6 @@ export function generateDepartureFlyer(data: FlyerData): Promise<string> {
     ctx.fillStyle = "#FFFFFF";
     ctx.font = `800 44px ${FONT}`;
     ctx.textAlign = "center";
-    ctx.letterSpacing = "4px";
     ctx.fillText("KONNEKT", W / 2, 80);
 
     ctx.fillStyle = "rgba(255,255,255,0.4)";
@@ -151,13 +149,10 @@ export function generateDepartureFlyer(data: FlyerData): Promise<string> {
     // -- Route: Cities --
     const routeY = cardY + 140;
     
-    // Origin city
     ctx.fillStyle = "#FFFFFF";
     ctx.font = `800 46px ${FONT}`;
     ctx.textAlign = "center";
     ctx.fillText(data.originCity.toUpperCase(), W / 2 - 200, routeY);
-
-    // Destination city
     ctx.fillText(data.destinationCity.toUpperCase(), W / 2 + 200, routeY);
 
     // Country labels
@@ -211,13 +206,12 @@ export function generateDepartureFlyer(data: FlyerData): Promise<string> {
     // -- Info pills --
     const pillY = dateY + 120;
     const pills = [
-      { label: "Prix/kg", value: `${data.pricePerKg} ${data.currency}` },
       { label: "Capacite", value: `${data.totalCapacity} kg` },
     ];
     if (data.airline) pills.push({ label: "Compagnie", value: data.airline });
     if (data.flightNumber) pills.push({ label: "Vol", value: data.flightNumber });
 
-    const pillW = pills.length <= 2 ? 320 : 220;
+    const pillW = pills.length <= 1 ? 400 : pills.length <= 2 ? 320 : 220;
     const totalPillW = pills.length * pillW + (pills.length - 1) * 16;
     let pillStartX = (W - totalPillW) / 2;
 
@@ -251,7 +245,6 @@ export function generateDepartureFlyer(data: FlyerData): Promise<string> {
     ctx.font = `700 28px ${FONT}`;
     ctx.fillText(data.businessName, W / 2, bizY + 38);
 
-    // -- Phone --
     if (data.phone) {
       ctx.fillStyle = "rgba(255,255,255,0.5)";
       ctx.font = `500 20px ${FONT}`;
@@ -269,7 +262,6 @@ export function generateDepartureFlyer(data: FlyerData): Promise<string> {
     ctx.fillStyle = ctaGrad;
     ctx.fill();
 
-    // CTA shadow
     ctx.shadowColor = "rgba(20, 184, 166, 0.35)";
     ctx.shadowBlur = 25;
     ctx.shadowOffsetY = 8;
@@ -299,7 +291,19 @@ export function generateDepartureFlyer(data: FlyerData): Promise<string> {
     ctx.textAlign = "center";
     ctx.fillText("konnekt.app  |  Transport securise  |  Paiement garanti", W / 2, footY + 8);
 
-    // Export
-    resolve(canvas.toDataURL("image/png", 1.0));
+    // Export using toBlob for reliability, fallback to toDataURL
+    try {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        } else {
+          resolve(canvas.toDataURL("image/png", 1.0));
+        }
+      }, "image/png");
+    } catch {
+      resolve(canvas.toDataURL("image/png", 1.0));
+    }
   });
 }
