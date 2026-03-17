@@ -163,7 +163,7 @@ export function SmartClientResponses({
         }
       },
     },
-    // 2️⃣ « Quand dois-je déposer mon colis ? »
+    // 2. "Quand dois-je deposer mon colis ?"
     {
       id: "deposit_date",
       icon: Calendar,
