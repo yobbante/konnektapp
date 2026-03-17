@@ -305,7 +305,7 @@ export default function OrderQRCodePage() {
             { icon: "S", title: "Camera externe", desc: "Redirige vers la page de suivi public du colis" },
           ].map((item, i) => (
             <div key={i} className="flex items-start gap-2.5">
-              <span className="text-sm">{item.emoji}</span>
+              <span className="text-[10px] font-bold w-5 h-5 rounded-full bg-white/10 flex items-center justify-center">{item.icon}</span>
               <div>
                 <p className="text-[11px] font-semibold text-white/60">{item.title}</p>
                 <p className="text-[10px] text-white/30 leading-relaxed">{item.desc}</p>
