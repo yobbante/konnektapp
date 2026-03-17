@@ -34,6 +34,7 @@ import GPProfilPublicPage from "./pages/gp/GPProfilPublicPage";
 import GPScanPage from "./pages/gp/GPScanPage";
 import GPCustomRequests from "./pages/GPCustomRequests";
 import GPOrderDetail from "./pages/GPOrderDetail";
+import GPGrowthTab from "./components/gp/GPGrowthTab";
 // ClientDashboard removed - redirect to /profil
 // ClientProfile removed - using UnifiedProfile at /profil
 import ClientTransporterProfile from "./pages/ClientTransporterProfile";
