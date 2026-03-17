@@ -642,11 +642,8 @@ export default function ReservationsPage() {
       </div>
 
       <MobileNav />
-      <OrderDetailSheet
-        order={selectedOrder}
-        open={!!selectedOrder}
-        onClose={() => setSelectedOrder(null)}
-      />
+
+      {/* OrderDetailSheet removed — cards now navigate to /tracking */}
       {ratingOrder && (
         <RateOrderDialog
           open={!!ratingOrder}
