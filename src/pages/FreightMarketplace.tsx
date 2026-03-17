@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
+import { GP_ONLY_MODE } from "@/config/featureFlags";
 
 type TransportMode = "all" | "aerien" | "maritime" | "routier" | "gp";
 type SortKey = "price" | "date" | "capacity";
@@ -44,12 +45,16 @@ interface MarketplaceListing {
   offerId: string;
 }
 
-const MODE_CONFIG: Record<string, { icon: any; color: string; bg: string; label: string }> = {
+const ALL_MODE_CONFIG: Record<string, { icon: any; color: string; bg: string; label: string }> = {
   aerien: { icon: Plane, color: "text-transport-aerien", bg: "bg-transport-aerien/10", label: "Aérien" },
   maritime: { icon: Ship, color: "text-transport-maritime", bg: "bg-transport-maritime/10", label: "Maritime" },
   routier: { icon: Truck, color: "text-transport-routier", bg: "bg-transport-routier/10", label: "Routier" },
   gp: { icon: Package, color: "text-transport-voyageur", bg: "bg-transport-voyageur/10", label: "GP Bagages" },
 };
+
+const MODE_CONFIG = GP_ONLY_MODE
+  ? { gp: ALL_MODE_CONFIG.gp }
+  : ALL_MODE_CONFIG;
 
 export default function FreightMarketplace() {
   const navigate = useNavigate();

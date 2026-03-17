@@ -413,7 +413,7 @@ export function ClientAppHome({
 
   const [fullScreenOrderId, setFullScreenOrderId] = useState<string | null>(null);
   const [requestPopup, setRequestPopup] = useState<{type: "custom" | "moving";item: any;} | null>(null);
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState(GP_ONLY_MODE ? "bagages" : "all");
   const [offresPopupOpen, setOffresPopupOpen] = useState(false);
   const [offresPopupSearch, setOffresPopupSearch] = useState<{origin?: string;dest?: string;tab?: string;}>({});
   const scrollRef = useRef<HTMLDivElement>(null);
