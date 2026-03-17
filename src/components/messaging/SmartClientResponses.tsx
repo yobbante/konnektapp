@@ -230,7 +230,7 @@ export function SmartClientResponses({
         return `Le GP n'est pas encore parti.\nStatut actuel: ${STATUS_LABELS[ctx.status] || ctx.status}`;
       },
     },
-    // 6️⃣ « Puis-je envoyer quelqu'un à ma place ? »
+    // 6. "Puis-je envoyer quelqu'un a ma place ?"
     {
       id: "delegate",
       icon: User,

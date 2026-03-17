@@ -373,7 +373,7 @@ export default function GPBagagesRegistration() {
         }
       }
 
-      toast({ title: "✈️ Inscription finalisée !", description: "Bienvenue dans l'espace GP Via Bagages" });
+      toast({ title: "Inscription finalisee", description: "Bienvenue dans l'espace GP Via Bagages" });
       navigate("/gp/dashboard");
     } catch (error: any) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
