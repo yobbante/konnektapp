@@ -6,6 +6,7 @@ import {
   Clock, CheckCircle, XCircle, FileText, Inbox, MapPin, Calendar, Users,
   Star, Scale, Heart, Bell, AlertCircle
 } from "lucide-react";
+import { SmartActionBar } from "@/components/home/SmartActionBar";
 import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
