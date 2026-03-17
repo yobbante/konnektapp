@@ -348,8 +348,8 @@ export default function FreightMarketplace() {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border">
+      {/* Filters — sticky below popup header or at top */}
+      <div className={`sticky ${isPopup ? "top-[88px]" : "top-0"} z-30 bg-background/95 backdrop-blur-md border-b border-border`}>
         <div className="container max-w-4xl px-4 py-3 space-y-3">
           {/* Mode filter tabs */}
           <div className="flex gap-1">
