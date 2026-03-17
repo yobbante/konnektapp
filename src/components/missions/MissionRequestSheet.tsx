@@ -834,8 +834,8 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
                     )}
                     {(customsRequired || insuranceRequired) && (
                       <div className="flex gap-2 mt-1">
-                        {customsRequired && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">🌍 Dédouanement</span>}
-                        {insuranceRequired && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">🛡️ Assurance</span>}
+                        {customsRequired && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">Dedouanement</span>}
+                        {insuranceRequired && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">Assurance</span>}
                       </div>
                     )}
                   </div>

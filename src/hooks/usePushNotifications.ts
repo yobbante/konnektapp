@@ -202,7 +202,7 @@ export function useRealtimePushNotifications({
             
             const statusLabel = statusLabels[order.status] || order.status;
             
-            showNotification(`📦 Commande ${statusLabel}`, {
+            showNotification(`Commande ${statusLabel}`, {
               body: `Votre commande ${order.order_number} est maintenant ${statusLabel}`,
               tag: `order-${order.id}`,
               data: { type: "order", id: order.id },

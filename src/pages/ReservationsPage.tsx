@@ -638,6 +638,19 @@ export default function ReservationsPage() {
         open={!!selectedOrder}
         onClose={() => setSelectedOrder(null)}
       />
+      {ratingOrder && (
+        <RateOrderDialog
+          open={!!ratingOrder}
+          onOpenChange={(open) => { if (!open) setRatingOrder(null); }}
+          orderId={ratingOrder.id}
+          gpId={ratingOrder.gp_id}
+          gpName={ratingOrder.gp_name}
+          onSuccess={() => {
+            setPendingReviews(prev => prev.filter(r => r.id !== ratingOrder.id));
+            setRatingOrder(null);
+          }}
+        />
+      )}
     </div>
   );
 }

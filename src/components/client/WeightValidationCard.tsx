@@ -45,7 +45,7 @@ export function WeightValidationCard({
       <Alert variant="destructive" className="mb-2 border-destructive bg-destructive/10">
         <ShieldAlert className="h-4 w-4" />
         <AlertTitle className="font-bold">
-          ⚠️ Validation requise — Modification de poids
+          Validation requise — Modification de poids
         </AlertTitle>
         <AlertDescription className="text-xs">
           Le transporteur a mesuré un poids différent lors du dépôt. Votre réservation est bloquée.

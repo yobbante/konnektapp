@@ -42,7 +42,7 @@ const zonePresets = [
   },
   { 
     value: "international", 
-    label: "✈️ International (Monde entier)", 
+    label: "International (Monde entier)", 
     zones: ["International"]
   },
 ];

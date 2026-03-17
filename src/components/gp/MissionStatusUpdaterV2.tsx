@@ -271,7 +271,7 @@ export function MissionStatusUpdaterV2({
         
         {hasDeliveryLogistics && currentStatus === "in_transit" && (
           <p className="text-xs text-muted-foreground text-center">
-            📍 Livraison dernier km par Konnekt
+            Livraison dernier km par Konnekt
           </p>
         )}
       </div>
