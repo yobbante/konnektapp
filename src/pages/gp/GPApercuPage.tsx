@@ -29,6 +29,7 @@ import { SelfieVerificationSheet } from "@/components/gp/SelfieVerificationSheet
 import { DocumentVerificationSheet } from "@/components/gp/DocumentVerificationSheet";
 import { PremiumCTABanner } from "@/components/gp/PremiumCTABanner";
 import { ShareOfferButton } from "@/components/share/ShareOfferButton";
+import { SuperGPBadge } from "@/components/gp/SuperGPBadge";
 import { useGPProfile } from "@/hooks/useGPProfile";
 import { isGPPremium } from "@/lib/premiumGating";
 import { getOrderStatusLabel, getOrderStatusColor } from "@/lib/transportTypes";
