@@ -182,7 +182,7 @@ const App = () => (
                 PUBLIC ROUTES - Accessibles sans authentification
             ============================================ */}
             <Route path="/" element={<Index />} />
-            <Route path="/offres" element={<Offres />} />
+            <Route path="/offres" element={<Navigate to="/freight-board" replace />} />
             <Route path="/offres/:id" element={<OfferDetail />} />
             <Route path="/freight-board" element={<FreightMarketplace />} />
             <Route path="/tracking" element={<Tracking />} />

@@ -13,23 +13,36 @@ interface HomeOfferCardProps {
   subscriptionBadge?: string;
 }
 
-const getOfferIcon = (type: string) => {
-  if (type === "maritime") return Ship;
-  if (type === "routier") return Truck;
-  if (type === "aerien") return Plane;
-  if (type === "mobility") return Bus;
-  return Luggage;
+const TYPE_STYLE: Record<string, { icon: typeof Plane; color: string; bg: string }> = {
+  aerien: { icon: Plane, color: "text-transport-aerien", bg: "bg-transport-aerien/10" },
+  maritime: { icon: Ship, color: "text-transport-maritime", bg: "bg-transport-maritime/10" },
+  routier: { icon: Truck, color: "text-transport-routier", bg: "bg-transport-routier/10" },
+  mobility: { icon: Bus, color: "text-transport-mobility", bg: "bg-transport-mobility/10" },
+};
+
+const getTypeStyle = (type: string) => {
+  if (TYPE_STYLE[type]) return TYPE_STYLE[type];
+  // GP/bagages types
+  return { icon: Luggage, color: "text-transport-voyageur", bg: "bg-transport-voyageur/10" };
+};
+
+const TYPE_BORDER: Record<string, string> = {
+  aerien: "border-transport-aerien/25",
+  maritime: "border-transport-maritime/25",
+  routier: "border-transport-routier/25",
+  mobility: "border-transport-mobility/25",
 };
 
 export function HomeOfferCard({ offer, index, modeLabel, subscriptionBadge }: HomeOfferCardProps) {
   const departDate = offer.departure_date ? new Date(offer.departure_date) : null;
-  const OfferIcon = getOfferIcon(offer.transport_type);
+  const style = getTypeStyle(offer.transport_type);
+  const OfferIcon = style.icon;
   const currencySymbol = CURRENCY_SYMBOLS[offer.currency] || offer.currency || "F";
   const isMobility = offer.transport_type === "mobility";
   const isRoutier = offer.transport_type === "routier";
-  const linkTo = `/offres/${offer.id}`; // All modes go to standard offer detail
+  const linkTo = `/offres/${offer.id}`;
+  const borderClass = TYPE_BORDER[offer.transport_type] || "border-transport-voyageur/25";
 
-  // For routier: show lowest size price as "À partir de"
   const routierMinPrice = isRoutier
     ? Math.min(...[offer.price_s, offer.price_m, offer.price_l, offer.price_xl].filter((p: number) => p && p > 0)) || (offer.price_per_kg > 0 ? offer.price_per_kg * 25 : 0)
     : 0;
@@ -41,25 +54,23 @@ export function HomeOfferCard({ offer, index, modeLabel, subscriptionBadge }: Ho
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.02, duration: 0.15 }}
         whileTap={{ scale: 0.98 }}
-        className="bg-card border border-border rounded-xl px-2.5 py-2 flex items-center gap-2 hover:border-primary/30 active:bg-muted/40 transition-all"
+        className={`bg-card border ${borderClass} rounded-xl px-2.5 py-2 flex items-center gap-2 hover:border-primary/30 active:bg-muted/40 transition-all`}
       >
-        {/* Icon */}
-        <div className="w-7 h-7 rounded-lg bg-primary/8 flex items-center justify-center flex-shrink-0">
-          <OfferIcon className="w-3.5 h-3.5 text-primary" />
+        {/* Icon - colored by type */}
+        <div className={`w-7 h-7 rounded-lg ${style.bg} flex items-center justify-center flex-shrink-0`}>
+          <OfferIcon className={`w-3.5 h-3.5 ${style.color}`} />
         </div>
 
-        {/* Center: route + GP name + mode */}
+        {/* Center */}
         <div className="flex-1 min-w-0">
-          {/* Route */}
           <div className="flex items-center gap-1">
             <span className="text-xs font-semibold text-foreground truncate">{offer.origin_city}</span>
             <ArrowRight className="w-2.5 h-2.5 text-muted-foreground/50 flex-shrink-0" />
             <span className="text-xs font-semibold text-foreground truncate">{offer.destination_city}</span>
           </div>
-          {/* Date + rating + capacity */}
           <div className="flex items-center gap-1.5 mt-0.5">
             {departDate && (
-              <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+              <span className={`text-[10px] font-semibold ${style.color} ${style.bg} px-1.5 py-0.5 rounded`}>
                 {departDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
               </span>
             )}
@@ -75,11 +86,10 @@ export function HomeOfferCard({ offer, index, modeLabel, subscriptionBadge }: Ho
               </span>
             )}
           </div>
-          {/* Mode label + subscription badge (below GP name) */}
           {(modeLabel || subscriptionBadge) && (
             <div className="flex items-center gap-1 mt-0.5">
               {modeLabel && (
-                <span className="text-[8px] text-muted-foreground bg-muted/60 px-1.5 py-px rounded-full font-medium">
+                <span className={`text-[8px] ${style.color} ${style.bg} px-1.5 py-px rounded-full font-medium`}>
                   {modeLabel}
                 </span>
               )}
@@ -92,31 +102,28 @@ export function HomeOfferCard({ offer, index, modeLabel, subscriptionBadge }: Ho
           )}
         </div>
 
-        {/* Price + Réserver */}
-        <div className="flex-shrink-0 flex flex-col items-center gap-1">
-          <div className="bg-primary/8 rounded-lg px-2 py-1 text-center">
+        {/* Price only - no Réserver button */}
+        <div className="flex-shrink-0">
+          <div className={`${style.bg} rounded-lg px-2 py-1 text-center`}>
             {isRoutier ? (
               <>
-                <span className="text-[8px] text-primary/70 block leading-tight font-semibold">À partir de</span>
-                <span className="text-[13px] font-extrabold text-primary leading-none whitespace-nowrap">
+                <span className={`text-[8px] ${style.color}/70 block leading-tight font-semibold`}>À partir de</span>
+                <span className={`text-[13px] font-extrabold ${style.color} leading-none whitespace-nowrap`}>
                   {routierMinPrice > 0 ? routierMinPrice.toLocaleString() : "—"}
                 </span>
-                <span className="text-[8px] text-primary/70 block leading-tight font-semibold">FCFA</span>
+                <span className={`text-[8px] ${style.color}/70 block leading-tight font-semibold`}>FCFA</span>
               </>
             ) : (
               <>
-                <span className="text-[13px] font-extrabold text-primary leading-none whitespace-nowrap">
+                <span className={`text-[13px] font-extrabold ${style.color} leading-none whitespace-nowrap`}>
                   {offer.price_per_kg?.toLocaleString()}
                 </span>
-                <span className="text-[8px] text-primary/70 block leading-tight font-semibold">
+                <span className={`text-[8px] ${style.color}/70 block leading-tight font-semibold`}>
                   {isMobility ? `${currencySymbol.trim()}/siège` : `${currencySymbol.trim()}/kg`}
                 </span>
               </>
             )}
           </div>
-          <span className="text-[8px] font-semibold text-primary/80 bg-primary/5 px-2 py-0.5 rounded-full">
-            Réserver
-          </span>
         </div>
       </motion.div>
     </Link>
