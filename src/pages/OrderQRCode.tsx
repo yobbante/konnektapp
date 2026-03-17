@@ -126,7 +126,7 @@ export default function OrderQRCodePage() {
       const link = document.createElement("a");
       link.download = `konnekt-${order.order_number}.png`;
       link.href = canvas.toDataURL("image/png"); link.click();
-      toast({ title: "✅ QR téléchargé" });
+      toast({ title: "QR telecharge" });
     };
     img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
   };
