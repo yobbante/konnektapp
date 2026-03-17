@@ -546,6 +546,44 @@ export default function ReservationsPage() {
         {/* Tab: En cours */}
         {activeTab === "actives" && (
           <>
+            {/* Pending actions: supplements, reviews */}
+            {!loading && (supplementOrders.length > 0 || pendingReviews.length > 0) && (
+              <div className="px-4 pt-3 space-y-2">
+                {supplementOrders.map((o) => (
+                  <button
+                    key={`supp-${o.id}`}
+                    onClick={() => navigate(`/supplement/${o.id}`)}
+                    className="w-full flex items-center gap-3 p-3 rounded-2xl border border-destructive/30 bg-destructive/5 active:scale-[0.98] transition-all"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+                      <Scale className="w-5 h-5 text-destructive" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-semibold text-destructive">Supplement requis</p>
+                      <p className="text-[11px] text-muted-foreground">{o.order_number} - Payez le supplement poids</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                ))}
+                {pendingReviews.slice(0, 2).map((o) => (
+                  <button
+                    key={`rev-${o.id}`}
+                    onClick={() => setRatingOrder(o)}
+                    className="w-full flex items-center gap-3 p-3 rounded-2xl border border-amber-500/30 bg-amber-500/5 active:scale-[0.98] transition-all"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                      <Star className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">Notez {o.gp_name}</p>
+                      <p className="text-[11px] text-muted-foreground">{o.order_number}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                ))}
+              </div>
+            )}
+
             {loading ? (
               <div className="flex items-center justify-center py-20">
                 <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -555,9 +593,9 @@ export default function ReservationsPage() {
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
                   <Package className="w-8 h-8 text-primary" />
                 </div>
-                <p className="text-sm font-bold text-foreground">Aucune réservation en cours</p>
+                <p className="text-sm font-bold text-foreground">Aucune reservation en cours</p>
                 <p className="text-xs text-muted-foreground mt-1.5">
-                  Vos envois actifs apparaîtront ici
+                  Vos envois actifs apparaitront ici
                 </p>
               </div>
             ) : (
