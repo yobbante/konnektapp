@@ -300,9 +300,9 @@ export default function OrderQRCodePage() {
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4 space-y-3">
           <h4 className="text-xs font-semibold text-white/50">Qui peut scanner ce QR ?</h4>
           {[
-            { emoji: "🚚", title: "Transporteur (GP)", desc: "Enregistrer le dépôt, ajuster le poids, confirmer la livraison avec code à 6 chiffres" },
-            { emoji: "📦", title: "Client (vous)", desc: "Voir le suivi en temps réel, confirmer la réception du colis" },
-            { emoji: "📸", title: "Caméra externe", desc: "Redirige vers la page de suivi public du colis" },
+            { icon: "T", title: "Transporteur (GP)", desc: "Enregistrer le depot, ajuster le poids, confirmer la livraison avec code a 6 chiffres" },
+            { icon: "C", title: "Client (vous)", desc: "Voir le suivi en temps reel, confirmer la reception du colis" },
+            { icon: "S", title: "Camera externe", desc: "Redirige vers la page de suivi public du colis" },
           ].map((item, i) => (
             <div key={i} className="flex items-start gap-2.5">
               <span className="text-sm">{item.emoji}</span>
