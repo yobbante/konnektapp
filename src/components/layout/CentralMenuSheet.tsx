@@ -111,8 +111,8 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
       ];
     }
 
-    // Routier mode
-    if (isInRoutierMode) {
+    // Routier mode (disabled in GP_ONLY_MODE)
+    if (isInRoutierMode && !GP_ONLY_MODE) {
       return [
         { icon: Home, label: "Accueil", href: "/" },
         { icon: Truck, label: "Missions", href: "/routier/demandes" },
