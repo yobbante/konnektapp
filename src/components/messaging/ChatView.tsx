@@ -325,7 +325,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
       <form 
         onSubmit={sendMessage} 
         className="p-3 border-t border-border bg-background flex-shrink-0"
-        style={{ paddingBottom: 'calc(12px + var(--safe-bottom, 0px))' }}
+        style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}
       >
         <div className="flex gap-2 items-end">
           <Input
