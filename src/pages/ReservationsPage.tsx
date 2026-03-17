@@ -417,13 +417,12 @@ export default function ReservationsPage() {
 
       {/* Smart Action Bar — visible across all tabs */}
       {userId && (
-        <div className="px-4 pt-3">
-          <SmartActionBar
-            userId={userId}
-            recentOrders={orders}
-            activeOrdersCount={activeOrders.length}
-          />
-        </div>
+        <SmartActionBar
+          userId={userId}
+          recentOrders={orders}
+          activeOrdersCount={activeOrders.length}
+          unreadMessages={0}
+        />
       )}
 
       {/* Content */}
