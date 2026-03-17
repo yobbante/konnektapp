@@ -71,6 +71,11 @@ export default function ReservationsPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [recipientCount, setRecipientCount] = useState(0);
+  const [recentlyChangedOrders, setRecentlyChangedOrders] = useState<Set<string>>(new Set());
+  const [tabNotifications, setTabNotifications] = useState<Record<TabId, number>>({ actives: 0, tickets: 0, colis: 0, demandes: 0, historique: 0 });
+  const [pendingReviews, setPendingReviews] = useState<any[]>([]);
+  const [supplementOrders, setSupplementOrders] = useState<any[]>([]);
+  const [ratingOrder, setRatingOrder] = useState<any>(null);
 
   useEffect(() => {
     loadData();
@@ -87,7 +92,7 @@ export default function ReservationsPage() {
           .from("orders")
           .select(`
             id, origin_city, destination_city, origin_country, destination_country,
-            weight, status, order_number, total_price, currency, pickup_date, created_at,
+            weight, status, order_number, total_price, currency, pickup_date, created_at, updated_at,
             gp_id, price_per_kg, has_insurance, recipient_name, recipient_phone, tracking_code,
             gp_profiles(business_name, rating, gp_type, phone, whatsapp_phone, deposit_address, reception_address)
           `)
@@ -111,16 +116,65 @@ export default function ReservationsPage() {
           .order("created_at", { ascending: false }),
       ]);
 
-      if (ordersRes.data) setOrders(ordersRes.data);
+      const allOrders = ordersRes.data || [];
+      setOrders(allOrders);
       if (requestsRes.data) setCustomRequests(requestsRes.data);
       setRecipientCount(recipientRes.count ?? 0);
       if (mobilityRes.data) setMobilityBookings(mobilityRes.data);
+
+      // Detect recently changed orders (updated in last 2 hours & status is notable)
+      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+      const recentIds = new Set<string>();
+      let activeNotifs = 0;
+      let histNotifs = 0;
+
+      allOrders.forEach((o: any) => {
+        if (o.updated_at > twoHoursAgo && NOTIFICATION_STATUSES.includes(o.status)) {
+          recentIds.add(o.id);
+          if (ACTIVE_STATUSES.includes(o.status)) activeNotifs++;
+          if (DELIVERED_STATUSES.includes(o.status)) histNotifs++;
+        }
+      });
+      setRecentlyChangedOrders(recentIds);
+      setTabNotifications(prev => ({ ...prev, actives: activeNotifs, historique: histNotifs }));
+
+      // Supplements
+      setSupplementOrders(allOrders.filter((o: any) => o.status === "weight_pending_payment"));
+
+      // Pending reviews
+      const delivered = allOrders.filter((o: any) => DELIVERED_STATUSES.includes(o.status));
+      if (delivered.length > 0) {
+        const orderIds = delivered.map((o: any) => o.id);
+        const gpIds = [...new Set(delivered.map((o: any) => o.gp_id))];
+        const [reviewsRes, gpRes] = await Promise.all([
+          supabase.from("reviews").select("order_id").in("order_id", orderIds),
+          supabase.from("gp_profiles").select("id, business_name").in("id", gpIds),
+        ]);
+        const reviewedIds = new Set((reviewsRes.data || []).map((r: any) => r.order_id));
+        const gpNames: Record<string, string> = {};
+        (gpRes.data || []).forEach((gp: any) => { gpNames[gp.id] = gp.business_name; });
+        setPendingReviews(
+          delivered
+            .filter((o: any) => !reviewedIds.has(o.id))
+            .map((o: any) => ({ ...o, gp_name: gpNames[o.gp_id] || "Transporteur" }))
+        );
+      }
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  // Realtime subscription
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel("reservations-rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `client_id=eq.${userId}` }, () => loadData())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [userId]);
 
   const activeOrders = orders.filter(o => ACTIVE_STATUSES.includes(o.status));
   const historyOrders = orders.filter(o => DELIVERED_STATUSES.includes(o.status) || CANCELLED_STATUSES.includes(o.status));
@@ -139,6 +193,8 @@ export default function ReservationsPage() {
     if (tabId === "tickets") return mobilityBookings.length;
     return 0;
   };
+
+  const getTabNotifCount = (tabId: TabId) => tabNotifications[tabId] || 0;
 
   const renderOrderCard = (order: any, i: number) => {
     const cfg = STATUS_CONFIG[order.status] || { label: order.status, color: "bg-muted text-muted-foreground", icon: Clock };
