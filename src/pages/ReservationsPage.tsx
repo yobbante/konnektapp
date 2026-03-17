@@ -202,6 +202,7 @@ export default function ReservationsPage() {
     const isActive = ACTIVE_STATUSES.includes(order.status);
     const isCancelled = CANCELLED_STATUSES.includes(order.status);
     const isDelivered = DELIVERED_STATUSES.includes(order.status);
+    const isRecentChange = recentlyChangedOrders.has(order.id);
 
     return (
       <motion.div
@@ -210,10 +211,15 @@ export default function ReservationsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: i * 0.03 }}
         onClick={() => setSelectedOrder(order)}
-        className={`bg-card border rounded-2xl p-3.5 active:scale-[0.98] transition-all cursor-pointer ${
+        className={`bg-card border rounded-2xl p-3.5 active:scale-[0.98] transition-all cursor-pointer relative ${
+          isRecentChange ? "border-primary/40 shadow-md ring-1 ring-primary/20" :
           isActive ? "border-primary/20 shadow-sm" : "border-border"
         }`}
       >
+        {/* Notification dot for recent changes */}
+        {isRecentChange && (
+          <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-primary animate-pulse" />
+        )}
         <div className="flex items-start gap-3">
           <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
             isCancelled ? 'bg-destructive/10' :
@@ -225,7 +231,6 @@ export default function ReservationsPage() {
             }`} />
           </div>
           <div className="flex-1 min-w-0">
-            {/* Route */}
             <div className="flex items-center justify-between gap-2">
               <p className="text-sm font-bold text-foreground truncate">
                 {order.origin_city} → {order.destination_city}
@@ -233,17 +238,20 @@ export default function ReservationsPage() {
               <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             </div>
 
-            {/* Status + order number */}
             <div className="flex items-center gap-2 mt-1.5">
               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${cfg.color}`}>
                 {cfg.label}
               </span>
+              {isRecentChange && (
+                <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                  MAJ
+                </span>
+              )}
               <span className="text-[10px] text-muted-foreground font-mono">
                 #{order.order_number?.slice(-6)}
               </span>
             </div>
 
-            {/* Details row */}
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               {order.weight > 0 && (
                 <span className="text-[11px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
@@ -262,7 +270,6 @@ export default function ReservationsPage() {
               )}
             </div>
 
-            {/* GP name + date */}
             <div className="flex items-center justify-between mt-1.5">
               {order.gp_profiles?.business_name && (
                 <span className="text-[10px] text-muted-foreground truncate max-w-[60%]">
