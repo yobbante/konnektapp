@@ -538,8 +538,8 @@ export default function FreightMarketplace() {
                       )}
 
                       {/* CTA */}
-                      <Button size="sm" className="w-full h-8 text-xs gap-1.5">
-                        Réserver <ArrowRight className="w-3.5 h-3.5" />
+                      <Button size="sm" variant="outline" className="w-full h-8 text-xs gap-1.5">
+                        Voir les détails <ArrowRight className="w-3.5 h-3.5" />
                       </Button>
                     </CardContent>
                   </Card>

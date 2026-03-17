@@ -650,10 +650,20 @@ export function ClientAppHome({
         </div>
         )}
 
-        {/* ── TAB BANNER (non-"all" tabs) ── */}
-        <div className="pt-3">
-          <TabBanner tab={activeTab} modeConfig={modeConfig} />
-        </div>
+        {/* ── TAB BANNER (non-"all" tabs) — In GP_ONLY, show GP inline ── */}
+        {GP_ONLY_MODE ? (
+          <div className="px-4 pt-3 pb-1">
+            <p className="text-xs text-muted-foreground">
+              <span className="font-semibold text-primary">GP</span>
+              <span className="mx-1">·</span>
+              {modeConfig.subtitle}
+            </p>
+          </div>
+        ) : (
+          <div className="pt-3">
+            <TabBanner tab={activeTab} modeConfig={modeConfig} />
+          </div>
+        )}
 
         {/* ── SEARCH ENGINE ── */}
         <div className="px-4 pb-3">
