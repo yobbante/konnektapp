@@ -31,6 +31,7 @@ interface ChatHeaderProps {
   onBack: () => void;
   gpPhone?: string | null;
   gpSelfieUrl?: string | null;
+  onAudioCall?: () => void;
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -50,6 +51,7 @@ export function ChatHeader({
   onBack,
   gpPhone,
   gpSelfieUrl,
+  onAudioCall,
 }: ChatHeaderProps) {
   const navigate = useNavigate();
   const [orderInfo, setOrderInfo] = useState<OrderInfo | null>(null);
@@ -85,7 +87,9 @@ export function ChatHeader({
   };
 
   const handleCall = () => {
-    if (gpPhone) {
+    if (onAudioCall) {
+      onAudioCall();
+    } else if (gpPhone) {
       window.location.href = `tel:${gpPhone}`;
     }
   };

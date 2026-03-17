@@ -6,6 +6,7 @@ import {
   Clock, CheckCircle, XCircle, FileText, Inbox, MapPin, Calendar, Users,
   Star, Scale, Heart, Bell, AlertCircle
 } from "lucide-react";
+import { SmartActionBar } from "@/components/home/SmartActionBar";
 import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -546,6 +547,16 @@ export default function ReservationsPage() {
         {/* Tab: En cours */}
         {activeTab === "actives" && (
           <>
+            {/* Smart Action Bar */}
+            {userId && (
+              <div className="px-4 pt-3">
+                <SmartActionBar
+                  userId={userId}
+                  recentOrders={orders}
+                  activeOrdersCount={activeOrders.length}
+                />
+              </div>
+            )}
             {/* Pending actions: supplements, reviews */}
             {!loading && (supplementOrders.length > 0 || pendingReviews.length > 0) && (
               <div className="px-4 pt-3 space-y-2">

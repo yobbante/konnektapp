@@ -212,7 +212,7 @@ export function ConversationList({ userType, onSelectConversation, selectedId }:
             transition={{ delay: index * 0.04 }}
             onClick={() => onSelectConversation(conv.id, contactName || "Contact")}
             className={`w-full p-3 text-left transition-colors ${
-              selectedId === conv.id ? "bg-primary/5" : hasUnread ? "bg-primary/[0.02]" : "hover:bg-muted/50"
+              selectedId === conv.id ? "bg-primary/5" : hasUnread ? "bg-primary/10 border-l-2 border-l-primary" : "hover:bg-muted/50"
             }`}
           >
             <div className="flex items-center gap-3">

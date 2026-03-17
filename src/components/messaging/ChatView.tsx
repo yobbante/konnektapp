@@ -8,12 +8,14 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
+import { useAudioCall } from "@/hooks/useAudioCall";
 import { TypingIndicator } from "./TypingIndicator";
 import { MessageTemplates } from "./MessageTemplates";
 import { SmartClientResponses } from "./SmartClientResponses";
 import { SmartGPResponses } from "./SmartGPResponses";
 import { ChatHeader } from "./ChatHeader";
 import { MessageContent } from "./MessageContent";
+import { AudioCallUI } from "./AudioCallUI";
 import { MiniLoader } from "@/components/ui/MiniLoader";
 
 interface Message {
@@ -56,12 +58,22 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
     userType
   );
 
+  const {
+    callStatus,
+    callDuration,
+    incomingCall,
+    startCall,
+    acceptCall,
+    rejectCall,
+    endCall,
+  } = useAudioCall({ currentUserId, conversationId });
+
   useEffect(() => {
     loadConversationData();
     fetchMessages();
     markMessagesAsRead();
     
-    // Subscribe to realtime messages
+    // Subscribe to realtime messages (INSERT + UPDATE for read receipts)
     const channel = supabase
       .channel(`messages-${conversationId}`)
       .on(
@@ -80,6 +92,25 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
             markMessageAsRead((payload.new as Message).id);
             notify({ sound: true, vibrate: [100] });
           }
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          // Update read_at for read receipts
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === (payload.new as Message).id
+                ? { ...msg, read_at: (payload.new as Message).read_at }
+                : msg
+            )
+          );
         }
       )
       .subscribe();
@@ -212,8 +243,33 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
     }
   };
 
+  // Determine callee ID for audio call
+  const getCalleeId = async () => {
+    const { data: conv } = await supabase
+      .from("conversations")
+      .select("client_id, gp_profiles!inner(user_id)")
+      .eq("id", conversationId)
+      .single();
+    
+    if (!conv) return;
+    const gpUserId = (conv.gp_profiles as any)?.user_id;
+    const calleeId = currentUserId === conv.client_id ? gpUserId : conv.client_id;
+    if (calleeId) startCall(calleeId);
+  };
+
   return (
     <div className="flex flex-col" style={{ height: '100dvh', overflow: 'hidden' }}>
+      {/* Audio Call UI Overlay */}
+      <AudioCallUI
+        callStatus={callStatus}
+        callDuration={callDuration}
+        contactName={contactName || "Contact"}
+        incomingCall={incomingCall}
+        onAccept={acceptCall}
+        onReject={rejectCall}
+        onEnd={endCall}
+      />
+
       {/* Spacer for fixed header */}
       <div className="flex-shrink-0" style={{ minHeight: '56px', paddingTop: 'env(safe-area-inset-top, 0px)' }} />
       
@@ -226,6 +282,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
         onBack={onBack}
         gpPhone={gpPhone}
         gpSelfieUrl={gpSelfieUrl}
+        onAudioCall={getCalleeId}
       />
 
       {/* Messages - Fixed container with scrollable content */}
@@ -281,13 +338,16 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
                       orderId={orderId || undefined}
                       isOwn={isOwn}
                     />
-                    {/* Read indicator for own messages */}
+                    {/* WhatsApp-style read receipts */}
                     {isOwn && (
-                      <div className="flex justify-end mt-0.5">
+                      <div className="flex items-center justify-end gap-1 mt-0.5">
+                        <span className="text-[9px] text-primary-foreground/50">
+                          {format(new Date(msg.created_at), "HH:mm", { locale: fr })}
+                        </span>
                         {msg.read_at ? (
-                          <CheckCheck className="w-3 h-3 text-primary-foreground/70" />
+                          <CheckCheck className="w-3.5 h-3.5 text-blue-400" />
                         ) : (
-                          <Check className="w-3 h-3 text-primary-foreground/50" />
+                          <CheckCheck className="w-3.5 h-3.5 text-primary-foreground/40" />
                         )}
                       </div>
                     )}
