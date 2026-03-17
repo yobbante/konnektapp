@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/layout/AppHeader";
@@ -53,8 +53,12 @@ const MODE_CONFIG: Record<string, { icon: any; color: string; bg: string; label:
 
 export default function FreightMarketplace() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isPopup = searchParams.get("popup") === "1";
   const [modeFilter, setModeFilter] = useState<TransportMode>("all");
-  const [routeSearch, setRouteSearch] = useState("");
+  const [routeSearch, setRouteSearch] = useState(
+    [searchParams.get("origin"), searchParams.get("dest")].filter(Boolean).join(" ") || ""
+  );
   const [sortBy, setSortBy] = useState<SortKey>("date");
   const [showFilters, setShowFilters] = useState(false);
 
@@ -272,21 +276,39 @@ export default function FreightMarketplace() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <AppHeader />
+    <div className={`bg-background pb-24 ${isPopup ? "min-h-screen" : "min-h-screen"}`}>
+      {/* Popup-style close bar */}
+      {isPopup ? (
+        <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 flex items-center justify-between" style={{ paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))' }}>
+          <div className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-primary" />
+            <h1 className="text-base font-bold text-foreground">Freight Board</h1>
+          </div>
+          <button 
+            onClick={() => navigate(-1)} 
+            className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+          >
+            <span className="text-sm font-bold text-muted-foreground">✕</span>
+          </button>
+        </div>
+      ) : (
+        <AppHeader />
+      )}
 
       {/* Hero header */}
-      <div className="bg-gradient-to-br from-primary/10 via-background to-accent/10 border-b border-border">
-        <div className="container max-w-4xl py-6 px-4">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
-              <BarChart3 className="w-5 h-5 text-primary" />
+      <div className={`bg-gradient-to-br from-primary/10 via-background to-accent/10 border-b border-border`}>
+        <div className="container max-w-4xl py-4 px-4">
+          {!isPopup && (
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-foreground">Freight Board</h1>
+                <p className="text-xs text-muted-foreground">Bourse logistique en temps réel</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">Freight Board</h1>
-              <p className="text-xs text-muted-foreground">Bourse logistique en temps réel</p>
-            </div>
-          </div>
+          )}
           <div className="flex gap-2 mt-3 text-xs">
             <Badge variant="outline" className="gap-1">
               <Package className="w-3 h-3" />
@@ -505,7 +527,7 @@ export default function FreightMarketplace() {
         )}
       </div>
 
-      <MobileNav />
+      {!isPopup && <MobileNav />}
     </div>
   );
 }

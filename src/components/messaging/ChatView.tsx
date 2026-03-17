@@ -43,6 +43,8 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   const [templatesExpanded, setTemplatesExpanded] = useState(false);
   const [isGpVerified, setIsGpVerified] = useState(false);
   const [gpId, setGpId] = useState<string | null>(null);
+  const [gpPhone, setGpPhone] = useState<string | null>(null);
+  const [gpSelfieUrl, setGpSelfieUrl] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -102,11 +104,13 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
         // Check if GP is verified
         const { data: gpProfile } = await supabase
           .from("gp_profiles")
-          .select("verified_at")
+          .select("verified_at, phone, selfie_url")
           .eq("id", conv.gp_id)
           .single();
 
         setIsGpVerified(!!gpProfile?.verified_at);
+        setGpPhone(gpProfile?.phone || null);
+        setGpSelfieUrl(gpProfile?.selfie_url || null);
       }
       
       if (conv?.order_id) {
@@ -220,6 +224,8 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
         contactId={gpId || ""}
         isGpVerified={isGpVerified}
         onBack={onBack}
+        gpPhone={gpPhone}
+        gpSelfieUrl={gpSelfieUrl}
       />
 
       {/* Messages - Fixed container with scrollable content */}
