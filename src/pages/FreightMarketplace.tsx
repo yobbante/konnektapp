@@ -342,7 +342,7 @@ export default function FreightMarketplace() {
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border">
         <div className="container max-w-4xl px-4 py-3 space-y-3">
           {/* Mode filter tabs */}
-          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1">
             {(["all", "aerien", "maritime", "routier", "gp"] as TransportMode[]).map((mode) => {
               const config = mode === "all" ? null : MODE_CONFIG[mode];
               const Icon = config?.icon || BarChart3;
@@ -351,15 +351,14 @@ export default function FreightMarketplace() {
                 <button
                   key={mode}
                   onClick={() => setModeFilter(mode)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                  className={`flex-1 flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
                     modeFilter === mode
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "bg-muted/60 text-muted-foreground hover:bg-muted"
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
+                  <Icon className="w-3 h-3" />
                   {mode === "all" ? "Tout" : config?.label}
-                  <span className="opacity-70">({count})</span>
                 </button>
               );
             })}
