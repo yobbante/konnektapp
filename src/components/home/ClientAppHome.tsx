@@ -91,7 +91,7 @@ const MODE_CONFIG: Record<string, {
   bagages: {
     subtitle: "Bagages accompagnés par GP de confiance",
     searchPlaceholderOrigin: "Ville d'envoi",
-    searchPlaceholderDest: "Ville de réception",
+    searchPlaceholderDest: "Ville de destination",
     searchButtonLabel: "Trouver un GP",
     offersTitle: "GP disponibles",
     emptyLabel: "Aucun GP disponible",
@@ -620,7 +620,8 @@ export function ClientAppHome({
         {/* Alerts */}
         {userId && <div className="px-4"><WeightValidationAlert userId={userId} /></div>}
 
-        {/* ── TRANSPORT TABS (sticky) ── */}
+        {/* ── TRANSPORT TABS (hidden in GP_ONLY_MODE, shown when multiple tabs) ── */}
+        {!GP_ONLY_MODE && TRANSPORT_TABS.length > 1 && (
         <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border/50">
           <div className="px-2 pt-1 pb-0">
             <div className="flex gap-0">
@@ -647,11 +648,22 @@ export function ClientAppHome({
             </div>
           </div>
         </div>
+        )}
 
-        {/* ── TAB BANNER (non-"all" tabs) ── */}
-        <div className="pt-3">
-          <TabBanner tab={activeTab} modeConfig={modeConfig} />
-        </div>
+        {/* ── TAB BANNER (non-"all" tabs) — In GP_ONLY, show GP inline ── */}
+        {GP_ONLY_MODE ? (
+          <div className="px-4 pt-3 pb-1">
+            <p className="text-xs text-muted-foreground">
+              <span className="font-semibold text-primary">GP</span>
+              <span className="mx-1">·</span>
+              {modeConfig.subtitle}
+            </p>
+          </div>
+        ) : (
+          <div className="pt-3">
+            <TabBanner tab={activeTab} modeConfig={modeConfig} />
+          </div>
+        )}
 
         {/* ── SEARCH ENGINE ── */}
         <div className="px-4 pb-3">

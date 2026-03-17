@@ -281,11 +281,8 @@ export default function FreightMarketplace() {
   };
 
   const handleBook = (listing: MarketplaceListing) => {
-    if (listing.mode === "gp" || listing.mode === "aerien") {
-      navigate(`/reservation/gp/${listing.providerId}?offer=${listing.offerId}`);
-    } else {
-      navigate(`/offres/${listing.offerId}`);
-    }
+    // Always open offer details first
+    navigate(`/offres/${listing.offerId}`);
   };
 
   return (
@@ -351,8 +348,8 @@ export default function FreightMarketplace() {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border">
+      {/* Filters — sticky below popup header or at top */}
+      <div className={`sticky ${isPopup ? "top-[88px]" : "top-0"} z-30 bg-background/95 backdrop-blur-md border-b border-border`}>
         <div className="container max-w-4xl px-4 py-3 space-y-3">
           {/* Mode filter tabs */}
           <div className="flex gap-1">
@@ -541,8 +538,8 @@ export default function FreightMarketplace() {
                       )}
 
                       {/* CTA */}
-                      <Button size="sm" className="w-full h-8 text-xs gap-1.5">
-                        Réserver <ArrowRight className="w-3.5 h-3.5" />
+                      <Button size="sm" variant="outline" className="w-full h-8 text-xs gap-1.5">
+                        Voir les détails <ArrowRight className="w-3.5 h-3.5" />
                       </Button>
                     </CardContent>
                   </Card>
