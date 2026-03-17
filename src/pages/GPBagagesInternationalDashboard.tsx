@@ -233,7 +233,7 @@ export default function GPBagagesInternationalDashboard() {
       if (error) throw error;
 
       toast({
-        title: "🎉 Bagage livré !",
+        title: "Bagage livre",
         description: "Mission terminée avec succès",
       });
       loadData();
