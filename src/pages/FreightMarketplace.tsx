@@ -279,26 +279,40 @@ export default function FreightMarketplace() {
     <div className={`bg-background pb-24 min-h-screen ${isPopup ? "animate-in fade-in slide-in-from-bottom-4 duration-200" : ""}`}>
       {/* Popup-style close bar */}
       {isPopup ? (
-        <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 flex items-center justify-between" style={{ paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))' }}>
-          <div className="flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-primary" />
-            <h1 className="text-base font-bold text-foreground">Freight Board</h1>
+        <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border px-4" style={{ paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))' }}>
+          <div className="flex items-center justify-between py-2.5">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-primary" />
+              <h1 className="text-base font-bold text-foreground">Freight Board</h1>
+            </div>
+            <button 
+              onClick={() => navigate(-1)} 
+              className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+            >
+              <span className="text-sm font-bold text-muted-foreground">✕</span>
+            </button>
           </div>
-          <button 
-            onClick={() => navigate(-1)} 
-            className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
-          >
-            <span className="text-sm font-bold text-muted-foreground">✕</span>
-          </button>
+          <div className="flex gap-2 pb-2 text-[10px]">
+            <span className="text-muted-foreground flex items-center gap-1">
+              <Package className="w-3 h-3" />
+              {listings.length} offres
+            </span>
+            {lastMinuteCount > 0 && (
+              <span className="text-destructive flex items-center gap-1">
+                <Flame className="w-3 h-3" />
+                {lastMinuteCount} last minute
+              </span>
+            )}
+          </div>
         </div>
       ) : (
         <AppHeader />
       )}
 
-      {/* Hero header */}
-      <div className={`bg-gradient-to-br from-primary/10 via-background to-accent/10 border-b border-border`}>
-        <div className="container max-w-4xl py-4 px-4">
-          {!isPopup && (
+      {/* Hero header — only in non-popup mode */}
+      {!isPopup && (
+        <div className="bg-gradient-to-br from-primary/10 via-background to-accent/10 border-b border-border">
+          <div className="container max-w-4xl py-4 px-4">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
                 <BarChart3 className="w-5 h-5 text-primary" />
@@ -308,27 +322,27 @@ export default function FreightMarketplace() {
                 <p className="text-xs text-muted-foreground">Bourse logistique en temps réel</p>
               </div>
             </div>
-          )}
-          <div className="flex gap-2 mt-3 text-xs">
-            <Badge variant="outline" className="gap-1">
-              <Package className="w-3 h-3" />
-              {listings.length} offres actives
-            </Badge>
-            {lastMinuteCount > 0 && (
-              <Badge className="gap-1 bg-destructive/15 text-destructive border-destructive/30">
-                <Flame className="w-3 h-3" />
-                {lastMinuteCount} last minute
+            <div className="flex gap-2 mt-3 text-xs">
+              <Badge variant="outline" className="gap-1">
+                <Package className="w-3 h-3" />
+                {listings.length} offres actives
               </Badge>
-            )}
+              {lastMinuteCount > 0 && (
+                <Badge className="gap-1 bg-destructive/15 text-destructive border-destructive/30">
+                  <Flame className="w-3 h-3" />
+                  {lastMinuteCount} last minute
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Filters */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border">
         <div className="container max-w-4xl px-4 py-3 space-y-3">
           {/* Mode filter tabs */}
-          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1">
             {(["all", "aerien", "maritime", "routier", "gp"] as TransportMode[]).map((mode) => {
               const config = mode === "all" ? null : MODE_CONFIG[mode];
               const Icon = config?.icon || BarChart3;
@@ -337,15 +351,14 @@ export default function FreightMarketplace() {
                 <button
                   key={mode}
                   onClick={() => setModeFilter(mode)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                  className={`flex-1 flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
                     modeFilter === mode
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "bg-muted/60 text-muted-foreground hover:bg-muted"
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
+                  <Icon className="w-3 h-3" />
                   {mode === "all" ? "Tout" : config?.label}
-                  <span className="opacity-70">({count})</span>
                 </button>
               );
             })}
