@@ -146,7 +146,7 @@ export function MissionStatusUpdaterV2({
       if (response.status === "executed") {
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
-        toast({ title: response.message || "✅ Statut mis à jour" });
+        toast({ title: response.message?.replace(/[✅⚠️📦🚚📍]/g, '').trim() || "Statut mis a jour" });
         onStatusUpdated();
       } else {
         toast({
