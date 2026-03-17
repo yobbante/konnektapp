@@ -666,8 +666,8 @@ export default function SmartBookingPage() {
       if (recipientData?.userId) {
         await supabase.from("notifications").insert({
           user_id: recipientData.userId,
-          title: "📦 Un colis est en route pour vous",
-          message: `${recipientData.name || "Vous"} avez un colis de ${offer.origin_city} → ${offer.destination_city} via ${gpProfile.business_name}. Suivez-le dans l'app.`,
+          title: "Un colis est en route pour vous",
+          message: `${recipientData.name || "Vous"} avez un colis de ${offer.origin_city} - ${offer.destination_city} via ${gpProfile.business_name}. Suivez-le dans l'app.`,
           type: "order",
           related_id: orderData.id,
           related_type: "order",
