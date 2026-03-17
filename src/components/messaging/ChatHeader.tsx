@@ -51,6 +51,7 @@ export function ChatHeader({
   onBack,
   gpPhone,
   gpSelfieUrl,
+  onAudioCall,
 }: ChatHeaderProps) {
   const navigate = useNavigate();
   const [orderInfo, setOrderInfo] = useState<OrderInfo | null>(null);
