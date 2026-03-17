@@ -197,23 +197,20 @@ export default function ReservationsPage() {
 
   const getTabNotifCount = (tabId: TabId) => tabNotifications[tabId] || 0;
 
-  const TYPE_CARD_STYLE: Record<string, { iconColor: string; iconBg: string; borderColor: string }> = {
-    routier: { iconColor: "text-transport-routier", iconBg: "bg-transport-routier/10", borderColor: "border-transport-routier/25" },
-    maritime: { iconColor: "text-transport-maritime", iconBg: "bg-transport-maritime/10", borderColor: "border-transport-maritime/25" },
-    aerien: { iconColor: "text-transport-aerien", iconBg: "bg-transport-aerien/10", borderColor: "border-transport-aerien/25" },
-    mobility: { iconColor: "text-transport-mobility", iconBg: "bg-transport-mobility/10", borderColor: "border-transport-mobility/25" },
-  };
-  const GP_STYLE = { iconColor: "text-transport-voyageur", iconBg: "bg-transport-voyageur/10", borderColor: "border-transport-voyageur/25" };
-
   const getTypeCardStyle = (gpType?: string) => {
-    if (!gpType) return GP_STYLE;
-    return TYPE_CARD_STYLE[gpType] || GP_STYLE;
+    // Subtle: only icon gets colored, card border stays neutral
+    const styles: Record<string, { iconColor: string; iconBg: string }> = {
+      routier: { iconColor: "text-transport-routier", iconBg: "bg-transport-routier/10" },
+      maritime: { iconColor: "text-transport-maritime", iconBg: "bg-transport-maritime/10" },
+      aerien: { iconColor: "text-transport-aerien", iconBg: "bg-transport-aerien/10" },
+      mobility: { iconColor: "text-transport-mobility", iconBg: "bg-transport-mobility/10" },
+    };
+    return styles[gpType || ""] || { iconColor: "text-transport-voyageur", iconBg: "bg-transport-voyageur/10" };
   };
 
   const renderOrderCard = (order: any, i: number) => {
     const cfg = STATUS_CONFIG[order.status] || { label: order.status, color: "bg-muted text-muted-foreground", icon: Clock };
     const Icon = getOrderIcon(order);
-    const isActive = ACTIVE_STATUSES.includes(order.status);
     const isCancelled = CANCELLED_STATUSES.includes(order.status);
     const isDelivered = DELIVERED_STATUSES.includes(order.status);
     const isRecentChange = recentlyChangedOrders.has(order.id);
@@ -227,18 +224,14 @@ export default function ReservationsPage() {
         transition={{ delay: i * 0.03 }}
         onClick={() => setSelectedOrder(order)}
         className={`bg-card border rounded-2xl p-3.5 active:scale-[0.98] transition-all cursor-pointer relative ${
-          isRecentChange ? "border-primary/40 shadow-md ring-1 ring-primary/20" :
-          isCancelled ? "border-destructive/20" :
-          isDelivered ? "border-green-500/20" :
-          typeStyle.borderColor
+          isRecentChange ? "border-primary/40 shadow-md ring-1 ring-primary/20" : "border-border"
         }`}
       >
-        {/* Notification dot for recent changes */}
         {isRecentChange && (
           <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-primary animate-pulse" />
         )}
         <div className="flex items-start gap-3">
-          <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
             isCancelled ? 'bg-destructive/10' :
             isDelivered ? 'bg-green-500/10' : typeStyle.iconBg
           }`}>
@@ -255,7 +248,7 @@ export default function ReservationsPage() {
               <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             </div>
 
-            <div className="flex items-center gap-2 mt-1.5">
+            <div className="flex items-center gap-1.5 mt-1">
               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${cfg.color}`}>
                 {cfg.label}
               </span>
@@ -269,7 +262,7 @@ export default function ReservationsPage() {
               </span>
             </div>
 
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
+            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               {order.weight > 0 && (
                 <span className="text-[11px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
                   {order.weight} kg
@@ -280,22 +273,11 @@ export default function ReservationsPage() {
                   {order.total_price.toLocaleString()} {order.currency || "FCFA"}
                 </span>
               )}
-              {order.gp_profiles?.gp_type && (
-                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${typeStyle.iconBg} ${typeStyle.iconColor} uppercase`}>
-                  {order.gp_profiles.gp_type}
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between mt-1.5">
               {order.gp_profiles?.business_name && (
-                <span className="text-[10px] text-muted-foreground truncate max-w-[60%]">
+                <span className="text-[10px] text-muted-foreground">
                   {order.gp_profiles.business_name}
                 </span>
               )}
-              <span className="text-[10px] text-muted-foreground">
-                {format(new Date(order.created_at), "d MMM yyyy", { locale: fr })}
-              </span>
             </div>
           </div>
         </div>
