@@ -59,10 +59,14 @@ export function MobileNav() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Import GP_ONLY_MODE
+  const gpOnlyMode = true; // Matches src/config/featureFlags.ts GP_ONLY_MODE
+
   const navItems = [
     { href: "/", icon: Home, label: "Accueil", isHome: true },
     { href: "/reservations", icon: CalendarCheck, label: "Réservations", requiresAuth: true },
-    { href: "#mission", icon: Send, label: "Mission", isMission: true },
+    // Hide Mission button in GP_ONLY_MODE (it's for routier/maritime/aerien)
+    ...(!gpOnlyMode ? [{ href: "#mission", icon: Send, label: "Mission", isMission: true }] : []),
     { href: "/messages", icon: MessageCircle, label: "Messages", isMessages: true },
     { href: "#menu", icon: Menu, label: "Menu", isMenu: true },
   ];
