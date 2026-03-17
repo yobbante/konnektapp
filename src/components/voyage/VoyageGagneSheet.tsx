@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { SearchableCitySelect, WORLD_CITIES } from "@/components/gp/SearchableCitySelect";
+import { SearchableCitySelect } from "@/components/gp/SearchableCitySelect";
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle
 } from "@/components/ui/drawer";
