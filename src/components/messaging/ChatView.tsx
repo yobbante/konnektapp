@@ -224,6 +224,8 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
         contactId={gpId || ""}
         isGpVerified={isGpVerified}
         onBack={onBack}
+        gpPhone={gpPhone}
+        gpSelfieUrl={gpSelfieUrl}
       />
 
       {/* Messages - Fixed container with scrollable content */}
