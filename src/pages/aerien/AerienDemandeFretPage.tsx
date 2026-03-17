@@ -267,7 +267,7 @@ export default function AerienDemandeFretPage() {
         {/* Dates */}
         <Card>
           <CardContent className="p-3 space-y-2">
-            <h3 className="text-xs font-bold">📅 Dates souhaitées</h3>
+            <h3 className="text-xs font-bold">Dates souhaitees</h3>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label className="text-[10px]">À partir du</Label>
