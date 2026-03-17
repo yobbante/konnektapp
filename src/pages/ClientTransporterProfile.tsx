@@ -784,7 +784,7 @@ function ClientTransporterProfileContent() {
                     onClick={() => handleBookOffer(offer.id)}
                   >
                     <div className="flex items-center gap-2">
-                      <span>{countryFlags[offer.origin_country] || "🌍"}</span>
+                      <span>{countryFlags[offer.origin_country] || ""}</span>
                       <span className="text-sm font-medium">
                         {offer.origin_city} → {offer.destination_city}
                       </span>
