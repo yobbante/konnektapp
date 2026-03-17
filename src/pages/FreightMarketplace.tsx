@@ -527,7 +527,7 @@ export default function FreightMarketplace() {
         )}
       </div>
 
-      <MobileNav />
+      {!isPopup && <MobileNav />}
     </div>
   );
 }
