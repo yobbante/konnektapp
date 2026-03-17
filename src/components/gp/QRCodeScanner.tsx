@@ -236,7 +236,7 @@ export function QRCodeScanner({ gpId, scanType, onComplete }: QRCodeScannerProps
         });
 
         toast({
-          title: "✅ Colis confirmé",
+          title: "Colis confirme",
           description: "Statut mis à jour: Colis reçu",
         });
       }
