@@ -1279,6 +1279,63 @@ export type Database = {
           },
         ]
       }
+      gp_levels: {
+        Row: {
+          badges: string[] | null
+          created_at: string | null
+          current_level: number | null
+          gp_id: string
+          id: string
+          level_name: string | null
+          next_level_threshold: number | null
+          total_clients_referred: number | null
+          total_missions: number | null
+          updated_at: string | null
+          xp_points: number | null
+        }
+        Insert: {
+          badges?: string[] | null
+          created_at?: string | null
+          current_level?: number | null
+          gp_id: string
+          id?: string
+          level_name?: string | null
+          next_level_threshold?: number | null
+          total_clients_referred?: number | null
+          total_missions?: number | null
+          updated_at?: string | null
+          xp_points?: number | null
+        }
+        Update: {
+          badges?: string[] | null
+          created_at?: string | null
+          current_level?: number | null
+          gp_id?: string
+          id?: string
+          level_name?: string | null
+          next_level_threshold?: number | null
+          total_clients_referred?: number | null
+          total_missions?: number | null
+          updated_at?: string | null
+          xp_points?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gp_levels_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: true
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_levels_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: true
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gp_navette_change_requests: {
         Row: {
           admin_notes: string | null
@@ -1883,6 +1940,133 @@ export type Database = {
           zones_covered?: string[] | null
         }
         Relationships: []
+      }
+      gp_referral_conversions: {
+        Row: {
+          bonus_amount: number | null
+          bonus_type: string | null
+          client_id: string
+          created_at: string | null
+          gp_id: string
+          id: string
+          order_id: string | null
+          referral_id: string
+          status: string | null
+        }
+        Insert: {
+          bonus_amount?: number | null
+          bonus_type?: string | null
+          client_id: string
+          created_at?: string | null
+          gp_id: string
+          id?: string
+          order_id?: string | null
+          referral_id: string
+          status?: string | null
+        }
+        Update: {
+          bonus_amount?: number | null
+          bonus_type?: string | null
+          client_id?: string
+          created_at?: string | null
+          gp_id?: string
+          id?: string
+          order_id?: string | null
+          referral_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gp_referral_conversions_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_referral_conversions_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_referral_conversions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "gp_contact_release"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "gp_referral_conversions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "mvp_coherence_dashboard"
+            referencedColumns: ["order_id"]
+          },
+          {
+            foreignKeyName: "gp_referral_conversions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_referral_conversions_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "gp_referrals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gp_referrals: {
+        Row: {
+          created_at: string | null
+          currency: string | null
+          gp_id: string
+          id: string
+          referral_code: string
+          total_bonus_earned: number | null
+          total_referrals: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          currency?: string | null
+          gp_id: string
+          id?: string
+          referral_code: string
+          total_bonus_earned?: number | null
+          total_referrals?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string | null
+          gp_id?: string
+          id?: string
+          referral_code?: string
+          total_bonus_earned?: number | null
+          total_referrals?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gp_referrals_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: true
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gp_referrals_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: true
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       gp_response_tracking: {
         Row: {
