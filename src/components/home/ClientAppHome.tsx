@@ -486,7 +486,7 @@ export function ClientAppHome({
           .from("gp_offers")
           .select("*, gp_profiles(business_name, rating, total_reviews, subscription)")
           .eq("status", "active")
-          .in("transport_type", ["bagages_international", "bagages_accompagnes", "navette"])
+          .eq("transport_type", "bagages_international" as any)
           .gte("departure_date", today)
           .order("departure_date", { ascending: true })
           .limit(50)
