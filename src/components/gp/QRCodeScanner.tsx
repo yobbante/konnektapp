@@ -292,7 +292,7 @@ export function QRCodeScanner({ gpId, scanType, onComplete }: QRCodeScannerProps
       });
 
       toast({
-        title: "🎉 Livraison confirmée",
+        title: "Livraison confirmee",
         description: "Mission terminée avec succès",
       });
 

@@ -947,7 +947,7 @@ function CreateVoyageDialog({
       if (error) throw error;
 
       toast({
-        title: "✈️ Voyage publié !",
+        title: "Voyage publie",
         description: "Votre voyage est maintenant visible par les expéditeurs",
       });
       onSuccess();
