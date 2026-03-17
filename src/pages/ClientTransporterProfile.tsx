@@ -465,7 +465,7 @@ function ClientTransporterProfileContent() {
                 {/* Route */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">{countryFlags[nextOffer.origin_country] || "🌍"}</span>
+                    <span className="text-lg">{countryFlags[nextOffer.origin_country] || ""}</span>
                     <span className="font-medium">{nextOffer.origin_city}</span>
                   </div>
                   <ArrowLeft className="w-4 h-4 rotate-180 text-muted-foreground" />
