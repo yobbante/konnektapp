@@ -229,7 +229,7 @@ export function QRCodeScanner({ gpId, scanType, onComplete }: QRCodeScannerProps
         await supabase.from("notifications").insert({
           user_id: scannedOrder.client_id,
           type: "order_update",
-          title: "📦 Colis reçu",
+          title: "Colis recu",
           message: `Votre colis ${scannedOrder.order_number} a été reçu par le transporteur`,
           related_type: "order",
           related_id: scannedOrder.id,
