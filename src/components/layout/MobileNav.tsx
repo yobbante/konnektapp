@@ -314,7 +314,12 @@ export function MobileNav() {
 
       <ClientScanSheet open={scanOpen} onOpenChange={setScanOpen} />
       <MissionRequestSheet open={missionOpen} onOpenChange={setMissionOpen} />
-      <VoyageGagneSheet open={voyageOpen} onOpenChange={setVoyageOpen} />
+      <VoyageGagneSheet open={voyageOpen} onOpenChange={(v) => { setVoyageOpen(v); if (!v) setHasPublishedTrips(true); }} />
+      <VoyageDashboard 
+        open={voyageDashOpen} 
+        onOpenChange={setVoyageDashOpen} 
+        onNewTrip={() => { setVoyageDashOpen(false); setTimeout(() => setVoyageOpen(true), 300); }}
+      />
       <CentralMenuSheet open={menuOpen} onOpenChange={setMenuOpen}>
         <span />
       </CentralMenuSheet>
