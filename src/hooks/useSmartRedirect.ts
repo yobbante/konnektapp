@@ -116,6 +116,15 @@ export function useSmartRedirect() {
         .maybeSingle();
 
       if (gpProfile) {
+        // GP Occasionnel = client, don't redirect to GP dashboard
+        if (gpProfile.gp_type === "occasionnel") {
+          navigate("/");
+          return { 
+            success: true, 
+            destination: "/", 
+            role: "client" 
+          };
+        }
         // Route based on gp_type
         const isRoutier = gpProfile.gp_type === "routier";
         const destination = isRoutier ? "/routier/apercu" : "/gp/demandes";
