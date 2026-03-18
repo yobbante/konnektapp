@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MiniLoader } from "@/components/ui/MiniLoader";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { GP_ONLY_MODE } from "@/config/featureFlags";
 
 interface TransportTypeOption {
   id: string;
