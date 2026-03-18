@@ -9,6 +9,7 @@ import { ClientScanSheet } from "@/components/scan/ClientScanSheet";
 import { CentralMenuSheet } from "@/components/layout/CentralMenuSheet";
 import { MissionRequestSheet } from "@/components/missions/MissionRequestSheet";
 import { VoyageGagneSheet } from "@/components/voyage/VoyageGagneSheet";
+import { VoyageDashboard } from "@/components/voyage/VoyageDashboard";
 import { GP_ONLY_MODE } from "@/config/featureFlags";
 
 /**
