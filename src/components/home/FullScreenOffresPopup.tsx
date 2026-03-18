@@ -46,7 +46,7 @@ const TYPE_MAP: Record<string, string[]> = {
   maritime: ["maritime"],
   routier: ["routier"],
   mobility: ["mobility"],
-  bagages: ["bagages_accompagnes", "navette", "bagages_international", "voyageur"],
+  bagages: ["bagages_accompagnes", "navette", "bagages_international", "voyageur", "occasionnel"],
 };
 
 const MODE_CONFIG: Record<string, { icon: typeof Package; label: string; colorClass: string; bgClass: string }> = {
