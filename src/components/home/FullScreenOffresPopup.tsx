@@ -54,7 +54,7 @@ const MODE_CONFIG: Record<string, { icon: typeof Package; label: string; colorCl
   voyageur: { icon: Luggage, label: "GP", colorClass: "text-primary", bgClass: "bg-primary/10" },
   navette: { icon: Luggage, label: "GP", colorClass: "text-primary", bgClass: "bg-primary/10" },
   bagages_accompagnes: { icon: Luggage, label: "GP", colorClass: "text-primary", bgClass: "bg-primary/10" },
-  occasionnel: { icon: Plane, label: "Voyageur ✨", colorClass: "text-amber-500", bgClass: "bg-amber-500/10" },
+  occasionnel: { icon: Plane, label: "GP Occasionnel", colorClass: "text-amber-500", bgClass: "bg-amber-500/10" },
   routier: { icon: Truck, label: "Routier", colorClass: "text-blue-500", bgClass: "bg-blue-500/10" },
   maritime: { icon: Ship, label: "Maritime", colorClass: "text-cyan-500", bgClass: "bg-cyan-500/10" },
   aerien: { icon: Plane, label: "Aérien", colorClass: "text-purple-500", bgClass: "bg-purple-500/10" },
