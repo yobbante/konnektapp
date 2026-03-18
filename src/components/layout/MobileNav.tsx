@@ -27,6 +27,30 @@ export function MobileNav() {
   const [scanOpen, setScanOpen] = useState(false);
   const [missionOpen, setMissionOpen] = useState(false);
   const [voyageOpen, setVoyageOpen] = useState(false);
+  const [voyageDashOpen, setVoyageDashOpen] = useState(false);
+  const [hasPublishedTrips, setHasPublishedTrips] = useState(false);
+
+  // Check if user has published trips (occasional GP)
+  useEffect(() => {
+    const checkTrips = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data: gp } = await supabase
+        .from("gp_profiles")
+        .select("id")
+        .eq("user_id", session.user.id)
+        .eq("gp_type", "occasionnel" as any)
+        .maybeSingle();
+      if (gp) {
+        const { count } = await supabase
+          .from("gp_offers")
+          .select("id", { count: "exact", head: true })
+          .eq("gp_id", gp.id);
+        setHasPublishedTrips((count || 0) > 0);
+      }
+    };
+    checkTrips();
+  }, [voyageOpen]);
 
   useEffect(() => {
     const checkAuth = async () => {
