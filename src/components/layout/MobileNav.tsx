@@ -124,7 +124,12 @@ export function MobileNav() {
         navigate("/auth");
         return;
       }
-      setVoyageOpen(true);
+      // If user has published trips, show dashboard; otherwise show creation flow
+      if (hasPublishedTrips) {
+        setVoyageDashOpen(true);
+      } else {
+        setVoyageOpen(true);
+      }
       return;
     }
 
