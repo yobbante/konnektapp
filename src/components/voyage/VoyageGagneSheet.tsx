@@ -1,13 +1,13 @@
 /**
  * VoyageGagneSheet — "Voyage & Gagne" flow
- * Allows any client to publish a trip and become an occasional GP.
- * 3 steps: Intro → Trip details → Summary & Publish
+ * Allows any client to publish a trip and become a GP Occasionnel.
+ * 3 steps: Intro → Trip details (with deposit/reception info) → Summary & Publish
  */
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plane, MapPin, Calendar, Weight, DollarSign, Luggage, 
-  ChevronRight, ChevronLeft, Sparkles, ArrowRight, Info, Check
+  ChevronRight, ChevronLeft, Sparkles, ArrowRight, Info, Check, Phone, MapPinned
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,8 +26,8 @@ interface VoyageGagneSheetProps {
 
 type Step = "intro" | "details" | "summary";
 
-const SUGGESTED_PRICE = 8; // Default suggested price per kg
-const SUGGESTED_CAPACITY = 20; // Default suggested capacity
+const SUGGESTED_PRICE = 8;
+const SUGGESTED_CAPACITY = 20;
 const BAGGAGE_PRESETS = [
   { label: "1 bagage (23kg)", count: 1, capacity: 20 },
   { label: "2 bagages (46kg)", count: 2, capacity: 40 },
@@ -52,6 +52,12 @@ export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) 
   const [pricePerKg, setPricePerKg] = useState(SUGGESTED_PRICE);
   const [currency] = useState("EUR");
   
+  // Deposit & Reception info
+  const [depositPhone, setDepositPhone] = useState("");
+  const [depositAddress, setDepositAddress] = useState("");
+  const [receptionPhone, setReceptionPhone] = useState("");
+  const [receptionAddress, setReceptionAddress] = useState("");
+  
   // Pre-fill user country
   const [userProfile, setUserProfile] = useState<any>(null);
   
@@ -62,10 +68,17 @@ export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) 
       if (!session) return;
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, phone, country")
+        .select("full_name, phone, country_code")
         .eq("user_id", session.user.id)
         .maybeSingle();
-      if (data) setUserProfile(data);
+      if (data) {
+        setUserProfile(data);
+        // Pre-fill phones with user's phone
+        if (data.phone) {
+          setDepositPhone(data.phone);
+          setReceptionPhone(data.phone);
+        }
+      }
     };
     loadProfile();
   }, [open]);
@@ -83,6 +96,10 @@ export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) 
         setBaggageCount(1);
         setCapacity(SUGGESTED_CAPACITY);
         setPricePerKg(SUGGESTED_PRICE);
+        setDepositPhone("");
+        setDepositAddress("");
+        setReceptionPhone("");
+        setReceptionAddress("");
       }, 300);
     }
   }, [open]);
@@ -96,7 +113,7 @@ export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) 
   const estimatedEarnings = capacity * pricePerKg;
   const minDate = new Date().toISOString().split("T")[0];
 
-  const canSubmitDetails = originCity && destCity && departureDate && capacity > 0 && pricePerKg > 0;
+  const canSubmitDetails = originCity && destCity && departureDate && capacity > 0 && pricePerKg > 0 && depositPhone && receptionPhone && depositAddress && receptionAddress;
 
   const handleCitySelect = (city: string, country: string, field: "origin" | "dest") => {
     if (field === "origin") {
@@ -132,7 +149,8 @@ export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) 
       // If no GP profile, create an occasional one
       if (!gpId) {
         const businessName = userProfile?.full_name || "GP Occasionnel";
-        const phone = userProfile?.phone || "";
+        // Use a unique phone to avoid constraint violation
+        const phone = userProfile?.phone || `occasionnel-${userId.slice(0, 8)}`;
         
         const { data: newGP, error: gpError } = await supabase
           .from("gp_profiles")
@@ -143,22 +161,49 @@ export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) 
             city: originCity,
             country_code: originCountry === "France" ? "FR" : originCountry === "Sénégal" ? "SN" : "CI",
             gp_type: "occasionnel" as any,
-            status: "verified" as any, // Auto-verified for occasional
+            status: "verified" as any,
             base_origin_city: originCity,
             base_origin_country: originCountry,
             base_destination_city: destCity,
             base_destination_country: destCountry,
             base_price_per_kg: pricePerKg,
             default_currency: currency,
+            deposit_address: depositAddress,
+            reception_address: receptionAddress,
           })
           .select("id")
           .single();
 
-        if (gpError) throw gpError;
-        gpId = newGP.id;
+        if (gpError) {
+          // If unique constraint on user_id, re-fetch existing profile
+          if (gpError.code === "23505") {
+            const { data: retryGP } = await supabase
+              .from("gp_profiles")
+              .select("id")
+              .eq("user_id", userId)
+              .maybeSingle();
+            gpId = retryGP?.id;
+            if (!gpId) throw gpError;
+          } else {
+            throw gpError;
+          }
+        } else {
+          gpId = newGP.id;
+        }
+      } else {
+        // Update existing GP profile with deposit/reception addresses if occasionnel
+        if (existingGP.gp_type === "occasionnel") {
+          await supabase
+            .from("gp_profiles")
+            .update({
+              deposit_address: depositAddress,
+              reception_address: receptionAddress,
+            })
+            .eq("id", gpId);
+        }
       }
 
-      // Create the offer
+      // Create the offer — always as "occasionnel" transport type for voyage flow
       const { error: offerError } = await supabase
         .from("gp_offers")
         .insert({
@@ -172,8 +217,9 @@ export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) 
           available_capacity: capacity,
           price_per_kg: pricePerKg,
           currency: currency,
-          transport_type: (existingGP?.gp_type === "occasionnel" || !existingGP ? "occasionnel" : "bagages_international") as any,
+          transport_type: "occasionnel" as any,
           status: "active" as any,
+          description: `Dépôt: ${depositAddress} (${depositPhone}) | Réception: ${receptionAddress} (${receptionPhone})`,
         });
 
       if (offerError) throw offerError;
@@ -184,8 +230,6 @@ export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) 
       });
 
       onOpenChange(false);
-      
-      // Navigate to activity/reservations
       navigate("/reservations");
     } catch (err: any) {
       console.error("Publish error:", err);
@@ -291,12 +335,12 @@ export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) 
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="space-y-4"
+                className="space-y-3"
               >
                 <p className="text-xs text-muted-foreground font-medium">Étape 2/3 · Détails du voyage</p>
 
                 {/* Origin & Destination */}
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   <div>
                     <label className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
                       <MapPin className="w-3 h-3 text-primary" /> Ville de départ
@@ -304,9 +348,7 @@ export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) 
                     <SearchableCitySelect
                       value={originCity}
                       countryCode={originCountry}
-                      onSelect={(city, country) => {
-                        handleCitySelect(city, country, "origin");
-                      }}
+                      onSelect={(city, country) => handleCitySelect(city, country, "origin")}
                       placeholder="Ex: Paris"
                       className="h-10"
                     />
@@ -319,9 +361,7 @@ export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) 
                     <SearchableCitySelect
                       value={destCity}
                       countryCode={destCountry}
-                      onSelect={(city, country) => {
-                        handleCitySelect(city, country, "dest");
-                      }}
+                      onSelect={(city, country) => handleCitySelect(city, country, "dest")}
                       placeholder="Ex: Dakar"
                       className="h-10"
                     />
@@ -344,7 +384,7 @@ export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) 
 
                 {/* Baggage count */}
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1">
+                  <label className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1">
                     <Luggage className="w-3 h-3" /> Nombre de bagages
                   </label>
                   <div className="flex gap-2">
@@ -352,7 +392,7 @@ export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) 
                       <button
                         key={preset.count}
                         onClick={() => setBaggageCount(preset.count)}
-                        className={`flex-1 py-2.5 px-2 rounded-xl text-xs font-semibold border transition-all ${
+                        className={`flex-1 py-2 px-2 rounded-xl text-xs font-semibold border transition-all ${
                           baggageCount === preset.count
                             ? "bg-amber-500/10 border-amber-500/40 text-amber-600"
                             : "bg-muted/30 border-border/50 text-muted-foreground"
@@ -366,41 +406,92 @@ export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) 
                   </div>
                 </div>
 
-                {/* Capacity */}
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
-                    <Weight className="w-3 h-3" /> Capacité disponible (kg)
-                  </label>
-                  <input
-                    type="number"
-                    value={capacity}
-                    onChange={(e) => setCapacity(Math.max(1, parseInt(e.target.value) || 0))}
-                    min={1}
-                    className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
-                  />
+                {/* Capacity & Price row */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
+                      <Weight className="w-3 h-3" /> Capacité (kg)
+                    </label>
+                    <input
+                      type="number"
+                      value={capacity}
+                      onChange={(e) => setCapacity(Math.max(1, parseInt(e.target.value) || 0))}
+                      min={1}
+                      className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                        <DollarSign className="w-3 h-3" /> Prix/kg (€)
+                      </label>
+                    </div>
+                    <input
+                      type="number"
+                      value={pricePerKg}
+                      onChange={(e) => setPricePerKg(Math.max(1, parseInt(e.target.value) || 0))}
+                      min={1}
+                      className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
                 </div>
 
-                {/* Price per kg */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                      <DollarSign className="w-3 h-3" /> Prix par kg (€)
-                    </label>
-                    <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-600 border-amber-500/20">
-                      <Sparkles className="w-2.5 h-2.5 mr-0.5" /> Suggéré : {SUGGESTED_PRICE}€
-                    </Badge>
+                {/* Deposit Info */}
+                <div className="p-3 rounded-xl bg-primary/5 border border-primary/10 space-y-2.5">
+                  <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <MapPinned className="w-3.5 h-3.5 text-primary" /> Point de dépôt (départ)
+                  </p>
+                  <div>
+                    <label className="text-[11px] text-muted-foreground">Téléphone dépôt</label>
+                    <input
+                      type="tel"
+                      value={depositPhone}
+                      onChange={(e) => setDepositPhone(e.target.value)}
+                      placeholder="+33 6 12 34 56 78"
+                      className="w-full h-9 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+                    />
                   </div>
-                  <input
-                    type="number"
-                    value={pricePerKg}
-                    onChange={(e) => setPricePerKg(Math.max(1, parseInt(e.target.value) || 0))}
-                    min={1}
-                    className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
-                  />
+                  <div>
+                    <label className="text-[11px] text-muted-foreground">Adresse de dépôt</label>
+                    <input
+                      type="text"
+                      value={depositAddress}
+                      onChange={(e) => setDepositAddress(e.target.value)}
+                      placeholder="Ex: 12 rue de la Paix, Paris"
+                      className="w-full h-9 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                </div>
+
+                {/* Reception Info */}
+                <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/10 space-y-2.5">
+                  <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <MapPinned className="w-3.5 h-3.5 text-amber-500" /> Point de réception (arrivée)
+                  </p>
+                  <div>
+                    <label className="text-[11px] text-muted-foreground">Téléphone réception</label>
+                    <input
+                      type="tel"
+                      value={receptionPhone}
+                      onChange={(e) => setReceptionPhone(e.target.value)}
+                      placeholder="+221 77 123 45 67"
+                      className="w-full h-9 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-muted-foreground">Adresse de réception</label>
+                    <input
+                      type="text"
+                      value={receptionAddress}
+                      onChange={(e) => setReceptionAddress(e.target.value)}
+                      placeholder="Ex: Quartier Médina, Dakar"
+                      className="w-full h-9 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
                 </div>
 
                 {/* Estimated earnings */}
-                <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+                <div className="p-2.5 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">Gains estimés</span>
                     <span className="text-lg font-bold text-amber-600">{estimatedEarnings.toLocaleString()}€</span>
@@ -470,6 +561,28 @@ export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) 
                     <div className="p-2.5 rounded-lg bg-muted/30">
                       <p className="text-[10px] text-muted-foreground mb-0.5">Prix/kg</p>
                       <p className="text-sm font-semibold">{pricePerKg}€</p>
+                    </div>
+                  </div>
+
+                  {/* Deposit & Reception summary */}
+                  <div className="space-y-2">
+                    <div className="p-2.5 rounded-lg bg-primary/5 border border-primary/10">
+                      <p className="text-[10px] text-muted-foreground mb-0.5 flex items-center gap-1">
+                        <MapPinned className="w-3 h-3" /> Dépôt
+                      </p>
+                      <p className="text-xs font-semibold">{depositAddress}</p>
+                      <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                        <Phone className="w-2.5 h-2.5" /> {depositPhone}
+                      </p>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/10">
+                      <p className="text-[10px] text-muted-foreground mb-0.5 flex items-center gap-1">
+                        <MapPinned className="w-3 h-3" /> Réception
+                      </p>
+                      <p className="text-xs font-semibold">{receptionAddress}</p>
+                      <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                        <Phone className="w-2.5 h-2.5" /> {receptionPhone}
+                      </p>
                     </div>
                   </div>
 
