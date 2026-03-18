@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MiniLoader } from "@/components/ui/MiniLoader";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { GP_ONLY_MODE } from "@/config/featureFlags";
 
 interface TransportTypeOption {
   id: string;
@@ -24,12 +25,12 @@ interface TransportTypeOption {
 
 const transportTypes: TransportTypeOption[] = [
   { id: "bagages", label: "GP Via Bagages", sub: "Colis par avion", icon: Plane, route: "/gp/bagages/inscription", color: "bg-primary text-primary-foreground", available: true },
-  { id: "routier", label: "Routier", sub: "Fret & transport routier", icon: Truck, route: "/routier/inscription", color: "bg-secondary text-secondary-foreground", available: true },
-  { id: "aerien", label: "Aérien Cargo", sub: "Fret aérien express", icon: Plane, route: "/aerien/inscription", color: "bg-violet-600 text-white", available: true },
-  { id: "maritime", label: "Maritime", sub: "Conteneurs & groupage", icon: Ship, route: "/maritime/inscription", color: "bg-blue-600 text-white", available: true },
-  { id: "express", label: "Coursier", sub: "Livraison express locale", icon: Package, route: "/coursier/inscription", color: "bg-orange-500 text-white", available: true },
-  { id: "agence", label: "Agence", sub: "Transitaire & logistique", icon: Building, route: "/agence/inscription", color: "bg-emerald-600 text-white", available: true },
-  { id: "mobility", label: "Mobility", sub: "Transport de personnes", icon: Car, route: "/mobility/inscription", color: "bg-transport-mobility text-white", available: true },
+  { id: "routier", label: "Routier", sub: "Fret & transport routier", icon: Truck, route: "/routier/inscription", color: "bg-secondary text-secondary-foreground", available: !GP_ONLY_MODE },
+  { id: "aerien", label: "Aérien Cargo", sub: "Fret aérien express", icon: Plane, route: "/aerien/inscription", color: "bg-violet-600 text-white", available: !GP_ONLY_MODE },
+  { id: "maritime", label: "Maritime", sub: "Conteneurs & groupage", icon: Ship, route: "/maritime/inscription", color: "bg-blue-600 text-white", available: !GP_ONLY_MODE },
+  { id: "express", label: "Coursier", sub: "Livraison express locale", icon: Package, route: "/coursier/inscription", color: "bg-orange-500 text-white", available: !GP_ONLY_MODE },
+  { id: "agence", label: "Agence", sub: "Transitaire & logistique", icon: Building, route: "/agence/inscription", color: "bg-emerald-600 text-white", available: !GP_ONLY_MODE },
+  { id: "mobility", label: "Mobility", sub: "Transport de personnes", icon: Car, route: "/mobility/inscription", color: "bg-transport-mobility text-white", available: !GP_ONLY_MODE },
 ];
 
 export default function TransporteurRegistration() {

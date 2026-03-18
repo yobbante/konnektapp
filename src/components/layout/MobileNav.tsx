@@ -9,6 +9,7 @@ import { ClientScanSheet } from "@/components/scan/ClientScanSheet";
 import { CentralMenuSheet } from "@/components/layout/CentralMenuSheet";
 import { MissionRequestSheet } from "@/components/missions/MissionRequestSheet";
 import { VoyageGagneSheet } from "@/components/voyage/VoyageGagneSheet";
+import { VoyageDashboard } from "@/components/voyage/VoyageDashboard";
 import { GP_ONLY_MODE } from "@/config/featureFlags";
 
 /**
@@ -26,6 +27,30 @@ export function MobileNav() {
   const [scanOpen, setScanOpen] = useState(false);
   const [missionOpen, setMissionOpen] = useState(false);
   const [voyageOpen, setVoyageOpen] = useState(false);
+  const [voyageDashOpen, setVoyageDashOpen] = useState(false);
+  const [hasPublishedTrips, setHasPublishedTrips] = useState(false);
+
+  // Check if user has published trips (occasional GP)
+  useEffect(() => {
+    const checkTrips = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data: gp } = await supabase
+        .from("gp_profiles")
+        .select("id")
+        .eq("user_id", session.user.id)
+        .eq("gp_type", "occasionnel" as any)
+        .maybeSingle();
+      if (gp) {
+        const { count } = await supabase
+          .from("gp_offers")
+          .select("id", { count: "exact", head: true })
+          .eq("gp_id", gp.id);
+        setHasPublishedTrips((count || 0) > 0);
+      }
+    };
+    checkTrips();
+  }, [voyageOpen]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -99,7 +124,12 @@ export function MobileNav() {
         navigate("/auth");
         return;
       }
-      setVoyageOpen(true);
+      // If user has published trips, show dashboard; otherwise show creation flow
+      if (hasPublishedTrips) {
+        setVoyageDashOpen(true);
+      } else {
+        setVoyageOpen(true);
+      }
       return;
     }
 
@@ -284,7 +314,12 @@ export function MobileNav() {
 
       <ClientScanSheet open={scanOpen} onOpenChange={setScanOpen} />
       <MissionRequestSheet open={missionOpen} onOpenChange={setMissionOpen} />
-      <VoyageGagneSheet open={voyageOpen} onOpenChange={setVoyageOpen} />
+      <VoyageGagneSheet open={voyageOpen} onOpenChange={(v) => { setVoyageOpen(v); if (!v) setHasPublishedTrips(true); }} />
+      <VoyageDashboard 
+        open={voyageDashOpen} 
+        onOpenChange={setVoyageDashOpen} 
+        onNewTrip={() => { setVoyageDashOpen(false); setTimeout(() => setVoyageOpen(true), 300); }}
+      />
       <CentralMenuSheet open={menuOpen} onOpenChange={setMenuOpen}>
         <span />
       </CentralMenuSheet>
