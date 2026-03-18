@@ -15,6 +15,8 @@ import { fr } from "date-fns/locale";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "bagages_international" | "occasionnel";
 
+const VOYAGEUR_EXCEPTIONNEL_BADGE = "✈️ Voyageur Exceptionnel";
+
 interface VehicleInfo {
   name?: string;
   vehicle_type?: string;
