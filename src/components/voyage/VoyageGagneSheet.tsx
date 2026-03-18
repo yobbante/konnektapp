@@ -68,7 +68,7 @@ export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) 
       if (!session) return;
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, phone, country")
+        .select("full_name, phone, country_code")
         .eq("user_id", session.user.id)
         .maybeSingle();
       if (data) {
