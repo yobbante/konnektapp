@@ -397,30 +397,31 @@ export default function FreightMarketplace() {
 
           {/* Search & sort row */}
           <div className="flex gap-2">
-            <div className="relative flex-1">
-              <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-success" />
-              <Input
-                placeholder="Ville de départ..."
-                value={originSearch}
-                onChange={(e) => setOriginSearch(e.target.value)}
-                className="pl-8 h-9 text-sm"
-              />
-            </div>
-            <div className="relative flex-1">
-              <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-destructive" />
-              <Input
-                placeholder="Ville de destination..."
-                value={destSearch}
-                onChange={(e) => setDestSearch(e.target.value)}
-                className="pl-8 h-9 text-sm"
-              />
-            </div>
+            <button
+              onClick={() => { setCityQuery(""); setActivePicker("origin"); }}
+              className="flex-1 flex items-center gap-1.5 px-2.5 h-9 rounded-md border border-input bg-background text-sm"
+            >
+              <MapPin className="w-3.5 h-3.5 text-success shrink-0" />
+              <span className={originSearch ? "text-foreground font-medium truncate" : "text-muted-foreground truncate"}>
+                {originSearch || "Départ..."}
+              </span>
+            </button>
+            <button
+              onClick={() => { setCityQuery(""); setActivePicker("dest"); }}
+              className="flex-1 flex items-center gap-1.5 px-2.5 h-9 rounded-md border border-input bg-background text-sm"
+            >
+              <MapPin className="w-3.5 h-3.5 text-destructive shrink-0" />
+              <span className={destSearch ? "text-foreground font-medium truncate" : "text-muted-foreground truncate"}>
+                {destSearch || "Destination..."}
+              </span>
+            </button>
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
-              <SelectTrigger className="w-[130px] h-9 text-xs">
+              <SelectTrigger className="w-[110px] h-9 text-xs">
                 <ArrowUpDown className="w-3 h-3 mr-1" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="score">Score ★</SelectItem>
                 <SelectItem value="date">Date départ</SelectItem>
                 <SelectItem value="price">Prix ↑</SelectItem>
                 <SelectItem value="capacity">Capacité ↓</SelectItem>
