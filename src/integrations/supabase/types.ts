@@ -4549,6 +4549,42 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_active_cities: {
+        Row: {
+          city: string
+          country_code: string
+          country_name: string
+          created_at: string
+          flag: string
+          id: string
+          is_active: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          city: string
+          country_code?: string
+          country_name?: string
+          created_at?: string
+          flag?: string
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          city?: string
+          country_code?: string
+          country_name?: string
+          created_at?: string
+          flag?: string
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       platform_wallet: {
         Row: {
           currency: string

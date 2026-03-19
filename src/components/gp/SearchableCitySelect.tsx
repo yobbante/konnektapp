@@ -270,6 +270,9 @@ export const WORLD_CITIES = [
 
 const POPULAR_CITIES = FEATURED_CITIES.map(c => c.city);
 
+// NOTE: FEATURED_CITIES and WORLD_CITIES are still exported for backward compat.
+// For search filters, use useActiveCities() hook which reads from DB (admin-managed).
+
 interface CityListProps {
   searchQuery: string;
   onSearchChange: (q: string) => void;
