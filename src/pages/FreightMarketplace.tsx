@@ -264,9 +264,15 @@ export default function FreightMarketplace() {
       result = result.filter((l) => l.destination.toLowerCase().includes(q));
     }
 
+    const scoreListing = (l: MarketplaceListing) => {
+      const subBoost = l.providerSubscription === "pro" ? 1000 : l.providerSubscription === "premium" ? 500 : 0;
+      return subBoost + (l.providerRating || 0);
+    };
+
     result.sort((a, b) => {
       if (sortBy === "price") return a.price - b.price;
       if (sortBy === "capacity") return b.capacityRemaining - a.capacityRemaining;
+      if (sortBy === "score") return scoreListing(b) - scoreListing(a);
       return new Date(a.departureDate).getTime() - new Date(b.departureDate).getTime();
     });
 
