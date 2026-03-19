@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Package, Download, Share, MoreVertical, Check, Smartphone, Monitor } from "lucide-react";
+import { Download, Share, MoreVertical, Check, Smartphone, Monitor } from "lucide-react";
+import { KonnektLogo } from "@/components/ui/KonnektLogo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MobileHeader } from "@/components/layout/MobileHeader";
