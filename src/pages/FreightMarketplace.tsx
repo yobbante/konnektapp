@@ -24,7 +24,7 @@ import { WORLD_CITIES, FEATURED_CITIES } from "@/components/gp/SearchableCitySel
 import { GP_ONLY_MODE } from "@/config/featureFlags";
 
 type TransportMode = "all" | "aerien" | "maritime" | "routier" | "gp";
-type SortKey = "price" | "date" | "capacity";
+type SortKey = "price" | "date" | "capacity" | "score";
 
 interface MarketplaceListing {
   id: string;
