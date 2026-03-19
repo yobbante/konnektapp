@@ -521,11 +521,11 @@ export default function GPOrderDetail() {
                     )}
                     <div className="flex justify-between text-xs text-destructive">
                       <span>Commission Konnekt</span>
-                      <span>-{dualFormat(order.commission_amount)}</span>
+                      <span>-{dualFormat(commissionAmount)}</span>
                     </div>
                     <div className="flex justify-between text-[10px] text-muted-foreground/70 pl-2">
                       <span>dont TVA 18% (incluse)</span>
-                      <span>{dualFormat(Math.round(order.commission_amount * 18 / 118))}</span>
+                      <span>{dualFormat(Math.round(commissionAmount * 18 / 118))}</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between">
