@@ -221,7 +221,7 @@ export function GPMissionDetailsSheet({
         if (hasPickup && gpName) {
           await notifyAdminPickupMission(order.id, order.order_number, gpName);
           toast({
-            title: "✅ Commande acceptée",
+            title: "Commande acceptee",
             description: "Le client et l'équipe Konnekt ont été notifiés pour l'enlèvement",
           });
         } else {
