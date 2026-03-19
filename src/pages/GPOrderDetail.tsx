@@ -367,7 +367,7 @@ export default function GPOrderDetail() {
         </motion.div>
 
         {/* Regressive pricing indicator */}
-        {regressiveInfo.savingsPercent > 0 && (
+        {hasRegressiveDiscount && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
             <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/15 rounded-lg text-xs">
               <TrendingDown className="w-3.5 h-3.5 text-primary shrink-0" />
@@ -375,11 +375,11 @@ export default function GPOrderDetail() {
             </div>
           </motion.div>
         )}
-        {order.weight < 1 && (
+        {isTMAApplied && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
-            <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/5 border border-amber-500/15 rounded-lg text-xs">
-              <Package className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-              <span className="text-muted-foreground">Forfait petit colis appliqué : <span className="font-medium text-foreground">{dualFormat(Math.round(order.price_per_kg * 1.5))}</span> min.</span>
+            <div className="flex items-center gap-2 px-3 py-2 bg-accent/50 border border-accent rounded-lg text-xs">
+              <Package className="w-3.5 h-3.5 text-primary shrink-0" />
+              <span className="text-muted-foreground">TMA appliqué : <span className="font-medium text-foreground">{dualFormat(TMA)}</span> (min. par colis)</span>
             </div>
           </motion.div>
         )}
