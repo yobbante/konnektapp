@@ -810,35 +810,46 @@ export function ClientAppHome({
               return subBoost + (o.gp_profiles?.rating || 0);
             };
 
-            // If search is active, show filtered results across all types
+            // Always show filtered + deduped by destination, sorted by score
             const hasSearch = searchOrigin || searchDest;
-            if (hasSearch) {
-              const searchResults = offers
-                .filter((o) => {
+            const base = hasSearch
+              ? offers.filter((o) => {
                   if (searchOrigin && !o.origin_city?.toLowerCase().includes(searchOrigin.toLowerCase())) return false;
                   if (searchDest && !o.destination_city?.toLowerCase().includes(searchDest.toLowerCase())) return false;
                   return true;
                 })
-                .sort((a, b) => scoreOffer(b) - scoreOffer(a))
-                .slice(0, 4);
+              : offers;
 
-              return searchResults.length > 0 ?
+            const sorted = [...base].sort((a, b) => scoreOffer(b) - scoreOffer(a));
+            const seenDests = new Set<string>();
+            const searchResults: any[] = [];
+            for (const o of sorted) {
+              const destKey = (o.destination_city || "").toLowerCase();
+              if (!seenDests.has(destKey)) {
+                seenDests.add(destKey);
+                searchResults.push(o);
+              }
+              if (searchResults.length >= 4) break;
+            }
+
+            if (searchResults.length > 0) {
+              return (
                 <div className="space-y-1.5">
                   {searchResults.map((offer: any, idx: number) => {
                     const mode = (offer.transport_type === "navette" || offer.transport_type === "bagages_accompagnes") ? "bagages_international" : offer.transport_type;
-                    const ModeIcon = modeIcons[mode] || Package;
-                     return (
+                    return (
                       <div key={offer.id}>
                         <HomeOfferCard offer={offer} index={idx} modeLabel={modeLabels[mode] || mode} />
-                      </div>);
+                      </div>
+                    );
                   })}
                   <button
                     onClick={goToOffres}
                     className="w-full py-2.5 text-xs font-semibold text-primary flex items-center justify-center gap-1 hover:bg-primary/5 rounded-xl transition-colors border border-dashed border-primary/20">
                     Voir toutes les offres <ChevronRight className="w-3.5 h-3.5" />
                   </button>
-                </div> :
-                <EmptyOffers modeConfig={modeConfig} onAction={goToOffres} />;
+                </div>
+              );
             }
 
             // Default: 1 best offer per type (premium/pro first, then highest rating)
