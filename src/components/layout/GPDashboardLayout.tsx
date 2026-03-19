@@ -62,6 +62,37 @@ export function GPDashboardLayout({
   const [walletData, setWalletData] = useState<{ balance: number; pending: number; currency: string } | null>(null);
   const [showBalance, setShowBalance] = useState(true);
 
+  // Track GP dashboard activity — store timestamp for auto-redirect on return
+  useEffect(() => {
+    // Mark that GP is on dashboard
+    sessionStorage.setItem("gp_dashboard_last_active", Date.now().toString());
+    
+    const interval = setInterval(() => {
+      sessionStorage.setItem("gp_dashboard_last_active", Date.now().toString());
+    }, 60_000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // On visibility change (app re-open), check if 15min elapsed → redirect to dashboard
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        const lastActive = sessionStorage.getItem("gp_dashboard_last_active");
+        if (lastActive) {
+          const elapsed = Date.now() - parseInt(lastActive);
+          const FIFTEEN_MINUTES = 15 * 60 * 1000;
+          if (elapsed > FIFTEEN_MINUTES && !location.pathname.startsWith("/gp/")) {
+            navigate("/gp/apercu", { replace: true });
+          }
+        }
+        sessionStorage.setItem("gp_dashboard_last_active", Date.now().toString());
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [location.pathname, navigate]);
+
   useEffect(() => {
     if (showWallet && !walletData) {
       (async () => {
@@ -358,6 +389,7 @@ export function GPDashboardLayout({
                 <SheetTitle className="text-left">Menu GP</SheetTitle>
               </SheetHeader>
               <div className="grid grid-cols-3 gap-3 pb-3">
+                <MenuButton icon={Home} label="Accueil site" onClick={() => { setShowMenu(false); navigate("/"); }} />
                 <MenuButton icon={BarChart3} label="Performances" onClick={() => { setShowMenu(false); navigate("/gp/performances"); }} />
                 <MenuButton icon={MapPin} label="Profil public" onClick={() => { setShowMenu(false); navigate("/gp/profil-public"); }} />
                 <MenuButton icon={Package} label="Demandes" badge={pendingCount} locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/demandes"); }}} />

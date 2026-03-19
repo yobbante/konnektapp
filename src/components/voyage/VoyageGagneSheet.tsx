@@ -22,6 +22,7 @@ import {
 interface VoyageGagneSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  skipIntro?: boolean;
 }
 
 type Step = "intro" | "details" | "summary";
@@ -34,11 +35,11 @@ const BAGGAGE_PRESETS = [
   { label: "3 bagages (69kg)", count: 3, capacity: 60 },
 ];
 
-export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) {
+export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: VoyageGagneSheetProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  const [step, setStep] = useState<Step>("intro");
+  const [step, setStep] = useState<Step>(skipIntro ? "details" : "intro");
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Form state
@@ -87,7 +88,7 @@ export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) 
   useEffect(() => {
     if (!open) {
       setTimeout(() => {
-        setStep("intro");
+        setStep(skipIntro ? "details" : "intro");
         setOriginCity("");
         setOriginCountry("");
         setDestCity("");
@@ -102,7 +103,7 @@ export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) 
         setReceptionAddress("");
       }, 300);
     }
-  }, [open]);
+  }, [open, skipIntro]);
 
   // Update capacity when baggage count changes
   useEffect(() => {

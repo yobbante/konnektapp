@@ -233,7 +233,7 @@ const TYPE_MAP: Record<string, string[]> = {
   aerien: ["aerien"],
   maritime: ["maritime"],
   routier: ["routier"],
-  bagages: ["bagages_international", "bagages_accompagnes", "navette", "voyageur"],
+  bagages: ["bagages_international", "bagages_accompagnes", "navette", "voyageur", "occasionnel"],
   mobility: ["mobility"],
 };
 
@@ -486,7 +486,7 @@ export function ClientAppHome({
           .from("gp_offers")
           .select("*, gp_profiles(business_name, rating, total_reviews, subscription, gp_type)")
           .eq("status", "active")
-          .in("transport_type", ["bagages_international", "bagages_accompagnes", "navette"] as any)
+          .in("transport_type", ["bagages_international", "bagages_accompagnes", "navette", "occasionnel"] as any)
           .gte("departure_date", today)
           .order("departure_date", { ascending: true })
           .limit(50);
