@@ -149,16 +149,7 @@ export function useAutoPushNotifications({
               cancelled: "annulée",
             };
 
-            const statusEmoji: Record<string, string> = {
-              accepted: "✅",
-              collected: "📦",
-              in_transit: "🚚",
-              delivered: "🎉",
-              cancelled: "❌",
-            };
-
             const label = statusLabels[order.status] || order.status;
-            const emoji = statusEmoji[order.status] || "📦";
             const notifId = `order-status-${order.id}-${order.status}`;
 
             showDedupedNotification(notifId, `${emoji} Colis ${label}`, {
