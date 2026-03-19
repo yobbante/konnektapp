@@ -181,6 +181,7 @@ export default function FreightMarketplace() {
         origin: `${a.origin_city}, ${a.origin_country}`,
         destination: `${a.destination_city}, ${a.destination_country}`,
         departureDate: a.departure_date,
+        arrivalDate: a.arrival_date || undefined,
         capacityTotal: a.total_capacity_kg || 0,
         capacityRemaining: a.available_capacity_kg || 0,
         capacityUnit: "kg",
@@ -189,6 +190,8 @@ export default function FreightMarketplace() {
         currency: a.currency || "XOF",
         providerName: a.gp_profiles?.business_name || "Cargo",
         providerId: a.gp_profiles?.id || a.gp_id,
+        providerRating: a.gp_profiles?.rating || 0,
+        providerSubscription: a.gp_profiles?.subscription || "free",
         isLastMinute: isAfter(tomorrow, new Date(a.departure_date)),
         offerId: a.id,
       });
