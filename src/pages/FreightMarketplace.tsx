@@ -256,7 +256,7 @@ export default function FreightMarketplace() {
     });
 
     return result;
-  }, [listingsWithBadges, modeFilter, routeSearch, sortBy]);
+  }, [listingsWithBadges, modeFilter, originSearch, destSearch, sortBy]);
 
   const lastMinuteCount = filtered.filter((l) => l.isLastMinute).length;
 
