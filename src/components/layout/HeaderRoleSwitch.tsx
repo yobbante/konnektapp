@@ -18,6 +18,7 @@ export function HeaderRoleSwitch() {
   const { isAdmin, userId, isAuthenticated } = useUserRole();
   const [hasGPProfile, setHasGPProfile] = useState(false);
   const [gpBusinessName, setGPBusinessName] = useState("");
+  const [gpType, setGPType] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
 
