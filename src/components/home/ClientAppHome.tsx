@@ -449,11 +449,17 @@ export function ClientAppHome({
 
   const { deliveredOrder, role: deliveryRole, dismiss: dismissDelivery, pendingRecipientFeedback } = usePostDeliveryDetection(userId);
 
+  const { cities: activeCities } = useActiveCities();
+  const activeCitiesFormatted = useMemo(() => 
+    activeCities.map(c => ({ city: c.city, country: c.country_code, flag: c.flag })),
+    [activeCities]
+  );
+
   const filteredCities = useMemo(() => {
-    if (!cityQuery) return FEATURED_CITIES;
+    if (!cityQuery) return activeCitiesFormatted;
     const q = cityQuery.toLowerCase();
-    return WORLD_CITIES.filter((c) => c.city.toLowerCase().includes(q));
-  }, [cityQuery]);
+    return activeCitiesFormatted.filter((c) => c.city.toLowerCase().includes(q));
+  }, [cityQuery, activeCitiesFormatted]);
 
   const handleMainAction = () => {
     const params = new URLSearchParams();
