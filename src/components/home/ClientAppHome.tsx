@@ -13,6 +13,7 @@ import { KonnektCanvasCarousel } from "./KonnektCanvasCarousel";
 import { WeightValidationAlert } from "@/components/client/WeightValidationAlert";
 import { supabase } from "@/integrations/supabase/client";
 import { WORLD_CITIES, FEATURED_CITIES } from "@/components/gp/SearchableCitySelect";
+import { useActiveCities } from "@/hooks/useActiveCities";
 import { FullScreenOrderDetails } from "./FullScreenOrderDetails";
 import { RequestDetailsPopup } from "./RequestDetailsPopup";
 import { HomeOfferCard } from "./HomeOfferCard";
