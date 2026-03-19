@@ -579,11 +579,13 @@ export function ClientAppHome({
     setSearchDest(city);
     setActivePicker(null);
     setCityQuery("");
+    setHasActiveSearch(true);
   };
 
   const handleRouteSelect = (from: string, to: string) => {
     setSearchOrigin(from);
     setSearchDest(to);
+    setHasActiveSearch(true);
     scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
