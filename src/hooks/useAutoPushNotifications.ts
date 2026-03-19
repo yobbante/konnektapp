@@ -328,7 +328,7 @@ export function useAutoPushNotifications({
 
             const gpName = gpProfile?.business_name || "Un transporteur favori";
 
-            showNotification(`⭐ Nouveau trajet de ${gpName}`, {
+            showNotification(`Nouveau trajet de ${gpName}`, {
               body: `${offer.origin_city} → ${offer.destination_city} • ${new Date(offer.departure_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`,
               tag: `favorite-offer-${offer.id}`,
               data: { 

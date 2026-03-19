@@ -154,9 +154,15 @@ export default function ReservationsPage() {
         const reviewedIds = new Set((reviewsRes.data || []).map((r: any) => r.order_id));
         const gpNames: Record<string, string> = {};
         (gpRes.data || []).forEach((gp: any) => { gpNames[gp.id] = gp.business_name; });
+        // Deduplicate by order id
+        const seenIds = new Set<string>();
         setPendingReviews(
           delivered
-            .filter((o: any) => !reviewedIds.has(o.id))
+            .filter((o: any) => {
+              if (reviewedIds.has(o.id) || seenIds.has(o.id)) return false;
+              seenIds.add(o.id);
+              return true;
+            })
             .map((o: any) => ({ ...o, gp_name: gpNames[o.gp_id] || "Transporteur" }))
         );
       }

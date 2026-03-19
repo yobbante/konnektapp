@@ -481,19 +481,12 @@ export function ClientAppHome({
   const [offers, setOffers] = useState<any[]>([]);
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
-    const gpQuery = GP_ONLY_MODE
-      ? supabase
+    // Only show GP (bagages_international) and GP occasionnel offers — exclude aerien, routier, maritime
+    const gpQuery = supabase
           .from("gp_offers")
-          .select("*, gp_profiles(business_name, rating, total_reviews, subscription)")
+          .select("*, gp_profiles(business_name, rating, total_reviews, subscription, gp_type)")
           .eq("status", "active")
-          .eq("transport_type", "bagages_international" as any)
-          .gte("departure_date", today)
-          .order("departure_date", { ascending: true })
-          .limit(50)
-      : supabase
-          .from("gp_offers")
-          .select("*, gp_profiles(business_name, rating, total_reviews, subscription)")
-          .eq("status", "active")
+          .in("transport_type", ["bagages_international", "bagages_accompagnes", "navette"] as any)
           .gte("departure_date", today)
           .order("departure_date", { ascending: true })
           .limit(50);
