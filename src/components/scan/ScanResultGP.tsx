@@ -97,19 +97,27 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
   const confirmDeposit = async () => {
     const actual = parseFloat(actualWeight) || order.weight;
     const hasWeightChange = Math.abs(weightDiff) > 0.01;
+    const hasFlatRateChange = modifiedFlatRateItems !== null;
+
+    // Build meta with flat rate items if modified
+    const flatRateMeta = hasFlatRateChange ? {
+      flat_rate_items: modifiedFlatRateItems,
+      flat_rate_total: modifiedFlatRateItems!.reduce((s, it) => s + it.price * it.quantity, 0),
+      new_total_price: modifiedTotal,
+    } : {};
 
     if (hasWeightChange) {
-      // Weight modification → engine handles PRV freeze + notifications
       const result = await executeAction("weight_modify", order.id, {
         declared_weight: order.weight,
         actual_weight: actual,
         price_diff: priceDiff,
+        ...flatRateMeta,
       });
       if (result?.status === "executed") onComplete();
     } else {
-      // Standard deposit → engine updates status + notifications
       const result = await executeAction("deposit_confirm", order.id, {
         weight: actual,
+        ...flatRateMeta,
       });
       if (result?.status === "executed") onComplete();
     }
