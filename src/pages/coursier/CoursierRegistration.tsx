@@ -94,6 +94,12 @@ export default function CoursierRegistration() {
     return () => clearTimeout(t);
   }, [form.phone]);
 
+  const selectedCountry = COUNTRIES.find(c => c.code === country);
+  const cities = useMemo(() => {
+    const fromDb = activeCities.filter(c => c.country_code === country).map(c => c.city);
+    return fromDb.length > 0 ? fromDb : (CITIES_BY_COUNTRY[country] || []);
+  }, [country, activeCities]);
+
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
@@ -125,12 +131,6 @@ export default function CoursierRegistration() {
   };
 
   if (loading) return <TransportPageLoader />;
-
-  const selectedCountry = COUNTRIES.find(c => c.code === country);
-  const cities = useMemo(() => {
-    const fromDb = activeCities.filter(c => c.country_code === country).map(c => c.city);
-    return fromDb.length > 0 ? fromDb : (CITIES_BY_COUNTRY[country] || []);
-  }, [country, activeCities]);
 
   const canNext = step === 1 ? country && city && form.phone && phoneUnique !== false
     : step === 2 ? form.fullName && form.email
