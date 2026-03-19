@@ -513,7 +513,7 @@ export default function GPOrderDetail() {
                     {flatRateItems.filter(i => i.quantity > 0).map((item, idx) => (
                       <div key={idx} className="flex justify-between text-xs">
                         <span className="text-muted-foreground">{item.label} x{item.quantity}</span>
-                        <span className="font-medium">{dualFormat(item.quantity * item.unit_price)}</span>
+                        <span className="font-medium">{dualFormat((item.quantity || 0) * (item.price || 0))}</span>
                       </div>
                     ))}
                     {flatRateTotal > 0 && (
