@@ -40,14 +40,21 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
   const { isDark, setMode } = useThemeManager();
   const [gpBusinessName, setGPBusinessName] = useState<string>("");
 
+  const [gpType, setGPType] = useState<string>("");
+
   useEffect(() => {
     if (isGP && userId) {
       supabase
         .from("gp_profiles")
-        .select("business_name")
+        .select("business_name, gp_type")
         .eq("user_id", userId)
         .maybeSingle()
-        .then(({ data }) => { if (data) setGPBusinessName(data.business_name); });
+        .then(({ data }) => { 
+          if (data) {
+            setGPBusinessName(data.business_name);
+            setGPType(data.gp_type || "");
+          }
+        });
     }
   }, [isGP, userId]);
 
