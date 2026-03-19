@@ -248,7 +248,16 @@ export default function GPOrderDetail() {
   const currencySymbol = getCurrencySymbol(order.currency);
   const { formatDual, fromFCFA, isFCFA } = currencyConversion;
   const transportPrice = order.weight * order.price_per_kg;
-  const gpEarnings = transportPrice - order.commission_amount;
+  
+  // Parse flat-rate items from order
+  const flatRateItems: { name: string; label: string; quantity: number; unit_price: number }[] = 
+    Array.isArray((order as any).flat_rate_items) ? (order as any).flat_rate_items : [];
+  const flatRateTotal = flatRateItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+  
+  // GP revenue = transport + flat-rate items
+  // Commission is on (transport + flat-rate)
+  const gpRevenue = transportPrice + flatRateTotal;
+  const gpEarnings = gpRevenue - order.commission_amount;
   const insuranceAmount = order.has_insurance ? (order.insurance_amount || 0) : 0;
   const logisticsPriceFCFA = logisticsOptions ?
     ((logisticsOptions.pickup_enabled ? (logisticsOptions as any).pickup_price || 0 : 0) +
