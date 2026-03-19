@@ -88,7 +88,7 @@ export function useAutoPushNotifications({
           (payload) => {
             const order = payload.new as any;
             const notifId = `new-order-${order.id}`;
-            showDedupedNotification(notifId, "🎉 Nouvelle réservation !", {
+            showDedupedNotification(notifId, "Nouvelle reservation !", {
               body: `${order.origin_city} → ${order.destination_city} • ${order.weight}kg`,
               tag: notifId,
               data: { type: "order", id: order.id, action: "new_booking" },
