@@ -500,6 +500,31 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                   </div>
                 </div>
 
+                {/* Restrictions */}
+                <div className="p-3 rounded-xl bg-muted/30 border border-border/30 space-y-2">
+                  <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5 text-destructive" /> Restrictions (ce que vous refusez)
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {RESTRICTION_OPTIONS.map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setSelectedRestrictions(prev => 
+                          prev.includes(r) ? prev.filter(x => x !== r) : [...prev, r]
+                        )}
+                        className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-all ${
+                          selectedRestrictions.includes(r)
+                            ? "bg-destructive/10 border-destructive/30 text-destructive"
+                            : "bg-background border-border/50 text-muted-foreground"
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Estimated earnings */}
                 <div className="p-2.5 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
                   <div className="flex items-center justify-between">
