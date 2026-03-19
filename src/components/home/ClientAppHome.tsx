@@ -494,7 +494,9 @@ export function ClientAppHome({
 
     if (GP_ONLY_MODE) {
       gpQuery.then(({ data }) => {
-        setOffers(data || []);
+        // Filter out aerien-type GP profiles creating baggage offers
+        const filtered = (data || []).filter((o: any) => o.gp_profiles?.gp_type !== 'aerien');
+        setOffers(filtered);
       });
     } else {
       Promise.all([
