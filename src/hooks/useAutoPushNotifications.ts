@@ -152,7 +152,7 @@ export function useAutoPushNotifications({
             const label = statusLabels[order.status] || order.status;
             const notifId = `order-status-${order.id}-${order.status}`;
 
-            showDedupedNotification(notifId, `${emoji} Colis ${label}`, {
+            showDedupedNotification(notifId, `Colis ${label}`, {
               body: `Commande ${order.order_number}: ${order.origin_city} → ${order.destination_city}`,
               tag: notifId,
               data: { 
