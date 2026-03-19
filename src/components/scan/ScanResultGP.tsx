@@ -176,8 +176,18 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
         </CardContent>
       </Card>
 
-      {/* Inventory List — Deposit overview */}
+      {/* Inventory List — Deposit overview (editable in deposit mode) */}
       {isDepositMode && (
+        <DepositInventoryCard 
+          order={order} 
+          editable 
+          onItemsChange={(items, newTotal) => {
+            setModifiedFlatRateItems(items);
+            setModifiedTotal(newTotal);
+          }}
+        />
+      )}
+      {!isDepositMode && (order.flat_rate_items as FlatRateOrderItem[] || []).length > 0 && (
         <DepositInventoryCard order={order} />
       )}
 
