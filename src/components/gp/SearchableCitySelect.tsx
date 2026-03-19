@@ -375,15 +375,6 @@ function CityListContent({
                 );
               });
             })()}
-            {!searchQuery && !showAll && filteredCities.length > citiesToShow.length && (
-              <button
-                onClick={() => setShowAll(true)}
-                className="w-full py-3 text-sm text-primary font-medium hover:bg-muted/50 rounded-md mt-1 flex items-center justify-center gap-1"
-              >
-                <Globe className="w-4 h-4" />
-                Voir toutes les villes ({filteredCities.length - citiesToShow.length} de plus)
-              </button>
-            )}
           </div>
         )}
       </div>
