@@ -330,11 +330,11 @@ export function GPWalletCard({ wallet, gpId, compact, withdrawalLimit = 0, kycLe
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-3">
-        <StatMini icon={Clock} color="text-secondary" bgColor="bg-secondary/10" label="En attente" value={pending} currency={currency} />
-        <StatMini icon={TrendingUp} color="text-success" bgColor="bg-success/10" label="Total gagné" value={totalEarned} currency={currency} />
-        <StatMini icon={ArrowDownRight} color="text-accent" bgColor="bg-accent/10" label="Total retiré" value={wallet?.total_withdrawn || 0} currency={currency} />
+        <StatMini icon={Clock} color="text-secondary" bgColor="bg-secondary/10" label="En attente" value={pending} currency={currency} isFCFA={isFCFA} formatDual={formatDual} />
+        <StatMini icon={TrendingUp} color="text-success" bgColor="bg-success/10" label="Total gagné" value={totalEarned} currency={currency} isFCFA={isFCFA} formatDual={formatDual} />
+        <StatMini icon={ArrowDownRight} color="text-accent" bgColor="bg-accent/10" label="Total retiré" value={wallet?.total_withdrawn || 0} currency={currency} isFCFA={isFCFA} formatDual={formatDual} />
         {locked > 0 ? (
-          <StatMini icon={AlertTriangle} color="text-destructive" bgColor="bg-destructive/10" label="Verrouillé" value={locked} currency={currency} />
+          <StatMini icon={AlertTriangle} color="text-destructive" bgColor="bg-destructive/10" label="Verrouillé" value={locked} currency={currency} isFCFA={isFCFA} formatDual={formatDual} />
         ) : (
           <StatMini icon={Percent} color="text-primary" bgColor="bg-primary/10" label="Commission" value={commissionRate} currency="%" isPercent />
         )}
@@ -560,8 +560,9 @@ export function GPWalletCard({ wallet, gpId, compact, withdrawalLimit = 0, kycLe
 
 /* ─── Sub-components ─── */
 
-function StatMini({ icon: Icon, color, bgColor, label, value, currency, isPercent }: {
+function StatMini({ icon: Icon, color, bgColor, label, value, currency, isPercent, isFCFA: isFcfa, formatDual }: {
   icon: any; color: string; bgColor: string; label: string; value: number; currency: string; isPercent?: boolean;
+  isFCFA?: boolean; formatDual?: (v: number) => string;
 }) {
   return (
     <div className="bg-card rounded-xl border border-border p-3 shadow-card">
@@ -571,7 +572,12 @@ function StatMini({ icon: Icon, color, bgColor, label, value, currency, isPercen
       <p className="text-lg font-bold text-foreground">
         {isPercent ? `${value}%` : value.toLocaleString()}
       </p>
-      <p className="text-[10px] text-muted-foreground">{label}{!isPercent && ` (${getCurrencySymbol(currency)})`}</p>
+      <p className="text-[10px] text-muted-foreground">
+        {label}{!isPercent && ` (${getCurrencySymbol(currency)})`}
+      </p>
+      {!isPercent && !isFcfa && formatDual && value > 0 && (
+        <p className="text-[9px] text-muted-foreground mt-0.5">{formatDual(value)}</p>
+      )}
     </div>
   );
 }

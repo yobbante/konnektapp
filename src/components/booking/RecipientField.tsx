@@ -451,7 +451,7 @@ export function RecipientField({
               >
                 <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/30">
                   <p className="text-xs text-destructive font-medium">
-                    ⚠️ Vous ne pouvez pas vous sélectionner comme destinataire
+                    Vous ne pouvez pas vous sélectionner comme destinataire
                   </p>
                 </div>
               </motion.div>

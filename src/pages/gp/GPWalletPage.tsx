@@ -44,7 +44,7 @@ export default function GPWalletPage() {
     >
       <div className="px-4 py-4 space-y-4">
         <GPWalletCard
-          wallet={wallet}
+          wallet={wallet ? { ...wallet, currency: gpProfile.default_currency || wallet.currency || "XOF" } : null}
           gpId={gpProfile.id}
           withdrawalLimit={gpProfile.withdrawal_limit ?? 300000}
           kycLevel={gpProfile.kyc_level ?? 0}

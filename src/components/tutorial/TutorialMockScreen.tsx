@@ -44,7 +44,7 @@ export function TutorialMockScreen({ screen, mockState, role, stepIndex }: Props
             <div>
               <p className="font-semibold text-sm">Amadou T.</p>
               <div className="flex items-center gap-1.5">
-                <Badge className="text-[9px] bg-green-500/10 text-green-600 border-0">Pro ⭐</Badge>
+                <Badge className="text-[9px] bg-green-500/10 text-green-600 border-0">Pro</Badge>
                 <span className="text-[10px] text-muted-foreground">KTP 92/100</span>
               </div>
             </div>
@@ -115,7 +115,7 @@ export function TutorialMockScreen({ screen, mockState, role, stepIndex }: Props
               {screen === "scan-deposit" ? "Scannez le QR du colis pour confirmer la collecte" : "Scannez pour confirmer la livraison au destinataire"}
             </p>
             <Badge variant="outline" className="mt-2 text-[10px]">
-              {mockState.orderStatus === "collecte" ? "✅ Collecté" : mockState.orderStatus === "livre" ? "✅ Livré" : "⏳ En attente"}
+              {mockState.orderStatus === "collecte" ? "Collecte" : mockState.orderStatus === "livre" ? "Livre" : "En attente"}
             </Badge>
           </div>
         </MockCard>
@@ -220,8 +220,8 @@ export function TutorialMockScreen({ screen, mockState, role, stepIndex }: Props
             </div>
             <p className="text-2xl font-bold">{mockState.escrow.amount.toLocaleString()} FCFA</p>
             <Badge variant="outline" className="mt-2 text-[10px]">
-              {mockState.escrow.status === "locked" ? "🔒 Fonds verrouillés" :
-               mockState.escrow.status === "released" ? "✅ Fonds libérés" : "⏳ En attente"}
+              {mockState.escrow.status === "locked" ? "Fonds verrouilles" :
+               mockState.escrow.status === "released" ? "Fonds liberes" : "En attente"}
             </Badge>
           </div>
         </MockCard>
@@ -245,7 +245,7 @@ export function TutorialMockScreen({ screen, mockState, role, stepIndex }: Props
               <span className="font-bold text-amber-600">+5 000 FCFA</span>
             </div>
             <div className="bg-amber-500/5 border border-amber-500/10 rounded-lg p-2 mt-1">
-              <p className="text-[10px] text-amber-700">⚠️ Le client doit accepter le supplément avant la prise en charge.</p>
+              <p className="text-[10px] text-amber-700">Le client doit accepter le supplement avant la prise en charge.</p>
             </div>
           </div>
         </MockCard>
@@ -373,7 +373,7 @@ export function TutorialMockScreen({ screen, mockState, role, stepIndex }: Props
             <MockInput label="Destinataire" value="Jean D." />
             <MockInput label="Poids" value="5 kg" />
             <div className="bg-amber-500/5 border border-amber-500/10 rounded-lg p-2 space-y-1">
-              <p className="text-[10px] text-amber-700 font-medium">⚠️ Colis hors plateforme :</p>
+              <p className="text-[10px] text-amber-700 font-medium">Colis hors plateforme :</p>
               <p className="text-[10px] text-amber-700">• Commission fixe 3%</p>
               <p className="text-[10px] text-amber-700">• Pas d'assurance Konnekt</p>
               <p className="text-[10px] text-amber-700">• Pas de protection litige</p>

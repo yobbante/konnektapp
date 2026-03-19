@@ -88,7 +88,7 @@ export function useAutoPushNotifications({
           (payload) => {
             const order = payload.new as any;
             const notifId = `new-order-${order.id}`;
-            showDedupedNotification(notifId, "🎉 Nouvelle réservation !", {
+            showDedupedNotification(notifId, "Nouvelle reservation !", {
               body: `${order.origin_city} → ${order.destination_city} • ${order.weight}kg`,
               tag: notifId,
               data: { type: "order", id: order.id, action: "new_booking" },
@@ -149,19 +149,10 @@ export function useAutoPushNotifications({
               cancelled: "annulée",
             };
 
-            const statusEmoji: Record<string, string> = {
-              accepted: "✅",
-              collected: "📦",
-              in_transit: "🚚",
-              delivered: "🎉",
-              cancelled: "❌",
-            };
-
             const label = statusLabels[order.status] || order.status;
-            const emoji = statusEmoji[order.status] || "📦";
             const notifId = `order-status-${order.id}-${order.status}`;
 
-            showDedupedNotification(notifId, `${emoji} Colis ${label}`, {
+            showDedupedNotification(notifId, `Colis ${label}`, {
               body: `Commande ${order.order_number}: ${order.origin_city} → ${order.destination_city}`,
               tag: notifId,
               data: { 
@@ -215,15 +206,15 @@ export function useAutoPushNotifications({
             if (profile.status !== oldProfile.status) {
               const statusMessages: Record<string, { title: string; body: string }> = {
                 verified: {
-                  title: "🎉 Compte vérifié !",
+                  title: "Compte verifie !",
                   body: "Votre compte a été approuvé. Vous pouvez maintenant publier des offres.",
                 },
                 suspended: {
-                  title: "⚠️ Compte suspendu",
+                  title: "Compte suspendu",
                   body: "Votre compte a été suspendu. Contactez le support pour plus d'informations.",
                 },
                 rejected: {
-                  title: "❌ Demande refusée",
+                  title: "Demande refusee",
                   body: "Votre demande d'inscription a été refusée. Consultez vos messages.",
                 },
               };
@@ -283,7 +274,7 @@ export function useAutoPushNotifications({
             (userType === "gp" && conversation.gp_id);
 
           if (isParticipant) {
-            showNotification("💬 Nouveau message", {
+            showNotification("Nouveau message", {
               body: message.content.substring(0, 100) + (message.content.length > 100 ? "..." : ""),
               tag: `message-${message.id}`,
               data: { type: "message", conversationId: message.conversation_id },
@@ -337,7 +328,7 @@ export function useAutoPushNotifications({
 
             const gpName = gpProfile?.business_name || "Un transporteur favori";
 
-            showNotification(`⭐ Nouveau trajet de ${gpName}`, {
+            showNotification(`Nouveau trajet de ${gpName}`, {
               body: `${offer.origin_city} → ${offer.destination_city} • ${new Date(offer.departure_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`,
               tag: `favorite-offer-${offer.id}`,
               data: { 

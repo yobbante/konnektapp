@@ -221,12 +221,12 @@ export function GPMissionDetailsSheet({
         if (hasPickup && gpName) {
           await notifyAdminPickupMission(order.id, order.order_number, gpName);
           toast({
-            title: "✅ Commande acceptée",
+            title: "Commande acceptee",
             description: "Le client et l'équipe Konnekt ont été notifiés pour l'enlèvement",
           });
         } else {
           toast({
-            title: "✅ Commande acceptée",
+            title: "Commande acceptee",
             description: "Le client a été notifié",
           });
         }
@@ -266,7 +266,7 @@ export function GPMissionDetailsSheet({
         await supabase.from("notifications").insert({
           user_id: order.client_id,
           type: "order_update",
-          title: "❌ Commande refusée",
+          title: "Commande refusee",
           message: `Votre commande ${order.order_number} a été refusée`,
           related_type: "order",
           related_id: order.id,

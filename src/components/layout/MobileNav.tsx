@@ -163,7 +163,7 @@ export function MobileNav() {
         lastHomeClickRef.current = now;
       }
     }
-  }, [location.pathname, isAuthenticated, navigate]);
+  }, [location.pathname, isAuthenticated, navigate, hasPublishedTrips]);
 
   if (!isAuthenticated) return null;
 
