@@ -206,15 +206,15 @@ export function useAutoPushNotifications({
             if (profile.status !== oldProfile.status) {
               const statusMessages: Record<string, { title: string; body: string }> = {
                 verified: {
-                  title: "🎉 Compte vérifié !",
+                  title: "Compte verifie !",
                   body: "Votre compte a été approuvé. Vous pouvez maintenant publier des offres.",
                 },
                 suspended: {
-                  title: "⚠️ Compte suspendu",
+                  title: "Compte suspendu",
                   body: "Votre compte a été suspendu. Contactez le support pour plus d'informations.",
                 },
                 rejected: {
-                  title: "❌ Demande refusée",
+                  title: "Demande refusee",
                   body: "Votre demande d'inscription a été refusée. Consultez vos messages.",
                 },
               };
