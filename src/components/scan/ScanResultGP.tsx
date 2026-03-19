@@ -79,6 +79,8 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
   const [priceDiff, setPriceDiff] = useState(0);
   const [showDeliveryCode, setShowDeliveryCode] = useState(false);
   const [deliveryCodeInput, setDeliveryCodeInput] = useState("");
+  const [modifiedFlatRateItems, setModifiedFlatRateItems] = useState<FlatRateOrderItem[] | null>(null);
+  const [modifiedTotal, setModifiedTotal] = useState<number | null>(null);
 
   const isDepositMode = ["accepted", "pending", "paid_held"].includes(order.status);
   const isTransitMode = false; // Transit is now automatic via geolocation
