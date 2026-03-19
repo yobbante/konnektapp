@@ -296,14 +296,10 @@ function CityListContent({
   placeholder,
 }: CityListProps) {
   const [showAll, setShowAll] = useState(false);
-  const featuredSet = useMemo(() => new Set(FEATURED_CITIES.map(c => `${c.city}-${c.country}`)), []);
 
-  // When searching, show all results. Otherwise show featured first
   const citiesToShow = useMemo(() => {
-    if (searchQuery) return filteredCities;
-    if (showAll) return filteredCities;
-    return filteredCities.filter(c => featuredSet.has(`${c.city}-${c.country}`));
-  }, [filteredCities, searchQuery, showAll, featuredSet]);
+    return filteredCities;
+  }, [filteredCities]);
 
   return (
     <div className="flex flex-col">
