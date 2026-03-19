@@ -456,23 +456,22 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
             )}
 
             {/* CTA to become pro */}
-            <div className="p-3 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowProTransition(true)}
+              className="w-full p-3 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20"
+            >
               <div className="flex items-center justify-between">
-                <div>
+                <div className="text-left">
                   <p className="text-xs font-semibold text-foreground">Devenir GP Pro</p>
                   <p className="text-[10px] text-muted-foreground">Dashboard complet, plus de clients</p>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => { onOpenChange(false); navigate("/gp/bagages/inscription"); }}
-                  className="h-7 text-[10px] border-primary/30 text-primary"
-                >
-                  Passer pro
-                  <ChevronRight className="w-3 h-3 ml-0.5" />
-                </Button>
+                <div className="flex items-center gap-1 text-primary">
+                  <span className="text-[10px] font-semibold">Découvrir</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </div>
               </div>
-            </div>
+            </motion.button>
           </div>
         </DrawerContent>
       </Drawer>
@@ -486,6 +485,18 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
           isVerified={true}
         />
       )}
+
+      {/* GP Pro Transition Sheet */}
+      <GPProTransitionSheet
+        open={showProTransition}
+        onOpenChange={setShowProTransition}
+        currentStats={trips.length > 0 ? {
+          tripsPublished: trips.length,
+          ordersCompleted: orders.filter(o => ["delivered", "delivery_confirmed"].includes(o.status)).length,
+          totalEarnings: walletData?.balance || 0,
+          currency: walletData?.currency || "XOF",
+        } : undefined}
+      />
     </>
   );
 }
