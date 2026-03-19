@@ -115,7 +115,7 @@ export function TutorialMockScreen({ screen, mockState, role, stepIndex }: Props
               {screen === "scan-deposit" ? "Scannez le QR du colis pour confirmer la collecte" : "Scannez pour confirmer la livraison au destinataire"}
             </p>
             <Badge variant="outline" className="mt-2 text-[10px]">
-              {mockState.orderStatus === "collecte" ? "✅ Collecté" : mockState.orderStatus === "livre" ? "✅ Livré" : "⏳ En attente"}
+              {mockState.orderStatus === "collecte" ? "Collecte" : mockState.orderStatus === "livre" ? "Livre" : "En attente"}
             </Badge>
           </div>
         </MockCard>
