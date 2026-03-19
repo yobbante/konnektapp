@@ -184,7 +184,11 @@ Deno.serve(async (req) => {
     // ── 9. Calcul financier final ──────────────────────────────────
     // RÈGLE CLÉ: GP ne touche QUE le transport. Assurance + Logistique → Konnekt.
     const totalAmount = escrow.amount; // Montant total bloqué (transport + insurance + logistics)
-    const transportPrice = (order.weight || 0) * (order.price_per_kg || 0); // Revenu transport brut
+    const kiloTransportPrice = (order.weight || 0) * (order.price_per_kg || 0);
+    // Include flat-rate items revenue in transport price (GP earns from these too)
+    const flatRateItems = (order.flat_rate_items || []) as Array<{ price: number; quantity: number }>;
+    const flatRateTotal = flatRateItems.reduce((s: number, it: any) => s + (it.price || 0) * (it.quantity || 0), 0);
+    const transportPrice = kiloTransportPrice + flatRateTotal; // Total GP transport revenue
     const insuranceAmount = order.has_insurance ? (order.insurance_amount || 0) : 0;
     const commissionRate = gpWallet.commission_rate || 5;
 
