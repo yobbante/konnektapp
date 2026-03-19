@@ -24,12 +24,14 @@ const COUNTRIES = [
   { code: "GN", name: "🇬🇳 Guinée", dialCode: "+224" },
 ];
 
+// Cities are now loaded dynamically from platform_active_cities via useActiveCities hook
+// Keeping minimal fallback for offline
 const CITIES_BY_COUNTRY: Record<string, string[]> = {
-  SN: ["Dakar", "Thiès", "Saint-Louis", "Kaolack", "Touba", "Ziguinchor", "Mbour", "Rufisque"],
-  CI: ["Abidjan", "Yamoussoukro", "Bouaké", "San-Pédro", "Daloa"],
-  ML: ["Bamako", "Sikasso", "Ségou", "Mopti"],
-  BF: ["Ouagadougou", "Bobo-Dioulasso", "Koudougou"],
-  GN: ["Conakry", "Kankan", "Kindia"],
+  SN: ["Dakar"],
+  CI: ["Abidjan"],
+  ML: ["Bamako"],
+  BF: ["Ouagadougou"],
+  GN: ["Conakry"],
 };
 
 const VEHICLE_TYPES = [

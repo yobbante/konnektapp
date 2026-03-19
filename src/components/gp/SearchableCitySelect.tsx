@@ -415,20 +415,26 @@ export function SearchableCitySelect({
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const isMobile = useIsMobile();
+  const { cities: activeCities } = useActiveCities();
+
+  // Build city list from active platform cities
+  const platformCities = useMemo(() => {
+    return activeCities.map(c => ({ city: c.city, country: c.country_code, flag: c.flag }));
+  }, [activeCities]);
 
   const currentCity = useMemo(() => {
-    return WORLD_CITIES.find(c => c.city === value && c.country === countryCode) ||
+    return platformCities.find(c => c.city === value && c.country === countryCode) ||
+           platformCities.find(c => c.city === value) ||
+           WORLD_CITIES.find(c => c.city === value && c.country === countryCode) ||
            WORLD_CITIES.find(c => c.city === value);
-  }, [value, countryCode]);
+  }, [value, countryCode, platformCities]);
 
-  // Group cities: current country first, then popular, then rest
-  // All cities sorted: current country first, popular, then rest — always show all
+  // Sort: current country first, then the rest
   const sortedCities = useMemo(() => {
-    const currentCountryCities = WORLD_CITIES.filter(c => c.country === countryCode);
-    const popularOther = WORLD_CITIES.filter(c => c.country !== countryCode && POPULAR_CITIES.includes(c.city));
-    const rest = WORLD_CITIES.filter(c => c.country !== countryCode && !POPULAR_CITIES.includes(c.city));
-    return [...currentCountryCities, ...popularOther, ...rest];
-  }, [countryCode]);
+    const currentCountryCities = platformCities.filter(c => c.country === countryCode);
+    const rest = platformCities.filter(c => c.country !== countryCode);
+    return [...currentCountryCities, ...rest];
+  }, [countryCode, platformCities]);
 
   const filteredCities = useMemo(() => {
     if (!searchQuery) return sortedCities;
