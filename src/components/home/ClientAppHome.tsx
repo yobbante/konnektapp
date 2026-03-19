@@ -899,6 +899,9 @@ export function ClientAppHome({
           </> :
 
         <>
+            {/* Discover Konnekt carousel */}
+            <KonnektCanvasCarousel />
+
             {/* Popular routes */}
             <PopularRoutesSection routes={popularRoutes} onSelect={handleRouteSelect} tabId={activeTab} />
 
