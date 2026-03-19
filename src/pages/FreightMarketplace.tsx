@@ -86,7 +86,7 @@ export default function FreightMarketplace() {
         .gte("departure_date", today.split("T")[0])
         .order("departure_date", { ascending: true });
       if (GP_ONLY_MODE) {
-        query = query.eq("transport_type", "bagages_international" as any);
+        query = query.in("transport_type", ["bagages_international", "bagages_accompagnes", "navette", "occasionnel", "voyageur"] as any);
       }
       const { data } = await query;
       return data || [];
