@@ -22,6 +22,7 @@ import {
 interface VoyageGagneSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  skipIntro?: boolean;
 }
 
 type Step = "intro" | "details" | "summary";
