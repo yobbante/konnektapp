@@ -386,12 +386,12 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
                           className="p-3 rounded-xl bg-card border border-border/50 space-y-2"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-mono text-muted-foreground">{order.tracking_number}</span>
+                            <span className="text-xs font-mono text-muted-foreground">{order.order_number}</span>
                             <Badge className={cn("text-[10px]", st.color)}>{st.label}</Badge>
                           </div>
                           <div className="flex items-center justify-between text-xs">
                             <div className="space-y-0.5">
-                              {order.sender_name && <p className="text-foreground font-medium">{order.sender_name}</p>}
+                              <p className="text-foreground font-medium">{order.origin_city} → {order.destination_city}</p>
                               {order.recipient_name && <p className="text-muted-foreground">Dest: {order.recipient_name}</p>}
                             </div>
                             <div className="text-right">
