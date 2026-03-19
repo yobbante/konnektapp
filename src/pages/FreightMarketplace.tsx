@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import {
   Ship, Plane, Truck, Search, Filter, ArrowRight, Flame, Award, Clock,
-  TrendingDown, ChevronDown, BarChart3, Zap, Package, ArrowUpDown, MapPin
+  TrendingDown, ChevronDown, BarChart3, Zap, Package, ArrowUpDown, MapPin, Star
 } from "lucide-react";
 import { format, isAfter, addDays, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -19,6 +19,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { WORLD_CITIES, FEATURED_CITIES } from "@/components/gp/SearchableCitySelect";
 import { GP_ONLY_MODE } from "@/config/featureFlags";
 
 type TransportMode = "all" | "aerien" | "maritime" | "routier" | "gp";
