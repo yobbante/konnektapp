@@ -1,5 +1,6 @@
 import { useState, useMemo, forwardRef } from "react";
 import { Check, Search, Globe, MapPin } from "lucide-react";
+import { useActiveCities } from "@/hooks/useActiveCities";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
