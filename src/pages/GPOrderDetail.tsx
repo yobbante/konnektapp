@@ -247,7 +247,13 @@ export default function GPOrderDetail() {
   const isBlockedByLogistics = order.status === "in_transit" && logisticsOptions?.delivery_enabled && order.logistics_status === "awaiting_admin_delivery";
   const currencySymbol = getCurrencySymbol(order.currency);
   const { formatDual, fromFCFA, isFCFA } = currencyConversion;
-  const transportPrice = (order.weight || 0) * (order.price_per_kg || 0);
+  // Use pricing engine for correct transport price (TMA, coefficients)
+  const regressiveInfo = getRegressiveInfo(order.weight || 0, order.price_per_kg || 0);
+  const rawTransport = (order.weight || 0) * (order.price_per_kg || 0);
+  const TMA = Math.round((order.price_per_kg || 0) * 1.50);
+  const transportPrice = (order.weight || 0) <= 1
+    ? TMA // Forfait petit colis
+    : Math.max(Math.round((order.weight || 0) * regressiveInfo.effectivePricePerKg), TMA);
   
   // Parse flat-rate items from order (DB stores "price", not "unit_price")
   const flatRateItems: { name: string; label: string; quantity: number; price: number }[] = 
@@ -270,8 +276,8 @@ export default function GPOrderDetail() {
     return formatDual(amount);
   };
 
-  // Regressive pricing info
-  const regressiveInfo = getRegressiveInfo(order.weight, order.price_per_kg);
+  const isTMAApplied = (order.weight || 0) <= 1 || rawTransport < TMA;
+  const hasRegressiveDiscount = regressiveInfo.savingsPercent > 0;
 
   return (
     <div className="min-h-screen bg-background flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
@@ -361,7 +367,7 @@ export default function GPOrderDetail() {
         </motion.div>
 
         {/* Regressive pricing indicator */}
-        {regressiveInfo.savingsPercent > 0 && (
+        {hasRegressiveDiscount && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
             <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/15 rounded-lg text-xs">
               <TrendingDown className="w-3.5 h-3.5 text-primary shrink-0" />
@@ -369,11 +375,11 @@ export default function GPOrderDetail() {
             </div>
           </motion.div>
         )}
-        {order.weight < 1 && (
+        {isTMAApplied && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
-            <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/5 border border-amber-500/15 rounded-lg text-xs">
-              <Package className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-              <span className="text-muted-foreground">Forfait petit colis appliqué : <span className="font-medium text-foreground">{dualFormat(Math.round(order.price_per_kg * 1.5))}</span> min.</span>
+            <div className="flex items-center gap-2 px-3 py-2 bg-accent/50 border border-accent rounded-lg text-xs">
+              <Package className="w-3.5 h-3.5 text-primary shrink-0" />
+              <span className="text-muted-foreground">TMA appliqué : <span className="font-medium text-foreground">{dualFormat(TMA)}</span> (min. par colis)</span>
             </div>
           </motion.div>
         )}
@@ -507,7 +513,9 @@ export default function GPOrderDetail() {
                   <div className="space-y-2 text-sm">
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Vos revenus</p>
                     <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Transport ({order.weight} kg x {order.price_per_kg})</span>
+                      <span className="text-muted-foreground">
+                        Transport ({order.weight} kg{isTMAApplied ? " - TMA" : ` x ${regressiveInfo.effectivePricePerKg}`})
+                      </span>
                       <span className="font-medium">{dualFormat(transportPrice)}</span>
                     </div>
                     {flatRateItems.filter(i => i.quantity > 0).map((item, idx) => (
