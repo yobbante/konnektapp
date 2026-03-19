@@ -226,7 +226,7 @@ export function GPMissionDetailsSheet({
           });
         } else {
           toast({
-            title: "✅ Commande acceptée",
+            title: "Commande acceptee",
             description: "Le client a été notifié",
           });
         }
