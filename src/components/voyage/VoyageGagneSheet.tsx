@@ -88,7 +88,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
   useEffect(() => {
     if (!open) {
       setTimeout(() => {
-        setStep("intro");
+        setStep(skipIntro ? "details" : "intro");
         setOriginCity("");
         setOriginCountry("");
         setDestCity("");
@@ -103,7 +103,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
         setReceptionAddress("");
       }, 300);
     }
-  }, [open]);
+  }, [open, skipIntro]);
 
   // Update capacity when baggage count changes
   useEffect(() => {

@@ -314,7 +314,7 @@ export function MobileNav() {
 
       <ClientScanSheet open={scanOpen} onOpenChange={setScanOpen} />
       <MissionRequestSheet open={missionOpen} onOpenChange={setMissionOpen} />
-      <VoyageGagneSheet open={voyageOpen} onOpenChange={(v) => { setVoyageOpen(v); if (!v) setHasPublishedTrips(true); }} />
+      <VoyageGagneSheet open={voyageOpen} onOpenChange={(v) => { setVoyageOpen(v); if (!v) setHasPublishedTrips(true); }} skipIntro={hasPublishedTrips} />
       <VoyageDashboard 
         open={voyageDashOpen} 
         onOpenChange={setVoyageDashOpen} 
