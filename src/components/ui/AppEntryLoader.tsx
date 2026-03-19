@@ -5,7 +5,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import konnektLogo from "@/assets/konnekt-logo-transparent.png";
+import konnektLogo from "@/assets/konnekt-logo-icon.png";
 
 interface AppEntryLoaderProps {
   onComplete?: () => void;
@@ -66,35 +66,10 @@ export function AppEntryLoader({ onComplete, minDuration = 1600 }: AppEntryLoade
             initial={{ opacity: 0, y: 8 }}
             animate={phase === 'expanding' ? { opacity: 0, y: -10 } : { opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: phase === 'expanding' ? 0 : 0.25 }}
-            className="text-2xl font-bold tracking-[0.14em] uppercase mb-1.5 text-primary"
+            className="text-2xl font-bold tracking-[0.14em] uppercase text-primary"
           >
             Konnekt
           </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={phase === 'expanding' ? { opacity: 0 } : { opacity: 1 }}
-            transition={{ duration: 0.3, delay: phase === 'expanding' ? 0 : 0.35 }}
-            className="text-xs tracking-widest uppercase mb-8 text-muted-foreground"
-          >
-            Transport sécurisé par scan
-          </motion.p>
-
-          {/* Progress bar */}
-          <motion.div
-            initial={{ opacity: 0, scaleX: 0 }}
-            animate={phase === 'expanding' ? { opacity: 0 } : { opacity: 1, scaleX: 1 }}
-            transition={{ duration: 0.25, delay: phase === 'expanding' ? 0 : 0.3 }}
-            className="w-28 h-[2px] rounded-full overflow-hidden bg-muted"
-          >
-            <div
-              className="h-full rounded-full bg-primary"
-              style={{
-                width: `${progress}%`,
-                transition: 'width 0.08s linear',
-              }}
-            />
-          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
