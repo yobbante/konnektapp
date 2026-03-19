@@ -42,9 +42,12 @@ export function HeaderRoleSwitch() {
         .eq("user_id", userId)
         .maybeSingle();
 
-      if (gpProfile) {
+      if (gpProfile && gpProfile.gp_type !== 'occasionnel') {
         setHasGPProfile(true);
         setGPBusinessName(gpProfile.business_name);
+        setGPType(gpProfile.gp_type);
+      } else {
+        setHasGPProfile(false);
       }
     } catch (error) {
       console.error("Error checking GP status:", error);
