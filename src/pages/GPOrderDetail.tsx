@@ -501,11 +501,23 @@ export default function GPOrderDetail() {
               <CollapsibleContent>
                 <CardContent className="px-3 pb-3 pt-0">
                   <div className="space-y-2 text-sm">
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Vos revenus</p>
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Vos revenus</p>
                     <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Transport ({order.weight} kg × {order.price_per_kg})</span>
+                      <span className="text-muted-foreground">Transport ({order.weight} kg x {order.price_per_kg})</span>
                       <span className="font-medium">{dualFormat(transportPrice)}</span>
                     </div>
+                    {flatRateItems.filter(i => i.quantity > 0).map((item, idx) => (
+                      <div key={idx} className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">{item.label} x{item.quantity}</span>
+                        <span className="font-medium">{dualFormat(item.quantity * item.unit_price)}</span>
+                      </div>
+                    ))}
+                    {flatRateTotal > 0 && (
+                      <div className="flex justify-between text-xs font-medium border-t border-border/30 pt-1">
+                        <span className="text-muted-foreground">Sous-total GP</span>
+                        <span>{dualFormat(gpRevenue)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-xs text-destructive">
                       <span>Commission Konnekt</span>
                       <span>-{dualFormat(order.commission_amount)}</span>
@@ -527,15 +539,21 @@ export default function GPOrderDetail() {
                         <span className="text-muted-foreground">Transport</span>
                         <span>{dualFormat(transportPrice)}</span>
                       </div>
+                      {flatRateItems.filter(i => i.quantity > 0).map((item, idx) => (
+                        <div key={`inv-${idx}`} className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">{item.label} x{item.quantity}</span>
+                          <span>{dualFormat(item.quantity * item.unit_price)}</span>
+                        </div>
+                      ))}
                       {insuranceAmount > 0 && (
                         <div className="flex justify-between text-xs">
-                          <span className="text-muted-foreground">Assurance</span>
+                          <span className="text-muted-foreground">Assurance (Konnekt)</span>
                           <span>{dualFormat(insuranceAmount)}</span>
                         </div>
                       )}
                       {logisticsPrice > 0 && (
                         <div className="flex justify-between text-xs">
-                          <span className="text-muted-foreground">Logistique</span>
+                          <span className="text-muted-foreground">Logistique (Konnekt)</span>
                           <span>{dualFormat(logisticsPrice)}</span>
                         </div>
                       )}
