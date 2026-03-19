@@ -249,10 +249,10 @@ export default function GPOrderDetail() {
   const { formatDual, fromFCFA, isFCFA } = currencyConversion;
   const transportPrice = (order.weight || 0) * (order.price_per_kg || 0);
   
-  // Parse flat-rate items from order
-  const flatRateItems: { name: string; label: string; quantity: number; unit_price: number }[] = 
+  // Parse flat-rate items from order (DB stores "price", not "unit_price")
+  const flatRateItems: { name: string; label: string; quantity: number; price: number }[] = 
     Array.isArray((order as any).flat_rate_items) ? (order as any).flat_rate_items : [];
-  const flatRateTotal = flatRateItems.reduce((sum, item) => sum + ((item.quantity || 0) * (item.unit_price || 0)), 0);
+  const flatRateTotal = flatRateItems.reduce((sum, item) => sum + ((item.quantity || 0) * (item.price || 0)), 0);
   
   // GP revenue = transport + flat-rate items
   // Commission is on (transport + flat-rate)
@@ -275,8 +275,8 @@ export default function GPOrderDetail() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-      {/* ─── Sticky Header ─── */}
-      <div className="sticky top-0 z-50 bg-card border-b">
+      {/* ─── Fixed Header ─── */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-card border-b" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="px-4 py-3">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" className="shrink-0 -ml-2" onClick={() => navigate(-1)}>
@@ -306,6 +306,9 @@ export default function GPOrderDetail() {
           )}
         </div>
       </div>
+
+      {/* Spacer for fixed header */}
+      <div className="h-28" />
 
       {/* ─── Scrollable Content ─── */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
@@ -510,7 +513,7 @@ export default function GPOrderDetail() {
                     {flatRateItems.filter(i => i.quantity > 0).map((item, idx) => (
                       <div key={idx} className="flex justify-between text-xs">
                         <span className="text-muted-foreground">{item.label} x{item.quantity}</span>
-                        <span className="font-medium">{dualFormat(item.quantity * item.unit_price)}</span>
+                        <span className="font-medium">{dualFormat((item.quantity || 0) * (item.price || 0))}</span>
                       </div>
                     ))}
                     {flatRateTotal > 0 && (
@@ -543,7 +546,7 @@ export default function GPOrderDetail() {
                       {flatRateItems.filter(i => i.quantity > 0).map((item, idx) => (
                         <div key={`inv-${idx}`} className="flex justify-between text-xs">
                           <span className="text-muted-foreground">{item.label} x{item.quantity}</span>
-                          <span>{dualFormat(item.quantity * item.unit_price)}</span>
+                          <span>{dualFormat((item.quantity || 0) * (item.price || 0))}</span>
                         </div>
                       ))}
                       {insuranceAmount > 0 && (
