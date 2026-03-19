@@ -18,6 +18,7 @@ export function HeaderRoleSwitch() {
   const { isAdmin, userId, isAuthenticated } = useUserRole();
   const [hasGPProfile, setHasGPProfile] = useState(false);
   const [gpBusinessName, setGPBusinessName] = useState("");
+  const [gpType, setGPType] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -37,13 +38,16 @@ export function HeaderRoleSwitch() {
     try {
       const { data: gpProfile } = await supabase
         .from("gp_profiles")
-        .select("id, business_name, status")
+        .select("id, business_name, status, gp_type")
         .eq("user_id", userId)
         .maybeSingle();
 
-      if (gpProfile) {
+      if (gpProfile && gpProfile.gp_type !== 'occasionnel') {
         setHasGPProfile(true);
         setGPBusinessName(gpProfile.business_name);
+        setGPType(gpProfile.gp_type);
+      } else {
+        setHasGPProfile(false);
       }
     } catch (error) {
       console.error("Error checking GP status:", error);
