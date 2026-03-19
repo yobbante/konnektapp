@@ -35,11 +35,11 @@ const BAGGAGE_PRESETS = [
   { label: "3 bagages (69kg)", count: 3, capacity: 60 },
 ];
 
-export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) {
+export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: VoyageGagneSheetProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  const [step, setStep] = useState<Step>("intro");
+  const [step, setStep] = useState<Step>(skipIntro ? "details" : "intro");
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Form state
