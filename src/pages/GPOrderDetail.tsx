@@ -247,7 +247,13 @@ export default function GPOrderDetail() {
   const isBlockedByLogistics = order.status === "in_transit" && logisticsOptions?.delivery_enabled && order.logistics_status === "awaiting_admin_delivery";
   const currencySymbol = getCurrencySymbol(order.currency);
   const { formatDual, fromFCFA, isFCFA } = currencyConversion;
-  const transportPrice = (order.weight || 0) * (order.price_per_kg || 0);
+  // Use pricing engine for correct transport price (TMA, coefficients)
+  const regressiveInfo = getRegressiveInfo(order.weight || 0, order.price_per_kg || 0);
+  const rawTransport = (order.weight || 0) * (order.price_per_kg || 0);
+  const TMA = Math.round((order.price_per_kg || 0) * 1.50);
+  const transportPrice = (order.weight || 0) <= 1
+    ? TMA // Forfait petit colis
+    : Math.max(Math.round((order.weight || 0) * regressiveInfo.effectivePricePerKg), TMA);
   
   // Parse flat-rate items from order (DB stores "price", not "unit_price")
   const flatRateItems: { name: string; label: string; quantity: number; price: number }[] = 
