@@ -513,7 +513,9 @@ export default function GPOrderDetail() {
                   <div className="space-y-2 text-sm">
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Vos revenus</p>
                     <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Transport ({order.weight} kg x {order.price_per_kg})</span>
+                      <span className="text-muted-foreground">
+                        Transport ({order.weight} kg{isTMAApplied ? " - TMA" : ` x ${regressiveInfo.effectivePricePerKg}`})
+                      </span>
                       <span className="font-medium">{dualFormat(transportPrice)}</span>
                     </div>
                     {flatRateItems.filter(i => i.quantity > 0).map((item, idx) => (
