@@ -551,14 +551,12 @@ export function ClientAppHome({
     if (activeTab !== "all") {
       result = result.filter((o) => (TYPE_MAP[activeTab] || []).includes(o.transport_type));
     }
-    // Only apply origin/dest filters when user has actively triggered a search
-    if (hasActiveSearch) {
-      if (searchOrigin) {
-        result = result.filter((o) => o.origin_city?.toLowerCase().includes(searchOrigin.toLowerCase()));
-      }
-      if (searchDest) {
-        result = result.filter((o) => o.destination_city?.toLowerCase().includes(searchDest.toLowerCase()));
-      }
+    // Always apply search filters reactively
+    if (searchOrigin) {
+      result = result.filter((o) => o.origin_city?.toLowerCase().includes(searchOrigin.toLowerCase()));
+    }
+    if (searchDest) {
+      result = result.filter((o) => o.destination_city?.toLowerCase().includes(searchDest.toLowerCase()));
     }
     // Rank by subscription boost + rating
     const scoreOffer = (o: any) => {
@@ -566,8 +564,20 @@ export function ClientAppHome({
       const subBoost = sub === "pro" ? 1000 : sub === "premium" ? 500 : 0;
       return subBoost + (o.gp_profiles?.rating || 0);
     };
-    return result.sort((a, b) => scoreOffer(b) - scoreOffer(a));
-  }, [offers, activeTab, searchOrigin, searchDest, hasActiveSearch]);
+    // Sort by score, then deduplicate by destination city (1 per dest)
+    const sorted = [...result].sort((a, b) => scoreOffer(b) - scoreOffer(a));
+    const seenDests = new Set<string>();
+    const unique: any[] = [];
+    for (const o of sorted) {
+      const destKey = (o.destination_city || "").toLowerCase();
+      if (!seenDests.has(destKey)) {
+        seenDests.add(destKey);
+        unique.push(o);
+      }
+      if (unique.length >= 4) break;
+    }
+    return unique;
+  }, [offers, activeTab, searchOrigin, searchDest]);
 
   const activeOrders = recentOrders.filter((o) => ACTIVE_STATUSES.includes(o.status));
   const selectedOrder = fullScreenOrderId ? activeOrders.find((o) => o.id === fullScreenOrderId) : null;
