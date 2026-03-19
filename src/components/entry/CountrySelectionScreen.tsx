@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ALL_COUNTRIES } from "@/components/gp/SearchableCountrySelect";
 import { COUNTRY_PHONE_CODES } from "@/lib/phoneCountryCodes";
-import { WORLD_CITIES, FEATURED_CITIES } from "@/components/gp/SearchableCitySelect";
+import { useActiveCities } from "@/hooks/useActiveCities";
 
 // Currency by country
 const COUNTRY_CURRENCY: Record<string, string> = {
@@ -35,6 +35,7 @@ export function CountrySelectionScreen({ onSelect }: CountrySelectionScreenProps
   const [citySearch, setCitySearch] = useState("");
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
+  const { cities: activeCities } = useActiveCities();
 
   const popular = useMemo(() => 
     POPULAR_CODES.map(code => ALL_COUNTRIES.find(c => c.code === code)!).filter(Boolean),
@@ -52,14 +53,16 @@ export function CountrySelectionScreen({ onSelect }: CountrySelectionScreenProps
   const displayList = search ? filtered : popular;
   const selectedCountry = ALL_COUNTRIES.find(c => c.code === selected);
 
-  // Cities for selected country
+  // Cities for selected country — only show active platform cities
   const countryCities = useMemo(() => {
     if (!selected) return [];
-    const cities = WORLD_CITIES.filter(c => c.country === selected);
+    const cities = activeCities
+      .filter(c => c.country_code === selected)
+      .map(c => ({ city: c.city, country: c.country_code, flag: c.flag }));
     if (!citySearch) return cities;
     const q = citySearch.toLowerCase();
     return cities.filter(c => c.city.toLowerCase().includes(q));
-  }, [selected, citySearch]);
+  }, [selected, citySearch, activeCities]);
 
   const handleCountryNext = () => {
     if (!selected) return;

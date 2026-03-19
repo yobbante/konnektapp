@@ -2,7 +2,8 @@
  * CoursierRegistration — Inscription coursier express local
  * Style GP Bagages : header sticky + barres d'étapes + footer fixe
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useActiveCities } from "@/hooks/useActiveCities";
 import { getEntryFlowData } from "@/lib/entryFlowData";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -24,12 +25,14 @@ const COUNTRIES = [
   { code: "GN", name: "🇬🇳 Guinée", dialCode: "+224" },
 ];
 
+// Cities are now loaded dynamically from platform_active_cities via useActiveCities hook
+// Keeping minimal fallback for offline
 const CITIES_BY_COUNTRY: Record<string, string[]> = {
-  SN: ["Dakar", "Thiès", "Saint-Louis", "Kaolack", "Touba", "Ziguinchor", "Mbour", "Rufisque"],
-  CI: ["Abidjan", "Yamoussoukro", "Bouaké", "San-Pédro", "Daloa"],
-  ML: ["Bamako", "Sikasso", "Ségou", "Mopti"],
-  BF: ["Ouagadougou", "Bobo-Dioulasso", "Koudougou"],
-  GN: ["Conakry", "Kankan", "Kindia"],
+  SN: ["Dakar"],
+  CI: ["Abidjan"],
+  ML: ["Bamako"],
+  BF: ["Ouagadougou"],
+  GN: ["Conakry"],
 };
 
 const VEHICLE_TYPES = [
@@ -65,6 +68,7 @@ export default function CoursierRegistration() {
     fullName: "", phone: entryFlow.phone || "", email: "", password: "",
     zone: "", vehicleType: "",
   });
+  const { cities: activeCities } = useActiveCities();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -89,6 +93,12 @@ export default function CoursierRegistration() {
     }, 600);
     return () => clearTimeout(t);
   }, [form.phone]);
+
+  const selectedCountry = COUNTRIES.find(c => c.code === country);
+  const cities = useMemo(() => {
+    const fromDb = activeCities.filter(c => c.country_code === country).map(c => c.city);
+    return fromDb.length > 0 ? fromDb : (CITIES_BY_COUNTRY[country] || []);
+  }, [country, activeCities]);
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -121,9 +131,6 @@ export default function CoursierRegistration() {
   };
 
   if (loading) return <TransportPageLoader />;
-
-  const selectedCountry = COUNTRIES.find(c => c.code === country);
-  const cities = CITIES_BY_COUNTRY[country] || [];
 
   const canNext = step === 1 ? country && city && form.phone && phoneUnique !== false
     : step === 2 ? form.fullName && form.email

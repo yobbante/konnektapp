@@ -1,5 +1,6 @@
 import { useState, useMemo, forwardRef } from "react";
 import { Check, Search, Globe, MapPin } from "lucide-react";
+import { useActiveCities } from "@/hooks/useActiveCities";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -295,14 +296,10 @@ function CityListContent({
   placeholder,
 }: CityListProps) {
   const [showAll, setShowAll] = useState(false);
-  const featuredSet = useMemo(() => new Set(FEATURED_CITIES.map(c => `${c.city}-${c.country}`)), []);
 
-  // When searching, show all results. Otherwise show featured first
   const citiesToShow = useMemo(() => {
-    if (searchQuery) return filteredCities;
-    if (showAll) return filteredCities;
-    return filteredCities.filter(c => featuredSet.has(`${c.city}-${c.country}`));
-  }, [filteredCities, searchQuery, showAll, featuredSet]);
+    return filteredCities;
+  }, [filteredCities]);
 
   return (
     <div className="flex flex-col">
@@ -378,15 +375,6 @@ function CityListContent({
                 );
               });
             })()}
-            {!searchQuery && !showAll && filteredCities.length > citiesToShow.length && (
-              <button
-                onClick={() => setShowAll(true)}
-                className="w-full py-3 text-sm text-primary font-medium hover:bg-muted/50 rounded-md mt-1 flex items-center justify-center gap-1"
-              >
-                <Globe className="w-4 h-4" />
-                Voir toutes les villes ({filteredCities.length - citiesToShow.length} de plus)
-              </button>
-            )}
           </div>
         )}
       </div>
@@ -414,20 +402,26 @@ export function SearchableCitySelect({
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const isMobile = useIsMobile();
+  const { cities: activeCities } = useActiveCities();
+
+  // Build city list from active platform cities
+  const platformCities = useMemo(() => {
+    return activeCities.map(c => ({ city: c.city, country: c.country_code, flag: c.flag }));
+  }, [activeCities]);
 
   const currentCity = useMemo(() => {
-    return WORLD_CITIES.find(c => c.city === value && c.country === countryCode) ||
+    return platformCities.find(c => c.city === value && c.country === countryCode) ||
+           platformCities.find(c => c.city === value) ||
+           WORLD_CITIES.find(c => c.city === value && c.country === countryCode) ||
            WORLD_CITIES.find(c => c.city === value);
-  }, [value, countryCode]);
+  }, [value, countryCode, platformCities]);
 
-  // Group cities: current country first, then popular, then rest
-  // All cities sorted: current country first, popular, then rest — always show all
+  // Sort: current country first, then the rest
   const sortedCities = useMemo(() => {
-    const currentCountryCities = WORLD_CITIES.filter(c => c.country === countryCode);
-    const popularOther = WORLD_CITIES.filter(c => c.country !== countryCode && POPULAR_CITIES.includes(c.city));
-    const rest = WORLD_CITIES.filter(c => c.country !== countryCode && !POPULAR_CITIES.includes(c.city));
-    return [...currentCountryCities, ...popularOther, ...rest];
-  }, [countryCode]);
+    const currentCountryCities = platformCities.filter(c => c.country === countryCode);
+    const rest = platformCities.filter(c => c.country !== countryCode);
+    return [...currentCountryCities, ...rest];
+  }, [countryCode, platformCities]);
 
   const filteredCities = useMemo(() => {
     if (!searchQuery) return sortedCities;
