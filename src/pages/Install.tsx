@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Package, Download, Share, MoreVertical, Check, Smartphone, Monitor } from "lucide-react";
+import { Download, Share, MoreVertical, Check, Smartphone, Monitor } from "lucide-react";
+import { KonnektLogo } from "@/components/ui/KonnektLogo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MobileHeader } from "@/components/layout/MobileHeader";
@@ -63,8 +64,8 @@ export default function Install() {
       <div className="container max-w-lg mx-auto p-4 space-y-6">
         {/* Hero Section */}
         <div className="text-center py-8">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Package className="w-10 h-10 text-white" />
+          <div className="w-20 h-20 rounded-2xl bg-card flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <KonnektLogo size={48} />
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-2">Konnekt</h1>
           <p className="text-muted-foreground">
