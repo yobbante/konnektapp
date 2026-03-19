@@ -482,11 +482,12 @@ export function ClientAppHome({
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
     // Only show GP (bagages_international) and GP occasionnel offers — exclude aerien, routier, maritime
+    // Also exclude offers from gp_type='aerien' transporters
     const gpQuery = supabase
           .from("gp_offers")
           .select("*, gp_profiles(business_name, rating, total_reviews, subscription, gp_type)")
           .eq("status", "active")
-          .in("transport_type", ["bagages_international", "bagages_accompagnes", "navette", "occasionnel"] as any)
+          .in("transport_type", ["bagages_international", "bagages_accompagnes", "navette", "occasionnel", "voyageur"] as any)
           .gte("departure_date", today)
           .order("departure_date", { ascending: true })
           .limit(50);
