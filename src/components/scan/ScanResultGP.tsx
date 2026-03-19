@@ -420,13 +420,35 @@ const NATURE_LABELS: Record<string, string> = {
   autres: "Autres",
 };
 
-function DepositInventoryCard({ order }: { order: ScanResultGPProps["order"] }) {
-  const flatRateItems = (order.flat_rate_items || []) as FlatRateOrderItem[];
+function DepositInventoryCard({ order, editable = false, onItemsChange }: { 
+  order: ScanResultGPProps["order"];
+  editable?: boolean;
+  onItemsChange?: (items: FlatRateOrderItem[], newTotal: number) => void;
+}) {
+  const [editableItems, setEditableItems] = useState<FlatRateOrderItem[]>(
+    () => (order.flat_rate_items || []) as FlatRateOrderItem[]
+  );
   const contentNature = order.content_nature || [];
   const hasKilo = order.weight > 0;
-  const hasFlatRate = flatRateItems.length > 0;
+  const hasFlatRate = editableItems.length > 0;
 
   if (!hasKilo && !hasFlatRate) return null;
+
+  const handleQuantityChange = (index: number, delta: number) => {
+    const updated = editableItems.map((item, i) => {
+      if (i !== index) return item;
+      const newQty = Math.max(0, item.quantity + delta);
+      return { ...item, quantity: newQty };
+    });
+    setEditableItems(updated);
+    
+    // Calculate new total: kilo price + flat rate totals
+    const kiloTotal = order.weight * order.price_per_kg;
+    const flatTotal = updated.reduce((sum, it) => sum + it.price * it.quantity, 0);
+    onItemsChange?.(updated, kiloTotal + flatTotal);
+  };
+
+  const displayItems = editable ? editableItems : (order.flat_rate_items || []) as FlatRateOrderItem[];
 
   return (
     <Card className="border-accent/30 bg-accent/5">
@@ -434,9 +456,16 @@ function DepositInventoryCard({ order }: { order: ScanResultGPProps["order"] }) 
         <div className="flex items-center gap-2">
           <Box className="w-4 h-4 text-accent-foreground" />
           <h4 className="text-sm font-semibold">Inventaire du colis</h4>
-          <Badge variant="outline" className="ml-auto text-[10px]">
-            {(hasKilo ? 1 : 0) + flatRateItems.length} article{((hasKilo ? 1 : 0) + flatRateItems.length) > 1 ? 's' : ''}
-          </Badge>
+          {editable && (
+            <Badge className="ml-auto text-[10px] bg-amber-500/10 text-amber-600 border-amber-500/30">
+              Modifiable
+            </Badge>
+          )}
+          {!editable && (
+            <Badge variant="outline" className="ml-auto text-[10px]">
+              {(hasKilo ? 1 : 0) + displayItems.length} article{((hasKilo ? 1 : 0) + displayItems.length) > 1 ? 's' : ''}
+            </Badge>
+          )}
         </div>
 
         <div className="space-y-1.5">
@@ -459,8 +488,9 @@ function DepositInventoryCard({ order }: { order: ScanResultGPProps["order"] }) 
           )}
 
           {/* Flat rate items */}
-          {flatRateItems.map((item, i) => {
+          {displayItems.map((item, i) => {
             const Icon = FLAT_RATE_ICONS[item.name] || Package;
+            const qty = editable ? editableItems[i]?.quantity ?? item.quantity : item.quantity;
             return (
               <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg bg-background border border-accent/30">
                 <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center">
@@ -470,12 +500,33 @@ function DepositInventoryCard({ order }: { order: ScanResultGPProps["order"] }) 
                   <p className="text-sm font-medium">{item.label}</p>
                   <Badge variant="secondary" className="text-[10px] mt-0.5">Forfaitaire</Badge>
                 </div>
-                <div className="text-right">
-                  <span className="text-sm font-bold">×{item.quantity}</span>
-                  <p className="text-[10px] text-muted-foreground">
-                    {(item.price * item.quantity).toLocaleString()} {getCurrencySymbol(order.currency)}
-                  </p>
-                </div>
+                {editable ? (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => handleQuantityChange(i, -1)}
+                      className="w-7 h-7 rounded-lg border border-border bg-muted flex items-center justify-center text-sm font-bold hover:bg-destructive/10 hover:text-destructive transition-colors"
+                    >
+                      −
+                    </button>
+                    <span className="text-sm font-bold w-6 text-center">{qty}</span>
+                    <button
+                      onClick={() => handleQuantityChange(i, 1)}
+                      className="w-7 h-7 rounded-lg border border-border bg-muted flex items-center justify-center text-sm font-bold hover:bg-primary/10 hover:text-primary transition-colors"
+                    >
+                      +
+                    </button>
+                    <p className="text-[10px] text-muted-foreground w-16 text-right">
+                      {(item.price * qty).toLocaleString()} {getCurrencySymbol(order.currency)}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="text-right">
+                    <span className="text-sm font-bold">×{qty}</span>
+                    <p className="text-[10px] text-muted-foreground">
+                      {(item.price * qty).toLocaleString()} {getCurrencySymbol(order.currency)}
+                    </p>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -485,7 +536,10 @@ function DepositInventoryCard({ order }: { order: ScanResultGPProps["order"] }) 
         <div className="flex items-center justify-between pt-2 border-t border-border">
           <span className="text-xs text-muted-foreground">Total déclaré</span>
           <span className="text-sm font-bold">
-            {order.total_price.toLocaleString()} {getCurrencySymbol(order.currency)}
+            {(editable 
+              ? (order.weight * order.price_per_kg + editableItems.reduce((s, it) => s + it.price * it.quantity, 0))
+              : order.total_price
+            ).toLocaleString()} {getCurrencySymbol(order.currency)}
           </span>
         </div>
       </CardContent>

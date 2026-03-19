@@ -230,7 +230,7 @@ export function VoyageGagneSheet({ open, onOpenChange }: VoyageGagneSheetProps) 
       });
 
       onOpenChange(false);
-      navigate("/reservations");
+      // Don't navigate away — the Voyage button will now show VoyageDashboard
     } catch (err: any) {
       console.error("Publish error:", err);
       toast({ 
