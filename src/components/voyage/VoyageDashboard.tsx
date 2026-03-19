@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
 import { GPScanSheet } from "@/components/scan/GPScanSheet";
+import { GPProTransitionSheet } from "./GPProTransitionSheet";
 
 interface VoyageDashboardProps {
   open: boolean;
