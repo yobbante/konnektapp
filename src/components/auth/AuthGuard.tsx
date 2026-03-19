@@ -179,7 +179,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
       const [gpRes, mobilityRes] = await Promise.all([
         supabase
           .from("gp_profiles")
-          .select("id, price_locked_at")
+          .select("id, price_locked_at, gp_type")
           .eq("user_id", userId)
           .maybeSingle(),
         supabase
@@ -192,7 +192,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
       const gpProfileEarly = gpRes.data;
       const mobilityProfile = mobilityRes.data;
 
-      const isGPEarly = !!gpProfileEarly;
+      // GP Occasionnel = client, skip all GP routing logic
+      const isOccasionnel = gpProfileEarly?.gp_type === "occasionnel";
+      const isGPEarly = !!gpProfileEarly && !isOccasionnel;
       // GP registration is only complete when pricing is locked
       const isGPRegistrationComplete = isGPEarly && !!gpProfileEarly?.price_locked_at;
       const isMobilityTransporter = !!mobilityProfile;

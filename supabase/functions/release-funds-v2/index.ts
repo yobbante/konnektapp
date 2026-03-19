@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
     const { data: order, error: orderErr } = await supabase
       .from("orders")
       .select(
-        "id, gp_id, client_id, total_price, weight, price_per_kg, insurance_amount, has_insurance, currency, status, financial_status, order_number, commission_amount, delivery_code"
+        "id, gp_id, client_id, total_price, weight, price_per_kg, insurance_amount, has_insurance, currency, status, financial_status, order_number, commission_amount, delivery_code, flat_rate_items"
       )
       .eq("id", order_id)
       .single();
@@ -184,7 +184,11 @@ Deno.serve(async (req) => {
     // ── 9. Calcul financier final ──────────────────────────────────
     // RÈGLE CLÉ: GP ne touche QUE le transport. Assurance + Logistique → Konnekt.
     const totalAmount = escrow.amount; // Montant total bloqué (transport + insurance + logistics)
-    const transportPrice = (order.weight || 0) * (order.price_per_kg || 0); // Revenu transport brut
+    const kiloTransportPrice = (order.weight || 0) * (order.price_per_kg || 0);
+    // Include flat-rate items revenue in transport price (GP earns from these too)
+    const flatRateItems = (order.flat_rate_items || []) as Array<{ price: number; quantity: number }>;
+    const flatRateTotal = flatRateItems.reduce((s: number, it: any) => s + (it.price || 0) * (it.quantity || 0), 0);
+    const transportPrice = kiloTransportPrice + flatRateTotal; // Total GP transport revenue
     const insuranceAmount = order.has_insurance ? (order.insurance_amount || 0) : 0;
     const commissionRate = gpWallet.commission_rate || 5;
 
