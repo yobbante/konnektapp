@@ -161,7 +161,8 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
     const extras: MenuItem[] = [];
     if (!isAuthenticated || isInAdminMode) return extras;
 
-    if (isGP && !isInGPMode) {
+    // Only show GP dashboard link for non-occasional GPs
+    if (isGP && !isInGPMode && gpType !== 'occasionnel') {
       extras.push({ icon: Truck, label: gpBusinessName || "Espace GP", href: "/gp/apercu", highlight: true });
     }
     if (hasAdminAccess && !isInAdminMode) {
