@@ -248,7 +248,16 @@ export default function GPOrderDetail() {
   const currencySymbol = getCurrencySymbol(order.currency);
   const { formatDual, fromFCFA, isFCFA } = currencyConversion;
   const transportPrice = order.weight * order.price_per_kg;
-  const gpEarnings = transportPrice - order.commission_amount;
+  
+  // Parse flat-rate items from order
+  const flatRateItems: { name: string; label: string; quantity: number; unit_price: number }[] = 
+    Array.isArray((order as any).flat_rate_items) ? (order as any).flat_rate_items : [];
+  const flatRateTotal = flatRateItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+  
+  // GP revenue = transport + flat-rate items
+  // Commission is on (transport + flat-rate)
+  const gpRevenue = transportPrice + flatRateTotal;
+  const gpEarnings = gpRevenue - order.commission_amount;
   const insuranceAmount = order.has_insurance ? (order.insurance_amount || 0) : 0;
   const logisticsPriceFCFA = logisticsOptions ?
     ((logisticsOptions.pickup_enabled ? (logisticsOptions as any).pickup_price || 0 : 0) +
@@ -492,11 +501,23 @@ export default function GPOrderDetail() {
               <CollapsibleContent>
                 <CardContent className="px-3 pb-3 pt-0">
                   <div className="space-y-2 text-sm">
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Vos revenus</p>
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Vos revenus</p>
                     <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Transport ({order.weight} kg × {order.price_per_kg})</span>
+                      <span className="text-muted-foreground">Transport ({order.weight} kg x {order.price_per_kg})</span>
                       <span className="font-medium">{dualFormat(transportPrice)}</span>
                     </div>
+                    {flatRateItems.filter(i => i.quantity > 0).map((item, idx) => (
+                      <div key={idx} className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">{item.label} x{item.quantity}</span>
+                        <span className="font-medium">{dualFormat(item.quantity * item.unit_price)}</span>
+                      </div>
+                    ))}
+                    {flatRateTotal > 0 && (
+                      <div className="flex justify-between text-xs font-medium border-t border-border/30 pt-1">
+                        <span className="text-muted-foreground">Sous-total GP</span>
+                        <span>{dualFormat(gpRevenue)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-xs text-destructive">
                       <span>Commission Konnekt</span>
                       <span>-{dualFormat(order.commission_amount)}</span>
@@ -518,15 +539,21 @@ export default function GPOrderDetail() {
                         <span className="text-muted-foreground">Transport</span>
                         <span>{dualFormat(transportPrice)}</span>
                       </div>
+                      {flatRateItems.filter(i => i.quantity > 0).map((item, idx) => (
+                        <div key={`inv-${idx}`} className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">{item.label} x{item.quantity}</span>
+                          <span>{dualFormat(item.quantity * item.unit_price)}</span>
+                        </div>
+                      ))}
                       {insuranceAmount > 0 && (
                         <div className="flex justify-between text-xs">
-                          <span className="text-muted-foreground">Assurance</span>
+                          <span className="text-muted-foreground">Assurance (Konnekt)</span>
                           <span>{dualFormat(insuranceAmount)}</span>
                         </div>
                       )}
                       {logisticsPrice > 0 && (
                         <div className="flex justify-between text-xs">
-                          <span className="text-muted-foreground">Logistique</span>
+                          <span className="text-muted-foreground">Logistique (Konnekt)</span>
                           <span>{dualFormat(logisticsPrice)}</span>
                         </div>
                       )}

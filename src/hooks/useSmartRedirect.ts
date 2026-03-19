@@ -125,9 +125,9 @@ export function useSmartRedirect() {
             role: "client" 
           };
         }
-        // Route based on gp_type
+        // Route based on gp_type - all GPs go to their overview page
         const isRoutier = gpProfile.gp_type === "routier";
-        const destination = isRoutier ? "/routier/apercu" : "/gp/demandes";
+        const destination = isRoutier ? "/routier/apercu" : "/gp/apercu";
         navigate(destination);
         return { 
           success: true, 
