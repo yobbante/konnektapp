@@ -81,7 +81,7 @@ export default function FreightMarketplace() {
     queryFn: async () => {
       let query = supabase
         .from("gp_offers")
-        .select("*, gp_profiles!gp_offers_gp_id_fkey(business_name, id)")
+        .select("*, gp_profiles!gp_offers_gp_id_fkey(business_name, id, rating, subscription)")
         .eq("status", "active")
         .gte("departure_date", today.split("T")[0])
         .order("departure_date", { ascending: true });
