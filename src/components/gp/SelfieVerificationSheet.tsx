@@ -210,7 +210,7 @@ export function SelfieVerificationSheet({ open, onClose, gpId, onSuccess, onAuto
 
       setStep("done");
       onSuccess?.(urlData.publicUrl);
-      toast({ title: "Selfie enregistré ✅", description: "Vérification réussie." });
+      toast({ title: "Selfie enregistre", description: "Vérification réussie." });
       
       // Try auto-activation
       setTimeout(async () => {

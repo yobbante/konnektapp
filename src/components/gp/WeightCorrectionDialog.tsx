@@ -119,7 +119,7 @@ export function WeightCorrectionDialog({
       await supabase.from("notifications").insert({
         user_id: clientId,
         type: "weight_correction",
-        title: "⚖️ Poids ajusté par le transporteur",
+        title: "Poids ajuste par le transporteur",
         message: `Le poids de votre colis ${orderNumber} a été vérifié: ${actualWeight} kg (déclaré: ${currentWeight} kg). Nouveau total: ${newTotalPrice.toLocaleString()} ${currency}.`,
         related_type: "order",
         related_id: orderId,

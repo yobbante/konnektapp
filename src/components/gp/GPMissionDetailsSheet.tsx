@@ -266,7 +266,7 @@ export function GPMissionDetailsSheet({
         await supabase.from("notifications").insert({
           user_id: order.client_id,
           type: "order_update",
-          title: "❌ Commande refusée",
+          title: "Commande refusee",
           message: `Votre commande ${order.order_number} a été refusée`,
           related_type: "order",
           related_id: order.id,
