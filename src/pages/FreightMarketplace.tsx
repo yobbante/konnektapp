@@ -624,11 +624,17 @@ function CityPickerDrawer({
   cityQuery: string;
   onCityQueryChange: (q: string) => void;
 }) {
+  const { cities: activeCities } = useActiveCities();
+  const activeCitiesFormatted = useMemo(() => 
+    activeCities.map(c => ({ city: c.city, country: c.country_code, flag: c.flag })),
+    [activeCities]
+  );
+
   const filteredCities = useMemo(() => {
-    if (!cityQuery) return FEATURED_CITIES;
+    if (!cityQuery) return activeCitiesFormatted;
     const q = cityQuery.toLowerCase();
-    return WORLD_CITIES.filter((c) => c.city.toLowerCase().includes(q));
-  }, [cityQuery]);
+    return activeCitiesFormatted.filter((c) => c.city.toLowerCase().includes(q));
+  }, [cityQuery, activeCitiesFormatted]);
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
