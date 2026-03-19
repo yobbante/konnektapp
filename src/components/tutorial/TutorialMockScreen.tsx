@@ -220,8 +220,8 @@ export function TutorialMockScreen({ screen, mockState, role, stepIndex }: Props
             </div>
             <p className="text-2xl font-bold">{mockState.escrow.amount.toLocaleString()} FCFA</p>
             <Badge variant="outline" className="mt-2 text-[10px]">
-              {mockState.escrow.status === "locked" ? "🔒 Fonds verrouillés" :
-               mockState.escrow.status === "released" ? "✅ Fonds libérés" : "⏳ En attente"}
+              {mockState.escrow.status === "locked" ? "Fonds verrouilles" :
+               mockState.escrow.status === "released" ? "Fonds liberes" : "En attente"}
             </Badge>
           </div>
         </MockCard>
