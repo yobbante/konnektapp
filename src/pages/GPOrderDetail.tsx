@@ -307,6 +307,9 @@ export default function GPOrderDetail() {
         </div>
       </div>
 
+      {/* Spacer for fixed header */}
+      <div className="h-28" />
+
       {/* ─── Scrollable Content ─── */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
 
