@@ -111,6 +111,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
         setDepositAddress("");
         setReceptionPhone("");
         setReceptionAddress("");
+        setSelectedRestrictions([]);
       }, 300);
     }
   }, [open, skipIntro]);
