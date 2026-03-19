@@ -112,7 +112,7 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
       // Fetch orders
       const { data: ordersData } = await supabase
         .from("orders")
-        .select("id, tracking_number, status, weight, total_price, currency, sender_name, recipient_name, created_at")
+        .select("id, order_number, status, weight, total_price, currency, recipient_name, origin_city, destination_city, created_at")
         .eq("gp_id", gpProfile.id)
         .order("created_at", { ascending: false })
         .limit(50);
