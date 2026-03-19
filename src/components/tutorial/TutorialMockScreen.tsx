@@ -44,7 +44,7 @@ export function TutorialMockScreen({ screen, mockState, role, stepIndex }: Props
             <div>
               <p className="font-semibold text-sm">Amadou T.</p>
               <div className="flex items-center gap-1.5">
-                <Badge className="text-[9px] bg-green-500/10 text-green-600 border-0">Pro ⭐</Badge>
+                <Badge className="text-[9px] bg-green-500/10 text-green-600 border-0">Pro</Badge>
                 <span className="text-[10px] text-muted-foreground">KTP 92/100</span>
               </div>
             </div>
