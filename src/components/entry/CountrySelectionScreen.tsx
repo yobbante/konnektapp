@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ALL_COUNTRIES } from "@/components/gp/SearchableCountrySelect";
 import { COUNTRY_PHONE_CODES } from "@/lib/phoneCountryCodes";
-import { WORLD_CITIES, FEATURED_CITIES } from "@/components/gp/SearchableCitySelect";
+import { useActiveCities } from "@/hooks/useActiveCities";
 
 // Currency by country
 const COUNTRY_CURRENCY: Record<string, string> = {
