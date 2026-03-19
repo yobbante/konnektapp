@@ -127,7 +127,6 @@ export default function CoursierRegistration() {
   if (loading) return <TransportPageLoader />;
 
   const selectedCountry = COUNTRIES.find(c => c.code === country);
-  const { cities: activeCities } = useActiveCities();
   const cities = useMemo(() => {
     const fromDb = activeCities.filter(c => c.country_code === country).map(c => c.city);
     return fromDb.length > 0 ? fromDb : (CITIES_BY_COUNTRY[country] || []);
