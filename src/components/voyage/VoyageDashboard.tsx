@@ -80,6 +80,7 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
   const [showScan, setShowScan] = useState(false);
   const [walletData, setWalletData] = useState<{ balance: number; pending: number; currency: string } | null>(null);
   const [showBalance, setShowBalance] = useState(true);
+  const [showProTransition, setShowProTransition] = useState(false);
 
   useEffect(() => {
     if (!open) return;
