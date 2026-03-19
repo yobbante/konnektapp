@@ -357,18 +357,37 @@ async function execDepositConfirm(
     return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_status", next_action: "none", message: "Le dépôt n'est possible qu'en statut « En attente », « Acceptée » ou « Paiement reçu »." };
   }
 
-  const actualWeight = actionData?.actual_weight || order.weight;
+  const actualWeight = actionData?.actual_weight || actionData?.weight || order.weight;
   const hasWeightChange = Math.abs(actualWeight - order.weight) > 0.01;
+  const hasFlatRateChange = actionData?.flat_rate_items != null;
 
   if (hasWeightChange) {
-    return execWeightModify(supabase, order, userId, role, { actual_weight: actualWeight });
+    return execWeightModify(supabase, order, userId, role, { 
+      actual_weight: actualWeight,
+      ...(hasFlatRateChange ? { flat_rate_items: actionData.flat_rate_items, flat_rate_total: actionData.flat_rate_total, new_total_price: actionData.new_total_price } : {}),
+    });
+  }
+
+  // Build update payload
+  const updatePayload: Record<string, any> = { status: "checked_in", weight: actualWeight };
+
+  // If flat rate items were modified by GP during deposit
+  if (hasFlatRateChange) {
+    const flatRateItems = actionData.flat_rate_items;
+    const flatRateTotal = flatRateItems.reduce((s: number, it: any) => s + (it.price || 0) * (it.quantity || 0), 0);
+    const kiloTotal = actualWeight * order.price_per_kg;
+    const insuranceAmount = order.insurance_amount || 0;
+    const newTotalPrice = kiloTotal + flatRateTotal + insuranceAmount;
+    
+    updatePayload.flat_rate_items = flatRateItems;
+    updatePayload.total_price = newTotalPrice;
   }
 
   // Standard deposit: update status to checked_in (state machine V2)
-  await supabase.from("orders").update({ status: "checked_in", weight: actualWeight }).eq("id", order.id);
+  await supabase.from("orders").update(updatePayload).eq("id", order.id);
   await supabase.from("order_status_history").insert({
     order_id: order.id, status: "checked_in", changed_by: userId, changed_by_type: role,
-    notes: "Dépôt confirmé par scan — poids conforme — check-in effectué",
+    notes: `Dépôt confirmé par scan${hasFlatRateChange ? ' — articles forfaitaires modifiés' : ''} — check-in effectué`,
   });
   // Notification client: colis ENREGISTRÉ (pas livré)
   await supabase.from("notifications").insert({
@@ -380,7 +399,7 @@ async function execDepositConfirm(
   return {
     status: "executed", qr_type: "QR_COLIS", scenario: "deposit_confirmed",
     next_action: "none", message: "✅ Dépôt confirmé. Colis enregistré (check-in). Le client a été notifié.",
-    data: { order: { ...order, status: "checked_in" } },
+    data: { order: { ...order, status: "checked_in", ...(hasFlatRateChange ? { flat_rate_items: actionData.flat_rate_items, total_price: updatePayload.total_price } : {}) } },
   };
 }
 
