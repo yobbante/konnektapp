@@ -245,7 +245,7 @@ export function TutorialMockScreen({ screen, mockState, role, stepIndex }: Props
               <span className="font-bold text-amber-600">+5 000 FCFA</span>
             </div>
             <div className="bg-amber-500/5 border border-amber-500/10 rounded-lg p-2 mt-1">
-              <p className="text-[10px] text-amber-700">⚠️ Le client doit accepter le supplément avant la prise en charge.</p>
+              <p className="text-[10px] text-amber-700">Le client doit accepter le supplement avant la prise en charge.</p>
             </div>
           </div>
         </MockCard>
