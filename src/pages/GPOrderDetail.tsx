@@ -249,10 +249,10 @@ export default function GPOrderDetail() {
   const { formatDual, fromFCFA, isFCFA } = currencyConversion;
   const transportPrice = (order.weight || 0) * (order.price_per_kg || 0);
   
-  // Parse flat-rate items from order
-  const flatRateItems: { name: string; label: string; quantity: number; unit_price: number }[] = 
+  // Parse flat-rate items from order (DB stores "price", not "unit_price")
+  const flatRateItems: { name: string; label: string; quantity: number; price: number }[] = 
     Array.isArray((order as any).flat_rate_items) ? (order as any).flat_rate_items : [];
-  const flatRateTotal = flatRateItems.reduce((sum, item) => sum + ((item.quantity || 0) * (item.unit_price || 0)), 0);
+  const flatRateTotal = flatRateItems.reduce((sum, item) => sum + ((item.quantity || 0) * (item.price || 0)), 0);
   
   // GP revenue = transport + flat-rate items
   // Commission is on (transport + flat-rate)
