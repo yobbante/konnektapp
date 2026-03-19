@@ -61,9 +61,8 @@ export default function FreightMarketplace() {
   const [searchParams] = useSearchParams();
   const isPopup = searchParams.get("popup") === "1";
   const [modeFilter, setModeFilter] = useState<TransportMode>(GP_ONLY_MODE ? "gp" : "all");
-  const [routeSearch, setRouteSearch] = useState(
-    [searchParams.get("origin"), searchParams.get("dest")].filter(Boolean).join(" ") || ""
-  );
+  const [originSearch, setOriginSearch] = useState(searchParams.get("origin") || "");
+  const [destSearch, setDestSearch] = useState(searchParams.get("dest") || "");
   const [sortBy, setSortBy] = useState<SortKey>("date");
   const [showFilters, setShowFilters] = useState(false);
 
@@ -240,13 +239,14 @@ export default function FreightMarketplace() {
       result = result.filter((l) => l.mode === modeFilter);
     }
 
-    if (routeSearch.trim()) {
-      const q = routeSearch.toLowerCase();
-      result = result.filter(
-        (l) =>
-          l.origin.toLowerCase().includes(q) ||
-          l.destination.toLowerCase().includes(q)
-      );
+    if (originSearch.trim()) {
+      const q = originSearch.toLowerCase();
+      result = result.filter((l) => l.origin.toLowerCase().includes(q));
+    }
+
+    if (destSearch.trim()) {
+      const q = destSearch.toLowerCase();
+      result = result.filter((l) => l.destination.toLowerCase().includes(q));
     }
 
     result.sort((a, b) => {
@@ -256,7 +256,7 @@ export default function FreightMarketplace() {
     });
 
     return result;
-  }, [listingsWithBadges, modeFilter, routeSearch, sortBy]);
+  }, [listingsWithBadges, modeFilter, originSearch, destSearch, sortBy]);
 
   const lastMinuteCount = filtered.filter((l) => l.isLastMinute).length;
 
@@ -377,11 +377,20 @@ export default function FreightMarketplace() {
           {/* Search & sort row */}
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-success" />
               <Input
-                placeholder="Rechercher une route..."
-                value={routeSearch}
-                onChange={(e) => setRouteSearch(e.target.value)}
+                placeholder="Ville de départ..."
+                value={originSearch}
+                onChange={(e) => setOriginSearch(e.target.value)}
+                className="pl-8 h-9 text-sm"
+              />
+            </div>
+            <div className="relative flex-1">
+              <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-destructive" />
+              <Input
+                placeholder="Ville de destination..."
+                value={destSearch}
+                onChange={(e) => setDestSearch(e.target.value)}
                 className="pl-8 h-9 text-sm"
               />
             </div>
