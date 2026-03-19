@@ -525,6 +525,11 @@ export default function FreightMarketplace() {
                           <p className="text-[10px] font-semibold">
                             {format(new Date(listing.departureDate), "d MMM", { locale: fr })}
                           </p>
+                          {listing.arrivalDate && (
+                            <p className="text-[8px] text-muted-foreground">
+                              → {format(new Date(listing.arrivalDate), "d MMM", { locale: fr })}
+                            </p>
+                          )}
                         </div>
                         {/* Price */}
                         <div className="text-center bg-primary/5 rounded-lg py-1.5 px-1">
