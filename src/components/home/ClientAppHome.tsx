@@ -543,7 +543,7 @@ export function ClientAppHome({
     then(({ data }) => {if (data) setRoutierOffers(data);});
   }, [isRoutier]);
 
-  // Track if user has actively searched (clicked search or selected a city)
+  // Track if user has actively searched (for navigation to freight board)
   const [hasActiveSearch, setHasActiveSearch] = useState(false);
 
   const filteredOffers = useMemo(() => {
@@ -551,14 +551,12 @@ export function ClientAppHome({
     if (activeTab !== "all") {
       result = result.filter((o) => (TYPE_MAP[activeTab] || []).includes(o.transport_type));
     }
-    // Only apply origin/dest filters when user has actively triggered a search
-    if (hasActiveSearch) {
-      if (searchOrigin) {
-        result = result.filter((o) => o.origin_city?.toLowerCase().includes(searchOrigin.toLowerCase()));
-      }
-      if (searchDest) {
-        result = result.filter((o) => o.destination_city?.toLowerCase().includes(searchDest.toLowerCase()));
-      }
+    // Always apply search filters reactively
+    if (searchOrigin) {
+      result = result.filter((o) => o.origin_city?.toLowerCase().includes(searchOrigin.toLowerCase()));
+    }
+    if (searchDest) {
+      result = result.filter((o) => o.destination_city?.toLowerCase().includes(searchDest.toLowerCase()));
     }
     // Rank by subscription boost + rating
     const scoreOffer = (o: any) => {
@@ -566,8 +564,20 @@ export function ClientAppHome({
       const subBoost = sub === "pro" ? 1000 : sub === "premium" ? 500 : 0;
       return subBoost + (o.gp_profiles?.rating || 0);
     };
-    return result.sort((a, b) => scoreOffer(b) - scoreOffer(a));
-  }, [offers, activeTab, searchOrigin, searchDest, hasActiveSearch]);
+    // Sort by score, then deduplicate by destination city (1 per dest)
+    const sorted = [...result].sort((a, b) => scoreOffer(b) - scoreOffer(a));
+    const seenDests = new Set<string>();
+    const unique: any[] = [];
+    for (const o of sorted) {
+      const destKey = (o.destination_city || "").toLowerCase();
+      if (!seenDests.has(destKey)) {
+        seenDests.add(destKey);
+        unique.push(o);
+      }
+      if (unique.length >= 4) break;
+    }
+    return unique;
+  }, [offers, activeTab, searchOrigin, searchDest]);
 
   const activeOrders = recentOrders.filter((o) => ACTIVE_STATUSES.includes(o.status));
   const selectedOrder = fullScreenOrderId ? activeOrders.find((o) => o.id === fullScreenOrderId) : null;
@@ -800,35 +810,46 @@ export function ClientAppHome({
               return subBoost + (o.gp_profiles?.rating || 0);
             };
 
-            // If search is active, show filtered results across all types
+            // Always show filtered + deduped by destination, sorted by score
             const hasSearch = searchOrigin || searchDest;
-            if (hasSearch) {
-              const searchResults = offers
-                .filter((o) => {
+            const base = hasSearch
+              ? offers.filter((o) => {
                   if (searchOrigin && !o.origin_city?.toLowerCase().includes(searchOrigin.toLowerCase())) return false;
                   if (searchDest && !o.destination_city?.toLowerCase().includes(searchDest.toLowerCase())) return false;
                   return true;
                 })
-                .sort((a, b) => scoreOffer(b) - scoreOffer(a))
-                .slice(0, 4);
+              : offers;
 
-              return searchResults.length > 0 ?
+            const sorted = [...base].sort((a, b) => scoreOffer(b) - scoreOffer(a));
+            const seenDests = new Set<string>();
+            const searchResults: any[] = [];
+            for (const o of sorted) {
+              const destKey = (o.destination_city || "").toLowerCase();
+              if (!seenDests.has(destKey)) {
+                seenDests.add(destKey);
+                searchResults.push(o);
+              }
+              if (searchResults.length >= 4) break;
+            }
+
+            if (searchResults.length > 0) {
+              return (
                 <div className="space-y-1.5">
                   {searchResults.map((offer: any, idx: number) => {
                     const mode = (offer.transport_type === "navette" || offer.transport_type === "bagages_accompagnes") ? "bagages_international" : offer.transport_type;
-                    const ModeIcon = modeIcons[mode] || Package;
-                     return (
+                    return (
                       <div key={offer.id}>
                         <HomeOfferCard offer={offer} index={idx} modeLabel={modeLabels[mode] || mode} />
-                      </div>);
+                      </div>
+                    );
                   })}
                   <button
                     onClick={goToOffres}
                     className="w-full py-2.5 text-xs font-semibold text-primary flex items-center justify-center gap-1 hover:bg-primary/5 rounded-xl transition-colors border border-dashed border-primary/20">
                     Voir toutes les offres <ChevronRight className="w-3.5 h-3.5" />
                   </button>
-                </div> :
-                <EmptyOffers modeConfig={modeConfig} onAction={goToOffres} />;
+                </div>
+              );
             }
 
             // Default: 1 best offer per type (premium/pro first, then highest rating)
@@ -865,12 +886,7 @@ export function ClientAppHome({
           })() :
           filteredOffers.length > 0 ?
           <div className="space-y-1.5">
-              {filteredOffers
-                .sort((a: any, b: any) => {
-                  const subScore = (o: any) => { const s = o.gp_profiles?.subscription || "free"; return s === "pro" ? 1000 : s === "premium" ? 500 : 0; };
-                  return (subScore(b) + (b.gp_profiles?.rating || 0)) - (subScore(a) + (a.gp_profiles?.rating || 0));
-                })
-                .slice(0, 4).map((offer, idx) =>
+              {filteredOffers.map((offer, idx) =>
             <HomeOfferCard key={offer.id} offer={offer} index={idx} />
             )}
               {filteredOffers.length > 4 &&

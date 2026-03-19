@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import {
   Ship, Plane, Truck, Search, Filter, ArrowRight, Flame, Award, Clock,
-  TrendingDown, ChevronDown, BarChart3, Zap, Package, ArrowUpDown, MapPin
+  TrendingDown, ChevronDown, BarChart3, Zap, Package, ArrowUpDown, MapPin, Star
 } from "lucide-react";
 import { format, isAfter, addDays, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -19,19 +19,22 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { WORLD_CITIES, FEATURED_CITIES } from "@/components/gp/SearchableCitySelect";
 import { GP_ONLY_MODE } from "@/config/featureFlags";
 
 type TransportMode = "all" | "aerien" | "maritime" | "routier" | "gp";
-type SortKey = "price" | "date" | "capacity";
+type SortKey = "price" | "date" | "capacity" | "score";
 
 interface MarketplaceListing {
   id: string;
   mode: "aerien" | "maritime" | "routier" | "gp";
   modeLabel: string;
-  subType?: string; // LCL, FCL, etc
+  subType?: string;
   origin: string;
   destination: string;
   departureDate: string;
+  arrivalDate?: string;
   capacityTotal: number;
   capacityRemaining: number;
   capacityUnit: string;
@@ -40,6 +43,8 @@ interface MarketplaceListing {
   currency: string;
   providerName: string;
   providerId: string;
+  providerRating: number;
+  providerSubscription: string;
   isLastMinute: boolean;
   isBestPrice?: boolean;
   offerId: string;
@@ -63,8 +68,10 @@ export default function FreightMarketplace() {
   const [modeFilter, setModeFilter] = useState<TransportMode>(GP_ONLY_MODE ? "gp" : "all");
   const [originSearch, setOriginSearch] = useState(searchParams.get("origin") || "");
   const [destSearch, setDestSearch] = useState(searchParams.get("dest") || "");
-  const [sortBy, setSortBy] = useState<SortKey>("date");
+  const [sortBy, setSortBy] = useState<SortKey>("score");
   const [showFilters, setShowFilters] = useState(false);
+  const [activePicker, setActivePicker] = useState<"origin" | "dest" | null>(null);
+  const [cityQuery, setCityQuery] = useState("");
 
   const today = startOfDay(new Date()).toISOString();
 
@@ -74,7 +81,7 @@ export default function FreightMarketplace() {
     queryFn: async () => {
       let query = supabase
         .from("gp_offers")
-        .select("*, gp_profiles!gp_offers_gp_id_fkey(business_name, id)")
+        .select("*, gp_profiles!gp_offers_gp_id_fkey(business_name, id, rating, subscription)")
         .eq("status", "active")
         .gte("departure_date", today.split("T")[0])
         .order("departure_date", { ascending: true });
@@ -93,7 +100,7 @@ export default function FreightMarketplace() {
       if (GP_ONLY_MODE) return [];
       const { data } = await supabase
         .from("air_departures")
-        .select("*, gp_profiles!air_departures_gp_id_fkey(business_name, id)")
+        .select("*, gp_profiles!air_departures_gp_id_fkey(business_name, id, rating, subscription)")
         .eq("status", "active")
         .gte("departure_date", today.split("T")[0])
         .order("departure_date", { ascending: true });
@@ -109,7 +116,7 @@ export default function FreightMarketplace() {
       if (GP_ONLY_MODE) return [];
       const { data } = await supabase
         .from("maritime_departures")
-        .select("*, gp_profiles!maritime_departures_gp_id_fkey(business_name, id)")
+        .select("*, gp_profiles!maritime_departures_gp_id_fkey(business_name, id, rating, subscription)")
         .eq("status", "active")
         .gte("departure_date", today.split("T")[0])
         .order("departure_date", { ascending: true });
@@ -148,6 +155,7 @@ export default function FreightMarketplace() {
         origin: `${o.origin_city}, ${o.origin_country}`,
         destination: `${o.destination_city}, ${o.destination_country}`,
         departureDate: o.departure_date,
+        arrivalDate: o.arrival_date || undefined,
         capacityTotal: o.total_capacity || 0,
         capacityRemaining: o.available_capacity || 0,
         capacityUnit: "kg",
@@ -156,6 +164,8 @@ export default function FreightMarketplace() {
         currency: o.currency || "XOF",
         providerName: o.gp_profiles?.business_name || "Transporteur",
         providerId: o.gp_profiles?.id || o.gp_id,
+        providerRating: o.gp_profiles?.rating || 0,
+        providerSubscription: o.gp_profiles?.subscription || "free",
         isLastMinute: isAfter(tomorrow, new Date(o.departure_date)),
         offerId: o.id,
       });
@@ -171,6 +181,7 @@ export default function FreightMarketplace() {
         origin: `${a.origin_city}, ${a.origin_country}`,
         destination: `${a.destination_city}, ${a.destination_country}`,
         departureDate: a.departure_date,
+        arrivalDate: a.arrival_date || undefined,
         capacityTotal: a.total_capacity_kg || 0,
         capacityRemaining: a.available_capacity_kg || 0,
         capacityUnit: "kg",
@@ -179,6 +190,8 @@ export default function FreightMarketplace() {
         currency: a.currency || "XOF",
         providerName: a.gp_profiles?.business_name || "Cargo",
         providerId: a.gp_profiles?.id || a.gp_id,
+        providerRating: a.gp_profiles?.rating || 0,
+        providerSubscription: a.gp_profiles?.subscription || "free",
         isLastMinute: isAfter(tomorrow, new Date(a.departure_date)),
         offerId: a.id,
       });
@@ -203,6 +216,8 @@ export default function FreightMarketplace() {
         currency: m.currency || "XOF",
         providerName: m.gp_profiles?.business_name || "Transitaire",
         providerId: m.gp_profiles?.id || m.gp_id,
+        providerRating: m.gp_profiles?.rating || 0,
+        providerSubscription: m.gp_profiles?.subscription || "free",
         isLastMinute: isAfter(tomorrow, new Date(m.departure_date)),
         offerId: m.id,
       });
@@ -249,9 +264,15 @@ export default function FreightMarketplace() {
       result = result.filter((l) => l.destination.toLowerCase().includes(q));
     }
 
+    const scoreListing = (l: MarketplaceListing) => {
+      const subBoost = l.providerSubscription === "pro" ? 1000 : l.providerSubscription === "premium" ? 500 : 0;
+      return subBoost + (l.providerRating || 0);
+    };
+
     result.sort((a, b) => {
       if (sortBy === "price") return a.price - b.price;
       if (sortBy === "capacity") return b.capacityRemaining - a.capacityRemaining;
+      if (sortBy === "score") return scoreListing(b) - scoreListing(a);
       return new Date(a.departureDate).getTime() - new Date(b.departureDate).getTime();
     });
 
@@ -376,30 +397,31 @@ export default function FreightMarketplace() {
 
           {/* Search & sort row */}
           <div className="flex gap-2">
-            <div className="relative flex-1">
-              <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-success" />
-              <Input
-                placeholder="Ville de départ..."
-                value={originSearch}
-                onChange={(e) => setOriginSearch(e.target.value)}
-                className="pl-8 h-9 text-sm"
-              />
-            </div>
-            <div className="relative flex-1">
-              <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-destructive" />
-              <Input
-                placeholder="Ville de destination..."
-                value={destSearch}
-                onChange={(e) => setDestSearch(e.target.value)}
-                className="pl-8 h-9 text-sm"
-              />
-            </div>
+            <button
+              onClick={() => { setCityQuery(""); setActivePicker("origin"); }}
+              className="flex-1 flex items-center gap-1.5 px-2.5 h-9 rounded-md border border-input bg-background text-sm"
+            >
+              <MapPin className="w-3.5 h-3.5 text-success shrink-0" />
+              <span className={originSearch ? "text-foreground font-medium truncate" : "text-muted-foreground truncate"}>
+                {originSearch || "Départ..."}
+              </span>
+            </button>
+            <button
+              onClick={() => { setCityQuery(""); setActivePicker("dest"); }}
+              className="flex-1 flex items-center gap-1.5 px-2.5 h-9 rounded-md border border-input bg-background text-sm"
+            >
+              <MapPin className="w-3.5 h-3.5 text-destructive shrink-0" />
+              <span className={destSearch ? "text-foreground font-medium truncate" : "text-muted-foreground truncate"}>
+                {destSearch || "Destination..."}
+              </span>
+            </button>
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
-              <SelectTrigger className="w-[130px] h-9 text-xs">
+              <SelectTrigger className="w-[110px] h-9 text-xs">
                 <ArrowUpDown className="w-3 h-3 mr-1" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="score">Score ★</SelectItem>
                 <SelectItem value="date">Date départ</SelectItem>
                 <SelectItem value="price">Prix ↑</SelectItem>
                 <SelectItem value="capacity">Capacité ↓</SelectItem>
@@ -483,9 +505,15 @@ export default function FreightMarketplace() {
                             <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                             <span className="font-medium truncate">{listing.destination.split(",")[0]}</span>
                           </div>
-                          <p className="text-[10px] text-muted-foreground mt-0.5 pl-5">
-                            {listing.providerName}
-                          </p>
+                          <div className="flex items-center gap-1.5 mt-0.5 pl-5">
+                            <span className="text-[10px] text-muted-foreground">{listing.providerName}</span>
+                            {listing.providerRating > 0 && (
+                              <span className="flex items-center gap-0.5 text-[10px] font-semibold text-amber-600">
+                                <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />
+                                {listing.providerRating.toFixed(1)}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -497,6 +525,11 @@ export default function FreightMarketplace() {
                           <p className="text-[10px] font-semibold">
                             {format(new Date(listing.departureDate), "d MMM", { locale: fr })}
                           </p>
+                          {listing.arrivalDate && (
+                            <p className="text-[8px] text-muted-foreground">
+                              → {format(new Date(listing.arrivalDate), "d MMM", { locale: fr })}
+                            </p>
+                          )}
                         </div>
                         {/* Price */}
                         <div className="text-center bg-primary/5 rounded-lg py-1.5 px-1">
@@ -560,6 +593,82 @@ export default function FreightMarketplace() {
       </div>
 
       {!isPopup && <MobileNav />}
+
+      {/* City Picker Drawer */}
+      <CityPickerDrawer
+        open={!!activePicker}
+        onOpenChange={(open) => { if (!open) setActivePicker(null); }}
+        title={activePicker === "origin" ? "Ville de départ" : "Ville de destination"}
+        onSelect={(city) => {
+          if (activePicker === "origin") setOriginSearch(city);
+          else setDestSearch(city);
+          setActivePicker(null);
+          setCityQuery("");
+        }}
+        cityQuery={cityQuery}
+        onCityQueryChange={setCityQuery}
+      />
     </div>
+  );
+}
+
+// ── City Picker Drawer ──
+function CityPickerDrawer({
+  open, onOpenChange, title, onSelect, cityQuery, onCityQueryChange
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  onSelect: (city: string) => void;
+  cityQuery: string;
+  onCityQueryChange: (q: string) => void;
+}) {
+  const filteredCities = useMemo(() => {
+    if (!cityQuery) return FEATURED_CITIES;
+    const q = cityQuery.toLowerCase();
+    return WORLD_CITIES.filter((c) => c.city.toLowerCase().includes(q));
+  }, [cityQuery]);
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="max-h-[85vh]">
+        <DrawerHeader className="pb-2">
+          <DrawerTitle>{title}</DrawerTitle>
+        </DrawerHeader>
+        <div className="px-4 pb-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Rechercher une ville..."
+              value={cityQuery}
+              onChange={(e) => onCityQueryChange(e.target.value)}
+              className="w-full h-11 pl-10 pr-4 rounded-xl border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30"
+              autoFocus
+            />
+          </div>
+        </div>
+        <div className="overflow-y-auto overscroll-contain px-2 pb-6" style={{ maxHeight: "55vh", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
+          {filteredCities.slice(0, 30).map((city) => (
+            <button
+              key={`${city.city}-${city.country}`}
+              onClick={() => onSelect(city.city)}
+              className="w-full flex items-center gap-3 py-2.5 px-3 rounded-lg text-left hover:bg-muted/60 active:bg-muted transition-colors"
+            >
+              <MapPin className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium flex-1">{city.city}</span>
+            </button>
+          ))}
+          {filteredCities.length === 0 && cityQuery && (
+            <button
+              onClick={() => onSelect(cityQuery)}
+              className="w-full py-3 text-sm text-primary font-medium text-center"
+            >
+              Utiliser "{cityQuery}"
+            </button>
+          )}
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }
