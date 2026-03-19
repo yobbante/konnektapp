@@ -100,7 +100,7 @@ export default function FreightMarketplace() {
       if (GP_ONLY_MODE) return [];
       const { data } = await supabase
         .from("air_departures")
-        .select("*, gp_profiles!air_departures_gp_id_fkey(business_name, id)")
+        .select("*, gp_profiles!air_departures_gp_id_fkey(business_name, id, rating, subscription)")
         .eq("status", "active")
         .gte("departure_date", today.split("T")[0])
         .order("departure_date", { ascending: true });
