@@ -505,9 +505,15 @@ export default function FreightMarketplace() {
                             <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                             <span className="font-medium truncate">{listing.destination.split(",")[0]}</span>
                           </div>
-                          <p className="text-[10px] text-muted-foreground mt-0.5 pl-5">
-                            {listing.providerName}
-                          </p>
+                          <div className="flex items-center gap-1.5 mt-0.5 pl-5">
+                            <span className="text-[10px] text-muted-foreground">{listing.providerName}</span>
+                            {listing.providerRating > 0 && (
+                              <span className="flex items-center gap-0.5 text-[10px] font-semibold text-amber-600">
+                                <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />
+                                {listing.providerRating.toFixed(1)}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
