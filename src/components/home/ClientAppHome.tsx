@@ -482,18 +482,21 @@ export function ClientAppHome({
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
     // Only show GP (bagages_international) and GP occasionnel offers — exclude aerien, routier, maritime
+    // Also exclude offers from gp_type='aerien' transporters
     const gpQuery = supabase
           .from("gp_offers")
           .select("*, gp_profiles(business_name, rating, total_reviews, subscription, gp_type)")
           .eq("status", "active")
-          .in("transport_type", ["bagages_international", "bagages_accompagnes", "navette", "occasionnel"] as any)
+          .in("transport_type", ["bagages_international", "bagages_accompagnes", "navette", "occasionnel", "voyageur"] as any)
           .gte("departure_date", today)
           .order("departure_date", { ascending: true })
           .limit(50);
 
     if (GP_ONLY_MODE) {
       gpQuery.then(({ data }) => {
-        setOffers(data || []);
+        // Filter out aerien-type GP profiles creating baggage offers
+        const filtered = (data || []).filter((o: any) => o.gp_profiles?.gp_type !== 'aerien');
+        setOffers(filtered);
       });
     } else {
       Promise.all([
@@ -540,26 +543,31 @@ export function ClientAppHome({
     then(({ data }) => {if (data) setRoutierOffers(data);});
   }, [isRoutier]);
 
+  // Track if user has actively searched (clicked search or selected a city)
+  const [hasActiveSearch, setHasActiveSearch] = useState(false);
+
   const filteredOffers = useMemo(() => {
     let result = offers;
     if (activeTab !== "all") {
       result = result.filter((o) => (TYPE_MAP[activeTab] || []).includes(o.transport_type));
     }
-    if (searchOrigin) {
-      result = result.filter((o) => o.origin_city?.toLowerCase().includes(searchOrigin.toLowerCase()));
+    // Only apply origin/dest filters when user has actively triggered a search
+    if (hasActiveSearch) {
+      if (searchOrigin) {
+        result = result.filter((o) => o.origin_city?.toLowerCase().includes(searchOrigin.toLowerCase()));
+      }
+      if (searchDest) {
+        result = result.filter((o) => o.destination_city?.toLowerCase().includes(searchDest.toLowerCase()));
+      }
     }
-    if (searchDest) {
-      result = result.filter((o) => o.destination_city?.toLowerCase().includes(searchDest.toLowerCase()));
-    }
-    // If no search active, show all offers for this tab
-    // Rank by subscription boost + rating (same as "all" tab logic)
+    // Rank by subscription boost + rating
     const scoreOffer = (o: any) => {
       const sub = o.gp_profiles?.subscription || "free";
       const subBoost = sub === "pro" ? 1000 : sub === "premium" ? 500 : 0;
       return subBoost + (o.gp_profiles?.rating || 0);
     };
     return result.sort((a, b) => scoreOffer(b) - scoreOffer(a));
-  }, [offers, activeTab, searchOrigin, searchDest]);
+  }, [offers, activeTab, searchOrigin, searchDest, hasActiveSearch]);
 
   const activeOrders = recentOrders.filter((o) => ACTIVE_STATUSES.includes(o.status));
   const selectedOrder = fullScreenOrderId ? activeOrders.find((o) => o.id === fullScreenOrderId) : null;
@@ -571,11 +579,13 @@ export function ClientAppHome({
     setSearchDest(city);
     setActivePicker(null);
     setCityQuery("");
+    setHasActiveSearch(true);
   };
 
   const handleRouteSelect = (from: string, to: string) => {
     setSearchOrigin(from);
     setSearchDest(to);
+    setHasActiveSearch(true);
     scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -889,6 +899,9 @@ export function ClientAppHome({
           </> :
 
         <>
+            {/* Discover Konnekt carousel */}
+            <KonnektCanvasCarousel />
+
             {/* Popular routes */}
             <PopularRoutesSection routes={popularRoutes} onSelect={handleRouteSelect} tabId={activeTab} />
 
