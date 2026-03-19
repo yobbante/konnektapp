@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plane, MapPin, Calendar, Weight, DollarSign, Luggage, 
-  ChevronRight, ChevronLeft, Sparkles, ArrowRight, Info, Check, Phone, MapPinned
+  ChevronRight, ChevronLeft, Sparkles, ArrowRight, Info, Check, Phone, MapPinned, Shield
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
