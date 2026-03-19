@@ -222,7 +222,7 @@ export default function ReservationsPage() {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: i * 0.03 }}
-        onClick={() => navigate(`/tracking?order=${order.id}`)}
+        onClick={() => setSelectedOrder(order)}
         className={`bg-card border rounded-2xl p-3.5 active:scale-[0.98] transition-all cursor-pointer relative ${
           isRecentChange ? "border-primary/40 shadow-md ring-1 ring-primary/20" : "border-border"
         }`}
@@ -643,7 +643,11 @@ export default function ReservationsPage() {
 
       <MobileNav />
 
-      {/* OrderDetailSheet removed — cards now navigate to /tracking */}
+      <OrderDetailSheet
+        order={selectedOrder}
+        open={!!selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+      />
       {ratingOrder && (
         <RateOrderDialog
           open={!!ratingOrder}
