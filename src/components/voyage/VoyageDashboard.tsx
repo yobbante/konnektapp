@@ -1,14 +1,13 @@
 /**
  * VoyageDashboard — Mini dashboard for occasional voyageurs
- * Shows published trips, incoming requests, earnings summary
- * Accessible from the Voyage button when user has published trips
+ * Shows published trips, orders management, scan, earnings
  */
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plane, MapPin, Calendar, Luggage, ChevronRight, Plus,
   Clock, CheckCircle2, Package, DollarSign, ArrowRight,
-  MessageCircle, Eye, Sparkles
+  ScanLine, Wallet, Eye, EyeOff, Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +19,7 @@ import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle
 } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
+import { GPScanSheet } from "@/components/scan/GPScanSheet";
 
 interface VoyageDashboardProps {
   open: boolean;
@@ -41,18 +41,50 @@ interface Trip {
   views_count: number | null;
 }
 
+interface Order {
+  id: string;
+  tracking_number: string;
+  status: string;
+  weight: number;
+  total_price: number;
+  currency: string;
+  sender_name: string | null;
+  recipient_name: string | null;
+  created_at: string;
+}
+
+type Tab = "voyages" | "commandes" | "wallet";
+
+const ORDER_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  pending: { label: "En attente", color: "bg-amber-500/15 text-amber-600" },
+  accepted: { label: "Accept\u00e9", color: "bg-green-500/15 text-green-600" },
+  collected: { label: "Collect\u00e9", color: "bg-blue-500/15 text-blue-600" },
+  checked_in: { label: "D\u00e9pos\u00e9", color: "bg-indigo-500/15 text-indigo-600" },
+  in_transit: { label: "En transit", color: "bg-blue-500/15 text-blue-600" },
+  arrived_destination: { label: "Arriv\u00e9", color: "bg-teal-500/15 text-teal-600" },
+  delivered: { label: "Livr\u00e9", color: "bg-green-500/15 text-green-700" },
+  delivery_confirmed: { label: "Confirm\u00e9", color: "bg-emerald-500/15 text-emerald-700" },
+};
+
 export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboardProps) {
   const navigate = useNavigate();
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"active" | "past">("active");
+  const [activeTab, setActiveTab] = useState<Tab>("voyages");
+  const [tripFilter, setTripFilter] = useState<"active" | "past">("active");
+  const [orderFilter, setOrderFilter] = useState<"active" | "done">("active");
+  const [gpId, setGpId] = useState<string | null>(null);
+  const [showScan, setShowScan] = useState(false);
+  const [walletData, setWalletData] = useState<{ balance: number; pending: number; currency: string } | null>(null);
+  const [showBalance, setShowBalance] = useState(true);
 
   useEffect(() => {
     if (!open) return;
-    fetchTrips();
+    fetchData();
   }, [open]);
 
-  const fetchTrips = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -60,25 +92,44 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
 
       const { data: gpProfile } = await supabase
         .from("gp_profiles")
-        .select("id")
+        .select("id, default_currency")
         .eq("user_id", session.user.id)
         .eq("gp_type", "occasionnel" as any)
         .maybeSingle();
 
-      if (!gpProfile) {
-        setTrips([]);
-        return;
-      }
+      if (!gpProfile) { setTrips([]); setOrders([]); return; }
+      setGpId(gpProfile.id);
 
-      const { data } = await supabase
+      // Fetch trips
+      const { data: tripsData } = await supabase
         .from("gp_offers")
         .select("id, origin_city, destination_city, departure_date, available_capacity, total_capacity, price_per_kg, currency, status, bookings_count, views_count")
         .eq("gp_id", gpProfile.id)
         .order("departure_date", { ascending: false });
+      setTrips(tripsData || []);
 
-      setTrips(data || []);
+      // Fetch orders
+      const { data: ordersData } = await supabase
+        .from("orders")
+        .select("id, tracking_number, status, weight, total_price, currency, sender_name, recipient_name, created_at")
+        .eq("gp_id", gpProfile.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      setOrders(ordersData || []);
+
+      // Fetch wallet
+      const [walletRes, escrowRes] = await Promise.all([
+        supabase.from("gp_wallets").select("balance, pending_balance, currency").eq("gp_id", gpProfile.id).maybeSingle(),
+        supabase.from("escrow_transactions").select("net_to_gp").eq("gp_id", gpProfile.id).eq("status", "held"),
+      ]);
+      const pendingEscrow = escrowRes.data?.reduce((sum: number, e: any) => sum + (e.net_to_gp || 0), 0) || 0;
+      setWalletData({
+        balance: walletRes.data?.balance || 0,
+        pending: pendingEscrow,
+        currency: gpProfile.default_currency || walletRes.data?.currency || "XOF",
+      });
     } catch (err) {
-      console.error("Error fetching trips:", err);
+      console.error("Error fetching data:", err);
     } finally {
       setLoading(false);
     }
@@ -87,14 +138,16 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
   const today = new Date().toISOString().split("T")[0];
   const activeTrips = trips.filter(t => t.status === "active" && t.departure_date >= today);
   const pastTrips = trips.filter(t => t.status !== "active" || t.departure_date < today);
-  const displayedTrips = activeTab === "active" ? activeTrips : pastTrips;
+
+  const ACTIVE_ORDER_STATUSES = ["pending", "accepted", "collected", "checked_in", "in_transit", "arrived_destination"];
+  const DONE_ORDER_STATUSES = ["delivered", "delivery_confirmed"];
+  const activeOrders = orders.filter(o => ACTIVE_ORDER_STATUSES.includes(o.status));
+  const doneOrders = orders.filter(o => DONE_ORDER_STATUSES.includes(o.status));
 
   const totalEarnings = trips.reduce((sum, t) => {
     const booked = (t.total_capacity - t.available_capacity);
     return sum + booked * t.price_per_kg;
   }, 0);
-
-  const totalBookings = trips.reduce((sum, t) => sum + (t.bookings_count || 0), 0);
 
   const formatDate = (d: string) => {
     try { return format(new Date(d), "EEE d MMM", { locale: fr }); }
@@ -102,175 +155,334 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
   };
 
   const getStatusConfig = (trip: Trip) => {
-    if (trip.departure_date < today) return { label: "Terminé", color: "bg-muted text-muted-foreground", icon: CheckCircle2 };
+    if (trip.departure_date < today) return { label: "Termin\u00e9", color: "bg-muted text-muted-foreground", icon: CheckCircle2 };
     if (trip.status !== "active") return { label: "Inactif", color: "bg-muted text-muted-foreground", icon: Clock };
     if (trip.available_capacity <= 0) return { label: "Complet", color: "bg-green-500/10 text-green-600", icon: CheckCircle2 };
     return { label: "En ligne", color: "bg-primary/10 text-primary", icon: Sparkles };
   };
 
+  const formatCurrency = (amount: number, currency: string) => {
+    if (currency === "EUR") return `${amount.toLocaleString("fr-FR")} \u20ac`;
+    if (currency === "USD") return `${amount.toLocaleString("fr-FR")} $`;
+    return `${amount.toLocaleString("fr-FR")} ${currency}`;
+  };
+
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[92vh]">
-        <DrawerHeader className="pb-2">
-          <DrawerTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-base">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-                <Luggage className="w-4 h-4 text-white" />
+    <>
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent className="max-h-[92vh]">
+          <DrawerHeader className="pb-2">
+            <DrawerTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-base">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                  <Luggage className="w-4 h-4 text-white" />
+                </div>
+                Mes Voyages
               </div>
-              Mes Voyages
-            </div>
-            <Button
-              size="sm"
-              onClick={() => { onOpenChange(false); onNewTrip(); }}
-              className="h-8 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
-            >
-              <Plus className="w-3.5 h-3.5 mr-1" />
-              Nouveau
-            </Button>
-          </DrawerTitle>
-        </DrawerHeader>
-
-        <div className="px-6 pb-8 overflow-y-auto max-h-[75vh] space-y-4">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { label: "Voyages", value: trips.length, icon: Plane, color: "text-primary" },
-              { label: "Réservations", value: totalBookings, icon: Package, color: "text-amber-500" },
-              { label: "Gains", value: `${totalEarnings.toLocaleString()}€`, icon: DollarSign, color: "text-green-500" },
-            ].map((stat) => (
-              <div key={stat.label} className="p-3 rounded-xl bg-muted/30 border border-border/30 text-center">
-                <stat.icon className={cn("w-4 h-4 mx-auto mb-1", stat.color)} />
-                <p className="text-lg font-bold text-foreground">{stat.value}</p>
-                <p className="text-[10px] text-muted-foreground">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* CTA to become pro */}
-          <div className="p-3 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-foreground">Devenir GP Pro</p>
-                <p className="text-[10px] text-muted-foreground">Dashboard complet, plus de clients</p>
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => { onOpenChange(false); navigate("/gp/bagages/inscription"); }}
-                className="h-7 text-[10px] border-primary/30 text-primary"
-              >
-                Passer pro
-                <ChevronRight className="w-3 h-3 ml-0.5" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex gap-1 p-1 bg-muted/30 rounded-xl">
-            {[
-              { id: "active" as const, label: `En cours (${activeTrips.length})` },
-              { id: "past" as const, label: `Passés (${pastTrips.length})` },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  "flex-1 py-2 text-xs font-semibold rounded-lg transition-all",
-                  activeTab === tab.id
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground"
+              <div className="flex items-center gap-1.5">
+                {/* Scan button */}
+                {gpId && (
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={() => setShowScan(true)}
+                    className="h-8 w-8 rounded-full border-primary/30"
+                  >
+                    <ScanLine className="w-4 h-4 text-primary" />
+                  </Button>
                 )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Trip List */}
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : displayedTrips.length === 0 ? (
-            <div className="text-center py-8">
-              <Plane className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground mb-3">
-                {activeTab === "active" ? "Aucun voyage en cours" : "Aucun voyage passé"}
-              </p>
-              {activeTab === "active" && (
+                {/* New trip */}
                 <Button
                   size="sm"
-                  onClick={() => { onOpenChange(false); onNewTrip(); }}
-                  className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs"
+                  onClick={onNewTrip}
+                  className="h-8 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
                 >
-                  Publier un trajet
+                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  Nouveau
                 </Button>
-              )}
+              </div>
+            </DrawerTitle>
+          </DrawerHeader>
+
+          <div className="px-6 pb-8 overflow-y-auto max-h-[75vh] space-y-4">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: "Voyages", value: trips.length, icon: Plane, color: "text-primary" },
+                { label: "Commandes", value: orders.length, icon: Package, color: "text-amber-500" },
+                { label: "Gains", value: formatCurrency(totalEarnings, walletData?.currency || "EUR"), icon: DollarSign, color: "text-green-500" },
+              ].map((stat) => (
+                <div key={stat.label} className="p-3 rounded-xl bg-muted/30 border border-border/30 text-center">
+                  <stat.icon className={cn("w-4 h-4 mx-auto mb-1", stat.color)} />
+                  <p className="text-lg font-bold text-foreground">{stat.value}</p>
+                  <p className="text-[10px] text-muted-foreground">{stat.label}</p>
+                </div>
+              ))}
             </div>
-          ) : (
-            <div className="space-y-2.5">
-              {displayedTrips.map((trip) => {
-                const statusConfig = getStatusConfig(trip);
-                const StatusIcon = statusConfig.icon;
-                const bookedKg = trip.total_capacity - trip.available_capacity;
-                const fillPercent = Math.round((bookedKg / trip.total_capacity) * 100);
 
-                return (
-                  <motion.button
-                    key={trip.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    onClick={() => { onOpenChange(false); navigate(`/offres/${trip.id}`); }}
-                    className="w-full text-left p-3.5 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all space-y-2.5"
-                  >
-                    {/* Route + Status */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm font-semibold">
-                        <span>{trip.origin_city}</span>
-                        <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
-                        <span>{trip.destination_city}</span>
-                      </div>
-                      <Badge className={cn("text-[10px] gap-1", statusConfig.color)}>
-                        <StatusIcon className="w-3 h-3" />
-                        {statusConfig.label}
-                      </Badge>
-                    </div>
-
-                    {/* Details */}
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {formatDate(trip.departure_date)}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Package className="w-3 h-3" />
-                        {bookedKg}/{trip.total_capacity}kg
-                      </span>
-                      <span className="font-semibold text-foreground">
-                        {trip.price_per_kg}€/kg
-                      </span>
-                    </div>
-
-                    {/* Fill bar */}
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className={cn(
-                            "h-full rounded-full transition-all",
-                            fillPercent >= 80 ? "bg-green-500" : fillPercent >= 40 ? "bg-amber-500" : "bg-primary"
-                          )}
-                          style={{ width: `${Math.max(3, fillPercent)}%` }}
-                        />
-                      </div>
-                      <span className="text-[10px] text-muted-foreground font-medium">{fillPercent}%</span>
-                    </div>
-                  </motion.button>
-                );
-              })}
+            {/* Main Tabs: Voyages | Commandes | Wallet */}
+            <div className="flex gap-1 p-1 bg-muted/30 rounded-xl">
+              {([
+                { id: "voyages" as Tab, label: "Voyages", icon: Plane },
+                { id: "commandes" as Tab, label: `Colis (${orders.length})`, icon: Package },
+                { id: "wallet" as Tab, label: "Finance", icon: Wallet },
+              ]).map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    "flex-1 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1",
+                    activeTab === tab.id
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  <tab.icon className="w-3 h-3" />
+                  {tab.label}
+                </button>
+              ))}
             </div>
-          )}
-        </div>
-      </DrawerContent>
-    </Drawer>
+
+            {/* ═══ TAB: VOYAGES ═══ */}
+            {activeTab === "voyages" && (
+              <>
+                {/* Sub-filter */}
+                <div className="flex gap-1 p-0.5 bg-muted/20 rounded-lg">
+                  {([
+                    { id: "active" as const, label: `En cours (${activeTrips.length})` },
+                    { id: "past" as const, label: `Pass\u00e9s (${pastTrips.length})` },
+                  ]).map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => setTripFilter(f.id)}
+                      className={cn(
+                        "flex-1 py-1.5 text-[11px] font-semibold rounded-md transition-all",
+                        tripFilter === f.id ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                      )}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+
+                {loading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : (tripFilter === "active" ? activeTrips : pastTrips).length === 0 ? (
+                  <div className="text-center py-8">
+                    <Plane className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground mb-3">
+                      {tripFilter === "active" ? "Aucun voyage en cours" : "Aucun voyage pass\u00e9"}
+                    </p>
+                    {tripFilter === "active" && (
+                      <Button size="sm" onClick={onNewTrip} className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs">
+                        Publier un trajet
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {(tripFilter === "active" ? activeTrips : pastTrips).map((trip) => {
+                      const statusConfig = getStatusConfig(trip);
+                      const StatusIcon = statusConfig.icon;
+                      const bookedKg = trip.total_capacity - trip.available_capacity;
+                      const fillPercent = Math.round((bookedKg / trip.total_capacity) * 100);
+                      return (
+                        <motion.button
+                          key={trip.id}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          onClick={() => { onOpenChange(false); navigate(`/offres/${trip.id}`); }}
+                          className="w-full text-left p-3.5 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all space-y-2.5"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-sm font-semibold">
+                              <span>{trip.origin_city}</span>
+                              <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
+                              <span>{trip.destination_city}</span>
+                            </div>
+                            <Badge className={cn("text-[10px] gap-1", statusConfig.color)}>
+                              <StatusIcon className="w-3 h-3" />
+                              {statusConfig.label}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {formatDate(trip.departure_date)}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Package className="w-3 h-3" />
+                              {bookedKg}/{trip.total_capacity}kg
+                            </span>
+                            <span className="font-semibold text-foreground">
+                              {trip.price_per_kg}{trip.currency === "EUR" ? "\u20ac" : trip.currency}/kg
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className={cn(
+                                  "h-full rounded-full transition-all",
+                                  fillPercent >= 80 ? "bg-green-500" : fillPercent >= 40 ? "bg-amber-500" : "bg-primary"
+                                )}
+                                style={{ width: `${Math.max(3, fillPercent)}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] text-muted-foreground font-medium">{fillPercent}%</span>
+                          </div>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* ═══ TAB: COMMANDES ═══ */}
+            {activeTab === "commandes" && (
+              <>
+                {/* Sub-filter */}
+                <div className="flex gap-1 p-0.5 bg-muted/20 rounded-lg">
+                  {([
+                    { id: "active" as const, label: `En cours (${activeOrders.length})` },
+                    { id: "done" as const, label: `Termin\u00e9s (${doneOrders.length})` },
+                  ]).map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => setOrderFilter(f.id)}
+                      className={cn(
+                        "flex-1 py-1.5 text-[11px] font-semibold rounded-md transition-all",
+                        orderFilter === f.id ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                      )}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+
+                {loading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : (orderFilter === "active" ? activeOrders : doneOrders).length === 0 ? (
+                  <div className="text-center py-8">
+                    <Package className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">
+                      {orderFilter === "active" ? "Aucune commande en cours" : "Aucune commande termin\u00e9e"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {(orderFilter === "active" ? activeOrders : doneOrders).map((order) => {
+                      const st = ORDER_STATUS_CONFIG[order.status] || { label: order.status, color: "bg-muted text-muted-foreground" };
+                      return (
+                        <motion.div
+                          key={order.id}
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="p-3 rounded-xl bg-card border border-border/50 space-y-2"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-mono text-muted-foreground">{order.tracking_number}</span>
+                            <Badge className={cn("text-[10px]", st.color)}>{st.label}</Badge>
+                          </div>
+                          <div className="flex items-center justify-between text-xs">
+                            <div className="space-y-0.5">
+                              {order.sender_name && <p className="text-foreground font-medium">{order.sender_name}</p>}
+                              {order.recipient_name && <p className="text-muted-foreground">Dest: {order.recipient_name}</p>}
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold text-foreground">{order.weight}kg</p>
+                              <p className="text-muted-foreground">{formatCurrency(order.total_price, order.currency)}</p>
+                            </div>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground">
+                            {formatDate(order.created_at)}
+                          </p>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* ═══ TAB: WALLET ═══ */}
+            {activeTab === "wallet" && (
+              <div className="space-y-4">
+                {walletData ? (
+                  <>
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs text-muted-foreground font-medium">Solde disponible</span>
+                        <button onClick={() => setShowBalance(b => !b)} className="text-muted-foreground hover:text-foreground">
+                          {showBalance ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                      <p className="text-2xl font-bold text-foreground tracking-tight">
+                        {showBalance ? formatCurrency(walletData.balance, walletData.currency) : "\u2022\u2022\u2022\u2022\u2022\u2022"}
+                      </p>
+                      {walletData.pending > 0 && (
+                        <div className="flex items-center gap-2 mt-3 bg-background/50 rounded-lg px-3 py-2">
+                          <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                          <span className="text-xs text-muted-foreground flex-1">En attente (escrow)</span>
+                          <span className="text-xs font-semibold text-foreground">
+                            {showBalance ? formatCurrency(walletData.pending, walletData.currency) : "\u2022\u2022\u2022\u2022"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-muted/30 border border-border/30">
+                      <p className="text-xs text-muted-foreground mb-1">Gains estim\u00e9s (voyages)</p>
+                      <p className="text-lg font-bold text-foreground">{formatCurrency(totalEarnings, walletData.currency)}</p>
+                    </div>
+
+                    <p className="text-[10px] text-muted-foreground text-center">
+                      Les fonds sont lib\u00e9r\u00e9s apr\u00e8s confirmation de livraison
+                    </p>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* CTA to become pro */}
+            <div className="p-3 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-foreground">Devenir GP Pro</p>
+                  <p className="text-[10px] text-muted-foreground">Dashboard complet, plus de clients</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => { onOpenChange(false); navigate("/gp/bagages/inscription"); }}
+                  className="h-7 text-[10px] border-primary/30 text-primary"
+                >
+                  Passer pro
+                  <ChevronRight className="w-3 h-3 ml-0.5" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* GP Scan Sheet */}
+      {gpId && (
+        <GPScanSheet
+          open={showScan}
+          onOpenChange={setShowScan}
+          gpId={gpId}
+          isVerified={true}
+        />
+      )}
+    </>
   );
 }
