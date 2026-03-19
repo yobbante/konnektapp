@@ -68,6 +68,7 @@ export default function CoursierRegistration() {
     fullName: "", phone: entryFlow.phone || "", email: "", password: "",
     zone: "", vehicleType: "",
   });
+  const { cities: activeCities } = useActiveCities();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
