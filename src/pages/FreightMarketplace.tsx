@@ -216,6 +216,8 @@ export default function FreightMarketplace() {
         currency: m.currency || "XOF",
         providerName: m.gp_profiles?.business_name || "Transitaire",
         providerId: m.gp_profiles?.id || m.gp_id,
+        providerRating: m.gp_profiles?.rating || 0,
+        providerSubscription: m.gp_profiles?.subscription || "free",
         isLastMinute: isAfter(tomorrow, new Date(m.departure_date)),
         offerId: m.id,
       });
