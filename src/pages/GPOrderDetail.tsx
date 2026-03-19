@@ -275,8 +275,8 @@ export default function GPOrderDetail() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-      {/* ─── Sticky Header ─── */}
-      <div className="sticky top-0 z-50 bg-card border-b">
+      {/* ─── Fixed Header ─── */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-card border-b" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="px-4 py-3">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" className="shrink-0 -ml-2" onClick={() => navigate(-1)}>
