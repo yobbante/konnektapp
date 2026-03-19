@@ -43,13 +43,14 @@ interface Trip {
 
 interface Order {
   id: string;
-  tracking_number: string;
+  order_number: string;
   status: string;
   weight: number;
   total_price: number;
   currency: string;
-  sender_name: string | null;
   recipient_name: string | null;
+  origin_city: string;
+  destination_city: string;
   created_at: string;
 }
 
