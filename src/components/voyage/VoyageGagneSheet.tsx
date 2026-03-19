@@ -230,6 +230,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
           transport_type: "occasionnel" as any,
           status: "active" as any,
           description: `Dépôt: ${depositAddress} (${depositPhone}) | Réception: ${receptionAddress} (${receptionPhone})`,
+          explicit_restrictions: selectedRestrictions.length > 0 ? selectedRestrictions : null,
         });
 
       if (offerError) throw offerError;
