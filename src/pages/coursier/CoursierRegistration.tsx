@@ -2,7 +2,8 @@
  * CoursierRegistration — Inscription coursier express local
  * Style GP Bagages : header sticky + barres d'étapes + footer fixe
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useActiveCities } from "@/hooks/useActiveCities";
 import { getEntryFlowData } from "@/lib/entryFlowData";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
