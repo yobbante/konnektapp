@@ -38,7 +38,7 @@ export function HeaderRoleSwitch() {
     try {
       const { data: gpProfile } = await supabase
         .from("gp_profiles")
-        .select("id, business_name, status")
+        .select("id, business_name, status, gp_type")
         .eq("user_id", userId)
         .maybeSingle();
 
