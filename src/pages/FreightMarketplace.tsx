@@ -30,10 +30,11 @@ interface MarketplaceListing {
   id: string;
   mode: "aerien" | "maritime" | "routier" | "gp";
   modeLabel: string;
-  subType?: string; // LCL, FCL, etc
+  subType?: string;
   origin: string;
   destination: string;
   departureDate: string;
+  arrivalDate?: string;
   capacityTotal: number;
   capacityRemaining: number;
   capacityUnit: string;
@@ -42,6 +43,8 @@ interface MarketplaceListing {
   currency: string;
   providerName: string;
   providerId: string;
+  providerRating: number;
+  providerSubscription: string;
   isLastMinute: boolean;
   isBestPrice?: boolean;
   offerId: string;
