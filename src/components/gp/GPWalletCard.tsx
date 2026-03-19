@@ -330,11 +330,11 @@ export function GPWalletCard({ wallet, gpId, compact, withdrawalLimit = 0, kycLe
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-3">
-        <StatMini icon={Clock} color="text-secondary" bgColor="bg-secondary/10" label="En attente" value={pending} currency={currency} />
-        <StatMini icon={TrendingUp} color="text-success" bgColor="bg-success/10" label="Total gagné" value={totalEarned} currency={currency} />
-        <StatMini icon={ArrowDownRight} color="text-accent" bgColor="bg-accent/10" label="Total retiré" value={wallet?.total_withdrawn || 0} currency={currency} />
+        <StatMini icon={Clock} color="text-secondary" bgColor="bg-secondary/10" label="En attente" value={pending} currency={currency} isFCFA={isFCFA} formatDual={formatDual} />
+        <StatMini icon={TrendingUp} color="text-success" bgColor="bg-success/10" label="Total gagné" value={totalEarned} currency={currency} isFCFA={isFCFA} formatDual={formatDual} />
+        <StatMini icon={ArrowDownRight} color="text-accent" bgColor="bg-accent/10" label="Total retiré" value={wallet?.total_withdrawn || 0} currency={currency} isFCFA={isFCFA} formatDual={formatDual} />
         {locked > 0 ? (
-          <StatMini icon={AlertTriangle} color="text-destructive" bgColor="bg-destructive/10" label="Verrouillé" value={locked} currency={currency} />
+          <StatMini icon={AlertTriangle} color="text-destructive" bgColor="bg-destructive/10" label="Verrouillé" value={locked} currency={currency} isFCFA={isFCFA} formatDual={formatDual} />
         ) : (
           <StatMini icon={Percent} color="text-primary" bgColor="bg-primary/10" label="Commission" value={commissionRate} currency="%" isPercent />
         )}
