@@ -593,6 +593,82 @@ export default function FreightMarketplace() {
       </div>
 
       {!isPopup && <MobileNav />}
+
+      {/* City Picker Drawer */}
+      <CityPickerDrawer
+        open={!!activePicker}
+        onOpenChange={(open) => { if (!open) setActivePicker(null); }}
+        title={activePicker === "origin" ? "Ville de départ" : "Ville de destination"}
+        onSelect={(city) => {
+          if (activePicker === "origin") setOriginSearch(city);
+          else setDestSearch(city);
+          setActivePicker(null);
+          setCityQuery("");
+        }}
+        cityQuery={cityQuery}
+        onCityQueryChange={setCityQuery}
+      />
     </div>
+  );
+}
+
+// ── City Picker Drawer ──
+function CityPickerDrawer({
+  open, onOpenChange, title, onSelect, cityQuery, onCityQueryChange
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  onSelect: (city: string) => void;
+  cityQuery: string;
+  onCityQueryChange: (q: string) => void;
+}) {
+  const filteredCities = useMemo(() => {
+    if (!cityQuery) return FEATURED_CITIES;
+    const q = cityQuery.toLowerCase();
+    return WORLD_CITIES.filter((c) => c.city.toLowerCase().includes(q));
+  }, [cityQuery]);
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="max-h-[85vh]">
+        <DrawerHeader className="pb-2">
+          <DrawerTitle>{title}</DrawerTitle>
+        </DrawerHeader>
+        <div className="px-4 pb-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Rechercher une ville..."
+              value={cityQuery}
+              onChange={(e) => onCityQueryChange(e.target.value)}
+              className="w-full h-11 pl-10 pr-4 rounded-xl border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30"
+              autoFocus
+            />
+          </div>
+        </div>
+        <div className="overflow-y-auto overscroll-contain px-2 pb-6" style={{ maxHeight: "55vh", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
+          {filteredCities.slice(0, 30).map((city) => (
+            <button
+              key={`${city.city}-${city.country}`}
+              onClick={() => onSelect(city.city)}
+              className="w-full flex items-center gap-3 py-2.5 px-3 rounded-lg text-left hover:bg-muted/60 active:bg-muted transition-colors"
+            >
+              <MapPin className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium flex-1">{city.city}</span>
+            </button>
+          ))}
+          {filteredCities.length === 0 && cityQuery && (
+            <button
+              onClick={() => onSelect(cityQuery)}
+              className="w-full py-3 text-sm text-primary font-medium text-center"
+            >
+              Utiliser "{cityQuery}"
+            </button>
+          )}
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }
