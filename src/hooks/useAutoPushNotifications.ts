@@ -274,7 +274,7 @@ export function useAutoPushNotifications({
             (userType === "gp" && conversation.gp_id);
 
           if (isParticipant) {
-            showNotification("💬 Nouveau message", {
+            showNotification("Nouveau message", {
               body: message.content.substring(0, 100) + (message.content.length > 100 ? "..." : ""),
               tag: `message-${message.id}`,
               data: { type: "message", conversationId: message.conversation_id },
