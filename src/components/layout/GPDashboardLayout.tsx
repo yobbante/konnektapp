@@ -358,6 +358,7 @@ export function GPDashboardLayout({
                 <SheetTitle className="text-left">Menu GP</SheetTitle>
               </SheetHeader>
               <div className="grid grid-cols-3 gap-3 pb-3">
+                <MenuButton icon={Home} label="Accueil site" onClick={() => { setShowMenu(false); navigate("/"); }} />
                 <MenuButton icon={BarChart3} label="Performances" onClick={() => { setShowMenu(false); navigate("/gp/performances"); }} />
                 <MenuButton icon={MapPin} label="Profil public" onClick={() => { setShowMenu(false); navigate("/gp/profil-public"); }} />
                 <MenuButton icon={Package} label="Demandes" badge={pendingCount} locked={!isVerified} onClick={() => { if (isVerified) { setShowMenu(false); navigate("/gp/demandes"); }}} />
