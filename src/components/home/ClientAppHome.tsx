@@ -543,26 +543,31 @@ export function ClientAppHome({
     then(({ data }) => {if (data) setRoutierOffers(data);});
   }, [isRoutier]);
 
+  // Track if user has actively searched (clicked search or selected a city)
+  const [hasActiveSearch, setHasActiveSearch] = useState(false);
+
   const filteredOffers = useMemo(() => {
     let result = offers;
     if (activeTab !== "all") {
       result = result.filter((o) => (TYPE_MAP[activeTab] || []).includes(o.transport_type));
     }
-    if (searchOrigin) {
-      result = result.filter((o) => o.origin_city?.toLowerCase().includes(searchOrigin.toLowerCase()));
+    // Only apply origin/dest filters when user has actively triggered a search
+    if (hasActiveSearch) {
+      if (searchOrigin) {
+        result = result.filter((o) => o.origin_city?.toLowerCase().includes(searchOrigin.toLowerCase()));
+      }
+      if (searchDest) {
+        result = result.filter((o) => o.destination_city?.toLowerCase().includes(searchDest.toLowerCase()));
+      }
     }
-    if (searchDest) {
-      result = result.filter((o) => o.destination_city?.toLowerCase().includes(searchDest.toLowerCase()));
-    }
-    // If no search active, show all offers for this tab
-    // Rank by subscription boost + rating (same as "all" tab logic)
+    // Rank by subscription boost + rating
     const scoreOffer = (o: any) => {
       const sub = o.gp_profiles?.subscription || "free";
       const subBoost = sub === "pro" ? 1000 : sub === "premium" ? 500 : 0;
       return subBoost + (o.gp_profiles?.rating || 0);
     };
     return result.sort((a, b) => scoreOffer(b) - scoreOffer(a));
-  }, [offers, activeTab, searchOrigin, searchDest]);
+  }, [offers, activeTab, searchOrigin, searchDest, hasActiveSearch]);
 
   const activeOrders = recentOrders.filter((o) => ACTIVE_STATUSES.includes(o.status));
   const selectedOrder = fullScreenOrderId ? activeOrders.find((o) => o.id === fullScreenOrderId) : null;
