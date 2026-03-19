@@ -276,8 +276,8 @@ export default function GPOrderDetail() {
     return formatDual(amount);
   };
 
-  // Regressive pricing info
-  const regressiveInfo = getRegressiveInfo(order.weight, order.price_per_kg);
+  const isTMAApplied = (order.weight || 0) <= 1 || rawTransport < TMA;
+  const hasRegressiveDiscount = regressiveInfo.savingsPercent > 0;
 
   return (
     <div className="min-h-screen bg-background flex flex-col" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
