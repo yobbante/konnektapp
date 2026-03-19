@@ -239,13 +239,14 @@ export default function FreightMarketplace() {
       result = result.filter((l) => l.mode === modeFilter);
     }
 
-    if (routeSearch.trim()) {
-      const q = routeSearch.toLowerCase();
-      result = result.filter(
-        (l) =>
-          l.origin.toLowerCase().includes(q) ||
-          l.destination.toLowerCase().includes(q)
-      );
+    if (originSearch.trim()) {
+      const q = originSearch.toLowerCase();
+      result = result.filter((l) => l.origin.toLowerCase().includes(q));
+    }
+
+    if (destSearch.trim()) {
+      const q = destSearch.toLowerCase();
+      result = result.filter((l) => l.destination.toLowerCase().includes(q));
     }
 
     result.sort((a, b) => {
