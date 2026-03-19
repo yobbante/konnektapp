@@ -68,8 +68,10 @@ export default function FreightMarketplace() {
   const [modeFilter, setModeFilter] = useState<TransportMode>(GP_ONLY_MODE ? "gp" : "all");
   const [originSearch, setOriginSearch] = useState(searchParams.get("origin") || "");
   const [destSearch, setDestSearch] = useState(searchParams.get("dest") || "");
-  const [sortBy, setSortBy] = useState<SortKey>("date");
+  const [sortBy, setSortBy] = useState<SortKey>("score");
   const [showFilters, setShowFilters] = useState(false);
+  const [activePicker, setActivePicker] = useState<"origin" | "dest" | null>(null);
+  const [cityQuery, setCityQuery] = useState("");
 
   const today = startOfDay(new Date()).toISOString();
 
