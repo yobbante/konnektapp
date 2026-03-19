@@ -43,8 +43,9 @@ export function RoleSwitchPopup() {
     try {
       const {
         data: gpProfile
-      } = await supabase.from("gp_profiles").select("id, business_name, status").eq("user_id", userId).maybeSingle();
-      if (gpProfile) {
+      } = await supabase.from("gp_profiles").select("id, business_name, status, gp_type").eq("user_id", userId).maybeSingle();
+      // Only show GP dashboard toggle for non-occasional GPs
+      if (gpProfile && gpProfile.gp_type !== 'occasionnel') {
         setHasGPProfile(true);
         setGPBusinessName(gpProfile.business_name);
       } else {
