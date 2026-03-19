@@ -377,7 +377,7 @@ export default function FreightMarketplace() {
           {/* Search & sort row */}
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
+              <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-success" />
               <Input
                 placeholder="Ville de départ..."
                 value={originSearch}
@@ -386,7 +386,7 @@ export default function FreightMarketplace() {
               />
             </div>
             <div className="relative flex-1">
-              <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-red-500" />
+              <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-destructive" />
               <Input
                 placeholder="Ville de destination..."
                 value={destSearch}
