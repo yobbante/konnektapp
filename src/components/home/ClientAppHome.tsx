@@ -543,7 +543,7 @@ export function ClientAppHome({
     then(({ data }) => {if (data) setRoutierOffers(data);});
   }, [isRoutier]);
 
-  // Track if user has actively searched (clicked search or selected a city)
+  // Track if user has actively searched (for navigation to freight board)
   const [hasActiveSearch, setHasActiveSearch] = useState(false);
 
   const filteredOffers = useMemo(() => {
