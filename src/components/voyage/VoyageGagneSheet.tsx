@@ -59,6 +59,16 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
   const [receptionPhone, setReceptionPhone] = useState("");
   const [receptionAddress, setReceptionAddress] = useState("");
   
+  // Restrictions
+  const RESTRICTION_OPTIONS = [
+    "Pas de liquides", "Pas de nourriture", "Pas de batteries/piles",
+    "Pas d'appareils electroniques", "Pas de produits chimiques", "Pas de parfums",
+    "Pas de cosmetiques", "Pas de medicaments"
+  ];
+  const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>([]);
+  const [receptionPhone, setReceptionPhone] = useState("");
+  const [receptionAddress, setReceptionAddress] = useState("");
+  
   // Pre-fill user country
   const [userProfile, setUserProfile] = useState<any>(null);
   
