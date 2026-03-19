@@ -560,8 +560,9 @@ export function GPWalletCard({ wallet, gpId, compact, withdrawalLimit = 0, kycLe
 
 /* ─── Sub-components ─── */
 
-function StatMini({ icon: Icon, color, bgColor, label, value, currency, isPercent }: {
+function StatMini({ icon: Icon, color, bgColor, label, value, currency, isPercent, isFCFA: isFcfa, formatDual }: {
   icon: any; color: string; bgColor: string; label: string; value: number; currency: string; isPercent?: boolean;
+  isFCFA?: boolean; formatDual?: (v: number) => string;
 }) {
   return (
     <div className="bg-card rounded-xl border border-border p-3 shadow-card">
@@ -571,7 +572,12 @@ function StatMini({ icon: Icon, color, bgColor, label, value, currency, isPercen
       <p className="text-lg font-bold text-foreground">
         {isPercent ? `${value}%` : value.toLocaleString()}
       </p>
-      <p className="text-[10px] text-muted-foreground">{label}{!isPercent && ` (${getCurrencySymbol(currency)})`}</p>
+      <p className="text-[10px] text-muted-foreground">
+        {label}{!isPercent && ` (${getCurrencySymbol(currency)})`}
+      </p>
+      {!isPercent && !isFcfa && formatDual && value > 0 && (
+        <p className="text-[9px] text-muted-foreground mt-0.5">{formatDual(value)}</p>
+      )}
     </div>
   );
 }
