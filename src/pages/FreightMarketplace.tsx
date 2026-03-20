@@ -85,6 +85,7 @@ export default function FreightMarketplace() {
         .select("*, gp_profiles!gp_offers_gp_id_fkey(business_name, id, rating, subscription)")
         .eq("status", "active")
         .gte("departure_date", today.split("T")[0])
+        .gt("available_capacity", 0)
         .order("departure_date", { ascending: true });
       if (GP_ONLY_MODE) {
         query = query.in("transport_type", ["bagages_international", "bagages_accompagnes", "navette", "occasionnel", "voyageur"] as any);

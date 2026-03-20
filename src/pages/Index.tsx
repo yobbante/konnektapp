@@ -44,6 +44,8 @@ function IndexContent() {
   const entryCompleted = !!localStorage.getItem(ENTRY_FLOW_KEY);
   
   const [entryStep, setEntryStep] = useState<EntryStep>(() => {
+    // If already authenticated, skip entire entry flow
+    if (isAuthenticated) return "done";
     if (!isFirstVisit) return "done";
     if (entryCompleted) return "splash"; // Just show splash then done
     return "splash";
@@ -60,6 +62,14 @@ function IndexContent() {
   const { isRefreshing, pullDistance, progress } = usePullToRefresh({
     onRefresh: handleRefresh,
   });
+
+  // When auth state resolves, skip entry flow if already logged in
+  useEffect(() => {
+    if (!roleLoading && isAuthenticated && entryStep !== "done") {
+      sessionStorage.setItem("app_loaded", "true");
+      setEntryStep("done");
+    }
+  }, [roleLoading, isAuthenticated, entryStep]);
 
   useEffect(() => {
     if (entryStep !== "done") return;

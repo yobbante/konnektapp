@@ -496,6 +496,7 @@ export function ClientAppHome({
           .eq("status", "active")
           .in("transport_type", ["bagages_international", "bagages_accompagnes", "navette", "occasionnel", "voyageur"] as any)
           .gte("departure_date", today)
+          .gt("available_capacity", 0)
           .order("departure_date", { ascending: true })
           .limit(50);
 
