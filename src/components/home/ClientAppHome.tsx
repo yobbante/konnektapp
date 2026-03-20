@@ -543,7 +543,7 @@ export function ClientAppHome({
     if (!isRoutier || GP_ONLY_MODE) return;
     supabase.
     from("gp_offers").
-    select("*, gp_profiles(business_name, rating, subscription)").
+    select("*, gp_profiles!gp_offers_gp_id_fkey(business_name, rating, subscription)").
     eq("transport_type", "routier").
     eq("status", "active").
     order("departure_date", { ascending: true }).
