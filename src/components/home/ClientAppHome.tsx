@@ -864,7 +864,7 @@ export function ClientAppHome({
             const top4 = modes.
             map((mode) => {
               const modeOffers = offers.
-              filter((o) => o.transport_type === mode || mode === "bagages_international" && (o.transport_type === "bagages_international" || o.transport_type === "bagages_accompagnes" || o.transport_type === "navette")).
+              filter((o) => o.transport_type === mode || mode === "bagages_international" && (o.transport_type === "bagages_international" || o.transport_type === "voyageur" || o.transport_type === "occasionnel")).
               sort((a, b) => scoreOffer(b) - scoreOffer(a));
               return modeOffers[0] ? { ...modeOffers[0], _mode: mode } : null;
             }).
