@@ -234,7 +234,7 @@ const TYPE_MAP: Record<string, string[]> = {
   aerien: ["aerien"],
   maritime: ["maritime"],
   routier: ["routier"],
-  bagages: ["bagages_international", "bagages_accompagnes", "navette", "voyageur", "occasionnel"],
+  bagages: ["bagages_international", "voyageur", "occasionnel"],
   mobility: ["mobility"],
 };
 
@@ -492,9 +492,9 @@ export function ClientAppHome({
     // Also exclude offers from gp_type='aerien' transporters
     const gpQuery = supabase
           .from("gp_offers")
-          .select("*, gp_profiles(business_name, rating, total_reviews, subscription, gp_type)")
+          .select("*, gp_profiles!gp_offers_gp_id_fkey(business_name, rating, total_reviews, subscription, gp_type)")
           .eq("status", "active")
-          .in("transport_type", ["bagages_international", "bagages_accompagnes", "navette", "occasionnel", "voyageur"] as any)
+          .in("transport_type", ["bagages_international", "occasionnel", "voyageur"] as any)
           .gte("departure_date", today)
           .gt("available_capacity", 0)
           .order("departure_date", { ascending: true })
@@ -543,7 +543,7 @@ export function ClientAppHome({
     if (!isRoutier || GP_ONLY_MODE) return;
     supabase.
     from("gp_offers").
-    select("*, gp_profiles(business_name, rating, subscription)").
+    select("*, gp_profiles!gp_offers_gp_id_fkey(business_name, rating, subscription)").
     eq("transport_type", "routier").
     eq("status", "active").
     order("departure_date", { ascending: true }).
@@ -864,7 +864,7 @@ export function ClientAppHome({
             const top4 = modes.
             map((mode) => {
               const modeOffers = offers.
-              filter((o) => o.transport_type === mode || mode === "bagages_international" && (o.transport_type === "bagages_international" || o.transport_type === "bagages_accompagnes" || o.transport_type === "navette")).
+              filter((o) => o.transport_type === mode || mode === "bagages_international" && (o.transport_type === "bagages_international" || o.transport_type === "voyageur" || o.transport_type === "occasionnel")).
               sort((a, b) => scoreOffer(b) - scoreOffer(a));
               return modeOffers[0] ? { ...modeOffers[0], _mode: mode } : null;
             }).

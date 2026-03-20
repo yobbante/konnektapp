@@ -236,7 +236,7 @@ export default function Offres() {
     aerien: ["aerien"],
     maritime: ["maritime"],
     routier: ["routier"],
-    bagages: ["bagages_accompagnes", "navette", "bagages_international", "voyageur", "occasionnel"],
+    bagages: ["bagages_international", "voyageur", "occasionnel"],
   };
 
   const FILTER_TABS = [
