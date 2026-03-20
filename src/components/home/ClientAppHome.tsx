@@ -492,9 +492,9 @@ export function ClientAppHome({
     // Also exclude offers from gp_type='aerien' transporters
     const gpQuery = supabase
           .from("gp_offers")
-          .select("*, gp_profiles(business_name, rating, total_reviews, subscription, gp_type)")
+          .select("*, gp_profiles!gp_offers_gp_id_fkey(business_name, rating, total_reviews, subscription, gp_type)")
           .eq("status", "active")
-          .in("transport_type", ["bagages_international", "bagages_accompagnes", "navette", "occasionnel", "voyageur"] as any)
+          .in("transport_type", ["bagages_international", "occasionnel", "voyageur"] as any)
           .gte("departure_date", today)
           .gt("available_capacity", 0)
           .order("departure_date", { ascending: true })
