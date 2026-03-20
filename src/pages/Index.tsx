@@ -44,6 +44,8 @@ function IndexContent() {
   const entryCompleted = !!localStorage.getItem(ENTRY_FLOW_KEY);
   
   const [entryStep, setEntryStep] = useState<EntryStep>(() => {
+    // If already authenticated, skip entire entry flow
+    if (isAuthenticated) return "done";
     if (!isFirstVisit) return "done";
     if (entryCompleted) return "splash"; // Just show splash then done
     return "splash";
