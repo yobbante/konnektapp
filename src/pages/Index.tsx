@@ -63,6 +63,14 @@ function IndexContent() {
     onRefresh: handleRefresh,
   });
 
+  // When auth state resolves, skip entry flow if already logged in
+  useEffect(() => {
+    if (!roleLoading && isAuthenticated && entryStep !== "done") {
+      sessionStorage.setItem("app_loaded", "true");
+      setEntryStep("done");
+    }
+  }, [roleLoading, isAuthenticated, entryStep]);
+
   useEffect(() => {
     if (entryStep !== "done") return;
     if (!roleLoading) {
