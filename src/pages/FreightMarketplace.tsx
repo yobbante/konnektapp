@@ -32,6 +32,7 @@ interface MarketplaceListing {
   mode: "aerien" | "maritime" | "routier" | "gp";
   modeLabel: string;
   subType?: string;
+  transportType?: string;
   origin: string;
   destination: string;
   departureDate: string;
