@@ -406,25 +406,27 @@ async function execDepositConfirm(
 async function execWeightModify(
   supabase: any, order: any, userId: string, role: string, actionData?: Record<string, any>
 ): Promise<ScanResponse> {
-  if (!["pending", "accepted", "paid_held", "checked_in"].includes(order.status)) {
-    return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_status", next_action: "none", message: "La modification de poids n'est possible qu'à l'étape de dépôt." };
+  if (!["pending", "accepted", "paid_held", "checked_in", "collected"].includes(order.status)) {
+    return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_status", next_action: "none", message: "La modification de poids n'est possible qu'à l'étape de dépôt ou collecte." };
   }
 
-  const actualWeight = actionData?.actual_weight;
-  if (!actualWeight || typeof actualWeight !== "number" || actualWeight <= 0) {
+  const rawWeight = actionData?.actual_weight;
+  const actualWeight = typeof rawWeight === "string" ? parseFloat(rawWeight) : rawWeight;
+  if (!actualWeight || typeof actualWeight !== "number" || isNaN(actualWeight) || actualWeight <= 0) {
     return { status: "failed", qr_type: "QR_COLIS", scenario: "invalid_data", next_action: "none", message: "Poids réel invalide." };
   }
 
   // Anti-fraud: max 50% variation
-  const maxVariation = order.weight * 0.5;
-  if (Math.abs(actualWeight - order.weight) > maxVariation && order.weight > 0) {
+  const orderWeight = order.weight || 1;
+  const maxVariation = orderWeight * 0.5;
+  if (Math.abs(actualWeight - orderWeight) > maxVariation && orderWeight > 0) {
     return { status: "failed", qr_type: "QR_COLIS", scenario: "weight_abuse", next_action: "none", message: `Variation de poids trop importante (max ±50%). Contactez le support.` };
   }
 
-  const basePricePerKg = order.price_per_kg;
+  const basePricePerKg = order.price_per_kg || 0;
   
   // Calculate price difference using TMA logic
-  const oldPrice = order.total_price;
+  const oldPrice = order.total_price || 0;
   let newTransportPrice: number;
   
   // TMA: for <1kg, tarif minimum = basePricePerKg * 1.5 (forfait fixe)
@@ -465,7 +467,11 @@ async function execWeightModify(
     updateData.adjustment_amount = priceDiff;
   }
   
-  await supabase.from("orders").update(updateData).eq("id", order.id);
+  const { error: updateError } = await supabase.from("orders").update(updateData).eq("id", order.id);
+  if (updateError) {
+    console.error("Weight modify order update error:", updateError);
+    return { status: "failed", qr_type: "QR_COLIS", scenario: "engine_error", next_action: "none", message: "Erreur lors de la mise à jour du poids. Réessayez." };
+  }
 
   // Update escrow if exists
   const { data: escrow } = await supabase
