@@ -32,6 +32,7 @@ interface MarketplaceListing {
   mode: "aerien" | "maritime" | "routier" | "gp";
   modeLabel: string;
   subType?: string;
+  transportType?: string;
   origin: string;
   destination: string;
   departureDate: string;
@@ -154,6 +155,7 @@ export default function FreightMarketplace() {
         id: o.id,
         mode,
         modeLabel: MODE_CONFIG[mode]?.label || "GP",
+        transportType: o.transport_type,
         origin: `${o.origin_city}, ${o.origin_country}`,
         destination: `${o.destination_city}, ${o.destination_country}`,
         departureDate: o.departure_date,
@@ -493,6 +495,11 @@ export default function FreightMarketplace() {
                           {listing.isBestPrice && (
                             <Badge className="text-[10px] px-1.5 py-0 bg-success/15 text-success border-success/30 gap-0.5">
                               <Award className="w-2.5 h-2.5" /> Best price
+                            </Badge>
+                          )}
+                          {listing.transportType === "occasionnel" && (
+                            <Badge className="text-[10px] px-1.5 py-0 bg-amber-500/15 text-amber-600 border-amber-500/30 gap-0.5">
+                              🧳 Occasionnel
                             </Badge>
                           )}
                         </div>

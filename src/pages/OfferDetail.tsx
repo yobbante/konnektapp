@@ -22,7 +22,7 @@ import { MiniLoader } from "@/components/ui/MiniLoader";
 
 import { Bus } from "lucide-react";
 
-type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "bagages_international" | "mobility";
+type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "bagages_international" | "mobility" | "occasionnel";
 
 const transportConfig: Record<TransportType, { icon: React.ElementType; color: string; gradient: string }> = {
   express: { icon: Zap, color: "text-orange-500", gradient: "from-orange-500/20 to-amber-500/20" },
@@ -32,6 +32,7 @@ const transportConfig: Record<TransportType, { icon: React.ElementType; color: s
   voyageur: { icon: Briefcase, color: "text-green-500", gradient: "from-green-500/20 to-emerald-500/20" },
   bagages_international: { icon: Luggage, color: "text-primary", gradient: "from-primary/20 to-primary/10" },
   mobility: { icon: Bus, color: "text-emerald-500", gradient: "from-emerald-500/20 to-green-500/20" },
+  occasionnel: { icon: Plane, color: "text-amber-500", gradient: "from-amber-500/20 to-orange-500/20" },
 };
 
 interface GPOffer {
@@ -383,7 +384,8 @@ export default function OfferDetail() {
       <motion.header 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`sticky top-0 z-40 bg-gradient-to-r ${config.gradient} backdrop-blur-md border-b border-border/50`}
+        className={`fixed top-0 left-0 right-0 z-40 bg-gradient-to-r ${config.gradient} backdrop-blur-md border-b border-border/50`}
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
@@ -421,6 +423,9 @@ export default function OfferDetail() {
           </div>
         </div>
       </motion.header>
+
+      {/* Spacer for fixed header */}
+      <div style={{ height: 'calc(56px + env(safe-area-inset-top, 0px))' }} />
 
       <div className="px-4 py-4" style={{ paddingBottom: 'calc(140px + env(safe-area-inset-bottom, 0px))' }}>
         {/* Animated Route Card */}
