@@ -424,6 +424,9 @@ export default function OfferDetail() {
         </div>
       </motion.header>
 
+      {/* Spacer for fixed header */}
+      <div style={{ height: 'calc(56px + env(safe-area-inset-top, 0px))' }} />
+
       <div className="px-4 py-4" style={{ paddingBottom: 'calc(140px + env(safe-area-inset-bottom, 0px))' }}>
         {/* Animated Route Card */}
         <motion.div
