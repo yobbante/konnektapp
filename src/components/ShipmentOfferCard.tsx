@@ -15,7 +15,7 @@ import { fr } from "date-fns/locale";
 
 type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "bagages_international" | "occasionnel";
 
-const GP_OCCASIONNEL_BADGE = "🧳 GP Occasionnel";
+// Badge is shown separately instead of modifying gpName
 
 interface VehicleInfo {
   name?: string;
