@@ -497,6 +497,11 @@ export default function FreightMarketplace() {
                               <Award className="w-2.5 h-2.5" /> Best price
                             </Badge>
                           )}
+                          {listing.transportType === "occasionnel" && (
+                            <Badge className="text-[10px] px-1.5 py-0 bg-amber-500/15 text-amber-600 border-amber-500/30 gap-0.5">
+                              🧳 Occasionnel
+                            </Badge>
+                          )}
                         </div>
                       </div>
 
