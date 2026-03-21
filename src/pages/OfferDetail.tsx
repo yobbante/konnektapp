@@ -384,7 +384,8 @@ export default function OfferDetail() {
       <motion.header 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`sticky top-0 z-40 bg-gradient-to-r ${config.gradient} backdrop-blur-md border-b border-border/50`}
+        className={`fixed top-0 left-0 right-0 z-40 bg-gradient-to-r ${config.gradient} backdrop-blur-md border-b border-border/50`}
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
