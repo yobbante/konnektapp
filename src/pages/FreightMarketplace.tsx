@@ -155,6 +155,7 @@ export default function FreightMarketplace() {
         id: o.id,
         mode,
         modeLabel: MODE_CONFIG[mode]?.label || "GP",
+        transportType: o.transport_type,
         origin: `${o.origin_city}, ${o.origin_country}`,
         destination: `${o.destination_city}, ${o.destination_country}`,
         departureDate: o.departure_date,
