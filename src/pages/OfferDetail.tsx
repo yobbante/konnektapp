@@ -22,7 +22,7 @@ import { MiniLoader } from "@/components/ui/MiniLoader";
 
 import { Bus } from "lucide-react";
 
-type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "bagages_international" | "mobility";
+type TransportType = "express" | "routier" | "maritime" | "aerien" | "voyageur" | "bagages_international" | "mobility" | "occasionnel";
 
 const transportConfig: Record<TransportType, { icon: React.ElementType; color: string; gradient: string }> = {
   express: { icon: Zap, color: "text-orange-500", gradient: "from-orange-500/20 to-amber-500/20" },
@@ -32,6 +32,7 @@ const transportConfig: Record<TransportType, { icon: React.ElementType; color: s
   voyageur: { icon: Briefcase, color: "text-green-500", gradient: "from-green-500/20 to-emerald-500/20" },
   bagages_international: { icon: Luggage, color: "text-primary", gradient: "from-primary/20 to-primary/10" },
   mobility: { icon: Bus, color: "text-emerald-500", gradient: "from-emerald-500/20 to-green-500/20" },
+  occasionnel: { icon: Plane, color: "text-amber-500", gradient: "from-amber-500/20 to-orange-500/20" },
 };
 
 interface GPOffer {

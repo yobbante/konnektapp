@@ -270,8 +270,8 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
         onEnd={endCall}
       />
 
-      {/* Spacer for fixed header */}
-      <div className="flex-shrink-0" style={{ minHeight: '56px', paddingTop: 'env(safe-area-inset-top, 0px)' }} />
+      {/* Spacer for fixed header — accounts for header height + safe area + optional order banner */}
+      <div className="flex-shrink-0" style={{ minHeight: '60px', paddingTop: 'env(safe-area-inset-top, 0px)' }} />
       
       {/* Enhanced Header with verified badge and order info - FIXED */}
       <ChatHeader
