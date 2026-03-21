@@ -142,7 +142,6 @@ export function HomeOfferCard({ offer, index, modeLabel, subscriptionBadge }: Ho
     </Link>
   );
 }
-const TYPE_ICON: Record<string, { icon: typeof Plane; color: string; bg: string }> = {
   aerien: { icon: Plane, color: "text-transport-aerien", bg: "bg-transport-aerien/10" },
   maritime: { icon: Ship, color: "text-transport-maritime", bg: "bg-transport-maritime/10" },
   routier: { icon: Truck, color: "text-transport-routier", bg: "bg-transport-routier/10" },
