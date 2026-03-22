@@ -72,6 +72,13 @@ export function PostDeliveryFlow({ order, role, onClose, onNavigate }: PostDeliv
         comment: comment || null,
       });
 
+      // Mark as dismissed permanently so it won't show again
+      const dismissedIds = JSON.parse(localStorage.getItem("kkt_delivery_dismissed") || "[]");
+      if (!dismissedIds.includes(order.id)) {
+        dismissedIds.push(order.id);
+        localStorage.setItem("kkt_delivery_dismissed", JSON.stringify(dismissedIds));
+      }
+
       notify.success("Merci pour votre avis !");
       setStep("done");
     } catch (e: any) {
@@ -113,6 +120,12 @@ export function PostDeliveryFlow({ order, role, onClose, onNavigate }: PostDeliv
           related_type: "order",
           read: true,
         });
+      }
+      // Mark as dismissed permanently
+      const dismissedIds = JSON.parse(localStorage.getItem("kkt_delivery_dismissed") || "[]");
+      if (!dismissedIds.includes(order.id)) {
+        dismissedIds.push(order.id);
+        localStorage.setItem("kkt_delivery_dismissed", JSON.stringify(dismissedIds));
       }
       notify.success("Merci pour votre retour !");
       setStep("done");
@@ -435,7 +448,7 @@ export function usePostDeliveryDetection(userId: string | undefined) {
     if (!userId) return;
 
     const checkDelivered = async () => {
-      const dismissedIds = JSON.parse(sessionStorage.getItem("kkt_delivery_dismissed") || "[]");
+      const dismissedIds = JSON.parse(localStorage.getItem("kkt_delivery_dismissed") || "[]");
       const dismissedSet = new Set<string>(dismissedIds);
       setDismissed(dismissedSet);
 
@@ -530,7 +543,7 @@ export function usePostDeliveryDetection(userId: string | undefined) {
 
   const dismiss = (orderId: string) => {
     const newDismissed = [...Array.from(dismissed), orderId];
-    sessionStorage.setItem("kkt_delivery_dismissed", JSON.stringify(newDismissed));
+    localStorage.setItem("kkt_delivery_dismissed", JSON.stringify(newDismissed));
     setDismissed(new Set(newDismissed));
     setDeliveredOrder(null);
   };
