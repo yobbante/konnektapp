@@ -530,7 +530,7 @@ export function usePostDeliveryDetection(userId: string | undefined) {
 
   const dismiss = (orderId: string) => {
     const newDismissed = [...Array.from(dismissed), orderId];
-    sessionStorage.setItem("kkt_delivery_dismissed", JSON.stringify(newDismissed));
+    localStorage.setItem("kkt_delivery_dismissed", JSON.stringify(newDismissed));
     setDismissed(new Set(newDismissed));
     setDeliveredOrder(null);
   };
