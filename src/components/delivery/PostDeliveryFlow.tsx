@@ -72,6 +72,13 @@ export function PostDeliveryFlow({ order, role, onClose, onNavigate }: PostDeliv
         comment: comment || null,
       });
 
+      // Mark as dismissed permanently so it won't show again
+      const dismissedIds = JSON.parse(localStorage.getItem("kkt_delivery_dismissed") || "[]");
+      if (!dismissedIds.includes(order.id)) {
+        dismissedIds.push(order.id);
+        localStorage.setItem("kkt_delivery_dismissed", JSON.stringify(dismissedIds));
+      }
+
       notify.success("Merci pour votre avis !");
       setStep("done");
     } catch (e: any) {
