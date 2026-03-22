@@ -435,7 +435,7 @@ export function usePostDeliveryDetection(userId: string | undefined) {
     if (!userId) return;
 
     const checkDelivered = async () => {
-      const dismissedIds = JSON.parse(sessionStorage.getItem("kkt_delivery_dismissed") || "[]");
+      const dismissedIds = JSON.parse(localStorage.getItem("kkt_delivery_dismissed") || "[]");
       const dismissedSet = new Set<string>(dismissedIds);
       setDismissed(dismissedSet);
 
