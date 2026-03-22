@@ -894,14 +894,12 @@ export function ClientAppHome({
           })() :
           filteredOffers.length > 0 ?
           <div className="space-y-1.5">
-              {filteredOffers.map((offer, idx) =>
+              {filteredOffers.slice(0, 3).map((offer, idx) =>
             <HomeOfferCard key={offer.id} offer={offer} index={idx} />
             )}
-              {filteredOffers.length > 4 &&
-            <button onClick={goToOffres} className="w-full py-2 text-xs font-semibold text-primary flex items-center justify-center gap-1 hover:bg-primary/5 rounded-xl transition-colors">
-                  +{filteredOffers.length - 4} autres offres <ChevronRight className="w-3.5 h-3.5" />
+              <button onClick={goToOffres} className="w-full py-2.5 text-xs font-semibold text-primary flex items-center justify-center gap-1 hover:bg-primary/5 rounded-xl transition-colors border border-dashed border-primary/20">
+                  Tout voir <ChevronRight className="w-3.5 h-3.5" />
                 </button>
-            }
             </div> :
 
           <EmptyOffers modeConfig={modeConfig} onAction={() => setActiveTab("all")} />
