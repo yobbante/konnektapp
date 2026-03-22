@@ -584,8 +584,7 @@ export default function ReservationsPage() {
                   <button
                     key={`rev-${o.id}`}
                     onClick={() => {
-                      setSelectedReviewOrder(o);
-                      setShowRateDialog(true);
+                      setRatingOrder(o);
                     }}
                     className="w-full flex items-center gap-3 p-3 rounded-2xl border border-amber-500/30 bg-amber-500/5 active:scale-[0.98] transition-all"
                   >
