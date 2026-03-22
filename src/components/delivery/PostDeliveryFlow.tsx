@@ -121,6 +121,12 @@ export function PostDeliveryFlow({ order, role, onClose, onNavigate }: PostDeliv
           read: true,
         });
       }
+      // Mark as dismissed permanently
+      const dismissedIds = JSON.parse(localStorage.getItem("kkt_delivery_dismissed") || "[]");
+      if (!dismissedIds.includes(order.id)) {
+        dismissedIds.push(order.id);
+        localStorage.setItem("kkt_delivery_dismissed", JSON.stringify(dismissedIds));
+      }
       notify.success("Merci pour votre retour !");
       setStep("done");
     } catch {
