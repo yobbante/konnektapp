@@ -572,19 +572,8 @@ export function ClientAppHome({
       const subBoost = sub === "pro" ? 1000 : sub === "premium" ? 500 : 0;
       return subBoost + (o.gp_profiles?.rating || 0);
     };
-    // Sort by score, then deduplicate by destination city (1 per dest)
-    const sorted = [...result].sort((a, b) => scoreOffer(b) - scoreOffer(a));
-    const seenDests = new Set<string>();
-    const unique: any[] = [];
-    for (const o of sorted) {
-      const destKey = (o.destination_city || "").toLowerCase();
-      if (!seenDests.has(destKey)) {
-        seenDests.add(destKey);
-        unique.push(o);
-      }
-      if (unique.length >= 4) break;
-    }
-    return unique;
+    // Sort by score — no dedup so all GP including occasionnels are visible
+    return [...result].sort((a, b) => scoreOffer(b) - scoreOffer(a));
   }, [offers, activeTab, searchOrigin, searchDest]);
 
   const activeOrders = recentOrders.filter((o) => ACTIVE_STATUSES.includes(o.status));
