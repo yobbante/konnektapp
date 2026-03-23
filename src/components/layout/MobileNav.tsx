@@ -21,6 +21,7 @@ export function MobileNav() {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { isKeyboardOpen } = useKeyboardViewport();
   
   const lastHomeClickRef = useRef<number>(0);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
