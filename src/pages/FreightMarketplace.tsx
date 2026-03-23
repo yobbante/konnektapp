@@ -472,126 +472,99 @@ export default function FreightMarketplace() {
                     }`}
                     onClick={() => handleBook(listing)}
                   >
-                    <CardContent className="p-3.5">
-                      {/* Top row: mode + badges */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-7 h-7 rounded-lg ${config?.bg} flex items-center justify-center`}>
-                            <Icon className={`w-4 h-4 ${config?.color}`} />
+                    <CardContent className="p-0">
+                      {/* Gradient accent bar */}
+                      <div className={`h-1 w-full bg-gradient-to-r ${
+                        listing.mode === "gp" ? "from-transport-voyageur to-transport-voyageur/60" :
+                        listing.mode === "aerien" ? "from-transport-aerien to-transport-aerien/60" :
+                        listing.mode === "maritime" ? "from-transport-maritime to-transport-maritime/60" :
+                        "from-transport-routier to-transport-routier/60"
+                      }`} />
+                      
+                      <div className="px-3.5 py-3">
+                        {/* Top: Route + Badges */}
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <div className={`w-8 h-8 rounded-xl ${config?.bg} flex items-center justify-center flex-shrink-0`}>
+                              <Icon className={`w-4 h-4 ${config?.color}`} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm font-bold text-foreground truncate">
+                                  {listing.origin.split(",")[0]}
+                                </span>
+                                <ArrowRight className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
+                                <span className="text-sm font-bold text-foreground truncate">
+                                  {listing.destination.split(",")[0]}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-[11px] text-muted-foreground truncate">
+                                  {listing.providerName}
+                                </span>
+                                {listing.providerRating > 0 && (
+                                  <span className="flex items-center gap-0.5 text-[10px] text-amber-600 font-medium">
+                                    <Star className="w-2.5 h-2.5 fill-amber-500" />
+                                    {listing.providerRating.toFixed(1)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <div>
-                            <span className="text-xs font-semibold text-foreground">{listing.modeLabel}</span>
-                            {listing.subType && (
-                              <span className="text-[10px] text-muted-foreground ml-1">· {listing.subType}</span>
-                            )}
+                          {/* Price */}
+                          <div className="flex-shrink-0 ml-2">
+                            <div className="bg-primary/8 rounded-xl px-2.5 py-1.5 text-center min-w-[60px]">
+                              <span className="text-sm font-extrabold text-primary leading-none whitespace-nowrap">
+                                {listing.price.toLocaleString()}
+                              </span>
+                              <span className="text-[8px] text-primary/70 block leading-tight font-semibold">
+                                {listing.currency}{listing.priceUnit}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex gap-1">
+
+                        {/* Info chips */}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                            <Clock className="w-2.5 h-2.5" />
+                            {format(new Date(listing.departureDate), "d MMM", { locale: fr })}
+                          </span>
+                          {listing.arrivalDate && (
+                            <span className="text-[9px] text-muted-foreground">
+                              → {format(new Date(listing.arrivalDate), "d MMM", { locale: fr })}
+                            </span>
+                          )}
+                          <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground font-medium bg-muted/50 px-2 py-0.5 rounded-full">
+                            {listing.capacityRemaining.toLocaleString()} {listing.capacityUnit}
+                          </span>
                           {listing.isLastMinute && (
-                            <Badge className="text-[10px] px-1.5 py-0 bg-destructive/15 text-destructive border-destructive/30 gap-0.5">
+                            <Badge className="text-[9px] px-1.5 py-0 bg-destructive/15 text-destructive border-destructive/30 gap-0.5">
                               <Flame className="w-2.5 h-2.5" /> Last min
                             </Badge>
                           )}
                           {listing.isBestPrice && (
-                            <Badge className="text-[10px] px-1.5 py-0 bg-success/15 text-success border-success/30 gap-0.5">
-                              <Award className="w-2.5 h-2.5" /> Best price
+                            <Badge className="text-[9px] px-1.5 py-0 bg-success/15 text-success border-success/30 gap-0.5">
+                              Best price
                             </Badge>
                           )}
                           {listing.transportType === "occasionnel" && (
-                            <Badge className="text-[10px] px-1.5 py-0 bg-amber-500/15 text-amber-600 border-amber-500/30 gap-0.5">
+                            <Badge className="text-[9px] px-1.5 py-0 bg-amber-500/15 text-amber-600 border-amber-500/30 gap-0.5">
                               🧳 Occasionnel
                             </Badge>
                           )}
-                        </div>
-                      </div>
-
-                      {/* Route */}
-                      <div className="flex items-center gap-2 mb-2.5">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 text-sm">
-                            <MapPin className="w-3 h-3 text-primary shrink-0" />
-                            <span className="font-medium truncate">{listing.origin.split(",")[0]}</span>
-                            <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                            <span className="font-medium truncate">{listing.destination.split(",")[0]}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 mt-0.5 pl-5">
-                            <span className="text-[10px] text-muted-foreground">{listing.providerName}</span>
-                            {listing.providerRating > 0 && (
-                              <span className="flex items-center gap-0.5 text-[10px] font-semibold text-amber-600">
-                                <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />
-                                {listing.providerRating.toFixed(1)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Stats row */}
-                      <div className="grid grid-cols-3 gap-2 mb-2.5">
-                        {/* Date */}
-                        <div className="text-center bg-muted/40 rounded-lg py-1.5 px-1">
-                          <Clock className="w-3 h-3 mx-auto text-muted-foreground mb-0.5" />
-                          <p className="text-[10px] font-semibold">
-                            {format(new Date(listing.departureDate), "d MMM", { locale: fr })}
-                          </p>
-                          {listing.arrivalDate && (
-                            <p className="text-[8px] text-muted-foreground">
-                              → {format(new Date(listing.arrivalDate), "d MMM", { locale: fr })}
-                            </p>
-                          )}
-                        </div>
-                        {/* Price */}
-                        <div className="text-center bg-primary/5 rounded-lg py-1.5 px-1">
-                          <p className="text-xs font-bold text-primary">
-                            {listing.price.toLocaleString()}
-                          </p>
-                          <p className="text-[9px] text-muted-foreground">
-                            {listing.currency}{listing.priceUnit}
-                          </p>
-                        </div>
-                        {/* Capacity */}
-                        <div className="text-center bg-muted/40 rounded-lg py-1.5 px-1">
-                          <p className={`text-xs font-bold ${isAlmostFull ? "text-destructive" : "text-foreground"}`}>
-                            {listing.capacityRemaining.toLocaleString()}
-                          </p>
-                          <p className="text-[9px] text-muted-foreground">
-                            {listing.capacityUnit} restant
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Capacity gauge */}
-                      <div className="mb-2">
-                        <Progress
-                          value={fillPercent}
-                          className={`h-1.5 ${isAlmostFull ? "[&>div]:bg-destructive" : "[&>div]:bg-primary"}`}
-                        />
-                        <div className="flex justify-between mt-0.5">
-                          <span className="text-[9px] text-muted-foreground">
-                            {Math.round(fillPercent)}% rempli
-                          </span>
                           {isAlmostFull && (
-                            <span className="text-[9px] text-destructive font-medium flex items-center gap-0.5">
-                              <Zap className="w-2.5 h-2.5" /> Presque complet
+                            <Badge className="text-[9px] px-1.5 py-0 bg-destructive/10 text-destructive border-destructive/20 gap-0.5">
+                              <Zap className="w-2.5 h-2.5" /> {Math.round(fillPercent)}%
+                            </Badge>
+                          )}
+                          {priceIndicator && (
+                            <span className={`text-[9px] font-medium ${priceIndicator.color}`}>
+                              {priceIndicator.label}
                             </span>
                           )}
                         </div>
                       </div>
-
-                      {/* Price indicator if available */}
-                      {priceIndicator && (
-                        <div className="flex items-center gap-1 mb-2">
-                          <TrendingDown className={`w-3 h-3 ${priceIndicator.color}`} />
-                          <span className={`text-[10px] font-medium ${priceIndicator.color}`}>
-                            {priceIndicator.label}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* CTA */}
-                      <Button size="sm" variant="outline" className="w-full h-8 text-xs gap-1.5">
-                        Voir les détails <ArrowRight className="w-3.5 h-3.5" />
-                      </Button>
                     </CardContent>
                   </Card>
                 </motion.div>
