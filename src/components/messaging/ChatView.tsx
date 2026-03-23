@@ -259,7 +259,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   };
 
   return (
-    <div className="flex flex-col" style={{ height: '100dvh', overflow: 'hidden' }}>
+    <div className="flex flex-col" style={{ height: 'var(--visual-vh, 100dvh)', overflow: 'hidden' }}>
       {/* Audio Call UI Overlay */}
       <AudioCallUI
         callStatus={callStatus}
