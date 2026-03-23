@@ -1,13 +1,14 @@
 /**
- * SmartActionBar — Single-action carousel
- * Shows ONE action at a time by priority. When completed, auto-advances to next.
- * Subscribes to realtime for auto-refresh.
+ * SmartActionBar — Intelligent single-action carousel
+ * Shows ONE action at a time by priority. Auto-refreshes via realtime.
+ * Displays critical updates: weight supplements, deposit addresses, delivery codes, reviews, messages.
  */
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Star, MessageCircle, Package, Scale, Bell, ChevronRight, Sparkles, ChevronLeft, Heart
+  Star, MessageCircle, Package, Scale, Bell, ChevronRight, Sparkles, ChevronLeft, Heart,
+  MapPin, Truck, Key
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { RateOrderDialog } from "@/components/RateOrderDialog";
@@ -48,9 +49,11 @@ interface PendingReview {
 export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, activeOrdersCount = 0, pendingRecipientFeedback = [] }: SmartActionBarProps) {
   const navigate = useNavigate();
   const [pendingReviews, setPendingReviews] = useState<PendingReview[]>([]);
-  const [incomingParcels, setIncomingParcels] = useState<any[]>([]);
   const [supplementOrders, setSupplementOrders] = useState<any[]>([]);
+  const [depositReleasedOrders, setDepositReleasedOrders] = useState<any[]>([]);
+  const [deliveryCodeOrders, setDeliveryCodeOrders] = useState<any[]>([]);
   const [priceChanges, setPriceChanges] = useState<any[]>([]);
+  const [weightChangedOrders, setWeightChangedOrders] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [ratingOrder, setRatingOrder] = useState<PendingReview | null>(null);
   const [feedbackOrder, setFeedbackOrder] = useState<any | null>(null);
@@ -58,6 +61,33 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
   const fetchContextualData = useCallback(async () => {
     if (!userId) return;
 
+    // Fetch orders needing attention
+    const { data: activeOrders } = await supabase
+      .from("orders")
+      .select("id, order_number, gp_id, destination_city, origin_city, status, delivery_code, total_price, weight, updated_at, currency" as any)
+      .eq("client_id", userId)
+      .not("status", "in", '("released","cancelled")')
+      .order("updated_at", { ascending: false })
+      .limit(30);
+
+    if (activeOrders) {
+      const orders = activeOrders as any[];
+      // Weight supplement required
+      setSupplementOrders(orders.filter((o: any) => o.status === "weight_pending_payment"));
+
+      // Deposit address released — check via notifications instead
+      setDepositReleasedOrders([]);
+
+      // Delivery codes available
+      setDeliveryCodeOrders(orders.filter((o: any) => 
+        o.delivery_code && o.status === "delivery_pending"
+      ));
+
+      // Weight changed (supplement) — same as supplement
+      setWeightChangedOrders([]);
+    }
+
+    // Fetch pending reviews
     const { data: unreviewed } = await supabase
       .from("orders")
       .select("id, order_number, gp_id, destination_city")
@@ -85,11 +115,7 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
       setPendingReviews([]);
     }
 
-    // Incoming parcels removed from SmartActionBar — now shown in /reservations
-    setIncomingParcels([]);
-
-    setSupplementOrders(recentOrders.filter(o => o.status === "weight_pending_payment"));
-
+    // Price notifications
     const { data: priceNotifs } = await (supabase
       .from("notifications")
       .select("id, title, message, related_id, created_at") as any)
@@ -99,7 +125,7 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
       .order("created_at", { ascending: false })
       .limit(3);
     setPriceChanges(priceNotifs || []);
-  }, [userId, recentOrders]);
+  }, [userId]);
 
   useEffect(() => { fetchContextualData(); }, [fetchContextualData]);
 
@@ -125,35 +151,53 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
   const actions = useMemo<SmartAction[]>(() => {
     const items: SmartAction[] = [];
 
-    // CRITICAL: Incoming parcels (highest priority)
-    incomingParcels.forEach(p => {
-      const statusLabels: Record<string, string> = {
-        pending: "En attente", accepted: "Accepté", registered: "Enregistré",
-        collected: "Collecté", checked_in: "Déposé", in_transit: "En transit",
-        arrived_destination: "Arrivé", delivery_pending: "Livraison en cours",
-        weight_pending_payment: "Supplément poids",
-      };
-      const statusLabel = statusLabels[p.status] || p.status;
-      items.push({
-        id: `incoming-${p.id}`, priority: "critical", icon: Package,
-        label: "Colis pour vous",
-        description: `${p.order_number} · ${p.origin_city} → ${p.destination_city || ""} · ${statusLabel}`,
-        onClick: () => navigate(`/tracking?order=${p.id}`),
-        color: "text-primary", bgColor: "bg-primary/10", borderColor: "border-primary/30",
-        pulse: ["delivery_pending", "in_transit"].includes(p.status),
-      });
-    });
-
-    // CRITICAL: Weight supplement
+    // CRITICAL: Weight supplement required
     supplementOrders.forEach(o => {
       items.push({
         id: `supplement-${o.id}`, priority: "critical", icon: Scale,
         label: "Supplément requis",
-        description: `${o.order_number} — Payez le supplément poids`,
+        description: `${o.order_number} — Payez le supplément de ${o.adjustment_amount?.toLocaleString() || ""} ${o.currency || "FCFA"}`,
         to: `/supplement/${o.id}`,
         color: "text-destructive", bgColor: "bg-destructive/10", borderColor: "border-destructive/30",
         pulse: true,
       });
+    });
+
+    // CRITICAL: Delivery code available — confirm delivery
+    deliveryCodeOrders.forEach(o => {
+      items.push({
+        id: `delivery-${o.id}`, priority: "critical", icon: Key,
+        label: "Code de livraison",
+        description: `${o.order_number} — Code: ${o.delivery_code}`,
+        onClick: () => navigate(`/tracking?order=${o.id}`),
+        color: "text-emerald-600 dark:text-emerald-400", bgColor: "bg-emerald-500/10", borderColor: "border-emerald-500/30",
+        pulse: true,
+      });
+    });
+
+    // URGENT: Deposit address released
+    depositReleasedOrders.forEach(o => {
+      items.push({
+        id: `deposit-${o.id}`, priority: "urgent", icon: MapPin,
+        label: "Adresse de dépôt",
+        description: `${o.order_number} — ${o.deposit_address?.slice(0, 40) || "Voir l'adresse"}`,
+        onClick: () => navigate(`/tracking?order=${o.id}`),
+        color: "text-blue-600 dark:text-blue-400", bgColor: "bg-blue-500/10", borderColor: "border-blue-500/30",
+      });
+    });
+
+    // URGENT: Weight changed (info)
+    weightChangedOrders.forEach(o => {
+      if (!supplementOrders.find(s => s.id === o.id)) {
+        items.push({
+          id: `weight-${o.id}`, priority: "urgent", icon: Scale,
+          label: "Poids modifié",
+          description: `${o.order_number} — Supplément de ${o.adjustment_amount?.toLocaleString()} FCFA`,
+          to: `/supplement/${o.id}`,
+          color: "text-orange-600 dark:text-orange-400", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/30",
+          pulse: true,
+        });
+      }
     });
 
     // URGENT: Pending reviews
@@ -206,7 +250,7 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
 
     const priorityOrder = { critical: 0, urgent: 1, important: 2 };
     return items.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
-  }, [supplementOrders, incomingParcels, pendingReviews, pendingRecipientFeedback, unreadMessages, priceChanges, navigate]);
+  }, [supplementOrders, depositReleasedOrders, deliveryCodeOrders, weightChangedOrders, pendingReviews, pendingRecipientFeedback, unreadMessages, priceChanges, navigate]);
 
   // Reset index when actions change
   useEffect(() => {

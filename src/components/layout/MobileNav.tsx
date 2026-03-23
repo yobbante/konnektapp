@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 import { useRef, useCallback, useEffect, useState } from "react";
+import { useKeyboardViewport } from "@/hooks/useKeyboardViewport";
 import { supabase } from "@/integrations/supabase/client";
 import { ClientScanSheet } from "@/components/scan/ClientScanSheet";
 import { CentralMenuSheet } from "@/components/layout/CentralMenuSheet";
@@ -20,6 +21,7 @@ export function MobileNav() {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { isKeyboardOpen } = useKeyboardViewport();
   
   const lastHomeClickRef = useRef<number>(0);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -165,7 +167,7 @@ export function MobileNav() {
     }
   }, [location.pathname, isAuthenticated, navigate, hasPublishedTrips]);
 
-  if (!isAuthenticated) return null;
+  if (!isAuthenticated || isKeyboardOpen) return null;
 
   return (
     <>

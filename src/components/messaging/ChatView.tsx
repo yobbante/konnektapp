@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Check, CheckCheck } from "lucide-react";
+import { useKeyboardViewport } from "@/hooks/useKeyboardViewport";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   const [sending, setSending] = useState(false);
   const [templatesExpanded, setTemplatesExpanded] = useState(false);
   const [isGpVerified, setIsGpVerified] = useState(false);
+  useKeyboardViewport(); // Activate viewport tracking for keyboard
   const [gpId, setGpId] = useState<string | null>(null);
   const [gpPhone, setGpPhone] = useState<string | null>(null);
   const [gpSelfieUrl, setGpSelfieUrl] = useState<string | null>(null);
@@ -258,7 +260,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   };
 
   return (
-    <div className="flex flex-col" style={{ height: '100dvh', overflow: 'hidden' }}>
+    <div className="flex flex-col" style={{ height: 'var(--visual-vh, 100dvh)', overflow: 'hidden' }}>
       {/* Audio Call UI Overlay */}
       <AudioCallUI
         callStatus={callStatus}
