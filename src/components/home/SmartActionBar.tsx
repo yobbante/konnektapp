@@ -64,31 +64,27 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
     // Fetch orders needing attention
     const { data: activeOrders } = await supabase
       .from("orders")
-      .select("id, order_number, gp_id, destination_city, origin_city, status, delivery_code, deposit_address, reception_address, total_price, weight, adjustment_amount, financial_status, updated_at")
+      .select("id, order_number, gp_id, destination_city, origin_city, status, delivery_code, total_price, weight, updated_at, currency" as any)
       .eq("client_id", userId)
       .not("status", "in", '("released","cancelled")')
       .order("updated_at", { ascending: false })
       .limit(30);
 
     if (activeOrders) {
+      const orders = activeOrders as any[];
       // Weight supplement required
-      setSupplementOrders(activeOrders.filter(o => o.status === "weight_pending_payment"));
+      setSupplementOrders(orders.filter((o: any) => o.status === "weight_pending_payment"));
 
-      // Orders with deposit address released (checked_in status with deposit_address)
-      setDepositReleasedOrders(activeOrders.filter(o => 
-        o.deposit_address && ["accepted", "paid_held"].includes(o.status)
-      ));
+      // Deposit address released — check via notifications instead
+      setDepositReleasedOrders([]);
 
       // Delivery codes available
-      setDeliveryCodeOrders(activeOrders.filter(o => 
+      setDeliveryCodeOrders(orders.filter((o: any) => 
         o.delivery_code && o.status === "delivery_pending"
       ));
 
-      // Weight changed notifications (orders where weight was modified recently)
-      const weightChanged = activeOrders.filter(o => 
-        o.financial_status === "adjustment_required" && o.adjustment_amount && o.adjustment_amount > 0
-      );
-      setWeightChangedOrders(weightChanged);
+      // Weight changed (supplement) — same as supplement
+      setWeightChangedOrders([]);
     }
 
     // Fetch pending reviews
