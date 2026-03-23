@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 import { useRef, useCallback, useEffect, useState } from "react";
+import { useKeyboardViewport } from "@/hooks/useKeyboardViewport";
 import { supabase } from "@/integrations/supabase/client";
 import { ClientScanSheet } from "@/components/scan/ClientScanSheet";
 import { CentralMenuSheet } from "@/components/layout/CentralMenuSheet";
