@@ -166,7 +166,9 @@ export function MobileNav() {
     }
   }, [location.pathname, isAuthenticated, navigate, hasPublishedTrips]);
 
-  if (!isAuthenticated) return null;
+  const { isKeyboardOpen } = useKeyboardViewport();
+
+  if (!isAuthenticated || isKeyboardOpen) return null;
 
   return (
     <>
