@@ -45,6 +45,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   const [sending, setSending] = useState(false);
   const [templatesExpanded, setTemplatesExpanded] = useState(false);
   const [isGpVerified, setIsGpVerified] = useState(false);
+  useKeyboardViewport(); // Activate viewport tracking for keyboard
   const [gpId, setGpId] = useState<string | null>(null);
   const [gpPhone, setGpPhone] = useState<string | null>(null);
   const [gpSelfieUrl, setGpSelfieUrl] = useState<string | null>(null);
