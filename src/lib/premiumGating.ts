@@ -12,13 +12,15 @@ export type PremiumFeature =
   | "extended_booking_window"
   | "departure_time"
   | "multi_navettes"
-  | "auto_navette_change";
+  | "auto_navette_change"
+  | "last_minute_departure";
 
 export const PREMIUM_FEATURES: Record<PremiumFeature, { label: string; desc: string }> = {
   extended_booking_window: { label: "Fenêtre de réservation étendue", desc: "Vos clients peuvent réserver jusqu'à 12h avant le départ (vs 24h standard)" },
   departure_time: { label: "Heure de départ précise", desc: "Publiez l'heure exacte de départ pour vos clients" },
   multi_navettes: { label: "Multi-navettes", desc: "Gérez jusqu'à 3 navettes (Premium) ou 5 (Pro)" },
   auto_navette_change: { label: "Changement navette auto", desc: "Changez de navette sans validation admin" },
+  last_minute_departure: { label: "Départ dernière minute", desc: "Publiez un départ prévu dans moins de 24h" },
   performances: { label: "Performances", desc: "Statistiques avancées de votre activité" },
   auto_accept: { label: "Auto-accept", desc: "Acceptation automatique des réservations" },
   priority_visibility: { label: "Visibilité prioritaire", desc: "Profil mis en avant dans les recherches" },
@@ -50,4 +52,25 @@ export function getMaxNavettes(subscription?: string): number {
   if (subscription === "pro") return 5;
   if (subscription === "premium") return 3;
   return 1;
+}
+
+/**
+ * Check if a departure date is allowed for this subscription.
+ * Non-premium/pro users cannot publish a departure within 24h.
+ */
+export function canPublishDepartureDate(departureDate: string, subscription?: string): { allowed: boolean; reason?: string } {
+  if (isGPPremium(subscription)) return { allowed: true };
+  
+  const dep = new Date(departureDate);
+  const now = new Date();
+  const diffMs = dep.getTime() - now.getTime();
+  const diffHours = diffMs / (1000 * 60 * 60);
+  
+  if (diffHours < 24) {
+    return { 
+      allowed: false, 
+      reason: "Les départs dans moins de 24h sont réservés aux abonnés Premium et Pro" 
+    };
+  }
+  return { allowed: true };
 }

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Package, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { canPublishDepartureDate } from "@/lib/premiumGating";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -100,6 +101,23 @@ export function GPCreateOfferDialog({ open, onClose, gpProfile, onSuccess }: GPC
       toast({
         title: "Erreur",
         description: "La date de départ doit être dans le futur",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // 24h minimum for non-premium/pro GPs
+    const { data: gpData } = await supabase
+      .from("gp_profiles")
+      .select("subscription")
+      .eq("id", gpProfile.id)
+      .maybeSingle();
+    
+    const depCheck = canPublishDepartureDate(formData.departureDate, gpData?.subscription);
+    if (!depCheck.allowed) {
+      toast({
+        title: "Départ trop proche",
+        description: depCheck.reason,
         variant: "destructive",
       });
       return;
