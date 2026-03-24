@@ -262,7 +262,7 @@ export function UnifiedScanInterface({
       {/* ── Compact dark header ── */}
       <div
         className="sticky top-0 z-10 border-b border-white/[0.06] backdrop-blur-xl flex-shrink-0"
-        style={{ background: "rgba(10, 18, 24, 0.96)" }}
+        style={{ background: colors.headerBg }}
       >
         {/* Title row — ultra compact */}
         <div className="flex items-center justify-between px-4 py-2.5">
