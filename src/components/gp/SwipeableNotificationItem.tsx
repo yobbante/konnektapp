@@ -89,7 +89,7 @@ export function SwipeableNotificationItem({
       )}
 
       <motion.div
-        drag="x"
+        drag={isPersistent ? false : "x"}
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.3}
         onDragEnd={handleDragEnd}
