@@ -309,7 +309,7 @@ export function UnifiedScanInterface({
                   className={cn(
                     "flex-1 py-2 text-[11px] font-semibold transition-all duration-200 flex items-center justify-center gap-1",
                     activeTab === tab.key
-                      ? tabActiveBg
+                      ? colors.tabActiveBg
                       : "text-white/35 active:text-white/60"
                   )}
                 >
