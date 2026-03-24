@@ -247,7 +247,7 @@ export default function SmartBookingPage() {
       const {
         data: gpData,
         error: gpError
-      } = await supabase.from("gp_profiles").select("id, business_name, rating, total_deliveries, verified_at, gp_type, default_currency, explicit_restrictions").eq("id", gpId).single();
+      } = await supabase.from("gp_profiles").select("id, business_name, rating, total_deliveries, verified_at, gp_type, subscription, default_currency, explicit_restrictions").eq("id", gpId).single();
       if (gpError || !gpData) {
         toast({
           title: "Transporteur non trouvé",
