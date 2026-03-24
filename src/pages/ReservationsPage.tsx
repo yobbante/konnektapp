@@ -71,7 +71,7 @@ export default function ReservationsPage() {
   const [mobilityBookings, setMobilityBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [_selectedOrder, _setSelectedOrder] = useState<any>(null); // kept for compat
   const [recipientCount, setRecipientCount] = useState(0);
   const [recentlyChangedOrders, setRecentlyChangedOrders] = useState<Set<string>>(new Set());
   const [tabNotifications, setTabNotifications] = useState<Record<TabId, number>>({ actives: 0, tickets: 0, colis: 0, demandes: 0, historique: 0 });
