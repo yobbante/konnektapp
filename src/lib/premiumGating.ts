@@ -53,3 +53,24 @@ export function getMaxNavettes(subscription?: string): number {
   if (subscription === "premium") return 3;
   return 1;
 }
+
+/**
+ * Check if a departure date is allowed for this subscription.
+ * Non-premium/pro users cannot publish a departure within 24h.
+ */
+export function canPublishDepartureDate(departureDate: string, subscription?: string): { allowed: boolean; reason?: string } {
+  if (isGPPremium(subscription)) return { allowed: true };
+  
+  const dep = new Date(departureDate);
+  const now = new Date();
+  const diffMs = dep.getTime() - now.getTime();
+  const diffHours = diffMs / (1000 * 60 * 60);
+  
+  if (diffHours < 24) {
+    return { 
+      allowed: false, 
+      reason: "Les départs dans moins de 24h sont réservés aux abonnés Premium et Pro" 
+    };
+  }
+  return { allowed: true };
+}
