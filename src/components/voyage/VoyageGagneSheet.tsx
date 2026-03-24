@@ -878,7 +878,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                       <div className="flex flex-wrap gap-1.5">
                         {flatRateItems.filter(i => i.isActive && i.price).map(item => (
                           <Badge key={item.id} variant="secondary" className="text-[10px] gap-1">
-                            {item.label} · {item.price}€
+                            {item.label} · {item.price} {currSymbol}
                           </Badge>
                         ))}
                       </div>
