@@ -7,7 +7,7 @@ import { fr } from "date-fns/locale";
 import QRCode from "react-qr-code";
 import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { MobileNav } from "@/components/layout/MobileNav";
+
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   pending: { label: "En attente", color: "bg-amber-500/20 text-amber-600" },
