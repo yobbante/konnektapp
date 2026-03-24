@@ -25,6 +25,7 @@ export function MobileNav() {
   
   const lastHomeClickRef = useRef<number>(0);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
   const [userRole, setUserRole] = useState<'client' | 'transporter' | null>(null);
   const [scanOpen, setScanOpen] = useState(false);
   const [missionOpen, setMissionOpen] = useState(false);
