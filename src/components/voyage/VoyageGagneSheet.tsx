@@ -33,6 +33,7 @@ interface VoyageGagneSheetProps {
 }
 
 type Step = "intro" | "details" | "pricing" | "summary";
+import { AirlineSelect } from "@/components/gp/AirlineSelect";
 
 const STEPS: Step[] = ["intro", "details", "pricing", "summary"];
 
