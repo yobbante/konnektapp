@@ -175,7 +175,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
         }
       }
 
-      let gpId = existingGP?.id;
+      // gpId already declared above
 
       // If no GP profile, create an occasional one
       if (!gpId) {
