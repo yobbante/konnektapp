@@ -386,7 +386,7 @@ export default function ReservationsPage() {
 
       {/* Tabs */}
       <div className="px-3 pt-3 pb-2 border-b border-border/50">
-        <div className="flex gap-0.5 bg-muted/50 rounded-xl p-1 overflow-x-auto no-scrollbar">
+        <div className="grid grid-cols-5 gap-0.5 bg-muted/50 rounded-xl p-0.5">
           {TABS.map((tab) => {
             const isActiveTab = activeTab === tab.id;
             const count = getTabCount(tab.id);
@@ -396,24 +396,23 @@ export default function ReservationsPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center justify-center gap-1 py-2 px-2.5 rounded-lg text-[11px] font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
+                className={`relative flex flex-col items-center justify-center gap-0.5 py-1.5 px-0.5 rounded-lg text-[9px] font-semibold transition-all leading-tight text-center ${
                 isActiveTab ?
                 "bg-card text-foreground shadow-sm" :
                 "text-muted-foreground"}`
                 }>
                 
-                <tab.icon className="w-3.5 h-3.5" />
-                {tab.label}
+                <tab.icon className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="truncate w-full">{tab.label}</span>
                 {count > 0 &&
-                <span className={`text-[9px] min-w-[18px] text-center px-1 py-0.5 rounded-full font-bold leading-none ${
+                <span className={`text-[8px] min-w-[14px] text-center px-0.5 py-0 rounded-full font-bold leading-none ${
                 isActiveTab ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`
                 }>
                     {count}
                   </span>
                 }
-                {/* Notification dot */}
                 {notifCount > 0 && !isActiveTab &&
-                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
+                <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-primary animate-pulse" />
                 }
               </button>);
 
