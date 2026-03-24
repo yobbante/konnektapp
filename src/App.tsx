@@ -65,6 +65,7 @@ import NotFound from "./pages/NotFound";
 import Recipients from "./pages/Recipients";
 import ClientScanPage from "./pages/ClientScanPage";
 import ReservationsPage from "./pages/ReservationsPage";
+import OrderDetailPage from "./pages/OrderDetailPage";
 // Routier pages
 import RoutierApercuPage from "./pages/routier/RoutierApercuPage";
 import RoutierDemandesPage from "./pages/routier/RoutierDemandesPage";
@@ -210,6 +211,7 @@ const App = () => (
             <Route path="/reservation/gp/:gpId" element={<SmartBookingPage />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/reservations" element={<ReservationsPage />} />
+            <Route path="/reservations/:orderId" element={<OrderDetailPage />} />
             <Route path="/client/dashboard" element={<Navigate to="/profil" replace />} />
             <Route path="/favorites" element={<Navigate to="/favoris" replace />} />
             <Route path="/favoris" element={<Favorites />} />

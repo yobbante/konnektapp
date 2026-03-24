@@ -4,19 +4,20 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Truck, ChevronRight, Bus, QrCode, Ticket,
   Clock, CheckCircle, XCircle, FileText, Inbox, MapPin, Calendar, Users,
-  Star, Scale, Heart, Bell, AlertCircle } from
+  Star, Scale, Heart, Bell, AlertCircle, ArrowRight, Plane, Ship, Luggage } from
 "lucide-react";
 import { SmartActionBar } from "@/components/home/SmartActionBar";
 import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { RecipientTrackingCard } from "@/components/client/RecipientTrackingCard";
-import { OrderDetailSheet, getTransportIcon } from "@/components/client/OrderDetailSheet";
+import { getTransportIcon } from "@/components/client/OrderDetailSheet";
 import { ClientMissionsView } from "@/components/routier/ClientMissionsView";
 import { RateOrderDialog } from "@/components/RateOrderDialog";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 const STATUS_CONFIG: Record<string, {label: string;color: string;icon: typeof Clock;}> = {
   pending: { label: "En attente", color: "bg-amber-500/15 text-amber-600", icon: Clock },
@@ -70,7 +71,7 @@ export default function ReservationsPage() {
   const [mobilityBookings, setMobilityBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [_selectedOrder, _setSelectedOrder] = useState<any>(null); // kept for compat
   const [recipientCount, setRecipientCount] = useState(0);
   const [recentlyChangedOrders, setRecentlyChangedOrders] = useState<Set<string>>(new Set());
   const [tabNotifications, setTabNotifications] = useState<Record<TabId, number>>({ actives: 0, tickets: 0, colis: 0, demandes: 0, historique: 0 });
@@ -203,8 +204,14 @@ export default function ReservationsPage() {
 
   const getTabNotifCount = (tabId: TabId) => tabNotifications[tabId] || 0;
 
+  const TYPE_GRADIENT: Record<string, string> = {
+    routier: "from-transport-routier to-transport-routier/60",
+    maritime: "from-transport-maritime to-transport-maritime/60",
+    aerien: "from-transport-aerien to-transport-aerien/60",
+    mobility: "from-transport-mobility to-transport-mobility/60",
+  };
+
   const getTypeCardStyle = (gpType?: string) => {
-    // Subtle: only icon gets colored, card border stays neutral
     const styles: Record<string, {iconColor: string;iconBg: string;}> = {
       routier: { iconColor: "text-transport-routier", iconBg: "bg-transport-routier/10" },
       maritime: { iconColor: "text-transport-maritime", iconBg: "bg-transport-maritime/10" },
@@ -221,74 +228,88 @@ export default function ReservationsPage() {
     const isDelivered = DELIVERED_STATUSES.includes(order.status);
     const isRecentChange = recentlyChangedOrders.has(order.id);
     const typeStyle = getTypeCardStyle(order.gp_profiles?.gp_type);
+    const gradient = TYPE_GRADIENT[order.gp_profiles?.gp_type || ""] || "from-transport-voyageur to-transport-voyageur/60";
 
     return (
       <motion.div
         key={order.id}
-        initial={{ opacity: 0, y: 8 }}
+        initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: i * 0.03 }}
-        onClick={() => setSelectedOrder(order)}
-        className={`bg-card border rounded-2xl p-3.5 active:scale-[0.98] transition-all cursor-pointer relative ${
-        isRecentChange ? "border-primary/40 shadow-md ring-1 ring-primary/20" : "border-border"}`
-        }>
-        
-        {isRecentChange &&
-        <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-primary animate-pulse" />
-        }
-        <div className="flex items-start gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-          isCancelled ? 'bg-destructive/10' :
-          isDelivered ? 'bg-green-500/10' : typeStyle.iconBg}`
-          }>
-            <Icon className={`w-5 h-5 ${
-            isCancelled ? 'text-destructive' :
-            isDelivered ? 'text-green-600' : typeStyle.iconColor}`
-            } />
+        transition={{ delay: i * 0.03, duration: 0.2 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => navigate(`/reservations/${order.id}`)}
+        className={cn(
+          "bg-card border border-border/60 rounded-2xl overflow-hidden cursor-pointer transition-all shadow-sm hover:border-primary/30",
+          isRecentChange && "border-primary/40 ring-1 ring-primary/20 shadow-md"
+        )}
+      >
+        {/* Gradient accent bar like HomeOfferCard */}
+        <div className={cn("h-1 w-full bg-gradient-to-r", gradient)} />
+
+        <div className="px-3 py-2.5">
+          {/* Route + Price */}
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0",
+                isCancelled ? "bg-destructive/10" : isDelivered ? "bg-green-500/10" : typeStyle.iconBg
+              )}>
+                <Icon className={cn("w-4 h-4",
+                  isCancelled ? "text-destructive" : isDelivered ? "text-green-600" : typeStyle.iconColor
+                )} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-bold text-foreground truncate">{order.origin_city}</span>
+                  <ArrowRight className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
+                  <span className="text-sm font-bold text-foreground truncate">{order.destination_city}</span>
+                </div>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-[11px] text-muted-foreground truncate">
+                    {order.gp_profiles?.business_name || "Transporteur"}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground font-mono">#{order.order_number?.slice(-6)}</span>
+                </div>
+              </div>
+            </div>
+            {/* Price badge */}
+            {order.total_price > 0 && (
+              <div className="flex-shrink-0 ml-2 flex items-center">
+                <div className="bg-primary/8 rounded-xl px-2.5 py-1.5 text-center min-w-[60px]">
+                  <span className="text-sm font-extrabold text-primary leading-none whitespace-nowrap">
+                    {order.total_price.toLocaleString()}
+                  </span>
+                  <span className="text-[8px] text-primary/70 block leading-tight font-semibold">
+                    {order.currency || "FCFA"}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-bold text-foreground truncate">
-                {order.origin_city} → {order.destination_city}
-              </p>
-              <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-            </div>
 
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${cfg.color}`}>
-                {cfg.label}
+          {/* Info chips */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold", cfg.color)}>
+              {cfg.label}
+            </span>
+            {isRecentChange && (
+              <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">MAJ</span>
+            )}
+            {order.weight > 0 && (
+              <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground font-medium bg-muted/50 px-2 py-0.5 rounded-full">
+                <Scale className="w-2.5 h-2.5" />
+                {order.weight} kg
               </span>
-              {isRecentChange &&
-              <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
-                  MAJ
-                </span>
-              }
-              <span className="text-[10px] text-muted-foreground font-mono">
-                #{order.order_number?.slice(-6)}
+            )}
+            {order.pickup_date && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                <Calendar className="w-2.5 h-2.5" />
+                {new Date(order.pickup_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
               </span>
-            </div>
-
-            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-              {order.weight > 0 &&
-              <span className="text-[11px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
-                  {order.weight} kg
-                </span>
-              }
-              {order.total_price > 0 &&
-              <span className="text-[11px] font-semibold text-foreground bg-muted/50 px-1.5 py-0.5 rounded">
-                  {order.total_price.toLocaleString()} {order.currency || "FCFA"}
-                </span>
-              }
-              {order.gp_profiles?.business_name &&
-              <span className="text-[10px] text-muted-foreground">
-                  {order.gp_profiles.business_name}
-                </span>
-              }
-            </div>
+            )}
           </div>
         </div>
-      </motion.div>);
-
+      </motion.div>
+    );
   };
 
   const renderMobilityCard = (booking: any, i: number) => {
@@ -649,10 +670,6 @@ export default function ReservationsPage() {
 
       <MobileNav />
 
-      <OrderDetailSheet
-        order={selectedOrder}
-        open={!!selectedOrder}
-        onClose={() => setSelectedOrder(null)} />
       
       {ratingOrder &&
       <RateOrderDialog
