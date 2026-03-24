@@ -12,7 +12,8 @@ export type PremiumFeature =
   | "extended_booking_window"
   | "departure_time"
   | "multi_navettes"
-  | "auto_navette_change";
+  | "auto_navette_change"
+  | "last_minute_departure";
 
 export const PREMIUM_FEATURES: Record<PremiumFeature, { label: string; desc: string }> = {
   extended_booking_window: { label: "Fenêtre de réservation étendue", desc: "Vos clients peuvent réserver jusqu'à 12h avant le départ (vs 24h standard)" },
