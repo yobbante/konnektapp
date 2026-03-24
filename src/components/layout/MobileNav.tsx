@@ -56,7 +56,32 @@ export function MobileNav() {
     checkTrips();
   }, [voyageOpen]);
 
+  // Fetch notification counts
   useEffect(() => {
+    const fetchCounts = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const userId = session.user.id;
+
+      const [{ count: unread }, { count: pendingOrd }] = await Promise.all([
+        supabase.from("messages")
+          .select("*", { count: "exact", head: true })
+          .eq("receiver_id", userId)
+          .is("read_at", null),
+        supabase.from("orders")
+          .select("*", { count: "exact", head: true })
+          .eq("client_id", userId)
+          .in("status", ["pending", "accepted", "weight_pending_payment"] as any),
+      ]);
+      setUnreadMessages(unread || 0);
+      setPendingActions(pendingOrd || 0);
+    };
+    fetchCounts();
+    const interval = setInterval(fetchCounts, 30000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
+
+
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
