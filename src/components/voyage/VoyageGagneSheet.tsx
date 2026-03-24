@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plane, MapPin, Calendar, Weight, DollarSign, Luggage, 
   ChevronRight, ChevronLeft, Sparkles, ArrowRight, Info, Check, Phone, MapPinned, Shield,
-  ArrowUpDown, Package, ToggleLeft, ToggleRight
+  ArrowUpDown, Package, AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { SearchableCitySelect } from "@/components/gp/SearchableCitySelect";
+import { canPublishDepartureDate } from "@/lib/premiumGating";
+import { getPhoneIndicatifForCity, getAddressPlaceholder, getPricePlaceholder, getCurrencySymbol } from "@/lib/cityUtils";
+import { CurrencySelector, type CurrencyCode } from "@/components/ui/currency-selector";
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle
 } from "@/components/ui/drawer";
