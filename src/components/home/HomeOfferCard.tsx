@@ -80,8 +80,8 @@ export function HomeOfferCard({ offer, index, modeLabel, subscriptionBadge }: Ho
               </div>
             </div>
             {/* Price - centered vertically */}
-            <div className="flex-shrink-0 ml-2 flex items-center">
-              <div className="bg-primary/8 rounded-xl px-2.5 py-1.5 text-center min-w-[60px]">
+            <div className="flex-shrink-0 ml-2 flex items-center self-center">
+              <div className="bg-primary/8 rounded-xl px-2.5 py-1.5 text-center min-w-[60px] flex flex-col items-center justify-center">
                 {isRoutier ? (
                   <>
                     <span className="text-[8px] text-primary/70 block leading-tight font-semibold">À partir de</span>
