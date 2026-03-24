@@ -201,6 +201,8 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
         setDestCountry("");
         setDepartureDate("");
         setArrivalDate("");
+        setAirline("");
+        setFlightNumber("");
       }, 300);
     }
   }, [open, skipIntro]);
