@@ -251,6 +251,22 @@ export default function OfferDetail() {
           }
         }
       }
+      // Check if current user owns this offer (GP viewing their own departure)
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser) {
+        const { data: myGp } = await supabase
+          .from("gp_profiles")
+          .select("id")
+          .eq("user_id", currentUser.id)
+          .maybeSingle();
+        if (myGp && offer) {
+          // Check against the last set offer's gp_id
+          const currentOfferId = offerData?.gp_id || airData?.gp_id;
+          if (myGp.id === currentOfferId) {
+            setIsOwnOffer(true);
+          }
+        }
+      }
     } catch (error) {
       console.error("Error loading offer:", error);
     } finally {
