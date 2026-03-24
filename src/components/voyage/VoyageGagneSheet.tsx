@@ -574,6 +574,12 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                       min={minDate}
                       className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
                     />
+                    {/* 24h warning */}
+                    {departureDate && !departureCheck.allowed && (
+                      <p className="text-[10px] text-destructive flex items-center gap-1 mt-1">
+                        <AlertTriangle className="w-3 h-3" /> {departureCheck.reason}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
