@@ -22,6 +22,7 @@ import {
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { WORLD_CITIES, FEATURED_CITIES } from "@/components/gp/SearchableCitySelect";
 import { useActiveCities } from "@/hooks/useActiveCities";
+import { isOfferVisibleForBooking } from "@/lib/bookingRules";
 import { GP_ONLY_MODE } from "@/config/featureFlags";
 
 type TransportMode = "all" | "aerien" | "maritime" | "routier" | "gp";

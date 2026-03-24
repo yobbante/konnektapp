@@ -164,10 +164,11 @@ export default function Offres() {
           available_capacity,
           total_capacity,
           status,
-          gp_id
+          gp_id,
+          gp_profiles!gp_offers_gp_id_fkey(subscription)
         `)
         .eq("status", "active")
-        .gte("departure_date", new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString())
+        .gte("departure_date", new Date().toISOString())
         .gt("available_capacity", 0)
         .order("departure_date", { ascending: true })
         .range(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE - 1);
