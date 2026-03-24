@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { GPScanSheet } from "@/components/scan/GPScanSheet";
 import { GPProTransitionSheet } from "./GPProTransitionSheet";
+import { GPMissionDetailsSheet } from "@/components/gp/GPMissionDetailsSheet";
 
 interface VoyageDashboardProps {
   open: boolean;
