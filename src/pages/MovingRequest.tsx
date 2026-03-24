@@ -107,7 +107,7 @@ const defaultItems: RoomItem[] = [{
   id: "boxes",
   name: "Cartons (estimés)",
   quantity: 0,
-  icon: "📦"
+  icon: ""
 }];
 const timeSlots = [{
   id: "morning",

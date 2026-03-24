@@ -230,7 +230,7 @@ export function AdminLogisticsOrdersV2({ compact = false }: AdminLogisticsOrders
         }
       }
 
-      toast({ title: "✅ Statut mis à jour" });
+      toast({ title: "Statut mis à jour" });
       fetchOrders();
       setSelectedOrder(null);
     } catch (err) {
@@ -246,19 +246,19 @@ export function AdminLogisticsOrdersV2({ compact = false }: AdminLogisticsOrders
   ) => {
     const statusMessages: Record<string, { title: string; message: string }> = {
       collected: {
-        title: "📦 Colis collecté",
+        title: "Colis collecté",
         message: `Votre colis ${order.order?.order_number} a été récupéré par notre agent`,
       },
       handed_to_gp: {
-        title: "✅ Colis remis au transporteur",
+        title: "Colis remis au transporteur",
         message: `Votre colis ${order.order?.order_number} a été remis au GP pour transport`,
       },
       picked_from_gp: {
-        title: "🚚 Colis en route",
+        title: "Colis en route",
         message: `Votre colis ${order.order?.order_number} est en route pour livraison`,
       },
       delivered: {
-        title: "🎉 Colis livré !",
+        title: "Colis livré !",
         message: `Votre colis ${order.order?.order_number} a été livré avec succès`,
       },
     };
@@ -324,10 +324,10 @@ export function AdminLogisticsOrdersV2({ compact = false }: AdminLogisticsOrders
           conversation_id: conv.id,
           sender_id: order.order?.gp_id || "",
           sender_type: "gp",
-          content: `📦 KONNEKT LOGISTIQUE:\n${message}`,
+          content: `KONNEKT LOGISTIQUE:\n${message}`,
         });
         
-        toast({ title: "✅ Message envoyé au client" });
+        toast({ title: "Message envoyé au client" });
         setAdminNote("");
       } else {
         toast({ title: "Conversation non trouvée", variant: "destructive" });
@@ -941,7 +941,7 @@ export function AdminLogisticsOrdersV2({ compact = false }: AdminLogisticsOrders
                                     {isAwaitingAdminDelivery && order.order?.gp_profiles && (
                                       <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
                                         <div className="flex items-center justify-between mb-2">
-                                          <p className="text-xs font-medium text-primary">📍 Récupérer chez GP</p>
+                                          <p className="text-xs font-medium text-primary">Récupérer chez GP</p>
                                           {order.order.gp_profiles.reception_address && (
                                             <Button
                                               size="sm"

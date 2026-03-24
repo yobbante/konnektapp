@@ -103,7 +103,7 @@ export function useGPGeolocation(gpId: string | null, userId: string | null) {
 
       if (error) throw error;
       setState(s => ({ ...s, consentGiven: true, trackingActive: true }));
-      toast({ title: "✅ Géolocalisation activée", description: "Les statuts seront mis à jour automatiquement" });
+      toast({ title: "Géolocalisation activée", description: "Les statuts seront mis à jour automatiquement" });
     } catch (err) {
       console.error("Consent error:", err);
       toast({ title: "Erreur", variant: "destructive" });
@@ -118,7 +118,7 @@ export function useGPGeolocation(gpId: string | null, userId: string | null) {
         .update({ tracking_active: active })
         .eq("gp_id", gpId);
       setState(s => ({ ...s, trackingActive: active }));
-      toast({ title: active ? "📍 Tracking activé" : "⏸️ Tracking en pause" });
+      toast({ title: active ? "Tracking activé" : "⏸️ Tracking en pause" });
     } catch (err) {
       console.error("Toggle error:", err);
     }
@@ -286,7 +286,7 @@ export function useGPGeolocation(gpId: string | null, userId: string | null) {
             status: "in_transit",
             changed_by: user.id,
             changed_by_type: "system",
-            notes: `🌍 Auto-GeoTrack: GP a quitté ${order?.origin_country} → Transit automatique (${detectedCountry})`,
+            notes: `Auto-GeoTrack: GP a quitté ${order?.origin_country} → Transit automatique (${detectedCountry})`,
           });
         }
 
@@ -295,7 +295,7 @@ export function useGPGeolocation(gpId: string | null, userId: string | null) {
           await supabase.from("notifications").insert({
             user_id: order.client_id,
             type: "order_status",
-            title: "🚚 Colis en transit !",
+            title: "Colis en transit !",
             message: `Votre colis ${order.order_number} est en route vers sa destination.`,
             related_type: "order",
             related_id: orderId,
@@ -325,7 +325,7 @@ export function useGPGeolocation(gpId: string | null, userId: string | null) {
             status: "arrived_destination",
             changed_by: user.id,
             changed_by_type: "system",
-            notes: `🌍 Auto-GeoTrack: GP arrivé au pays de destination (${detectedCountry}) — Mission dernier km créée`,
+            notes: `Auto-GeoTrack: GP arrivé au pays de destination (${detectedCountry}) — Mission dernier km créée`,
           });
         }
 
@@ -333,7 +333,7 @@ export function useGPGeolocation(gpId: string | null, userId: string | null) {
           await supabase.from("notifications").insert({
             user_id: order.client_id,
             type: "order_status",
-            title: "🎉 Colis arrivé à destination !",
+            title: "Colis arrivé à destination !",
             message: `Votre transporteur est arrivé au ${detectedCountry}. Livraison en préparation. Commande ${order.order_number}`,
             related_type: "order",
             related_id: orderId,

@@ -108,7 +108,7 @@ export function SmartDepartureDialog({
       };
 
   const currencySymbol = getCurrencySymbol(gpPricing.currency as any);
-  const getFlag = (code: string) => FLAGS[code] || "🌍";
+  const getFlag = (code: string) => FLAGS[code] || "";
 
   const handleSubmit = async () => {
     if (!selectedDate || !capacity || parseFloat(capacity) <= 0) return;

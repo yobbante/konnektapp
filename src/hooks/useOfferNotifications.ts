@@ -106,7 +106,7 @@ export function useOfferNotifications({
             lastNotifiedRef.current.add(newOffer.id);
             
             toast({
-              title: "🎉 Nouvelle offre disponible !",
+              title: "Nouvelle offre disponible !",
               description: `${newOffer.origin_city} → ${newOffer.destination_city} à ${newOffer.price_per_kg} FCFA/kg`,
               duration: 10000,
             });

@@ -278,7 +278,7 @@ export default function MaritimeRegistration() {
                 <CardContent className="p-4 space-y-3">
                   {(form.containerTypes.includes("lcl") || form.containerTypes.length === 0) && (
                     <div className="p-3 rounded-xl border-2 border-sky-500/30 bg-sky-500/5 space-y-2">
-                      <p className="text-xs font-bold">📦 Groupage (LCL)</p>
+                      <p className="text-xs font-bold">Groupage (LCL)</p>
                       <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-1"><Label className="text-[10px]">Prix / m³</Label>
                           <div className="relative"><Input type="number" value={form.priceLclPerM3} onChange={e => set("priceLclPerM3", e.target.value)} className="h-9" placeholder="150000" />
@@ -293,7 +293,7 @@ export default function MaritimeRegistration() {
                   )}
                   {(form.containerTypes.includes("20ft") || form.containerTypes.includes("40ft")) && (
                     <div className="p-3 rounded-xl border-2 border-emerald-500/30 bg-emerald-500/5 space-y-2">
-                      <p className="text-xs font-bold">🚢 FCL</p>
+                      <p className="text-xs font-bold">FCL</p>
                       <div className="grid grid-cols-2 gap-2">
                         {form.containerTypes.includes("20ft") && (
                           <div className="space-y-1"><Label className="text-[10px]">Forfait 20ft</Label>
@@ -310,7 +310,7 @@ export default function MaritimeRegistration() {
                   )}
                   {form.containerTypes.includes("roro") && (
                     <div className="p-3 rounded-xl border-2 border-amber-500/30 bg-amber-500/5 space-y-2">
-                      <p className="text-xs font-bold">🚗 RoRo</p>
+                      <p className="text-xs font-bold">RoRo</p>
                       <div className="space-y-1"><Label className="text-[10px]">Forfait / véhicule</Label>
                         <div className="relative"><Input type="number" value={form.forfaitRoRo} onChange={e => set("forfaitRoRo", e.target.value)} className="h-9" placeholder="800000" />
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{form.currency}</span></div>

@@ -163,7 +163,7 @@ export default function DeliveryConfirmation() {
                     <span className="font-medium">{order.destination_city}</span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    🎁 Un colis vous attend ! Confirmez la réception ci-dessous.
+                    Un colis vous attend ! Confirmez la réception ci-dessous.
                   </p>
                 </CardContent>
               </Card>

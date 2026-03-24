@@ -15,7 +15,7 @@ function mapVariant(variant?: string, title?: string): NotificationType {
   
   // Infer type from title content (common patterns in the app)
   const t = typeof title === "string" ? title.toLowerCase() : "";
-  if (t.includes("✅") || t.includes("succès") || t.includes("réussi") || t.includes("ajouté") || t.includes("mis à jour") || t.includes("supprimé") || t.includes("enregistr") || t.includes("envoyé") || t.includes("activé")) return "success";
+  if (t.includes("") || t.includes("succès") || t.includes("réussi") || t.includes("ajouté") || t.includes("mis à jour") || t.includes("supprimé") || t.includes("enregistr") || t.includes("envoyé") || t.includes("activé")) return "success";
   if (t.includes("erreur") || t.includes("échoué") || t.includes("impossible")) return "error";
   if (t.includes("attention") || t.includes("⚠")) return "warning";
   if (t.includes("message")) return "message";

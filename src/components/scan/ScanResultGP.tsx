@@ -134,7 +134,7 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
     if (result?.status === "executed") {
       setShowDeliveryCode(true);
       toast({
-        title: "📱 Code envoyé",
+        title: "Code envoyé",
         description: `Le code de livraison a été envoyé à ${order.recipient_name || order.client_name || "le client"}. Demandez-lui le code.`,
       });
     }
@@ -178,7 +178,7 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
           )}
           {order.description && (
             <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-lg">
-              📦 {order.description}
+              {order.description}
             </p>
           )}
         </CardContent>
@@ -268,7 +268,7 @@ export function ScanResultGP({ order, gpId, logScan, onComplete }: ScanResultGPP
                   </div>
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-2">
-                  ⚠️ Le client devra valider cette modification avant traitement
+                  Le client devra valider cette modification avant traitement
                 </p>
               </motion.div>
             )}

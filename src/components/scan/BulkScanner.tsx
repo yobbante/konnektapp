@@ -107,7 +107,7 @@ export function BulkScanner({ gpId, onComplete }: BulkScannerProps) {
 
       setItems(prev => [...prev, newItem]);
       if (navigator.vibrate) navigator.vibrate(50);
-      toast({ title: `✅ ${order.order_number} ajouté` });
+      toast({ title: `${order.order_number} ajouté` });
     } catch (err) {
       console.error("Scan error:", err);
       toast({ title: "Erreur de scan", variant: "destructive" });
@@ -160,7 +160,7 @@ export function BulkScanner({ gpId, onComplete }: BulkScannerProps) {
       }
 
       toast({
-        title: `✅ Batch terminé`,
+        title: `Batch terminé`,
         description: `${successCount} réussi(s)${failCount > 0 ? `, ${failCount} erreur(s)` : ""}`,
       });
 
@@ -353,7 +353,7 @@ export function BulkScanner({ gpId, onComplete }: BulkScannerProps) {
                 </div>
                 {errorItems.length > 0 && (
                   <p className="text-xs text-destructive">
-                    ⚠️ {errorItems.length} colis ignoré(s) (statut incompatible)
+                    {errorItems.length} colis ignoré(s) (statut incompatible)
                   </p>
                 )}
               </div>

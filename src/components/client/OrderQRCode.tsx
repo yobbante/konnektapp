@@ -300,8 +300,8 @@ export function OrderQRCode({
             {/* Role hints */}
             <div className="px-5 pb-4 space-y-1.5">
               {[
-                { icon: "🚚", text: "GP : Enregistrer dépôt, ajuster poids, confirmer livraison" },
-                { icon: "📦", text: "Client : Suivre le colis, confirmer réception" },
+                { icon: "", text: "GP : Enregistrer dépôt, ajuster poids, confirmer livraison" },
+                { icon: "", text: "Client : Suivre le colis, confirmer réception" },
                 { icon: "📸", text: "Externe : Redirige vers le suivi public" },
               ].map((h, i) => (
                 <div key={i} className="flex items-start gap-2">

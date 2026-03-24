@@ -95,13 +95,13 @@ export function AdminInsuranceTiers() {
           .update(tierData)
           .eq("id", editingTier.id);
         if (error) throw error;
-        toast({ title: "✅ Palier mis à jour" });
+        toast({ title: "Palier mis à jour" });
       } else {
         const { error } = await supabase
           .from("insurance_tiers")
           .insert(tierData);
         if (error) throw error;
-        toast({ title: "✅ Palier ajouté" });
+        toast({ title: "Palier ajouté" });
       }
 
       resetForm();
@@ -136,7 +136,7 @@ export function AdminInsuranceTiers() {
         .eq("id", deleteId);
 
       if (error) throw error;
-      toast({ title: "✅ Palier supprimé" });
+      toast({ title: "Palier supprimé" });
       setDeleteId(null);
       loadTiers();
     } catch (error) {

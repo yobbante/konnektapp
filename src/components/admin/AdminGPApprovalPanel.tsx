@@ -130,7 +130,7 @@ export function AdminGPApprovalPanel() {
 
       toast({ 
         title: decision === "verified" 
-          ? "✅ GP validé — Prix et navette verrouillés" 
+          ? "GP validé — Prix et navette verrouillés" 
           : "❌ GP refusé" 
       });
       

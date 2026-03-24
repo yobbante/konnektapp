@@ -198,7 +198,7 @@ export default function UnifiedProfile() {
                     kycLevel === 1 ? "bg-emerald-500/10 text-emerald-600" :
                     "bg-muted text-muted-foreground"
                   }`}>
-                    {kycLevel === 2 ? "🏆 Confirmé" : kycLevel === 1 ? "✅ Vérifié" : "🔘 Starter"}
+                    {kycLevel === 2 ? "Confirmé" : kycLevel === 1 ? "Vérifié" : "🔘 Starter"}
                   </span>
                 </div>
               </div>

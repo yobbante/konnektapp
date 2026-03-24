@@ -255,11 +255,11 @@ export default function FavoriteTransporters() {
                                 >
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                      <span>{countryFlags[trip.origin_country] || "🌍"}</span>
+                                      <span>{countryFlags[trip.origin_country] || ""}</span>
                                       <span className="font-medium text-sm">{trip.origin_city}</span>
                                       <ArrowRight className="w-3 h-3 text-muted-foreground" />
                                       <span className="font-medium text-sm">{trip.destination_city}</span>
-                                      <span>{countryFlags[trip.destination_country] || "🌍"}</span>
+                                      <span>{countryFlags[trip.destination_country] || ""}</span>
                                     </div>
                                     <Badge variant="secondary" className="text-xs">
                                       {trip.price_per_kg} {getCurrencySymbol(trip.currency)}/kg

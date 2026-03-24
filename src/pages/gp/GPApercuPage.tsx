@@ -302,7 +302,7 @@ export default function GPApercuPage() {
               transition={{ delay: 0.5 }}
               className="text-center space-y-2"
             >
-              <h2 className="text-xl font-bold">🎉 Compte activé !</h2>
+              <h2 className="text-xl font-bold">Compte activé !</h2>
               <p className="text-sm text-muted-foreground">Bienvenue sur Konnekt, votre compte est prêt.</p>
             </motion.div>
             <motion.div
@@ -402,7 +402,7 @@ export default function GPApercuPage() {
           const { error } = await supabase.from("gp_profiles").
           update({ status: "verified" as any, kyc_status: "verified", kyc_level: 1, verified_at: new Date().toISOString() }).
           eq("id", gpProfile.id);
-          if (!error) {toast({ title: "Compte activé ✅" });window.location.reload();}
+          if (!error) {toast({ title: "Compte activé" });window.location.reload();}
         }} />
         }
 
@@ -881,7 +881,7 @@ function PendingAccountBanner({ gpProfile, onDocumentClick, onSelfieClick, navig
           <Shield className={cn("w-5 h-5", allDone ? "text-accent" : "text-primary")} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-sm">{allDone ? "Activation en cours... ✨" : "Activez votre compte"}</p>
+          <p className="font-bold text-sm">{allDone ? "Activation en cours..." : "Activez votre compte"}</p>
           <p className="text-xs text-muted-foreground mt-0.5">
             {allDone ? "Votre compte sera activé automatiquement." : `${4 - completedChecks} étape(s) restante(s)`}
           </p>

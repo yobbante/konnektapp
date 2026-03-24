@@ -96,7 +96,7 @@ export function AdminConfigPanel() {
             .eq("id", rate.id);
         }
       }
-      toast({ title: "✅ Taux sauvegardés" });
+      toast({ title: "Taux sauvegardés" });
       fetchRates();
     } catch (err) {
       toast({ title: "Erreur", variant: "destructive" });
@@ -118,7 +118,7 @@ export function AdminConfigPanel() {
 
       if (error) throw error;
 
-      toast({ title: "✅ Devise ajoutée" });
+      toast({ title: "Devise ajoutée" });
       setShowAddCurrency(false);
       setNewCurrency({ code: "", rate: "" });
       fetchRates();
@@ -293,7 +293,7 @@ export function AdminConfigPanel() {
 
             {/* Info */}
             <div className="p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground">
-              <strong>💡 Règle Konnekt :</strong> Les taux sont volontairement majorés par rapport au marché 
+              <strong>Règle Konnekt :</strong> Les taux sont volontairement majorés par rapport au marché 
               pour couvrir la volatilité et éviter les pertes FX. Tous les calculs internes utilisent le FCFA.
             </div>
           </CardContent>

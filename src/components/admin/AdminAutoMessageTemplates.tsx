@@ -149,13 +149,13 @@ export function AdminAutoMessageTemplates() {
           .update(templateData)
           .eq("id", editingTemplate.id);
         if (error) throw error;
-        toast({ title: "✅ Template mis à jour" });
+        toast({ title: "Template mis à jour" });
       } else {
         const { error } = await supabase
           .from("message_templates")
           .insert(templateData);
         if (error) throw error;
-        toast({ title: "✅ Template ajouté" });
+        toast({ title: "Template ajouté" });
       }
 
       resetForm();
@@ -194,7 +194,7 @@ export function AdminAutoMessageTemplates() {
         .eq("id", deleteId);
 
       if (error) throw error;
-      toast({ title: "✅ Template supprimé" });
+      toast({ title: "Template supprimé" });
       setDeleteId(null);
       loadTemplates();
     } catch (error) {
@@ -348,7 +348,7 @@ export function AdminAutoMessageTemplates() {
                 <div key={category}>
                   <div className="flex items-center gap-2 mb-3">
                     <div className={cn("w-6 h-6 rounded-md flex items-center justify-center text-white text-xs", catConfig?.color || "bg-slate-500")}>
-                      {catConfig?.icon || "📝"}
+                      {catConfig?.icon || ""}
                     </div>
                     <h4 className="font-semibold text-sm">
                       {catConfig?.label || category}
@@ -540,7 +540,7 @@ export function AdminAutoMessageTemplates() {
               <div>
                 <Label>Icône (emoji)</Label>
                 <Input
-                  placeholder="📦"
+                  placeholder=""
                   value={formData.icon}
                   onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
                   className="text-center text-2xl"

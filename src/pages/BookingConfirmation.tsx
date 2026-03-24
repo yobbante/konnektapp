@@ -192,13 +192,13 @@ export default function BookingConfirmation() {
     {
       num: 2,
       label: "Paiement & dépôt",
-      sub: isPaid ? "✅ Adresse de dépôt disponible" : "Visible après paiement",
+      sub: isPaid ? "Adresse de dépôt disponible" : "Visible après paiement",
       done: isPaid,
     },
     {
       num: 3,
       label: "Livraison",
-      sub: isDelivered ? "✅ Livré avec succès" : "Visible après livraison",
+      sub: isDelivered ? "Livré avec succès" : "Visible après livraison",
       done: isDelivered,
     },
   ];
@@ -479,7 +479,7 @@ export default function BookingConfirmation() {
                 {canSeeDepositAddress && contactInfo.deposit_address && (
                   <div className="mt-3 pt-3 border-t flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-medium">📍 Adresse de dépôt disponible</p>
+                      <p className="text-xs font-medium">Adresse de dépôt disponible</p>
                       <p className="text-[10px] text-muted-foreground">Présentez votre QR lors du dépôt</p>
                     </div>
                     <DepositAddressPopup

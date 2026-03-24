@@ -106,7 +106,7 @@ export default function RoutierNegotiationsPage() {
         if (orderId) console.log("[Routier] Order created:", orderId);
       } catch (e) { console.warn("Conversion:", e); }
 
-      toast({ title: "✅ Accord conclu !" });
+      toast({ title: "Accord conclu !" });
       loadData(true);
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });

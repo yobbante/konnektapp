@@ -200,7 +200,7 @@ export default function ShipmentTypeSelector() {
           className="pb-4 text-center flex-shrink-0"
         >
           <p className="text-xs text-muted-foreground">
-            💡 Chaque mode a ses propres tarifs et délais
+            Chaque mode a ses propres tarifs et délais
           </p>
         </motion.div>
       </div>

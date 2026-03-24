@@ -27,7 +27,7 @@ export function SendTestNotification({ userId }: SendTestNotificationProps) {
         .from("notifications")
         .insert({
           user_id: userId,
-          title: "🔔 Notification test",
+          title: "Notification test",
           message: "Ceci est une notification test pour vérifier le fonctionnement en temps réel. Si vous voyez cette notification, tout fonctionne correctement !",
           type: "system",
         });

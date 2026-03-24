@@ -19,10 +19,10 @@ import { Badge } from "@/components/ui/badge";
 type MaritimeType = "lcl" | "fcl" | "vehicle" | "bulk";
 
 const maritimeTypes: { value: MaritimeType; label: string; icon: string; desc: string }[] = [
-  { value: "lcl", label: "Groupage LCL", icon: "📦", desc: "Consolidation au m³" },
-  { value: "fcl", label: "Conteneur FCL", icon: "🏗️", desc: "20ft / 40ft dédié" },
-  { value: "vehicle", label: "Véhicule", icon: "🚗", desc: "RoRo ou conteneur" },
-  { value: "bulk", label: "Vrac / Divers", icon: "📋", desc: "Marchandise diverse" },
+  { value: "lcl", label: "Groupage LCL", icon: "", desc: "Consolidation au m³" },
+  { value: "fcl", label: "Conteneur FCL", icon: "", desc: "20ft / 40ft dédié" },
+  { value: "vehicle", label: "Véhicule", icon: "", desc: "RoRo ou conteneur" },
+  { value: "bulk", label: "Vrac / Divers", icon: "", desc: "Marchandise diverse" },
 ];
 
 const containerTypes = ["20ft Standard", "40ft Standard", "40ft High Cube", "20ft Reefer", "40ft Reefer", "Flat Rack", "Open Top"];
@@ -130,7 +130,7 @@ export default function MaritimePublierPage() {
 
       if (error) throw error;
 
-      toast({ title: "🚢 Départ publié !", description: `${portDepart} → ${portArrivee}` });
+      toast({ title: "Départ publié !", description: `${portDepart} → ${portArrivee}` });
       navigate("/maritime/apercu");
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });

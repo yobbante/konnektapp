@@ -51,7 +51,7 @@ export function DeliveryCodePopup() {
       setMinimized(false);
 
       // Also trigger notification sound + toast
-      notify.delivery("🔑 Code de livraison reçu", `Code: ${data.code} — Communiquez-le au livreur`);
+      notify.delivery("Code de livraison reçu", `Code: ${data.code} — Communiquez-le au livreur`);
 
       // Vibrate on mobile
       if (navigator.vibrate) {

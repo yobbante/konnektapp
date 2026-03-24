@@ -345,12 +345,12 @@ export default function GPNavettesPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <Label className="text-[10px]">📍 Adresse départ</Label>
+                        <Label className="text-[10px]">Adresse départ</Label>
                         <Input className="h-8 text-xs" placeholder="Adresse de dépôt" value={editForm.address_origin}
                           onChange={e => setEditForm(f => ({ ...f, address_origin: e.target.value }))} />
                       </div>
                       <div>
-                        <Label className="text-[10px]">📍 Adresse arrivée</Label>
+                        <Label className="text-[10px]">Adresse arrivée</Label>
                         <Input className="h-8 text-xs" placeholder="Adresse de réception" value={editForm.address_destination}
                           onChange={e => setEditForm(f => ({ ...f, address_destination: e.target.value }))} />
                       </div>
@@ -516,12 +516,12 @@ export default function GPNavettesPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-[10px]">📍 Adresse départ</Label>
+                      <Label className="text-[10px]">Adresse départ</Label>
                       <Input className="h-8 text-xs" placeholder="Adresse de dépôt" value={form.address_origin}
                         onChange={e => setForm(f => ({ ...f, address_origin: e.target.value }))} />
                     </div>
                     <div>
-                      <Label className="text-[10px]">📍 Adresse arrivée</Label>
+                      <Label className="text-[10px]">Adresse arrivée</Label>
                       <Input className="h-8 text-xs" placeholder="Adresse de réception" value={form.address_destination}
                         onChange={e => setForm(f => ({ ...f, address_destination: e.target.value }))} />
                     </div>

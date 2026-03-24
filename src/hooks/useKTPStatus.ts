@@ -62,7 +62,7 @@ export const KTP_LEVELS: Record<KTPLevel, KTPLevelConfig> = {
     color: "text-muted-foreground",
     bgColor: "bg-muted/50",
     borderColor: "border-muted",
-    icon: "🔒",
+    icon: "",
     gradient: "from-slate-400 to-slate-500",
   },
   basic: {

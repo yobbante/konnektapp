@@ -41,7 +41,7 @@ interface Props {
 export function AdminOverviewModule({ stats, onNavigate }: Props) {
   const kpiRows = [
     {
-      title: "📦 Activité",
+      title: "Activité",
       items: [
         { label: "Aujourd'hui", value: stats.volumeToday, icon: Package, color: "text-blue-500", bg: "bg-blue-500/10", module: "colis" },
         { label: "Ce mois", value: stats.volumeMonth, icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10", module: "colis" },
@@ -51,7 +51,7 @@ export function AdminOverviewModule({ stats, onNavigate }: Props) {
       ],
     },
     {
-      title: "💰 Finance",
+      title: "Finance",
       items: [
         { label: "Escrow bloqué", value: `${(stats.totalEscrow / 1000).toFixed(0)}k`, suffix: "FCFA", icon: Wallet, color: "text-amber-500", bg: "bg-amber-500/10", module: "finance" },
         { label: "Commissions", value: `${(stats.totalCommissions / 1000).toFixed(0)}k`, suffix: "FCFA", icon: TrendingUp, color: "text-green-500", bg: "bg-green-500/10", module: "finance" },
@@ -69,7 +69,7 @@ export function AdminOverviewModule({ stats, onNavigate }: Props) {
       ],
     },
     {
-      title: "📋 Demandes & Support",
+      title: "Demandes & Support",
       items: [
         { label: "Demandes GP", value: stats.totalCustomRequests, icon: FileText, color: "text-purple-500", bg: "bg-purple-500/10", module: "demandes" },
         { label: "Fret", value: stats.totalFreightRequests, icon: Truck, color: "text-teal-500", bg: "bg-teal-500/10", module: "demandes" },
@@ -120,7 +120,7 @@ export function AdminOverviewModule({ stats, onNavigate }: Props) {
       {/* Quick Alerts */}
       {(stats.gpPending > 0 || stats.colisLitiges > 0 || stats.anomalies > 0 || stats.openSupportTickets > 0 || stats.activeSanctions > 0) && (
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-muted-foreground">⚠️ Alertes</h3>
+          <h3 className="text-sm font-semibold text-muted-foreground">Alertes</h3>
           {stats.gpPending > 0 && (
             <button 
               onClick={() => onNavigate("kyc")}
@@ -174,7 +174,7 @@ export function AdminOverviewModule({ stats, onNavigate }: Props) {
 
       {/* GP Summary */}
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-muted-foreground">🚀 GP Summary</h3>
+        <h3 className="text-sm font-semibold text-muted-foreground">GP Summary</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="p-3 rounded-xl border border-border bg-card">
             <p className="text-xs text-muted-foreground">GP Total</p>

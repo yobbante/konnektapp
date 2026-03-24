@@ -184,7 +184,7 @@ export default function GPBagagesInternationalDashboard() {
       if (error) throw error;
 
       toast({
-        title: "✅ Bagage accepté",
+        title: "Bagage accepté",
         description: "Le client sera notifié de votre acceptation",
       });
       loadData();

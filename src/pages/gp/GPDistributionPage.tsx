@@ -120,7 +120,7 @@ export default function GPDistributionPage() {
       // Check if logistics delivery is active (GP shouldn't deliver directly)
       if (item.has_logistics) {
         toast({
-          title: "⚠️ Livraison gérée par Konnekt",
+          title: "Livraison gérée par Konnekt",
           description: "Ce colis sera livré par un livreur Konnekt. Vous ne pouvez pas confirmer la remise.",
           variant: "destructive",
         });
@@ -296,7 +296,7 @@ export default function GPDistributionPage() {
                   <br />
                   Poids: {confirmItem.weight} kg · Prix: {confirmItem.total_price.toLocaleString()} {getCurrencySymbol(confirmItem.currency)}
                   <br /><br />
-                  ⚠️ Cette action est irréversible et sera enregistrée.
+                  Cette action est irréversible et sera enregistrée.
                 </>
               )}
             </AlertDialogDescription>

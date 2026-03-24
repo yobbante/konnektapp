@@ -314,11 +314,11 @@ export function GPOrderDetailsSheet({
                   </h3>
                   <div className="space-y-3">
                     <div>
-                      <p className="text-xs text-primary font-medium">📍 Chargement</p>
+                      <p className="text-xs text-primary font-medium">Chargement</p>
                       <p className="text-sm">{logistics.pickup_address}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-accent font-medium">🎯 Livraison</p>
+                      <p className="text-xs text-accent font-medium">Livraison</p>
                       <p className="text-sm">{logistics.delivery_address}</p>
                     </div>
                   </div>

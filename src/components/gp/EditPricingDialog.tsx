@@ -137,7 +137,7 @@ export function EditPricingDialog({ open, onClose, gpId, onSuccess }: EditPricin
       }
 
       toast({
-        title: "✅ Tarifs mis à jour",
+        title: "Tarifs mis à jour",
         description: "Vos tarifs ont été enregistrés",
       });
       onSuccess();

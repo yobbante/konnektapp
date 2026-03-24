@@ -95,7 +95,7 @@ export default function GPDemandesPage() {
         }
       }
 
-      toast({ title: "✅ Demande acceptée", description: "Le client sera notifié." });
+      toast({ title: "Demande acceptée", description: "Le client sera notifié." });
       setExpandedId(null);
       loadOrders();
     } catch {

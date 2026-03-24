@@ -257,7 +257,7 @@ export default function DemandeEnvoi() {
             className="mt-8 p-4 bg-muted/50 rounded-xl"
           >
             <p className="text-sm text-muted-foreground text-center">
-              💡 Astuce: Les offres existantes sont généralement moins chères et plus rapides à confirmer
+              Astuce: Les offres existantes sont généralement moins chères et plus rapides à confirmer
             </p>
           </motion.div>
         </div>

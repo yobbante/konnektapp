@@ -148,14 +148,14 @@ export function AdminMovingRequestsTab() {
         await supabase.from("notifications").insert({
           user_id: selectedRequest.client_id,
           type: "moving_status",
-          title: `🚚 Déménagement: ${statusLabel}`,
+          title: `Déménagement: ${statusLabel}`,
           message: `Votre demande ${selectedRequest.request_number} est passée au statut "${statusLabel}"`,
           related_type: "moving_request",
           related_id: requestId,
         });
       }
 
-      toast({ title: "✅ Statut mis à jour" });
+      toast({ title: "Statut mis à jour" });
       loadRequests();
       setSelectedRequest(null);
     } catch (error) {
@@ -192,13 +192,13 @@ export function AdminMovingRequestsTab() {
       await supabase.from("notifications").insert({
         user_id: selectedRequest.client_id,
         type: "moving_quote",
-        title: "💰 Devis de déménagement",
+        title: "Devis de déménagement",
         message: `Votre demande ${selectedRequest.request_number} a reçu un devis de ${priceNum.toLocaleString()} FCFA. ${adminNotes ? `Note: ${adminNotes}` : ""}`,
         related_type: "moving_request",
         related_id: selectedRequest.id,
       });
 
-      toast({ title: "✅ Devis envoyé au client" });
+      toast({ title: "Devis envoyé au client" });
       setQuotePrice("");
       setAdminNotes("");
       loadRequests();
@@ -458,7 +458,7 @@ export function AdminMovingRequestsTab() {
                     {request.budget_max && request.budget_max > 0 && (
                       <div className="mt-2 pt-2 border-t">
                         <p className="text-sm font-bold text-green-600">
-                          💰 Devis: {request.budget_max.toLocaleString()} FCFA
+                          Devis: {request.budget_max.toLocaleString()} FCFA
                         </p>
                       </div>
                     )}

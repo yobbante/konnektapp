@@ -637,7 +637,7 @@ export default function PostBookingForm() {
 
             <div className="p-4 bg-muted/50 rounded-xl">
               <p className="text-sm text-muted-foreground text-center">
-                ⚠️ Après validation, ces informations seront transmises au transporteur. 
+                Après validation, ces informations seront transmises au transporteur. 
                 Vous ne pourrez plus les modifier après son acceptation.
               </p>
             </div>

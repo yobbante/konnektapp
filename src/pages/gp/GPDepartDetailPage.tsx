@@ -64,7 +64,7 @@ const countryFlags: Record<string, string> = {
   Bénin: "🇧🇯", Burkina: "🇧🇫", Gabon: "🇬🇦", Congo: "🇨🇬",
 };
 
-const getFlag = (country: string) => countryFlags[country] || "🌍";
+const getFlag = (country: string) => countryFlags[country] || "";
 
 export default function GPDepartDetailPage() {
   const { id } = useParams();

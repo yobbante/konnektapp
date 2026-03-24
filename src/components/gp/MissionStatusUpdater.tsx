@@ -81,7 +81,7 @@ export function MissionStatusUpdater({
       }
 
       toast({
-        title: "✅ Statut mis à jour",
+        title: "Statut mis à jour",
         description: `Commande marquée comme "${ORDER_STATUS_LABELS[validatedStatus]}"`,
       });
 

@@ -194,7 +194,7 @@ export default function RoutierSearchPage() {
                       </span>
                       {route.next_departure && (
                         <span className="flex items-center gap-1">
-                          🗓️ Prochain : {new Date(route.next_departure).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+                          Prochain : {new Date(route.next_departure).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
                         </span>
                       )}
                     </div>

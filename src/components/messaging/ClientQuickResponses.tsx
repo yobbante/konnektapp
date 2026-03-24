@@ -169,7 +169,7 @@ export function ClientQuickResponses({
               
               {/* Info text */}
               <p className="text-[10px] text-muted-foreground text-center pt-2">
-                💡 Ces messages génèrent des réponses automatiques
+                Ces messages génèrent des réponses automatiques
               </p>
             </div>
           </motion.div>

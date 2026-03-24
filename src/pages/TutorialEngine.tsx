@@ -54,7 +54,7 @@ function TutorialEngineContent() {
           <h1 className="text-xl font-bold text-foreground mb-1">Konnekt Academy</h1>
           <p className="text-sm text-muted-foreground">Apprenez en pratiquant — mode démo interactif</p>
           <Badge variant="outline" className="mt-2 text-xs border-amber-500/30 text-amber-600">
-            🔒 Environnement Sandbox — aucun impact réel
+            Environnement Sandbox — aucun impact réel
           </Badge>
         </motion.div>
 

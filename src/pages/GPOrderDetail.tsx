@@ -485,7 +485,7 @@ export default function GPOrderDetail() {
                 {order.description && <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-lg">{order.description}</p>}
                 {logistics?.special_conditions && (
                   <div className="p-2 bg-destructive/5 border border-destructive/20 rounded-lg">
-                    <p className="text-[10px] font-medium text-destructive">⚠️ {logistics.special_conditions}</p>
+                    <p className="text-[10px] font-medium text-destructive">{logistics.special_conditions}</p>
                   </div>
                 )}
               </CardContent>

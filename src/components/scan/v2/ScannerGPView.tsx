@@ -207,7 +207,7 @@ function OrderHeader({ payload, darkMode }: { payload: ScannerGPPayload; darkMod
       {/* Description */}
       {dp.description && (
         <p className={cn("text-xs px-3 py-2 rounded-xl", darkMode ? "bg-white/[0.03] text-white/40" : "bg-muted/40 text-muted-foreground")}>
-          📦 {dp.description}
+          {dp.description}
         </p>
       )}
     </div>
@@ -278,7 +278,7 @@ function ActionDepositConfirm({ orderId, payload, executing, execute, darkMode }
             )}
           >
             <p className={cn("text-xs font-semibold mb-1", diff > 0 ? "text-red-400" : "text-emerald-400")}>
-              {diff > 0 ? "⚠️ Excédent de poids" : "✓ Poids inférieur"}
+              {diff > 0 ? "Excédent de poids" : "✓ Poids inférieur"}
             </p>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
@@ -350,7 +350,7 @@ function ActionWeightPending({ orderId, payload, executing, execute, darkMode }:
       {/* INSTRUCTIONS GP */}
       <div className={cn("rounded-xl p-3 space-y-2.5 border", darkMode ? "bg-white/[0.03] border-white/10" : "bg-muted/40 border-border/50")}>
         <p className={cn("text-xs font-semibold flex items-center gap-1.5", darkMode ? "text-white/80" : "text-foreground")}>
-          📋 Vos instructions
+          Vos instructions
         </p>
         <div className={cn("text-[11px] space-y-2", textSub)}>
           <div className="flex items-start gap-2">
@@ -414,7 +414,7 @@ function ActionDelivery({ orderId, payload, executing, execute, darkMode, delive
           >
             <div className={cn("rounded-xl p-3 text-xs space-y-1.5", darkMode ? "bg-white/[0.03]" : "bg-muted/40")}>
               <p className={cn("font-medium", darkMode ? "text-white/70" : "text-foreground")}>
-                📱 Processus de livraison sécurisé :
+                Processus de livraison sécurisé :
               </p>
               <ol className={cn("space-y-1 pl-3 list-decimal", textSub)}>
                 <li>Un code 6 chiffres est envoyé au client/destinataire</li>

@@ -317,7 +317,7 @@ export function LogisticsLabelGenerator({ order, onDownloaded, required = false 
       
       setDownloaded(true);
       onDownloaded?.();
-      toast({ title: "✅ Feuille logistique téléchargée" });
+      toast({ title: "Feuille logistique téléchargée" });
     } catch (err) {
       console.error("PDF generation error:", err);
       toast({ title: "Erreur de génération", description: "Réessayez.", variant: "destructive" });
@@ -388,13 +388,13 @@ export function LogisticsLabelGenerator({ order, onDownloaded, required = false 
             <QrCode className="w-3 h-3" /> QR Code
           </Badge>
           <Badge variant="outline" className="text-[10px] gap-1">
-            📊 Code-barres
+            Code-barres
           </Badge>
           <Badge variant="outline" className="text-[10px] gap-1">
             <Package className="w-3 h-3" /> {order.weight} kg
           </Badge>
           <Badge variant="outline" className="text-[10px] gap-1">
-            📍 {order.originCity} → {order.destinationCity}
+            {order.originCity} → {order.destinationCity}
           </Badge>
         </div>
 

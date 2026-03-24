@@ -115,7 +115,7 @@ export function TerrainScanTab({ orders, onRefresh }: Props) {
         });
       }
 
-      toast({ title: "✅ Statut mis à jour", description: `→ ${newStatus}` });
+      toast({ title: "Statut mis à jour", description: `→ ${newStatus}` });
       onRefresh();
       setScanResult(null);
       setShowScanner(true);
@@ -210,7 +210,7 @@ export function TerrainScanTab({ orders, onRefresh }: Props) {
                     <div className="text-sm text-muted-foreground space-y-1">
                       <p>Ville: {scanResult.data.city}</p>
                       <p>Statut: {scanResult.data.status}</p>
-                      <p>Note: {scanResult.data.rating || "N/A"} ⭐</p>
+                      <p>Note: {scanResult.data.rating || "N/A"}</p>
                       <p>Colis associés: {scanResult.data.orders?.length || 0}</p>
                     </div>
                   </CardContent>

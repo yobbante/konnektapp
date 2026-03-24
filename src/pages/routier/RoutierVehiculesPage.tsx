@@ -148,7 +148,7 @@ export default function RoutierVehiculesPage() {
 
       if (error) throw error;
 
-      toast({ title: "✅ Véhicule ajouté" });
+      toast({ title: "Véhicule ajouté" });
       setShowAddDialog(false);
       setFormData({ name: "", vehicle_type: "camion", max_weight_kg: "", max_volume_m3: "" });
       loadData();

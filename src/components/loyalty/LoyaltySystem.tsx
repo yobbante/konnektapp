@@ -261,7 +261,7 @@ export function useLoyaltyNotifications() {
         const notification = data[0];
         if (notification.notification_type === "approaching") {
           toast({
-            title: "🎉 Vous approchez du niveau " + notification.tier_name + " !",
+            title: "Vous approchez du niveau " + notification.tier_name + " !",
             description: `Plus que ${100 - notification.progress_percent}% pour atteindre le prochain palier. Continuez ainsi !`,
             duration: 8000,
           });

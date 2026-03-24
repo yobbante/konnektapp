@@ -716,7 +716,7 @@ export default function SmartBookingPage() {
         gpName: gpProfile.business_name
       });
       toast({
-        title: "🎉 Réservation confirmée !",
+        title: "Réservation confirmée !",
         description: "Redirection vers la confirmation..."
       });
 
@@ -746,7 +746,7 @@ export default function SmartBookingPage() {
       gpName: gpProfile.business_name
     });
     toast({
-      title: "🎉 Réservation confirmée !",
+      title: "Réservation confirmée !",
       description: "Paiement sécurisé. Redirection..."
     });
 
@@ -973,13 +973,13 @@ export default function SmartBookingPage() {
                   label: "🍲 Alimentaire"
                 }, {
                   id: "vetements",
-                  label: "👕 Vêtements"
+                  label: "Vêtements"
                 }, {
                   id: "tissus",
-                  label: "🧵 Tissus"
+                  label: "Tissus"
                 }, {
                   id: "autres",
-                  label: "📦 Autres"
+                  label: "Autres"
                 }].map(nature => <button key={nature.id} type="button" onClick={() => toggleKiloNature(nature.id)} className={`
                               flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all text-sm font-medium
                               ${kiloNatures.includes(nature.id) ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 text-muted-foreground hover:border-primary/50"}

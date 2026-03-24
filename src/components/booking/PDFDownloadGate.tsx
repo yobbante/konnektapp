@@ -284,7 +284,7 @@ export function PDFDownloadGate({ order, onUnlocked }: PDFDownloadGateProps) {
       doc.save(`feuille-logistique-${order.orderNumber}.pdf`);
       localStorage.setItem(storageKey, "1");
       setDownloaded(true);
-      toast({ title: "✅ Feuille logistique téléchargée" });
+      toast({ title: "Feuille logistique téléchargée" });
     } catch (err) {
       console.error("PDF generation error:", err);
       toast({ title: "Erreur de génération", description: "Réessayez.", variant: "destructive" });
@@ -347,7 +347,7 @@ export function PDFDownloadGate({ order, onUnlocked }: PDFDownloadGateProps) {
             <Package className="w-3 h-3" /> {order.weight} kg
           </Badge>
           <Badge variant="outline" className="text-xs gap-1">
-            📍 {order.originCity} → {order.destinationCity}
+            {order.originCity} → {order.destinationCity}
           </Badge>
           <Badge variant="outline" className="text-xs gap-1">
             <QrCode className="w-3 h-3" /> QR + Code-barres
