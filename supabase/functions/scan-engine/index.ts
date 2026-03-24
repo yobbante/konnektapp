@@ -180,6 +180,19 @@ function detectQRType(scannedData: string): ParsedQR {
     if (gpMatch) return { type: "QR_GP", reference_id: gpMatch[1], raw: trimmed };
     const trackMatch = cleanUrl.match(/\/track\/([a-f0-9-]{36})/i);
     if (trackMatch) return { type: "QR_COLIS", reference_id: trackMatch[1], raw: trimmed };
+
+    // Support /tracking?id={uuid} format used by OrderDetailSheet QR codes
+    const trackingQueryMatch = trimmed.match(/\/tracking\?id=([a-f0-9-]{36})/i);
+    if (trackingQueryMatch) return { type: "QR_COLIS", reference_id: trackingQueryMatch[1], raw: trimmed };
+
+    // Support /order/{uuid}/qrcode format
+    const orderPageMatch = trimmed.match(/\/order\/([a-f0-9-]{36})\/qrcode/i);
+    if (orderPageMatch) return { type: "QR_COLIS", reference_id: orderPageMatch[1], raw: trimmed };
+
+    // Support /public-tracking?order={uuid} format
+    const publicTrackMatch = trimmed.match(/\/public-tracking\?order=([a-f0-9-]{36})/i);
+    if (publicTrackMatch) return { type: "QR_COLIS", reference_id: publicTrackMatch[1], raw: trimmed };
+
     return { type: "QR_EXTERNAL", raw: trimmed, metadata: { is_url: true } };
   }
   // 9. Default
