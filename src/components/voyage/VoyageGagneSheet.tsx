@@ -863,7 +863,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                     </div>
                     <div className="p-2.5 rounded-lg bg-muted/30">
                       <p className="text-[10px] text-muted-foreground mb-0.5">Prix/kg</p>
-                      <p className="text-sm font-semibold">{pricePerKg}€</p>
+                      <p className="text-sm font-semibold">{pricePerKg} {currSymbol}</p>
                     </div>
                     <div className="p-2.5 rounded-lg bg-muted/30">
                       <p className="text-[10px] text-muted-foreground mb-0.5">Forfait valise</p>
