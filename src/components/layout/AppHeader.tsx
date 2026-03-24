@@ -176,8 +176,12 @@ export function AppHeader({
         </div>
       </motion.header>
 
-      {/* Scan Sheet */}
-      <ClientScanSheet open={scanOpen} onOpenChange={setScanOpen} />
+      {/* Scan Sheet — GP scan if user has GP profile, else client scan */}
+      {gpInfo ? (
+        <GPScanSheet open={scanOpen} onOpenChange={setScanOpen} gpId={gpInfo.id} isVerified={gpInfo.isVerified} />
+      ) : (
+        <ClientScanSheet open={scanOpen} onOpenChange={setScanOpen} />
+      )}
     </>
   );
 }
