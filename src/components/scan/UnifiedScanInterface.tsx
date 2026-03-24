@@ -345,7 +345,7 @@ export function UnifiedScanInterface({
               {/* ScanHeart — full width, optimized camera height */}
               <ScanHeart
                 role={role}
-                accent={accent}
+                accent={accent as any}
                 darkMode
                 cameraHeight={isSheet ? "42vh" : "50vh"}
                 gpId={gpContext?.gpId}
