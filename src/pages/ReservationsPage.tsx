@@ -4,19 +4,20 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Truck, ChevronRight, Bus, QrCode, Ticket,
   Clock, CheckCircle, XCircle, FileText, Inbox, MapPin, Calendar, Users,
-  Star, Scale, Heart, Bell, AlertCircle } from
+  Star, Scale, Heart, Bell, AlertCircle, ArrowRight, Plane, Ship, Luggage } from
 "lucide-react";
 import { SmartActionBar } from "@/components/home/SmartActionBar";
 import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { RecipientTrackingCard } from "@/components/client/RecipientTrackingCard";
-import { OrderDetailSheet, getTransportIcon } from "@/components/client/OrderDetailSheet";
+import { getTransportIcon } from "@/components/client/OrderDetailSheet";
 import { ClientMissionsView } from "@/components/routier/ClientMissionsView";
 import { RateOrderDialog } from "@/components/RateOrderDialog";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 const STATUS_CONFIG: Record<string, {label: string;color: string;icon: typeof Clock;}> = {
   pending: { label: "En attente", color: "bg-amber-500/15 text-amber-600", icon: Clock },
