@@ -194,8 +194,18 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
   const estimatedEarnings = capacity * pricePerKg;
   const minDate = new Date().toISOString().split("T")[0];
 
+  // Dynamic phone indicatifs based on selected cities
+  const depositPhoneIndicatif = getPhoneIndicatifForCity(originCity);
+  const receptionPhoneIndicatif = getPhoneIndicatifForCity(destCity);
+  const depositAddrPlaceholder = getAddressPlaceholder(originCity) || "Ex: 12 rue de la Paix";
+  const receptionAddrPlaceholder = getAddressPlaceholder(destCity) || "Ex: Quartier Médina";
+  const currSymbol = getCurrencySymbol(currency);
+
   const canSubmitDetails = originCity && destCity && departureDate && capacity > 0 && depositPhone && receptionPhone && depositAddress && receptionAddress;
   const canSubmitPricing = pricePerKg > 0 && suitcasePrice && parseFloat(suitcasePrice) > 0;
+
+  // 24h departure validation
+  const departureCheck = departureDate ? canPublishDepartureDate(departureDate) : { allowed: true };
 
   const handleCitySelect = (city: string, country: string, field: "origin" | "dest") => {
     if (field === "origin") {
