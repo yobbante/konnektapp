@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { 
   ArrowRight, MapPin, Calendar, Package, Star, Truck, Weight, 
   Clock, Zap, Ship, Plane, Briefcase, Building2, ChevronRight,
-  Heart, Scale, Sparkles
+  Heart, Scale, Sparkles, Luggage
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

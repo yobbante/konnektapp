@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import {
   Ship, Plane, Truck, Search, Filter, ArrowRight, Flame, Award, Clock,
-  TrendingDown, ChevronDown, BarChart3, Zap, Package, ArrowUpDown, MapPin, Star
+  TrendingDown, ChevronDown, BarChart3, Zap, Package, ArrowUpDown, MapPin, Star, Luggage
 } from "lucide-react";
 import { format, isAfter, addDays, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
