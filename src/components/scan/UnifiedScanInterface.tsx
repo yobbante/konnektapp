@@ -299,7 +299,7 @@ export function UnifiedScanInterface({
 
         {/* Tabs — tight, pill style */}
         <div className="px-4 pb-2.5">
-          <div className={cn("flex rounded-xl overflow-hidden border bg-white/[0.03]", tabBorder)}>
+          <div className={cn("flex rounded-xl overflow-hidden border bg-white/[0.03]", colors.tabBorder)}>
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
