@@ -65,6 +65,7 @@ import NotFound from "./pages/NotFound";
 import Recipients from "./pages/Recipients";
 import ClientScanPage from "./pages/ClientScanPage";
 import ReservationsPage from "./pages/ReservationsPage";
+import OrderDetailPage from "./pages/OrderDetailPage";
 // Routier pages
 import RoutierApercuPage from "./pages/routier/RoutierApercuPage";
 import RoutierDemandesPage from "./pages/routier/RoutierDemandesPage";
