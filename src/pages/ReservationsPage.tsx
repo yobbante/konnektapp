@@ -204,8 +204,14 @@ export default function ReservationsPage() {
 
   const getTabNotifCount = (tabId: TabId) => tabNotifications[tabId] || 0;
 
+  const TYPE_GRADIENT: Record<string, string> = {
+    routier: "from-transport-routier to-transport-routier/60",
+    maritime: "from-transport-maritime to-transport-maritime/60",
+    aerien: "from-transport-aerien to-transport-aerien/60",
+    mobility: "from-transport-mobility to-transport-mobility/60",
+  };
+
   const getTypeCardStyle = (gpType?: string) => {
-    // Subtle: only icon gets colored, card border stays neutral
     const styles: Record<string, {iconColor: string;iconBg: string;}> = {
       routier: { iconColor: "text-transport-routier", iconBg: "bg-transport-routier/10" },
       maritime: { iconColor: "text-transport-maritime", iconBg: "bg-transport-maritime/10" },
