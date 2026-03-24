@@ -95,8 +95,8 @@ export function SwipeableNotificationItem({
         onDragEnd={handleDragEnd}
         style={{ x }}
         className={`
-          bg-card p-3 relative z-10 cursor-grab active:cursor-grabbing
-          ${notification.read_at ? "opacity-60" : "bg-primary/5"}
+          bg-card p-3 relative z-10 ${isPersistent ? '' : 'cursor-grab active:cursor-grabbing'}
+          ${isPersistent ? "bg-emerald-500/10 border-l-2 border-emerald-500" : notification.read_at ? "opacity-60" : "bg-primary/5"}
         `}
         onClick={toggleExpand}
       >
