@@ -10,6 +10,7 @@ import { CentralMenuSheet } from "@/components/layout/CentralMenuSheet";
 import { HeaderRoleSwitch } from "@/components/layout/HeaderRoleSwitch";
 import { HeaderQRBadge } from "@/components/ui/HeaderQRBadge";
 import { ClientScanSheet } from "@/components/scan/ClientScanSheet";
+import { GPScanSheet } from "@/components/scan/GPScanSheet";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -38,18 +39,19 @@ export function AppHeader({
   const [userName, setUserName] = useState<string>("Mon profil");
   const [countryFlag, setCountryFlag] = useState<string>("");
   const [scanOpen, setScanOpen] = useState(false);
+  const [gpInfo, setGpInfo] = useState<{ id: string; isVerified: boolean } | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUserId(session.user.id);
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name, country_code")
-          .eq("user_id", session.user.id)
-          .maybeSingle();
+        const [{ data: profile }, { data: gp }] = await Promise.all([
+          supabase.from("profiles").select("full_name, country_code").eq("user_id", session.user.id).maybeSingle(),
+          supabase.from("gp_profiles").select("id, status").eq("user_id", session.user.id).maybeSingle(),
+        ]);
         if (profile?.full_name) setUserName(profile.full_name);
+        if (gp) setGpInfo({ id: gp.id, isVerified: gp.status === "verified" });
         const entryCountry = sessionStorage.getItem("entry_country");
         if (entryCountry) {
           try { setCountryFlag(JSON.parse(entryCountry).flag || ""); } catch {}
@@ -174,8 +176,12 @@ export function AppHeader({
         </div>
       </motion.header>
 
-      {/* Scan Sheet */}
-      <ClientScanSheet open={scanOpen} onOpenChange={setScanOpen} />
+      {/* Scan Sheet — GP scan if user has GP profile, else client scan */}
+      {gpInfo ? (
+        <GPScanSheet open={scanOpen} onOpenChange={setScanOpen} gpId={gpInfo.id} isVerified={gpInfo.isVerified} />
+      ) : (
+        <ClientScanSheet open={scanOpen} onOpenChange={setScanOpen} />
+      )}
     </>
   );
 }

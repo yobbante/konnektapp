@@ -25,6 +25,7 @@ export function MobileNav() {
   
   const lastHomeClickRef = useRef<number>(0);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
   const [userRole, setUserRole] = useState<'client' | 'transporter' | null>(null);
   const [scanOpen, setScanOpen] = useState(false);
   const [missionOpen, setMissionOpen] = useState(false);
@@ -83,6 +84,7 @@ export function MobileNav() {
 
   useEffect(() => {
     const checkAuth = async () => {
+      setAuthLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
       
@@ -98,20 +100,35 @@ export function MobileNav() {
       } else {
         setUserRole(null);
       }
+      setAuthLoading(false);
     };
     checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      setIsAuthenticated(!!session);
-      if (!session) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN') {
+        // Wait a tick for session to stabilize before showing nav
+        setAuthLoading(true);
+        setIsAuthenticated(true);
+        if (session?.user?.id) {
+          const { data } = await supabase
+            .from("gp_profiles")
+            .select("id, gp_type")
+            .eq("user_id", session.user.id)
+            .maybeSingle();
+          setUserRole(data && data.gp_type !== 'occasionnel' ? 'transporter' : 'client');
+        }
+        // Small delay to let redirect complete before showing nav
+        setTimeout(() => setAuthLoading(false), 800);
+      } else if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
         setUserRole(null);
-      } else if (session?.user?.id) {
-        supabase
-          .from("gp_profiles")
-          .select("id, gp_type")
-          .eq("user_id", session.user.id)
-          .maybeSingle()
-          .then(({ data }) => setUserRole(data && data.gp_type !== 'occasionnel' ? 'transporter' : 'client'));
+        setAuthLoading(false);
+      } else {
+        setIsAuthenticated(!!session);
+        if (!session) {
+          setUserRole(null);
+        }
+        setAuthLoading(false);
       }
     });
     return () => subscription.unsubscribe();
@@ -194,7 +211,7 @@ export function MobileNav() {
     }
   }, [location.pathname, isAuthenticated, navigate, hasPublishedTrips]);
 
-  if (!isAuthenticated || isKeyboardOpen) return null;
+  if (!isAuthenticated || isKeyboardOpen || authLoading) return null;
 
   return (
     <>
