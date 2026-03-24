@@ -22,6 +22,7 @@ import {
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { WORLD_CITIES, FEATURED_CITIES } from "@/components/gp/SearchableCitySelect";
 import { useActiveCities } from "@/hooks/useActiveCities";
+import { isOfferVisibleForBooking } from "@/lib/bookingRules";
 import { GP_ONLY_MODE } from "@/config/featureFlags";
 
 type TransportMode = "all" | "aerien" | "maritime" | "routier" | "gp";
@@ -147,6 +148,8 @@ export default function FreightMarketplace() {
 
     // GP offers → map transport_type
     gpOffers.forEach((o: any) => {
+      if (!isOfferVisibleForBooking(o)) return;
+
       const mode = o.transport_type === "routier" ? "routier" :
         o.transport_type === "maritime" ? "maritime" :
         o.transport_type === "aerien" ? "aerien" : "gp";

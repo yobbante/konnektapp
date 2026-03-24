@@ -53,6 +53,25 @@ export function isOfferBookable(departureDateStr: string, subscription?: string)
 }
 
 /**
+ * Shared guard for offer lists: only show active departures still bookable now.
+ */
+export function isOfferVisibleForBooking<T extends {
+  departure_date?: string | null;
+  departureDate?: string | null;
+  status?: string | null;
+  gp_profiles?: { subscription?: string | null } | null;
+  providerSubscription?: string | null;
+}>(offer: T): boolean {
+  const departureDate = offer.departure_date ?? offer.departureDate;
+  const subscription = offer.gp_profiles?.subscription ?? offer.providerSubscription ?? undefined;
+
+  if (!departureDate) return false;
+  if (offer.status && offer.status !== "active") return false;
+
+  return isOfferBookable(departureDate, subscription ?? undefined);
+}
+
+/**
  * Get human-readable cutoff message based on subscription
  */
 export function getBookingCutoffMessage(subscription?: string): string {
