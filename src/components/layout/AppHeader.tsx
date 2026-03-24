@@ -10,6 +10,7 @@ import { CentralMenuSheet } from "@/components/layout/CentralMenuSheet";
 import { HeaderRoleSwitch } from "@/components/layout/HeaderRoleSwitch";
 import { HeaderQRBadge } from "@/components/ui/HeaderQRBadge";
 import { ClientScanSheet } from "@/components/scan/ClientScanSheet";
+import { GPScanSheet } from "@/components/scan/GPScanSheet";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
