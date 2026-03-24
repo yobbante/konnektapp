@@ -671,7 +671,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                       type="tel"
                       value={receptionPhone}
                       onChange={(e) => setReceptionPhone(e.target.value)}
-                      placeholder="+221 77 123 45 67"
+                      placeholder={receptionPhoneIndicatif ? `${receptionPhoneIndicatif} 77 123 45 67` : "+221 77 123 45 67"}
                       className="w-full h-9 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>
@@ -681,7 +681,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                       type="text"
                       value={receptionAddress}
                       onChange={(e) => setReceptionAddress(e.target.value)}
-                      placeholder="Ex: Quartier Médina, Dakar"
+                      placeholder={receptionAddrPlaceholder}
                       className="w-full h-9 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>
