@@ -52,18 +52,18 @@ export function SwipeableNotificationItem({
   const y = useMotionValue(0);
 
   const Icon = typeIcons[notification.type] || Bell;
+  const isPersistent = notification.type === "delivery_code" || notification.persistent;
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (isPersistent) return; // Persistent notifications cannot be swiped away
     // Swipe up to dismiss
     if (info.offset.y < -60 && onDismiss) {
       onDismiss(notification.id);
       return;
     }
     if (info.offset.x > 80) {
-      // Swipe right - mark as read
       onMarkAsRead(notification.id);
     } else if (info.offset.x < -80 && onDismiss) {
-      // Swipe left - dismiss (optional)
       onDismiss(notification.id);
     }
   };
