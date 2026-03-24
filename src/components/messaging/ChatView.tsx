@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Check, CheckCheck } from "lucide-react";
-import { useKeyboardViewport } from "@/hooks/useKeyboardViewport";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,13 +44,13 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   const [sending, setSending] = useState(false);
   const [templatesExpanded, setTemplatesExpanded] = useState(false);
   const [isGpVerified, setIsGpVerified] = useState(false);
-  useKeyboardViewport(); // Activate viewport tracking for keyboard
   const [gpId, setGpId] = useState<string | null>(null);
   const [gpPhone, setGpPhone] = useState<string | null>(null);
   const [gpSelfieUrl, setGpSelfieUrl] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { notify } = useNotificationSound();
   
   const { isOtherTyping, handleTypingStart, stopTyping } = useTypingIndicator(
@@ -75,7 +74,6 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
     fetchMessages();
     markMessagesAsRead();
     
-    // Subscribe to realtime messages (INSERT + UPDATE for read receipts)
     const channel = supabase
       .channel(`messages-${conversationId}`)
       .on(
@@ -89,7 +87,6 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
         (payload) => {
           setMessages((prev) => [...prev, payload.new as Message]);
           scrollToBottom();
-          // Mark new messages as read if from other user and play sound
           if ((payload.new as Message).sender_id !== currentUserId) {
             markMessageAsRead((payload.new as Message).id);
             notify({ sound: true, vibrate: [100] });
@@ -105,7 +102,6 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
-          // Update read_at for read receipts
           setMessages((prev) =>
             prev.map((msg) =>
               msg.id === (payload.new as Message).id
@@ -124,7 +120,6 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
 
   const loadConversationData = async () => {
     try {
-      // Get conversation to find GP and order
       const { data: conv } = await supabase
         .from("conversations")
         .select("gp_id, order_id")
@@ -133,8 +128,6 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
 
       if (conv?.gp_id) {
         setGpId(conv.gp_id);
-        
-        // Check if GP is verified
         const { data: gpProfile } = await supabase
           .from("gp_profiles")
           .select("verified_at, phone, selfie_url")
@@ -200,7 +193,9 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
   };
 
   const handleSelectTemplate = (content: string) => {
@@ -213,7 +208,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
     if (!newMessage.trim() || sending) return;
 
     setSending(true);
-    stopTyping(); // Stop typing indicator when sending
+    stopTyping();
     try {
       const { error } = await supabase.from("messages").insert({
         conversation_id: conversationId,
@@ -224,7 +219,6 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
 
       if (error) throw error;
 
-      // Update conversation's last_message_at
       await supabase
         .from("conversations")
         .update({ last_message_at: new Date().toISOString() })
@@ -238,14 +232,12 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
     }
   };
 
-  // Close templates when clicking outside
   const handleContainerClick = (e: React.MouseEvent) => {
     if (templatesExpanded && e.target === messagesContainerRef.current) {
       setTemplatesExpanded(false);
     }
   };
 
-  // Determine callee ID for audio call
   const getCalleeId = async () => {
     const { data: conv } = await supabase
       .from("conversations")
@@ -260,7 +252,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   };
 
   return (
-    <div className="flex flex-col" style={{ height: 'var(--visual-vh, 100dvh)', overflow: 'hidden' }}>
+    <div className="flex flex-col h-[100dvh] overflow-hidden">
       {/* Audio Call UI Overlay */}
       <AudioCallUI
         callStatus={callStatus}
@@ -272,10 +264,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
         onEnd={endCall}
       />
 
-      {/* Spacer for fixed header — accounts for header height + safe area + optional order banner */}
-      <div className="flex-shrink-0" style={{ minHeight: '60px', paddingTop: 'env(safe-area-inset-top, 0px)' }} />
-      
-      {/* Enhanced Header with verified badge and order info - FIXED */}
+      {/* Fixed Header */}
       <ChatHeader
         conversationId={conversationId}
         contactName={contactName || "Contact"}
@@ -287,7 +276,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
         onAudioCall={getCalleeId}
       />
 
-      {/* Messages - Fixed container with scrollable content */}
+      {/* Messages - scrollable area between fixed header and fixed input */}
       <div 
         ref={messagesContainerRef}
         className="flex-1 overflow-y-auto px-3 py-2 space-y-2" 
@@ -340,7 +329,6 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
                       orderId={orderId || undefined}
                       isOwn={isOwn}
                     />
-                    {/* WhatsApp-style read receipts */}
                     {isOwn && (
                       <div className="flex items-center justify-end gap-1 mt-0.5">
                         <span className="text-[9px] text-primary-foreground/50">
@@ -360,7 +348,6 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
           })
         )}
         
-        {/* Typing Indicator */}
         <AnimatePresence>
           {isOtherTyping && (
             <TypingIndicator contactName={contactName} />
@@ -389,14 +376,15 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
         />
       )}
 
-      {/* Input - Mobile optimized with larger touch target */}
+      {/* Input - stays above keyboard */}
       <form 
         onSubmit={sendMessage} 
         className="p-3 border-t border-border bg-background flex-shrink-0"
-        style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}
+        style={{ paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))' }}
       >
         <div className="flex gap-2 items-end">
           <Input
+            ref={inputRef}
             placeholder="Votre message..."
             value={newMessage}
             onChange={(e) => {

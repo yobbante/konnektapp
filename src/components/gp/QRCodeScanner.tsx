@@ -108,7 +108,7 @@ export function QRCodeScanner({ gpId, scanType, onComplete }: QRCodeScannerProps
       }
 
       // Validate status for scan type
-      if (scanType === "deposit" && !["accepted", "pending"].includes(order.status)) {
+      if (scanType === "deposit" && !["accepted", "pending", "paid_held"].includes(order.status)) {
         toast({ 
           title: "Statut invalide", 
           description: `Cette commande est déjà "${order.status}"`,
