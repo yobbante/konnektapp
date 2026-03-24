@@ -62,6 +62,8 @@ interface ScanStats {
 
 export interface UnifiedScanInterfaceProps {
   role: ScanRole;
+  /** GP tier for color theming */
+  tier?: ScanTier;
   /** GP context — required when role="gp" */
   gpContext?: GPContext;
   /** Client context — required when role="client" */
