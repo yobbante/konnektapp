@@ -670,10 +670,6 @@ export default function ReservationsPage() {
 
       <MobileNav />
 
-      <OrderDetailSheet
-        order={selectedOrder}
-        open={!!selectedOrder}
-        onClose={() => setSelectedOrder(null)} />
       
       {ratingOrder &&
       <RateOrderDialog
