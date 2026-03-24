@@ -85,6 +85,7 @@ export function GPScanSheet({ open, onOpenChange, gpId, isVerified }: GPScanShee
         {gpContext ? (
           <UnifiedScanInterface
             role="gp"
+            tier={gpContext.gpType === "occasionnel" ? "occasionnel" : gpContext.gpType === "bagages_international" ? "standard" : "standard"}
             gpContext={gpContext}
             isSheet
             onRefresh={loadGpContext}

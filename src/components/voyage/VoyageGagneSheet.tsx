@@ -33,6 +33,7 @@ interface VoyageGagneSheetProps {
 }
 
 type Step = "intro" | "details" | "pricing" | "summary";
+import { AirlineSelect } from "@/components/gp/AirlineSelect";
 
 const STEPS: Step[] = ["intro", "details", "pricing", "summary"];
 
@@ -99,6 +100,8 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
   const [destCountry, setDestCountry] = useState(saved?.destCountry || "");
   const [departureDate, setDepartureDate] = useState("");
   const [arrivalDate, setArrivalDate] = useState("");
+  const [airline, setAirline] = useState("");
+  const [flightNumber, setFlightNumber] = useState("");
   const [baggageCount, setBaggageCount] = useState(saved?.baggageCount || 1);
   const [capacity, setCapacity] = useState(SUGGESTED_CAPACITY);
   const [pricePerKg, setPricePerKg] = useState(saved?.pricePerKg || SUGGESTED_PRICE);
@@ -198,6 +201,8 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
         setDestCountry("");
         setDepartureDate("");
         setArrivalDate("");
+        setAirline("");
+        setFlightNumber("");
       }, 300);
     }
   }, [open, skipIntro]);
@@ -399,6 +404,8 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
           destination_country: destCountry || "Sénégal",
           departure_date: departureDate,
           arrival_date: arrivalDate || null,
+          airline: airline || null,
+          flight_number: flightNumber || null,
           total_capacity: capacity,
           available_capacity: capacity,
           price_per_kg: pricePerKg,
@@ -652,7 +659,33 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                   </div>
                 </div>
 
-                {/* Baggage count */}
+                {/* Compagnie & Vol */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
+                      <Plane className="w-3 h-3" /> Compagnie
+                    </label>
+                    <AirlineSelect
+                      value={airline}
+                      onChange={setAirline}
+                      placeholder="Compagnie..."
+                      className="h-10 rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
+                      N° de vol
+                    </label>
+                    <input
+                      type="text"
+                      value={flightNumber}
+                      onChange={(e) => setFlightNumber(e.target.value)}
+                      placeholder="Ex: AF718"
+                      className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1">
                     <Luggage className="w-3 h-3" /> Nombre de bagages

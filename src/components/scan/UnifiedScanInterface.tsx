@@ -23,7 +23,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { ScanHeart } from "./ScanHeart";
+import { ScanHeart, type ScanAccent } from "./ScanHeart";
 import { ScanQRTab } from "./ScanQRTab";
 import { ScanColisTab } from "./ScanColisTab";
 import { GPDistributionList } from "./GPDistributionList";
@@ -180,6 +180,11 @@ export function UnifiedScanInterface({
 
   const colors = getTierColors();
   const accent = colors.accent;
+
+  // Map visual accent to ScanHeart's limited accent type
+  const scanHeartAccent: ScanAccent = isGP
+    ? (tier === "premium" || tier === "occasionnel" ? "amber" : "primary")
+    : "emerald";
 
   // Determine initial tab
   const initialTab: TabKey = defaultTab || "scanner";
@@ -345,7 +350,7 @@ export function UnifiedScanInterface({
               {/* ScanHeart — full width, optimized camera height */}
               <ScanHeart
                 role={role}
-                accent={accent as any}
+                accent={scanHeartAccent}
                 darkMode
                 cameraHeight={isSheet ? "42vh" : "50vh"}
                 gpId={gpContext?.gpId}
