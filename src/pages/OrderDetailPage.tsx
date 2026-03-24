@@ -91,7 +91,6 @@ export default function OrderDetailPage() {
         <div className="flex-1 flex items-center justify-center">
           <p className="text-muted-foreground">Cette commande n'existe pas.</p>
         </div>
-        <MobileNav />
       </div>
     );
   }
