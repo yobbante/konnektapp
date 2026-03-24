@@ -1,5 +1,13 @@
-import { useState, useEffect } from "react";
-import { Plane, RefreshCw, Trash2, Save } from "lucide-react";
+/**
+ * EditVoyageDialog — Full voyage edit form matching SmartVoyageForm
+ * Supports airline, flight number, luggage counter, dates, capacity
+ */
+import { useState, useEffect, useMemo } from "react";
+import { motion } from "framer-motion";
+import {
+  Plane, RefreshCw, Trash2, Save, Calendar, Clock,
+  Luggage, Plus, Minus, MapPin, Info
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -7,9 +15,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { CurrencySelector, getCurrencySymbol } from "@/components/ui/currency-selector";
+import {
+  Drawer, DrawerContent
+} from "@/components/ui/drawer";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
+import { CurrencySelector, getCurrencySymbol, type CurrencyCode } from "@/components/ui/currency-selector";
+import { AirlineSelect } from "@/components/gp/AirlineSelect";
+import { SearchableCitySelect } from "@/components/gp/SearchableCitySelect";
+import { LUGGAGE_PRESETS } from "@/lib/bookingRules";
 
 interface VoyageOffer {
   id: string;
@@ -30,17 +47,6 @@ interface VoyageOffer {
   airline: string | null;
 }
 
-const BAGGAGE_TYPES = [
-  { value: "valise", label: "Valise" },
-  { value: "carton", label: "Carton" },
-  { value: "sac", label: "Sac" },
-  { value: "colis", label: "Colis" },
-  { value: "electronique", label: "Électronique" },
-  { value: "vetements", label: "Vêtements" },
-  { value: "documents", label: "Documents" },
-  { value: "alimentaire_sec", label: "Alimentaire sec" },
-];
-
 interface EditVoyageDialogProps {
   open: boolean;
   onClose: () => void;
@@ -51,98 +57,78 @@ interface EditVoyageDialogProps {
 export function EditVoyageDialog({ open, onClose, voyage, onSuccess }: EditVoyageDialogProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    originCity: "",
-    originCountry: "SN",
-    destinationCity: "",
-    destinationCountry: "FR",
-    departureDate: "",
-    arrivalDate: "",
-    totalCapacity: "",
-    availableCapacity: "",
-    pricePerKg: "",
-    currency: "EUR",
-    flightNumber: "",
-    airline: "",
-    baggageTypesAccepted: [] as string[],
-    restrictions: "",
-    status: "active",
-  });
+
+  const [originCity, setOriginCity] = useState("");
+  const [originCountry, setOriginCountry] = useState("");
+  const [destCity, setDestCity] = useState("");
+  const [destCountry, setDestCountry] = useState("");
+  const [departureDate, setDepartureDate] = useState("");
+  const [arrivalDate, setArrivalDate] = useState("");
+  const [airline, setAirline] = useState("");
+  const [flightNumber, setFlightNumber] = useState("");
+  const [pricePerKg, setPricePerKg] = useState("");
+  const [currency, setCurrency] = useState<CurrencyCode>("EUR");
+  const [totalCapacity, setTotalCapacity] = useState("");
+  const [availableCapacity, setAvailableCapacity] = useState("");
+  const [restrictions, setRestrictions] = useState("");
+  const [status, setStatus] = useState("active");
 
   useEffect(() => {
-    if (voyage) {
-      setFormData({
-        originCity: voyage.origin_city || "",
-        originCountry: voyage.origin_country || "SN",
-        destinationCity: voyage.destination_city || "",
-        destinationCountry: voyage.destination_country || "FR",
-        departureDate: voyage.departure_date ? voyage.departure_date.split('T')[0] : "",
-        arrivalDate: voyage.arrival_date ? voyage.arrival_date.split('T')[0] : "",
-        totalCapacity: voyage.total_capacity?.toString() || "",
-        availableCapacity: voyage.available_capacity?.toString() || "",
-        pricePerKg: voyage.price_per_kg?.toString() || "",
-        currency: voyage.currency || "EUR",
-        flightNumber: voyage.flight_number || "",
-        airline: voyage.airline || "",
-        baggageTypesAccepted: voyage.baggage_types_accepted || [],
-        restrictions: voyage.baggage_restrictions || "",
-        status: voyage.status || "active",
-      });
+    if (voyage && open) {
+      setOriginCity(voyage.origin_city || "");
+      setOriginCountry(voyage.origin_country || "");
+      setDestCity(voyage.destination_city || "");
+      setDestCountry(voyage.destination_country || "");
+      setDepartureDate(voyage.departure_date ? voyage.departure_date.split('T')[0] : "");
+      setArrivalDate(voyage.arrival_date ? voyage.arrival_date.split('T')[0] : "");
+      setAirline(voyage.airline || "");
+      setFlightNumber(voyage.flight_number || "");
+      setPricePerKg(voyage.price_per_kg?.toString() || "");
+      setCurrency((voyage.currency || "EUR") as CurrencyCode);
+      setTotalCapacity(voyage.total_capacity?.toString() || "");
+      setAvailableCapacity(voyage.available_capacity?.toString() || "");
+      setRestrictions(voyage.baggage_restrictions || "");
+      setStatus(voyage.status || "active");
     }
-  }, [voyage]);
+  }, [voyage, open]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const currSymbol = getCurrencySymbol(currency);
+  const minDate = new Date().toISOString().split("T")[0];
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!voyage) return;
-    if (!formData.originCity || !formData.destinationCity || !formData.departureDate || !formData.totalCapacity || !formData.pricePerKg) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez remplir tous les champs obligatoires",
-        variant: "destructive",
-      });
+    if (!originCity || !destCity || !departureDate || !pricePerKg || !totalCapacity) {
+      toast({ title: "Erreur", description: "Remplissez tous les champs obligatoires", variant: "destructive" });
       return;
     }
-
     setLoading(true);
-
     try {
       const { error } = await supabase
         .from("gp_offers")
         .update({
-          origin_city: formData.originCity,
-          origin_country: formData.originCountry,
-          destination_city: formData.destinationCity,
-          destination_country: formData.destinationCountry,
-          departure_date: formData.departureDate,
-          arrival_date: formData.arrivalDate || null,
-          total_capacity: parseFloat(formData.totalCapacity),
-          available_capacity: parseFloat(formData.availableCapacity) || parseFloat(formData.totalCapacity),
-          price_per_kg: parseFloat(formData.pricePerKg),
-          currency: formData.currency,
-          flight_number: formData.flightNumber || null,
-          airline: formData.airline || null,
-          baggage_types_accepted: formData.baggageTypesAccepted.length > 0 ? formData.baggageTypesAccepted : null,
-          baggage_restrictions: formData.restrictions || null,
-          status: formData.status as "active" | "paused" | "completed" | "expired",
+          origin_city: originCity,
+          origin_country: originCountry,
+          destination_city: destCity,
+          destination_country: destCountry,
+          departure_date: departureDate,
+          arrival_date: arrivalDate || null,
+          total_capacity: parseFloat(totalCapacity),
+          available_capacity: parseFloat(availableCapacity) || parseFloat(totalCapacity),
+          price_per_kg: parseFloat(pricePerKg),
+          currency: currency,
+          flight_number: flightNumber || null,
+          airline: airline || null,
+          baggage_restrictions: restrictions || null,
+          status: status as any,
         })
         .eq("id", voyage.id);
-
       if (error) throw error;
-
-      toast({
-        title: "Voyage modifie",
-        description: "Les modifications ont été enregistrées",
-      });
+      toast({ title: "Voyage modifié", description: "Les modifications ont été enregistrées" });
       onSuccess();
       onClose();
     } catch (error: any) {
-      console.error("Error updating voyage:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de modifier le voyage",
-        variant: "destructive",
-      });
+      toast({ title: "Erreur", description: error.message || "Impossible de modifier", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -150,214 +136,194 @@ export function EditVoyageDialog({ open, onClose, voyage, onSuccess }: EditVoyag
 
   const handleDelete = async () => {
     if (!voyage) return;
-
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from("gp_offers")
-        .delete()
-        .eq("id", voyage.id);
-
+      const { error } = await supabase.from("gp_offers").delete().eq("id", voyage.id);
       if (error) throw error;
-
-      toast({
-        title: "Voyage supprimé",
-        description: "Le voyage a été supprimé",
-      });
+      toast({ title: "Voyage supprimé" });
       onSuccess();
       onClose();
     } catch (error: any) {
-      console.error("Error deleting voyage:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer le voyage",
-        variant: "destructive",
-      });
+      toast({ title: "Erreur", description: "Impossible de supprimer", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleBaggageType = (type: string) => {
-    setFormData(prev => ({
-      ...prev,
-      baggageTypesAccepted: prev.baggageTypesAccepted.includes(type)
-        ? prev.baggageTypesAccepted.filter(t => t !== type)
-        : [...prev.baggageTypesAccepted, type]
-    }));
-  };
-
   if (!voyage) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Plane className="w-5 h-5" />
-            Modifier le voyage
-          </DialogTitle>
-        </DialogHeader>
+    <Drawer open={open} onOpenChange={(o) => !o && onClose()}>
+      <DrawerContent className="max-h-[92vh] flex flex-col focus:outline-none [&>div:first-child]:hidden">
+        <div className="bg-primary text-primary-foreground px-4 py-3 rounded-t-2xl flex items-center gap-2">
+          <div className="mx-auto w-10 h-1 rounded-full bg-primary-foreground/30 mb-2" />
+        </div>
+        <div className="bg-primary text-primary-foreground px-4 pb-3 -mt-1 flex items-center gap-2">
+          <Plane className="w-4 h-4" />
+          <h2 className="text-base font-bold">Modifier le voyage</h2>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="px-4 py-4 space-y-4 overflow-y-auto flex-1 pb-safe" style={{ maxHeight: 'calc(92vh - 56px)' }}>
           {/* Route */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2.5">
             <div>
-              <Label>Ville départ *</Label>
-              <Input 
-                value={formData.originCity}
-                onChange={(e) => setFormData({...formData, originCity: e.target.value})}
+              <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-primary" /> Ville de départ
+              </Label>
+              <SearchableCitySelect
+                value={originCity}
+                countryCode={originCountry}
+                onSelect={(city, country) => { setOriginCity(city); setOriginCountry(country); }}
                 placeholder="Ex: Dakar"
+                className="h-10"
               />
             </div>
             <div>
-              <Label>Ville arrivée *</Label>
-              <Input 
-                value={formData.destinationCity}
-                onChange={(e) => setFormData({...formData, destinationCity: e.target.value})}
+              <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-amber-500" /> Ville d'arrivée
+              </Label>
+              <SearchableCitySelect
+                value={destCity}
+                countryCode={destCountry}
+                onSelect={(city, country) => { setDestCity(city); setDestCountry(country); }}
                 placeholder="Ex: Paris"
+                className="h-10"
               />
             </div>
           </div>
 
           {/* Dates */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Date départ *</Label>
-              <Input 
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5" /> Date départ
+              </Label>
+              <Input
                 type="date"
-                value={formData.departureDate}
-                onChange={(e) => setFormData({...formData, departureDate: e.target.value})}
+                value={departureDate}
+                min={minDate}
+                onChange={(e) => setDepartureDate(e.target.value)}
+                className="h-10 rounded-lg"
               />
             </div>
-            <div>
-              <Label>Date arrivée</Label>
-              <Input 
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5" /> Date arrivée
+              </Label>
+              <Input
                 type="date"
-                value={formData.arrivalDate}
-                onChange={(e) => setFormData({...formData, arrivalDate: e.target.value})}
+                value={arrivalDate}
+                min={departureDate || minDate}
+                onChange={(e) => setArrivalDate(e.target.value)}
+                className="h-10 rounded-lg"
               />
             </div>
           </div>
 
-          {/* Flight Info */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Compagnie</Label>
-              <Input 
-                value={formData.airline}
-                onChange={(e) => setFormData({...formData, airline: e.target.value})}
-                placeholder="Ex: Air France"
+          {/* Airline & Flight */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className="text-[10px] text-muted-foreground">Compagnie</Label>
+              <AirlineSelect
+                value={airline}
+                onChange={setAirline}
+                placeholder="Compagnie..."
               />
             </div>
-            <div>
-              <Label>N° de vol</Label>
-              <Input 
-                value={formData.flightNumber}
-                onChange={(e) => setFormData({...formData, flightNumber: e.target.value})}
-                placeholder="Ex: AF718"
+            <div className="space-y-1">
+              <Label className="text-[10px] text-muted-foreground">N° Vol</Label>
+              <Input
+                placeholder="AF123"
+                value={flightNumber}
+                onChange={(e) => setFlightNumber(e.target.value)}
+                className="h-10 rounded-lg"
               />
             </div>
           </div>
 
           {/* Capacity & Price */}
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Capacité (kg) *</Label>
-                <Input 
-                  type="number"
-                  value={formData.totalCapacity}
-                  onChange={(e) => setFormData({...formData, totalCapacity: e.target.value})}
-                  placeholder="30"
-                />
-              </div>
-              <div>
-                <Label>Disponible (kg)</Label>
-                <Input 
-                  type="number"
-                  value={formData.availableCapacity}
-                  onChange={(e) => setFormData({...formData, availableCapacity: e.target.value})}
-                  placeholder="30"
-                />
-              </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Capacité totale (kg)</Label>
+              <Input
+                type="number"
+                value={totalCapacity}
+                onChange={(e) => setTotalCapacity(e.target.value)}
+                placeholder="30"
+                className="h-10 rounded-lg"
+              />
             </div>
-            
-            {/* Price with Currency */}
-            <div>
-              <Label>Prix par kg *</Label>
-              <div className="grid grid-cols-3 gap-2 mt-1">
-                <CurrencySelector
-                  value={formData.currency}
-                  onValueChange={(value) => setFormData({...formData, currency: value})}
-                />
-                <Input 
-                  type="number"
-                  step="0.5"
-                  value={formData.pricePerKg}
-                  onChange={(e) => setFormData({...formData, pricePerKg: e.target.value})}
-                  placeholder="8"
-                />
-                <div className="flex items-center text-sm text-muted-foreground">
-                  {getCurrencySymbol(formData.currency)}/kg
-                </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Disponible (kg)</Label>
+              <Input
+                type="number"
+                value={availableCapacity}
+                onChange={(e) => setAvailableCapacity(e.target.value)}
+                placeholder="30"
+                className="h-10 rounded-lg"
+              />
+            </div>
+          </div>
+
+          {/* Price with Currency */}
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Prix par kg</Label>
+            <div className="grid grid-cols-3 gap-2">
+              <CurrencySelector
+                value={currency}
+                onValueChange={(v) => setCurrency(v as CurrencyCode)}
+              />
+              <Input
+                type="number"
+                step="0.5"
+                value={pricePerKg}
+                onChange={(e) => setPricePerKg(e.target.value)}
+                placeholder="8"
+                className="h-10 rounded-lg"
+              />
+              <div className="flex items-center text-sm text-muted-foreground">
+                {currSymbol}/kg
               </div>
             </div>
           </div>
 
           {/* Status */}
-          <div className="flex items-center gap-4">
-            <Label>Statut:</Label>
+          <div className="flex items-center gap-3">
+            <Label className="text-xs text-muted-foreground">Statut</Label>
             <div className="flex gap-2">
-              <Badge 
-                variant={formData.status === "active" ? "default" : "outline"}
+              <Badge
+                variant={status === "active" ? "default" : "outline"}
                 className="cursor-pointer"
-                onClick={() => setFormData({...formData, status: "active"})}
+                onClick={() => setStatus("active")}
               >
                 Actif
               </Badge>
-              <Badge 
-                variant={formData.status === "paused" ? "secondary" : "outline"}
+              <Badge
+                variant={status === "paused" ? "secondary" : "outline"}
                 className="cursor-pointer"
-                onClick={() => setFormData({...formData, status: "paused"})}
+                onClick={() => setStatus("paused")}
               >
                 Pause
               </Badge>
             </div>
           </div>
 
-          {/* Baggage Types */}
-          <div>
-            <Label className="mb-2 block">Types de bagages acceptés</Label>
-            <div className="flex flex-wrap gap-2">
-              {BAGGAGE_TYPES.map((type) => (
-                <Badge 
-                  key={type.value}
-                  variant={formData.baggageTypesAccepted.includes(type.value) ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => toggleBaggageType(type.value)}
-                >
-                  {type.label}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
           {/* Restrictions */}
-          <div>
-            <Label>Restrictions / Conditions</Label>
-            <Textarea 
-              value={formData.restrictions}
-              onChange={(e) => setFormData({...formData, restrictions: e.target.value})}
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Restrictions</Label>
+            <Textarea
+              value={restrictions}
+              onChange={(e) => setRestrictions(e.target.value)}
               placeholder="Ex: Pas de liquides, pas de produits alimentaires périssables..."
               rows={2}
             />
           </div>
 
-          <div className="flex gap-3 pt-2">
+          {/* Actions */}
+          <div className="flex gap-2 pt-1 pb-3">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button type="button" variant="destructive" size="icon">
+                <Button type="button" variant="destructive" size="icon" className="h-11 w-11 rounded-lg">
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </AlertDialogTrigger>
@@ -365,7 +331,7 @@ export function EditVoyageDialog({ open, onClose, voyage, onSuccess }: EditVoyag
                 <AlertDialogHeader>
                   <AlertDialogTitle>Supprimer ce voyage ?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Cette action est irréversible. Toutes les réservations associées seront également affectées.
+                    Cette action est irréversible.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -376,17 +342,22 @@ export function EditVoyageDialog({ open, onClose, voyage, onSuccess }: EditVoyag
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+            <Button variant="outline" onClick={onClose} disabled={loading} className="flex-1 h-11 rounded-lg">
               Annuler
             </Button>
-            <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-              Enregistrer
+            <Button onClick={() => handleSubmit()} disabled={loading} className="flex-1 h-11 rounded-lg gap-1.5">
+              {loading ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  Enregistrer
+                </>
+              )}
             </Button>
           </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }

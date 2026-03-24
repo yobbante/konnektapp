@@ -34,7 +34,7 @@ export function AirlineSelect({ value, onChange, placeholder = "Compagnie aérie
   const selectedAirline = ALL_AIRLINES_SORTED.find(a => a.name === value || a.code === value);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal={true}>
       <PopoverTrigger asChild>
         <button
           type="button"
