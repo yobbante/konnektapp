@@ -26,6 +26,7 @@ const typeIcons: Record<string, React.ElementType> = {
   account_status: Luggage,
   alert: AlertCircle,
   info: Bell,
+  delivery_code: KeyRound,
 };
 
 interface SwipeableNotificationItemProps {
