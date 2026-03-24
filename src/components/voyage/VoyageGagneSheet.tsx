@@ -1057,6 +1057,8 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
             </div>
           )}
         </div>
+        </>
+        )}
       </DrawerContent>
     </Drawer>
   );
