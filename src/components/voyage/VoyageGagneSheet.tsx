@@ -404,6 +404,8 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
           destination_country: destCountry || "Sénégal",
           departure_date: departureDate,
           arrival_date: arrivalDate || null,
+          airline: airline || null,
+          flight_number: flightNumber || null,
           total_capacity: capacity,
           available_capacity: capacity,
           price_per_kg: pricePerKg,
