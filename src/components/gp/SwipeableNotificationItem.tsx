@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
-import { Bell, Check, Package, MessageCircle, Luggage, AlertCircle, X } from "lucide-react";
+import { Bell, Check, Package, MessageCircle, Luggage, AlertCircle, X, KeyRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
