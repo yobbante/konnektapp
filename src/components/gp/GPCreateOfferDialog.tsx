@@ -106,6 +106,23 @@ export function GPCreateOfferDialog({ open, onClose, gpProfile, onSuccess }: GPC
       return;
     }
 
+    // 24h minimum for non-premium/pro GPs
+    const { data: gpData } = await supabase
+      .from("gp_profiles")
+      .select("subscription")
+      .eq("id", gpProfile.id)
+      .maybeSingle();
+    
+    const depCheck = canPublishDepartureDate(formData.departureDate, gpData?.subscription);
+    if (!depCheck.allowed) {
+      toast({
+        title: "Départ trop proche",
+        description: depCheck.reason,
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Expiration: defaults to departure date (offer hidden after this date)
     const effectiveExpiresAt = formData.expiresAt || formData.departureDate;
     const expiresDate = new Date(effectiveExpiresAt);
