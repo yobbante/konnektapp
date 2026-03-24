@@ -89,6 +89,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
   
   const [step, setStep] = useState<Step>(skipIntro ? "details" : "intro");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [limitReached, setLimitReached] = useState(false);
   
   // Form state
   const saved = loadSavedData();
