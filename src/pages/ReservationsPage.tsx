@@ -580,7 +580,7 @@ export default function ReservationsPage() {
         {activeTab === "actives" &&
         <>
             {/* Pending actions: supplements, reviews */}
-            {!loading && (supplementOrders.length > 0 || pendingReviews.length > 0) &&
+            {!loading && supplementOrders.length > 0 &&
           <div className="px-4 pt-3 space-y-2">
                 {supplementOrders.map((o) =>
             <button
@@ -598,24 +598,6 @@ export default function ReservationsPage() {
                     <ChevronRight className="w-4 h-4 text-muted-foreground" />
                   </button>
             )}
-                {pendingReviews.slice(0, 2).map((o) => (
-                  <button
-                    key={`rev-${o.id}`}
-                    onClick={() => {
-                      setRatingOrder(o);
-                    }}
-                    className="w-full flex items-center gap-3 p-3 rounded-2xl border border-amber-500/30 bg-amber-500/5 active:scale-[0.98] transition-all"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                      <Star className="w-5 h-5 text-amber-500" />
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className="text-sm font-semibold text-amber-600">Notez votre transporteur</p>
-                      <p className="text-[11px] text-muted-foreground">{o.order_number} - {o.origin_city} → {o.destination_city}</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                  </button>
-                ))}
               </div>
           }
 
