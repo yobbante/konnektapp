@@ -39,6 +39,7 @@ export function AppHeader({
   const [userName, setUserName] = useState<string>("Mon profil");
   const [countryFlag, setCountryFlag] = useState<string>("");
   const [scanOpen, setScanOpen] = useState(false);
+  const [gpInfo, setGpInfo] = useState<{ id: string; isVerified: boolean } | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
