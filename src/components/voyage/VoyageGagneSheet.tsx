@@ -644,7 +644,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                       type="tel"
                       value={depositPhone}
                       onChange={(e) => setDepositPhone(e.target.value)}
-                      placeholder="+33 6 12 34 56 78"
+                      placeholder={depositPhoneIndicatif ? `${depositPhoneIndicatif} 6 12 34 56 78` : "+33 6 12 34 56 78"}
                       className="w-full h-9 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>
@@ -654,7 +654,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                       type="text"
                       value={depositAddress}
                       onChange={(e) => setDepositAddress(e.target.value)}
-                      placeholder="Ex: 12 rue de la Paix, Paris"
+                      placeholder={depositAddrPlaceholder}
                       className="w-full h-9 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>
