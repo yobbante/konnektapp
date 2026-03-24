@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { orderStatusConfig, OrderStatus } from "@/lib/transportTypes";
+import { KonnektLoader } from "@/components/ui/KonnektLoader";
 
 interface OrderDetail {
   id: string;
@@ -167,7 +168,7 @@ export default function AdminOrderDetail() {
       <div className="min-h-screen bg-background pb-safe">
         <MobileHeader />
         <div className="flex items-center justify-center h-[60vh]">
-          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+          <KonnektLoader size="md" />
         </div>
         <MobileNav />
       </div>
