@@ -15,6 +15,7 @@ interface Notification {
   related_type: string | null;
   read_at: string | null;
   created_at: string;
+  persistent?: boolean;
 }
 
 const typeIcons: Record<string, React.ElementType> = {
