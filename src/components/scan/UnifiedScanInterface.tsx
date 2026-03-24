@@ -181,6 +181,11 @@ export function UnifiedScanInterface({
   const colors = getTierColors();
   const accent = colors.accent;
 
+  // Map visual accent to ScanHeart's limited accent type
+  const scanHeartAccent: ScanAccent = isGP
+    ? (tier === "premium" || tier === "occasionnel" ? "amber" : "primary")
+    : "emerald";
+
   // Determine initial tab
   const initialTab: TabKey = defaultTab || "scanner";
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
