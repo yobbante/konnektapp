@@ -101,7 +101,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
   const [baggageCount, setBaggageCount] = useState(saved?.baggageCount || 1);
   const [capacity, setCapacity] = useState(SUGGESTED_CAPACITY);
   const [pricePerKg, setPricePerKg] = useState(saved?.pricePerKg || SUGGESTED_PRICE);
-  const [currency] = useState("EUR");
+  const [currency, setCurrency] = useState<CurrencyCode>("EUR");
   
   // Deposit & Reception info
   const [depositPhone, setDepositPhone] = useState(saved?.depositPhone || "");
