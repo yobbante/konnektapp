@@ -910,7 +910,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                   {/* Earnings highlight */}
                   <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/30 text-center">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Gains potentiels</p>
-                    <p className="text-2xl font-bold text-amber-600">{estimatedEarnings.toLocaleString()}€</p>
+                    <p className="text-2xl font-bold text-amber-600">{estimatedEarnings.toLocaleString()} {currSymbol}</p>
                   </div>
                 </div>
 
