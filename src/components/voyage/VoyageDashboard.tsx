@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { GPScanSheet } from "@/components/scan/GPScanSheet";
 import { GPProTransitionSheet } from "./GPProTransitionSheet";
+import { GPMissionDetailsSheet } from "@/components/gp/GPMissionDetailsSheet";
 
 interface VoyageDashboardProps {
   open: boolean;
@@ -81,6 +82,7 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
   const [walletData, setWalletData] = useState<{ balance: number; pending: number; currency: string } | null>(null);
   const [showBalance, setShowBalance] = useState(true);
   const [showProTransition, setShowProTransition] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -385,7 +387,8 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
                           key={order.id}
                           initial={{ opacity: 0, y: 6 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="p-3 rounded-xl bg-card border border-border/50 space-y-2"
+                          onClick={() => setSelectedOrderId(order.id)}
+                          className="p-3 rounded-xl bg-card border border-border/50 space-y-2 cursor-pointer active:scale-[0.98] transition-all"
                         >
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-mono text-muted-foreground">{order.order_number}</span>
@@ -396,9 +399,12 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
                               <p className="text-foreground font-medium">{order.origin_city} → {order.destination_city}</p>
                               {order.recipient_name && <p className="text-muted-foreground">Dest: {order.recipient_name}</p>}
                             </div>
-                            <div className="text-right">
-                              <p className="font-semibold text-foreground">{order.weight}kg</p>
-                              <p className="text-muted-foreground">{formatCurrency(order.total_price, order.currency)}</p>
+                            <div className="text-right flex items-center gap-2">
+                              <div>
+                                <p className="font-semibold text-foreground">{order.weight}kg</p>
+                                <p className="text-muted-foreground">{formatCurrency(order.total_price, order.currency)}</p>
+                              </div>
+                              <ChevronRight className="w-4 h-4 text-muted-foreground" />
                             </div>
                           </div>
                           <p className="text-[10px] text-muted-foreground">
@@ -497,6 +503,29 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
           currency: walletData?.currency || "XOF",
         } : undefined}
       />
+
+      {/* Order Details Sheet */}
+      {selectedOrderId && (
+        <GPMissionDetailsSheet
+          open={!!selectedOrderId}
+          onClose={() => {
+            setSelectedOrderId(null);
+            fetchData(); // refresh after actions
+          }}
+          orderId={selectedOrderId}
+          gpProfileId={gpId || undefined}
+          gpName="Mon colis"
+          onAccept={() => {
+            setSelectedOrderId(null);
+            fetchData();
+          }}
+          onRefuse={() => {
+            setSelectedOrderId(null);
+            fetchData();
+          }}
+          showActions={true}
+        />
+      )}
     </>
   );
 }
