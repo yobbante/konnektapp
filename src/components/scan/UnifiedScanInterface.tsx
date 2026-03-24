@@ -23,7 +23,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { ScanHeart } from "./ScanHeart";
+import { ScanHeart, type ScanAccent } from "./ScanHeart";
 import { ScanQRTab } from "./ScanQRTab";
 import { ScanColisTab } from "./ScanColisTab";
 import { GPDistributionList } from "./GPDistributionList";
