@@ -20,6 +20,7 @@ export const PREMIUM_FEATURES: Record<PremiumFeature, { label: string; desc: str
   departure_time: { label: "Heure de départ précise", desc: "Publiez l'heure exacte de départ pour vos clients" },
   multi_navettes: { label: "Multi-navettes", desc: "Gérez jusqu'à 3 navettes (Premium) ou 5 (Pro)" },
   auto_navette_change: { label: "Changement navette auto", desc: "Changez de navette sans validation admin" },
+  last_minute_departure: { label: "Départ dernière minute", desc: "Publiez un départ prévu dans moins de 24h" },
   performances: { label: "Performances", desc: "Statistiques avancées de votre activité" },
   auto_accept: { label: "Auto-accept", desc: "Acceptation automatique des réservations" },
   priority_visibility: { label: "Visibilité prioritaire", desc: "Profil mis en avant dans les recherches" },
