@@ -1,18 +1,22 @@
 /**
  * GPDistributionList — Interactive distribution list for GP
  * Shows all accepted/active parcels grouped by delivery status
+ * "Livrer" button triggers delivery code flow directly from distribution list
  */
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, ChevronDown, Loader2, Inbox, Truck,
-  MapPin, Clock, CheckCircle, Send, Phone
+  MapPin, Clock, CheckCircle, Send, Phone, KeyRound, ShieldCheck
 } from "lucide-react";
 import QRCodeDisplay from "react-qr-code";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 interface DistributionItem {
   id: string;
@@ -26,6 +30,7 @@ interface DistributionItem {
   recipient_phone: string | null;
   total_price: number;
   currency: string;
+  delivery_code: string | null;
 }
 
 interface GPDistributionListProps {
@@ -41,6 +46,8 @@ const FILTERS: { key: FilterKey; label: string; icon: React.ComponentType<{ clas
   { key: "delivered", label: "Livré", icon: CheckCircle, statuses: ["delivery_confirmed", "delivered", "released"] },
 ];
 
+const DELIVERY_ELIGIBLE_STATUSES = ["checked_in", "collected", "scheduled_departure", "in_transit", "arrived_destination", "delivery_pending"];
+
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   pending: { label: "En attente", color: "text-amber-400 bg-amber-500/15" },
   accepted: { label: "Accepté", color: "text-blue-400 bg-blue-500/15" },
@@ -51,18 +58,20 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   scheduled_departure: { label: "Départ programmé", color: "text-sky-400 bg-sky-500/15" },
   in_transit: { label: "En transit", color: "text-purple-400 bg-purple-500/15" },
   arrived_destination: { label: "Arrivé", color: "text-indigo-400 bg-indigo-500/15" },
-  delivery_pending: { label: "Livraison à initier", color: "text-amber-400 bg-amber-500/15" },
-  delivery_confirmed: { label: "Livré ✓", color: "text-emerald-400 bg-emerald-500/15" },
+  delivery_pending: { label: "Code envoyé", color: "text-amber-400 bg-amber-500/15" },
+  delivery_confirmed: { label: "Livré", color: "text-emerald-400 bg-emerald-500/15" },
   delivered: { label: "Livré", color: "text-emerald-400 bg-emerald-500/15" },
   released: { label: "Terminé", color: "text-emerald-400 bg-emerald-500/15" },
 };
 
 export function GPDistributionList({ gpId }: GPDistributionListProps) {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [orders, setOrders] = useState<DistributionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<FilterKey>("active");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [deliveryState, setDeliveryState] = useState<Record<string, { phase: "idle" | "sending" | "code"; code: string; executing: boolean }>>({});
 
   useEffect(() => {
     loadOrders();
@@ -73,7 +82,7 @@ export function GPDistributionList({ gpId }: GPDistributionListProps) {
     try {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, order_number, status, weight, origin_city, destination_city, client_id, total_price, currency, recipient_name, recipient_phone")
+        .select("id, order_number, status, weight, origin_city, destination_city, client_id, total_price, currency, recipient_name, recipient_phone, delivery_code")
         .eq("gp_id", gpId)
         .not("status", "in", "(cancelled)")
         .order("created_at", { ascending: false })
@@ -81,7 +90,6 @@ export function GPDistributionList({ gpId }: GPDistributionListProps) {
 
       if (error) throw error;
 
-      // Load client names
       if (data && data.length > 0) {
         const clientIds = [...new Set(data.map(o => o.client_id))];
         const { data: profiles } = await supabase
@@ -102,6 +110,53 @@ export function GPDistributionList({ gpId }: GPDistributionListProps) {
       setOrders([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getDeliveryState = (orderId: string) => {
+    return deliveryState[orderId] || { phase: "idle", code: "", executing: false };
+  };
+
+  const setOrderDeliveryState = (orderId: string, patch: Partial<{ phase: "idle" | "sending" | "code"; code: string; executing: boolean }>) => {
+    setDeliveryState(prev => ({
+      ...prev,
+      [orderId]: { ...getDeliveryState(orderId), ...patch },
+    }));
+  };
+
+  const handleInitiateDelivery = async (orderId: string) => {
+    setOrderDeliveryState(orderId, { phase: "sending", executing: true });
+    try {
+      const { data, error } = await supabase.functions.invoke("scan-engine", {
+        body: { action: "prepare_delivery", order_id: orderId },
+      });
+      if (error) throw error;
+      setOrderDeliveryState(orderId, { phase: "code", executing: false });
+      toast({ title: "Code envoyé", description: "Le code de livraison a été envoyé au client et au destinataire." });
+      loadOrders();
+    } catch (err: any) {
+      console.error("Initiate delivery error:", err);
+      toast({ title: "Erreur", description: err.message || "Impossible d'initier la livraison", variant: "destructive" });
+      setOrderDeliveryState(orderId, { phase: "idle", executing: false });
+    }
+  };
+
+  const handleConfirmDelivery = async (orderId: string) => {
+    const state = getDeliveryState(orderId);
+    if (state.code.length < 4) return;
+    setOrderDeliveryState(orderId, { executing: true });
+    try {
+      const { data, error } = await supabase.functions.invoke("scan-engine", {
+        body: { action: "confirm_delivery", order_id: orderId, data: { delivery_code: state.code } },
+      });
+      if (error) throw error;
+      toast({ title: "Livraison confirmée", description: "Le colis a été livré avec succès !" });
+      setOrderDeliveryState(orderId, { phase: "idle", code: "", executing: false });
+      loadOrders();
+    } catch (err: any) {
+      console.error("Confirm delivery error:", err);
+      toast({ title: "Code incorrect", description: err.message || "Le code est invalide. Réessayez.", variant: "destructive" });
+      setOrderDeliveryState(orderId, { executing: false });
     }
   };
 
@@ -172,6 +227,9 @@ export function GPDistributionList({ gpId }: GPDistributionListProps) {
           {filteredOrders.map(order => {
             const isExpanded = expandedId === order.id;
             const statusInfo = STATUS_LABELS[order.status] || { label: order.status, color: "text-white/50 bg-white/5" };
+            const canDeliver = DELIVERY_ELIGIBLE_STATUSES.includes(order.status);
+            const isDeliveryPending = order.status === "delivery_pending";
+            const ds = getDeliveryState(order.id);
 
             return (
               <motion.div
@@ -253,21 +311,64 @@ export function GPDistributionList({ gpId }: GPDistributionListProps) {
                           </div>
                         </div>
 
+                        {/* Delivery code flow — inline */}
+                        {(canDeliver || isDeliveryPending) && (
+                          <div className="rounded-xl border-2 border-emerald-400/20 bg-emerald-500/5 p-3 space-y-2.5">
+                            {(ds.phase === "idle" && !isDeliveryPending) ? (
+                              <>
+                                <p className="text-xs text-white/50">Envoyez le code au client pour confirmer la remise</p>
+                                <Button
+                                  className="w-full h-10 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold"
+                                  onClick={() => handleInitiateDelivery(order.id)}
+                                  disabled={ds.executing}
+                                >
+                                  {ds.executing ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-3.5 h-3.5 mr-1.5" /> Envoyer le code</>}
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex items-center gap-2">
+                                  <KeyRound className="w-4 h-4 text-emerald-400" />
+                                  <p className="text-xs font-semibold text-emerald-400">Saisir le code du client</p>
+                                </div>
+                                <Input
+                                  value={ds.code}
+                                  onChange={(e) => setOrderDeliveryState(order.id, { code: e.target.value.toUpperCase() })}
+                                  placeholder="Ex: A3F29B"
+                                  className="font-mono text-center text-lg tracking-[0.3em] h-12 border-2 border-emerald-400/30 bg-emerald-500/5"
+                                  maxLength={6}
+                                />
+                                <div className="grid grid-cols-2 gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-9 text-xs border-white/10"
+                                    onClick={() => setOrderDeliveryState(order.id, { phase: "idle", code: "" })}
+                                    disabled={ds.executing}
+                                  >
+                                    Retour
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    className="h-9 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold"
+                                    onClick={() => handleConfirmDelivery(order.id)}
+                                    disabled={ds.executing || ds.code.length < 4}
+                                  >
+                                    {ds.executing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><ShieldCheck className="w-3.5 h-3.5 mr-1" /> Valider</>}
+                                  </Button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )}
+
                         {/* Actions */}
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => navigate(`/gp/order/${order.id}`)}
-                            className="flex-1 py-2.5 rounded-xl border border-amber-400/20 bg-amber-500/10 text-amber-400 text-xs font-semibold"
-                          >
-                            Détails
-                          </button>
-                          <button
-                            onClick={() => navigate("/gp/en-cours")}
-                            className="flex-1 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.04] text-white/60 text-xs font-semibold"
-                          >
-                            Gérer
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => navigate(`/gp/order/${order.id}`)}
+                          className="w-full py-2.5 rounded-xl border border-amber-400/20 bg-amber-500/10 text-amber-400 text-xs font-semibold"
+                        >
+                          Détails
+                        </button>
                       </div>
                     </motion.div>
                   )}
