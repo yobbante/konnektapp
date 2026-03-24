@@ -122,6 +122,14 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
         .order("created_at", { ascending: false })
         .limit(50);
       setOrders(ordersData || []);
+      
+      // Auto-navigate to colis tab if there are active orders
+      const activeStatuses = ["pending", "accepted", "collected", "checked_in", "in_transit", "arrived_destination"];
+      const hasActive = (ordersData || []).some(o => activeStatuses.includes(o.status));
+      if (hasActive) {
+        setActiveTab("commandes");
+        setHasNewOrders(true);
+      }
 
       // Fetch wallet
       const [walletRes, escrowRes] = await Promise.all([
