@@ -399,7 +399,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
 
       toast({
         title: "Trajet publié !",
-        description: `${originCity} → ${destCity} · Gains potentiels : ${estimatedEarnings}€`,
+        description: `${originCity} → ${destCity} · Gains potentiels : ${estimatedEarnings} ${currSymbol}`,
       });
 
       onOpenChange(false);
