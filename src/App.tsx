@@ -211,6 +211,7 @@ const App = () => (
             <Route path="/reservation/gp/:gpId" element={<SmartBookingPage />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/reservations" element={<ReservationsPage />} />
+            <Route path="/reservations/:orderId" element={<OrderDetailPage />} />
             <Route path="/client/dashboard" element={<Navigate to="/profil" replace />} />
             <Route path="/favorites" element={<Navigate to="/favoris" replace />} />
             <Route path="/favoris" element={<Favorites />} />
