@@ -46,12 +46,12 @@ export function AppHeader({
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUserId(session.user.id);
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name, country_code")
-          .eq("user_id", session.user.id)
-          .maybeSingle();
+        const [{ data: profile }, { data: gp }] = await Promise.all([
+          supabase.from("profiles").select("full_name, country_code").eq("user_id", session.user.id).maybeSingle(),
+          supabase.from("gp_profiles").select("id, status").eq("user_id", session.user.id).maybeSingle(),
+        ]);
         if (profile?.full_name) setUserName(profile.full_name);
+        if (gp) setGpInfo({ id: gp.id, isVerified: gp.status === "verified" });
         const entryCountry = sessionStorage.getItem("entry_country");
         if (entryCountry) {
           try { setCountryFlag(JSON.parse(entryCountry).flag || ""); } catch {}
