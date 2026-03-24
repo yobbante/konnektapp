@@ -148,6 +148,8 @@ export default function FreightMarketplace() {
 
     // GP offers → map transport_type
     gpOffers.forEach((o: any) => {
+      if (!isOfferVisibleForBooking(o)) return;
+
       const mode = o.transport_type === "routier" ? "routier" :
         o.transport_type === "maritime" ? "maritime" :
         o.transport_type === "aerien" ? "aerien" : "gp";

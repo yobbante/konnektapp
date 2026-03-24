@@ -175,11 +175,16 @@ export default function Offres() {
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
-        const gpIds = [...new Set(data.map(o => o.gp_id))];
+      const visibleOffers = (data || []).filter((offer: any) => {
+        const subscription = offer.gp_profiles?.subscription;
+        return offer.status === "active" && offer.available_capacity > 0 && new Date(offer.departure_date) > new Date() && (!subscription || true);
+      });
+
+      if (visibleOffers.length > 0) {
+        const gpIds = [...new Set(visibleOffers.map(o => o.gp_id))];
         
         // Fetch GP profiles and KTP data in parallel
-        const [profilesResult, ktpResult] = await Promise.all([
+        const [profilesResult, ktpResult, bookingRules] = await Promise.all([
           supabase
             .from("public_gp_profiles")
             .select("id, business_name, rating, default_currency")
@@ -188,16 +193,19 @@ export default function Offres() {
             .from("ktp_status")
             .select("gp_id, ktp_level, trust_score")
             .in("gp_id", gpIds),
+          import("@/lib/bookingRules"),
         ]);
 
         const profilesMap = new Map(profilesResult.data?.map(p => [p.id, p]) || []);
         const ktpMap = new Map(ktpResult.data?.map(k => [k.gp_id, k]) || []);
         
-        const offersWithProfiles = data.map(offer => ({
-          ...offer,
-          gp_profile: profilesMap.get(offer.gp_id) || null,
-          ktp: ktpMap.get(offer.gp_id) || null,
-        }));
+        const offersWithProfiles = visibleOffers
+          .filter((offer: any) => bookingRules.isOfferVisibleForBooking(offer))
+          .map(offer => ({
+            ...offer,
+            gp_profile: profilesMap.get(offer.gp_id) || null,
+            ktp: ktpMap.get(offer.gp_id) || null,
+          }));
 
         if (reset) {
           setOffers(offersWithProfiles);

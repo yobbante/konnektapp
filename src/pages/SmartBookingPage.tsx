@@ -270,20 +270,14 @@ export default function SmartBookingPage() {
       const {
         data: offerData
       } = await offerQuery.single();
-      if (offerData) {
-        // Check booking cutoff: block if departure is within 48h
-        const { isOfferBookable, getBookingCutoffMessage } = await import("@/lib/bookingRules");
-        if (!isOfferBookable(offerData.departure_date)) {
-          toast({
-            title: "Réservations fermées",
-            description: getBookingCutoffMessage(),
-            variant: "destructive"
-          });
-          navigate(-1);
-          return;
+        if (offerData) {
+          const { isOfferBookable } = await import("@/lib/bookingRules");
+          if (!isOfferBookable(offerData.departure_date, gpData.subscription)) {
+            navigate("/offres", { replace: true });
+            return;
+          }
+          setOffer(offerData);
         }
-        setOffer(offerData);
-      }
 
       // Fetch GP's flat-rate pricing
       const {

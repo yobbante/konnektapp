@@ -503,8 +503,9 @@ export function ClientAppHome({
 
     if (GP_ONLY_MODE) {
       gpQuery.then(({ data }) => {
-        // Filter out aerien-type GP profiles creating baggage offers
-        const filtered = (data || []).filter((o: any) => o.gp_profiles?.gp_type !== 'aerien');
+        const filtered = (data || []).filter((o: any) =>
+          o.gp_profiles?.gp_type !== 'aerien' && isOfferVisibleForBooking(o)
+        );
         setOffers(filtered);
       });
     } else {
@@ -518,7 +519,7 @@ export function ClientAppHome({
           .order("departure_date", { ascending: true })
           .limit(20),
       ]).then(([gpRes, mobRes]) => {
-        const gpOffers = gpRes.data || [];
+        const gpOffers = (gpRes.data || []).filter((o: any) => isOfferVisibleForBooking(o));
         const mobOffers = (mobRes.data || []).map((mo: any) => ({
           ...mo,
           transport_type: "mobility",
