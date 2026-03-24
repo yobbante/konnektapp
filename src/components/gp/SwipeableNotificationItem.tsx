@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
-import { Bell, Check, Package, MessageCircle, Luggage, AlertCircle, X } from "lucide-react";
+import { Bell, Check, Package, MessageCircle, Luggage, AlertCircle, X, KeyRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -15,6 +15,7 @@ interface Notification {
   related_type: string | null;
   read_at: string | null;
   created_at: string;
+  persistent?: boolean;
 }
 
 const typeIcons: Record<string, React.ElementType> = {
@@ -25,6 +26,7 @@ const typeIcons: Record<string, React.ElementType> = {
   account_status: Luggage,
   alert: AlertCircle,
   info: Bell,
+  delivery_code: KeyRound,
 };
 
 interface SwipeableNotificationItemProps {
@@ -50,18 +52,18 @@ export function SwipeableNotificationItem({
   const y = useMotionValue(0);
 
   const Icon = typeIcons[notification.type] || Bell;
+  const isPersistent = notification.type === "delivery_code" || notification.persistent;
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (isPersistent) return; // Persistent notifications cannot be swiped away
     // Swipe up to dismiss
     if (info.offset.y < -60 && onDismiss) {
       onDismiss(notification.id);
       return;
     }
     if (info.offset.x > 80) {
-      // Swipe right - mark as read
       onMarkAsRead(notification.id);
     } else if (info.offset.x < -80 && onDismiss) {
-      // Swipe left - dismiss (optional)
       onDismiss(notification.id);
     }
   };
@@ -87,14 +89,14 @@ export function SwipeableNotificationItem({
       )}
 
       <motion.div
-        drag="x"
+        drag={isPersistent ? false : "x"}
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.3}
         onDragEnd={handleDragEnd}
         style={{ x }}
         className={`
-          bg-card p-3 relative z-10 cursor-grab active:cursor-grabbing
-          ${notification.read_at ? "opacity-60" : "bg-primary/5"}
+          bg-card p-3 relative z-10 ${isPersistent ? '' : 'cursor-grab active:cursor-grabbing'}
+          ${isPersistent ? "bg-emerald-500/10 border-l-2 border-emerald-500" : notification.read_at ? "opacity-60" : "bg-primary/5"}
         `}
         onClick={toggleExpand}
       >

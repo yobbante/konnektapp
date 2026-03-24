@@ -614,17 +614,19 @@ async function execPrepareDelivery(
     await supabase.from("orders").update({ status: "delivery_pending" }).eq("id", order.id);
   }
 
-  // Notify client + recipient
+  // Notify client + recipient — persistent delivery code notification
   await supabase.from("notifications").insert({
     user_id: order.client_id, type: "delivery_code",
-    title: "🔑 Code de livraison", message: `Votre code pour ${order.order_number} : ${deliveryCode}. Communiquez-le au transporteur.`,
+    title: "Code de livraison", message: `Votre code pour ${order.order_number} : ${deliveryCode}. Communiquez-le au transporteur.`,
     related_type: "order", related_id: order.id,
+    persistent: true,
   });
   if (order.recipient_user_id && order.recipient_user_id !== order.client_id) {
     await supabase.from("notifications").insert({
       user_id: order.recipient_user_id, type: "delivery_code",
-      title: "🔑 Code de livraison", message: `Code pour ${order.order_number} : ${deliveryCode}. Donnez-le au livreur.`,
+      title: "Code de livraison", message: `Code pour ${order.order_number} : ${deliveryCode}. Donnez-le au livreur.`,
       related_type: "order", related_id: order.id,
+      persistent: true,
     });
   }
 

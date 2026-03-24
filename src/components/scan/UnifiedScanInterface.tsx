@@ -32,6 +32,7 @@ import QRCode from "react-qr-code";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type ScanRole = "gp" | "client";
+export type ScanTier = "standard" | "premium" | "pro" | "occasionnel";
 
 type GPTabKey = "scanner" | "mon_qr" | "lot";
 type ClientTabKey = "scanner" | "mon_qr" | "mes_colis";
@@ -61,6 +62,8 @@ interface ScanStats {
 
 export interface UnifiedScanInterfaceProps {
   role: ScanRole;
+  /** GP tier for color theming */
+  tier?: ScanTier;
   /** GP context — required when role="gp" */
   gpContext?: GPContext;
   /** Client context — required when role="client" */
@@ -102,6 +105,7 @@ function RoleScanInfo({ icon: Icon, role, info, color }: {
 
 export function UnifiedScanInterface({
   role,
+  tier = "standard",
   gpContext,
   clientContext,
   stats,
@@ -110,8 +114,72 @@ export function UnifiedScanInterface({
   defaultTab,
 }: UnifiedScanInterfaceProps) {
   const isGP = role === "gp";
-  const accent = isGP ? "amber" : "emerald";
-  const accentColor = isGP ? "amber" : "emerald";
+
+  // ── Tier-based color system ──
+  const getTierColors = () => {
+    if (!isGP) {
+      // Client: teal accent
+      return {
+        accent: "emerald",
+        tabBorder: "border-teal-400/20",
+        tabActiveBg: "bg-teal-500/20 text-teal-400",
+        dotColor: "bg-teal-400",
+        liveColor: "text-teal-400/70",
+        accentBg: "bg-teal-500/15",
+        accentText: "text-teal-400",
+        headerBg: "rgba(10, 24, 20, 0.96)",
+      };
+    }
+    switch (tier) {
+      case "pro":
+        return {
+          accent: "indigo",
+          tabBorder: "border-indigo-400/20",
+          tabActiveBg: "bg-indigo-500/20 text-indigo-400",
+          dotColor: "bg-indigo-400",
+          liveColor: "text-indigo-400/70",
+          accentBg: "bg-indigo-500/15",
+          accentText: "text-indigo-400",
+          headerBg: "rgba(14, 10, 28, 0.96)",
+        };
+      case "premium":
+        return {
+          accent: "amber",
+          tabBorder: "border-amber-400/20",
+          tabActiveBg: "bg-amber-500/20 text-amber-400",
+          dotColor: "bg-amber-400",
+          liveColor: "text-amber-400/70",
+          accentBg: "bg-amber-500/15",
+          accentText: "text-amber-400",
+          headerBg: "rgba(20, 16, 8, 0.96)",
+        };
+      case "occasionnel":
+        return {
+          accent: "orange",
+          tabBorder: "border-orange-400/20",
+          tabActiveBg: "bg-orange-500/20 text-orange-400",
+          dotColor: "bg-orange-400",
+          liveColor: "text-orange-400/70",
+          accentBg: "bg-orange-500/15",
+          accentText: "text-orange-400",
+          headerBg: "rgba(20, 14, 8, 0.96)",
+        };
+      default: // standard
+        return {
+          accent: "sky",
+          tabBorder: "border-sky-400/20",
+          tabActiveBg: "bg-sky-500/20 text-sky-400",
+          dotColor: "bg-sky-400",
+          liveColor: "text-sky-400/70",
+          accentBg: "bg-sky-500/15",
+          accentText: "text-sky-400",
+          headerBg: "rgba(10, 18, 24, 0.96)",
+        };
+    }
+  };
+
+  const colors = getTierColors();
+  const accent = colors.accent;
 
   // Determine initial tab
   const initialTab: TabKey = defaultTab || "scanner";
@@ -136,7 +204,7 @@ export function UnifiedScanInterface({
           supabase.from("gp_offers").select("*", { count: "exact", head: true }).eq("gp_id", gpContext.gpId).eq("status", "active"),
         ]);
         setAutoStats([
-          { label: "En attente", value: pending || 0, color: "text-amber-400" },
+          { label: "En attente", value: pending || 0, color: colors.accentText },
           { label: "En cours", value: active || 0, color: "text-sky-400" },
           { label: "Offres actives", value: offers || 0, color: "text-emerald-400" },
         ]);
@@ -147,7 +215,7 @@ export function UnifiedScanInterface({
           supabase.from("orders").select("*", { count: "exact", head: true }).eq("client_id", clientContext.userId).in("status", ["in_transit", "arrived_destination"] as any),
         ]);
         setAutoStats([
-          { label: "Colis actifs", value: active || 0, color: "text-emerald-400" },
+          { label: "Colis actifs", value: active || 0, color: "text-teal-400" },
           { label: "Suppléments", value: supplements || 0, color: "text-amber-400" },
           { label: "En transit", value: transit || 0, color: "text-sky-400" },
         ]);
@@ -176,7 +244,8 @@ export function UnifiedScanInterface({
 
   const tabs = isGP ? gpTabs : clientTabs;
 
-  // Title
+  // Title with tier badge
+  const tierLabel = tier === "pro" ? "PRO" : tier === "premium" ? "PREMIUM" : tier === "occasionnel" ? "OCC" : "";
   const title = isGP
     ? `Konnekt Scan — GP`
     : `Konnekt Scan`;
@@ -188,20 +257,12 @@ export function UnifiedScanInterface({
     ? `https://konnektapp.lovable.app/client/transporteurs/${gpContext.gpId}`
     : "";
 
-  // Border accent
-  const tabBorder = isGP ? "border-amber-400/20" : "border-emerald-400/20";
-  const tabActiveBg = isGP ? "bg-amber-500/20 text-amber-400" : "bg-emerald-500/20 text-emerald-400";
-  const dotColor = isGP ? "bg-amber-400" : "bg-emerald-400";
-  const liveColor = isGP ? "text-amber-400/70" : "text-emerald-400/70";
-  const accentBg = isGP ? "bg-amber-500/15" : "bg-emerald-500/15";
-  const accentText = isGP ? "text-amber-400" : "text-emerald-400";
-
   return (
     <div className="flex flex-col h-full">
       {/* ── Compact dark header ── */}
       <div
         className="sticky top-0 z-10 border-b border-white/[0.06] backdrop-blur-xl flex-shrink-0"
-        style={{ background: "rgba(10, 18, 24, 0.96)" }}
+        style={{ background: colors.headerBg }}
       >
         {/* Title row — ultra compact */}
         <div className="flex items-center justify-between px-4 py-2.5">
@@ -214,8 +275,8 @@ export function UnifiedScanInterface({
             )}
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", dotColor)} />
-            <span className={cn("text-[9px] font-medium", liveColor)}>LIVE</span>
+            <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", colors.dotColor)} />
+            <span className={cn("text-[9px] font-medium", colors.liveColor)}>LIVE</span>
           </div>
         </div>
 
@@ -238,7 +299,7 @@ export function UnifiedScanInterface({
 
         {/* Tabs — tight, pill style */}
         <div className="px-4 pb-2.5">
-          <div className={cn("flex rounded-xl overflow-hidden border bg-white/[0.03]", tabBorder)}>
+          <div className={cn("flex rounded-xl overflow-hidden border bg-white/[0.03]", colors.tabBorder)}>
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -248,7 +309,7 @@ export function UnifiedScanInterface({
                   className={cn(
                     "flex-1 py-2 text-[11px] font-semibold transition-all duration-200 flex items-center justify-center gap-1",
                     activeTab === tab.key
-                      ? tabActiveBg
+                      ? colors.tabActiveBg
                       : "text-white/35 active:text-white/60"
                   )}
                 >
@@ -284,7 +345,7 @@ export function UnifiedScanInterface({
               {/* ScanHeart — full width, optimized camera height */}
               <ScanHeart
                 role={role}
-                accent={accent}
+                accent={accent as any}
                 darkMode
                 cameraHeight={isSheet ? "42vh" : "50vh"}
                 gpId={gpContext?.gpId}
@@ -308,7 +369,7 @@ export function UnifiedScanInterface({
                   <div key={item.n} className="flex items-center gap-2">
                     <span className={cn(
                       "w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0",
-                      accentBg, accentText
+                      colors.accentBg, colors.accentText
                     )}>
                       {item.n}
                     </span>

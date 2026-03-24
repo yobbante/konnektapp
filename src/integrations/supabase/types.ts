@@ -3994,6 +3994,7 @@ export type Database = {
           created_at: string
           id: string
           message: string
+          persistent: boolean | null
           read_at: string | null
           related_id: string | null
           related_type: string | null
@@ -4005,6 +4006,7 @@ export type Database = {
           created_at?: string
           id?: string
           message: string
+          persistent?: boolean | null
           read_at?: string | null
           related_id?: string | null
           related_type?: string | null
@@ -4016,6 +4018,7 @@ export type Database = {
           created_at?: string
           id?: string
           message?: string
+          persistent?: boolean | null
           read_at?: string | null
           related_id?: string | null
           related_type?: string | null

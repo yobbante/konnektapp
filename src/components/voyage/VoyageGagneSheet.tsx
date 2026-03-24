@@ -89,6 +89,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
   
   const [step, setStep] = useState<Step>(skipIntro ? "details" : "intro");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [limitReached, setLimitReached] = useState(false);
   
   // Form state
   const saved = loadSavedData();
@@ -127,6 +128,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
   
   useEffect(() => {
     if (!open) return;
+    setLimitReached(false);
     const loadProfile = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
@@ -137,10 +139,25 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
         .maybeSingle();
       if (data) {
         setUserProfile(data);
-        // Pre-fill phones with user's phone if not saved
         if (data.phone && !saved?.depositPhone) {
           setDepositPhone(data.phone);
           setReceptionPhone(data.phone);
+        }
+      }
+      // Check departure limit for occasional GPs
+      const { data: gpData } = await supabase
+        .from("gp_profiles")
+        .select("id, gp_type")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+      if (gpData?.gp_type === "occasionnel") {
+        const { count } = await supabase
+          .from("gp_offers")
+          .select("id", { count: "exact", head: true })
+          .eq("gp_id", gpData.id)
+          .eq("status", "active" as any);
+        if ((count || 0) >= 3) {
+          setLimitReached(true);
         }
       }
     };
@@ -461,6 +478,46 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
           </div>
         </div>
 
+        {/* Limit reached CTA */}
+        {limitReached ? (
+          <div className="flex-1 px-6 flex flex-col items-center justify-center gap-4 pb-8">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center">
+              <AlertTriangle className="w-8 h-8 text-amber-500" />
+            </div>
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-bold text-foreground">Limite atteinte</h3>
+              <p className="text-sm text-muted-foreground max-w-[280px]">
+                Vous avez atteint la limite de 3 départs actifs pour les GP Occasionnels.
+              </p>
+            </div>
+            <div className="w-full max-w-[300px] p-4 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-400/20 space-y-3">
+              <p className="text-sm font-bold text-foreground flex items-center gap-2">
+                <Shield className="w-4 h-4 text-indigo-500" />
+                Passez GP Pro
+              </p>
+              <ul className="space-y-1.5 text-xs text-muted-foreground">
+                <li className="flex items-center gap-2"><Check className="w-3 h-3 text-emerald-500" /> Départs illimités</li>
+                <li className="flex items-center gap-2"><Check className="w-3 h-3 text-emerald-500" /> Dashboard professionnel complet</li>
+                <li className="flex items-center gap-2"><Check className="w-3 h-3 text-emerald-500" /> Visibilité prioritaire</li>
+                <li className="flex items-center gap-2"><Check className="w-3 h-3 text-emerald-500" /> Auto-acceptation des commandes</li>
+              </ul>
+              <Button
+                className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-semibold"
+                onClick={() => {
+                  onOpenChange(false);
+                  navigate("/gp/upgrade");
+                }}
+              >
+                Devenir GP Pro
+                <ArrowRight className="w-4 h-4 ml-1.5" />
+              </Button>
+            </div>
+            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={() => onOpenChange(false)}>
+              Plus tard
+            </Button>
+          </div>
+        ) : (
+        <>
         {/* Scrollable content area */}
         <div className="flex-1 overflow-y-auto px-6">
           <AnimatePresence mode="wait">
@@ -1000,6 +1057,8 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
             </div>
           )}
         </div>
+        </>
+        )}
       </DrawerContent>
     </Drawer>
   );
