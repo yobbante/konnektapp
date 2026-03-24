@@ -122,7 +122,7 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="bg-background flex flex-col" style={{ height: '100dvh', overflow: 'hidden' }}>
+    <div className="bg-background flex flex-col h-[100dvh] overflow-hidden">
       {!selectedConversation && <MobileHeader />}
 
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">

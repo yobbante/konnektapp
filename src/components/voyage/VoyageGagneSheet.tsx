@@ -156,6 +156,27 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
 
       let gpId = existingGP?.id;
 
+      // If existing occasional GP, check departure limit (max 3)
+      if (existingGP?.gp_type === "occasionnel" && gpId) {
+        const { count } = await supabase
+          .from("gp_offers")
+          .select("id", { count: "exact", head: true })
+          .eq("gp_id", gpId)
+          .eq("status", "active" as any);
+        
+        if ((count || 0) >= 3) {
+          toast({
+            title: "Limite atteinte",
+            description: "Les GP Occasionnels peuvent publier maximum 3 départs actifs. Passez GP Pro pour publier plus !",
+            variant: "destructive",
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // gpId already declared above
+
       // If no GP profile, create an occasional one
       if (!gpId) {
         const businessName = userProfile?.full_name || "GP Occasionnel";

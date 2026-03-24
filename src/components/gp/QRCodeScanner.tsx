@@ -75,9 +75,17 @@ export function QRCodeScanner({ gpId, scanType, onComplete }: QRCodeScannerProps
   };
 
   // Lookup order by code
-  const lookupOrder = async (code: string) => {
+  const lookupOrder = async (rawCode: string) => {
     setLoading(true);
     try {
+      // Extract order number from QR value — may be raw code or URL containing it
+      let code = rawCode;
+      // If scanned value is a URL, try to extract order number pattern
+      const orderMatch = rawCode.match(/(ORD-[A-Z0-9]+|CMD-[A-Z0-9]+)/i);
+      if (orderMatch) {
+        code = orderMatch[1].toUpperCase();
+      }
+      
       // Try order_number or tracking_code
       const { data: order, error } = await supabase
         .from("orders")
@@ -100,7 +108,7 @@ export function QRCodeScanner({ gpId, scanType, onComplete }: QRCodeScannerProps
       }
 
       // Validate status for scan type
-      if (scanType === "deposit" && !["accepted", "pending"].includes(order.status)) {
+      if (scanType === "deposit" && !["accepted", "pending", "paid_held"].includes(order.status)) {
         toast({ 
           title: "Statut invalide", 
           description: `Cette commande est déjà "${order.status}"`,
@@ -109,10 +117,10 @@ export function QRCodeScanner({ gpId, scanType, onComplete }: QRCodeScannerProps
         return;
       }
 
-      if (scanType === "delivery" && order.status !== "in_transit") {
+      if (scanType === "delivery" && !["in_transit", "arrived_destination", "delivery_pending"].includes(order.status)) {
         toast({ 
           title: "Statut invalide", 
-          description: "Cette commande n'est pas en transit",
+          description: "Cette commande n'est pas prête pour la livraison",
           variant: "destructive" 
         });
         return;
