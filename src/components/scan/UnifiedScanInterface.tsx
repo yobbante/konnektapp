@@ -275,8 +275,8 @@ export function UnifiedScanInterface({
             )}
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", dotColor)} />
-            <span className={cn("text-[9px] font-medium", liveColor)}>LIVE</span>
+            <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", colors.dotColor)} />
+            <span className={cn("text-[9px] font-medium", colors.liveColor)}>LIVE</span>
           </div>
         </div>
 
