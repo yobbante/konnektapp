@@ -75,9 +75,17 @@ export function QRCodeScanner({ gpId, scanType, onComplete }: QRCodeScannerProps
   };
 
   // Lookup order by code
-  const lookupOrder = async (code: string) => {
+  const lookupOrder = async (rawCode: string) => {
     setLoading(true);
     try {
+      // Extract order number from QR value — may be raw code or URL containing it
+      let code = rawCode;
+      // If scanned value is a URL, try to extract order number pattern
+      const orderMatch = rawCode.match(/(ORD-[A-Z0-9]+|CMD-[A-Z0-9]+)/i);
+      if (orderMatch) {
+        code = orderMatch[1].toUpperCase();
+      }
+      
       // Try order_number or tracking_code
       const { data: order, error } = await supabase
         .from("orders")
