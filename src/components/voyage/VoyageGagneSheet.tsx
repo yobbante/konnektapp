@@ -659,7 +659,33 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                   </div>
                 </div>
 
-                {/* Baggage count */}
+                {/* Compagnie & Vol */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
+                      <Plane className="w-3 h-3" /> Compagnie
+                    </label>
+                    <AirlineSelect
+                      value={airline}
+                      onChange={setAirline}
+                      placeholder="Compagnie..."
+                      className="h-10 rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
+                      N° de vol
+                    </label>
+                    <input
+                      type="text"
+                      value={flightNumber}
+                      onChange={(e) => setFlightNumber(e.target.value)}
+                      placeholder="Ex: AF718"
+                      className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1">
                     <Luggage className="w-3 h-3" /> Nombre de bagages
