@@ -31,6 +31,8 @@ export function MobileNav() {
   const [voyageOpen, setVoyageOpen] = useState(false);
   const [voyageDashOpen, setVoyageDashOpen] = useState(false);
   const [hasPublishedTrips, setHasPublishedTrips] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [pendingActions, setPendingActions] = useState(0);
 
   // Check if user has published trips (occasional GP)
   useEffect(() => {
