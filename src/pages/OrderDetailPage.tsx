@@ -259,7 +259,7 @@ export default function OrderDetailPage() {
         </button>
       </div>
 
-      <MobileNav />
+      
     </div>
   );
 }
