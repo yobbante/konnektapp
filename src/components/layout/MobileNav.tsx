@@ -324,6 +324,11 @@ export function MobileNav() {
                   <motion.div animate={isActive ? { scale: 1.1 } : { scale: 1 }} transition={{ type: "spring", stiffness: 500 }}>
                     <item.icon className={cn("w-5 h-5", isActive && "text-primary")} />
                   </motion.div>
+                  {/* Red notification dot */}
+                  {(('isMessages' in item && item.isMessages && unreadMessages > 0) ||
+                    (item.href === "/reservations" && pendingActions > 0)) && (
+                    <span className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-red-500" />
+                  )}
                 </motion.div>
                 <motion.span className={cn("text-[10px] font-medium", isActive && "text-primary")} animate={isActive ? { fontWeight: 600 } : { fontWeight: 500 }}>
                   {item.label}
