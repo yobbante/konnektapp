@@ -128,6 +128,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
   
   useEffect(() => {
     if (!open) return;
+    setLimitReached(false);
     const loadProfile = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
@@ -138,10 +139,25 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
         .maybeSingle();
       if (data) {
         setUserProfile(data);
-        // Pre-fill phones with user's phone if not saved
         if (data.phone && !saved?.depositPhone) {
           setDepositPhone(data.phone);
           setReceptionPhone(data.phone);
+        }
+      }
+      // Check departure limit for occasional GPs
+      const { data: gpData } = await supabase
+        .from("gp_profiles")
+        .select("id, gp_type")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+      if (gpData?.gp_type === "occasionnel") {
+        const { count } = await supabase
+          .from("gp_offers")
+          .select("id", { count: "exact", head: true })
+          .eq("gp_id", gpData.id)
+          .eq("status", "active" as any);
+        if ((count || 0) >= 3) {
+          setLimitReached(true);
         }
       }
     };
