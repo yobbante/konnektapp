@@ -237,15 +237,15 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
             {/* Main Tabs: Voyages | Commandes | Wallet */}
             <div className="flex gap-1 p-1 bg-muted/30 rounded-xl">
               {([
-                { id: "voyages" as Tab, label: "Voyages", icon: Plane },
-                { id: "commandes" as Tab, label: `Colis (${orders.length})`, icon: Package },
-                { id: "wallet" as Tab, label: "Finance", icon: Wallet },
+                { id: "voyages" as Tab, label: "Voyages", icon: Plane, hasNotif: activeTrips.length > 0 },
+                { id: "commandes" as Tab, label: `Colis (${orders.length})`, icon: Package, hasNotif: activeOrders.length > 0 },
+                { id: "wallet" as Tab, label: "Finance", icon: Wallet, hasNotif: false },
               ]).map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => { setActiveTab(tab.id); if (tab.id === "commandes") setHasNewOrders(false); }}
                   className={cn(
-                    "flex-1 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1",
+                    "flex-1 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1 relative",
                     activeTab === tab.id
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground"
@@ -253,6 +253,9 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
                 >
                   <tab.icon className="w-3 h-3" />
                   {tab.label}
+                  {tab.hasNotif && activeTab !== tab.id && (
+                    <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-red-500" />
+                  )}
                 </button>
               ))}
             </div>
