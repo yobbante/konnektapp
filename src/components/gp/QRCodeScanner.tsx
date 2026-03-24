@@ -117,10 +117,10 @@ export function QRCodeScanner({ gpId, scanType, onComplete }: QRCodeScannerProps
         return;
       }
 
-      if (scanType === "delivery" && order.status !== "in_transit") {
+      if (scanType === "delivery" && !["in_transit", "arrived_destination", "delivery_pending"].includes(order.status)) {
         toast({ 
           title: "Statut invalide", 
-          description: "Cette commande n'est pas en transit",
+          description: "Cette commande n'est pas prête pour la livraison",
           variant: "destructive" 
         });
         return;
