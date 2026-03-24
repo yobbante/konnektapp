@@ -1417,7 +1417,7 @@ Deno.serve(async (req) => {
 
       const response = await executeAction(supabase, body.action as ExecuteAction, body.order_id, userId, role, body.action_data);
       return new Response(JSON.stringify(response), {
-        status: response.status === "failed" ? 400 : 200,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

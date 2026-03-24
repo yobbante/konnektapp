@@ -172,9 +172,16 @@ export function OrderDetailSheet({ order, open, onClose }: OrderDetailSheetProps
             )}
 
             {/* QR Code toggle */}
-            <div className="mx-4 mb-3">
+            <div className="mx-4 mb-3" id="qr-section">
               <button
-                onClick={() => setShowQR(!showQR)}
+                onClick={() => {
+                  setShowQR(!showQR);
+                  if (!showQR) {
+                    setTimeout(() => {
+                      document.getElementById("qr-section")?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }, 300);
+                  }
+                }}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-muted/40 border border-border/50 text-sm font-medium text-foreground"
               >
                 <QrCode className="w-4 h-4" />
