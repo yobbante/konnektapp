@@ -211,7 +211,7 @@ export function MobileNav() {
     }
   }, [location.pathname, isAuthenticated, navigate, hasPublishedTrips]);
 
-  if (!isAuthenticated || isKeyboardOpen) return null;
+  if (!isAuthenticated || isKeyboardOpen || authLoading) return null;
 
   return (
     <>
