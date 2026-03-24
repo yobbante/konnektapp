@@ -404,13 +404,11 @@ export default function ReservationsPage() {
                 
                 <tab.icon className="w-3.5 h-3.5 flex-shrink-0" />
                 <span className="truncate w-full">{tab.label}</span>
-                {count > 0 &&
                 <span className={`text-[8px] min-w-[14px] text-center px-0.5 py-0 rounded-full font-bold leading-none ${
                 isActiveTab ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`
                 }>
                     {count}
                   </span>
-                }
                 {notifCount > 0 && !isActiveTab &&
                 <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-primary animate-pulse" />
                 }
