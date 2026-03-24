@@ -54,7 +54,7 @@ type TabId = "actives" | "colis" | "tickets" | "demandes" | "historique";
 
 const TABS: {id: TabId;label: string;icon: typeof Clock;}[] = [
 { id: "actives", label: "En cours", icon: Clock },
-{ id: "colis", label: "Mes colis entrants", icon: Package },
+{ id: "colis", label: "Colis entrants", icon: Package },
 { id: "demandes", label: "Missions", icon: FileText },
 { id: "tickets", label: "Tickets", icon: Ticket },
 { id: "historique", label: "Historique", icon: CheckCircle }];
