@@ -32,6 +32,7 @@ import QRCode from "react-qr-code";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type ScanRole = "gp" | "client";
+export type ScanTier = "standard" | "premium" | "pro" | "occasionnel";
 
 type GPTabKey = "scanner" | "mon_qr" | "lot";
 type ClientTabKey = "scanner" | "mon_qr" | "mes_colis";
