@@ -83,6 +83,7 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
   const [showBalance, setShowBalance] = useState(true);
   const [showProTransition, setShowProTransition] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [hasNewOrders, setHasNewOrders] = useState(false);
 
   useEffect(() => {
     if (!open) return;
