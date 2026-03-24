@@ -268,15 +268,27 @@ export function useAutoPushNotifications({
 
           if (!conversation) return;
 
+          // Get GP profile ID for GP users
+          let gpProfileId: string | null = null;
+          if (userType === "gp") {
+            const { data: gp } = await supabase
+              .from("gp_profiles")
+              .select("id")
+              .eq("user_id", userId)
+              .maybeSingle();
+            gpProfileId = gp?.id || null;
+          }
+
           // Check if user is part of this conversation
           const isParticipant =
             (userType === "client" && conversation.client_id === userId) ||
-            (userType === "gp" && conversation.gp_id);
+            (userType === "gp" && gpProfileId && conversation.gp_id === gpProfileId);
 
           if (isParticipant) {
-            showNotification("Nouveau message", {
+            const notifId = `message-${message.id}`;
+            showDedupedNotification(notifId, "Nouveau message", {
               body: message.content.substring(0, 100) + (message.content.length > 100 ? "..." : ""),
-              tag: `message-${message.id}`,
+              tag: notifId,
               data: { type: "message", conversationId: message.conversation_id },
             });
           }
