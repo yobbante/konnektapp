@@ -418,7 +418,15 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
   const stepIndex = STEPS.indexOf(step);
 
   const goNext = () => {
-    if (step === "details") { persistData(); setStep("pricing"); }
+    if (step === "details") {
+      // Validate 24h rule
+      if (!departureCheck.allowed) {
+        toast({ title: "Départ trop proche", description: departureCheck.reason, variant: "destructive" });
+        return;
+      }
+      persistData(); 
+      setStep("pricing"); 
+    }
     else if (step === "pricing") { persistData(); setStep("summary"); }
   };
 
