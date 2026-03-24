@@ -30,14 +30,14 @@ import { getAllSizeCategories, formatPriceFCFA } from "@/lib/routierUtils";
 const SIZE_CATEGORIES = getAllSizeCategories();
 
 const PACKAGE_TYPES = [
-  { id: "documents", label: "📄 Documents", icon: "📄" },
-  { id: "vetements", label: "👕 Vêtements", icon: "👕" },
-  { id: "electronique", label: "💻 Électronique", icon: "💻" },
-  { id: "alimentaire", label: "🍎 Alimentaire", icon: "🍎" },
-  { id: "pieces_auto", label: "🔧 Pièces auto", icon: "🔧" },
+  { id: "documents", label: "Documents", icon: "" },
+  { id: "vetements", label: "Vêtements", icon: "" },
+  { id: "electronique", label: "Électronique", icon: "" },
+  { id: "alimentaire", label: "Alimentaire", icon: "" },
+  { id: "pieces_auto", label: "Pièces auto", icon: "" },
   { id: "fragile", label: "🥚 Fragile", icon: "🥚" },
   { id: "mobilier", label: "🪑 Mobilier", icon: "🪑" },
-  { id: "autre", label: "📦 Autre", icon: "📦" },
+  { id: "autre", label: "Autre", icon: "" },
 ];
 
 type PickupMode = "depot" | "collecte";
@@ -250,9 +250,9 @@ export default function RoutierBookingPage() {
             pickupMode === "collecte" ? `Collecte: ${pickupAddress}` : "Dépôt chez transporteur",
             `Livraison: ${deliveryAddress}`,
             deliveryInstructions ? `Instructions: ${deliveryInstructions}` : "",
-            isFragile ? "⚠️ Fragile" : "",
-            isHeavy ? "⚠️ Lourd" : "",
-            needsLoadingHelp ? "🤝 Assistance chargement" : "",
+            isFragile ? "Fragile" : "",
+            isHeavy ? "Lourd" : "",
+            needsLoadingHelp ? "Assistance chargement" : "",
             speed === "prioritaire" ? "⚡ Prioritaire" : "",
           ].filter(Boolean).join(" | "),
           content_nature: [packageType].filter(Boolean),
@@ -262,7 +262,7 @@ export default function RoutierBookingPage() {
 
       if (error) throw error;
 
-      toast({ title: "✅ Réservation confirmée !" });
+      toast({ title: "Réservation confirmée !" });
       navigate(`/tracking/${order.id}`);
     } catch (error: any) {
       console.error(error);
@@ -546,7 +546,7 @@ export default function RoutierBookingPage() {
                   <label className="flex items-center gap-3 cursor-pointer">
                     <Checkbox checked={needsLoadingHelp} onCheckedChange={(v) => setNeedsLoadingHelp(!!v)} />
                     <div>
-                      <p className="text-xs font-medium">🤝 Assistance chargement</p>
+                      <p className="text-xs font-medium">Assistance chargement</p>
                       <p className="text-[10px] text-muted-foreground">Aide pour charger/décharger</p>
                     </div>
                   </label>
@@ -594,7 +594,7 @@ export default function RoutierBookingPage() {
                   <p className="text-xs font-semibold text-muted-foreground mb-1">Trajet</p>
                   <p className="text-sm font-bold">{pickupCity} → {deliveryCity}</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    🚚 {gpProfile.business_name}
+                    {gpProfile.business_name}
                   </p>
                 </CardContent>
               </Card>
@@ -610,7 +610,7 @@ export default function RoutierBookingPage() {
                   </div>
                   {(dimensionL || dimensionW || dimensionH) && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      📐 {dimensionL || "–"} × {dimensionW || "–"} × {dimensionH || "–"} cm
+                      {dimensionL || "–"} × {dimensionW || "–"} × {dimensionH || "–"} cm
                     </p>
                   )}
                 </CardContent>
@@ -622,12 +622,12 @@ export default function RoutierBookingPage() {
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground">Récupération</p>
                     <p className="text-sm">
-                      {pickupMode === "depot" ? "📍 Dépôt chez transporteur" : `📍 ${pickupAddress}`}
+                      {pickupMode === "depot" ? "Dépôt chez transporteur" : `${pickupAddress}`}
                     </p>
                   </div>
                   <div className="border-t border-border pt-2">
                     <p className="text-xs font-semibold text-muted-foreground">Livraison</p>
-                    <p className="text-sm">📍 {deliveryAddress}</p>
+                    <p className="text-sm">{deliveryAddress}</p>
                     <p className="text-xs text-muted-foreground mt-1">
                       👤 {recipientName} • {recipientPhone}
                     </p>
@@ -644,7 +644,7 @@ export default function RoutierBookingPage() {
                       {speed === "prioritaire" && <Badge variant="secondary" className="text-[10px]">⚡ Prioritaire</Badge>}
                       {isFragile && <Badge variant="secondary" className="text-[10px]">🥚 Fragile</Badge>}
                       {isHeavy && <Badge variant="secondary" className="text-[10px]">🏋️ Lourd</Badge>}
-                      {needsLoadingHelp && <Badge variant="secondary" className="text-[10px]">🤝 Assistance</Badge>}
+                      {needsLoadingHelp && <Badge variant="secondary" className="text-[10px]">Assistance</Badge>}
                     </div>
                   </CardContent>
                 </Card>

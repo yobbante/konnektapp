@@ -154,7 +154,7 @@ export function AdminDemandesModule() {
               <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                 {req.weight_kg && <span>{req.weight_kg} kg</span>}
                 {req.declared_value && <span>Valeur: {req.declared_value?.toLocaleString()} FCFA</span>}
-                {req.is_vehicle && <span className="text-orange-600">🚗 Véhicule</span>}
+                {req.is_vehicle && <span className="text-orange-600">Véhicule</span>}
               </div>
             </div>
           ))}

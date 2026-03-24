@@ -135,7 +135,7 @@ export const KonnektScanEngine = {
 
     // Executed actions → success toast
     if (response.status === "executed") {
-      return { type: "toast", data: { title: "✅ Succès", description: response.message } };
+      return { type: "toast", data: { title: "Succès", description: response.message } };
     }
 
     // Redirects

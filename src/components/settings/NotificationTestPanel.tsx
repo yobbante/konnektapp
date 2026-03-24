@@ -51,7 +51,7 @@ export function NotificationTestPanel({ userId }: NotificationTestPanelProps) {
   const handleTestCombined = () => {
     notify({ sound: true, vibrate: [100, 50, 100, 50, 200] });
     toast({
-      title: "🔔 Notification complète",
+      title: "Notification complète",
       description: "Son + vibration envoyés simultanément !",
     });
   };
@@ -82,7 +82,7 @@ export function NotificationTestPanel({ userId }: NotificationTestPanelProps) {
     setTestingPush(true);
     
     // Show browser notification
-    showNotification("🚀 Test Notification Push", {
+    showNotification("Test Notification Push", {
       body: "Cette notification confirme que les push fonctionnent sur votre appareil !",
       icon: "/pwa-192x192.png",
       tag: "test-notification",
@@ -113,7 +113,7 @@ export function NotificationTestPanel({ userId }: NotificationTestPanelProps) {
         .from("notifications")
         .insert({
           user_id: userId,
-          title: "🔔 Test notification in-app",
+          title: "Test notification in-app",
           message: "Cette notification vérifie le système temps réel. Regardez l'icône de notification dans l'en-tête !",
           type: "system",
         });
@@ -316,7 +316,7 @@ export function NotificationTestPanel({ userId }: NotificationTestPanelProps) {
         {/* Help Text */}
         <div className="p-3 rounded-lg bg-muted/30 border border-border">
           <p className="text-xs text-muted-foreground">
-            💡 <strong>Astuce mobile:</strong> Assurez-vous que le mode silencieux est désactivé 
+            <strong>Astuce mobile:</strong> Assurez-vous que le mode silencieux est désactivé 
             et que les notifications sont autorisées dans les paramètres de votre appareil.
           </p>
         </div>

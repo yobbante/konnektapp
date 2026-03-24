@@ -450,10 +450,10 @@ export function UnifiedScanRouter({ scannedUserId, onComplete }: UnifiedScanRout
             </div>
 
             <div className="p-2.5 bg-muted/50 rounded-lg text-xs text-muted-foreground">
-              {scanRole === "gp" && "🔧 Confirmer dépôt, modifier poids, confirmer livraison"}
+              {scanRole === "gp" && "Confirmer dépôt, modifier poids, confirmer livraison"}
               {scanRole === "client" && "👁️ Consultation: statut, trajet, historique"}
-              {scanRole === "agent_logistique" && "📋 Collecte, distribution, validation stock"}
-              {scanRole === "admin" && "⚙️ Accès complet: statuts, transitions, audit"}
+              {scanRole === "agent_logistique" && "Collecte, distribution, validation stock"}
+              {scanRole === "admin" && "Accès complet: statuts, transitions, audit"}
             </div>
 
             <div className="space-y-2">

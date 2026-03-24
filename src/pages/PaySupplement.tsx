@@ -9,8 +9,8 @@ import { toast } from "sonner";
 const BG = "linear-gradient(180deg, #0F1923 0%, #15232F 50%, #1A2B3A 100%)";
 
 const paymentMethods = [
-  { id: "wallet", label: "Konnekt Wallet", icon: "💳", desc: "Solde disponible" },
-  { id: "wave", label: "Wave", icon: "🌊", desc: "Mobile money" },
+  { id: "wallet", label: "Konnekt Wallet", icon: "", desc: "Solde disponible" },
+  { id: "wave", label: "Wave", icon: "", desc: "Mobile money" },
   { id: "orange", label: "Orange Money", icon: "🟠", desc: "Mobile money" },
 ];
 
@@ -125,7 +125,7 @@ export default function PaySupplement() {
         status: "checked_in",
         changed_by: user?.id,
         changed_by_type: "client",
-        notes: `💳 Supplément de ${supplement.toLocaleString()} ${order.currency} payé via ${selectedMethod}. Poids: ${order.weight}kg → ${newWeight}kg. Transit débloqué.`,
+        notes: `Supplément de ${supplement.toLocaleString()} ${order.currency} payé via ${selectedMethod}. Poids: ${order.weight}kg → ${newWeight}kg. Transit débloqué.`,
       });
 
       // Log supplement in escrow_logs

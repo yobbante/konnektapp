@@ -304,7 +304,7 @@ export default function AerienRegistration() {
                   </div>
                   {form.pricePerKg && (
                     <div className="p-3 rounded-xl bg-muted/50 border space-y-1.5">
-                      <p className="text-[10px] font-bold">📊 Simulation</p>
+                      <p className="text-[10px] font-bold">Simulation</p>
                       <div className="text-[11px] space-y-1">
                         <div className="flex justify-between py-0.5 border-b border-border/50">
                           <span className="text-muted-foreground">10 kg</span>

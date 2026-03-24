@@ -11,16 +11,16 @@ export function generateBookingHookMessage(
   originCity: string,
   destinationCity: string
 ): string {
-  return `🎉 Bonjour !
+  return `Bonjour !
 
 Votre réservation ${orderNumber} a été créée avec succès !
 
-📦 Trajet : ${originCity} → ${destinationCity}
-🚚 Transporteur : ${gpName}
+Trajet : ${originCity} → ${destinationCity}
+Transporteur : ${gpName}
 
 ${gpName} va prendre contact avec vous pour confirmer les détails de l'envoi (adresse de collecte, horaires, etc.).
 
-N'hésitez pas à poser vos questions ici. Bonne communication ! 🚀`;
+N'hésitez pas à poser vos questions ici. Bonne communication !`;
 }
 
 /**
@@ -46,18 +46,18 @@ export function generateAcceptanceMessage(
   const whatsapp = gpContactInfo?.whatsapp;
   
   // Build structured message WITHOUT markdown ** syntax
-  let message = `✅ RÉSERVATION CONFIRMÉE
+  let message = `RÉSERVATION CONFIRMÉE
 
 ━━━━━━━━━━━━━━━━━━━━
 
-🎉 Bonne nouvelle ! ${gpName} a accepté votre demande.
+Bonne nouvelle ! ${gpName} a accepté votre demande.
 
-📦 Commande : ${orderNumber}
-✈️ Trajet : ${originCity} → ${destinationCity}
+Commande : ${orderNumber}
+Trajet : ${originCity} → ${destinationCity}
 
 ━━━━━━━━━━━━━━━━━━━━
 
-📍 POINT DE DÉPÔT
+POINT DE DÉPÔT
 `;
 
   if (address) {
@@ -66,25 +66,25 @@ export function generateAcceptanceMessage(
     const googleMapsLink = `https://maps.google.com/?q=${encodeURIComponent(address)}`;
     
     message += `
-🏠 ${address}
+${address}
 
-🗺️ Ouvrir dans :
-→ [📍 Waze](${wazeLink})
-→ [🗺️ Google Maps](${googleMapsLink})
+Ouvrir dans :
+→ [Waze](${wazeLink})
+→ [Google Maps](${googleMapsLink})
 `;
   } else {
-    message += `\n🏠 Adresse à confirmer avec le transporteur\n`;
+    message += `\nAdresse à confirmer avec le transporteur\n`;
   }
 
-  message += `\n━━━━━━━━━━━━━━━━━━━━\n\n📞 CONTACT TRANSPORTEUR\n`;
+  message += `\n━━━━━━━━━━━━━━━━━━━━\n\nCONTACT TRANSPORTEUR\n`;
 
   if (phone) {
-    message += `\n📱 Téléphone : ${phone}`;
+    message += `\nTéléphone : ${phone}`;
   }
 
   if (whatsapp) {
     const waNumber = whatsapp.replace(/\D/g, '');
-    message += `\n💬 WhatsApp : [Ouvrir WhatsApp](https://wa.me/${waNumber})`;
+    message += `\nWhatsApp : [Ouvrir WhatsApp](https://wa.me/${waNumber})`;
   }
 
   if (!phone && !whatsapp) {
@@ -95,7 +95,7 @@ export function generateAcceptanceMessage(
 
 ━━━━━━━━━━━━━━━━━━━━
 
-📋 À RETENIR :
+À RETENIR :
 
 ✓ Un QR code sera requis lors du dépôt
 ✓ Vous pouvez envoyer une personne de confiance
@@ -103,7 +103,7 @@ export function generateAcceptanceMessage(
 
 📲 Accédez à votre QR code ici pour le dépôt
 
-💡 Discutez ici pour organiser les détails avec ${gpName}.`;
+Discutez ici pour organiser les détails avec ${gpName}.`;
 
   return message;
 }
@@ -306,7 +306,7 @@ export async function sendAcceptanceNotification(
     const { error: notifError } = await supabase.from("notifications").insert({
       user_id: clientId,
       type: "order_accepted",
-      title: "✅ Commande acceptée !",
+      title: "Commande acceptée !",
       message: `${orderDetails.gpName} a accepté votre réservation ${orderDetails.orderNumber}`,
       related_type: "order",
       related_id: orderId,

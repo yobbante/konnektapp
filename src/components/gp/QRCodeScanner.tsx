@@ -191,7 +191,7 @@ export function QRCodeScanner({ gpId, scanType, onComplete }: QRCodeScannerProps
             status: scannedOrder.status as any, // Keep current status
             changed_by: user.id,
             changed_by_type: "gp",
-            notes: `⚠️ POIDS MODIFIÉ - EN ATTENTE VALIDATION CLIENT: ${scannedOrder.weight} kg → ${actual} kg. Différence prix poids: ${adjustmentAmount > 0 ? '+' : ''}${adjustmentAmount} ${scannedOrder.currency}`,
+            notes: `POIDS MODIFIÉ - EN ATTENTE VALIDATION CLIENT: ${scannedOrder.weight} kg → ${actual} kg. Différence prix poids: ${adjustmentAmount > 0 ? '+' : ''}${adjustmentAmount} ${scannedOrder.currency}`,
           });
         }
 

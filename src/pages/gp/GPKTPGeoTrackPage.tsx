@@ -140,12 +140,12 @@ export default function GPKTPGeoTrackPage() {
                 </p>
                 <div className="space-y-2.5">
                   <ExplainRow
-                    emoji="📊"
+                    emoji=""
                     title="Score de confiance"
                     desc="Calculé à partir de vos scans, ponctualité, satisfaction client et respect des règles."
                   />
                   <ExplainRow
-                    emoji="💰"
+                    emoji=""
                     title="Impact financier"
                     desc="Meilleur score = commission réduite, paiement accéléré, assurance optimisée."
                   />
@@ -155,7 +155,7 @@ export default function GPKTPGeoTrackPage() {
                     desc="Nouveau → Bronze → Verified → Pro. Chaque niveau débloque des avantages."
                   />
                   <ExplainRow
-                    emoji="📱"
+                    emoji=""
                     title="Scannez à chaque étape"
                     desc="Le scan est le facteur #1 (40%) de votre score. Ne manquez aucun scan."
                   />
@@ -266,17 +266,17 @@ export default function GPKTPGeoTrackPage() {
                 </p>
                 <div className="space-y-2.5">
                   <ExplainRow
-                    emoji="📍"
+                    emoji=""
                     title="Détection passive"
                     desc="Votre position est détectée automatiquement en arrière-plan, sans action de votre part."
                   />
                   <ExplainRow
-                    emoji="✈️"
+                    emoji=""
                     title="Transition automatique"
                     desc="Quand vous arrivez au pays de destination, le statut de vos colis passe automatiquement en transit."
                   />
                   <ExplainRow
-                    emoji="🔒"
+                    emoji=""
                     title="Vie privée"
                     desc="La position n'est utilisée que pour le suivi des colis. Aucune donnée partagée avec des tiers."
                   />

@@ -568,7 +568,7 @@ export default function GPRegistration() {
                           <p className="text-sm text-muted-foreground">{isLocked ? 'Bientôt disponible' : (transport.longDescription || transport.description)}</p>
                           {isBagages && (
                             <p className="text-xs text-amber-600 mt-2 font-medium">
-                              ✈️ Inscription rapide en 2 min
+                              Inscription rapide en 2 min
                             </p>
                           )}
                         </div>

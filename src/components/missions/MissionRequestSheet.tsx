@@ -409,9 +409,9 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
                               onChange={(e) => updateCorridorLeg(i, "mode", e.target.value)}
                               className="text-xs bg-background border border-border rounded-lg px-2 py-1"
                             >
-                              <option value="aerien">✈️ Aérien</option>
-                              <option value="maritime">🚢 Maritime</option>
-                              <option value="routier">🚛 Routier</option>
+                              <option value="aerien">Aérien</option>
+                              <option value="maritime">Maritime</option>
+                              <option value="routier">Routier</option>
                             </select>
                             {corridorLegs.length > 2 && (
                               <button onClick={() => removeCorridorLeg(i)} className="text-destructive hover:text-destructive/80">
@@ -466,7 +466,7 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
                         placeholder="Rechercher ville de départ..."
                         label="Ville de départ"
                       />
-                      {originCountry && <p className="text-[11px] text-muted-foreground ml-1">📍 {originCountry}</p>}
+                      {originCountry && <p className="text-[11px] text-muted-foreground ml-1">{originCountry}</p>}
                       {mode === "routier" && (
                         <Input value={originAddress} onChange={(e) => setOriginAddress(e.target.value)} placeholder="Adresse de collecte (optionnel)" className="text-sm" />
                       )}
@@ -485,7 +485,7 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
                         placeholder="Rechercher ville d'arrivée..."
                         label="Ville de destination"
                       />
-                      {destCountry && <p className="text-[11px] text-muted-foreground ml-1">📍 {destCountry}</p>}
+                      {destCountry && <p className="text-[11px] text-muted-foreground ml-1">{destCountry}</p>}
                       {mode === "routier" && (
                         <Input value={destAddress} onChange={(e) => setDestAddress(e.target.value)} placeholder="Adresse de livraison (optionnel)" className="text-sm" />
                       )}
@@ -535,7 +535,7 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
                           vehicleRunning ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600" : "bg-orange-500/10 border-orange-500/30 text-orange-600"
                         )}
                       >
-                        {vehicleRunning ? "✅ Roulant" : "🔧 Non roulant"}
+                        {vehicleRunning ? "Roulant" : "Non roulant"}
                       </button>
                     </div>
                   </div>
@@ -777,7 +777,7 @@ export function MissionRequestSheet({ open, onOpenChange }: MissionRequestSheetP
                         {corridorLegs.map((leg, i) => (
                           <div key={i} className="flex items-center gap-2 text-xs">
                             <span className="w-5 h-5 rounded-full bg-background flex items-center justify-center text-[10px] font-bold">{i + 1}</span>
-                            <span className="text-muted-foreground">{leg.mode === "aerien" ? "✈️" : leg.mode === "maritime" ? "🚢" : "🚛"}</span>
+                            <span className="text-muted-foreground">{leg.mode === "aerien" ? "" : leg.mode === "maritime" ? "" : ""}</span>
                             <span className="font-medium text-foreground">{leg.originCity} → {leg.destCity}</span>
                           </div>
                         ))}

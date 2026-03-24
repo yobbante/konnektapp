@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAutoPushNotifications } from "@/hooks/useAutoPushNotifications";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 
 /**
  * Global notification provider that sets up push notifications
- * based on the current user's role
+ * and in-app realtime notifications based on the current user's role
  */
 export function GlobalNotificationProvider({ children }: { children: React.ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
@@ -56,6 +57,11 @@ export function GlobalNotificationProvider({ children }: { children: React.React
     userId,
     userType,
     enabled: true,
+  });
+
+  // Initialize in-app realtime notifications (toasts + sounds)
+  useRealtimeNotifications({
+    userId,
   });
 
   return <>{children}</>;

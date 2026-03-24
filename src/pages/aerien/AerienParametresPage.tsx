@@ -167,11 +167,11 @@ export default function AerienParametresPage() {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label className="text-[10px] text-muted-foreground">✈️ Aéroport origine</Label>
+                  <Label className="text-[10px] text-muted-foreground">Aéroport origine</Label>
                   <Input className="h-8 text-sm" value={profileForm.deposit_address} onChange={e => setProfileForm(p => ({ ...p, deposit_address: e.target.value }))} />
                 </div>
                 <div>
-                  <Label className="text-[10px] text-muted-foreground">✈️ Aéroport arrivée</Label>
+                  <Label className="text-[10px] text-muted-foreground">Aéroport arrivée</Label>
                   <Input className="h-8 text-sm" value={profileForm.reception_address} onChange={e => setProfileForm(p => ({ ...p, reception_address: e.target.value }))} />
                 </div>
               </div>
@@ -255,7 +255,7 @@ export default function AerienParametresPage() {
           <Separator />
           <SettingsRow icon={ScanLine} iconColor="text-purple-500" iconBg="bg-purple-500/10" label="Scanner QR" desc="Caméra" onClick={() => navigate("/aerien/scan")} />
           <Separator />
-          <SettingsRow icon={Zap} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Auto-acceptation" desc={isPremium && gpProfile.auto_accept_enabled ? "Activée ✅" : isPremium ? "Désactivée" : "Découvrir"} onClick={() => {}} />
+          <SettingsRow icon={Zap} iconColor="text-blue-500" iconBg="bg-blue-500/10" label="Auto-acceptation" desc={isPremium && gpProfile.auto_accept_enabled ? "Activée" : isPremium ? "Désactivée" : "Découvrir"} onClick={() => {}} />
         </SettingsSection>
 
         {/* ═══ 5. SÉCURITÉ & FINANCES ═══ */}

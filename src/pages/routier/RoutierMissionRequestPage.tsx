@@ -27,22 +27,22 @@ type FreightType = "colis" | "palettes" | "alimentaire" | "frigorifie" | "liquid
 type Urgency = "standard" | "express" | "immediate";
 
 const freightTypes: { id: FreightType; icon: React.ComponentType<{ className?: string }>; emoji: string; label: string }[] = [
-  { id: "colis", icon: Package, emoji: "📦", label: "Colis" },
+  { id: "colis", icon: Package, emoji: "", label: "Colis" },
   { id: "palettes", icon: Box, emoji: "🪵", label: "Palettes" },
-  { id: "alimentaire", icon: Package, emoji: "🍎", label: "Alimentaire" },
+  { id: "alimentaire", icon: Package, emoji: "", label: "Alimentaire" },
   { id: "frigorifie", icon: Thermometer, emoji: "❄️", label: "Frigorifié" },
   { id: "liquides", icon: Droplets, emoji: "🛢️", label: "Liquides" },
   { id: "materiaux", icon: Truck, emoji: "🪨", label: "Matériaux" },
-  { id: "btp", icon: Truck, emoji: "🏗️", label: "BTP" },
-  { id: "vehicules", icon: Truck, emoji: "🚗", label: "Véhicules" },
+  { id: "btp", icon: Truck, emoji: "", label: "BTP" },
+  { id: "vehicules", icon: Truck, emoji: "", label: "Véhicules" },
 ];
 
 const vehicleTypes = [
   { id: "fourgon", emoji: "🚐" },
   { id: "camionnette", emoji: "🚙" },
-  { id: "camion_3t", emoji: "🚚" },
-  { id: "camion_10t", emoji: "🚛" },
-  { id: "semi_remorque", emoji: "🚛" },
+  { id: "camion_3t", emoji: "" },
+  { id: "camion_10t", emoji: "" },
+  { id: "semi_remorque", emoji: "" },
   { id: "frigo", emoji: "❄️" },
 ];
 

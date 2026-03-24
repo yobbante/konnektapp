@@ -99,7 +99,7 @@ export function useFavoriteTransporters() {
         if (error) throw error;
 
         toast({
-          title: "Ajouté aux favoris ⭐",
+          title: "Ajouté aux favoris",
           description: "Vous recevrez une notification pour ses prochains trajets",
         });
       }

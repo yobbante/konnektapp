@@ -59,9 +59,9 @@ function detectInputType(input: string): DetectedType {
 
 function getPlaceholderHint(type: DetectedType): string {
   switch (type) {
-    case "phone": return "📱 Recherche par téléphone...";
-    case "email": return "📧 Recherche par email...";
-    case "uuid": return "🔑 Recherche par UUID...";
+    case "phone": return "Recherche par téléphone...";
+    case "email": return "Recherche par email...";
+    case "uuid": return "Recherche par UUID...";
     case "konnekt_id": return "🆔 Recherche par ID Konnekt...";
     case "name": return "👤 Recherche par nom...";
   }

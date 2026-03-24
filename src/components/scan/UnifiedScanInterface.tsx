@@ -350,7 +350,7 @@ export function UnifiedScanInterface({
                             </span>
                           )}
                           {gpContext.rating && (
-                            <span className="text-[10px] text-amber-400">⭐ {gpContext.rating.toFixed(1)}</span>
+                            <span className="text-[10px] text-amber-400">{gpContext.rating.toFixed(1)}</span>
                           )}
                         </div>
                       </div>

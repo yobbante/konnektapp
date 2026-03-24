@@ -38,7 +38,7 @@ export function ShareOfferButton({
 
   const offerUrl = `${window.location.origin}/offres/${offerId}`;
   const dateFormatted = format(new Date(departureDate), "d MMMM", { locale: fr });
-  const shareText = `🚀 Offre de transport ${originCity} → ${destinationCity} le ${dateFormatted} - ${pricePerKg} ${getCurrencySymbol(currency)}/kg sur Konnekt`;
+  const shareText = `Offre de transport ${originCity} → ${destinationCity} le ${dateFormatted} - ${pricePerKg} ${getCurrencySymbol(currency)}/kg sur Konnekt`;
 
   const handleCopyLink = async () => {
     try {

@@ -89,7 +89,7 @@ export default function RoutierMissionDetailPage() {
     if (error) {
       toast({ title: "Erreur", variant: "destructive" });
     } else {
-      toast({ title: "✅ Mission acceptée !" });
+      toast({ title: "Mission acceptée !" });
       setOrder({ ...order, status: "accepted" });
     }
     setAccepting(false);

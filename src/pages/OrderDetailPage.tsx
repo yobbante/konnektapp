@@ -7,7 +7,8 @@ import { fr } from "date-fns/locale";
 import QRCode from "react-qr-code";
 import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/layout/AppHeader";
-import { MobileNav } from "@/components/layout/MobileNav";
+import { KonnektPageLoader } from "@/components/ui/KonnektLoader";
+
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   pending: { label: "En attente", color: "bg-amber-500/20 text-amber-600" },
@@ -81,11 +82,7 @@ export default function OrderDetailPage() {
   }, [orderId]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <KonnektPageLoader message="Chargement de la commande..." />;
   }
 
   if (!order) {
@@ -95,7 +92,6 @@ export default function OrderDetailPage() {
         <div className="flex-1 flex items-center justify-center">
           <p className="text-muted-foreground">Cette commande n'existe pas.</p>
         </div>
-        <MobileNav />
       </div>
     );
   }
@@ -264,7 +260,7 @@ export default function OrderDetailPage() {
         </button>
       </div>
 
-      <MobileNav />
+      
     </div>
   );
 }

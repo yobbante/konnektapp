@@ -1,6 +1,6 @@
 /**
  * RoutierInteractiveMap — Plain Leaflet interactive map
- * Overview: mission chips (📦 price + size) placed at origin city + corridor routes
+ * Overview: mission chips (price + size) placed at origin city + corridor routes
  * Detail: curved road-style route with Départ/Arrivée labels + bottom card
  */
 import { useEffect, useRef, useMemo, useState, useCallback } from "react";

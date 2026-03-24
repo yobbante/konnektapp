@@ -120,7 +120,7 @@ export default function Recipients() {
         }).then(() => {});
       }
 
-      toast({ title: "✅ Destinataire ajouté" });
+      toast({ title: "Destinataire ajouté" });
       setShowAddSheet(false);
       setAddName("");
       setAddPhone("");

@@ -164,7 +164,7 @@ export default function RoutierMissionDetailTransporteurPage() {
         if (orderId) console.log("[Routier] Order created:", orderId);
       } catch (e) { console.warn("Conversion:", e); }
 
-      toast({ title: "✅ Mission acceptée au prix client" });
+      toast({ title: "Mission acceptée au prix client" });
       navigate("/routier/en-cours");
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
@@ -224,7 +224,7 @@ export default function RoutierMissionDetailTransporteurPage() {
         if (orderId) console.log("[Routier] Order created:", orderId);
       } catch (e) { console.warn("Conversion:", e); }
 
-      toast({ title: "✅ Accord conclu !" });
+      toast({ title: "Accord conclu !" });
       navigate("/routier/en-cours");
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });

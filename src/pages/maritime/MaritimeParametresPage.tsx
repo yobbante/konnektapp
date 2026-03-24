@@ -168,11 +168,11 @@ export default function MaritimeParametresPage() {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label className="text-[10px] text-muted-foreground">⚓ Port d'origine</Label>
+                  <Label className="text-[10px] text-muted-foreground">Port d'origine</Label>
                   <Input className="h-8 text-sm" value={profileForm.deposit_address} onChange={e => setProfileForm(p => ({ ...p, deposit_address: e.target.value }))} />
                 </div>
                 <div>
-                  <Label className="text-[10px] text-muted-foreground">⚓ Port d'arrivée</Label>
+                  <Label className="text-[10px] text-muted-foreground">Port d'arrivée</Label>
                   <Input className="h-8 text-sm" value={profileForm.reception_address} onChange={e => setProfileForm(p => ({ ...p, reception_address: e.target.value }))} />
                 </div>
               </div>

@@ -152,14 +152,14 @@ export function TutorialStepOverlay() {
                 <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
                   <CheckCircle className="w-10 h-10 text-green-400" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">Scénario terminé ! 🎉</h3>
+                <h3 className="text-xl font-bold text-white mb-2">Scénario terminé !</h3>
                 <p className="text-sm text-white/60 mb-2">
                   Vous maîtrisez « {currentScenario.title} »
                 </p>
 
                 {/* Mini summary */}
                 <div className="bg-white/5 border border-white/10 rounded-xl p-3 mt-4 text-left max-w-xs mx-auto space-y-1">
-                  <p className="text-[11px] text-white/40 font-medium mb-1.5">📊 Résumé sandbox</p>
+                  <p className="text-[11px] text-white/40 font-medium mb-1.5">Résumé sandbox</p>
                   <p className="text-[11px] text-white/60">Wallet Client : {mockState.clientWallet.balance.toLocaleString()} FCFA</p>
                   <p className="text-[11px] text-white/60">Wallet GP : {mockState.gpWallet.balance.toLocaleString()} FCFA</p>
                   <p className="text-[11px] text-white/60">Escrow : {mockState.escrow.status}</p>
@@ -184,7 +184,7 @@ export function TutorialStepOverlay() {
               {/* Step header */}
               <div className="flex items-start gap-3 mb-3">
                 <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-base">{currentStep.actionIcon || "📌"}</span>
+                  <span className="text-base">{currentStep.actionIcon || ""}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-sm text-foreground">{currentStep.title}</h3>
@@ -210,7 +210,7 @@ export function TutorialStepOverlay() {
 
                 {isStepCompleted ? (
                   <Button size="sm" onClick={handleNext} className="flex-1 rounded-xl gap-1.5 h-10">
-                    {currentStepIndex === totalSteps - 1 ? "Terminer 🎉" : "Étape suivante"}
+                    {currentStepIndex === totalSteps - 1 ? "Terminer" : "Étape suivante"}
                     <ChevronRight className="w-4 h-4" />
                   </Button>
                 ) : (

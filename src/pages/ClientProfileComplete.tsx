@@ -203,7 +203,7 @@ export default function ClientProfileComplete() {
               <span className={completion >= 100 ? "text-emerald-500 font-medium" : "text-primary font-medium"}>{completion}%</span>
             </div>
             <Progress value={completion} className="h-2" />
-            {completion >= 100 && <p className="text-xs text-emerald-500 mt-1.5 font-medium">✨ Protection maximale activée</p>}
+            {completion >= 100 && <p className="text-xs text-emerald-500 mt-1.5 font-medium">Protection maximale activée</p>}
           </div>
 
           {/* Avatar */}

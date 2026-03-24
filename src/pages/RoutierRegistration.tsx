@@ -40,8 +40,8 @@ const CITIES_BY_COUNTRY: Record<string, string[]> = {
 };
 
 const ROUTIER_VEHICLES = [
-  { value: "moto", label: "🏍️ Moto", category: "light" },
-  { value: "tricycle", label: "🛺 Tricycle / Jakarta", category: "light" },
+  { value: "moto", label: "Moto", category: "light" },
+  { value: "tricycle", label: "Tricycle / Jakarta", category: "light" },
   { value: "pickup", label: "🚙 Pick-up", category: "light" },
   { value: "fourgonnette", label: "🚐 Fourgonnette", category: "medium" },
   { value: "fourgon", label: "Fourgon", category: "medium" },
@@ -50,21 +50,21 @@ const ROUTIER_VEHICLES = [
   { value: "camion_10t", label: "Camion 10T", category: "heavy" },
   { value: "camion_benne", label: "Camion benne", category: "heavy" },
   { value: "semi_remorque", label: "Semi-remorque", category: "heavy" },
-  { value: "plateau", label: "🚛 Plateau", category: "heavy" },
-  { value: "porte_conteneur", label: "📦 Porte-conteneur", category: "heavy" },
+  { value: "plateau", label: "Plateau", category: "heavy" },
+  { value: "porte_conteneur", label: "Porte-conteneur", category: "heavy" },
   { value: "citerne", label: "🛢️ Citerne", category: "heavy" },
   { value: "frigorifique", label: "❄️ Frigorifique", category: "heavy" },
 ];
 
 const FREIGHT_TYPES = [
-  { id: "colis", label: "📦 Colis & Cartons" },
+  { id: "colis", label: "Colis & Cartons" },
   { id: "mobilier", label: "🪑 Mobilier & Meubles" },
   { id: "materiaux", label: "🧱 Matériaux BTP" },
-  { id: "machines", label: "⚙️ Machines & Équipements" },
-  { id: "vehicules", label: "🚗 Véhicules" },
+  { id: "machines", label: "Machines & Équipements" },
+  { id: "vehicules", label: "Véhicules" },
   { id: "vrac", label: "🪨 Vrac (sable, gravier)" },
-  { id: "denrees", label: "🍎 Denrées périssables" },
-  { id: "conteneurs", label: "📦 Conteneurs" },
+  { id: "denrees", label: "Denrées périssables" },
+  { id: "conteneurs", label: "Conteneurs" },
 ];
 
 type EntityType = "particulier" | "entreprise";
@@ -236,7 +236,7 @@ export default function RoutierRegistration() {
     setVehicles(prev => [...prev, { ...currentVehicle, id: `v-${Date.now()}` }]);
     setCurrentVehicle({ id: "", type: "", name: "", maxWeightKg: "", maxVolumeM3: "", hasInsurance: false, homeDelivery: false });
     setShowVehicleForm(false);
-    toast({ title: "✅ Véhicule ajouté" });
+    toast({ title: "Véhicule ajouté" });
   };
 
   const handleSubmit = async () => {
@@ -284,7 +284,7 @@ export default function RoutierRegistration() {
         });
       }
 
-      toast({ title: "🚛 Inscription réussie !" });
+      toast({ title: "Inscription réussie !" });
       navigate("/routier/apercu");
     } catch (error: any) {
       console.error(error);

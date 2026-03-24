@@ -81,16 +81,16 @@ export function MessageContent({ content, orderId, isOwn = false }: MessageConte
     cleaned = cleaned.replace(/\*\*([^*]+)\*\*/g, "$1");
     
     // Remove Waze markdown links
-    cleaned = cleaned.replace(/→?\s*\[📍?\s*Waze\]\([^\)]+\)/gi, "");
+    cleaned = cleaned.replace(/→?\s*\[?\s*Waze\]\([^\)]+\)/gi, "");
     
     // Remove Google Maps markdown links
-    cleaned = cleaned.replace(/→?\s*\[🗺️?\s*Google Maps\]\([^\)]+\)/gi, "");
+    cleaned = cleaned.replace(/→?\s*\[?\s*Google Maps\]\([^\)]+\)/gi, "");
     
     // Remove WhatsApp markdown links
-    cleaned = cleaned.replace(/💬\s*WhatsApp\s*:\s*\[.*?\]\([^\)]+\)/gi, "");
+    cleaned = cleaned.replace(/\s*WhatsApp\s*:\s*\[.*?\]\([^\)]+\)/gi, "");
     
     // Remove "Ouvrir dans :" section if empty after link removal
-    cleaned = cleaned.replace(/🗺️\s*Ouvrir dans\s*:\s*\n?\s*$/gm, "");
+    cleaned = cleaned.replace(/\s*Ouvrir dans\s*:\s*\n?\s*$/gm, "");
     
     // Clean up empty lines
     cleaned = cleaned.replace(/\n{3,}/g, "\n\n");

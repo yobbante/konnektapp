@@ -149,7 +149,7 @@ export function WeightRefusalAlert({ gpId }: WeightRefusalAlertProps) {
 
       setDismissedIds(prev => new Set([...prev, orderId]));
       toast({
-        title: "✅ Pris en compte",
+        title: "Pris en compte",
         description: "N'oubliez pas de restituer le colis au client.",
       });
     } catch (error) {
@@ -229,7 +229,7 @@ export function WeightRefusalAlert({ gpId }: WeightRefusalAlertProps) {
                       Actions requises:
                     </p>
                     <ul className="text-xs text-destructive/80 mt-1 space-y-1 pl-6 list-disc">
-                      <li>🔒 Ne PAS prendre en charge ce colis</li>
+                      <li>Ne PAS prendre en charge ce colis</li>
                       <li>⛔ Scan invalide pour cette commande</li>
                       <li>↩️ Restituer le colis au client/expéditeur</li>
                     </ul>

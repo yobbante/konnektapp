@@ -75,9 +75,9 @@ export default function GPRestrictionsPage() {
     { id: "all", label: "Tout" },
     { id: "critical", label: "⛔ Critiques" },
     { id: "legal", label: "⚖️ Légal" },
-    { id: "safety", label: "🔥 Sécurité" },
+    { id: "safety", label: "Sécurité" },
     { id: "valuable", label: "💎 Valeur" },
-    { id: "special", label: "📦 Spécial" },
+    { id: "special", label: "Spécial" },
   ];
 
   const filteredRestrictions = activeCategory === "all"

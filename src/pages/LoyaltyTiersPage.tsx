@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { useClientLoyalty, LoyaltyBadge } from "@/components/loyalty/LoyaltySystem";
+import { KonnektLoader } from "@/components/ui/KonnektLoader";
 
 interface LoyaltyTier {
   id: string;
@@ -73,7 +74,7 @@ export default function LoyaltyTiersPage() {
       <div className="min-h-screen bg-background pb-safe">
         <MobileHeader />
         <div className="flex items-center justify-center h-[60vh]">
-          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+          <KonnektLoader size="md" />
         </div>
         <MobileNav />
       </div>

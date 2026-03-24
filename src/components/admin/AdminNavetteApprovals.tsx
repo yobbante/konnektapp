@@ -99,7 +99,7 @@ export function AdminNavetteApprovals() {
           .eq("id", request.gp_id);
       }
 
-      toast({ title: decision === "approved" ? "✅ Navette approuvée" : "❌ Navette refusée" });
+      toast({ title: decision === "approved" ? "Navette approuvée" : "❌ Navette refusée" });
       loadRequests();
     } catch (err) {
       console.error("Error processing request:", err);

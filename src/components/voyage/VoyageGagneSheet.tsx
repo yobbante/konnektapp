@@ -257,7 +257,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
       if (offerError) throw offerError;
 
       toast({
-        title: "🎉 Trajet publié !",
+        title: "Trajet publié !",
         description: `${originCity} → ${destCity} · Gains potentiels : ${estimatedEarnings}€`,
       });
 
@@ -319,7 +319,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                     Tu voyages ? 
                   </h2>
                   <p className="text-base text-amber-600 font-semibold mb-1">
-                    Gagne de l'argent avec ton bagage 💰
+                    Gagne de l'argent avec ton bagage
                   </p>
                   <p className="text-sm text-muted-foreground max-w-[280px] mx-auto leading-relaxed">
                     Publie ton trajet en 30 secondes. Des clients réservent ton espace bagage et tu gagnes à chaque voyage.

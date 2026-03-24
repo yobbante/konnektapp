@@ -437,7 +437,7 @@ export default function GPPremiumPage() {
             {!isPremium && (
               <div className="bg-accent/10 border border-accent/20 rounded-xl p-3 text-center">
                 <p className="text-[11px] font-semibold text-accent">
-                  💡 1 seul colis supplémentaire par mois rembourse l'abonnement
+                  1 seul colis supplémentaire par mois rembourse l'abonnement
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
                   En moyenne, les GP Premium reçoivent 3x plus de demandes

@@ -121,13 +121,13 @@ export function AdminMessageTemplates() {
           .update(templateData)
           .eq("id", editingTemplate.id);
         if (error) throw error;
-        toast({ title: "✅ Template mis à jour" });
+        toast({ title: "Template mis à jour" });
       } else {
         const { error } = await supabase
           .from("message_templates")
           .insert(templateData);
         if (error) throw error;
-        toast({ title: "✅ Template ajouté" });
+        toast({ title: "Template ajouté" });
       }
 
       resetForm();
@@ -162,7 +162,7 @@ export function AdminMessageTemplates() {
         .eq("id", deleteId);
 
       if (error) throw error;
-      toast({ title: "✅ Template supprimé" });
+      toast({ title: "Template supprimé" });
       setDeleteId(null);
       loadTemplates();
     } catch (error) {
@@ -316,7 +316,7 @@ export function AdminMessageTemplates() {
               <div>
                 <Label>Icône (emoji)</Label>
                 <Input
-                  placeholder="📦"
+                  placeholder=""
                   value={formData.icon}
                   onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
                 />

@@ -33,14 +33,14 @@ const CITIES_BY_COUNTRY: Record<string, string[]> = {
 };
 
 const SERVICES = [
-  { id: "aerien", label: "✈️ Fret aérien" },
-  { id: "maritime", label: "🚢 Fret maritime" },
-  { id: "routier", label: "🚛 Transport routier" },
-  { id: "douane", label: "📋 Dédouanement" },
-  { id: "entreposage", label: "🏭 Entreposage" },
-  { id: "assurance", label: "🛡️ Assurance transport" },
+  { id: "aerien", label: "Fret aérien" },
+  { id: "maritime", label: "Fret maritime" },
+  { id: "routier", label: "Transport routier" },
+  { id: "douane", label: "Dédouanement" },
+  { id: "entreposage", label: "Entreposage" },
+  { id: "assurance", label: "Assurance transport" },
   { id: "multimodal", label: "🔄 Multimodal" },
-  { id: "last_mile", label: "📦 Dernier kilomètre" },
+  { id: "last_mile", label: "Dernier kilomètre" },
 ];
 
 const TOTAL_STEPS = 4;

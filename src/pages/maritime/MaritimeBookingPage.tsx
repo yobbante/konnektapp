@@ -37,9 +37,9 @@ const merchandiseTypes = [
 ];
 
 const freightModes = [
-  { value: "lcl", label: "Groupage LCL", desc: "Volume partiel, au m³", icon: "📦" },
-  { value: "fcl", label: "Conteneur FCL", desc: "20ft ou 40ft dédié", icon: "🏗️" },
-  { value: "roro", label: "RoRo Véhicule", desc: "Transport de véhicule", icon: "🚗" },
+  { value: "lcl", label: "Groupage LCL", desc: "Volume partiel, au m³", icon: "" },
+  { value: "fcl", label: "Conteneur FCL", desc: "20ft ou 40ft dédié", icon: "" },
+  { value: "roro", label: "RoRo Véhicule", desc: "Transport de véhicule", icon: "" },
 ];
 
 export default function MaritimeBookingPage() {
@@ -143,7 +143,7 @@ export default function MaritimeBookingPage() {
 
       if (error) throw error;
 
-      toast({ title: "🚢 Demande envoyée !", description: "Les transitaires vont recevoir votre demande." });
+      toast({ title: "Demande envoyée !", description: "Les transitaires vont recevoir votre demande." });
       setStep(7); // success
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });

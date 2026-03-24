@@ -287,7 +287,7 @@ export default function CustomRequest() {
             {/* Link to dedicated moving page */}
             <div className="mb-6 p-3 bg-amber-500/10 rounded-xl border border-amber-200/50">
               <p className="text-sm text-amber-700 dark:text-amber-400 mb-2">
-                🚚 Besoin d'un déménagement complet ?
+                Besoin d'un déménagement complet ?
               </p>
               <Button 
                 variant="outline" 

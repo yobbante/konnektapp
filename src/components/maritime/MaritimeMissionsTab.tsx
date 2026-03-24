@@ -26,10 +26,10 @@ interface MaritimeMissionsTabProps {
 }
 
 const maritimeTypeConfig: Record<string, { label: string; icon: string; color: string; bg: string }> = {
-  lcl: { label: "Groupage LCL", icon: "📦", color: "text-blue-700", bg: "bg-blue-100 dark:bg-blue-900/30" },
-  fcl: { label: "Conteneur FCL", icon: "🏗️", color: "text-indigo-700", bg: "bg-indigo-100 dark:bg-indigo-900/30" },
-  roro: { label: "RoRo Véhicule", icon: "🚗", color: "text-emerald-700", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
-  bulk: { label: "Vrac", icon: "📋", color: "text-amber-700", bg: "bg-amber-100 dark:bg-amber-900/30" },
+  lcl: { label: "Groupage LCL", icon: "", color: "text-blue-700", bg: "bg-blue-100 dark:bg-blue-900/30" },
+  fcl: { label: "Conteneur FCL", icon: "", color: "text-indigo-700", bg: "bg-indigo-100 dark:bg-indigo-900/30" },
+  roro: { label: "RoRo Véhicule", icon: "", color: "text-emerald-700", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
+  bulk: { label: "Vrac", icon: "", color: "text-amber-700", bg: "bg-amber-100 dark:bg-amber-900/30" },
 };
 
 const urgencyConfig: Record<string, { label: string; color: string; bg: string }> = {

@@ -91,7 +91,7 @@ export async function notifyAdminPickupMission(
     const notifications = adminUsers.map((admin) => ({
       user_id: admin.user_id,
       type: "logistics_mission",
-      title: "🚚 Nouvelle mission d'enlèvement",
+      title: "Nouvelle mission d'enlèvement",
       message: `GP ${gpName} a accepté la commande ${orderNumber}. Enlèvement à effectuer à Dakar.`,
       related_type: "order",
       related_id: orderId,
@@ -135,7 +135,7 @@ export async function notifyAdminDeliveryMission(
     const notifications = adminUsers.map((admin) => ({
       user_id: admin.user_id,
       type: "logistics_mission",
-      title: "📦 Colis arrivé - Livraison dernier km",
+      title: "Colis arrivé - Livraison dernier km",
       message: `Le colis ${orderNumber} est arrivé à Dakar chez ${gpName}. Livraison dernier km à effectuer.`,
       related_type: "order",
       related_id: orderId,

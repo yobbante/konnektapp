@@ -62,7 +62,7 @@ export function AdminActiveCities() {
         city: newCity,
         country_code: newCountryCode,
         country_name: newCountryName || newCountryCode,
-        flag: newFlag || "🌍",
+        flag: newFlag || "",
         sort_order: cities.length + 1,
       });
 

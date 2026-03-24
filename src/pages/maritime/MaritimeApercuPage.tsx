@@ -124,7 +124,7 @@ export default function MaritimeApercuPage() {
         {/* HEADER */}
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-bold">🚢 Maritime</h2>
+            <h2 className="text-sm font-bold">Maritime</h2>
             <p className="text-[10px] text-muted-foreground">Fret maritime, groupage & véhicules</p>
           </div>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => loadAll(true)} disabled={refreshing}>
@@ -164,10 +164,10 @@ export default function MaritimeApercuPage() {
           </h3>
           <div className="grid grid-cols-2 gap-2">
             {[
-              { icon: "📦", title: "Groupage LCL", desc: "Réservation au m³", path: "/maritime/publier" },
-              { icon: "🏗️", title: "Conteneur FCL", desc: "20ft / 40ft dédié", path: "/maritime/publier" },
-              { icon: "🚗", title: "Véhicule", desc: "RoRo / Conteneur", path: "/maritime/publier" },
-              { icon: "📋", title: "Devis libre", desc: "Demande sur mesure", path: "/maritime/publier" },
+              { icon: "", title: "Groupage LCL", desc: "Réservation au m³", path: "/maritime/publier" },
+              { icon: "", title: "Conteneur FCL", desc: "20ft / 40ft dédié", path: "/maritime/publier" },
+              { icon: "", title: "Véhicule", desc: "RoRo / Conteneur", path: "/maritime/publier" },
+              { icon: "", title: "Devis libre", desc: "Demande sur mesure", path: "/maritime/publier" },
             ].map((s) => (
               <Card key={s.title} className="cursor-pointer active:scale-[0.98] transition-all border-primary/15 hover:border-primary/40" onClick={() => navigate(s.path)}>
                 <CardContent className="p-2.5 flex items-center gap-2">

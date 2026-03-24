@@ -25,11 +25,11 @@ interface AerienMissionsTabProps {
 }
 
 const cargoTypeConfig: Record<string, { label: string; icon: string; color: string; bg: string }> = {
-  documents: { label: "Documents", icon: "📄", color: "text-blue-700", bg: "bg-blue-100 dark:bg-blue-900/30" },
-  "électronique": { label: "Électronique", icon: "💻", color: "text-indigo-700", bg: "bg-indigo-100 dark:bg-indigo-900/30" },
-  textile: { label: "Textile", icon: "👕", color: "text-emerald-700", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
-  "pièces auto": { label: "Pièces auto", icon: "⚙️", color: "text-amber-700", bg: "bg-amber-100 dark:bg-amber-900/30" },
-  alimentaire: { label: "Alimentaire", icon: "🍎", color: "text-red-700", bg: "bg-red-100 dark:bg-red-900/30" },
+  documents: { label: "Documents", icon: "", color: "text-blue-700", bg: "bg-blue-100 dark:bg-blue-900/30" },
+  "électronique": { label: "Électronique", icon: "", color: "text-indigo-700", bg: "bg-indigo-100 dark:bg-indigo-900/30" },
+  textile: { label: "Textile", icon: "", color: "text-emerald-700", bg: "bg-emerald-100 dark:bg-emerald-900/30" },
+  "pièces auto": { label: "Pièces auto", icon: "", color: "text-amber-700", bg: "bg-amber-100 dark:bg-amber-900/30" },
+  alimentaire: { label: "Alimentaire", icon: "", color: "text-red-700", bg: "bg-red-100 dark:bg-red-900/30" },
 };
 
 const urgencyConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -150,7 +150,7 @@ export function AerienMissionsTab({ gpId }: AerienMissionsTabProps) {
         <div className="space-y-2">
           <AnimatePresence>
             {filteredMissions.map((m, idx) => {
-              const cType = cargoTypeConfig[m.merchandise_type?.toLowerCase()] || { label: m.merchandise_type || "Cargo", icon: "📦", color: "text-violet-700", bg: "bg-violet-100 dark:bg-violet-900/30" };
+              const cType = cargoTypeConfig[m.merchandise_type?.toLowerCase()] || { label: m.merchandise_type || "Cargo", icon: "", color: "text-violet-700", bg: "bg-violet-100 dark:bg-violet-900/30" };
               const urgency = urgencyConfig[m.urgency_level] || urgencyConfig.standard;
               const isExpanded = expandedId === m.id;
               const budget = m.declared_value || 0;

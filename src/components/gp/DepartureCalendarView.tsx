@@ -208,7 +208,7 @@ export function DepartureCalendarView({
     }));
   };
 
-  const getFlag = (code: string) => FLAGS[code] || "🌍";
+  const getFlag = (code: string) => FLAGS[code] || "";
 
   return (
     <div className="space-y-4">
@@ -465,7 +465,7 @@ function SmartVoyageFormInline({
         destinationCountry: defaultRoute.originCountry,
       };
 
-  const getFlag = (code: string) => FLAGS[code] || "🌍";
+  const getFlag = (code: string) => FLAGS[code] || "";
 
   const handleSubmit = async () => {
     if (totalCapacity <= 0) return;

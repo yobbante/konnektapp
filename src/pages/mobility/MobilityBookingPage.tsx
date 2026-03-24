@@ -142,7 +142,7 @@ export default function MobilityBookingPage() {
 
       setBooking(bk);
       setStep("confirmation");
-      toast({ title: "🎉 Réservation confirmée !" });
+      toast({ title: "Réservation confirmée !" });
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
     } finally {

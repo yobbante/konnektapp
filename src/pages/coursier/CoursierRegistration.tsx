@@ -36,10 +36,10 @@ const CITIES_BY_COUNTRY: Record<string, string[]> = {
 };
 
 const VEHICLE_TYPES = [
-  { value: "moto", label: "🏍️ Moto" },
-  { value: "velo", label: "🚲 Vélo" },
-  { value: "scooter", label: "🛵 Scooter" },
-  { value: "voiture", label: "🚗 Voiture" },
+  { value: "moto", label: "Moto" },
+  { value: "velo", label: "Vélo" },
+  { value: "scooter", label: "Scooter" },
+  { value: "voiture", label: "Voiture" },
   { value: "a_pied", label: "🚶 À pied" },
 ];
 

@@ -61,22 +61,22 @@ export function useOrderRealtime({
 
       if (order.status === "accepted") {
         toast({
-          title: "🎉 Réservation acceptée !",
+          title: "Réservation acceptée !",
           description: `Commande ${order.order_number} - Voir les infos de dépôt`,
         });
       } else if (order.status === "collected") {
         toast({
-          title: "📦 Colis reçu",
+          title: "Colis reçu",
           description: `Votre colis ${order.order_number} a été pris en charge`,
         });
       } else if (order.status === "in_transit") {
         toast({
-          title: "🚚 En transit",
+          title: "En transit",
           description: `Votre colis ${order.order_number} est en route`,
         });
       } else if (order.status === "delivered") {
         toast({
-          title: "🎉 Livré !",
+          title: "Livré !",
           description: `Votre colis ${order.order_number} a été livré avec succès`,
         });
       }

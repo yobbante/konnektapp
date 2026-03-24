@@ -22,7 +22,7 @@ interface ZoneSelectorSimpleProps {
 const zonePresets = [
   { 
     value: "local", 
-    label: "🏠 Local (Ma ville uniquement)", 
+    label: "Local (Ma ville uniquement)", 
     zones: [] // Sera défini par la ville du GP
   },
   { 

@@ -443,7 +443,7 @@ function MissionCard({ mission }: { mission: Mission }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Badge className={`text-[10px] ${statusClass}`}>
-                {isPickup ? "📍 Enlèvement" : "🚚 Livraison"}
+                {isPickup ? "Enlèvement" : "Livraison"}
               </Badge>
               <span className="font-mono text-xs font-bold text-muted-foreground">
                 {mission.order_number}
@@ -482,7 +482,7 @@ function MissionCard({ mission }: { mission: Mission }) {
             )}
             {mission.instructions && (
               <div className="text-xs text-muted-foreground italic mt-1 p-2 bg-muted/30 rounded-lg">
-                💬 {mission.instructions}
+                {mission.instructions}
               </div>
             )}
           </div>

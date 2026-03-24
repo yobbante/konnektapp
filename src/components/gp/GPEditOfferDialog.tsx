@@ -222,7 +222,7 @@ export function GPEditOfferDialog({ open, onClose, offer, onSuccess }: GPEditOff
           {/* Bookings warning */}
           {hasBookings && (
             <div className="p-3 rounded-lg bg-warning/10 border border-warning/30 text-sm text-warning-foreground">
-              ⚠️ Cette offre a {offer.bookings_count} réservation(s). Certaines modifications peuvent affecter les commandes en cours.
+              Cette offre a {offer.bookings_count} réservation(s). Certaines modifications peuvent affecter les commandes en cours.
             </div>
           )}
 

@@ -112,7 +112,7 @@ export default function MovingConfirmation() {
               transition={{ delay: 0.5 }}
               className="text-2xl font-bold text-foreground mb-2"
             >
-              Demande envoyée ! 🎉
+              Demande envoyée !
             </motion.h1>
             
             <motion.p

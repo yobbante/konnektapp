@@ -67,7 +67,7 @@ export function MaritimeNegotiationSheet({
         }).eq("id", proposal.id);
 
         if (error) throw error;
-        toast({ title: "🚢 Proposition mise à jour" });
+        toast({ title: "Proposition mise à jour" });
       } else {
         const { error } = await supabase.from("freight_proposals").insert({
           request_id: request.id,
@@ -85,7 +85,7 @@ export function MaritimeNegotiationSheet({
         });
 
         if (error) throw error;
-        toast({ title: "🚢 Proposition envoyée !" });
+        toast({ title: "Proposition envoyée !" });
       }
 
       onSuccess?.();

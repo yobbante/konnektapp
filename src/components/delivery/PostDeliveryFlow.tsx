@@ -401,7 +401,7 @@ export function PostDeliveryFlow({ order, role, onClose, onNavigate }: PostDeliv
                 <Sparkles className="w-8 h-8 text-primary" />
               </motion.div>
 
-              <h3 className="text-lg font-bold text-foreground">Merci ! 🙏</h3>
+              <h3 className="text-lg font-bold text-foreground">Merci !</h3>
               <p className="text-sm text-muted-foreground">
                 {role === "client"
                   ? "Votre avis aide la communauté Konnekt"

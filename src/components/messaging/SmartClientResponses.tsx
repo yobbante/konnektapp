@@ -249,7 +249,7 @@ export function SmartClientResponses({
       getResponse: async (ctx) => {
         if (ctx.weight_tier_applied?.startsWith("pending:")) {
           const newWeight = ctx.weight_tier_applied.split(":")[1];
-          return `⚠️ Correction de poids détectée !\n\n🔁 Ancien poids: ${ctx.weight} kg\n🔁 Nouveau poids: ${newWeight} kg\n\n👉 Action requise: Rendez-vous sur votre page d'accueil pour confirmer le nouveau poids.\n\n💡 Seul le prix du poids est ajusté. L'assurance et la logistique restent inchangées.`;
+          return `Correction de poids détectée !\n\n🔁 Ancien poids: ${ctx.weight} kg\n🔁 Nouveau poids: ${newWeight} kg\n\n👉 Action requise: Rendez-vous sur votre page d'accueil pour confirmer le nouveau poids.\n\nSeul le prix du poids est ajusté. L'assurance et la logistique restent inchangées.`;
         }
         return `⚖️ Poids actuel: ${ctx.weight} kg\n\nSi le poids réel diffère, le GP effectuera la vérification lors du dépôt et vous devrez confirmer tout ajustement.`;
       },
@@ -261,7 +261,7 @@ export function SmartClientResponses({
       message: "Pourquoi le prix a changé ?",
       color: "bg-rose-500/10 text-rose-600",
       getResponse: async () => {
-        return `💡 Le prix peut changer pour une raison:\n\nLe poids réel du colis a été vérifié lors du dépôt et diffère du poids déclaré.\n\n👉 Important:\n• Seul le prix du poids est recalculé\n• L'assurance reste inchangée\n• La logistique reste inchangée\n\nVous devez confirmer tout ajustement avant que la commande continue.`;
+        return `Le prix peut changer pour une raison:\n\nLe poids réel du colis a été vérifié lors du dépôt et diffère du poids déclaré.\n\n👉 Important:\n• Seul le prix du poids est recalculé\n• L'assurance reste inchangée\n• La logistique reste inchangée\n\nVous devez confirmer tout ajustement avant que la commande continue.`;
       },
     },
     // 9️⃣ « Ai-je une assurance sur mon colis ? »
@@ -274,9 +274,9 @@ export function SmartClientResponses({
         if (ctx.has_insurance && ctx.insurance_amount > 0) {
           const rates = await loadExchangeRates();
           const insuranceDisplay = formatInsuranceDual(ctx.insurance_amount, ctx.currency, rates);
-          return `🛡️ Oui, votre colis est assuré !\n\nMontant: ${insuranceDisplay}\n\nL'assurance couvre les dommages et pertes pendant le transport.`;
+          return `Oui, votre colis est assuré !\n\nMontant: ${insuranceDisplay}\n\nL'assurance couvre les dommages et pertes pendant le transport.`;
         }
-        return `⚠️ Vous avez choisi de ne pas assurer ce colis.\n\nSans assurance, Konnekt ne peut pas garantir le remboursement en cas de perte ou dommage.`;
+        return `Vous avez choisi de ne pas assurer ce colis.\n\nSans assurance, Konnekt ne peut pas garantir le remboursement en cas de perte ou dommage.`;
       },
     },
     // 🔟 « J'ai besoin d'aide concernant ma commande »
@@ -296,21 +296,21 @@ export function SmartClientResponses({
         if (ctx.pickup_date && ctx.status === "pending") {
           const pickupDate = new Date(ctx.pickup_date);
           if (new Date() > pickupDate) {
-            issues.push("📅 Collecte en retard");
+            issues.push("Collecte en retard");
           }
         }
         
         if (ctx.delivery_date && !["delivered", "cancelled"].includes(ctx.status)) {
           const deliveryDate = new Date(ctx.delivery_date);
           if (new Date() > deliveryDate) {
-            issues.push("🚚 Livraison en retard");
+            issues.push("Livraison en retard");
           }
         }
         
-        let response = `👋 **Nous avons bien reçu votre demande.**\n\n📌 Commande: #${ctx.order_number.slice(-6)}\n📦 Statut: ${STATUS_LABELS[ctx.status] || ctx.status}\n`;
+        let response = `**Nous avons bien reçu votre demande.**\n\nCommande: #${ctx.order_number.slice(-6)}\nStatut: ${STATUS_LABELS[ctx.status] || ctx.status}\n`;
         
         if (issues.length > 0) {
-          response += `\n⚠️ **Points détectés:**\n${issues.map(i => `• ${i}`).join("\n")}\n\nUn agent Konnekt vous contactera si nécessaire.`;
+          response += `\n**Points détectés:**\n${issues.map(i => `• ${i}`).join("\n")}\n\nUn agent Konnekt vous contactera si nécessaire.`;
           
           // Log support request
           try {
@@ -324,7 +324,7 @@ export function SmartClientResponses({
             });
           } catch (e) {}
         } else {
-          response += `\n✅ Aucun problème détecté.\nPour toute question, écrivez directement au GP dans cette conversation.`;
+          response += `\nAucun problème détecté.\nPour toute question, écrivez directement au GP dans cette conversation.`;
         }
         
         return response;
@@ -355,7 +355,7 @@ export function SmartClientResponses({
       if (orderContext) {
         autoResponse = await response.getResponse(orderContext);
       } else {
-        autoResponse = "📋 Nous n'avons pas trouvé de commande associée à cette conversation. Veuillez préciser votre demande ou contacter le support.";
+        autoResponse = "Nous n'avons pas trouvé de commande associée à cette conversation. Veuillez préciser votre demande ou contacter le support.";
       }
       
       // 3. Get GP ID for the conversation to send as GP (auto-response)
@@ -440,7 +440,7 @@ export function SmartClientResponses({
               {orderContext?.weight_tier_applied?.startsWith("pending:") && (
                 <div className="flex items-center gap-2 p-2 bg-amber-500/10 rounded-lg text-xs text-amber-700 mb-2 border border-amber-300">
                   <AlertTriangle className="w-3 h-3" />
-                  <span>⚠️ Correction de poids en attente de confirmation</span>
+                  <span>Correction de poids en attente de confirmation</span>
                 </div>
               )}
               
@@ -495,7 +495,7 @@ export function SmartClientResponses({
               
               {/* Info text */}
               <p className="text-[10px] text-muted-foreground text-center pt-2">
-                💡 Réponses basées sur les données réelles de votre commande
+                Réponses basées sur les données réelles de votre commande
               </p>
             </div>
           </motion.div>

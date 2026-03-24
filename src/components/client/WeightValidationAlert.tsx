@@ -130,7 +130,7 @@ export function WeightValidationAlert({
         const fixedInsurance = Number(order.insurance_amount) || 0; // In GP currency
         const fixedLogistics = Number(logisticsMap.get(order.id)) || 0; // FCFA
 
-        // ✅ Definitive fix: compute impact ONLY from stored price_per_kg (same currency as order.total_price)
+        // Definitive fix: compute impact ONLY from stored price_per_kg (same currency as order.total_price)
         // This prevents mixing FCFA logistics (2000) with USD totals (156).
         const pricePerKg = Number(order.price_per_kg) || 0;
         if (!pricePerKg) continue;
@@ -377,7 +377,7 @@ export function WeightValidationAlert({
           <AlertDialogFooter>
             <AlertDialogCancel disabled={processing}>Annuler</AlertDialogCancel>
             <AlertDialogAction onClick={handleAccept} disabled={processing}>
-              {processing ? "Validation..." : "✅ Accepter et continuer l'envoi"}
+              {processing ? "Validation..." : "Accepter et continuer l'envoi"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -397,7 +397,7 @@ export function WeightValidationAlert({
             <AlertDialogDescription asChild>
               <div className="space-y-3">
                 <p className="font-medium text-destructive">
-                  ⚠️ Cette action est irréversible.
+                  Cette action est irréversible.
                 </p>
                 <p>
                   En refusant la modification de poids, votre envoi sera{" "}

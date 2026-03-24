@@ -83,7 +83,7 @@ export function useLoyaltyPushNotifications({
           }
           message += ` pour débloquer ${nextTier.discount_percent}% de réduction !`;
 
-          showNotification(`🎉 Niveau ${nextTier.name} en vue !`, {
+          showNotification(`Niveau ${nextTier.name} en vue !`, {
             body: message,
             tag: `loyalty-tier-${nextTier.id}`,
             data: { type: "loyalty", tierId: nextTier.id },
@@ -137,7 +137,7 @@ export function useLoyaltyPushNotifications({
               .eq("user_id", userId);
 
             // Send push notification
-            showNotification(`🏆 Félicitations ! Niveau ${newTier.name} atteint !`, {
+            showNotification(`Félicitations ! Niveau ${newTier.name} atteint !`, {
               body: `Vous bénéficiez maintenant de ${newTier.discount_percent}% de réduction sur toutes vos commandes !`,
               tag: `loyalty-upgrade-${newTier.id}`,
               data: { type: "loyalty-upgrade", tierId: newTier.id },

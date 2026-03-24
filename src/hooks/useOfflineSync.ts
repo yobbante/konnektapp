@@ -25,7 +25,7 @@ export function useOfflineSync() {
     const handleOnline = () => {
       setIsOnline(true);
       toast({
-        title: "✅ Connexion rétablie",
+        title: "Connexion rétablie",
         description: "Synchronisation des données en cours...",
       });
       syncPendingChanges();
@@ -165,14 +165,14 @@ export function useOfflineSync() {
 
     if (successCount > 0) {
       toast({
-        title: "✅ Synchronisation terminée",
+        title: "Synchronisation terminée",
         description: `${successCount} modification${successCount > 1 ? 's' : ''} synchronisée${successCount > 1 ? 's' : ''}`,
       });
     }
 
     if (failCount > 0) {
       toast({
-        title: "⚠️ Certaines modifications non synchronisées",
+        title: "Certaines modifications non synchronisées",
         description: `${failCount} modification${failCount > 1 ? 's' : ''} en attente`,
         variant: "destructive",
       });
