@@ -503,6 +503,29 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
           currency: walletData?.currency || "XOF",
         } : undefined}
       />
+
+      {/* Order Details Sheet */}
+      {selectedOrderId && (
+        <GPMissionDetailsSheet
+          open={!!selectedOrderId}
+          onClose={() => {
+            setSelectedOrderId(null);
+            fetchData(); // refresh after actions
+          }}
+          orderId={selectedOrderId}
+          gpProfileId={gpId || undefined}
+          gpName="Mon colis"
+          onAccept={() => {
+            setSelectedOrderId(null);
+            fetchData();
+          }}
+          onRefuse={() => {
+            setSelectedOrderId(null);
+            fetchData();
+          }}
+          showActions={true}
+        />
+      )}
     </>
   );
 }
