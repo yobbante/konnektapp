@@ -369,7 +369,7 @@ export function UnifiedScanInterface({
                   <div key={item.n} className="flex items-center gap-2">
                     <span className={cn(
                       "w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0",
-                      accentBg, accentText
+                      colors.accentBg, colors.accentText
                     )}>
                       {item.n}
                     </span>
