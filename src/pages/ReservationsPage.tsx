@@ -50,13 +50,13 @@ const CANCELLED_STATUSES = ['cancelled', 'rejected', 'expired'];
 // Statuses that indicate a recent important change the user should see
 const NOTIFICATION_STATUSES = ['accepted', 'collected', 'in_transit', 'arrived_destination', 'delivery_pending', 'delivered', 'delivery_confirmed', 'weight_pending_payment'];
 
-type TabId = "actives" | "tickets" | "colis" | "demandes" | "historique";
+type TabId = "actives" | "colis" | "tickets" | "demandes" | "historique";
 
 const TABS: {id: TabId;label: string;icon: typeof Clock;}[] = [
 { id: "actives", label: "En cours", icon: Clock },
+{ id: "colis", label: "Mes colis entrants", icon: Package },
+{ id: "demandes", label: "Missions", icon: FileText },
 { id: "tickets", label: "Tickets", icon: Ticket },
-{ id: "colis", label: "Colis", icon: Package },
-{ id: "demandes", label: "Demandes", icon: FileText },
 { id: "historique", label: "Historique", icon: CheckCircle }];
 
 
