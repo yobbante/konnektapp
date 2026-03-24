@@ -725,65 +725,63 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
               >
                 <p className="text-xs text-muted-foreground font-medium">Étape 3/4 · Tarification</p>
 
+                {/* Currency selector */}
+                <div className="p-3 rounded-xl bg-card border border-border">
+                  <label className="text-[11px] text-muted-foreground mb-1.5 block">Devise</label>
+                  <CurrencySelector value={currency} onValueChange={(v) => setCurrency(v as CurrencyCode)} />
+                </div>
+
                 {/* Price per kg */}
-                <div className="p-4 rounded-xl bg-card border border-border space-y-3">
+                <div className="p-3 rounded-xl bg-card border border-border space-y-2">
                   <p className="text-sm font-bold text-foreground flex items-center gap-2">
                     <DollarSign className="w-4 h-4 text-primary" /> Prix au kilogramme
                   </p>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <input
                       type="number"
                       value={pricePerKg}
                       onChange={(e) => setPricePerKg(Math.max(1, parseInt(e.target.value) || 0))}
                       min={1}
-                      className="flex-1 h-12 px-4 rounded-xl border border-border bg-background text-lg font-bold text-foreground outline-none focus:ring-2 focus:ring-primary/30 text-center"
+                      placeholder={getPricePlaceholder(currency, "per_kg")}
+                      className="flex-1 h-11 px-3 rounded-xl border border-border bg-background text-lg font-bold text-foreground outline-none focus:ring-2 focus:ring-primary/30 text-center"
                     />
-                    <span className="text-sm font-semibold text-muted-foreground">€/kg</span>
+                    <span className="text-xs font-semibold text-muted-foreground w-12 text-center">{currSymbol}/kg</span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                    <Info className="w-3 h-3" /> Prix suggéré : {SUGGESTED_PRICE}€/kg pour ce corridor
-                  </p>
                 </div>
 
                 {/* Suitcase forfait */}
-                <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/15 space-y-3">
+                <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/15 space-y-2">
                   <p className="text-sm font-bold text-foreground flex items-center gap-2">
                     <Luggage className="w-4 h-4 text-amber-500" /> Forfait valise 23kg
                   </p>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <input
                       type="number"
                       value={suitcasePrice}
                       onChange={(e) => setSuitcasePrice(e.target.value)}
-                      placeholder="Ex: 150"
+                      placeholder={getPricePlaceholder(currency, "suitcase")}
                       min={1}
-                      className="flex-1 h-12 px-4 rounded-xl border border-border bg-background text-lg font-bold text-foreground outline-none focus:ring-2 focus:ring-amber-500/30 text-center"
+                      className="flex-1 h-11 px-3 rounded-xl border border-border bg-background text-lg font-bold text-foreground outline-none focus:ring-2 focus:ring-amber-500/30 text-center"
                     />
-                    <span className="text-sm font-semibold text-muted-foreground">€</span>
+                    <span className="text-xs font-semibold text-muted-foreground w-12 text-center">{currSymbol}</span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground">
-                    Prix fixe pour une valise complète de 23kg
-                  </p>
                 </div>
 
                 {/* Flat-rate objects */}
                 {flatRateItems.length > 0 && (
-                  <div className="p-4 rounded-xl bg-card border border-border space-y-3">
+                  <div className="p-3 rounded-xl bg-card border border-border space-y-2">
                     <p className="text-sm font-bold text-foreground flex items-center gap-2">
-                      <Package className="w-4 h-4 text-primary" /> Tarifs forfaitaires par objet
+                      <Package className="w-4 h-4 text-primary" /> Tarifs forfaitaires
                     </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      Activez et fixez un prix pour les objets à tarif fixe
-                    </p>
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       {flatRateItems.map((item) => (
-                        <div key={item.id} className={`flex items-center gap-3 p-2.5 rounded-lg border transition-all ${
+                        <div key={item.id} className={`flex items-center gap-2 p-2 rounded-lg border transition-all ${
                           item.isActive ? "bg-primary/5 border-primary/20" : "bg-muted/20 border-border/50"
                         }`}>
                           <Switch
                             checked={item.isActive}
                             onCheckedChange={(checked) => updateFlatRateItem(item.id, "isActive", checked)}
-                            className="scale-90"
+                            className="scale-75"
                           />
                           <span className={`flex-1 text-xs font-medium ${item.isActive ? "text-foreground" : "text-muted-foreground"}`}>
                             {item.label}
@@ -795,9 +793,9 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                                 value={item.price}
                                 onChange={(e) => updateFlatRateItem(item.id, "price", e.target.value)}
                                 placeholder="Prix"
-                                className="w-20 h-8 px-2 rounded-lg border border-border bg-background text-sm font-semibold text-foreground text-center outline-none focus:ring-2 focus:ring-primary/30"
+                                className="w-16 h-7 px-1.5 rounded-lg border border-border bg-background text-xs font-semibold text-foreground text-center outline-none focus:ring-2 focus:ring-primary/30"
                               />
-                              <span className="text-[11px] text-muted-foreground">€</span>
+                              <span className="text-[10px] text-muted-foreground">{currSymbol}</span>
                             </div>
                           )}
                         </div>
@@ -807,10 +805,10 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                 )}
 
                 {/* Estimated earnings */}
-                <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+                <div className="p-2.5 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Gains estimés (transport)</span>
-                    <span className="text-lg font-bold text-amber-600">{estimatedEarnings.toLocaleString()}€</span>
+                    <span className="text-xs text-muted-foreground">Gains estimés</span>
+                    <span className="text-lg font-bold text-amber-600">{estimatedEarnings.toLocaleString()} {currSymbol}</span>
                   </div>
                 </div>
               </motion.div>
