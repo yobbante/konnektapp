@@ -1,16 +1,20 @@
 /**
  * VoyageGagneSheet — "Voyage & Gagne" flow
  * Allows any client to publish a trip and become a GP Occasionnel.
- * 3 steps: Intro → Trip details (with deposit/reception info) → Summary & Publish
+ * 4 steps: Intro → Trip details → Pricing (kg + flat-rate) → Summary & Publish
+ * Persists form data to localStorage for pre-fill on next use.
+ * Syncs data to GP profile on creation/update.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plane, MapPin, Calendar, Weight, DollarSign, Luggage, 
-  ChevronRight, ChevronLeft, Sparkles, ArrowRight, Info, Check, Phone, MapPinned, Shield
+  ChevronRight, ChevronLeft, Sparkles, ArrowRight, Info, Check, Phone, MapPinned, Shield,
+  ArrowUpDown, Package, ToggleLeft, ToggleRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -25,7 +29,9 @@ interface VoyageGagneSheetProps {
   skipIntro?: boolean;
 }
 
-type Step = "intro" | "details" | "summary";
+type Step = "intro" | "details" | "pricing" | "summary";
+
+const STEPS: Step[] = ["intro", "details", "pricing", "summary"];
 
 const SUGGESTED_PRICE = 8;
 const SUGGESTED_CAPACITY = 20;
@@ -35,6 +41,45 @@ const BAGGAGE_PRESETS = [
   { label: "3 bagages (69kg)", count: 3, capacity: 60 },
 ];
 
+const STORAGE_KEY = "voyage_gagne_saved_data";
+
+interface FlatRateItem {
+  id: string;
+  label: string;
+  defaultPrice: number | null;
+  price: string;
+  isActive: boolean;
+}
+
+interface SavedVoyageData {
+  originCity: string;
+  originCountry: string;
+  destCity: string;
+  destCountry: string;
+  depositPhone: string;
+  depositAddress: string;
+  receptionPhone: string;
+  receptionAddress: string;
+  pricePerKg: number;
+  baggageCount: number;
+  selectedRestrictions: string[];
+  flatRatePrices: Record<string, { price: string; isActive: boolean }>;
+  suitcasePrice: string;
+}
+
+function loadSavedData(): SavedVoyageData | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function savePersistentData(data: SavedVoyageData) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {}
+}
+
 export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: VoyageGagneSheetProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -43,21 +88,23 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Form state
-  const [originCity, setOriginCity] = useState("");
-  const [originCountry, setOriginCountry] = useState("");
-  const [destCity, setDestCity] = useState("");
-  const [destCountry, setDestCountry] = useState("");
+  const saved = loadSavedData();
+  const [originCity, setOriginCity] = useState(saved?.originCity || "");
+  const [originCountry, setOriginCountry] = useState(saved?.originCountry || "");
+  const [destCity, setDestCity] = useState(saved?.destCity || "");
+  const [destCountry, setDestCountry] = useState(saved?.destCountry || "");
   const [departureDate, setDepartureDate] = useState("");
-  const [baggageCount, setBaggageCount] = useState(1);
+  const [arrivalDate, setArrivalDate] = useState("");
+  const [baggageCount, setBaggageCount] = useState(saved?.baggageCount || 1);
   const [capacity, setCapacity] = useState(SUGGESTED_CAPACITY);
-  const [pricePerKg, setPricePerKg] = useState(SUGGESTED_PRICE);
+  const [pricePerKg, setPricePerKg] = useState(saved?.pricePerKg || SUGGESTED_PRICE);
   const [currency] = useState("EUR");
   
   // Deposit & Reception info
-  const [depositPhone, setDepositPhone] = useState("");
-  const [depositAddress, setDepositAddress] = useState("");
-  const [receptionPhone, setReceptionPhone] = useState("");
-  const [receptionAddress, setReceptionAddress] = useState("");
+  const [depositPhone, setDepositPhone] = useState(saved?.depositPhone || "");
+  const [depositAddress, setDepositAddress] = useState(saved?.depositAddress || "");
+  const [receptionPhone, setReceptionPhone] = useState(saved?.receptionPhone || "");
+  const [receptionAddress, setReceptionAddress] = useState(saved?.receptionAddress || "");
   
   // Restrictions
   const RESTRICTION_OPTIONS = [
@@ -65,7 +112,12 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
     "Pas d'appareils electroniques", "Pas de produits chimiques", "Pas de parfums",
     "Pas de cosmetiques", "Pas de medicaments"
   ];
-  const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>([]);
+  const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>(saved?.selectedRestrictions || []);
+  
+  // Flat-rate pricing
+  const [flatRateItems, setFlatRateItems] = useState<FlatRateItem[]>([]);
+  const [suitcasePrice, setSuitcasePrice] = useState(saved?.suitcasePrice || "");
+  const [flatRateLoaded, setFlatRateLoaded] = useState(false);
   
   // Pre-fill user country
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -82,8 +134,8 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
         .maybeSingle();
       if (data) {
         setUserProfile(data);
-        // Pre-fill phones with user's phone
-        if (data.phone) {
+        // Pre-fill phones with user's phone if not saved
+        if (data.phone && !saved?.depositPhone) {
           setDepositPhone(data.phone);
           setReceptionPhone(data.phone);
         }
@@ -91,6 +143,29 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
     };
     loadProfile();
   }, [open]);
+
+  // Load flat-rate object types
+  useEffect(() => {
+    if (!open || flatRateLoaded) return;
+    const loadFlatRates = async () => {
+      const { data } = await supabase
+        .from("flat_rate_object_types")
+        .select("id, label, default_price")
+        .eq("is_active", true);
+      if (data) {
+        const savedPrices = saved?.flatRatePrices || {};
+        setFlatRateItems(data.map(item => ({
+          id: item.id,
+          label: item.label,
+          defaultPrice: item.default_price,
+          price: savedPrices[item.id]?.price || (item.default_price ? String(item.default_price) : ""),
+          isActive: savedPrices[item.id]?.isActive ?? false,
+        })));
+        setFlatRateLoaded(true);
+      }
+    };
+    loadFlatRates();
+  }, [open, flatRateLoaded]);
 
   // Reset on close
   useEffect(() => {
@@ -102,14 +177,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
         setDestCity("");
         setDestCountry("");
         setDepartureDate("");
-        setBaggageCount(1);
-        setCapacity(SUGGESTED_CAPACITY);
-        setPricePerKg(SUGGESTED_PRICE);
-        setDepositPhone("");
-        setDepositAddress("");
-        setReceptionPhone("");
-        setReceptionAddress("");
-        setSelectedRestrictions([]);
+        setArrivalDate("");
       }, 300);
     }
   }, [open, skipIntro]);
@@ -123,7 +191,8 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
   const estimatedEarnings = capacity * pricePerKg;
   const minDate = new Date().toISOString().split("T")[0];
 
-  const canSubmitDetails = originCity && destCity && departureDate && capacity > 0 && pricePerKg > 0 && depositPhone && receptionPhone && depositAddress && receptionAddress;
+  const canSubmitDetails = originCity && destCity && departureDate && capacity > 0 && depositPhone && receptionPhone && depositAddress && receptionAddress;
+  const canSubmitPricing = pricePerKg > 0 && suitcasePrice && parseFloat(suitcasePrice) > 0;
 
   const handleCitySelect = (city: string, country: string, field: "origin" | "dest") => {
     if (field === "origin") {
@@ -134,6 +203,42 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
       setDestCountry(country);
     }
   };
+
+  // Swap origin ↔ destination
+  const handleSwapCities = () => {
+    const tmpCity = originCity;
+    const tmpCountry = originCountry;
+    const tmpPhone = depositPhone;
+    const tmpAddress = depositAddress;
+    setOriginCity(destCity);
+    setOriginCountry(destCountry);
+    setDestCity(tmpCity);
+    setDestCountry(tmpCountry);
+    setDepositPhone(receptionPhone);
+    setDepositAddress(receptionAddress);
+    setReceptionPhone(tmpPhone);
+    setReceptionAddress(tmpAddress);
+  };
+
+  const updateFlatRateItem = (id: string, field: "price" | "isActive", value: string | boolean) => {
+    setFlatRateItems(prev => prev.map(item => 
+      item.id === id ? { ...item, [field]: value } : item
+    ));
+  };
+
+  // Save persistent data
+  const persistData = useCallback(() => {
+    const flatRatePrices: Record<string, { price: string; isActive: boolean }> = {};
+    flatRateItems.forEach(item => {
+      flatRatePrices[item.id] = { price: item.price, isActive: item.isActive };
+    });
+    savePersistentData({
+      originCity, originCountry, destCity, destCountry,
+      depositPhone, depositAddress, receptionPhone, receptionAddress,
+      pricePerKg, baggageCount, selectedRestrictions,
+      flatRatePrices, suitcasePrice,
+    });
+  }, [originCity, originCountry, destCity, destCountry, depositPhone, depositAddress, receptionPhone, receptionAddress, pricePerKg, baggageCount, selectedRestrictions, flatRateItems, suitcasePrice]);
 
   const handlePublish = async () => {
     setIsSubmitting(true);
@@ -175,12 +280,9 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
         }
       }
 
-      // gpId already declared above
-
       // If no GP profile, create an occasional one
       if (!gpId) {
         const businessName = userProfile?.full_name || "GP Occasionnel";
-        // Use a unique phone to avoid constraint violation
         const phone = userProfile?.phone || `occasionnel-${userId.slice(0, 8)}`;
         
         const { data: newGP, error: gpError } = await supabase
@@ -201,12 +303,12 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
             default_currency: currency,
             deposit_address: depositAddress,
             reception_address: receptionAddress,
+            whatsapp_phone: depositPhone,
           })
           .select("id")
           .single();
 
         if (gpError) {
-          // If unique constraint on user_id, re-fetch existing profile
           if (gpError.code === "23505") {
             const { data: retryGP } = await supabase
               .from("gp_profiles")
@@ -222,19 +324,41 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
           gpId = newGP.id;
         }
       } else {
-        // Update existing GP profile with deposit/reception addresses if occasionnel
+        // Sync profile data on every publish for occasional GPs
         if (existingGP.gp_type === "occasionnel") {
           await supabase
             .from("gp_profiles")
             .update({
               deposit_address: depositAddress,
               reception_address: receptionAddress,
+              base_origin_city: originCity,
+              base_origin_country: originCountry,
+              base_destination_city: destCity,
+              base_destination_country: destCountry,
+              base_price_per_kg: pricePerKg,
+              default_currency: currency,
             })
             .eq("id", gpId);
         }
       }
 
-      // Create the offer — always as "occasionnel" transport type for voyage flow
+      // Save flat-rate pricing for this GP
+      const activeFlatRates = flatRateItems.filter(i => i.isActive && i.price && parseFloat(i.price) > 0);
+      if (gpId && activeFlatRates.length > 0) {
+        for (const item of activeFlatRates) {
+          await supabase
+            .from("gp_flat_rate_pricing")
+            .upsert({
+              gp_id: gpId,
+              object_type_id: item.id,
+              price: parseFloat(item.price),
+              currency: currency,
+              is_active: true,
+            }, { onConflict: "gp_id,object_type_id" as any });
+        }
+      }
+
+      // Create the offer
       const { error: offerError } = await supabase
         .from("gp_offers")
         .insert({
@@ -244,6 +368,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
           destination_city: destCity,
           destination_country: destCountry || "Sénégal",
           departure_date: departureDate,
+          arrival_date: arrivalDate || null,
           total_capacity: capacity,
           available_capacity: capacity,
           price_per_kg: pricePerKg,
@@ -256,13 +381,15 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
 
       if (offerError) throw offerError;
 
+      // Persist data for next time
+      persistData();
+
       toast({
         title: "Trajet publié !",
         description: `${originCity} → ${destCity} · Gains potentiels : ${estimatedEarnings}€`,
       });
 
       onOpenChange(false);
-      // Don't navigate away — the Voyage button will now show VoyageDashboard
     } catch (err: any) {
       console.error("Publish error:", err);
       toast({ 
@@ -275,10 +402,23 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
     }
   };
 
+  const stepIndex = STEPS.indexOf(step);
+
+  const goNext = () => {
+    if (step === "details") { persistData(); setStep("pricing"); }
+    else if (step === "pricing") { persistData(); setStep("summary"); }
+  };
+
+  const goBack = () => {
+    if (step === "details") setStep("intro");
+    else if (step === "pricing") setStep("details");
+    else if (step === "summary") setStep("pricing");
+  };
+
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[92vh]">
-        <DrawerHeader className="pb-2">
+      <DrawerContent className="max-h-[95vh] flex flex-col">
+        <DrawerHeader className="pb-2 flex-shrink-0">
           <DrawerTitle className="flex items-center gap-2 text-base">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
               <Luggage className="w-4 h-4 text-white" />
@@ -288,11 +428,11 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
         </DrawerHeader>
 
         {/* Progress indicator */}
-        <div className="px-6 pb-3">
+        <div className="px-6 pb-3 flex-shrink-0">
           <div className="flex gap-1.5">
-            {(["intro", "details", "summary"] as Step[]).map((s, i) => (
+            {STEPS.map((s, i) => (
               <div key={s} className={`flex-1 h-1 rounded-full transition-colors ${
-                i <= ["intro", "details", "summary"].indexOf(step) 
+                i <= stepIndex 
                   ? "bg-gradient-to-r from-amber-400 to-orange-500" 
                   : "bg-muted"
               }`} />
@@ -300,7 +440,8 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
           </div>
         </div>
 
-        <div className="px-6 pb-8 overflow-y-auto max-h-[70vh]">
+        {/* Scrollable content area */}
+        <div className="flex-1 overflow-y-auto px-6">
           <AnimatePresence mode="wait">
             {/* ── STEP 1: INTRO ── */}
             {step === "intro" && (
@@ -309,14 +450,14 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="space-y-5"
+                className="space-y-5 pb-24"
               >
                 <div className="text-center py-4">
                   <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-amber-400/20 to-orange-500/20 flex items-center justify-center mb-4">
                     <Plane className="w-8 h-8 text-amber-500" />
                   </div>
                   <h2 className="text-xl font-bold text-foreground mb-2">
-                    Tu voyages ? 
+                    Tu voyages ?
                   </h2>
                   <p className="text-base text-amber-600 font-semibold mb-1">
                     Gagne de l'argent avec ton bagage
@@ -326,7 +467,6 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                   </p>
                 </div>
 
-                {/* How it works */}
                 <div className="space-y-2.5">
                   {[
                     { icon: MapPin, text: "Indique ton trajet et ta date", color: "text-primary bg-primary/10" },
@@ -341,22 +481,6 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                     </div>
                   ))}
                 </div>
-
-                <div className="space-y-2 pt-2">
-                  <Button 
-                    onClick={() => setStep("details")} 
-                    className="w-full h-12 text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg"
-                  >
-                    Publier mon trajet
-                    <ChevronRight className="w-5 h-5 ml-1" />
-                  </Button>
-                  <button 
-                    onClick={() => onOpenChange(false)} 
-                    className="w-full text-xs text-muted-foreground py-2 hover:text-foreground transition-colors"
-                  >
-                    Comment ça marche ?
-                  </button>
-                </div>
               </motion.div>
             )}
 
@@ -367,12 +491,12 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="space-y-3"
+                className="space-y-3 pb-24"
               >
-                <p className="text-xs text-muted-foreground font-medium">Étape 2/3 · Détails du voyage</p>
+                <p className="text-xs text-muted-foreground font-medium">Étape 2/4 · Détails du voyage</p>
 
-                {/* Origin & Destination */}
-                <div className="space-y-2.5">
+                {/* Origin & Destination with Swap */}
+                <div className="space-y-2.5 relative">
                   <div>
                     <label className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
                       <MapPin className="w-3 h-3 text-primary" /> Ville de départ
@@ -384,6 +508,18 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                       placeholder="Ex: Paris"
                       className="h-10"
                     />
+                  </div>
+
+                  {/* Swap button */}
+                  <div className="flex justify-center -my-1 relative z-10">
+                    <button
+                      type="button"
+                      onClick={handleSwapCities}
+                      className="w-8 h-8 rounded-full bg-card border-2 border-border shadow-sm flex items-center justify-center hover:bg-muted transition-colors"
+                      title="Intervertir départ et arrivée"
+                    >
+                      <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
                   </div>
                   
                   <div>
@@ -400,18 +536,36 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                   </div>
                 </div>
 
-                {/* Date */}
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
-                    <Calendar className="w-3 h-3" /> Date du voyage
-                  </label>
-                  <input
-                    type="date"
-                    value={departureDate}
-                    onChange={(e) => setDepartureDate(e.target.value)}
-                    min={minDate}
-                    className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
-                  />
+                {/* Dates */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
+                      <Calendar className="w-3 h-3" /> Date de départ
+                    </label>
+                    <input
+                      type="date"
+                      value={departureDate}
+                      onChange={(e) => {
+                        setDepartureDate(e.target.value);
+                        // Clear arrival if before departure
+                        if (arrivalDate && e.target.value > arrivalDate) setArrivalDate("");
+                      }}
+                      min={minDate}
+                      className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
+                      <Calendar className="w-3 h-3 text-amber-500" /> Date d'arrivée
+                    </label>
+                    <input
+                      type="date"
+                      value={arrivalDate}
+                      onChange={(e) => setArrivalDate(e.target.value)}
+                      min={departureDate || minDate}
+                      className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
                 </div>
 
                 {/* Baggage count */}
@@ -438,34 +592,18 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                   </div>
                 </div>
 
-                {/* Capacity & Price row */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
-                      <Weight className="w-3 h-3" /> Capacité (kg)
-                    </label>
-                    <input
-                      type="number"
-                      value={capacity}
-                      onChange={(e) => setCapacity(Math.max(1, parseInt(e.target.value) || 0))}
-                      min={1}
-                      className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                        <DollarSign className="w-3 h-3" /> Prix/kg (€)
-                      </label>
-                    </div>
-                    <input
-                      type="number"
-                      value={pricePerKg}
-                      onChange={(e) => setPricePerKg(Math.max(1, parseInt(e.target.value) || 0))}
-                      min={1}
-                      className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
-                    />
-                  </div>
+                {/* Capacity */}
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
+                    <Weight className="w-3 h-3" /> Capacité disponible (kg)
+                  </label>
+                  <input
+                    type="number"
+                    value={capacity}
+                    onChange={(e) => setCapacity(Math.max(1, parseInt(e.target.value) || 0))}
+                    min={1}
+                    className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+                  />
                 </div>
 
                 {/* Deposit Info */}
@@ -546,42 +684,121 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                     ))}
                   </div>
                 </div>
+              </motion.div>
+            )}
 
-                {/* Estimated earnings */}
-                <div className="p-2.5 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Gains estimés</span>
-                    <span className="text-lg font-bold text-amber-600">{estimatedEarnings.toLocaleString()}€</span>
+            {/* ── STEP 3: PRICING ── */}
+            {step === "pricing" && (
+              <motion.div
+                key="pricing"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-4 pb-24"
+              >
+                <p className="text-xs text-muted-foreground font-medium">Étape 3/4 · Tarification</p>
+
+                {/* Price per kg */}
+                <div className="p-4 rounded-xl bg-card border border-border space-y-3">
+                  <p className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-primary" /> Prix au kilogramme
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      value={pricePerKg}
+                      onChange={(e) => setPricePerKg(Math.max(1, parseInt(e.target.value) || 0))}
+                      min={1}
+                      className="flex-1 h-12 px-4 rounded-xl border border-border bg-background text-lg font-bold text-foreground outline-none focus:ring-2 focus:ring-primary/30 text-center"
+                    />
+                    <span className="text-sm font-semibold text-muted-foreground">€/kg</span>
                   </div>
+                  <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <Info className="w-3 h-3" /> Prix suggéré : {SUGGESTED_PRICE}€/kg pour ce corridor
+                  </p>
                 </div>
 
-                {/* Actions */}
-                <div className="flex gap-2 pt-1">
-                  <Button variant="outline" onClick={() => setStep("intro")} className="h-11">
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    onClick={() => setStep("summary")}
-                    disabled={!canSubmitDetails}
-                    className="flex-1 h-11 text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
-                  >
-                    Continuer
-                    <ChevronRight className="w-5 h-5 ml-1" />
-                  </Button>
+                {/* Suitcase forfait */}
+                <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/15 space-y-3">
+                  <p className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <Luggage className="w-4 h-4 text-amber-500" /> Forfait valise 23kg
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      value={suitcasePrice}
+                      onChange={(e) => setSuitcasePrice(e.target.value)}
+                      placeholder="Ex: 150"
+                      min={1}
+                      className="flex-1 h-12 px-4 rounded-xl border border-border bg-background text-lg font-bold text-foreground outline-none focus:ring-2 focus:ring-amber-500/30 text-center"
+                    />
+                    <span className="text-sm font-semibold text-muted-foreground">€</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Prix fixe pour une valise complète de 23kg
+                  </p>
+                </div>
+
+                {/* Flat-rate objects */}
+                {flatRateItems.length > 0 && (
+                  <div className="p-4 rounded-xl bg-card border border-border space-y-3">
+                    <p className="text-sm font-bold text-foreground flex items-center gap-2">
+                      <Package className="w-4 h-4 text-primary" /> Tarifs forfaitaires par objet
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Activez et fixez un prix pour les objets à tarif fixe
+                    </p>
+                    <div className="space-y-2">
+                      {flatRateItems.map((item) => (
+                        <div key={item.id} className={`flex items-center gap-3 p-2.5 rounded-lg border transition-all ${
+                          item.isActive ? "bg-primary/5 border-primary/20" : "bg-muted/20 border-border/50"
+                        }`}>
+                          <Switch
+                            checked={item.isActive}
+                            onCheckedChange={(checked) => updateFlatRateItem(item.id, "isActive", checked)}
+                            className="scale-90"
+                          />
+                          <span className={`flex-1 text-xs font-medium ${item.isActive ? "text-foreground" : "text-muted-foreground"}`}>
+                            {item.label}
+                          </span>
+                          {item.isActive && (
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                value={item.price}
+                                onChange={(e) => updateFlatRateItem(item.id, "price", e.target.value)}
+                                placeholder="Prix"
+                                className="w-20 h-8 px-2 rounded-lg border border-border bg-background text-sm font-semibold text-foreground text-center outline-none focus:ring-2 focus:ring-primary/30"
+                              />
+                              <span className="text-[11px] text-muted-foreground">€</span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Estimated earnings */}
+                <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Gains estimés (transport)</span>
+                    <span className="text-lg font-bold text-amber-600">{estimatedEarnings.toLocaleString()}€</span>
+                  </div>
                 </div>
               </motion.div>
             )}
 
-            {/* ── STEP 3: SUMMARY ── */}
+            {/* ── STEP 4: SUMMARY ── */}
             {step === "summary" && (
               <motion.div
                 key="summary"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="space-y-4"
+                className="space-y-4 pb-24"
               >
-                <p className="text-xs text-muted-foreground font-medium">Étape 3/3 · Confirmation</p>
+                <p className="text-xs text-muted-foreground font-medium">Étape 4/4 · Confirmation</p>
 
                 <div className="p-4 rounded-2xl bg-card border border-border space-y-4">
                   {/* Route */}
@@ -604,8 +821,12 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                   {/* Details grid */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="p-2.5 rounded-lg bg-muted/30">
-                      <p className="text-[10px] text-muted-foreground mb-0.5">Date</p>
+                      <p className="text-[10px] text-muted-foreground mb-0.5">Départ</p>
                       <p className="text-sm font-semibold">{departureDate ? new Date(departureDate).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }) : "-"}</p>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-muted/30">
+                      <p className="text-[10px] text-muted-foreground mb-0.5">Arrivée</p>
+                      <p className="text-sm font-semibold">{arrivalDate ? new Date(arrivalDate).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }) : "Non précisée"}</p>
                     </div>
                     <div className="p-2.5 rounded-lg bg-muted/30">
                       <p className="text-[10px] text-muted-foreground mb-0.5">Bagages</p>
@@ -619,7 +840,25 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                       <p className="text-[10px] text-muted-foreground mb-0.5">Prix/kg</p>
                       <p className="text-sm font-semibold">{pricePerKg}€</p>
                     </div>
+                    <div className="p-2.5 rounded-lg bg-muted/30">
+                      <p className="text-[10px] text-muted-foreground mb-0.5">Forfait valise</p>
+                      <p className="text-sm font-semibold">{suitcasePrice ? `${suitcasePrice}€` : "-"}</p>
+                    </div>
                   </div>
+
+                  {/* Active flat-rate items summary */}
+                  {flatRateItems.filter(i => i.isActive && i.price).length > 0 && (
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] text-muted-foreground font-medium">Articles forfaitaires</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {flatRateItems.filter(i => i.isActive && i.price).map(item => (
+                          <Badge key={item.id} variant="secondary" className="text-[10px] gap-1">
+                            {item.label} · {item.price}€
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Deposit & Reception summary */}
                   <div className="space-y-2">
@@ -657,30 +896,84 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                     Ton trajet sera visible par les clients. Tu recevras des notifications pour chaque demande. Le paiement est sécurisé par escrow.
                   </p>
                 </div>
-
-                {/* Actions */}
-                <div className="flex gap-2 pt-1">
-                  <Button variant="outline" onClick={() => setStep("details")} className="h-11">
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    onClick={handlePublish}
-                    disabled={isSubmitting}
-                    className="flex-1 h-12 text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg"
-                  >
-                    {isSubmitting ? (
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : (
-                      <>
-                        <Check className="w-5 h-5 mr-1" />
-                        Publier mon trajet
-                      </>
-                    )}
-                  </Button>
-                </div>
               </motion.div>
             )}
           </AnimatePresence>
+        </div>
+
+        {/* ── FIXED BOTTOM BUTTONS ── */}
+        <div className="flex-shrink-0 px-6 py-4 border-t border-border bg-background safe-area-bottom">
+          {step === "intro" && (
+            <div className="space-y-2">
+              <Button 
+                onClick={() => setStep("details")} 
+                className="w-full h-12 text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg"
+              >
+                Publier mon trajet
+                <ChevronRight className="w-5 h-5 ml-1" />
+              </Button>
+              <button 
+                onClick={() => onOpenChange(false)} 
+                className="w-full text-xs text-muted-foreground py-2 hover:text-foreground transition-colors"
+              >
+                Plus tard
+              </button>
+            </div>
+          )}
+
+          {step === "details" && (
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={goBack} className="h-11 px-4">
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button 
+                onClick={goNext}
+                disabled={!canSubmitDetails}
+                className="flex-1 h-11 text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+              >
+                Continuer
+                <ChevronRight className="w-5 h-5 ml-1" />
+              </Button>
+            </div>
+          )}
+
+          {step === "pricing" && (
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={goBack} className="h-11 px-4">
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button 
+                onClick={goNext}
+                disabled={!canSubmitPricing}
+                className="flex-1 h-11 text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+              >
+                Continuer
+                <ChevronRight className="w-5 h-5 ml-1" />
+              </Button>
+            </div>
+          )}
+
+          {step === "summary" && (
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={goBack} className="h-11 px-4">
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button 
+                onClick={handlePublish}
+                disabled={isSubmitting}
+                className="flex-1 h-12 text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg"
+              >
+                {isSubmitting ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Check className="w-5 h-5 mr-1" />
+                    Publier mon trajet
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       </DrawerContent>
     </Drawer>
