@@ -750,16 +750,22 @@ export default function OfferDetail() {
                 </>
               )}
             </div>
-            <motion.div whileTap={{ scale: 0.95 }}>
-              <Button 
-                size="lg" 
-                onClick={handleBook} 
-                className="px-8 gap-2 shadow-lg shadow-primary/20"
-              >
-                {isMobility ? "Réserver une place" : "Réserver maintenant"}
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </motion.div>
+            {isOwnOffer ? (
+              <div className="text-xs text-muted-foreground bg-muted/50 px-4 py-2 rounded-lg">
+                Votre départ
+              </div>
+            ) : (
+              <motion.div whileTap={{ scale: 0.95 }}>
+                <Button 
+                  size="lg" 
+                  onClick={handleBook} 
+                  className="px-8 gap-2 shadow-lg shadow-primary/20"
+                >
+                  {isMobility ? "Réserver une place" : "Réserver maintenant"}
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </motion.div>
+            )}
           </div>
         </div>
       </motion.div>
