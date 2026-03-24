@@ -74,6 +74,7 @@ export default function OfferDetail() {
   const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [detectedType, setDetectedType] = useState<string | null>(null);
+  const [isOwnOffer, setIsOwnOffer] = useState(false);
   
   const { isFavorite, toggleFavorite } = useFavorites();
 
