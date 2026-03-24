@@ -31,6 +31,8 @@ export function MobileNav() {
   const [voyageOpen, setVoyageOpen] = useState(false);
   const [voyageDashOpen, setVoyageDashOpen] = useState(false);
   const [hasPublishedTrips, setHasPublishedTrips] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [pendingActions, setPendingActions] = useState(0);
 
   // Check if user has published trips (occasional GP)
   useEffect(() => {
@@ -53,6 +55,31 @@ export function MobileNav() {
     };
     checkTrips();
   }, [voyageOpen]);
+
+  // Fetch notification counts
+  useEffect(() => {
+    const fetchCounts = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const userId = session.user.id;
+
+      const [{ count: unread }, { count: pendingOrd }] = await Promise.all([
+        supabase.from("messages")
+          .select("*", { count: "exact", head: true })
+          .eq("receiver_id", userId)
+          .is("read_at", null),
+        supabase.from("orders")
+          .select("*", { count: "exact", head: true })
+          .eq("client_id", userId)
+          .in("status", ["pending", "accepted", "weight_pending_payment"] as any),
+      ]);
+      setUnreadMessages(unread || 0);
+      setPendingActions(pendingOrd || 0);
+    };
+    fetchCounts();
+    const interval = setInterval(fetchCounts, 30000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -297,6 +324,11 @@ export function MobileNav() {
                   <motion.div animate={isActive ? { scale: 1.1 } : { scale: 1 }} transition={{ type: "spring", stiffness: 500 }}>
                     <item.icon className={cn("w-5 h-5", isActive && "text-primary")} />
                   </motion.div>
+                  {/* Red notification dot */}
+                  {(('isMessages' in item && item.isMessages && unreadMessages > 0) ||
+                    (item.href === "/reservations" && pendingActions > 0)) && (
+                    <span className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-red-500" />
+                  )}
                 </motion.div>
                 <motion.span className={cn("text-[10px] font-medium", isActive && "text-primary")} animate={isActive ? { fontWeight: 600 } : { fontWeight: 500 }}>
                   {item.label}

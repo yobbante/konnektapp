@@ -74,6 +74,7 @@ export default function OfferDetail() {
   const [gpProfile, setGpProfile] = useState<GPProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [detectedType, setDetectedType] = useState<string | null>(null);
+  const [isOwnOffer, setIsOwnOffer] = useState(false);
   
   const { isFavorite, toggleFavorite } = useFavorites();
 
@@ -256,6 +257,24 @@ export default function OfferDetail() {
       setLoading(false);
     }
   };
+
+  // Check if current user owns this offer
+  useEffect(() => {
+    if (!offer?.gp_id) return;
+    const checkOwnership = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: myGp } = await supabase
+        .from("gp_profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (myGp && myGp.id === offer.gp_id) {
+        setIsOwnOffer(true);
+      }
+    };
+    checkOwnership();
+  }, [offer?.gp_id]);
 
   const handleBook = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -731,16 +750,22 @@ export default function OfferDetail() {
                 </>
               )}
             </div>
-            <motion.div whileTap={{ scale: 0.95 }}>
-              <Button 
-                size="lg" 
-                onClick={handleBook} 
-                className="px-8 gap-2 shadow-lg shadow-primary/20"
-              >
-                {isMobility ? "Réserver une place" : "Réserver maintenant"}
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </motion.div>
+            {isOwnOffer ? (
+              <div className="text-xs text-muted-foreground bg-muted/50 px-4 py-2 rounded-lg">
+                Votre départ
+              </div>
+            ) : (
+              <motion.div whileTap={{ scale: 0.95 }}>
+                <Button 
+                  size="lg" 
+                  onClick={handleBook} 
+                  className="px-8 gap-2 shadow-lg shadow-primary/20"
+                >
+                  {isMobility ? "Réserver une place" : "Réserver maintenant"}
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </motion.div>
+            )}
           </div>
         </div>
       </motion.div>

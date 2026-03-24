@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import {
   Ship, Plane, Truck, Search, Filter, ArrowRight, Flame, Award, Clock,
-  TrendingDown, ChevronDown, BarChart3, Zap, Package, ArrowUpDown, MapPin, Star
+  TrendingDown, ChevronDown, BarChart3, Zap, Package, ArrowUpDown, MapPin, Star, Luggage
 } from "lucide-react";
 import { format, isAfter, addDays, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -553,7 +553,7 @@ export default function FreightMarketplace() {
                           )}
                           {listing.transportType === "occasionnel" && (
                             <Badge className="text-[9px] px-1.5 py-0 bg-amber-500/15 text-amber-600 border-amber-500/30 gap-0.5">
-                              🧳 Occasionnel
+                              <Luggage className="w-2.5 h-2.5" /> Occasionnel
                             </Badge>
                           )}
                           {isAlmostFull && (

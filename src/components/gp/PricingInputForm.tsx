@@ -142,7 +142,7 @@ export function PricingInputForm({
         <Card className={`border-2 ${locked ? 'border-muted' : 'border-accent/30'}`}>
           <CardContent className="p-4">
             <Label className="text-sm font-medium flex items-center gap-2 mb-2">
-              🧳 Forfait valise 23 kg
+              Forfait valise 23 kg
               {locked && (
                 <Badge variant="secondary" className="text-[10px] gap-1">
                   <Lock className="w-3 h-3" /> Verrouillé
