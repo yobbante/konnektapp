@@ -1,21 +1,21 @@
 /**
  * RoutierTarificationPage — Size-based pricing (S/M/L/XL)
- * Transporter sets own prices with platform recommended prices shown
+ * Compact mobile layout with currency selector and smart placeholders
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DollarSign, Save, Info, Loader2, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { RoutierDashboardLayout } from "@/components/layout/RoutierDashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { TransportPageLoader } from "@/components/ui/TransportLoader";
 import { CurrencySelector, type CurrencyCode } from "@/components/ui/currency-selector";
 import { useToast } from "@/hooks/use-toast";
 import { getAllSizeCategories, formatPriceFCFA } from "@/lib/routierUtils";
+import { getPricePlaceholder, getCurrencySymbol } from "@/lib/cityUtils";
 
 const sizes = getAllSizeCategories();
 
@@ -32,7 +32,6 @@ export default function RoutierTarificationPage() {
   const [priceL, setPriceL] = useState(0);
   const [priceXL, setPriceXL] = useState(0);
 
-  // Recommended prices (from platform)
   const [recommended, setRecommended] = useState<{ s: number; m: number; l: number; xl: number } | null>(null);
 
   useEffect(() => { loadData(); }, []);
@@ -68,7 +67,6 @@ export default function RoutierTarificationPage() {
         setCurrency((gp.default_currency || "XOF") as CurrencyCode);
       }
 
-      // Load recommended prices for base route
       if (gp.base_origin_city && gp.base_destination_city) {
         const { data: rec } = await supabase.rpc("get_routier_recommended_prices", {
           p_origin_city: gp.base_origin_city,
@@ -132,45 +130,45 @@ export default function RoutierTarificationPage() {
   const prices = [priceS, priceM, priceL, priceXL];
   const recPrices = recommended ? [recommended.s, recommended.m, recommended.l, recommended.xl] : null;
   const setters = [setPriceS, setPriceM, setPriceL, setPriceXL];
+  const sizeKeys: Array<"s" | "m" | "l" | "xl"> = ["s", "m", "l", "xl"];
+  const currSym = getCurrencySymbol(currency);
 
   return (
     <RoutierDashboardLayout gpProfile={gpProfile} pendingCount={0} activeOrdersCount={0}>
-      <div className="p-4 space-y-4 max-w-lg mx-auto pb-24">
-        <h2 className="text-lg font-bold">Tarification par taille</h2>
-        <p className="text-xs text-muted-foreground -mt-2">
-          Définissez vos prix pour chaque catégorie de colis
-        </p>
+      <div className="p-3 space-y-3 max-w-lg mx-auto pb-24">
+        <div>
+          <h2 className="text-base font-bold">Tarification</h2>
+          <p className="text-[11px] text-muted-foreground">Prix par catégorie de colis</p>
+        </div>
 
-        {/* Currency */}
+        {/* Currency selector - compact */}
         <Card>
-          <CardContent className="p-3">
-            <Label className="text-xs mb-2 block">Devise</Label>
+          <CardContent className="p-2.5 flex items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground shrink-0">Devise</span>
             <CurrencySelector value={currency} onValueChange={(v) => setCurrency(v as CurrencyCode)} />
           </CardContent>
         </Card>
 
-        {/* Size pricing grid */}
+        {/* Pricing grid - compact */}
         <Card>
-          <CardHeader className="py-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <DollarSign className="w-4 h-4" />
-              Prix par taille de colis
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 pt-0">
+          <CardContent className="p-3 space-y-2.5">
+            <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+              <DollarSign className="w-3.5 h-3.5 text-primary" />
+              Prix par taille
+            </p>
             {sizes.map((size, i) => (
-              <div key={size.label} className="space-y-1.5">
+              <div key={size.label} className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Badge className={`${size.bg} ${size.color} border-0 text-xs font-bold`}>
+                  <div className="flex items-center gap-1.5">
+                    <Badge className={`${size.bg} ${size.color} border-0 text-[10px] font-bold px-1.5 py-0`}>
                       {size.label}
                     </Badge>
-                    <span className="text-xs text-muted-foreground">{size.description}</span>
+                    <span className="text-[10px] text-muted-foreground">{size.description}</span>
                   </div>
                   {recPrices && recPrices[i] > 0 && (
-                    <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                      <TrendingUp className="w-3 h-3" />
-                      Recommandé: {formatPriceFCFA(recPrices[i])}
+                    <span className="text-[9px] text-muted-foreground flex items-center gap-0.5">
+                      <TrendingUp className="w-2.5 h-2.5" />
+                      {formatPriceFCFA(recPrices[i])}
                     </span>
                   )}
                 </div>
@@ -179,15 +177,15 @@ export default function RoutierTarificationPage() {
                     type="number"
                     value={prices[i] || ""}
                     onChange={e => setters[i](+e.target.value)}
-                    placeholder={recPrices && recPrices[i] > 0 ? String(recPrices[i]) : "0"}
-                    className="h-9 text-sm pr-16"
+                    placeholder={getPricePlaceholder(currency, sizeKeys[i])}
+                    className="h-8 text-sm pr-14"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                    {currency}
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
+                    {currSym}
                   </span>
                 </div>
                 {recPrices && recPrices[i] > 0 && prices[i] > 0 && (
-                  <p className={`text-[10px] ${
+                  <p className={`text-[9px] ${
                     prices[i] < recPrices[i] * 0.8 ? "text-emerald-600" :
                     prices[i] > recPrices[i] * 1.2 ? "text-amber-600" :
                     "text-muted-foreground"
@@ -202,36 +200,32 @@ export default function RoutierTarificationPage() {
           </CardContent>
         </Card>
 
-        {/* Info */}
-        <Card className="border-muted">
-          <CardContent className="p-3 flex items-start gap-2">
-            <Info className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-            <p className="text-xs text-muted-foreground">
-              Vous êtes libre de fixer vos prix. Le prix recommandé est calculé à partir de la moyenne des transporteurs sur ce corridor. 
-              Les clients voient vos prix et le prix recommandé Konnekt comme référence.
-            </p>
-          </CardContent>
-        </Card>
+        {/* Info - compact */}
+        <div className="flex items-start gap-1.5 p-2.5 rounded-lg bg-muted/30 border border-border/30">
+          <Info className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            Fixez vos prix librement. Le prix recommandé est la moyenne du corridor. Les clients voient vos prix et la référence Konnekt.
+          </p>
+        </div>
 
-        {/* Preview */}
+        {/* Preview - compact */}
         {priceS > 0 && (
           <Card className="border-primary/30 bg-primary/5">
-            <CardContent className="p-3">
-              <p className="text-xs font-medium mb-2">Aperçu client</p>
-              <p className="text-lg font-bold text-primary">
-                À partir de {formatPriceFCFA(Math.min(priceS, priceM, priceL, priceXL))}
-              </p>
-              <p className="text-[10px] text-muted-foreground">
-                Ce prix apparaîtra sur les cartes de résultats
-              </p>
+            <CardContent className="p-2.5 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-muted-foreground">Aperçu client</p>
+                <p className="text-base font-bold text-primary">
+                  À partir de {formatPriceFCFA(Math.min(priceS, priceM, priceL, priceXL))} {currSym}
+                </p>
+              </div>
             </CardContent>
           </Card>
         )}
 
         {/* Save */}
-        <Button className="w-full h-11" onClick={handleSave} disabled={saving}>
+        <Button className="w-full h-10" onClick={handleSave} disabled={saving}>
           {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-          {saving ? "Enregistrement..." : "Enregistrer les tarifs"}
+          {saving ? "Enregistrement..." : "Enregistrer"}
         </Button>
       </div>
     </RoutierDashboardLayout>
