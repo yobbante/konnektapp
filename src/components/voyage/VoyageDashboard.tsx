@@ -124,7 +124,7 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
       setOrders(ordersData || []);
       
       // Auto-navigate to colis tab if there are active orders
-      const activeStatuses = ["pending", "accepted", "collected", "checked_in", "in_transit", "arrived_destination"];
+      const activeStatuses = ["pending", "accepted", "collected", "checked_in", "in_transit", "arrived_destination", "weight_pending_payment"];
       const hasActive = (ordersData || []).some(o => activeStatuses.includes(o.status));
       if (hasActive) {
         setActiveTab("commandes");
