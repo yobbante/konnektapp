@@ -153,7 +153,7 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
   const activeTrips = trips.filter(t => t.status === "active" && t.departure_date >= today);
   const pastTrips = trips.filter(t => t.status !== "active" || t.departure_date < today);
 
-  const ACTIVE_ORDER_STATUSES = ["pending", "accepted", "collected", "checked_in", "in_transit", "arrived_destination"];
+  const ACTIVE_ORDER_STATUSES = ["pending", "accepted", "collected", "checked_in", "in_transit", "arrived_destination", "weight_pending_payment"];
   const DONE_ORDER_STATUSES = ["delivered", "delivery_confirmed"];
   const activeOrders = orders.filter(o => ACTIVE_ORDER_STATUSES.includes(o.status));
   const doneOrders = orders.filter(o => DONE_ORDER_STATUSES.includes(o.status));
