@@ -1,16 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, CreditCard, Info, CheckCircle2, Scale, AlertTriangle } from "lucide-react";
+import { ArrowLeft, CreditCard, CheckCircle2, Scale, AlertTriangle, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getCurrencySymbol } from "@/components/ui/currency-selector";
 
 const BG = "linear-gradient(180deg, #0F1923 0%, #15232F 50%, #1A2B3A 100%)";
 
 const paymentMethods = [
-  { id: "wallet", label: "Konnekt Wallet", icon: "", desc: "Solde disponible" },
-  { id: "wave", label: "Wave", icon: "", desc: "Mobile money" },
+  { id: "wallet", label: "Konnekt Wallet", icon: "💳", desc: "Solde disponible" },
+  { id: "wave", label: "Wave", icon: "🌊", desc: "Mobile money" },
   { id: "orange", label: "Orange Money", icon: "🟠", desc: "Mobile money" },
 ];
 
@@ -37,10 +38,33 @@ export default function PaySupplement() {
   const [paying, setPaying] = useState(false);
   const [paid, setPaid] = useState(false);
   const [supplement, setSupplement] = useState(0);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [walletCurrency, setWalletCurrency] = useState("USD");
 
   useEffect(() => {
     if (orderId) loadOrder();
+    loadWallet();
   }, [orderId]);
+
+  const loadWallet = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
+    const { data: wallet } = await supabase
+      .from("client_wallets")
+      .select("available_balance, currency")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    
+    if (wallet) {
+      setWalletBalance(wallet.available_balance || 0);
+      setWalletCurrency(wallet.currency || "USD");
+    } else {
+      // No wallet yet — default USD
+      setWalletCurrency("USD");
+      setWalletBalance(0);
+    }
+  };
 
   const loadOrder = async () => {
     try {
@@ -58,13 +82,11 @@ export default function PaySupplement() {
       
       setOrder(data);
       
-      // Calculate supplement from weight difference
       const newWeight = parseFloat(data.weight_tier_applied || "0");
       const oldWeight = data.weight;
       const basePricePerKg = data.price_per_kg;
       
       if (newWeight > 0 && newWeight !== oldWeight) {
-        // TMA: for <1kg, tarif minimum = basePricePerKg * 1.5
         let newPrice: number;
         if (newWeight > 0 && newWeight <= 1) {
           newPrice = Math.round(basePricePerKg * 1.5);
@@ -87,24 +109,21 @@ export default function PaySupplement() {
       const newWeight = parseFloat(order.weight_tier_applied || "0");
       const newTotal = order.total_price + supplement;
       
-      // Update order: pay supplement, update weight, unblock transit
       const { error } = await supabase.from("orders").update({
         weight: newWeight,
         total_price: newTotal,
         financial_status: "escrow_locked",
-        status: "checked_in", // Unblock back to checked_in
+        status: "checked_in",
       }).eq("id", order.id);
       
       if (error) throw error;
 
-      // Sync escrow_transactions with new amount
       const { data: { user } } = await supabase.auth.getUser();
       
       await supabase.from("escrow_transactions").update({
         amount: newTotal,
       }).eq("order_id", order.id).eq("status", "held");
 
-      // Update client wallet escrow_balance with supplement delta
       if (user) {
         const { data: cw } = await supabase
           .from("client_wallets")
@@ -119,7 +138,6 @@ export default function PaySupplement() {
         }
       }
       
-      // Log in order history
       await supabase.from("order_status_history").insert({
         order_id: order.id,
         status: "checked_in",
@@ -128,7 +146,6 @@ export default function PaySupplement() {
         notes: `Supplément de ${supplement.toLocaleString()} ${order.currency} payé via ${selectedMethod}. Poids: ${order.weight}kg → ${newWeight}kg. Transit débloqué.`,
       });
 
-      // Log supplement in escrow_logs
       await supabase.from("escrow_logs").insert({
         order_id: order.id,
         action: "supplement_paid",
@@ -147,6 +164,8 @@ export default function PaySupplement() {
       setPaying(false);
     }
   };
+
+  const currencySymbol = getCurrencySymbol(walletCurrency);
 
   if (loading) {
     return (
@@ -198,6 +217,25 @@ export default function PaySupplement() {
       </div>
 
       <div className="px-5 space-y-5">
+        {/* Wallet balance card */}
+        <div className="p-4 rounded-xl border border-white/[0.08] bg-white/[0.04] flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center">
+            <Wallet className="w-5 h-5 text-emerald-400" />
+          </div>
+          <div className="flex-1">
+            <p className="text-[11px] text-white/40 uppercase tracking-wider">Solde Konnekt</p>
+            <p className="text-lg font-bold text-white">
+              {walletBalance.toLocaleString("fr-FR")} {currencySymbol}
+            </p>
+          </div>
+          <button
+            onClick={() => navigate("/client/wallet")}
+            className="text-[11px] text-emerald-400 font-medium px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-400/20"
+          >
+            Recharger
+          </button>
+        </div>
+
         {/* Weight change details */}
         {order && (
           <div className="p-4 rounded-xl border border-amber-400/20 bg-amber-500/10 space-y-3">
@@ -237,26 +275,33 @@ export default function PaySupplement() {
         <div>
           <label className="text-xs font-semibold text-white/60 mb-2 block">Mode de paiement</label>
           <div className="space-y-2">
-            {paymentMethods.map((method) => (
-              <button
-                key={method.id}
-                onClick={() => setSelectedMethod(method.id)}
-                className={`w-full flex items-center gap-3 p-3.5 rounded-xl border transition-all ${
-                  selectedMethod === method.id
-                    ? "border-emerald-400/40 bg-emerald-500/10"
-                    : "border-white/[0.06] bg-white/[0.03]"
-                }`}
-              >
-                <span className="text-xl">{method.icon}</span>
-                <div className="flex-1 text-left">
-                  <p className="text-sm font-semibold text-white">{method.label}</p>
-                  <p className="text-[11px] text-white/40">{method.desc}</p>
-                </div>
-                {selectedMethod === method.id && (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                )}
-              </button>
-            ))}
+            {paymentMethods.map((method) => {
+              const isWallet = method.id === "wallet";
+              return (
+                <button
+                  key={method.id}
+                  onClick={() => setSelectedMethod(method.id)}
+                  className={`w-full flex items-center gap-3 p-3.5 rounded-xl border transition-all ${
+                    selectedMethod === method.id
+                      ? "border-emerald-400/40 bg-emerald-500/10"
+                      : "border-white/[0.06] bg-white/[0.03]"
+                  }`}
+                >
+                  <span className="text-xl">{method.icon}</span>
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-semibold text-white">{method.label}</p>
+                    <p className="text-[11px] text-white/40">
+                      {isWallet
+                        ? `Solde: ${walletBalance.toLocaleString("fr-FR")} ${currencySymbol}`
+                        : method.desc}
+                    </p>
+                  </div>
+                  {selectedMethod === method.id && (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
