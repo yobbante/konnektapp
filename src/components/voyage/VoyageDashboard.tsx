@@ -65,6 +65,7 @@ const ORDER_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   checked_in: { label: "D\u00e9pos\u00e9", color: "bg-indigo-500/15 text-indigo-600" },
   in_transit: { label: "En transit", color: "bg-blue-500/15 text-blue-600" },
   arrived_destination: { label: "Arriv\u00e9", color: "bg-teal-500/15 text-teal-600" },
+  weight_pending_payment: { label: "Suppl\u00e9ment requis", color: "bg-orange-500/15 text-orange-600" },
   delivered: { label: "Livr\u00e9", color: "bg-green-500/15 text-green-700" },
   delivery_confirmed: { label: "Confirm\u00e9", color: "bg-emerald-500/15 text-emerald-700" },
 };
