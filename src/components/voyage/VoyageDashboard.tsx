@@ -65,6 +65,7 @@ const ORDER_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   checked_in: { label: "D\u00e9pos\u00e9", color: "bg-indigo-500/15 text-indigo-600" },
   in_transit: { label: "En transit", color: "bg-blue-500/15 text-blue-600" },
   arrived_destination: { label: "Arriv\u00e9", color: "bg-teal-500/15 text-teal-600" },
+  weight_pending_payment: { label: "Suppl\u00e9ment requis", color: "bg-orange-500/15 text-orange-600" },
   delivered: { label: "Livr\u00e9", color: "bg-green-500/15 text-green-700" },
   delivery_confirmed: { label: "Confirm\u00e9", color: "bg-emerald-500/15 text-emerald-700" },
 };
@@ -124,7 +125,7 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
       setOrders(ordersData || []);
       
       // Auto-navigate to colis tab if there are active orders
-      const activeStatuses = ["pending", "accepted", "collected", "checked_in", "in_transit", "arrived_destination"];
+      const activeStatuses = ["pending", "accepted", "collected", "checked_in", "in_transit", "arrived_destination", "weight_pending_payment"];
       const hasActive = (ordersData || []).some(o => activeStatuses.includes(o.status));
       if (hasActive) {
         setActiveTab("commandes");
@@ -153,7 +154,7 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
   const activeTrips = trips.filter(t => t.status === "active" && t.departure_date >= today);
   const pastTrips = trips.filter(t => t.status !== "active" || t.departure_date < today);
 
-  const ACTIVE_ORDER_STATUSES = ["pending", "accepted", "collected", "checked_in", "in_transit", "arrived_destination"];
+  const ACTIVE_ORDER_STATUSES = ["pending", "accepted", "collected", "checked_in", "in_transit", "arrived_destination", "weight_pending_payment"];
   const DONE_ORDER_STATUSES = ["delivered", "delivery_confirmed"];
   const activeOrders = orders.filter(o => ACTIVE_ORDER_STATUSES.includes(o.status));
   const doneOrders = orders.filter(o => DONE_ORDER_STATUSES.includes(o.status));
@@ -237,7 +238,7 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
             {/* Main Tabs: Voyages | Commandes | Wallet */}
             <div className="flex gap-1 p-1 bg-muted/30 rounded-xl">
               {([
-                { id: "voyages" as Tab, label: "Voyages", icon: Plane, hasNotif: activeTrips.length > 0 },
+                { id: "voyages" as Tab, label: "Voyages", icon: Plane, hasNotif: false },
                 { id: "commandes" as Tab, label: `Colis (${orders.length})`, icon: Package, hasNotif: activeOrders.length > 0 },
                 { id: "wallet" as Tab, label: "Finance", icon: Wallet, hasNotif: false },
               ]).map((tab) => (
