@@ -312,17 +312,8 @@ function RecipientParcelDetails({
       transition={{ type: "spring", damping: 25, stiffness: 300 }}
       className="h-[100dvh] flex flex-col bg-background pb-[calc(env(safe-area-inset-bottom)+88px)]"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-            <Package className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h2 className="font-bold text-foreground">Colis pour vous</h2>
-            <p className="text-xs text-muted-foreground">{parcels.length} colis entrant{parcels.length > 1 ? 's' : ''}</p>
-          </div>
-        </div>
+      {/* Header - minimal close button */}
+      <div className="flex items-center justify-end px-4 py-2">
         <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
           <X className="w-5 h-5" />
         </Button>

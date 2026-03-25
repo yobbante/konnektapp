@@ -237,7 +237,7 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
             {/* Main Tabs: Voyages | Commandes | Wallet */}
             <div className="flex gap-1 p-1 bg-muted/30 rounded-xl">
               {([
-                { id: "voyages" as Tab, label: "Voyages", icon: Plane, hasNotif: activeTrips.length > 0 },
+                { id: "voyages" as Tab, label: "Voyages", icon: Plane, hasNotif: false },
                 { id: "commandes" as Tab, label: `Colis (${orders.length})`, icon: Package, hasNotif: activeOrders.length > 0 },
                 { id: "wallet" as Tab, label: "Finance", icon: Wallet, hasNotif: false },
               ]).map((tab) => (

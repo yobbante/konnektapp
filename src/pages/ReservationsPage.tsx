@@ -585,7 +585,7 @@ export default function ReservationsPage() {
                 {supplementOrders.map((o) =>
             <button
               key={`supp-${o.id}`}
-              onClick={() => navigate(`/supplement/${o.id}`)}
+              onClick={() => navigate(`/payer-supplement?orderId=${o.id}`)}
               className="w-full flex items-center gap-3 p-3 rounded-2xl border border-destructive/30 bg-destructive/5 active:scale-[0.98] transition-all">
               
                     <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
