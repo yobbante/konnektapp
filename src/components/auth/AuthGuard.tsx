@@ -143,9 +143,16 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const [authenticated, setAuthenticated] = useState(false);
 
   useEffect(() => {
-    checkAuth();
+    let isMounted = true;
+    
+    const doCheck = async () => {
+      if (!isMounted) return;
+      await checkAuth();
+    };
+    doCheck();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
       if (event === "SIGNED_OUT" || !session) {
         setAuthenticated(false);
         if (!isPublicRoute(location.pathname)) {
@@ -157,8 +164,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, [location.pathname, navigate]);
+    return () => { isMounted = false; subscription.unsubscribe(); };
+  }, [location.pathname]);
 
   const checkRoleAccess = async (userId: string, email: string) => {
     const pathname = location.pathname;
