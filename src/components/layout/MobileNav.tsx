@@ -211,7 +211,11 @@ export function MobileNav() {
     }
   }, [location.pathname, isAuthenticated, navigate, hasPublishedTrips]);
 
+  // Prevent rendering if auth state is unstable
   if (!isAuthenticated || isKeyboardOpen || authLoading) return null;
+  
+  // Safety: hide on auth page
+  if (location.pathname === "/auth") return null;
 
   return (
     <>

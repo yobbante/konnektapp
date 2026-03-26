@@ -64,7 +64,7 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
     // Fetch orders needing attention
     const { data: activeOrders } = await supabase
       .from("orders")
-      .select("id, order_number, gp_id, destination_city, origin_city, status, delivery_code, total_price, weight, updated_at, currency" as any)
+      .select("id, order_number, gp_id, destination_city, origin_city, status, delivery_code, total_price, weight, updated_at, currency, adjustment_amount" as any)
       .eq("client_id", userId)
       .not("status", "in", '("released","cancelled")')
       .order("updated_at", { ascending: false })
@@ -151,16 +151,19 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
   const actions = useMemo<SmartAction[]>(() => {
     const items: SmartAction[] = [];
 
-    // CRITICAL: Weight supplement required
+    // CRITICAL: Weight supplement required (only if amount > 0)
     supplementOrders.forEach(o => {
-      items.push({
-        id: `supplement-${o.id}`, priority: "critical", icon: Scale,
-        label: "Supplément requis",
-        description: `${o.order_number} — Payez le supplément de ${o.adjustment_amount?.toLocaleString() || ""} ${o.currency || "FCFA"}`,
-        to: `/payer-supplement?orderId=${o.id}`,
-        color: "text-destructive", bgColor: "bg-destructive/10", borderColor: "border-destructive/30",
-        pulse: true,
-      });
+      const adjustAmount = o.adjustment_amount || 0;
+      if (adjustAmount > 0) {
+        items.push({
+          id: `supplement-${o.id}`, priority: "critical", icon: Scale,
+          label: "Supplément requis",
+          description: `${o.order_number} — Payez ${adjustAmount.toLocaleString()} ${o.currency || "FCFA"}`,
+          to: `/payer-supplement?orderId=${o.id}`,
+          color: "text-destructive", bgColor: "bg-destructive/10", borderColor: "border-destructive/30",
+          pulse: true,
+        });
+      }
     });
 
     // CRITICAL: Delivery code available — confirm delivery
@@ -272,21 +275,21 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
 
   return (
     <>
-      <div className="px-4 pb-3">
+      <div className="px-4 pb-3 overflow-hidden">
         {/* Counter + review hint */}
         {total > 1 && (
           <div className="flex items-center justify-between mb-1.5 px-1">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 min-w-0">
               {reviewCount > 0 && (
                 <>
-                  <Sparkles className="w-3 h-3 text-amber-500" />
-                  <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                  <Sparkles className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                  <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 truncate">
                     {reviewCount} avis en attente
                   </span>
                 </>
               )}
             </div>
-            <span className="text-[10px] text-muted-foreground font-medium">
+            <span className="text-[10px] text-muted-foreground font-medium flex-shrink-0">
               {currentIndex + 1}/{total}
             </span>
           </div>
@@ -300,7 +303,7 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
             exit={{ opacity: 0, x: -30 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
           >
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 overflow-hidden">
               {/* Prev button */}
               {total > 1 && (
                 <button onClick={goPrev} className="w-6 h-6 rounded-full flex items-center justify-center bg-muted/50 flex-shrink-0">
@@ -310,36 +313,25 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
 
               <Wrapper
                 {...wrapperProps}
-                className={`flex-1 flex items-center gap-3 p-3 rounded-2xl border transition-all ${action.bgColor} ${action.borderColor} ${
+                className={`flex-1 flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all min-w-0 overflow-hidden ${action.bgColor} ${action.borderColor} ${
                   isCritical ? "shadow-sm" : ""
                 } active:scale-[0.98]`}
               >
-                <div className={`relative w-10 h-10 rounded-xl ${action.bgColor} flex items-center justify-center flex-shrink-0`}>
-                  <action.icon className={`w-5 h-5 ${action.color}`} />
+                <div className={`relative w-9 h-9 rounded-xl ${action.bgColor} flex items-center justify-center flex-shrink-0`}>
+                  <action.icon className={`w-4 h-4 ${action.color}`} />
                   {action.pulse && (
-                    <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-destructive animate-pulse" />
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-destructive animate-pulse" />
                   )}
                 </div>
-                <div className="flex-1 min-w-0 text-left">
-                  <p className={`text-sm font-semibold leading-tight ${isCritical ? action.color : "text-foreground"}`}>
+                <div className="flex-1 min-w-0 text-left overflow-hidden">
+                  <p className={`text-xs font-semibold leading-tight truncate ${isCritical ? action.color : "text-foreground"}`}>
                     {action.label}
                   </p>
-                  <p className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
+                  <p className="text-[10px] text-muted-foreground truncate leading-tight mt-0.5">
                     {action.description}
                   </p>
                 </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  {action.badge && typeof action.badge === "number" ? (
-                    <span className="w-6 h-6 rounded-full bg-destructive text-destructive-foreground text-[11px] font-bold flex items-center justify-center">
-                      {action.badge}
-                    </span>
-                  ) : action.badge ? (
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${action.bgColor} ${action.color}`}>
-                      {action.badge}
-                    </span>
-                  ) : null}
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               </Wrapper>
 
               {/* Next button */}
