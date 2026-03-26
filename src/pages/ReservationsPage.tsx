@@ -402,7 +402,7 @@ export default function ReservationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pb-20">
+    <div className="min-h-screen bg-background flex flex-col pb-20 overflow-x-hidden">
       <AppHeader title="Mes réservations" showBack />
 
       {/* Tabs */}
@@ -450,7 +450,7 @@ export default function ReservationsPage() {
       }
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto overscroll-contain pb-8" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain pb-8" style={{ WebkitOverflowScrolling: 'touch' }}>
         
         {/* Tab: Tickets Mobilité */}
         {activeTab === "tickets" &&
