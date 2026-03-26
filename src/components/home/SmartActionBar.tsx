@@ -64,7 +64,7 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
     // Fetch orders needing attention
     const { data: activeOrders } = await supabase
       .from("orders")
-      .select("id, order_number, gp_id, destination_city, origin_city, status, delivery_code, total_price, weight, updated_at, currency" as any)
+      .select("id, order_number, gp_id, destination_city, origin_city, status, delivery_code, total_price, weight, updated_at, currency, adjustment_amount" as any)
       .eq("client_id", userId)
       .not("status", "in", '("released","cancelled")')
       .order("updated_at", { ascending: false })
