@@ -299,14 +299,22 @@ export function GPMissionDetailsSheet({
               <Package className="w-5 h-5 text-primary" />
               Détails de la mission
             </span>
-            {order && (
-              <Badge 
-                variant={isPending ? "warning" : isActive ? "default" : "secondary"}
-                className={isActive ? "bg-green-500" : ""}
+            <div className="flex items-center gap-2">
+              {order && (
+                <Badge 
+                  variant={isPending ? "warning" : isActive ? "default" : "secondary"}
+                  className={isActive ? "bg-green-500" : ""}
+                >
+                  {ORDER_STATUS_LABELS[validStatus as OrderStatus]}
+                </Badge>
+              )}
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
               >
-                {ORDER_STATUS_LABELS[validStatus as OrderStatus]}
-              </Badge>
-            )}
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
           </SheetTitle>
         </SheetHeader>
 
