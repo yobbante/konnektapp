@@ -216,8 +216,27 @@ Deno.serve(async (req) => {
     });
 
     if (delta === 0) {
+      // Weight changed but no financial impact — update weight, notify client, don't block
+      await supabase
+        .from("orders")
+        .update({
+          declared_weight: new_weight,
+          weight_adjustment_count: adjustmentCount + 1,
+        })
+        .eq("id", order_id);
+
+      // Notify client of weight change (no payment needed)
+      await supabase.from("notifications").insert({
+        user_id: order.client_id,
+        title: "⚖️ Poids mis à jour",
+        message: `Le poids de ${order.order_number} a été ajusté à ${new_weight}kg. Aucun supplément requis.`,
+        type: "weight_adjustment",
+        related_id: order_id,
+        related_type: "order",
+      });
+
       return new Response(
-        JSON.stringify({ success: true, delta: 0, message: "No adjustment needed" }),
+        JSON.stringify({ success: true, delta: 0, message: "Weight updated, no payment needed" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
