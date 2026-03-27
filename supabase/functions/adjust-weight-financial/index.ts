@@ -11,6 +11,7 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
+import { calculatePrice } from "../../../src/lib/gpPricingEngine.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -198,9 +199,21 @@ Deno.serve(async (req) => {
     }
 
     const effectivePricePerKg = price_per_kg || order.price_per_kg || 0;
+    const previousWeight = Number(order.declared_weight ?? order.weight ?? 0);
+    const forfaitValise23kg = Math.round(effectivePricePerKg * 23 * 0.85);
+    const previousTransportAmount = calculatePrice(previousWeight, {
+      basePricePerKg: effectivePricePerKg,
+      forfaitValise23kg,
+      currency: order.currency || "",
+    });
+    const newTransportAmount = calculatePrice(new_weight, {
+      basePricePerKg: effectivePricePerKg,
+      forfaitValise23kg,
+      currency: order.currency || "",
+    });
+    const delta = newTransportAmount - previousTransportAmount;
     const oldAmount = order.total_price || 0;
-    const newAmount = Math.ceil(new_weight * effectivePricePerKg);
-    const delta = newAmount - oldAmount;
+    const newAmount = oldAmount + delta;
     const now = new Date().toISOString();
 
     // ── Log dans weight_adjustment_log (audit immuable) ──

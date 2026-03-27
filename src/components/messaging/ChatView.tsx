@@ -76,18 +76,20 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
     if (!vv) return;
 
     const onViewportResize = () => {
-      // Calculate how much the viewport shrank (= keyboard height)
-      const keyboardHeight = window.innerHeight - vv.height;
+      const viewportHeight = vv.height + vv.offsetTop;
+      const keyboardHeight = Math.max(0, window.innerHeight - viewportHeight);
       // Only apply offset if keyboard is meaningfully open (>100px)
       setBottomOffset(keyboardHeight > 100 ? keyboardHeight : 0);
       
       // Scroll to bottom when keyboard opens
       if (keyboardHeight > 100) {
         requestAnimationFrame(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+          messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
         });
       }
     };
+
+    onViewportResize();
 
     vv.addEventListener("resize", onViewportResize);
     vv.addEventListener("scroll", onViewportResize);
@@ -223,7 +225,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
     }, 100);
   }, []);
 
@@ -290,6 +292,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
       style={{
         // When keyboard is open, shrink the container to visual viewport
         height: isKeyboardOpen ? `${window.innerHeight - bottomOffset}px` : '100dvh',
+        paddingBottom: 0,
       }}
     >
       {/* Audio Call UI Overlay */}
@@ -321,7 +324,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
       {/* Messages - scrollable area fills space between header and input */}
       <div 
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto overscroll-contain px-3 py-2 space-y-2" 
+        className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-3 py-2 space-y-2" 
         style={{ 
           minHeight: 0,
           WebkitOverflowScrolling: 'touch',
