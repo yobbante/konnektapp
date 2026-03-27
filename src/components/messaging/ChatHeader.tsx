@@ -111,7 +111,7 @@ export function ChatHeader({
   const statusInfo = orderInfo?.status ? STATUS_LABELS[orderInfo.status] : null;
 
   return (
-    <div className="border-b border-border bg-background/95 backdrop-blur-md flex-shrink-0 sticky top-0 left-0 right-0 z-50">
+    <div className="border-b border-border bg-background/95 backdrop-blur-md flex-shrink-0 sticky top-0 left-0 right-0 z-50 shrink-0">
       {/* Main header */}
       <div 
         className={`flex items-center gap-2 px-2 ${isKeyboardOpen ? 'py-1' : 'py-2'}`}

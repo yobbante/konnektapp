@@ -18,6 +18,29 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+function calculateGpPrice(weight: number, basePricePerKg: number, forfaitValise23kg: number): number {
+  const tma = Math.round(basePricePerKg * 1.5);
+
+  if (weight === 23) return forfaitValise23kg;
+  if (weight > 0 && weight <= 1) return tma;
+
+  let rawPrice = 0;
+
+  if (weight > 23) {
+    rawPrice = Math.round(weight * basePricePerKg * 0.85);
+  } else if (weight <= 5) {
+    rawPrice = Math.round(weight * basePricePerKg);
+  } else if (weight <= 10) {
+    rawPrice = Math.round(weight * basePricePerKg * 0.95);
+  } else if (weight <= 15) {
+    rawPrice = Math.round(weight * basePricePerKg * 0.9);
+  } else {
+    rawPrice = Math.round(weight * basePricePerKg * 0.85);
+  }
+
+  return Math.max(rawPrice, tma);
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -437,17 +460,13 @@ async function execWeightModify(
   }
 
   const basePricePerKg = order.price_per_kg || 0;
+  const forfait23kg = Math.round(basePricePerKg * 23 * 0.85);
   
-  // Calculate price difference using TMA logic
+  // Calculate transport using GP pricing engine rules
   const oldPrice = order.total_price || 0;
-  let newTransportPrice: number;
-  
-  // TMA: for <1kg, tarif minimum = basePricePerKg * 1.5 (forfait fixe)
-  if (actualWeight > 0 && actualWeight <= 1) {
-    newTransportPrice = Math.round(basePricePerKg * 1.5);
-  } else {
-    newTransportPrice = Math.round(actualWeight * basePricePerKg);
-  }
+  const previousWeight = Number(order.declared_weight ?? order.weight ?? 0);
+  const previousTransportPrice = calculateGpPrice(previousWeight, basePricePerKg, forfait23kg);
+  const newTransportPrice = calculateGpPrice(actualWeight, basePricePerKg, forfait23kg);
 
   // Recalculate total: transport + insurance + logistics (insurance/logistics stay the same)
   const insuranceAmount = order.insurance_amount || 0;
@@ -461,8 +480,8 @@ async function execWeightModify(
     ? ((logOpts.pickup_enabled ? (logOpts.pickup_price || 0) : 0) + (logOpts.delivery_enabled ? (logOpts.delivery_price || 0) : 0))
     : 0;
 
-  const newTotalPrice = newTransportPrice + insuranceAmount + logisticsTotal;
-  const priceDiff = newTotalPrice - oldPrice;
+  const newTotalPrice = oldPrice + (newTransportPrice - previousTransportPrice);
+  const priceDiff = newTransportPrice - previousTransportPrice;
 
   // Update order with ACTUAL weight, total_price, and status
   const updateData: Record<string, any> = {

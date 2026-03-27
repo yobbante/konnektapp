@@ -22,6 +22,7 @@ import { SearchableCitySelect } from "@/components/gp/SearchableCitySelect";
 import { canPublishDepartureDate } from "@/lib/premiumGating";
 import { getPhoneIndicatifForCity, getAddressPlaceholder, getPricePlaceholder, getCurrencySymbol } from "@/lib/cityUtils";
 import { CurrencySelector, type CurrencyCode } from "@/components/ui/currency-selector";
+import { configToDbTiers, type GPPricingConfig } from "@/lib/gpPricingEngine";
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle
 } from "@/components/ui/drawer";
@@ -378,6 +379,27 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
       }
 
       // Save flat-rate pricing for this GP
+      const pricingConfig: GPPricingConfig = {
+        basePricePerKg: pricePerKg,
+        forfaitValise23kg: parseFloat(suitcasePrice),
+        currency,
+      };
+
+      if (gpId) {
+        const tiersToUpsert = configToDbTiers(pricingConfig).map((tier) => ({
+          gp_id: gpId,
+          ...tier,
+        }));
+
+        if (tiersToUpsert.length > 0) {
+          const { error: tiersError } = await supabase
+            .from("gp_weight_tiers")
+            .upsert(tiersToUpsert as any, { onConflict: "gp_id,min_weight,max_weight" as any });
+
+          if (tiersError) throw tiersError;
+        }
+      }
+
       const activeFlatRates = flatRateItems.filter(i => i.isActive && i.price && parseFloat(i.price) > 0);
       if (gpId && activeFlatRates.length > 0) {
         for (const item of activeFlatRates) {

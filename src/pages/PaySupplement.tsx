@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
+import { calculatePrice } from "@/lib/gpPricingEngine";
 
 const BG = "linear-gradient(180deg, #0F1923 0%, #15232F 50%, #1A2B3A 100%)";
 
@@ -19,9 +20,11 @@ interface OrderDetails {
   id: string;
   order_number: string;
   weight: number;
+  declared_weight: number | null;
   total_price: number;
   currency: string;
   price_per_kg: number;
+  adjustment_amount: number | null;
   weight_tier_applied: string | null;
   financial_status: string;
   status: string;
@@ -70,7 +73,7 @@ export default function PaySupplement() {
     try {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, order_number, weight, total_price, currency, price_per_kg, weight_tier_applied, financial_status, status")
+        .select("id, order_number, weight, declared_weight, total_price, currency, price_per_kg, adjustment_amount, weight_tier_applied, financial_status, status")
         .eq("id", orderId)
         .maybeSingle();
       
@@ -81,20 +84,31 @@ export default function PaySupplement() {
       }
       
       setOrder(data);
-      
-      const newWeight = parseFloat(data.weight_tier_applied || "0");
-      const oldWeight = data.weight;
+
+      const persistedAdjustment = typeof data.adjustment_amount === "number" ? data.adjustment_amount : 0;
+      if (persistedAdjustment > 0) {
+        setSupplement(persistedAdjustment);
+        return;
+      }
+
+      const newWeight = parseFloat(data.weight_tier_applied || String(data.declared_weight || 0));
+      const previousWeight = Number(data.declared_weight ?? data.weight ?? 0);
       const basePricePerKg = data.price_per_kg;
-      
-      if (newWeight > 0 && newWeight !== oldWeight) {
-        let newPrice: number;
-        if (newWeight > 0 && newWeight <= 1) {
-          newPrice = Math.round(basePricePerKg * 1.5);
-        } else {
-          newPrice = Math.round(newWeight * basePricePerKg);
-        }
-        const diff = newPrice - data.total_price;
-        setSupplement(Math.max(0, diff));
+
+      if (newWeight > 0 && previousWeight > 0 && newWeight !== previousWeight && basePricePerKg > 0) {
+        const nextTransport = calculatePrice(newWeight, {
+          basePricePerKg,
+          forfaitValise23kg: Math.round(basePricePerKg * 23 * 0.85),
+          currency: data.currency || "",
+        });
+        const previousTransport = calculatePrice(previousWeight, {
+          basePricePerKg,
+          forfaitValise23kg: Math.round(basePricePerKg * 23 * 0.85),
+          currency: data.currency || "",
+        });
+        setSupplement(Math.max(0, nextTransport - previousTransport));
+      } else {
+        setSupplement(0);
       }
     } finally {
       setLoading(false);
@@ -107,11 +121,12 @@ export default function PaySupplement() {
     
     try {
       const newWeight = parseFloat(order.weight_tier_applied || "0");
-      const newTotal = order.total_price + supplement;
+      const newTotal = order.total_price;
       
       const { error } = await supabase.from("orders").update({
         weight: newWeight,
         total_price: newTotal,
+        adjustment_amount: 0,
         financial_status: "escrow_locked",
         status: "checked_in",
       }).eq("id", order.id);
