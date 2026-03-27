@@ -151,10 +151,10 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
   const actions = useMemo<SmartAction[]>(() => {
     const items: SmartAction[] = [];
 
-    // CRITICAL: Weight supplement required (only if amount > 0)
+    // CRITICAL: Weight supplement required (only if amount > 0 and status confirms it)
     supplementOrders.forEach(o => {
-      const adjustAmount = o.adjustment_amount || 0;
-      if (adjustAmount > 0) {
+      const adjustAmount = typeof o.adjustment_amount === 'number' ? o.adjustment_amount : 0;
+      if (adjustAmount > 0 && o.status === "weight_pending_payment") {
         items.push({
           id: `supplement-${o.id}`, priority: "critical", icon: Scale,
           label: "Supplément requis",

@@ -216,12 +216,13 @@ Deno.serve(async (req) => {
     });
 
     if (delta === 0) {
-      // Weight changed but no financial impact — update weight, notify client, don't block
+      // Weight changed but no financial impact — update weight, reset adjustment_amount, notify client, don't block
       await supabase
         .from("orders")
         .update({
           declared_weight: new_weight,
           weight_adjustment_count: adjustmentCount + 1,
+          adjustment_amount: 0,
         })
         .eq("id", order_id);
 
