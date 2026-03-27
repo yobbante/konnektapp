@@ -303,7 +303,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
         onEnd={endCall}
       />
 
-      {/* Fixed Header - always visible at top */}
+      {/* Fixed Header - always visible at top, compact when keyboard open */}
       <div className="flex-shrink-0 z-50">
         <ChatHeader
           conversationId={conversationId}
@@ -314,6 +314,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
           gpPhone={gpPhone}
           gpSelfieUrl={gpSelfieUrl}
           onAudioCall={getCalleeId}
+          isKeyboardOpen={isKeyboardOpen}
         />
       </div>
 

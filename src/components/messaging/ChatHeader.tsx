@@ -32,6 +32,7 @@ interface ChatHeaderProps {
   gpPhone?: string | null;
   gpSelfieUrl?: string | null;
   onAudioCall?: () => void;
+  isKeyboardOpen?: boolean;
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -52,6 +53,7 @@ export function ChatHeader({
   gpPhone,
   gpSelfieUrl,
   onAudioCall,
+  isKeyboardOpen = false,
 }: ChatHeaderProps) {
   const navigate = useNavigate();
   const [orderInfo, setOrderInfo] = useState<OrderInfo | null>(null);
@@ -112,8 +114,8 @@ export function ChatHeader({
     <div className="border-b border-border bg-background/95 backdrop-blur-md flex-shrink-0 sticky top-0 left-0 right-0 z-50">
       {/* Main header */}
       <div 
-        className="flex items-center gap-2 px-2 py-2" 
-        style={{ paddingTop: 'calc(8px + env(safe-area-inset-top, 0px))' }}
+        className={`flex items-center gap-2 px-2 ${isKeyboardOpen ? 'py-1' : 'py-2'}`}
+        style={{ paddingTop: isKeyboardOpen ? '4px' : 'calc(8px + env(safe-area-inset-top, 0px))' }}
       >
         <Button variant="ghost" size="icon" onClick={onBack} className="h-9 w-9 flex-shrink-0">
           <ArrowLeft className="w-5 h-5" />
@@ -197,11 +199,12 @@ export function ChatHeader({
         </DropdownMenu>
       </div>
 
-      {/* Order summary banner */}
-      {orderInfo && (
+      {/* Order summary banner — hidden when keyboard is open for compact header */}
+      {orderInfo && !isKeyboardOpen && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
           className="border-t border-border"
         >
           <button
