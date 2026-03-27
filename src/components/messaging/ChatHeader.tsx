@@ -32,6 +32,7 @@ interface ChatHeaderProps {
   gpPhone?: string | null;
   gpSelfieUrl?: string | null;
   onAudioCall?: () => void;
+  isKeyboardOpen?: boolean;
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -52,6 +53,7 @@ export function ChatHeader({
   gpPhone,
   gpSelfieUrl,
   onAudioCall,
+  isKeyboardOpen = false,
 }: ChatHeaderProps) {
   const navigate = useNavigate();
   const [orderInfo, setOrderInfo] = useState<OrderInfo | null>(null);
