@@ -11,7 +11,29 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
-import { calculatePrice } from "../../../src/lib/gpPricingEngine.ts";
+
+function calculateGpPrice(weight: number, basePricePerKg: number, forfaitValise23kg: number): number {
+  const tma = Math.round(basePricePerKg * 1.5);
+
+  if (weight === 23) return forfaitValise23kg;
+  if (weight > 0 && weight <= 1) return tma;
+
+  let rawPrice = 0;
+
+  if (weight > 23) {
+    rawPrice = Math.round(weight * basePricePerKg * 0.85);
+  } else if (weight <= 5) {
+    rawPrice = Math.round(weight * basePricePerKg);
+  } else if (weight <= 10) {
+    rawPrice = Math.round(weight * basePricePerKg * 0.95);
+  } else if (weight <= 15) {
+    rawPrice = Math.round(weight * basePricePerKg * 0.9);
+  } else {
+    rawPrice = Math.round(weight * basePricePerKg * 0.85);
+  }
+
+  return Math.max(rawPrice, tma);
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -201,16 +223,8 @@ Deno.serve(async (req) => {
     const effectivePricePerKg = price_per_kg || order.price_per_kg || 0;
     const previousWeight = Number(order.declared_weight ?? order.weight ?? 0);
     const forfaitValise23kg = Math.round(effectivePricePerKg * 23 * 0.85);
-    const previousTransportAmount = calculatePrice(previousWeight, {
-      basePricePerKg: effectivePricePerKg,
-      forfaitValise23kg,
-      currency: order.currency || "",
-    });
-    const newTransportAmount = calculatePrice(new_weight, {
-      basePricePerKg: effectivePricePerKg,
-      forfaitValise23kg,
-      currency: order.currency || "",
-    });
+    const previousTransportAmount = calculateGpPrice(previousWeight, effectivePricePerKg, forfaitValise23kg);
+    const newTransportAmount = calculateGpPrice(new_weight, effectivePricePerKg, forfaitValise23kg);
     const delta = newTransportAmount - previousTransportAmount;
     const oldAmount = order.total_price || 0;
     const newAmount = oldAmount + delta;
