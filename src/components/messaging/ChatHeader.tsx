@@ -199,11 +199,12 @@ export function ChatHeader({
         </DropdownMenu>
       </div>
 
-      {/* Order summary banner */}
-      {orderInfo && (
+      {/* Order summary banner — hidden when keyboard is open for compact header */}
+      {orderInfo && !isKeyboardOpen && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
           className="border-t border-border"
         >
           <button
