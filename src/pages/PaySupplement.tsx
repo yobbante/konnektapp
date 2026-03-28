@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getCurrencySymbol } from "@/components/ui/currency-selector";
 import { calculatePrice } from "@/lib/gpPricingEngine";
+import { loadExchangeRates, convertAmount, type ExchangeRate } from "@/lib/currencyUtils";
 
 const BG = "linear-gradient(180deg, #0F1923 0%, #15232F 50%, #1A2B3A 100%)";
 
@@ -28,6 +29,7 @@ interface OrderDetails {
   weight_tier_applied: string | null;
   financial_status: string;
   status: string;
+  gp_id: string | null;
 }
 
 export default function PaySupplement() {
@@ -41,13 +43,19 @@ export default function PaySupplement() {
   const [paying, setPaying] = useState(false);
   const [paid, setPaid] = useState(false);
   const [supplement, setSupplement] = useState(0);
+  const [supplementInOrderCurrency, setSupplementInOrderCurrency] = useState(0);
   const [walletBalance, setWalletBalance] = useState(0);
   const [walletCurrency, setWalletCurrency] = useState("USD");
+  const [rates, setRates] = useState<ExchangeRate[]>([]);
 
   useEffect(() => {
-    if (orderId) loadOrder();
+    loadExchangeRates().then(setRates);
+  }, []);
+
+  useEffect(() => {
+    if (orderId && rates.length > 0) loadOrder();
     loadWallet();
-  }, [orderId]);
+  }, [orderId, rates]);
 
   const loadWallet = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -63,7 +71,6 @@ export default function PaySupplement() {
       setWalletBalance(wallet.available_balance || 0);
       setWalletCurrency(wallet.currency || "USD");
     } else {
-      // No wallet yet — default USD
       setWalletCurrency("USD");
       setWalletBalance(0);
     }
@@ -73,7 +80,7 @@ export default function PaySupplement() {
     try {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, order_number, weight, declared_weight, total_price, currency, price_per_kg, adjustment_amount, weight_tier_applied, financial_status, status")
+        .select("id, order_number, weight, declared_weight, total_price, currency, price_per_kg, adjustment_amount, weight_tier_applied, financial_status, status, gp_id")
         .eq("id", orderId)
         .maybeSingle();
       
@@ -85,31 +92,34 @@ export default function PaySupplement() {
       
       setOrder(data);
 
-      const persistedAdjustment = typeof data.adjustment_amount === "number" ? data.adjustment_amount : 0;
-      if (persistedAdjustment > 0) {
-        setSupplement(persistedAdjustment);
-        return;
-      }
-
+      // Calculate supplement in the ORDER's currency (GP currency) using pricing engine
       const newWeight = parseFloat(data.weight_tier_applied || String(data.declared_weight || 0));
-      const previousWeight = Number(data.declared_weight ?? data.weight ?? 0);
+      const previousWeight = Number(data.weight ?? 0);
       const basePricePerKg = data.price_per_kg;
+      const orderCurrency = data.currency || "XOF";
+
+      let supplementInGpCurrency = 0;
 
       if (newWeight > 0 && previousWeight > 0 && newWeight !== previousWeight && basePricePerKg > 0) {
-        const nextTransport = calculatePrice(newWeight, {
+        const config = {
           basePricePerKg,
           forfaitValise23kg: Math.round(basePricePerKg * 23 * 0.85),
-          currency: data.currency || "",
-        });
-        const previousTransport = calculatePrice(previousWeight, {
-          basePricePerKg,
-          forfaitValise23kg: Math.round(basePricePerKg * 23 * 0.85),
-          currency: data.currency || "",
-        });
-        setSupplement(Math.max(0, nextTransport - previousTransport));
-      } else {
-        setSupplement(0);
+          currency: orderCurrency,
+        };
+        const nextTransport = calculatePrice(newWeight, config);
+        const previousTransport = calculatePrice(previousWeight, config);
+        supplementInGpCurrency = Math.max(0, nextTransport - previousTransport);
       }
+
+      // Use persisted adjustment_amount if available and > 0
+      const persistedAdjustment = typeof data.adjustment_amount === "number" && data.adjustment_amount > 0
+        ? data.adjustment_amount
+        : supplementInGpCurrency;
+
+      // Store supplement in order currency
+      setSupplementInOrderCurrency(persistedAdjustment);
+      // Also set display supplement (same as order currency for display)
+      setSupplement(persistedAdjustment);
     } finally {
       setLoading(false);
     }
@@ -120,11 +130,48 @@ export default function PaySupplement() {
     setPaying(true);
     
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Non authentifié");
+
+      const orderCurrency = order.currency || "XOF";
+
+      if (selectedMethod === "wallet") {
+        // Convert supplement from order currency to wallet currency for deduction
+        let deductionAmount = supplementInOrderCurrency;
+        if (walletCurrency !== orderCurrency && rates.length > 0) {
+          deductionAmount = Math.ceil(convertAmount(supplementInOrderCurrency, orderCurrency, walletCurrency, rates));
+        }
+
+        // Check sufficient balance
+        if (walletBalance < deductionAmount) {
+          toast.error(`Solde insuffisant. Il vous faut ${deductionAmount.toLocaleString("fr-FR")} ${getCurrencySymbol(walletCurrency)}`);
+          setPaying(false);
+          return;
+        }
+
+        // Deduct from wallet
+        const { error: walletError } = await supabase
+          .from("client_wallets")
+          .update({
+            available_balance: walletBalance - deductionAmount,
+            escrow_balance: (await supabase.from("client_wallets").select("escrow_balance").eq("user_id", user.id).maybeSingle()).data?.escrow_balance || 0 + deductionAmount,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", user.id);
+
+        if (walletError) throw walletError;
+
+        // Update local wallet state
+        setWalletBalance(prev => prev - deductionAmount);
+      }
+
+      // Calculate new total price
       const newWeight = parseFloat(order.weight_tier_applied || "0");
-      const newTotal = order.total_price;
-      
+      const newTotal = order.total_price + supplementInOrderCurrency;
+
+      // Update order
       const { error } = await supabase.from("orders").update({
-        weight: newWeight,
+        weight: newWeight > 0 ? newWeight : order.weight,
         total_price: newTotal,
         adjustment_amount: 0,
         financial_status: "escrow_locked",
@@ -133,32 +180,18 @@ export default function PaySupplement() {
       
       if (error) throw error;
 
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      // Update escrow transaction
       await supabase.from("escrow_transactions").update({
         amount: newTotal,
       }).eq("order_id", order.id).eq("status", "held");
 
-      if (user) {
-        const { data: cw } = await supabase
-          .from("client_wallets")
-          .select("escrow_balance")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        if (cw) {
-          await supabase.from("client_wallets").update({
-            escrow_balance: (cw.escrow_balance || 0) + supplement,
-            updated_at: new Date().toISOString(),
-          }).eq("user_id", user.id);
-        }
-      }
-      
+      // Log status change
       await supabase.from("order_status_history").insert({
         order_id: order.id,
         status: "checked_in",
-        changed_by: user?.id,
+        changed_by: user.id,
         changed_by_type: "client",
-        notes: `Supplément de ${supplement.toLocaleString()} ${order.currency} payé via ${selectedMethod}. Poids: ${order.weight}kg → ${newWeight}kg. Transit débloqué.`,
+        notes: `Supplément de ${supplementInOrderCurrency.toLocaleString()} ${orderCurrency} payé via ${selectedMethod}. Poids: ${order.weight}kg → ${newWeight || order.weight}kg. Transit débloqué.`,
       });
 
       await supabase.from("escrow_logs").insert({
@@ -181,6 +214,13 @@ export default function PaySupplement() {
   };
 
   const currencySymbol = getCurrencySymbol(walletCurrency);
+  const orderCurrencySymbol = getCurrencySymbol(order?.currency || "XOF");
+
+  // Convert supplement to wallet currency for display on the wallet card
+  let supplementInWalletCurrency = supplementInOrderCurrency;
+  if (order && walletCurrency !== (order.currency || "XOF") && rates.length > 0) {
+    supplementInWalletCurrency = Math.ceil(convertAmount(supplementInOrderCurrency, order.currency || "XOF", walletCurrency, rates));
+  }
 
   if (loading) {
     return (
@@ -203,8 +243,13 @@ export default function PaySupplement() {
           </div>
           <h2 className="text-xl font-bold text-white">Paiement confirmé</h2>
           <p className="text-white/50 text-sm text-center">
-            Supplément de {supplement.toLocaleString()} {order?.currency} payé. Votre colis peut maintenant partir en transit.
+            Supplément de {supplement.toLocaleString()} {orderCurrencySymbol} payé. Votre colis peut maintenant partir en transit.
           </p>
+          {selectedMethod === "wallet" && (
+            <p className="text-white/40 text-xs">
+              Solde restant : {walletBalance.toLocaleString("fr-FR")} {currencySymbol}
+            </p>
+          )}
           {order && (
             <p className="text-white/30 text-xs font-mono">{order.order_number}</p>
           )}
@@ -242,6 +287,11 @@ export default function PaySupplement() {
             <p className="text-lg font-bold text-white">
               {walletBalance.toLocaleString("fr-FR")} {currencySymbol}
             </p>
+            {selectedMethod === "wallet" && supplementInWalletCurrency > 0 && (
+              <p className="text-[10px] text-white/30">
+                Après paiement : {Math.max(0, walletBalance - supplementInWalletCurrency).toLocaleString("fr-FR")} {currencySymbol}
+              </p>
+            )}
           </div>
           <button
             onClick={() => navigate("/client/wallet")}
@@ -279,8 +329,13 @@ export default function PaySupplement() {
             <p className="text-sm font-semibold text-red-400">Supplément à payer</p>
           </div>
           <p className="text-3xl font-bold text-red-400">
-            {supplement.toLocaleString()} {order?.currency || "FCFA"}
+            {supplement.toLocaleString()} {orderCurrencySymbol}
           </p>
+          {walletCurrency !== (order?.currency || "XOF") && supplementInWalletCurrency > 0 && (
+            <p className="text-sm text-red-300/70">
+              ≈ {supplementInWalletCurrency.toLocaleString("fr-FR")} {currencySymbol}
+            </p>
+          )}
           <p className="text-[11px] text-red-300/60">
             Ce montant doit être réglé pour débloquer le transit de votre colis
           </p>
@@ -292,6 +347,7 @@ export default function PaySupplement() {
           <div className="space-y-2">
             {paymentMethods.map((method) => {
               const isWallet = method.id === "wallet";
+              const insufficientBalance = isWallet && walletBalance < supplementInWalletCurrency;
               return (
                 <button
                   key={method.id}
@@ -305,9 +361,9 @@ export default function PaySupplement() {
                   <span className="text-xl">{method.icon}</span>
                   <div className="flex-1 text-left">
                     <p className="text-sm font-semibold text-white">{method.label}</p>
-                    <p className="text-[11px] text-white/40">
+                    <p className={`text-[11px] ${insufficientBalance ? 'text-red-400' : 'text-white/40'}`}>
                       {isWallet
-                        ? `Solde: ${walletBalance.toLocaleString("fr-FR")} ${currencySymbol}`
+                        ? `Solde: ${walletBalance.toLocaleString("fr-FR")} ${currencySymbol}${insufficientBalance ? ' — Insuffisant' : ''}`
                         : method.desc}
                     </p>
                   </div>
@@ -332,7 +388,7 @@ export default function PaySupplement() {
           ) : (
             <>
               <CreditCard className="w-5 h-5" />
-              Payer {supplement.toLocaleString()} {order?.currency || "FCFA"}
+              Payer {supplement.toLocaleString()} {orderCurrencySymbol}
             </>
           )}
         </motion.button>

@@ -47,7 +47,10 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   const [gpPhone, setGpPhone] = useState<string | null>(null);
   const [gpSelfieUrl, setGpSelfieUrl] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
-  const [bottomOffset, setBottomOffset] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(() => 
+    window.visualViewport?.height || window.innerHeight
+  );
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -75,29 +78,26 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
     const vv = window.visualViewport;
     if (!vv) return;
 
-    const onViewportResize = () => {
-      const viewportHeight = vv.height + vv.offsetTop;
-      const keyboardHeight = Math.max(0, window.innerHeight - viewportHeight);
-      // Only apply offset if keyboard is meaningfully open (>100px)
-      setBottomOffset(keyboardHeight > 100 ? keyboardHeight : 0);
+    const update = () => {
+      const vvHeight = vv.height;
+      const fullHeight = window.innerHeight;
+      const diff = fullHeight - vvHeight;
+      const kbOpen = diff > 100;
       
+      setViewportHeight(vvHeight);
+      setIsKeyboardOpen(kbOpen);
+
       // Scroll to bottom when keyboard opens
-      if (keyboardHeight > 100) {
+      if (kbOpen) {
         requestAnimationFrame(() => {
           messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
         });
       }
     };
 
-    onViewportResize();
-
-    vv.addEventListener("resize", onViewportResize);
-    vv.addEventListener("scroll", onViewportResize);
-    
-    return () => {
-      vv.removeEventListener("resize", onViewportResize);
-      vv.removeEventListener("scroll", onViewportResize);
-    };
+    update();
+    vv.addEventListener("resize", update);
+    return () => vv.removeEventListener("resize", update);
   }, []);
 
   useEffect(() => {
@@ -283,16 +283,12 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
     if (calleeId) startCall(calleeId);
   };
 
-  const isKeyboardOpen = bottomOffset > 100;
-
   return (
     <div 
       ref={containerRef}
-      className="fixed inset-0 flex flex-col bg-background"
+      className="fixed inset-x-0 top-0 flex flex-col bg-background overflow-hidden"
       style={{
-        // When keyboard is open, shrink the container to visual viewport
-        height: isKeyboardOpen ? `${window.innerHeight - bottomOffset}px` : '100dvh',
-        paddingBottom: 0,
+        height: `${viewportHeight}px`,
       }}
     >
       {/* Audio Call UI Overlay */}
@@ -306,7 +302,7 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
         onEnd={endCall}
       />
 
-      {/* Fixed Header - always visible at top, compact when keyboard open */}
+      {/* Fixed Header - always visible at top, never scrolls */}
       <div className="flex-shrink-0 z-50">
         <ChatHeader
           conversationId={conversationId}
@@ -406,27 +402,29 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
       </div>
 
       {/* Smart responses - collapsible, above input */}
-      <div className="flex-shrink-0">
-        {userType === "client" ? (
-          <SmartClientResponses
-            conversationId={conversationId}
-            currentUserId={currentUserId}
-            onSelectMessage={handleSelectTemplate}
-            isExpanded={templatesExpanded}
-            onToggleExpand={() => setTemplatesExpanded(!templatesExpanded)}
-          />
-        ) : (
-          <SmartGPResponses
-            conversationId={conversationId}
-            currentUserId={currentUserId}
-            onSelectMessage={handleSelectTemplate}
-            isExpanded={templatesExpanded}
-            onToggleExpand={() => setTemplatesExpanded(!templatesExpanded)}
-          />
-        )}
-      </div>
+      {!isKeyboardOpen && (
+        <div className="flex-shrink-0">
+          {userType === "client" ? (
+            <SmartClientResponses
+              conversationId={conversationId}
+              currentUserId={currentUserId}
+              onSelectMessage={handleSelectTemplate}
+              isExpanded={templatesExpanded}
+              onToggleExpand={() => setTemplatesExpanded(!templatesExpanded)}
+            />
+          ) : (
+            <SmartGPResponses
+              conversationId={conversationId}
+              currentUserId={currentUserId}
+              onSelectMessage={handleSelectTemplate}
+              isExpanded={templatesExpanded}
+              onToggleExpand={() => setTemplatesExpanded(!templatesExpanded)}
+            />
+          )}
+        </div>
+      )}
 
-      {/* Input - fixed at bottom, above keyboard */}
+      {/* Input - fixed at bottom */}
       <form 
         onSubmit={sendMessage} 
         className="flex-shrink-0 p-3 border-t border-border bg-background"
