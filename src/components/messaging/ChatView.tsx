@@ -87,10 +87,12 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
       setViewportHeight(vvHeight);
       setIsKeyboardOpen(kbOpen);
 
-      // Scroll to bottom when keyboard opens
-      if (kbOpen) {
+      // Scroll messages to bottom when keyboard opens
+      if (kbOpen && messagesContainerRef.current) {
         requestAnimationFrame(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+          if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+          }
         });
       }
     };
