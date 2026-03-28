@@ -72,8 +72,12 @@ export function SmartActionBar({ userId, recentOrders = [], unreadMessages = 0, 
 
     if (activeOrders) {
       const orders = activeOrders as any[];
-      // Weight supplement required
-      setSupplementOrders(orders.filter((o: any) => o.status === "weight_pending_payment"));
+      // Weight supplement required - only show if there's actually an amount to pay
+      setSupplementOrders(orders.filter((o: any) => 
+        o.status === "weight_pending_payment" && 
+        o.adjustment_amount && 
+        Number(o.adjustment_amount) > 0
+      ));
 
       // Deposit address released — check via notifications instead
       setDepositReleasedOrders([]);

@@ -87,10 +87,12 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
       setViewportHeight(vvHeight);
       setIsKeyboardOpen(kbOpen);
 
-      // Scroll to bottom when keyboard opens
-      if (kbOpen) {
+      // Scroll messages to bottom when keyboard opens
+      if (kbOpen && messagesContainerRef.current) {
         requestAnimationFrame(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+          if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+          }
         });
       }
     };
@@ -286,9 +288,10 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   return (
     <div 
       ref={containerRef}
-      className="fixed inset-x-0 top-0 flex flex-col bg-background overflow-hidden"
+      className="fixed inset-x-0 bottom-0 flex flex-col bg-background overflow-hidden"
       style={{
         height: `${viewportHeight}px`,
+        top: 'auto',
       }}
     >
       {/* Audio Call UI Overlay */}
