@@ -27,6 +27,11 @@ export function useKeyboardViewport() {
         "--visual-vh",
         `${vv.height}px`
       );
+      document.documentElement.style.setProperty(
+        "--visual-offset-top",
+        `${vv.offsetTop}px`
+      );
+      document.documentElement.classList.toggle("keyboard-open", keyboardVisible);
     };
 
     vv.addEventListener("resize", onResize);
@@ -35,6 +40,7 @@ export function useKeyboardViewport() {
 
     return () => {
       vv.removeEventListener("resize", onResize);
+      document.documentElement.classList.remove("keyboard-open");
     };
   }, []);
 

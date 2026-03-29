@@ -14,6 +14,7 @@ import { GPScanSheet } from "@/components/scan/GPScanSheet";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useKeyboardViewport } from "@/hooks/useKeyboardViewport";
 
 interface AppHeaderProps {
   title?: string;
@@ -34,6 +35,7 @@ export function AppHeader({
   const location = useLocation();
   const { isAuthenticated } = useUserRole();
   const { logoBackground, logoColor } = usePageTheme();
+  const { isKeyboardOpen } = useKeyboardViewport();
   const [menuOpen, setMenuOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("Mon profil");
@@ -71,11 +73,22 @@ export function AppHeader({
 
   return (
     <>
+      {isKeyboardOpen && (
+        <div
+          aria-hidden="true"
+          style={{ height: 'calc(46px + env(safe-area-inset-top, 0px))' }}
+        />
+      )}
       <motion.header 
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className={`sticky top-0 z-40 ${headerStyles[variant]}`}
+        className={cn(
+          "z-40",
+          isKeyboardOpen ? "fixed inset-x-0" : "sticky top-0",
+          headerStyles[variant]
+        )}
         style={{ 
+          top: isKeyboardOpen ? 'var(--visual-offset-top, 0px)' : undefined,
           paddingTop: 'calc(6px + env(safe-area-inset-top, 0px))',
           paddingBottom: '6px',
           paddingLeft: 'calc(12px + env(safe-area-inset-left, 0px))',

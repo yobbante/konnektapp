@@ -109,8 +109,9 @@ Discutez ici pour organiser les détails avec ${gpName}.`;
 }
 
 /**
- * Crée ou récupère une conversation entre un client et un GP
- * et envoie un message automatique après une réservation
+ * Crée ou récupère une conversation entre un client et un GP.
+ * Aucun message automatique ne doit être visible à la réservation.
+ * Le premier message automatique part uniquement après acceptation.
  */
 export async function createAutoConversationAfterBooking(
   clientId: string,
@@ -153,35 +154,6 @@ export async function createAutoConversationAfterBooking(
       console.error("Error creating conversation:", convError);
       return { conversationId: null, error: convError?.message || "Erreur création conversation" };
     }
-
-    // 3. Générer le message d'accroche
-    const hookMessage = generateBookingHookMessage(
-      orderDetails.clientName || "Client",
-      orderDetails.gpName,
-      orderDetails.orderNumber,
-      orderDetails.originCity,
-      orderDetails.destinationCity
-    );
-
-    // 4. Envoyer le message automatique (système)
-    const { error: messageError } = await supabase
-      .from("messages")
-      .insert({
-        conversation_id: newConv.id,
-        sender_id: clientId, // Le message apparaît comme envoyé par le système/client
-        sender_type: "system",
-        content: hookMessage,
-      });
-
-    if (messageError) {
-      console.error("Error sending auto message:", messageError);
-    }
-
-    // 5. Mettre à jour la date du dernier message
-    await supabase
-      .from("conversations")
-      .update({ last_message_at: new Date().toISOString() })
-      .eq("id", newConv.id);
 
     return { conversationId: newConv.id, error: null };
   } catch (error: any) {

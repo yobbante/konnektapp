@@ -13,6 +13,16 @@ import { VoyageGagneSheet } from "@/components/voyage/VoyageGagneSheet";
 import { VoyageDashboard } from "@/components/voyage/VoyageDashboard";
 import { GP_ONLY_MODE } from "@/config/featureFlags";
 
+let mobileNavAuthCache: {
+  initialized: boolean;
+  isAuthenticated: boolean;
+  userRole: 'client' | 'transporter' | null;
+} = {
+  initialized: false,
+  isAuthenticated: false,
+  userRole: null,
+};
+
 /**
  * MobileNav V7 — Konnekt
  * 5 items: Accueil, Réservations, VOYAGE & GAGNE (center), Messages, Menu
@@ -24,9 +34,9 @@ export function MobileNav() {
   const { isKeyboardOpen } = useKeyboardViewport();
   
   const lastHomeClickRef = useRef<number>(0);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [userRole, setUserRole] = useState<'client' | 'transporter' | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(mobileNavAuthCache.isAuthenticated);
+  const [authLoading, setAuthLoading] = useState(!mobileNavAuthCache.initialized);
+  const [userRole, setUserRole] = useState<'client' | 'transporter' | null>(mobileNavAuthCache.userRole);
   const [scanOpen, setScanOpen] = useState(false);
   const [missionOpen, setMissionOpen] = useState(false);
   const [voyageOpen, setVoyageOpen] = useState(false);
@@ -86,7 +96,14 @@ export function MobileNav() {
     const checkAuth = async () => {
       setAuthLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
+      const authenticated = !!session;
+      setIsAuthenticated(authenticated);
+      mobileNavAuthCache = {
+        ...mobileNavAuthCache,
+        initialized: true,
+        isAuthenticated: authenticated,
+      };
+      setAuthLoading(false);
       
       if (session?.user?.id) {
         const { data: gpProfile } = await supabase
@@ -96,36 +113,64 @@ export function MobileNav() {
           .maybeSingle();
         
         // Occasional GPs are treated as clients in nav
-        setUserRole(gpProfile && gpProfile.gp_type !== 'occasionnel' ? 'transporter' : 'client');
+        const nextRole = gpProfile && gpProfile.gp_type !== 'occasionnel' ? 'transporter' : 'client';
+        setUserRole(nextRole);
+        mobileNavAuthCache = {
+          ...mobileNavAuthCache,
+          userRole: nextRole,
+        };
       } else {
         setUserRole(null);
+        mobileNavAuthCache = {
+          initialized: true,
+          isAuthenticated: false,
+          userRole: null,
+        };
       }
-      setAuthLoading(false);
     };
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const authenticated = !!session;
+      setIsAuthenticated(authenticated);
+      setAuthLoading(false);
+      mobileNavAuthCache = {
+        ...mobileNavAuthCache,
+        initialized: true,
+        isAuthenticated: authenticated,
+      };
+
       if (event === 'SIGNED_IN') {
-        setIsAuthenticated(true);
         if (session?.user?.id) {
           const { data } = await supabase
             .from("gp_profiles")
             .select("id, gp_type")
             .eq("user_id", session.user.id)
             .maybeSingle();
-          setUserRole(data && data.gp_type !== 'occasionnel' ? 'transporter' : 'client');
+          const nextRole = data && data.gp_type !== 'occasionnel' ? 'transporter' : 'client';
+          setUserRole(nextRole);
+          mobileNavAuthCache = {
+            ...mobileNavAuthCache,
+            userRole: nextRole,
+          };
         }
-        setAuthLoading(false);
       } else if (event === 'SIGNED_OUT') {
         setIsAuthenticated(false);
         setUserRole(null);
-        setAuthLoading(false);
+        mobileNavAuthCache = {
+          initialized: true,
+          isAuthenticated: false,
+          userRole: null,
+        };
       } else {
-        setIsAuthenticated(!!session);
         if (!session) {
           setUserRole(null);
+          mobileNavAuthCache = {
+            initialized: true,
+            isAuthenticated: false,
+            userRole: null,
+          };
         }
-        setAuthLoading(false);
       }
     });
     return () => subscription.unsubscribe();
