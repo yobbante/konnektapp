@@ -47,6 +47,7 @@ export default function PaySupplement() {
   const [walletBalance, setWalletBalance] = useState(0);
   const [walletCurrency, setWalletCurrency] = useState("USD");
   const [rates, setRates] = useState<ExchangeRate[]>([]);
+  const [lastPaidAmount, setLastPaidAmount] = useState(0);
 
   useEffect(() => {
     loadExchangeRates().then(setRates);
@@ -93,6 +94,8 @@ export default function PaySupplement() {
       setOrder(data);
 
       // Calculate supplement in the ORDER's currency (GP currency) using pricing engine
+      // IMPORTANT: once payment is done, we must trust persisted adjustment_amount/status
+      // and never recompute a stale supplement from weights.
       const newWeight = parseFloat(data.weight_tier_applied || String(data.declared_weight || 0));
       const previousWeight = Number(data.weight ?? 0);
       const basePricePerKg = data.price_per_kg;
@@ -111,14 +114,15 @@ export default function PaySupplement() {
         supplementInGpCurrency = Math.max(0, nextTransport - previousTransport);
       }
 
-      // Use persisted adjustment_amount if available and > 0
-      const persistedAdjustment = typeof data.adjustment_amount === "number" && data.adjustment_amount > 0
-        ? data.adjustment_amount
-        : supplementInGpCurrency;
+      const isPendingSupplement = data.status === "weight_pending_payment";
+      const persistedAdjustment = isPendingSupplement
+        ? (typeof data.adjustment_amount === "number" && data.adjustment_amount > 0
+            ? data.adjustment_amount
+            : supplementInGpCurrency)
+        : 0;
 
       // Store supplement in order currency
       setSupplementInOrderCurrency(persistedAdjustment);
-      // Also set display supplement (same as order currency for display)
       setSupplement(persistedAdjustment);
     } finally {
       setLoading(false);
@@ -130,109 +134,34 @@ export default function PaySupplement() {
     setPaying(true);
     
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Non authentifié");
+      const { data, error } = await supabase.functions.invoke("pay-weight-supplement", {
+        body: {
+          order_id: order.id,
+          payment_method: selectedMethod,
+        },
+      });
 
-      const orderCurrency = order.currency || "XOF";
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-      if (selectedMethod === "wallet") {
-        // Convert supplement from order currency to wallet currency for deduction
-        let deductionAmount = supplementInOrderCurrency;
-        if (walletCurrency !== orderCurrency && rates.length > 0) {
-          deductionAmount = Math.ceil(convertAmount(supplementInOrderCurrency, orderCurrency, walletCurrency, rates));
-        }
+      setLastPaidAmount(supplementInOrderCurrency);
 
-        // Check sufficient balance
-        if (walletBalance < deductionAmount) {
-          toast.error(`Solde insuffisant. Il vous faut ${deductionAmount.toLocaleString("fr-FR")} ${getCurrencySymbol(walletCurrency)}`);
-          setPaying(false);
-          return;
-        }
-
-        // Get current escrow balance first
-        const { data: currentWallet } = await supabase
-          .from("client_wallets")
-          .select("escrow_balance")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        
-        const currentEscrow = currentWallet?.escrow_balance || 0;
-
-        // Deduct from wallet
-        const { error: walletError } = await supabase
-          .from("client_wallets")
-          .update({
-            available_balance: walletBalance - deductionAmount,
-            escrow_balance: currentEscrow + deductionAmount,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("user_id", user.id);
-
-        if (walletError) throw walletError;
-
-        // Update local wallet state
-        setWalletBalance(prev => prev - deductionAmount);
-      } else {
-        // For Wave/Orange Money, mark as paid directly (external payment)
+      if (data?.wallet) {
+        setWalletBalance(data.wallet.available_balance || 0);
+        setWalletCurrency(data.wallet.currency || walletCurrency || "USD");
       }
 
-      // Calculate new total price
-      const newWeight = parseFloat(order.weight_tier_applied || "0");
-      const newTotal = order.total_price + supplementInOrderCurrency;
+      if (data?.order) {
+        setOrder(data.order);
+      }
 
-      // Determine the previous status to restore to (checked_in is the next logical step)
-      const previousStatus = order.status === "weight_pending_payment" ? "checked_in" : order.status;
-
-      // Update order: clear adjustment, advance status
-      const { error } = await supabase.from("orders").update({
-        weight: newWeight > 0 ? newWeight : order.weight,
-        total_price: newTotal,
-        adjustment_amount: 0,
-        financial_status: "escrow_locked",
-        status: "checked_in",
-      }).eq("id", order.id);
-      
-      if (error) throw error;
-
-      // Update escrow transaction
-      await supabase.from("escrow_transactions").update({
-        amount: newTotal,
-      }).eq("order_id", order.id).eq("status", "held");
-
-      // Log status change
-      await supabase.from("order_status_history").insert({
-        order_id: order.id,
-        status: "checked_in",
-        changed_by: user.id,
-        changed_by_type: "client",
-        notes: `Supplément de ${supplementInOrderCurrency.toLocaleString()} ${orderCurrency} payé via ${selectedMethod}. Poids: ${order.weight}kg → ${newWeight || order.weight}kg. Transit débloqué.`,
-      });
-
-      // Log in escrow_logs for traceability
-      await supabase.from("escrow_logs").insert({
-        order_id: order.id,
-        action: "supplement_paid",
-        previous_amount: order.total_price,
-        new_amount: newTotal,
-        commission_amount: 0,
-        actor: "client",
-      });
-
-      // Create notification for client
-      await supabase.from("notifications").insert({
-        user_id: user.id,
-        title: "Supplément payé",
-        message: `Supplément de ${supplementInOrderCurrency.toLocaleString()} ${orderCurrency} payé pour ${order.order_number}. Votre colis est en transit.`,
-        type: "order_status",
-        related_id: order.id,
-        related_type: "order",
-      });
-      
+      setSupplement(0);
+      setSupplementInOrderCurrency(0);
       setPaid(true);
       toast.success("Supplément payé ! Transit débloqué.");
     } catch (err) {
       console.error("Payment error:", err);
-      toast.error("Erreur lors du paiement");
+      toast.error(err instanceof Error ? err.message : "Erreur lors du paiement");
     } finally {
       setPaying(false);
     }
@@ -268,7 +197,7 @@ export default function PaySupplement() {
           </div>
           <h2 className="text-xl font-bold text-white">Paiement confirmé</h2>
           <p className="text-white/50 text-sm text-center">
-            Supplément de {supplement.toLocaleString()} {orderCurrencySymbol} payé. Votre colis peut maintenant partir en transit.
+            Supplément de {lastPaidAmount.toLocaleString()} {orderCurrencySymbol} payé. Votre colis peut maintenant passer à l'étape suivante.
           </p>
           {selectedMethod === "wallet" && (
             <p className="text-white/40 text-xs">

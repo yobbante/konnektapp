@@ -226,9 +226,11 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   };
 
   const scrollToBottom = useCallback(() => {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
-    }, 100);
+    requestAnimationFrame(() => {
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      }
+    });
   }, []);
 
   const handleSelectTemplate = (content: string) => {
@@ -288,10 +290,10 @@ export function ChatView({ conversationId, currentUserId, userType, onBack, cont
   return (
     <div 
       ref={containerRef}
-      className="fixed inset-x-0 bottom-0 flex flex-col bg-background overflow-hidden"
+      className="fixed inset-x-0 top-0 flex flex-col bg-background overflow-hidden"
       style={{
         height: `${viewportHeight}px`,
-        top: 'auto',
+        top: 'var(--visual-offset-top, 0px)',
       }}
     >
       {/* Audio Call UI Overlay */}
