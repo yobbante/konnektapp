@@ -149,12 +149,21 @@ export default function PaySupplement() {
           return;
         }
 
+        // Get current escrow balance first
+        const { data: currentWallet } = await supabase
+          .from("client_wallets")
+          .select("escrow_balance")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        
+        const currentEscrow = currentWallet?.escrow_balance || 0;
+
         // Deduct from wallet
         const { error: walletError } = await supabase
           .from("client_wallets")
           .update({
             available_balance: walletBalance - deductionAmount,
-            escrow_balance: (await supabase.from("client_wallets").select("escrow_balance").eq("user_id", user.id).maybeSingle()).data?.escrow_balance || 0 + deductionAmount,
+            escrow_balance: currentEscrow + deductionAmount,
             updated_at: new Date().toISOString(),
           })
           .eq("user_id", user.id);
@@ -163,13 +172,18 @@ export default function PaySupplement() {
 
         // Update local wallet state
         setWalletBalance(prev => prev - deductionAmount);
+      } else {
+        // For Wave/Orange Money, mark as paid directly (external payment)
       }
 
       // Calculate new total price
       const newWeight = parseFloat(order.weight_tier_applied || "0");
       const newTotal = order.total_price + supplementInOrderCurrency;
 
-      // Update order
+      // Determine the previous status to restore to (checked_in is the next logical step)
+      const previousStatus = order.status === "weight_pending_payment" ? "checked_in" : order.status;
+
+      // Update order: clear adjustment, advance status
       const { error } = await supabase.from("orders").update({
         weight: newWeight > 0 ? newWeight : order.weight,
         total_price: newTotal,
@@ -194,6 +208,7 @@ export default function PaySupplement() {
         notes: `Supplément de ${supplementInOrderCurrency.toLocaleString()} ${orderCurrency} payé via ${selectedMethod}. Poids: ${order.weight}kg → ${newWeight || order.weight}kg. Transit débloqué.`,
       });
 
+      // Log in escrow_logs for traceability
       await supabase.from("escrow_logs").insert({
         order_id: order.id,
         action: "supplement_paid",
@@ -201,6 +216,16 @@ export default function PaySupplement() {
         new_amount: newTotal,
         commission_amount: 0,
         actor: "client",
+      });
+
+      // Create notification for client
+      await supabase.from("notifications").insert({
+        user_id: user.id,
+        title: "Supplément payé",
+        message: `Supplément de ${supplementInOrderCurrency.toLocaleString()} ${orderCurrency} payé pour ${order.order_number}. Votre colis est en transit.`,
+        type: "order_status",
+        related_id: order.id,
+        related_type: "order",
       });
       
       setPaid(true);
