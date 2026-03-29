@@ -145,6 +145,7 @@ export function CentralMenuSheet({ children, open, onOpenChange }: CentralMenuSh
       { icon: Home, label: "Accueil", href: "/" },
       ...(!GP_ONLY_MODE ? [{ icon: Package, label: "Envoyer", href: "/envoyer" }] : []),
       { icon: Search, label: "Offres", href: "/offres" },
+      { icon: DollarSign, label: "Portefeuille", href: "/client/wallet" },
       { icon: MapPin, label: "Suivre", href: "/tracking" },
       { icon: Users, label: "Destinataires", href: "/destinataires" },
       { icon: User, label: "Profil", href: "/profil" },
