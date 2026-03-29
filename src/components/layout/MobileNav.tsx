@@ -106,8 +106,6 @@ export function MobileNav() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN') {
-        // Wait a tick for session to stabilize before showing nav
-        setAuthLoading(true);
         setIsAuthenticated(true);
         if (session?.user?.id) {
           const { data } = await supabase
@@ -117,8 +115,7 @@ export function MobileNav() {
             .maybeSingle();
           setUserRole(data && data.gp_type !== 'occasionnel' ? 'transporter' : 'client');
         }
-        // Small delay to let redirect complete before showing nav
-        setTimeout(() => setAuthLoading(false), 800);
+        setAuthLoading(false);
       } else if (event === 'SIGNED_OUT') {
         setIsAuthenticated(false);
         setUserRole(null);
