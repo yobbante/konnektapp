@@ -94,7 +94,10 @@ export function MobileNav() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      setAuthLoading(true);
+      // Only show loading if cache hasn't been initialized yet
+      if (!mobileNavAuthCache.initialized) {
+        setAuthLoading(true);
+      }
       const { data: { session } } = await supabase.auth.getSession();
       const authenticated = !!session;
       setIsAuthenticated(authenticated);

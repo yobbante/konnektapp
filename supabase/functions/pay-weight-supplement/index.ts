@@ -188,8 +188,8 @@ Deno.serve(async (req) => {
 
     const nextOrder = {
       status: "checked_in",
-      financial_status: "adjustment_paid",
-      payment_status: "paid",
+      financial_status: "completed",
+      payment_status: "held",
       adjustment_amount: 0,
       weight: resolvedWeight,
       updated_at: now,
