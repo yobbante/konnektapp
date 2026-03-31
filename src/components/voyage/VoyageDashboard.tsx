@@ -7,7 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plane, MapPin, Calendar, Luggage, ChevronRight, Plus,
   Clock, CheckCircle2, Package, DollarSign, ArrowRight,
-  ScanLine, Wallet, Eye, EyeOff, Sparkles
+  ScanLine, Wallet, Eye, EyeOff, Sparkles, ArrowUpRight,
+  Smartphone, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
