@@ -234,7 +234,7 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
               {[
                 { label: "Voyages", value: trips.length, icon: Plane, color: "text-primary" },
                 { label: "Commandes", value: orders.length, icon: Package, color: "text-amber-500" },
-                { label: "Gains", value: formatCurrency(totalEarnings, walletData?.currency || "EUR"), icon: DollarSign, color: "text-green-500" },
+                { label: "Gains", value: formatCurrency(totalEarningsAfterCommission, walletData?.currency || "EUR"), icon: DollarSign, color: "text-green-500" },
               ].map((stat) => (
                 <div key={stat.label} className="p-3 rounded-xl bg-muted/30 border border-border/30 text-center">
                   <stat.icon className={cn("w-4 h-4 mx-auto mb-1", stat.color)} />
