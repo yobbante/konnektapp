@@ -139,13 +139,15 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
 
       // Fetch wallet
       const [walletRes, escrowRes] = await Promise.all([
-        supabase.from("gp_wallets").select("balance, pending_balance, currency").eq("gp_id", gpProfile.id).maybeSingle(),
+        supabase.from("gp_wallets").select("balance, pending_balance, total_earned, commission_rate, currency").eq("gp_id", gpProfile.id).maybeSingle(),
         supabase.from("escrow_transactions").select("net_to_gp").eq("gp_id", gpProfile.id).eq("status", "held"),
       ]);
       const pendingEscrow = escrowRes.data?.reduce((sum: number, e: any) => sum + (e.net_to_gp || 0), 0) || 0;
       setWalletData({
         balance: walletRes.data?.balance || 0,
         pending: pendingEscrow,
+        totalEarned: walletRes.data?.total_earned || 0,
+        commissionRate: walletRes.data?.commission_rate || 5,
         currency: gpProfile.default_currency || walletRes.data?.currency || "XOF",
       });
     } catch (err) {
