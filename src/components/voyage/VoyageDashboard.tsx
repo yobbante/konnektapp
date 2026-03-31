@@ -166,10 +166,12 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
   const activeOrders = orders.filter(o => ACTIVE_ORDER_STATUSES.includes(o.status));
   const doneOrders = orders.filter(o => DONE_ORDER_STATUSES.includes(o.status));
 
-  const totalEarnings = trips.reduce((sum, t) => {
-    const booked = (t.total_capacity - t.available_capacity);
-    return sum + booked * t.price_per_kg;
-  }, 0);
+  // Gains réels basés sur les commandes (pas les estimations de capacité)
+  const totalEarnings = orders
+    .filter(o => !["cancelled"].includes(o.status))
+    .reduce((sum, o) => sum + (o.total_price || 0), 0);
+
+  const totalEarningsAfterCommission = Math.round(totalEarnings * (1 - (walletData?.commissionRate || 5) / 100));
 
   const formatDate = (d: string) => {
     try { return format(new Date(d), "EEE d MMM", { locale: fr }); }
