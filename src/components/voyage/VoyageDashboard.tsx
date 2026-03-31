@@ -81,11 +81,15 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
   const [orderFilter, setOrderFilter] = useState<"active" | "done">("active");
   const [gpId, setGpId] = useState<string | null>(null);
   const [showScan, setShowScan] = useState(false);
-  const [walletData, setWalletData] = useState<{ balance: number; pending: number; currency: string } | null>(null);
+  const [walletData, setWalletData] = useState<{ balance: number; pending: number; currency: string; totalEarned: number; commissionRate: number } | null>(null);
   const [showBalance, setShowBalance] = useState(true);
   const [showProTransition, setShowProTransition] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [hasNewOrders, setHasNewOrders] = useState(false);
+  const [showWithdraw, setShowWithdraw] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [withdrawPhone, setWithdrawPhone] = useState("");
+  const [withdrawing, setWithdrawing] = useState(false);
 
   useEffect(() => {
     if (!open) return;
