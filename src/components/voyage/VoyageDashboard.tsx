@@ -137,7 +137,34 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
         setHasNewOrders(true);
       }
 
-      // Fetch wallet
+      // Auto-release funds for delivered orders that still have held escrow
+      const { data: unreleasedOrders } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("gp_id", gpProfile.id)
+        .in("status", ["delivered", "delivery_confirmed"] as any)
+        .neq("financial_status", "completed");
+
+      if (unreleasedOrders && unreleasedOrders.length > 0) {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (currentSession) {
+          await Promise.all(
+            unreleasedOrders.map((o) =>
+              fetch(`${supabaseUrl}/functions/v1/release-funds-v2`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${currentSession.access_token}`,
+                },
+                body: JSON.stringify({ order_id: o.id, idempotency_key: `auto_release:${o.id}` }),
+              }).catch((e) => console.warn("Auto-release failed for", o.id, e))
+            )
+          );
+        }
+      }
+
+      // Fetch wallet (after potential auto-release)
       const [walletRes, escrowRes] = await Promise.all([
         supabase.from("gp_wallets").select("balance, pending_balance, total_earned, commission_rate, currency").eq("gp_id", gpProfile.id).maybeSingle(),
         supabase.from("escrow_transactions").select("net_to_gp").eq("gp_id", gpProfile.id).eq("status", "held"),
