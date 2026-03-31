@@ -185,7 +185,30 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
     return { label: "En ligne", color: "bg-primary/10 text-primary", icon: Sparkles };
   };
 
-  const formatCurrency = (amount: number, currency: string) => {
+  const handleWithdraw = async () => {
+    if (!gpId || !walletData) return;
+    const amount = Number(withdrawAmount);
+    if (amount <= 0 || amount > walletData.balance) return;
+    setWithdrawing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("wallet-withdraw", {
+        body: { amount, method: "mobile_money", wallet_type: "gp", phone_number: withdrawPhone },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setShowWithdraw(false);
+      setWithdrawAmount("");
+      setWithdrawPhone("");
+      fetchData();
+    } catch (err: any) {
+      console.error("Withdrawal error:", err);
+      alert(err.message || "Erreur lors du retrait");
+    } finally {
+      setWithdrawing(false);
+    }
+  };
+
+
     if (currency === "EUR") return `${amount.toLocaleString("fr-FR")} \u20ac`;
     if (currency === "USD") return `${amount.toLocaleString("fr-FR")} $`;
     return `${amount.toLocaleString("fr-FR")} ${currency}`;
