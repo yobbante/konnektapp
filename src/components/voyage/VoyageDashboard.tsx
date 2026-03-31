@@ -208,8 +208,8 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
     }
   };
 
-
-    if (currency === "EUR") return `${amount.toLocaleString("fr-FR")} \u20ac`;
+  const formatCurrency = (amount: number, currency: string) => {
+    if (currency === "EUR") return `${amount.toLocaleString("fr-FR")} €`;
     if (currency === "USD") return `${amount.toLocaleString("fr-FR")} $`;
     return `${amount.toLocaleString("fr-FR")} ${currency}`;
   };
