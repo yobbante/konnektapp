@@ -7,7 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plane, MapPin, Calendar, Luggage, ChevronRight, Plus,
   Clock, CheckCircle2, Package, DollarSign, ArrowRight,
-  ScanLine, Wallet, Eye, EyeOff, Sparkles
+  ScanLine, Wallet, Eye, EyeOff, Sparkles, ArrowUpRight,
+  Smartphone, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -80,11 +81,15 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
   const [orderFilter, setOrderFilter] = useState<"active" | "done">("active");
   const [gpId, setGpId] = useState<string | null>(null);
   const [showScan, setShowScan] = useState(false);
-  const [walletData, setWalletData] = useState<{ balance: number; pending: number; currency: string } | null>(null);
+  const [walletData, setWalletData] = useState<{ balance: number; pending: number; currency: string; totalEarned: number; commissionRate: number } | null>(null);
   const [showBalance, setShowBalance] = useState(true);
   const [showProTransition, setShowProTransition] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [hasNewOrders, setHasNewOrders] = useState(false);
+  const [showWithdraw, setShowWithdraw] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [withdrawPhone, setWithdrawPhone] = useState("");
+  const [withdrawing, setWithdrawing] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -134,13 +139,15 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
 
       // Fetch wallet
       const [walletRes, escrowRes] = await Promise.all([
-        supabase.from("gp_wallets").select("balance, pending_balance, currency").eq("gp_id", gpProfile.id).maybeSingle(),
+        supabase.from("gp_wallets").select("balance, pending_balance, total_earned, commission_rate, currency").eq("gp_id", gpProfile.id).maybeSingle(),
         supabase.from("escrow_transactions").select("net_to_gp").eq("gp_id", gpProfile.id).eq("status", "held"),
       ]);
       const pendingEscrow = escrowRes.data?.reduce((sum: number, e: any) => sum + (e.net_to_gp || 0), 0) || 0;
       setWalletData({
         balance: walletRes.data?.balance || 0,
         pending: pendingEscrow,
+        totalEarned: walletRes.data?.total_earned || 0,
+        commissionRate: walletRes.data?.commission_rate || 5,
         currency: gpProfile.default_currency || walletRes.data?.currency || "XOF",
       });
     } catch (err) {
@@ -159,10 +166,12 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
   const activeOrders = orders.filter(o => ACTIVE_ORDER_STATUSES.includes(o.status));
   const doneOrders = orders.filter(o => DONE_ORDER_STATUSES.includes(o.status));
 
-  const totalEarnings = trips.reduce((sum, t) => {
-    const booked = (t.total_capacity - t.available_capacity);
-    return sum + booked * t.price_per_kg;
-  }, 0);
+  // Gains réels basés sur les commandes (pas les estimations de capacité)
+  const totalEarnings = orders
+    .filter(o => !["cancelled"].includes(o.status))
+    .reduce((sum, o) => sum + (o.total_price || 0), 0);
+
+  const totalEarningsAfterCommission = Math.round(totalEarnings * (1 - (walletData?.commissionRate || 5) / 100));
 
   const formatDate = (d: string) => {
     try { return format(new Date(d), "EEE d MMM", { locale: fr }); }
@@ -176,8 +185,31 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
     return { label: "En ligne", color: "bg-primary/10 text-primary", icon: Sparkles };
   };
 
+  const handleWithdraw = async () => {
+    if (!gpId || !walletData) return;
+    const amount = Number(withdrawAmount);
+    if (amount <= 0 || amount > walletData.balance) return;
+    setWithdrawing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("wallet-withdraw", {
+        body: { amount, method: "mobile_money", wallet_type: "gp", phone_number: withdrawPhone },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setShowWithdraw(false);
+      setWithdrawAmount("");
+      setWithdrawPhone("");
+      fetchData();
+    } catch (err: any) {
+      console.error("Withdrawal error:", err);
+      alert(err.message || "Erreur lors du retrait");
+    } finally {
+      setWithdrawing(false);
+    }
+  };
+
   const formatCurrency = (amount: number, currency: string) => {
-    if (currency === "EUR") return `${amount.toLocaleString("fr-FR")} \u20ac`;
+    if (currency === "EUR") return `${amount.toLocaleString("fr-FR")} €`;
     if (currency === "USD") return `${amount.toLocaleString("fr-FR")} $`;
     return `${amount.toLocaleString("fr-FR")} ${currency}`;
   };
@@ -225,7 +257,7 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
               {[
                 { label: "Voyages", value: trips.length, icon: Plane, color: "text-primary" },
                 { label: "Commandes", value: orders.length, icon: Package, color: "text-amber-500" },
-                { label: "Gains", value: formatCurrency(totalEarnings, walletData?.currency || "EUR"), icon: DollarSign, color: "text-green-500" },
+                { label: "Gains", value: formatCurrency(totalEarningsAfterCommission, walletData?.currency || "EUR"), icon: DollarSign, color: "text-green-500" },
               ].map((stat) => (
                 <div key={stat.label} className="p-3 rounded-xl bg-muted/30 border border-border/30 text-center">
                   <stat.icon className={cn("w-4 h-4 mx-auto mb-1", stat.color)} />
@@ -444,26 +476,93 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
                         </button>
                       </div>
                       <p className="text-2xl font-bold text-foreground tracking-tight">
-                        {showBalance ? formatCurrency(walletData.balance, walletData.currency) : "\u2022\u2022\u2022\u2022\u2022\u2022"}
+                        {showBalance ? formatCurrency(walletData.balance, walletData.currency) : "••••••"}
                       </p>
                       {walletData.pending > 0 && (
                         <div className="flex items-center gap-2 mt-3 bg-background/50 rounded-lg px-3 py-2">
                           <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
                           <span className="text-xs text-muted-foreground flex-1">En attente (escrow)</span>
                           <span className="text-xs font-semibold text-foreground">
-                            {showBalance ? formatCurrency(walletData.pending, walletData.currency) : "\u2022\u2022\u2022\u2022"}
+                            {showBalance ? formatCurrency(walletData.pending, walletData.currency) : "••••"}
                           </span>
                         </div>
                       )}
                     </div>
 
                     <div className="p-3 rounded-xl bg-muted/30 border border-border/30">
-                      <p className="text-xs text-muted-foreground mb-1">Gains estim\u00e9s (voyages)</p>
-                      <p className="text-lg font-bold text-foreground">{formatCurrency(totalEarnings, walletData.currency)}</p>
+                      <p className="text-xs text-muted-foreground mb-1">Gains nets (après commission {walletData.commissionRate}%)</p>
+                      <p className="text-lg font-bold text-foreground">{formatCurrency(totalEarningsAfterCommission, walletData.currency)}</p>
                     </div>
 
+                    {/* Withdrawal button */}
+                    {walletData.balance > 0 && !showWithdraw && (
+                      <Button
+                        onClick={() => setShowWithdraw(true)}
+                        className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+                      >
+                        <ArrowUpRight className="w-4 h-4 mr-2" />
+                        Retirer mes fonds
+                      </Button>
+                    )}
+
+                    {/* Withdrawal form */}
+                    <AnimatePresence>
+                      {showWithdraw && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="space-y-3 p-4 rounded-xl bg-card border border-border"
+                        >
+                          <p className="text-sm font-semibold text-foreground">Retrait Mobile Money</p>
+                          <div className="space-y-2">
+                            <label className="text-xs text-muted-foreground">Montant ({walletData.currency})</label>
+                            <input
+                              type="number"
+                              value={withdrawAmount}
+                              onChange={(e) => setWithdrawAmount(e.target.value)}
+                              placeholder={`Max: ${walletData.balance.toLocaleString()}`}
+                              className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs text-muted-foreground">Numéro de téléphone</label>
+                            <div className="flex items-center gap-2">
+                              <Smartphone className="w-4 h-4 text-muted-foreground" />
+                              <input
+                                type="tel"
+                                value={withdrawPhone}
+                                onChange={(e) => setWithdrawPhone(e.target.value)}
+                                placeholder="+225 07 00 00 00"
+                                className="flex-1 px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => { setShowWithdraw(false); setWithdrawAmount(""); setWithdrawPhone(""); }}
+                              className="flex-1 text-xs"
+                            >
+                              Annuler
+                            </Button>
+                            <Button
+                              size="sm"
+                              disabled={withdrawing || !withdrawAmount || Number(withdrawAmount) <= 0 || Number(withdrawAmount) > walletData.balance || !withdrawPhone}
+                              onClick={handleWithdraw}
+                              className="flex-1 text-xs bg-gradient-to-r from-amber-500 to-orange-500 text-white"
+                            >
+                              {withdrawing ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                              Confirmer
+                            </Button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
                     <p className="text-[10px] text-muted-foreground text-center">
-                      Les fonds sont lib\u00e9r\u00e9s apr\u00e8s confirmation de livraison
+                      Les fonds sont libérés après confirmation de livraison
                     </p>
                   </>
                 ) : (
