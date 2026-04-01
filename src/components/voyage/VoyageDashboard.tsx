@@ -525,8 +525,9 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
                     </div>
 
                     <div className="p-3 rounded-xl bg-muted/30 border border-border/30">
-                      <p className="text-xs text-muted-foreground mb-1">Gains nets (après commission {walletData.commissionRate}%)</p>
-                      <p className="text-lg font-bold text-foreground">{formatCurrency(totalEarningsAfterCommission, walletData.currency)}</p>
+                      <p className="text-xs text-muted-foreground mb-1">Prochains gains en attente (estimés)</p>
+                      <p className="text-lg font-bold text-amber-500">{formatCurrency(pendingEarningsAfterCommission, walletData.currency)}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{activeOrders.length} commande{activeOrders.length > 1 ? "s" : ""} en cours · commission {walletData.commissionRate}%</p>
                     </div>
 
                     {/* Withdrawal button */}
