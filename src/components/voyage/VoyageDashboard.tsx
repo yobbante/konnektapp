@@ -149,6 +149,7 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         if (currentSession) {
+          const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
           await Promise.all(
             unreleasedOrders.map((o) =>
               fetch(`${supabaseUrl}/functions/v1/release-funds-v2`, {
@@ -156,6 +157,7 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
                 headers: {
                   "Content-Type": "application/json",
                   Authorization: `Bearer ${currentSession.access_token}`,
+                  apikey: anonKey,
                 },
                 body: JSON.stringify({ order_id: o.id, idempotency_key: `auto_release:${o.id}` }),
               }).catch((e) => console.warn("Auto-release failed for", o.id, e))
