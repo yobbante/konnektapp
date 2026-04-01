@@ -202,6 +202,12 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
 
   const totalEarningsAfterCommission = Math.round(totalEarnings * (1 - (walletData?.commissionRate || 5) / 100));
 
+  // Gains en attente estimés (commandes actives non encore livrées)
+  const pendingEarnings = orders
+    .filter(o => ACTIVE_ORDER_STATUSES.includes(o.status))
+    .reduce((sum, o) => sum + (o.total_price || 0), 0);
+  const pendingEarningsAfterCommission = Math.round(pendingEarnings * (1 - (walletData?.commissionRate || 5) / 100));
+
   const formatDate = (d: string) => {
     try { return format(new Date(d), "EEE d MMM", { locale: fr }); }
     catch { return d; }
