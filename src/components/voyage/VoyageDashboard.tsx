@@ -106,7 +106,7 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
         .from("gp_profiles")
         .select("id, default_currency")
         .eq("user_id", session.user.id)
-        .eq("gp_type", "occasionnel" as string)
+        .eq("gp_type", "occasionnel" as never)
         .maybeSingle();
 
       if (!gpProfile) { setTrips([]); setOrders([]); return; }
