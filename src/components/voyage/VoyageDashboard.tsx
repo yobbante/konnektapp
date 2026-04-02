@@ -235,9 +235,9 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
       setWithdrawAmount("");
       setWithdrawPhone("");
       fetchData();
-    } catch (err: any) {
-      console.error("Withdrawal error:", err);
-      alert(err.message || "Erreur lors du retrait");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erreur lors du retrait";
+      alert(message);
     } finally {
       setWithdrawing(false);
     }
