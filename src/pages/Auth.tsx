@@ -142,17 +142,15 @@ export default function AuthPage() {
         if (error) throw error;
 
         if (authData.user) {
-          const profileUpdate: Record<string, any> = { phone: data.phone };
+          const profileUpdate: Record<string, string> = { phone: data.phone };
           if (entryFlow.country) {
             profileUpdate.country_code = entryFlow.country.code;
           }
-          // Save city from entry flow — sync both city and residence_city
           const entryCity = sessionStorage.getItem("entry_city");
           if (entryCity) {
             profileUpdate.residence_city = entryCity;
             profileUpdate.city = entryCity;
           }
-          // Save full name redundantly for consistency
           if (data.fullName) {
             profileUpdate.full_name = data.fullName;
           }
@@ -160,6 +158,15 @@ export default function AuthPage() {
             .from("profiles")
             .update(profileUpdate)
             .eq("user_id", authData.user.id);
+        }
+
+        // Check if email confirmation is required
+        if (authData.user && !authData.user.email_confirmed_at) {
+          toast({
+            title: "Vérifiez votre email",
+            description: "Un lien de confirmation a été envoyé à votre adresse email. Veuillez cliquer dessus pour activer votre compte.",
+          });
+          return;
         }
 
         toast({
