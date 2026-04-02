@@ -17,11 +17,11 @@ import { toast } from "@/hooks/use-toast";
 
 interface ReleaseEscrowButtonProps {
   orderId: string;
-  escrowId: string;
+  escrowId?: string; // kept for backward compat, not used
   onReleased?: () => void;
 }
 
-export function ReleaseEscrowButton({ orderId, escrowId, onReleased }: ReleaseEscrowButtonProps) {
+export function ReleaseEscrowButton({ orderId, onReleased }: ReleaseEscrowButtonProps) {
   const [loading, setLoading] = useState(false);
 
   const handleRelease = async () => {
