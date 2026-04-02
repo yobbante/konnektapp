@@ -142,7 +142,7 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
         .from("orders")
         .select("id")
         .eq("gp_id", gpProfile.id)
-        .in("status", ["delivered", "delivery_confirmed"] as any)
+        .in("status", ["delivered", "delivery_confirmed"])
         .neq("financial_status", "completed");
 
       if (unreleasedOrders && unreleasedOrders.length > 0) {
