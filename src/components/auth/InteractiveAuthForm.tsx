@@ -534,7 +534,7 @@ export function InteractiveAuthForm({
                   onClick={() => {
                     if (!formData.email || !isValidEmail) { alert("Entrez votre email d'abord"); return; }
                     supabase.auth.resetPasswordForEmail(formData.email, {
-                      redirectTo: `${window.location.origin}/auth`,
+                      redirectTo: `${window.location.origin}/reset-password`,
                     }).then(({ error }) => {
                       if (error) alert("Erreur: " + error.message);
                       else alert("Email de réinitialisation envoyé à " + formData.email);
