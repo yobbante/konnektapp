@@ -31,7 +31,22 @@ export default function GPWalletPage() {
     setLoading(false);
   };
 
-  if (profileLoading || loading) return <PageLoader message="Chargement..." />;
+  if (profileLoading || loading) {
+    return (
+      <GPDashboardLayout
+        gpProfile={gpProfile || ({} as any)}
+        pendingCount={0}
+        activeOrdersCount={0}
+        activeTab="wallet"
+        onNewVoyage={() => {}}
+      >
+        <div className="px-4 py-4 space-y-4">
+          <WalletSkeleton />
+          <WalletSkeleton />
+        </div>
+      </GPDashboardLayout>
+    );
+  }
   if (!gpProfile) return null;
 
   return (
