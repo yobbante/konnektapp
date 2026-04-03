@@ -192,6 +192,7 @@ const App = () => (
             <Route path="/gp/:gpId" element={<GPProfile />} />
             <Route path="/client/transporteurs/:gpId" element={<ClientTransporterProfile />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/install" element={<Navigate to="/" replace />} />
             <Route path="/track/:orderId" element={<PublicTracking />} />
             <Route path="/track/user/:userId" element={<PublicUserProfile />} />
