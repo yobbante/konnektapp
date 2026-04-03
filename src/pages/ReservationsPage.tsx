@@ -458,9 +458,7 @@ export default function ReservationsPage() {
         {activeTab === "tickets" &&
         <div className="px-4 pt-3 space-y-3">
             {loading ?
-          <div className="flex items-center justify-center py-20">
-                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              </div> :
+          <div className="px-4"><CardListSkeleton count={2} /></div> :
           mobilityBookings.length === 0 ?
           <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
                 <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4">
