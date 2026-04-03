@@ -7,6 +7,8 @@ import {
   Star, Scale, Heart, Bell, AlertCircle, ArrowRight, Plane, Ship, Luggage } from
 "lucide-react";
 import { SmartActionBar } from "@/components/home/SmartActionBar";
+import { CardListSkeleton } from "@/components/ui/skeletons";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
