@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
 import { GPWalletCard } from "@/components/gp/GPWalletCard";
-import { PageLoader } from "@/components/ui/PageLoader";
+import { WalletSkeleton } from "@/components/ui/skeletons";
 import { useGPProfile } from "@/hooks/useGPProfile";
 import { SmartVoyageForm } from "@/components/gp/SmartVoyageForm";
 import { PremiumCTABanner } from "@/components/gp/PremiumCTABanner";
