@@ -171,7 +171,7 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
         supabase.from("gp_wallets").select("balance, pending_balance, total_earned, commission_rate, currency").eq("gp_id", gpProfile.id).maybeSingle(),
         supabase.from("escrow_transactions").select("net_to_gp").eq("gp_id", gpProfile.id).eq("status", "held"),
       ]);
-      const pendingEscrow = escrowRes.data?.reduce((sum: number, e: any) => sum + (e.net_to_gp || 0), 0) || 0;
+      const pendingEscrow = escrowRes.data?.reduce((sum: number, e: { net_to_gp: number | null }) => sum + (e.net_to_gp || 0), 0) || 0;
       setWalletData({
         balance: walletRes.data?.balance || 0,
         pending: pendingEscrow,
