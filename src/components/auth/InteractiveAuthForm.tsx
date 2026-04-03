@@ -443,7 +443,7 @@ export function InteractiveAuthForm({
                   onClick={() => {
                     if (!formData.email || !isValidEmail) return;
                     supabase.auth.resetPasswordForEmail(formData.email, {
-                      redirectTo: `${window.location.origin}/auth`,
+                      redirectTo: `${window.location.origin}/reset-password`,
                     }).then(({ error }) => {
                       if (error) alert("Erreur: " + error.message);
                       else alert("Un email de réinitialisation a été envoyé à " + formData.email);
