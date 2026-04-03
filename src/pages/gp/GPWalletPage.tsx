@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { GPDashboardLayout } from "@/components/layout/GPDashboardLayout";
 import { GPWalletCard } from "@/components/gp/GPWalletCard";
-import { PageLoader } from "@/components/ui/PageLoader";
+import { WalletSkeleton } from "@/components/ui/skeletons";
 import { useGPProfile } from "@/hooks/useGPProfile";
 import { SmartVoyageForm } from "@/components/gp/SmartVoyageForm";
 import { PremiumCTABanner } from "@/components/gp/PremiumCTABanner";
@@ -31,7 +31,22 @@ export default function GPWalletPage() {
     setLoading(false);
   };
 
-  if (profileLoading || loading) return <PageLoader message="Chargement..." />;
+  if (profileLoading || loading) {
+    return (
+      <GPDashboardLayout
+        gpProfile={gpProfile || ({} as any)}
+        pendingCount={0}
+        activeOrdersCount={0}
+        activeTab="wallet"
+        onNewVoyage={() => {}}
+      >
+        <div className="px-4 py-4 space-y-4">
+          <WalletSkeleton />
+          <WalletSkeleton />
+        </div>
+      </GPDashboardLayout>
+    );
+  }
   if (!gpProfile) return null;
 
   return (

@@ -40,6 +40,7 @@ import GPGrowthTab from "./components/gp/GPGrowthTab";
 // ClientProfile removed - using UnifiedProfile at /profil
 import ClientTransporterProfile from "./pages/ClientTransporterProfile";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import Tracking from "./pages/Tracking";
 import Messages from "./pages/Messages";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -191,6 +192,7 @@ const App = () => (
             <Route path="/gp/:gpId" element={<GPProfile />} />
             <Route path="/client/transporteurs/:gpId" element={<ClientTransporterProfile />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/install" element={<Navigate to="/" replace />} />
             <Route path="/track/:orderId" element={<PublicTracking />} />
             <Route path="/track/user/:userId" element={<PublicUserProfile />} />

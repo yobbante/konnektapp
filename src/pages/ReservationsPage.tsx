@@ -7,6 +7,8 @@ import {
   Star, Scale, Heart, Bell, AlertCircle, ArrowRight, Plane, Ship, Luggage } from
 "lucide-react";
 import { SmartActionBar } from "@/components/home/SmartActionBar";
+import { CardListSkeleton } from "@/components/ui/skeletons";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -456,9 +458,7 @@ export default function ReservationsPage() {
         {activeTab === "tickets" &&
         <div className="px-4 pt-3 space-y-3">
             {loading ?
-          <div className="flex items-center justify-center py-20">
-                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              </div> :
+          <div className="px-4"><CardListSkeleton count={2} /></div> :
           mobilityBookings.length === 0 ?
           <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
                 <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4">
@@ -495,9 +495,7 @@ export default function ReservationsPage() {
             <ClientMissionsView />
 
             {loading ?
-          <div className="flex items-center justify-center py-10">
-                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              </div> :
+          <div className="px-4"><CardListSkeleton count={2} /></div> :
           customRequests.length > 0 &&
           <div className="space-y-2">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
@@ -580,19 +578,9 @@ export default function ReservationsPage() {
         {activeTab === "actives" &&
         <>
             {loading ?
-          <div className="flex items-center justify-center py-20">
-                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              </div> :
+          <div className="px-4 pt-3"><CardListSkeleton count={3} /></div> :
           activeOrders.length === 0 ?
-          <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-                  <Package className="w-8 h-8 text-primary" />
-                </div>
-                <p className="text-sm font-bold text-foreground">Aucune reservation en cours</p>
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  Vos envois actifs apparaitront ici
-                </p>
-              </div> :
+          <EmptyState variant="orders" title="Aucune réservation en cours" description="Vos envois actifs apparaîtront ici" /> :
 
           <div className="px-4 pt-3 space-y-2.5">
                 {activeOrders.map((order, i) => renderOrderCard(order, i))}
@@ -605,19 +593,9 @@ export default function ReservationsPage() {
         {activeTab === "historique" &&
         <>
             {loading ?
-          <div className="flex items-center justify-center py-20">
-                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              </div> :
+          <div className="px-4 pt-3"><CardListSkeleton count={3} /></div> :
           historyOrders.length === 0 ?
-          <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mb-4">
-                  <CheckCircle className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <p className="text-sm font-bold text-foreground">Aucun historique</p>
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  Vos commandes livrées et annulées apparaîtront ici
-                </p>
-              </div> :
+          <EmptyState variant="orders" title="Aucun historique" description="Vos commandes livrées et annulées apparaîtront ici" /> :
 
           <div className="px-4 pt-3 space-y-2.5">
                 {historyOrders.map((order, i) => renderOrderCard(order, i))}

@@ -137,7 +137,7 @@ export function ForgotPasswordDialog({ open, onOpenChange, userEmail }: {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
-        redirectTo: `${window.location.origin}/settings`,
+        redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
       setSent(true);
