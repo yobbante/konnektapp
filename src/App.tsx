@@ -40,6 +40,7 @@ import GPGrowthTab from "./components/gp/GPGrowthTab";
 // ClientProfile removed - using UnifiedProfile at /profil
 import ClientTransporterProfile from "./pages/ClientTransporterProfile";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import Tracking from "./pages/Tracking";
 import Messages from "./pages/Messages";
 import AdminDashboard from "./pages/AdminDashboard";
