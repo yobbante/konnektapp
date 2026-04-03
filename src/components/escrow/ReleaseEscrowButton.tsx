@@ -17,35 +17,25 @@ import { toast } from "@/hooks/use-toast";
 
 interface ReleaseEscrowButtonProps {
   orderId: string;
-  escrowId: string;
+  escrowId?: string; // kept for backward compat, not used
   onReleased?: () => void;
 }
 
-export function ReleaseEscrowButton({ orderId, escrowId, onReleased }: ReleaseEscrowButtonProps) {
+export function ReleaseEscrowButton({ orderId, onReleased }: ReleaseEscrowButtonProps) {
   const [loading, setLoading] = useState(false);
 
   const handleRelease = async () => {
     setLoading(true);
     try {
-      // Update escrow status
-      const { error: escrowError } = await supabase
-        .from("escrow_transactions")
-        .update({
-          status: "released",
-          released_at: new Date().toISOString(),
-          release_reason: "Livraison confirmée par le client",
-        })
-        .eq("id", escrowId);
+      const { data, error } = await supabase.functions.invoke("release-funds-v2", {
+        body: {
+          order_id: orderId,
+          idempotency_key: `client_release:${orderId}`,
+        },
+      });
 
-      if (escrowError) throw escrowError;
-
-      // Update order payment status
-      const { error: orderError } = await supabase
-        .from("orders")
-        .update({ payment_status: "released" })
-        .eq("id", orderId);
-
-      if (orderError) throw orderError;
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast({
         title: "Paiement libéré",
@@ -53,11 +43,11 @@ export function ReleaseEscrowButton({ orderId, escrowId, onReleased }: ReleaseEs
       });
 
       onReleased?.();
-    } catch (error: any) {
-      console.error("Release error:", error);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Impossible de libérer le paiement";
       toast({
         title: "Erreur",
-        description: error.message || "Impossible de libérer le paiement",
+        description: message,
         variant: "destructive",
       });
     } finally {

@@ -106,7 +106,7 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
         .from("gp_profiles")
         .select("id, default_currency")
         .eq("user_id", session.user.id)
-        .eq("gp_type", "occasionnel" as any)
+        .eq("gp_type", "occasionnel" as never)
         .maybeSingle();
 
       if (!gpProfile) { setTrips([]); setOrders([]); return; }
@@ -142,7 +142,7 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
         .from("orders")
         .select("id")
         .eq("gp_id", gpProfile.id)
-        .in("status", ["delivered", "delivery_confirmed"] as any)
+        .in("status", ["delivered", "delivery_confirmed"])
         .neq("financial_status", "completed");
 
       if (unreleasedOrders && unreleasedOrders.length > 0) {
@@ -171,7 +171,7 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
         supabase.from("gp_wallets").select("balance, pending_balance, total_earned, commission_rate, currency").eq("gp_id", gpProfile.id).maybeSingle(),
         supabase.from("escrow_transactions").select("net_to_gp").eq("gp_id", gpProfile.id).eq("status", "held"),
       ]);
-      const pendingEscrow = escrowRes.data?.reduce((sum: number, e: any) => sum + (e.net_to_gp || 0), 0) || 0;
+      const pendingEscrow = escrowRes.data?.reduce((sum: number, e: { net_to_gp: number | null }) => sum + (e.net_to_gp || 0), 0) || 0;
       setWalletData({
         balance: walletRes.data?.balance || 0,
         pending: pendingEscrow,
@@ -235,9 +235,9 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
       setWithdrawAmount("");
       setWithdrawPhone("");
       fetchData();
-    } catch (err: any) {
-      console.error("Withdrawal error:", err);
-      alert(err.message || "Erreur lors du retrait");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erreur lors du retrait";
+      alert(message);
     } finally {
       setWithdrawing(false);
     }
