@@ -593,19 +593,9 @@ export default function ReservationsPage() {
         {activeTab === "historique" &&
         <>
             {loading ?
-          <div className="flex items-center justify-center py-20">
-                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              </div> :
+          <div className="px-4 pt-3"><CardListSkeleton count={3} /></div> :
           historyOrders.length === 0 ?
-          <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mb-4">
-                  <CheckCircle className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <p className="text-sm font-bold text-foreground">Aucun historique</p>
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  Vos commandes livrées et annulées apparaîtront ici
-                </p>
-              </div> :
+          <EmptyState variant="orders" title="Aucun historique" description="Vos commandes livrées et annulées apparaîtront ici" /> :
 
           <div className="px-4 pt-3 space-y-2.5">
                 {historyOrders.map((order, i) => renderOrderCard(order, i))}
