@@ -992,7 +992,7 @@ export function ClientAppHome({
                 value={cityQuery}
                 onChange={(e) => setCityQuery(e.target.value)}
                 className="w-full h-11 pl-10 pr-4 rounded-xl border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30"
-                autoFocus />
+                />
               
             </div>
           </div>

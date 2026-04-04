@@ -162,18 +162,6 @@ export function AppHeader({
               </div>
             )}
             
-            {/* Login */}
-            {!isAuthenticated && (
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => navigate("/auth")}
-                className="rounded-full h-8 px-3 gap-1.5 text-xs font-medium bg-primary/10 text-primary"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                <span className="hidden xs:inline">Connexion</span>
-              </Button>
-            )}
             
             <HeaderRoleSwitch />
             {rightAction}
