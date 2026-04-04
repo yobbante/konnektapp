@@ -366,11 +366,6 @@ export function NotificationBell() {
                 })}
               </div>
             ))
-                    </div>
-                  </motion.button>
-                );
-              })}
-            </AnimatePresence>
           )}
         </div>
       </PopoverContent>
