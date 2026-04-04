@@ -193,6 +193,7 @@ export function MobileNav() {
   ];
 
   const handleNavClick = useCallback((e: React.MouseEvent, item: typeof navItems[0]) => {
+    hapticLight();
     if ('isMenu' in item && item.isMenu) {
       e.preventDefault();
       setMenuOpen(true);
