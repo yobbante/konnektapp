@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, MessageCircle, CalendarCheck, Menu, Send, Luggage } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { hapticLight } from "@/lib/haptics";
 
 import { useRef, useCallback, useEffect, useState } from "react";
 import { useKeyboardViewport } from "@/hooks/useKeyboardViewport";
@@ -192,6 +193,7 @@ export function MobileNav() {
   ];
 
   const handleNavClick = useCallback((e: React.MouseEvent, item: typeof navItems[0]) => {
+    hapticLight();
     if ('isMenu' in item && item.isMenu) {
       e.preventDefault();
       setMenuOpen(true);

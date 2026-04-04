@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Check, Truck, Package, MessageCircle, AlertCircle, Shield } from "lucide-react";
+import { Bell, Check, Truck, Package, MessageCircle, AlertCircle, Shield, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -11,8 +11,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { format } from "date-fns";
+import { format, isToday, isYesterday } from "date-fns";
 import { fr } from "date-fns/locale";
+import { hapticLight } from "@/lib/haptics";
 
 interface Notification {
   id: string;
@@ -37,12 +38,34 @@ const typeIcons: Record<string, React.ElementType> = {
   order_status: Package,
 };
 
+function getDateLabel(dateStr: string): string {
+  const d = new Date(dateStr);
+  if (isToday(d)) return "Aujourd'hui";
+  if (isYesterday(d)) return "Hier";
+  return format(d, "d MMMM", { locale: fr });
+}
+
 export function NotificationBell() {
   const navigate = useNavigate();
   const { hasAdminAccess, isGP } = useUserRole();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
+
+  const groupedNotifications = useMemo(() => {
+    const groups: { label: string; items: Notification[] }[] = [];
+    let currentLabel = "";
+    for (const n of notifications) {
+      const label = getDateLabel(n.created_at);
+      if (label !== currentLabel) {
+        currentLabel = label;
+        groups.push({ label, items: [n] });
+      } else {
+        groups[groups.length - 1].items.push(n);
+      }
+    }
+    return groups;
+  }, [notifications]);
 
   useEffect(() => {
     fetchNotifications();
@@ -289,57 +312,60 @@ export function NotificationBell() {
           )}
         </div>
 
-        <div className="max-h-80 overflow-y-auto divide-y divide-border/50">
+        <div className="max-h-80 overflow-y-auto">
           {notifications.length === 0 ? (
             <div className="p-6 text-center">
               <Bell className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
               <p className="text-sm text-muted-foreground">Aucune notification</p>
             </div>
           ) : (
-            <AnimatePresence initial={false}>
-              {notifications.map((notif, index) => {
-                const Icon = typeIcons[notif.type] || Bell;
-                const isClickable = notif.related_id || ["order", "message", "gp"].includes(notif.type);
-                
-                return (
-                  <motion.button
-                    key={notif.id}
-                    initial={{ opacity: 0, height: 0, y: -8 }}
-                    animate={{ opacity: 1, height: "auto", y: 0 }}
-                    exit={{ opacity: 0, height: 0, y: -8 }}
-                    transition={{ 
-                      duration: 0.35, 
-                      ease: [0.25, 0.46, 0.45, 0.94],
-                      delay: index * 0.03
-                    }}
-                    onClick={() => handleNotificationClick(notif)}
-                    className={`w-full px-4 py-3 text-left transition-colors hover:bg-accent/50 ${
-                      notif.read_at ? "opacity-60" : "bg-primary/5"
-                    } ${isClickable ? "cursor-pointer" : ""}`}
-                  >
-                    <div className="flex gap-3 items-start">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        notif.read_at ? "bg-muted" : "bg-primary/10"
-                      }`}>
-                        <Icon className={`w-4 h-4 ${notif.read_at ? "text-muted-foreground" : "text-primary"}`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-sm font-medium truncate">{notif.title}</p>
-                          {!notif.read_at && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                          )}
+            groupedNotifications.map((group) => (
+              <div key={group.label}>
+                <div className="px-4 py-1.5 bg-muted/50 sticky top-0">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{group.label}</p>
+                </div>
+                {group.items.map((notif) => {
+                  const Icon = typeIcons[notif.type] || Bell;
+                  const isClickable = notif.related_id || ["order", "message", "gp"].includes(notif.type);
+                  
+                  return (
+                    <motion.button
+                      key={notif.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.2 }}
+                      onClick={() => {
+                        hapticLight();
+                        handleNotificationClick(notif);
+                      }}
+                      className={`w-full px-4 py-3 text-left transition-colors hover:bg-accent/50 border-b border-border/30 ${
+                        notif.read_at ? "opacity-60" : "bg-primary/5"
+                      } ${isClickable ? "cursor-pointer" : ""}`}
+                    >
+                      <div className="flex gap-3 items-start">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          notif.read_at ? "bg-muted" : "bg-primary/10"
+                        }`}>
+                          <Icon className={`w-4 h-4 ${notif.read_at ? "text-muted-foreground" : "text-primary"}`} />
                         </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{notif.message}</p>
-                        <p className="text-[10px] text-muted-foreground/70 mt-1">
-                          {format(new Date(notif.created_at), "d MMM, HH:mm", { locale: fr })}
-                        </p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-sm font-medium truncate">{notif.title}</p>
+                            {!notif.read_at && (
+                              <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{notif.message}</p>
+                          <p className="text-[10px] text-muted-foreground/70 mt-1">
+                            {format(new Date(notif.created_at), "HH:mm", { locale: fr })}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </motion.button>
-                );
-              })}
-            </AnimatePresence>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            ))
           )}
         </div>
       </PopoverContent>
