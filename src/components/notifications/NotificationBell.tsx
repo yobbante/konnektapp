@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Check, Truck, Package, MessageCircle, AlertCircle, Shield } from "lucide-react";
+import { Bell, Check, Truck, Package, MessageCircle, AlertCircle, Shield, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -11,8 +11,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { format } from "date-fns";
+import { format, isToday, isYesterday } from "date-fns";
 import { fr } from "date-fns/locale";
+import { hapticLight } from "@/lib/haptics";
 
 interface Notification {
   id: string;
