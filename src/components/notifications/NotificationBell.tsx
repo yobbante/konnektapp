@@ -38,12 +38,34 @@ const typeIcons: Record<string, React.ElementType> = {
   order_status: Package,
 };
 
+function getDateLabel(dateStr: string): string {
+  const d = new Date(dateStr);
+  if (isToday(d)) return "Aujourd'hui";
+  if (isYesterday(d)) return "Hier";
+  return format(d, "d MMMM", { locale: fr });
+}
+
 export function NotificationBell() {
   const navigate = useNavigate();
   const { hasAdminAccess, isGP } = useUserRole();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
+
+  const groupedNotifications = useMemo(() => {
+    const groups: { label: string; items: Notification[] }[] = [];
+    let currentLabel = "";
+    for (const n of notifications) {
+      const label = getDateLabel(n.created_at);
+      if (label !== currentLabel) {
+        currentLabel = label;
+        groups.push({ label, items: [n] });
+      } else {
+        groups[groups.length - 1].items.push(n);
+      }
+    }
+    return groups;
+  }, [notifications]);
 
   useEffect(() => {
     fetchNotifications();
