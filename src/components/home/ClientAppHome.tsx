@@ -602,7 +602,7 @@ export function ClientAppHome({
     <div
       className="flex flex-col relative bg-background"
       style={{
-        height: "calc(100vh - 60px - 64px - env(safe-area-inset-top) - env(safe-area-inset-bottom))",
+        height: "calc(100vh - 52px - 56px - env(safe-area-inset-top) - env(safe-area-inset-bottom))",
         minHeight: "400px"
       }}>
       
@@ -992,7 +992,7 @@ export function ClientAppHome({
                 value={cityQuery}
                 onChange={(e) => setCityQuery(e.target.value)}
                 className="w-full h-11 pl-10 pr-4 rounded-xl border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary/30"
-                autoFocus />
+                />
               
             </div>
           </div>

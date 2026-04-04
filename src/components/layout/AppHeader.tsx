@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Menu, ChevronLeft, LogIn, ScanLine, Wallet, Package } from "lucide-react";
+import { Menu, ChevronLeft, ScanLine, Wallet, Package } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
@@ -162,18 +162,6 @@ export function AppHeader({
               </div>
             )}
             
-            {/* Login */}
-            {!isAuthenticated && (
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => navigate("/auth")}
-                className="rounded-full h-8 px-3 gap-1.5 text-xs font-medium bg-primary/10 text-primary"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                <span className="hidden xs:inline">Connexion</span>
-              </Button>
-            )}
             
             <HeaderRoleSwitch />
             {rightAction}
