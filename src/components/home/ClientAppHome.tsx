@@ -602,8 +602,9 @@ export function ClientAppHome({
     <div
       className="flex flex-col relative bg-background"
       style={{
-        height: "calc(100vh - 52px - 56px - env(safe-area-inset-top) - env(safe-area-inset-bottom))",
-        minHeight: "400px"
+        flex: 1,
+        minHeight: 0,
+        overflow: "hidden"
       }}>
       
       {/* Post-Delivery Flow */}

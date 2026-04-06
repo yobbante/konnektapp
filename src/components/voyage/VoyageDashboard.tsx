@@ -67,8 +67,10 @@ const ORDER_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   in_transit: { label: "En transit", color: "bg-blue-500/15 text-blue-600" },
   arrived_destination: { label: "Arriv\u00e9", color: "bg-teal-500/15 text-teal-600" },
   weight_pending_payment: { label: "Suppl\u00e9ment requis", color: "bg-orange-500/15 text-orange-600" },
-  delivered: { label: "Livr\u00e9", color: "bg-green-500/15 text-green-700" },
-  delivery_confirmed: { label: "Confirm\u00e9", color: "bg-emerald-500/15 text-emerald-700" },
+  delivered: { label: "Livré", color: "bg-green-500/15 text-green-700" },
+  delivery_confirmed: { label: "Confirmé", color: "bg-emerald-500/15 text-emerald-700" },
+  released: { label: "Terminé", color: "bg-emerald-500/15 text-emerald-700" },
+  delivery_pending: { label: "Livraison en cours", color: "bg-teal-500/15 text-teal-600" },
 };
 
 export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboardProps) {
@@ -191,7 +193,7 @@ export function VoyageDashboard({ open, onOpenChange, onNewTrip }: VoyageDashboa
   const pastTrips = trips.filter(t => t.status !== "active" || t.departure_date < today);
 
   const ACTIVE_ORDER_STATUSES = ["pending", "accepted", "collected", "checked_in", "in_transit", "arrived_destination", "weight_pending_payment"];
-  const DONE_ORDER_STATUSES = ["delivered", "delivery_confirmed"];
+  const DONE_ORDER_STATUSES = ["delivered", "delivery_confirmed", "released", "delivery_pending"];
   const activeOrders = orders.filter(o => ACTIVE_ORDER_STATUSES.includes(o.status));
   const doneOrders = orders.filter(o => DONE_ORDER_STATUSES.includes(o.status));
 
