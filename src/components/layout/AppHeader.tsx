@@ -88,7 +88,7 @@ export function AppHeader({
           headerStyles[variant]
         )}
         style={{ 
-          top: isKeyboardOpen ? 'var(--visual-offset-top, 0px)' : undefined,
+          top: isKeyboardOpen ? '0px' : undefined,
           paddingTop: 'calc(6px + env(safe-area-inset-top, 0px))',
           paddingBottom: '6px',
           paddingLeft: 'calc(12px + env(safe-area-inset-left, 0px))',
