@@ -599,14 +599,8 @@ export function ClientAppHome({
   };
 
   return (
-    <div
-      className="flex flex-col relative bg-background"
-      style={{
-        flex: 1,
-        minHeight: 0,
-        overflow: "hidden"
-      }}>
-      
+    <div className="flex flex-col relative bg-background flex-1">
+
       {/* Post-Delivery Flow */}
       <AnimatePresence>
         {deliveredOrder &&
