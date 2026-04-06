@@ -272,7 +272,7 @@ function IndexContent() {
   }
 
   return (
-    <div className="h-screen bg-background overflow-hidden fixed inset-0 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col pb-20 overflow-x-hidden">
       <PullToRefreshIndicator isRefreshing={isRefreshing} progress={progress} pullDistance={pullDistance} />
       <AppHeader />
       
