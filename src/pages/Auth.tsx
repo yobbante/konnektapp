@@ -210,7 +210,7 @@ export default function AuthPage() {
 
   return (
     <div 
-      className="min-h-screen bg-background flex flex-col overflow-hidden"
+      className="min-h-screen bg-background flex flex-col"
       style={{
         paddingBottom: 'env(safe-area-inset-bottom)'
       }}
