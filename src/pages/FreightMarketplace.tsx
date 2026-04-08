@@ -347,34 +347,32 @@ export default function FreightMarketplace() {
         <AppHeader />
       )}
 
-      {/* Hero header — only in non-popup mode */}
-      {!isPopup && (
-        <div className="bg-gradient-to-br from-primary/10 via-background to-accent/10 border-b border-border">
-          <div className="container max-w-4xl py-4 px-4">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
-                <BarChart3 className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-foreground">Freight Board</h1>
-                <p className="text-xs text-muted-foreground">Bourse logistique en temps réel</p>
-              </div>
+      {/* Hero header */}
+      <div className="bg-gradient-to-br from-primary/10 via-background to-accent/10 border-b border-border">
+        <div className="container max-w-4xl py-4 px-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+              <BarChart3 className="w-5 h-5 text-primary" />
             </div>
-            <div className="flex gap-2 mt-3 text-xs">
-              <Badge variant="outline" className="gap-1">
-                <Package className="w-3 h-3" />
-                {listings.length} offres actives
-              </Badge>
-              {lastMinuteCount > 0 && (
-                <Badge className="gap-1 bg-destructive/15 text-destructive border-destructive/30">
-                  <Flame className="w-3 h-3" />
-                  {lastMinuteCount} last minute
-                </Badge>
-              )}
+            <div>
+              <h1 className="text-xl font-bold text-foreground">Freight Board</h1>
+              <p className="text-xs text-muted-foreground">Bourse logistique en temps réel</p>
             </div>
           </div>
+          <div className="flex gap-2 mt-3 text-xs">
+            <Badge variant="outline" className="gap-1">
+              <Package className="w-3 h-3" />
+              {listings.length} offres actives
+            </Badge>
+            {lastMinuteCount > 0 && (
+              <Badge className="gap-1 bg-destructive/15 text-destructive border-destructive/30">
+                <Flame className="w-3 h-3" />
+                {lastMinuteCount} last minute
+              </Badge>
+            )}
+          </div>
         </div>
-      )}
+      </div>
 
       {/* Filters — sticky below popup header or at top */}
       <div className={`sticky ${isPopup ? "top-[88px]" : "top-0"} z-30 bg-background/95 backdrop-blur-md border-b border-border`}>
