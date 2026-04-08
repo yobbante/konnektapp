@@ -51,11 +51,18 @@ interface DashboardData {
 
 const STATUS_FLOW: Record<string, {label: string;next: string;nextLabel: string;color: string;bg: string;}> = {
   pending: { label: "En attente", next: "accepted", nextLabel: "Accepter", color: "text-amber-600", bg: "bg-amber-500/10" },
-  accepted: { label: "À collecter", next: "collected", nextLabel: "Confirmer collecte", color: "text-blue-600", bg: "bg-blue-500/10" },
-  collected: { label: "Collecté", next: "in_transit", nextLabel: "Départ", color: "text-indigo-600", bg: "bg-indigo-500/10" },
-  in_transit: { label: "En transit", next: "arrived", nextLabel: "Arrivée destination", color: "text-purple-600", bg: "bg-purple-500/10" },
-  arrived: { label: "Arrivé", next: "delivered", nextLabel: "Confirmer livraison", color: "text-green-600", bg: "bg-green-500/10" },
-  delivered: { label: "Livré ✓", next: "", nextLabel: "", color: "text-green-700", bg: "bg-green-500/10" }
+  accepted: { label: "À collecter", next: "checked_in", nextLabel: "Confirmer dépôt", color: "text-blue-600", bg: "bg-blue-500/10" },
+  paid_held: { label: "Paiement reçu", next: "checked_in", nextLabel: "Confirmer dépôt", color: "text-emerald-600", bg: "bg-emerald-500/10" },
+  checked_in: { label: "Déposé", next: "in_transit", nextLabel: "En transit", color: "text-indigo-600", bg: "bg-indigo-500/10" },
+  collected: { label: "Collecté", next: "checked_in", nextLabel: "Confirmer dépôt", color: "text-indigo-600", bg: "bg-indigo-500/10" },
+  weight_pending_payment: { label: "Supplément requis", next: "", nextLabel: "", color: "text-orange-600", bg: "bg-orange-500/10" },
+  scheduled_departure: { label: "Départ programmé", next: "in_transit", nextLabel: "En transit", color: "text-violet-600", bg: "bg-violet-500/10" },
+  in_transit: { label: "En transit", next: "arrived_destination", nextLabel: "Arrivé", color: "text-purple-600", bg: "bg-purple-500/10" },
+  arrived_destination: { label: "Arrivé à destination", next: "delivery_pending", nextLabel: "Préparer livraison", color: "text-teal-600", bg: "bg-teal-500/10" },
+  delivery_pending: { label: "Livraison en cours", next: "delivery_confirmed", nextLabel: "Confirmer livraison", color: "text-green-600", bg: "bg-green-500/10" },
+  delivery_confirmed: { label: "Livraison confirmée", next: "released", nextLabel: "Libérer fonds", color: "text-green-700", bg: "bg-green-500/10" },
+  delivered: { label: "Livré ✓", next: "", nextLabel: "", color: "text-green-700", bg: "bg-green-500/10" },
+  released: { label: "Terminé ✓", next: "", nextLabel: "", color: "text-green-800", bg: "bg-green-600/10" },
 };
 
 export default function GPApercuPage() {
@@ -176,7 +183,7 @@ export default function GPApercuPage() {
 
       const pendingParcels = orders.filter((o) => o.status === "pending").slice(0, 5);
       const activeParcels = orders.filter((o) =>
-      ["accepted", "collected", "in_transit", "arrived"].includes(o.status as string)
+      ["accepted", "collected", "paid_held", "checked_in", "weight_pending_payment", "scheduled_departure", "in_transit", "arrived_destination", "delivery_pending", "delivery_confirmed"].includes(o.status as string)
       ).slice(0, 8);
 
       setData({

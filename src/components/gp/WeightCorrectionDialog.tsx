@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Scale, AlertTriangle, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { calculatePrice, type GPPricingConfig } from "@/lib/gpPricingEngine";
 
 interface WeightCorrectionDialogProps {
   open: boolean;
@@ -27,14 +28,16 @@ interface WeightCorrectionDialogProps {
   onCorrected: () => void;
   currentInsurance?: number;
   currentLogistics?: number;
+  forfaitValise23kg?: number;
 }
 
 /**
- * WeightCorrectionDialog V3
+ * WeightCorrectionDialog V4
  * 
  * RÈGLES:
  * - Le colis est DÉJÀ collecté (status = collected)
  * - Seul le prix poids change, assurance et logistique restent FIXES
+ * - Utilise le moteur de prix gpPricingEngine pour recalculer (coefficients dégressifs + TMA)
  * - Met à jour: orders.weight, orders.total_price, orders.weight_tier_applied
  * - Met à jour escrow si existant
  * - Notifie le client avec le nouveau montant
@@ -52,14 +55,23 @@ export function WeightCorrectionDialog({
   onCorrected,
   currentInsurance = 0,
   currentLogistics = 0,
+  forfaitValise23kg = 0,
 }: WeightCorrectionDialogProps) {
   const { toast } = useToast();
   const [newWeight, setNewWeight] = useState(currentWeight.toString());
   const [submitting, setSubmitting] = useState(false);
 
-  const weightDiff = parseFloat(newWeight) - currentWeight;
-  const currentWeightPrice = Math.round(currentWeight * pricePerKg);
-  const newWeightPrice = Math.round(parseFloat(newWeight) * pricePerKg);
+  // Use pricing engine for proper regressive calculation
+  const pricingConfig: GPPricingConfig = {
+    basePricePerKg: pricePerKg,
+    forfaitValise23kg: forfaitValise23kg || Math.round(pricePerKg * 23 * 0.85),
+    currency,
+  };
+
+  const currentWeightPrice = calculatePrice(currentWeight, pricingConfig);
+  const parsedNewWeight = parseFloat(newWeight) || 0;
+  const newWeightPrice = parsedNewWeight > 0 ? calculatePrice(parsedNewWeight, pricingConfig) : 0;
+  const weightDiff = parsedNewWeight - currentWeight;
   const priceDiff = newWeightPrice - currentWeightPrice;
   const newTotalPrice = newWeightPrice + currentInsurance + currentLogistics;
 
