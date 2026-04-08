@@ -1,13 +1,13 @@
 /**
- * ClientWallet — Client financial hub with virtual card, balance, withdrawal & transactions
- * Now powered by wallet-ledger and wallet-withdraw edge functions
+ * ClientWallet — Unified wallet view combining client + GP balances
+ * Powered by wallet-ledger (unified mode) and wallet-withdraw edge functions
  */
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Wallet, CreditCard, ArrowDownRight, ArrowUpRight,
-  Send, Download, Eye, EyeOff, Copy, CheckCircle
+  Send, Download, Eye, EyeOff, Copy, CheckCircle, TrendingUp, Truck
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -31,25 +31,44 @@ interface LedgerEntry {
   id: string;
   type: string;
   amount_fcfa: number;
+  amount_display?: number;
+  currency_display?: string;
   description: string | null;
   status: string;
   created_at: string;
+  source?: "client" | "gp";
 }
 
-function formatAmount(amount: number, currency = "FCFA") {
-  return `${amount.toLocaleString("fr-FR")} ${currency}`;
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  XOF: "FCFA", XAF: "FCFA", EUR: "€", USD: "$", GBP: "£",
+};
+
+function formatAmount(amount: number, currency = "XOF") {
+  const symbol = CURRENCY_SYMBOLS[currency] || currency;
+  return `${amount.toLocaleString("fr-FR")} ${symbol}`;
 }
 
-function ledgerTypeToDisplay(type: string): { label: string; isCredit: boolean } {
+function ledgerTypeToDisplay(type: string, source?: string): { label: string; isCredit: boolean; emoji: string } {
+  // GP-side entries (income)
+  if (source === "gp") {
+    switch (type) {
+      case "release": return { label: "Revenu livraison", isCredit: true, emoji: "📦" };
+      case "commission": return { label: "Commission plateforme", isCredit: false, emoji: "🏷️" };
+      case "withdrawal": return { label: "Retrait GP", isCredit: false, emoji: "💸" };
+      case "escrow_release": return { label: "Fonds libérés (GP)", isCredit: true, emoji: "✅" };
+      case "order_payment": return { label: "Paiement reçu", isCredit: true, emoji: "💰" };
+      default: return { label: `GP: ${type}`, isCredit: type.includes("release") || type.includes("payment"), emoji: "🚚" };
+    }
+  }
+  // Client-side entries
   switch (type) {
-    case "escrow_lock": return { label: "Escrow verrouillé", isCredit: false };
-    case "adjustment_minus": return { label: "Crédit ajustement", isCredit: true };
-    case "adjustment_plus": return { label: "Supplément poids", isCredit: false };
-    case "refund": return { label: "Remboursement", isCredit: true };
-    case "withdrawal": return { label: "Retrait", isCredit: false };
-    case "commission": return { label: "Commission", isCredit: false };
-    case "release": return { label: "Paiement libéré", isCredit: false };
-    default: return { label: type, isCredit: false };
+    case "escrow_lock": return { label: "Paiement commande", isCredit: false, emoji: "🔒" };
+    case "adjustment_minus": return { label: "Crédit ajustement poids", isCredit: true, emoji: "⚖️" };
+    case "adjustment_plus": return { label: "Supplément poids", isCredit: false, emoji: "⚖️" };
+    case "refund": return { label: "Remboursement", isCredit: true, emoji: "↩️" };
+    case "withdrawal": return { label: "Retrait", isCredit: false, emoji: "💸" };
+    case "release": return { label: "Paiement livraison", isCredit: false, emoji: "📦" };
+    default: return { label: type, isCredit: false, emoji: "📄" };
   }
 }
 
@@ -68,6 +87,9 @@ export default function ClientWallet() {
   const [availableBalance, setAvailableBalance] = useState(0);
   const [escrowBalance, setEscrowBalance] = useState(0);
   const [creditBonus, setCreditBonus] = useState(0);
+  const [walletCurrency, setWalletCurrency] = useState("XOF");
+  const [gpWallet, setGpWallet] = useState<{ balance: number; pending_balance: number; currency: string; gp_type?: string; business_name?: string } | null>(null);
+  const [unifiedBalance, setUnifiedBalance] = useState(0);
   const [transactions, setTransactions] = useState<LedgerEntry[]>([]);
   const [shortId, setShortId] = useState("");
 
@@ -78,15 +100,8 @@ export default function ClientWallet() {
 
       setShortId(getKonnektId(session.user.id));
 
-      const { data, error } = await supabase.functions.invoke("wallet-ledger", {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        body: null,
-      });
-
-      // Fallback: use query params via POST workaround
       const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/wallet-ledger?type=client&limit=50`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/wallet-ledger?type=unified&limit=50`,
         {
           headers: {
             Authorization: `Bearer ${session.access_token}`,
@@ -101,7 +116,12 @@ export default function ClientWallet() {
           setAvailableBalance(result.wallet.available_balance || 0);
           setEscrowBalance(result.wallet.escrow_balance || 0);
           setCreditBonus(result.wallet.credit_bonus || 0);
+          setWalletCurrency(result.wallet.currency || "XOF");
         }
+        if (result.gp_wallet) {
+          setGpWallet(result.gp_wallet);
+        }
+        setUnifiedBalance(result.unified_balance || 0);
         setTransactions(result.transactions || []);
       }
     } catch (error) {
@@ -128,6 +148,9 @@ export default function ClientWallet() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
+      // Auto-detect wallet type: withdraw from GP wallet if it has balance, else client
+      const useGpWallet = gpWallet && gpWallet.balance >= amount;
+
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/wallet-withdraw`,
         {
@@ -140,7 +163,7 @@ export default function ClientWallet() {
           body: JSON.stringify({
             amount,
             method: withdrawMethod,
-            wallet_type: "client",
+            wallet_type: useGpWallet ? "gp" : "client",
             phone_number: withdrawPhone,
           }),
         }
@@ -149,7 +172,8 @@ export default function ClientWallet() {
       const result = await res.json();
 
       if (res.ok && result.success) {
-        toast({ title: "Retrait effectué", description: `${formatAmount(amount)} retirés avec succès.` });
+        const cur = result.currency || walletCurrency;
+        toast({ title: "Retrait effectué", description: `${formatAmount(amount, cur)} retirés avec succès.` });
         setShowWithdrawDialog(false);
         setWithdrawAmount("");
         loadWalletData();
@@ -171,7 +195,10 @@ export default function ClientWallet() {
     );
   }
 
-  const totalBalance = availableBalance + creditBonus;
+  const totalClientBalance = availableBalance + creditBonus;
+  const totalBalance = unifiedBalance + creditBonus;
+  const totalWithdrawable = availableBalance + (gpWallet?.balance || 0);
+  const currencySymbol = CURRENCY_SYMBOLS[walletCurrency] || walletCurrency;
 
   return (
     <div className="min-h-screen bg-muted/30 pb-safe">
@@ -214,7 +241,7 @@ export default function ClientWallet() {
               <div className="mb-6">
                 <p className="text-xs opacity-70 mb-1">Solde total</p>
                 <p className="text-3xl font-bold tracking-tight">
-                  {balanceVisible ? formatAmount(totalBalance) : "••••••"}
+                  {balanceVisible ? formatAmount(totalBalance, walletCurrency) : "••••••"}
                 </p>
               </div>
 
@@ -237,20 +264,47 @@ export default function ClientWallet() {
           </motion.div>
 
           {/* Balance breakdown */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className={`grid ${gpWallet ? "grid-cols-2" : "grid-cols-3"} gap-2`}>
             <div className="bg-card rounded-xl border border-border p-3 text-center">
               <p className="text-[10px] text-muted-foreground mb-1">Disponible</p>
-              <p className="text-sm font-bold text-foreground">{formatAmount(availableBalance)}</p>
+              <p className="text-sm font-bold text-foreground">{formatAmount(availableBalance, walletCurrency)}</p>
             </div>
+            {gpWallet && (
+              <div className="bg-card rounded-xl border border-border p-3 text-center">
+                <div className="flex items-center justify-center gap-1 mb-1">
+                  <Truck className="w-3 h-3 text-muted-foreground" />
+                  <p className="text-[10px] text-muted-foreground">Revenus GP</p>
+                </div>
+                <p className="text-sm font-bold text-emerald-600">{formatAmount(gpWallet.balance, gpWallet.currency)}</p>
+                {gpWallet.pending_balance > 0 && (
+                  <p className="text-[9px] text-muted-foreground">+{formatAmount(gpWallet.pending_balance, gpWallet.currency)} en attente</p>
+                )}
+              </div>
+            )}
             <div className="bg-card rounded-xl border border-border p-3 text-center">
               <p className="text-[10px] text-muted-foreground mb-1">En escrow</p>
-              <p className="text-sm font-bold text-foreground">{formatAmount(escrowBalance)}</p>
+              <p className="text-sm font-bold text-foreground">{formatAmount(escrowBalance, walletCurrency)}</p>
             </div>
-            <div className="bg-card rounded-xl border border-border p-3 text-center">
-              <p className="text-[10px] text-muted-foreground mb-1">Bonus</p>
-              <p className="text-sm font-bold text-emerald-500">{formatAmount(creditBonus)}</p>
-            </div>
+            {!gpWallet && (
+              <div className="bg-card rounded-xl border border-border p-3 text-center">
+                <p className="text-[10px] text-muted-foreground mb-1">Bonus</p>
+                <p className="text-sm font-bold text-emerald-500">{formatAmount(creditBonus, walletCurrency)}</p>
+              </div>
+            )}
           </div>
+
+          {/* Withdrawable total */}
+          {gpWallet && totalWithdrawable > 0 && (
+            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-emerald-600" />
+                <span className="text-xs font-medium text-foreground">Total retirable</span>
+              </div>
+              <span className="text-sm font-bold text-emerald-600">
+                {balanceVisible ? formatAmount(totalWithdrawable, walletCurrency) : "••••••"}
+              </span>
+            </div>
+          )}
 
           {/* Quick actions */}
           <div className="grid grid-cols-2 gap-3">
@@ -258,7 +312,7 @@ export default function ClientWallet() {
               variant="outline"
               className="h-14 flex flex-col items-center gap-1 rounded-xl"
               onClick={() => setShowWithdrawDialog(true)}
-              disabled={availableBalance <= 0}
+              disabled={totalWithdrawable <= 0}
             >
               <Send className="w-5 h-5 text-primary" />
               <span className="text-xs">Retirer</span>
@@ -301,29 +355,34 @@ export default function ClientWallet() {
             ) : (
               <div className="divide-y divide-border">
                 {transactions.map((tx) => {
-                  const display = ledgerTypeToDisplay(tx.type);
+                  const display = ledgerTypeToDisplay(tx.type, tx.source);
+                  const txCurrency = tx.currency_display || walletCurrency;
+                  const txAmount = tx.amount_display || tx.amount_fcfa;
                   return (
                     <div key={tx.id} className="flex items-center justify-between p-4">
                       <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center ${
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-base ${
                           display.isCredit ? "bg-emerald-500/10" : "bg-destructive/10"
                         }`}>
-                          {display.isCredit ? (
-                            <ArrowDownRight className="w-4 h-4 text-emerald-500" />
-                          ) : (
-                            <ArrowUpRight className="w-4 h-4 text-destructive" />
-                          )}
+                          {display.emoji}
                         </div>
                         <div>
                           <p className="text-sm font-medium">{tx.description || display.label}</p>
-                          <p className="text-[11px] text-muted-foreground">
-                            {new Date(tx.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
-                          </p>
+                          <div className="flex items-center gap-1.5">
+                            {tx.source === "gp" && (
+                              <Badge variant="outline" className="text-[8px] px-1 py-0 h-3.5 text-emerald-600 border-emerald-200">
+                                GP
+                              </Badge>
+                            )}
+                            <p className="text-[11px] text-muted-foreground">
+                              {new Date(tx.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                            </p>
+                          </div>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className={`text-sm font-semibold ${display.isCredit ? "text-emerald-500" : "text-destructive"}`}>
-                          {display.isCredit ? "+" : "-"}{formatAmount(tx.amount_fcfa)}
+                          {display.isCredit ? "+" : "-"}{formatAmount(txAmount, txCurrency)}
                         </p>
                         <Badge variant="outline" className="text-[9px] px-1.5 py-0">
                           {tx.status === "completed" ? "Terminé" : "En attente"}
@@ -345,6 +404,11 @@ export default function ClientWallet() {
             <DialogTitle>Retirer des fonds</DialogTitle>
             <DialogDescription>
               Choisissez le mode de retrait et le montant.
+              {gpWallet && gpWallet.balance > 0 && (
+                <span className="block mt-1 text-emerald-600">
+                  Revenus GP disponibles : {formatAmount(gpWallet.balance, gpWallet.currency)}
+                </span>
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-2">
@@ -370,7 +434,7 @@ export default function ClientWallet() {
               />
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground">Montant (FCFA)</Label>
+              <Label className="text-xs text-muted-foreground">Montant ({currencySymbol})</Label>
               <Input
                 type="number"
                 value={withdrawAmount}
@@ -379,7 +443,7 @@ export default function ClientWallet() {
                 className="mt-1"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Solde disponible : {formatAmount(availableBalance)}
+                Total retirable : {formatAmount(totalWithdrawable, walletCurrency)}
               </p>
             </div>
             <Button
