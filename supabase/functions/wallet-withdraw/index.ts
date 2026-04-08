@@ -44,6 +44,12 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Helper to format currency label
+    const currencyLabel = (code: string) => {
+      const map: Record<string, string> = { XOF: "FCFA", EUR: "€", USD: "$", GBP: "£", XAF: "FCFA" };
+      return map[code] || code;
+    };
+
     if (wallet_type === "gp") {
       // GP withdrawal
       const { data: gpProfile } = await supabase
@@ -60,7 +66,7 @@ Deno.serve(async (req) => {
 
       const { data: wallet } = await supabase
         .from("gp_wallets")
-        .select("id, balance, debt_balance, total_withdrawn")
+        .select("id, balance, debt_balance, total_withdrawn, currency")
         .eq("gp_id", gpProfile.id)
         .single();
 
@@ -69,6 +75,9 @@ Deno.serve(async (req) => {
           status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+
+      const walletCurrency = wallet.currency || "XOF";
+      const cLabel = currencyLabel(walletCurrency);
 
       // Block withdrawal if critical debt
       if (wallet.debt_balance > 0 && wallet.debt_balance >= wallet.balance) {
@@ -82,7 +91,7 @@ Deno.serve(async (req) => {
       // Check withdrawal limit
       const limit = gpProfile.withdrawal_limit || 300000;
       if (amount > limit) {
-        return new Response(JSON.stringify({ error: `Limite de retrait : ${limit.toLocaleString()} FCFA` }), {
+        return new Response(JSON.stringify({ error: `Limite de retrait : ${limit.toLocaleString()} ${cLabel}` }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -105,10 +114,10 @@ Deno.serve(async (req) => {
         type: "withdrawal",
         gp_id: gpProfile.id,
         amount_fcfa: amount,
-        currency_display: "XOF",
+        currency_display: walletCurrency,
         amount_display: amount,
         status: "completed",
-        description: `Retrait ${method || "mobile_money"} — ${amount.toLocaleString()} FCFA`,
+        description: `Retrait ${method || "mobile_money"} — ${amount.toLocaleString()} ${cLabel}`,
         reference: phone_number || null,
       });
 
@@ -116,13 +125,14 @@ Deno.serve(async (req) => {
       await supabase.from("notifications").insert({
         user_id: userId,
         title: "💸 Retrait effectué",
-        message: `${amount.toLocaleString()} FCFA retirés via ${method || "mobile_money"}`,
+        message: `${amount.toLocaleString()} ${cLabel} retirés via ${method || "mobile_money"}`,
         type: "wallet",
       });
 
       return new Response(JSON.stringify({
         success: true,
         amount,
+        currency: walletCurrency,
         new_balance: wallet.balance - amount,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -132,7 +142,7 @@ Deno.serve(async (req) => {
       // Client withdrawal
       const { data: cw } = await supabase
         .from("client_wallets")
-        .select("id, available_balance")
+        .select("id, available_balance, currency")
         .eq("user_id", userId)
         .maybeSingle();
 
@@ -142,6 +152,9 @@ Deno.serve(async (req) => {
         });
       }
 
+      const clientCurrency = cw.currency || "XOF";
+      const cLabel = currencyLabel(clientCurrency);
+
       await supabase.from("client_wallets").update({
         available_balance: cw.available_balance - amount,
         updated_at: new Date().toISOString(),
@@ -150,16 +163,25 @@ Deno.serve(async (req) => {
       await supabase.from("konnekt_ledger").insert({
         type: "withdrawal",
         amount_fcfa: amount,
-        currency_display: "XOF",
+        currency_display: clientCurrency,
         amount_display: amount,
         status: "completed",
-        description: `Retrait client ${method || "mobile_money"} — ${amount.toLocaleString()} FCFA`,
+        description: `Retrait client ${method || "mobile_money"} — ${amount.toLocaleString()} ${cLabel}`,
         reference: phone_number || null,
+      });
+
+      // Notify client
+      await supabase.from("notifications").insert({
+        user_id: userId,
+        title: "💸 Retrait effectué",
+        message: `${amount.toLocaleString()} ${cLabel} retirés via ${method || "mobile_money"}`,
+        type: "wallet",
       });
 
       return new Response(JSON.stringify({
         success: true,
         amount,
+        currency: clientCurrency,
         new_balance: cw.available_balance - amount,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
