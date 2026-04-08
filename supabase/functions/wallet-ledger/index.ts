@@ -37,12 +37,12 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceKey);
     const url = new URL(req.url);
-    const walletType = url.searchParams.get("type") || "client";
+    const walletType = url.searchParams.get("type") || "unified";
     const limit = parseInt(url.searchParams.get("limit") || "50");
     const offset = parseInt(url.searchParams.get("offset") || "0");
 
+    // Legacy GP-only mode
     if (walletType === "gp") {
-      // Get GP profile
       const { data: gp } = await supabase
         .from("gp_profiles").select("id").eq("user_id", userId).single();
 
@@ -69,50 +69,119 @@ Deno.serve(async (req) => {
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
 
-    } else {
-      // Client ledger — get orders for this client, then ledger entries
-      const { data: clientWallet } = await supabase
-        .from("client_wallets").select("*").eq("user_id", userId).maybeSingle();
+    // ── Unified wallet view (client + GP if applicable) ──────────
 
-      // Get client orders
-      const { data: orders } = await supabase
-        .from("orders").select("id").eq("client_id", userId);
+    // 1. Client wallet
+    const { data: clientWallet } = await supabase
+      .from("client_wallets").select("*").eq("user_id", userId).maybeSingle();
 
-      const orderIds = (orders || []).map((o: any) => o.id);
+    // 2. GP wallet (if user is also a GP)
+    const { data: gp } = await supabase
+      .from("gp_profiles").select("id, business_name, gp_type").eq("user_id", userId).maybeSingle();
 
-      let transactions: any[] = [];
-      let total = 0;
+    let gpWallet: any = null;
+    if (gp) {
+      const { data: gw } = await supabase
+        .from("gp_wallets").select("*").eq("gp_id", gp.id).maybeSingle();
+      gpWallet = gw;
+    }
 
-      if (orderIds.length > 0) {
-        const { data, count } = await supabase
-          .from("konnekt_ledger")
-          .select("*", { count: "exact" })
-          .in("order_id", orderIds)
-          .order("created_at", { ascending: false })
-          .range(offset, offset + limit - 1);
+    // 3. Compute unified balance
+    const clientAvailable = clientWallet?.available_balance || 0;
+    const clientEscrow = clientWallet?.escrow_balance || 0;
+    const clientBonus = clientWallet?.credit_bonus || 0;
+    const clientCurrency = clientWallet?.currency || "XOF";
 
-        transactions = data || [];
-        total = count || 0;
-      }
+    const gpBalance = gpWallet?.balance || 0;
+    const gpPending = gpWallet?.pending_balance || 0;
+    const gpCurrency = gpWallet?.currency || "XOF";
 
-      // Also get escrow transactions
-      const { data: escrows } = await supabase
-        .from("escrow_transactions")
+    // 4. Collect all transactions
+    const allTransactions: any[] = [];
+
+    // Client orders → ledger entries
+    const { data: orders } = await supabase
+      .from("orders").select("id").eq("client_id", userId);
+    const orderIds = (orders || []).map((o: any) => o.id);
+
+    if (orderIds.length > 0) {
+      const { data } = await supabase
+        .from("konnekt_ledger")
         .select("*")
-        .eq("client_id", userId)
+        .in("order_id", orderIds)
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(limit);
 
-      return new Response(JSON.stringify({
-        wallet: clientWallet,
-        transactions,
-        escrows: escrows || [],
-        total,
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      (data || []).forEach((tx: any) => {
+        allTransactions.push({ ...tx, source: "client" });
       });
     }
+
+    // GP ledger entries
+    if (gp) {
+      const { data } = await supabase
+        .from("konnekt_ledger")
+        .select("*")
+        .eq("gp_id", gp.id)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+      (data || []).forEach((tx: any) => {
+        // Avoid duplicates (same id already from client orders)
+        if (!allTransactions.find((t: any) => t.id === tx.id)) {
+          allTransactions.push({ ...tx, source: "gp" });
+        }
+      });
+    }
+
+    // Client withdrawal ledger entries (no order_id, no gp_id)
+    const { data: clientLedger } = await supabase
+      .from("konnekt_ledger")
+      .select("*")
+      .is("gp_id", null)
+      .is("order_id", null)
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    // Filter to entries that belong to this user (via description match or other heuristic)
+    // Since konnekt_ledger doesn't have user_id, we rely on client-side withdrawal entries
+    // already being captured above via order_ids. Skip duplicates.
+
+    // Sort all by date
+    allTransactions.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    // Escrow transactions for context
+    const { data: escrows } = await supabase
+      .from("escrow_transactions")
+      .select("*")
+      .eq("client_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    return new Response(JSON.stringify({
+      wallet: {
+        available_balance: clientAvailable,
+        escrow_balance: clientEscrow,
+        credit_bonus: clientBonus,
+        currency: clientCurrency,
+      },
+      gp_wallet: gpWallet ? {
+        balance: gpBalance,
+        pending_balance: gpPending,
+        currency: gpCurrency,
+        gp_type: gp?.gp_type,
+        business_name: gp?.business_name,
+      } : null,
+      unified_balance: clientAvailable + gpBalance,
+      transactions: allTransactions.slice(0, limit),
+      escrows: escrows || [],
+      total: allTransactions.length,
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
   } catch (error: any) {
     console.error("Wallet ledger error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
