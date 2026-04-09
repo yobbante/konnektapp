@@ -83,7 +83,7 @@ export function AppHeader({
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         className={cn(
-          "z-40",
+          "z-50",
           isKeyboardOpen ? "fixed inset-x-0" : "sticky top-0",
           headerStyles[variant]
         )}
@@ -92,7 +92,9 @@ export function AppHeader({
           paddingTop: 'calc(6px + env(safe-area-inset-top, 0px))',
           paddingBottom: '6px',
           paddingLeft: 'calc(12px + env(safe-area-inset-left, 0px))',
-          paddingRight: 'calc(12px + env(safe-area-inset-right, 0px))'
+          paddingRight: 'calc(12px + env(safe-area-inset-right, 0px))',
+          willChange: isKeyboardOpen ? 'transform' : undefined,
+          transform: 'translateZ(0)',
         }}
       >
         <div className="flex items-center justify-between h-10">

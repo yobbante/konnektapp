@@ -982,7 +982,7 @@ function CreateVoyageDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" onKeyDown={(e) => { if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "TEXTAREA") e.preventDefault(); }}>
           {/* Navette picker for subscribers */}
           {isPremiumOrPro && navettes.length > 0 && (
             <div>
