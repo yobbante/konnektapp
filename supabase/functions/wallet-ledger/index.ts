@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
 
     // 2. GP wallet (if user is also a GP)
     const { data: gp } = await supabase
-      .from("gp_profiles").select("id, business_name, gp_type").eq("user_id", userId).maybeSingle();
+      .from("gp_profiles").select("id, business_name, gp_type, default_currency").eq("user_id", userId).maybeSingle();
 
     let gpWallet: any = null;
     if (gp) {
@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
       gpWallet = gw;
     }
 
-    // 3. Compute unified balance
+    // 3. Compute unified balance — use gp_profiles.default_currency as source of truth
     const clientAvailable = clientWallet?.available_balance || 0;
     const clientEscrow = clientWallet?.escrow_balance || 0;
     const clientBonus = clientWallet?.credit_bonus || 0;
@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
 
     const gpBalance = gpWallet?.balance || 0;
     const gpPending = gpWallet?.pending_balance || 0;
-    const gpCurrency = gpWallet?.currency || "XOF";
+    const gpCurrency = gp?.default_currency || gpWallet?.currency || "XOF";
 
     // 4. Collect all transactions
     const allTransactions: any[] = [];

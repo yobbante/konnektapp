@@ -702,6 +702,7 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
                       type="text"
                       value={flightNumber}
                       onChange={(e) => setFlightNumber(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
                       placeholder="Ex: AF718"
                       className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
                     />
