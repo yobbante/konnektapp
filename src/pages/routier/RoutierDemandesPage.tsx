@@ -111,13 +111,35 @@ export default function RoutierDemandesPage() {
   const handleRefuseConfirm = async (reason: RefusalReason, notes?: string) => {
     if (!refusingOrderId) return;
     try {
-      await supabase.from("orders").update({ status: "cancelled" }).eq("id", refusingOrderId);
-      toast({ title: "Demande refusée" });
+      const refusalReason = notes ? `${reason} — ${notes}` : reason;
+      const { data, error } = await supabase.functions.invoke("cancel-order", {
+        body: {
+          order_id: refusingOrderId,
+          actor_type: "gp",
+          reason: `Mission refusée: ${refusalReason}`,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: "Demande refusée",
+        description: data?.refunded_amount > 0
+          ? "Annulation et remboursement effectués."
+          : undefined,
+      });
       setRefusalDialogOpen(false);
       setRefusingOrderId(null);
       setExpandedId(null);
       loadData();
-    } catch { toast({ title: "Erreur", variant: "destructive" }); }
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error?.message || "Impossible de refuser la demande",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) return <TransportPageLoader message="Chargement..." vehicle="truck" />;

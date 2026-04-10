@@ -101,35 +101,24 @@ export function RecentHistory({ orders, onViewAll, onRefresh }: RecentHistoryPro
     if (!selectedOrder) return;
     setLoading(true);
     
-    console.log("=== RecentHistory handleRefuse ===");
-    console.log("Order:", selectedOrder.order_number);
-    console.log("Target status constant:", ORDER_STATUS.cancelled);
-    
     try {
-      // CRITICAL: Validate enum value before DB operation
-      const validStatus = assertValidOrderStatus(ORDER_STATUS.cancelled);
-      console.log("Validated status:", validStatus);
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Non authentifié");
-
-      const { error } = await supabase
-        .from("orders")
-        .update({ status: validStatus })
-        .eq("id", selectedOrder.id);
-
-      if (error) throw error;
-
-      // Add history
-      await supabase.from("order_status_history").insert({
-        order_id: selectedOrder.id,
-        status: validStatus,
-        changed_by: user.id,
-        changed_by_type: "gp",
-        notes: "Refusée par le GP",
+      const { data, error } = await supabase.functions.invoke("cancel-order", {
+        body: {
+          order_id: selectedOrder.id,
+          actor_type: "gp",
+          reason: "Refusée par le GP",
+        },
       });
 
-      toast({ title: "Mission refusée", description: `Commande ${selectedOrder.order_number} refusée` });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+ 
+      toast({
+        title: "Mission refusée",
+        description: data?.refunded_amount > 0
+          ? `Commande ${selectedOrder.order_number} annulée et remboursée`
+          : `Commande ${selectedOrder.order_number} refusée`,
+      });
       onRefresh?.();
     } catch (error: any) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
