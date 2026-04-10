@@ -105,13 +105,31 @@ export default function GPDemandesPage() {
 
   const handleRefuse = async (orderId: string) => {
     try {
-      const { error } = await supabase.from("orders").update({ status: "cancelled" }).eq("id", orderId);
+      const { data, error } = await supabase.functions.invoke("cancel-order", {
+        body: {
+          order_id: orderId,
+          actor_type: "gp",
+          reason: "Demande refusée par le transporteur",
+        },
+      });
+
       if (error) throw error;
-      toast({ title: "Demande refusée", description: "Le client sera notifié" });
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: "Demande refusée",
+        description: data?.refunded_amount > 0
+          ? "Commande annulée et remboursement lancé."
+          : "Le client sera notifié.",
+      });
       setExpandedId(null);
       loadOrders();
-    } catch {
-      toast({ title: "Erreur", description: "Impossible de refuser", variant: "destructive" });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error?.message || "Impossible de refuser",
+        variant: "destructive",
+      });
     }
   };
 

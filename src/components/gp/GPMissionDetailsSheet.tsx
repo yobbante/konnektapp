@@ -246,41 +246,32 @@ export function GPMissionDetailsSheet({
     setActionLoading("refuse");
     
     try {
-      const { error } = await supabase
-        .from("orders")
-        .update({ status: "cancelled" })
-        .eq("id", order.id);
+      const { data, error } = await supabase.functions.invoke("cancel-order", {
+        body: {
+          order_id: order.id,
+          actor_type: "gp",
+          reason: "Commande refusée par le transporteur",
+        },
+      });
 
       if (error) throw error;
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from("order_status_history").insert({
-          order_id: order.id,
-          status: "cancelled",
-          changed_by: user.id,
-          changed_by_type: "gp",
-          notes: "Commande refusée par le transporteur",
-        });
-
-        await supabase.from("notifications").insert({
-          user_id: order.client_id,
-          type: "order_update",
-          title: "Commande refusee",
-          message: `Votre commande ${order.order_number} a été refusée`,
-          related_type: "order",
-          related_id: order.id,
-        });
-      }
+      if (data?.error) throw new Error(data.error);
 
       toast({
         title: "Commande refusée",
+        description: data?.refunded_amount > 0
+          ? "Remboursement du client lancé."
+          : "Le client a été notifié.",
       });
 
       onRefuse?.();
       onClose();
-    } catch (error) {
-      toast({ title: "Erreur", variant: "destructive" });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error?.message || "Impossible de refuser la commande",
+        variant: "destructive",
+      });
     } finally {
       setActionLoading(null);
     }

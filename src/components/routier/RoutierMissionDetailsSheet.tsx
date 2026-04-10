@@ -167,30 +167,32 @@ export function RoutierMissionDetailsSheet({
     setActionLoading("refuse");
     
     try {
-      const { error } = await supabase
-        .from("orders")
-        .update({ status: "cancelled" })
-        .eq("id", mission.id);
+      const { data, error } = await supabase.functions.invoke("cancel-order", {
+        body: {
+          order_id: mission.id,
+          actor_type: "gp",
+          reason: `Mission refusée: ${reason}`,
+        },
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from("order_status_history").insert({
-          order_id: mission.id,
-          status: "cancelled",
-          changed_by: user.id,
-          changed_by_type: "gp",
-          notes: `Mission refusée: ${reason}`,
-        });
-      }
-
-      toast({ title: "Mission refusée" });
+      toast({
+        title: "Mission refusée",
+        description: data?.refunded_amount > 0
+          ? "Annulation et remboursement effectués."
+          : undefined,
+      });
       setShowRefusalDialog(false);
       onRefuse?.();
       onClose();
-    } catch (error) {
-      toast({ title: "Erreur", variant: "destructive" });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error?.message || "Impossible de refuser la mission",
+        variant: "destructive",
+      });
     } finally {
       setActionLoading(null);
     }

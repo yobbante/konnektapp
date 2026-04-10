@@ -151,22 +151,28 @@ export function BagagesDashboardSection({
 
   const handleRefuseOrder = async (orderId: string) => {
     try {
-      const { error } = await supabase
-        .from("orders")
-        .update({ status: "cancelled" })
-        .eq("id", orderId);
+      const { data, error } = await supabase.functions.invoke("cancel-order", {
+        body: {
+          order_id: orderId,
+          actor_type: "gp",
+          reason: "Bagage refusé par le transporteur",
+        },
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast({
         title: "Bagage refusé",
-        description: "Le client sera notifié",
+        description: data?.refunded_amount > 0
+          ? "Commande annulée et remboursement lancé."
+          : "Le client sera notifié",
       });
       onRefresh();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Erreur",
-        description: "Impossible de refuser le bagage",
+        description: error?.message || "Impossible de refuser le bagage",
         variant: "destructive",
       });
     }

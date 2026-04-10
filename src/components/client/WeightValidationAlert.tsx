@@ -232,51 +232,23 @@ export function WeightValidationAlert({
     if (!selectedValidation) return;
     setProcessing(true);
     try {
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
-
-      // PRV: Cancel order immediately
-      const {
-        error: orderError
-      } = await supabase.from("orders").update({
-        status: "cancelled",
-        weight_tier_applied: null
-      }).eq("id", selectedValidation.order_id);
-      if (orderError) throw orderError;
-
-      // Log refusal
-      await supabase.from("order_status_history").insert({
-        order_id: selectedValidation.order_id,
-        status: "cancelled",
-        changed_by: user?.id || "",
-        changed_by_type: "client",
-        notes: `CLIENT REFUSE la modification de poids. Commande annulee. Poids declare: ${selectedValidation.declared_weight} kg, Poids mesure: ${selectedValidation.actual_weight} kg. Le colis ne doit PAS etre pris en charge.`
+      const { data, error } = await supabase.functions.invoke("cancel-order", {
+        body: {
+          order_id: selectedValidation.order_id,
+          actor_type: "client",
+          clear_weight_tier: true,
+          reason: `Client refuse la modification de poids (${selectedValidation.declared_weight}kg → ${selectedValidation.actual_weight}kg). Commande annulée.`,
+        },
       });
 
-      // CRITICAL: Notify GP with blocking message
-      const {
-        data: gpProfile
-      } = await supabase.from("gp_profiles").select("user_id").eq("id", selectedValidation.gp_id).single();
-      if (gpProfile?.user_id) {
-        await supabase.from("notifications").insert({
-          user_id: gpProfile.user_id,
-          type: "weight_validation_refused",
-           title: "ENVOI ANNULE - Client a refuse",
-           message: `Le client a refuse la modification de poids pour ${selectedValidation.order_number}. NE CHARGEZ PAS CE COLIS. Konnekt Logistique viendra le recuperer chez vous.`,
-          related_type: "order",
-          related_id: selectedValidation.order_id
-        });
-      }
-
-      // TODO: Handle refund if payment was made
-      // This would trigger escrow refund logic
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast({
-        title: "Envoi annule",
-        description: "Vous serez remboursé intégralement. Konnekt Logistique vous ramènera votre colis.",
+        title: "Envoi annulé",
+        description: data?.refunded_amount > 0
+          ? "Remboursement intégral lancé sur votre wallet."
+          : "Commande annulée avec succès.",
         variant: "destructive"
       });
       setSelectedValidation(null);
