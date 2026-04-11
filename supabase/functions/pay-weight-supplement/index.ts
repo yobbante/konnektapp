@@ -122,6 +122,26 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Idempotency guard: check if a supplement was already paid for this order
+    const { data: existingLedger } = await supabase
+      .from("konnekt_ledger")
+      .select("id")
+      .eq("order_id", orderId)
+      .eq("type", "adjustment_payment")
+      .eq("status", "completed")
+      .limit(1);
+
+    if (existingLedger && existingLedger.length > 0) {
+      return new Response(JSON.stringify({
+        success: true,
+        already_paid: true,
+        order,
+        message: "Supplément déjà payé",
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const now = new Date().toISOString();
     const orderCurrency = order.currency || "XOF";
 
