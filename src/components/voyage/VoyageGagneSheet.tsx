@@ -483,8 +483,8 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[95vh] flex flex-col">
+    <Drawer open={open} onOpenChange={onOpenChange} repositionInputs={false}>
+      <DrawerContent className="max-h-[95vh] flex flex-col" onInteractOutside={(e) => e.preventDefault()}>
         <DrawerHeader className="pb-2 flex-shrink-0">
           <DrawerTitle className="flex items-center gap-2 text-base">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
