@@ -440,8 +440,35 @@ export function VoyageGagneSheet({ open, onOpenChange, skipIntro = false }: Voya
 
       if (offerError) throw offerError;
 
-      // Persist data for next time
-      persistData();
+      // Swap origin↔dest for next trip (return journey pre-fill)
+      const swappedData: SavedVoyageData = {
+        originCity: destCity,
+        originCountry: destCountry,
+        destCity: originCity,
+        destCountry: originCountry,
+        depositPhone: receptionPhone,
+        depositAddress: receptionAddress,
+        receptionPhone: depositPhone,
+        receptionAddress: depositAddress,
+        pricePerKg,
+        baggageCount,
+        selectedRestrictions,
+        flatRatePrices: Object.fromEntries(
+          flatRateItems.map(i => [i.id, { price: i.price, isActive: i.isActive }])
+        ),
+        suitcasePrice,
+      };
+      savePersistentData(swappedData);
+
+      // Update local state for immediate re-open
+      setOriginCity(destCity);
+      setOriginCountry(destCountry);
+      setDestCity(originCity);
+      setDestCountry(originCountry);
+      setDepositPhone(receptionPhone);
+      setDepositAddress(receptionAddress);
+      setReceptionPhone(depositPhone);
+      setReceptionAddress(depositAddress);
 
       toast({
         title: "Trajet publié !",
