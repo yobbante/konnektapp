@@ -875,7 +875,7 @@ export function ClientAppHome({
                   </button>
                 </div> :
 
-            <EmptyOffers modeConfig={modeConfig} onAction={() => setActiveTab("bagages")} />;
+            <EmptyOffers modeConfig={modeConfig} onAction={goToOffres} />;
 
           })() :
           filteredOffers.length > 0 ?
@@ -888,7 +888,7 @@ export function ClientAppHome({
                 </button>
             </div> :
 
-          <EmptyOffers modeConfig={modeConfig} onAction={() => setActiveTab("all")} />
+          <EmptyOffers modeConfig={modeConfig} onAction={goToOffres} />
           }
         </div>
 
