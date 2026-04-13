@@ -128,7 +128,7 @@ export function CountrySelectionScreen({ onSelect }: CountrySelectionScreenProps
       </div>
 
       {/* Bottom actions */}
-      <div className="px-5 py-4 border-t border-border bg-background space-y-3">
+      <div className="px-5 py-4 border-t border-border bg-background space-y-3 mt-auto">
         <Button
           className="w-full h-12 rounded-xl text-base"
           disabled={!selectedCity}
