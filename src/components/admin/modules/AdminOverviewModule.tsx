@@ -63,7 +63,7 @@ export function AdminOverviewModule({ stats, onNavigate }: Props) {
       title: "👥 Utilisateurs & Transporteurs",
       items: [
         { label: "Clients", value: stats.totalClients, icon: Users, color: "text-pink-500", bg: "bg-pink-500/10", module: "clients" },
-        { label: "GP Actifs", value: stats.gpActifs, icon: Users, color: "text-violet-500", bg: "bg-violet-500/10", module: "gp" },
+        { label: "Transporteurs", value: stats.gpActifs, icon: Users, color: "text-violet-500", bg: "bg-violet-500/10", module: "transporteurs" },
         { label: "En attente", value: stats.gpPending, icon: Users, color: "text-amber-500", bg: "bg-amber-500/10", module: "kyc", alert: stats.gpPending > 0 },
         { label: "Note moyenne", value: stats.avgRating.toFixed(1), icon: Star, color: "text-amber-500", bg: "bg-amber-500/10", module: "reputation" },
       ],
@@ -71,10 +71,10 @@ export function AdminOverviewModule({ stats, onNavigate }: Props) {
     {
       title: "Demandes & Support",
       items: [
-        { label: "Demandes clients", value: stats.totalCustomRequests, icon: FileText, color: "text-purple-500", bg: "bg-purple-500/10", module: "demandes" },
+        { label: "Demandes GP", value: stats.totalCustomRequests, icon: FileText, color: "text-purple-500", bg: "bg-purple-500/10", module: "demandes" },
+        { label: "Fret", value: stats.totalFreightRequests, icon: Truck, color: "text-teal-500", bg: "bg-teal-500/10", module: "demandes" },
+        { label: "Missions routier", value: stats.totalRoutierMissions, icon: Truck, color: "text-orange-500", bg: "bg-orange-500/10", module: "demandes" },
         { label: "Tickets support", value: stats.openSupportTickets, icon: HeadphonesIcon, color: "text-blue-500", bg: "bg-blue-500/10", module: "support", alert: stats.openSupportTickets > 0 },
-        { label: "Score KTP moyen", value: stats.avgKtpScore, icon: Award, color: "text-emerald-500", bg: "bg-emerald-500/10", module: "reputation" },
-        { label: "Sanctions actives", value: stats.activeSanctions, icon: Shield, color: "text-red-500", bg: "bg-red-500/10", module: "reputation", alert: stats.activeSanctions > 0 },
       ],
     },
   ];

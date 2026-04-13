@@ -14,6 +14,7 @@ import { UnifiedAdminLayout, type AdminModule } from "@/components/layout/Unifie
 import { AdminOverviewModule, type AdminGlobalStats } from "@/components/admin/modules/AdminOverviewModule";
 import { AdminColisModule } from "@/components/admin/modules/AdminColisModule";
 import { AdminGPModule } from "@/components/admin/modules/AdminGPModule";
+import { AdminTransporteursModule } from "@/components/admin/modules/AdminTransporteursModule";
 import { AdminClientsModule } from "@/components/admin/modules/AdminClientsModule";
 import { AdminFinanceModule } from "@/components/admin/modules/AdminFinanceModule";
 import { AdminDemandesModule } from "@/components/admin/modules/AdminDemandesModule";
@@ -69,7 +70,7 @@ export default function AdminDashboard() {
       today.setHours(0, 0, 0, 0);
       const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
-      const [gpsRes, ordersRes, manualRes, escrowRes, disputesRes, profilesRes, customReqRes, ticketsRes, sanctionsRes, ktpRes] = await Promise.all([
+      const [gpsRes, ordersRes, manualRes, escrowRes, disputesRes, profilesRes, customReqRes, freightReqRes, routierRes, ticketsRes, sanctionsRes, ktpRes, mobilityRes, mobilityBookingsRes] = await Promise.all([
         supabase.from("gp_profiles").select("*").order("created_at", { ascending: false }),
         supabase.from("orders").select("*, gp_profile:gp_profiles(business_name, phone)").order("created_at", { ascending: false }).limit(500),
         supabase.from("manual_parcels").select("*, gp:gp_profiles(business_name)").order("created_at", { ascending: false }).limit(200),
@@ -77,9 +78,13 @@ export default function AdminDashboard() {
         supabase.from("disputes").select("id, status").in("status", ["open", "under_review", "awaiting_response"]),
         supabase.from("profiles").select("id, is_gp", { count: "exact", head: true }).eq("is_gp", false),
         supabase.from("custom_requests").select("id, status", { count: "exact", head: true }),
+        supabase.from("freight_requests").select("id, status", { count: "exact", head: true }),
+        supabase.from("routier_missions").select("id, status", { count: "exact", head: true }),
         supabase.from("support_tickets").select("id, status").eq("status", "open"),
         supabase.from("sanctions").select("id").eq("is_active", true),
         supabase.from("ktp_status").select("trust_score"),
+        supabase.from("mobility_profiles").select("id, status", { count: "exact", head: true }),
+        supabase.from("mobility_bookings").select("id, status", { count: "exact", head: true }),
       ]);
 
       const allGps = gpsRes.data || [];
@@ -125,8 +130,8 @@ export default function AdminDashboard() {
         anomalies: 0,
         totalClients: profilesRes.count || 0,
         totalCustomRequests: customReqRes.count || 0,
-        totalFreightRequests: 0,
-        totalRoutierMissions: 0,
+        totalFreightRequests: freightReqRes.count || 0,
+        totalRoutierMissions: routierRes.count || 0,
         openSupportTickets: (ticketsRes.data || []).length,
         avgKtpScore: avgKtp,
         activeSanctions: (sanctionsRes.data || []).length,
@@ -191,7 +196,9 @@ export default function AdminDashboard() {
           onUpdateStatus={updateGPStatus}
         />
       )}
-      
+      {activeModule === "transporteurs" && (
+        <AdminTransporteursModule searchQuery={searchQuery} />
+      )}
       {activeModule === "clients" && <AdminClientsModule />}
       {activeModule === "finance" && (
         <AdminFinanceModule
