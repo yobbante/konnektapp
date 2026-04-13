@@ -191,7 +191,7 @@ export default function AdminDashboard() {
           onUpdateStatus={updateGPStatus}
         />
       )}
-      {activeModule === "gp" && null /* transporteurs unifié dans GP en mode GP_ONLY */}
+      
       {activeModule === "clients" && <AdminClientsModule />}
       {activeModule === "finance" && (
         <AdminFinanceModule
