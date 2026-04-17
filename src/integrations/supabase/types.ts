@@ -437,6 +437,7 @@ export type Database = {
         Row: {
           accepted_offer_id: string | null
           additional_services: string[] | null
+          app_source: Database["public"]["Enums"]["app_source"]
           budget_max: number | null
           budget_min: number | null
           client_id: string
@@ -463,6 +464,7 @@ export type Database = {
         Insert: {
           accepted_offer_id?: string | null
           additional_services?: string[] | null
+          app_source?: Database["public"]["Enums"]["app_source"]
           budget_max?: number | null
           budget_min?: number | null
           client_id: string
@@ -489,6 +491,7 @@ export type Database = {
         Update: {
           accepted_offer_id?: string | null
           additional_services?: string[] | null
+          app_source?: Database["public"]["Enums"]["app_source"]
           budget_max?: number | null
           budget_min?: number | null
           client_id?: string
@@ -740,6 +743,7 @@ export type Database = {
       escrow_transactions: {
         Row: {
           amount: number
+          app_source: Database["public"]["Enums"]["app_source"]
           client_id: string
           commission_amount: number
           created_at: string
@@ -761,6 +765,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          app_source?: Database["public"]["Enums"]["app_source"]
           client_id: string
           commission_amount?: number
           created_at?: string
@@ -782,6 +787,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          app_source?: Database["public"]["Enums"]["app_source"]
           client_id?: string
           commission_amount?: number
           created_at?: string
@@ -975,6 +981,7 @@ export type Database = {
       freight_requests: {
         Row: {
           accepted_proposal_id: string | null
+          app_source: Database["public"]["Enums"]["app_source"]
           client_id: string
           created_at: string
           currency: string | null
@@ -1014,6 +1021,7 @@ export type Database = {
         }
         Insert: {
           accepted_proposal_id?: string | null
+          app_source?: Database["public"]["Enums"]["app_source"]
           client_id: string
           created_at?: string
           currency?: string | null
@@ -1053,6 +1061,7 @@ export type Database = {
         }
         Update: {
           accepted_proposal_id?: string | null
+          app_source?: Database["public"]["Enums"]["app_source"]
           client_id?: string
           created_at?: string
           currency?: string | null
@@ -3292,6 +3301,7 @@ export type Database = {
       }
       mobility_bookings: {
         Row: {
+          app_source: Database["public"]["Enums"]["app_source"]
           boarding_code: string | null
           booking_number: string
           client_id: string
@@ -3318,6 +3328,7 @@ export type Database = {
           vehicle_id: string | null
         }
         Insert: {
+          app_source?: Database["public"]["Enums"]["app_source"]
           boarding_code?: string | null
           booking_number: string
           client_id: string
@@ -3344,6 +3355,7 @@ export type Database = {
           vehicle_id?: string | null
         }
         Update: {
+          app_source?: Database["public"]["Enums"]["app_source"]
           boarding_code?: string | null
           booking_number?: string
           client_id?: string
@@ -4322,6 +4334,7 @@ export type Database = {
         Row: {
           actual_delivery_date: string | null
           adjustment_amount: number | null
+          app_source: Database["public"]["Enums"]["app_source"]
           client_disclaimer_accepted_at: string | null
           client_id: string
           commission_amount: number
@@ -4379,6 +4392,7 @@ export type Database = {
         Insert: {
           actual_delivery_date?: string | null
           adjustment_amount?: number | null
+          app_source?: Database["public"]["Enums"]["app_source"]
           client_disclaimer_accepted_at?: string | null
           client_id: string
           commission_amount?: number
@@ -4436,6 +4450,7 @@ export type Database = {
         Update: {
           actual_delivery_date?: string | null
           adjustment_amount?: number | null
+          app_source?: Database["public"]["Enums"]["app_source"]
           client_disclaimer_accepted_at?: string | null
           client_id?: string
           commission_amount?: number
@@ -4615,6 +4630,7 @@ export type Database = {
       profiles: {
         Row: {
           address: string | null
+          app_source: Database["public"]["Enums"]["app_source"]
           avatar_url: string | null
           city: string | null
           country_code: string | null
@@ -4636,6 +4652,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          app_source?: Database["public"]["Enums"]["app_source"]
           avatar_url?: string | null
           city?: string | null
           country_code?: string | null
@@ -4657,6 +4674,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          app_source?: Database["public"]["Enums"]["app_source"]
           avatar_url?: string | null
           city?: string | null
           country_code?: string | null
@@ -5015,6 +5033,7 @@ export type Database = {
         Row: {
           accepted_negotiation_id: string | null
           accepted_order_id: string | null
+          app_source: Database["public"]["Enums"]["app_source"]
           client_budget: number | null
           client_id: string
           constraints: string[] | null
@@ -5052,6 +5071,7 @@ export type Database = {
         Insert: {
           accepted_negotiation_id?: string | null
           accepted_order_id?: string | null
+          app_source?: Database["public"]["Enums"]["app_source"]
           client_budget?: number | null
           client_id: string
           constraints?: string[] | null
@@ -5089,6 +5109,7 @@ export type Database = {
         Update: {
           accepted_negotiation_id?: string | null
           accepted_order_id?: string | null
+          app_source?: Database["public"]["Enums"]["app_source"]
           client_budget?: number | null
           client_id?: string
           constraints?: string[] | null
@@ -6462,6 +6483,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      calculate_price: {
+        Args: {
+          p_currency?: string
+          p_distance?: number
+          p_type: string
+          p_weight?: number
+        }
+        Returns: Json
+      }
       calculate_routier_price: {
         Args: {
           p_distance_km: number
@@ -6500,6 +6530,19 @@ export type Database = {
       create_default_weight_tiers: {
         Args: { p_currency?: string; p_gp_id: string }
         Returns: undefined
+      }
+      create_shipment: {
+        Args: {
+          p_app_source?: Database["public"]["Enums"]["app_source"]
+          p_description: string
+          p_destination_city: string
+          p_destination_country?: string
+          p_origin_city: string
+          p_origin_country?: string
+          p_shipment_type?: string
+          p_weight_estimate?: number
+        }
+        Returns: Json
       }
       create_transaction: {
         Args: {
@@ -6581,6 +6624,14 @@ export type Database = {
           sample_count: number
         }[]
       }
+      get_user_activity: {
+        Args: {
+          p_app_source?: Database["public"]["Enums"]["app_source"]
+          p_limit?: number
+          p_user_id?: string
+        }
+        Returns: Json
+      }
       has_admin_access: { Args: { _user_id: string }; Returns: boolean }
       has_permission: {
         Args: { _permission: string; _user_id: string }
@@ -6621,9 +6672,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_entity_status: {
+        Args: {
+          p_entity_id: string
+          p_entity_type: string
+          p_new_status: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user" | "agent_logistique"
+      app_source: "konnekt" | "yobbante" | "autre"
       dispute_category:
         | "delay_unjustified"
         | "partial_loss"
@@ -6848,6 +6908,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user", "agent_logistique"],
+      app_source: ["konnekt", "yobbante", "autre"],
       dispute_category: [
         "delay_unjustified",
         "partial_loss",
