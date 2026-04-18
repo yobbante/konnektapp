@@ -36,4 +36,7 @@ verify_jwt = false
 [functions.system-coherence-check]
 verify_jwt = false
 
+[functions.external-create-order]
+verify_jwt = false
+
 
