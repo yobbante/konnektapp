@@ -2,7 +2,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-app-source",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-app-source, x-yobbante-api-key",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -12,32 +13,42 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized: missing Bearer token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const yobbanteApiKey = Deno.env.get("YOBBANTE_API_KEY");
 
-    // Verify caller identity (must be a valid Konnekt user)
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: userData, error: userErr } = await userClient.auth.getUser(
-      authHeader.replace("Bearer ", "")
-    );
-    if (userErr || !userData?.user) {
-      return new Response(JSON.stringify({ error: "Unauthorized: invalid token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const partnerKey = req.headers.get("X-Yobbante-Api-Key") ?? req.headers.get("x-yobbante-api-key");
+    const authHeader = req.headers.get("Authorization");
+
+    let isPartnerCall = false;
+    let callerId: string | null = null;
+
+    if (partnerKey && yobbanteApiKey && partnerKey === yobbanteApiKey) {
+      isPartnerCall = true;
+    } else {
+      // Fallback: JWT auth
+      if (!authHeader?.startsWith("Bearer ")) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized: missing Bearer token or partner API key" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const userClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } },
       });
+      const { data: userData, error: userErr } = await userClient.auth.getUser(
+        authHeader.replace("Bearer ", "")
+      );
+      if (userErr || !userData?.user) {
+        return new Response(JSON.stringify({ error: "Unauthorized: invalid token" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      callerId = userData.user.id;
     }
-    const callerId = userData.user.id;
 
     const body = await req.json().catch(() => ({}));
     const {
@@ -60,29 +71,63 @@ Deno.serve(async (req) => {
       metadata,
     } = body || {};
 
-    // Required fields
-    if (!origin_city || !destination_city || !total_price) {
+    if (!origin_city || !destination_city) {
       return new Response(
         JSON.stringify({
           error: "MISSING_FIELDS",
-          required: ["origin_city", "destination_city", "total_price"],
+          required: ["origin_city", "destination_city"],
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // The order's client_id defaults to the caller (for trust); admins can override
     const supabase = createClient(supabaseUrl, serviceKey);
-    let effectiveClientId = client_id || callerId;
 
-    if (client_id && client_id !== callerId) {
-      // Only admins can impersonate another client_id
-      const { data: isAdmin } = await supabase.rpc("has_role", {
-        _user_id: callerId,
-        _role: "admin",
-      });
-      if (!isAdmin) {
-        effectiveClientId = callerId;
+    // Resolve client_id
+    let effectiveClientId: string | null = null;
+    if (isPartnerCall) {
+      // Partner call: use provided client_id or system user
+      if (client_id) {
+        effectiveClientId = client_id;
+      } else {
+        // Try to find/use a system user for Yobbanté external orders
+        const systemEmail = "system+yobbante@konnekt.local";
+        const { data: existing } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("email", systemEmail)
+          .maybeSingle();
+
+        if (existing?.user_id) {
+          effectiveClientId = existing.user_id;
+        } else {
+          // Create system user via admin API
+          const { data: created, error: createErr } = await supabase.auth.admin.createUser({
+            email: systemEmail,
+            email_confirm: true,
+            user_metadata: { full_name: "Yobbanté System", system: true },
+          });
+          if (createErr || !created?.user) {
+            console.error("[external-create-order] failed to create system user:", createErr);
+            return new Response(
+              JSON.stringify({ error: "SYSTEM_USER_CREATION_FAILED", details: createErr?.message }),
+              { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+          effectiveClientId = created.user.id;
+        }
+      }
+    } else {
+      // JWT call: default to caller, allow admin override
+      effectiveClientId = client_id || callerId;
+      if (client_id && client_id !== callerId) {
+        const { data: isAdmin } = await supabase.rpc("has_role", {
+          _user_id: callerId,
+          _role: "admin",
+        });
+        if (!isAdmin) {
+          effectiveClientId = callerId;
+        }
       }
     }
 
@@ -119,13 +164,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Optional: log external reference for traceability
     if (external_reference || metadata) {
       console.log("[external-create-order] external ref:", {
         order_id: order.id,
         app_source,
         external_reference,
         metadata,
+        partner_call: isPartnerCall,
       });
     }
 
@@ -139,6 +184,7 @@ Deno.serve(async (req) => {
         currency: order.currency,
         app_source: order.app_source,
         created_at: order.created_at,
+        external_reference: external_reference ?? null,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
