@@ -10,6 +10,7 @@ import {
 "lucide-react";
 import { RecipientTrackingCard } from "@/components/client/RecipientTrackingCard";
 import { KonnektCanvasCarousel } from "./KonnektCanvasCarousel";
+import { UpcomingDeparturesTicker } from "./UpcomingDeparturesTicker";
 import { WeightValidationAlert } from "@/components/client/WeightValidationAlert";
 import { supabase } from "@/integrations/supabase/client";
 import { WORLD_CITIES, FEATURED_CITIES } from "@/components/gp/SearchableCitySelect";
@@ -891,6 +892,9 @@ export function ClientAppHome({
           <EmptyOffers modeConfig={modeConfig} onAction={goToOffres} />
           }
         </div>
+
+        {/* ── LIVE DEPARTURES TICKER (toujours visible) ── */}
+        <UpcomingDeparturesTicker />
 
         {/* ── BOTTOM SECTIONS ── */}
         {activeTab === "all" ?
