@@ -894,7 +894,7 @@ export function ClientAppHome({
         </div>
 
         {/* ── LIVE DEPARTURES TICKER (toujours visible) ── */}
-        <UpcomingDeparturesTicker />
+        <UpcomingDeparturesTicker userCity={userCity} />
 
         {/* ── BOTTOM SECTIONS ── */}
         {activeTab === "all" ?
