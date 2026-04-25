@@ -256,6 +256,11 @@ export default function TransporteurBetaDashboard() {
         />
       </div>
 
+      {/* Mode test intégration Yobbanté */}
+      <section className="px-5 mt-6">
+        <TestModePanel />
+      </section>
+
       {/* Mes départs */}
       <section className="px-5 mt-8">
         <div className="flex items-center justify-between mb-4">
