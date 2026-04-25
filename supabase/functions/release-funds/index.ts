@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
     }
 
     // Prevent double release
-    if (order.payment_status === "released") {
+    if ((order as any).payment_status === "released") {
       return new Response(JSON.stringify({ error: "Already released" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
