@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, Pencil, Package, Truck, Sparkles, MessageCircle, CheckCircle2, Clock, Loader2 } from "lucide-react";
+import { Plus, Trash2, Pencil, Package, Truck, Sparkles, MessageCircle, CheckCircle2, Clock, Loader2, FlaskConical } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -198,9 +198,20 @@ export default function TransporteurBetaDashboard() {
   });
 
   const openWhatsApp = (op: Opportunity) => {
-    const msg = encodeURIComponent(
-      `Bonjour Konnekt, je suis intéressé par la demande ${op.request_number} (${op.origin_city} → ${op.destination_city}, ${op.weight_estimate || "?"} kg).`
-    );
+    const dateStr = op.pickup_date_from
+      ? format(new Date(op.pickup_date_from), "d MMM yyyy", { locale: fr })
+      : "dès que possible";
+    const lines = [
+      `Bonjour Konnekt,`,
+      `Je suis intéressé par la demande *${op.request_number}*.`,
+      ``,
+      `📍 Origine : ${op.origin_city}`,
+      `📍 Destination : ${op.destination_city}`,
+      `📅 Date : ${dateStr}`,
+      `⚖️ Poids : ${op.weight_estimate ? op.weight_estimate + " kg" : "à confirmer"}`,
+      `🔖 Référence : ${op.request_number}`,
+    ];
+    const msg = encodeURIComponent(lines.join("\n"));
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
   };
 
