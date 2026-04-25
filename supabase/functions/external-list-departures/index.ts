@@ -44,13 +44,19 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // ⚠️ BETA INTEGRATION: pas de filtre sur kyc/verified — un départ "active" est visible
+    // pour Yobbanté quel que soit le statut du transporteur. Seuls comptent :
+    //   - status = 'active'
+    //   - available_capacity > 0
+    //   - departure_date >= now (sauf override via from_date)
     let query = supabase
       .from("gp_offers")
       .select(
         `id, origin_city, origin_country, destination_city, destination_country,
          departure_date, arrival_date, available_capacity, total_capacity,
          price_per_kg, currency, transport_type, airline, flight_number,
-         min_weight, max_weight, baggage_types_accepted, explicit_restrictions`
+         min_weight, max_weight, baggage_types_accepted, explicit_restrictions,
+         created_at, updated_at`
       )
       .eq("status", "active")
       .gt("available_capacity", 0)
