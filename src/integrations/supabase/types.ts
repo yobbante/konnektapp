@@ -5921,6 +5921,61 @@ export type Database = {
           },
         ]
       }
+      transporter_interests: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          custom_request_id: string
+          gp_id: string
+          id: string
+          message: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          custom_request_id: string
+          gp_id: string
+          id?: string
+          message?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          custom_request_id?: string
+          gp_id?: string
+          id?: string
+          message?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transporter_interests_custom_request_id_fkey"
+            columns: ["custom_request_id"]
+            isOneToOne: false
+            referencedRelation: "custom_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transporter_interests_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transporter_interests_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transporter_reputation: {
         Row: {
           created_at: string

@@ -17,6 +17,7 @@ import { ThemeInitializer } from "@/components/ThemeInitializer";
 import { AppleNotificationContainer } from "@/components/ui/AppleNotification";
 import { SmartScrollTop } from "@/hooks/useSmartScrollTop";
 import Index from "./pages/Index";
+import TransporteurBetaDashboard from "./pages/transporteur/TransporteurBetaDashboard";
 import Offres from "./pages/Offres";
 import OfferDetail from "./pages/OfferDetail";
 import SmartBookingPage from "./pages/SmartBookingPage";
@@ -185,6 +186,7 @@ const App = () => (
                 PUBLIC ROUTES - Accessibles sans authentification
             ============================================ */}
             <Route path="/" element={<Index />} />
+            <Route path="/transporteur/beta" element={<TransporteurBetaDashboard />} />
             <Route path="/offres" element={<Navigate to="/freight-board" replace />} />
             <Route path="/offres/:id" element={<OfferDetail />} />
             <Route path="/freight-board" element={<FreightMarketplace />} />
