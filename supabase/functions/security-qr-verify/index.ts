@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
         reference_id: id.match(/^[a-f0-9-]{36}$/i) ? id : null,
         signature_valid: isValid,
         metadata: { prefix, timestamp, signed: true },
-      }).catch(() => {});
+      } as any).then(() => {}, () => {});
 
       if (!isValid) {
         await supabase.from("security_audit_log").insert({
@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
           actor_id: userId,
           details: { qr_type: qrType, id, reason: "invalid_hmac_signature" },
           severity: "critical",
-        }).catch(() => {});
+        } as any).then(() => {}, () => {});
 
         return new Response(
           JSON.stringify({ valid: false, signed: true, error: "QR signature invalide" }),
