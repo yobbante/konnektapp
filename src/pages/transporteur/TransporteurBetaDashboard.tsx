@@ -146,7 +146,7 @@ export default function TransporteurBetaDashboard() {
           .eq("id", payload.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("gp_offers").insert({
+        const insertPayload: any = {
           gp_id: gpId,
           origin_city: payload.origin_city,
           destination_city: payload.destination_city,
@@ -157,7 +157,8 @@ export default function TransporteurBetaDashboard() {
           currency: "XOF",
           transport_type: "bagages_international",
           status: "active",
-        });
+        };
+        const { error } = await (supabase.from("gp_offers") as any).insert(insertPayload);
         if (error) throw error;
       }
     },
