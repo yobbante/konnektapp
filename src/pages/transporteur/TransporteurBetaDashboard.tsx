@@ -497,3 +497,106 @@ function DepartureDialog({
     </Dialog>
   );
 }
+
+// ============================================================
+// Mode test : simule une demande client + appelle external-match-shipment
+// ============================================================
+function TestModePanel() {
+  const [origin, setOrigin] = useState("Dakar");
+  const [destination, setDestination] = useState("Paris");
+  const [weight, setWeight] = useState("15");
+  const [loading, setLoading] = useState(false);
+  const [matchResult, setMatchResult] = useState<any>(null);
+  const [createdRequest, setCreatedRequest] = useState<string | null>(null);
+
+  const runTest = async () => {
+    setLoading(true);
+    setMatchResult(null);
+    setCreatedRequest(null);
+    try {
+      // 1. Créer une demande client réelle (RPC sécurisée)
+      const { data: created, error: e1 } = await supabase.rpc("create_shipment", {
+        p_origin_city: origin,
+        p_destination_city: destination,
+        p_description: `[TEST] Simulation Yobbanté ${Date.now()}`,
+        p_weight_estimate: Number(weight),
+        p_shipment_type: "bagages_international",
+      });
+      if (e1) throw e1;
+      const reqNum = (created as any)?.request_number;
+      setCreatedRequest(reqNum || "créée");
+
+      // 2. Appel direct à l'edge function de matching (comme Yobbanté)
+      const { data: match, error: e2 } = await supabase.functions.invoke("external-match-shipment", {
+        body: {
+          origin_city: origin,
+          destination_city: destination,
+          weight_kg: Number(weight),
+          urgency: "normal",
+        },
+      });
+      if (e2) throw e2;
+      setMatchResult(match);
+      toast.success("Test terminé — réponse Yobbanté reçue");
+    } catch (err: any) {
+      toast.error(err.message || "Erreur test");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card className="bg-white/5 border-white/10 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <FlaskConical className="w-4 h-4 text-white/60" />
+        <h3 className="font-semibold">Mode test — Intégration Yobbanté</h3>
+      </div>
+      <p className="text-xs text-white/50 mb-3">
+        Crée une vraie demande client et vérifie que l'API renvoie 3 options (Rapide / Économique / Volume).
+      </p>
+      <div className="grid grid-cols-3 gap-2">
+        <Input value={origin} onChange={(e) => setOrigin(e.target.value)} placeholder="Origine" className="bg-white/5 border-white/10 text-white" />
+        <Input value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Destination" className="bg-white/5 border-white/10 text-white" />
+        <Input type="number" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="Poids" className="bg-white/5 border-white/10 text-white" />
+      </div>
+      <Button
+        onClick={runTest}
+        disabled={loading || !origin || !destination || !weight}
+        className="w-full mt-3 bg-white text-black hover:bg-white/90"
+      >
+        {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FlaskConical className="w-4 h-4 mr-2" />}
+        Lancer la simulation
+      </Button>
+
+      {createdRequest && (
+        <div className="mt-3 text-xs text-white/60">
+          ✓ Demande client créée : <span className="font-mono text-white">{createdRequest}</span>
+        </div>
+      )}
+
+      {matchResult && (
+        <div className="mt-3 space-y-2">
+          <div className="text-xs text-white/60">
+            Source: {matchResult.source} · {matchResult.options?.length || 0} option(s)
+          </div>
+          {(matchResult.options || []).map((opt: any) => (
+            <div key={opt.category} className="bg-white/5 border border-white/10 rounded-lg p-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold capitalize">{opt.category}</span>
+                <Badge variant="outline" className="border-white/20 text-white/80 text-[10px]">{opt.tagline}</Badge>
+              </div>
+              <div className="text-xs text-white/60 mt-1">
+                💰 {opt.price_total?.toLocaleString()} {opt.currency || "FCFA"} · ⏱ {opt.eta_days} j
+              </div>
+            </div>
+          ))}
+          {(matchResult.options || []).length === 0 && (
+            <div className="text-xs text-yellow-400/80">
+              Aucune option retournée — vérifiez qu'un départ actif couvre ce trajet.
+            </div>
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
