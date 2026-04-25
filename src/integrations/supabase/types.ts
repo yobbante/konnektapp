@@ -5921,6 +5921,44 @@ export type Database = {
           },
         ]
       }
+      transporter_interest_history: {
+        Row: {
+          changed_by: string | null
+          comment: string | null
+          created_at: string
+          id: string
+          interest_id: string
+          new_status: string
+          old_status: string | null
+        }
+        Insert: {
+          changed_by?: string | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          interest_id: string
+          new_status: string
+          old_status?: string | null
+        }
+        Update: {
+          changed_by?: string | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          interest_id?: string
+          new_status?: string
+          old_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transporter_interest_history_interest_id_fkey"
+            columns: ["interest_id"]
+            isOneToOne: false
+            referencedRelation: "transporter_interests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transporter_interests: {
         Row: {
           admin_notes: string | null
