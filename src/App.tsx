@@ -17,6 +17,7 @@ import { ThemeInitializer } from "@/components/ThemeInitializer";
 import { AppleNotificationContainer } from "@/components/ui/AppleNotification";
 import { SmartScrollTop } from "@/hooks/useSmartScrollTop";
 import Index from "./pages/Index";
+import TransporteurBetaDashboard from "./pages/transporteur/TransporteurBetaDashboard";
 import Offres from "./pages/Offres";
 import OfferDetail from "./pages/OfferDetail";
 import SmartBookingPage from "./pages/SmartBookingPage";
