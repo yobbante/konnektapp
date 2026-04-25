@@ -63,6 +63,7 @@ import Alerts from "./pages/Alerts";
 import Install from "./pages/Install";
 import LoyaltyTiersPage from "./pages/LoyaltyTiersPage";
 import AdminMessages from "./pages/AdminMessages";
+import AdminTransporterInterests from "./pages/AdminTransporterInterests";
 import NotFound from "./pages/NotFound";
 import Recipients from "./pages/Recipients";
 import ClientScanPage from "./pages/ClientScanPage";
@@ -388,6 +389,7 @@ const App = () => (
             <Route path="/admin/gp/:gpId" element={<AdminGPProfile />} />
             <Route path="/admin/order/:orderId" element={<AdminOrderDetail />} />
             <Route path="/admin/messages" element={<AdminMessages />} />
+            <Route path="/admin/transporter-interests" element={<AdminTransporterInterests />} />
             
             {/* ============================================
                 AGENT LOGISTIQUE - Dashboard livreur Konnekt
