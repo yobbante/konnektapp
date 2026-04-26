@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Sparkles, Package, ArrowRight, CheckCircle2, MessageCircle,
-  Plus, Loader2, Truck, MapPin, Calendar, Weight, User, Phone,
+  Plus, Loader2, Truck, MapPin, Calendar, Weight, User, Phone, RefreshCw,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -29,8 +29,39 @@ interface Opportunity {
 
 type Step = "landing" | "form" | "success";
 
+// Persisted anonymous session id for funnel attribution
+function getSessionId() {
+  try {
+    let id = localStorage.getItem("kkt_beta_sid");
+    if (!id) {
+      id = `s_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+      localStorage.setItem("kkt_beta_sid", id);
+    }
+    return id;
+  } catch { return `s_${Date.now()}`; }
+}
+
+function track(event_type: string, extra: Record<string, any> = {}) {
+  const session_id = getSessionId();
+  const source = extra.source || (typeof window !== "undefined" ? sessionStorage.getItem("kkt_src") : null);
+  void supabase.from("beta_tracking_events" as any).insert({
+    event_type,
+    session_id,
+    source,
+    metadata: extra,
+  } as any);
+}
+
+function cleanPhoneInput(v: string) {
+  // Keep digits and a leading "+"
+  const trimmed = v.trim();
+  const plus = trimmed.startsWith("+") ? "+" : "";
+  return plus + trimmed.replace(/[^\d]/g, "");
+}
+
 export default function TransporteurQuickOnboard() {
   const nav = useNavigate();
+  const [params] = useSearchParams();
   const [step, setStep] = useState<Step>("landing");
   const [submitting, setSubmitting] = useState(false);
 
@@ -47,22 +78,37 @@ export default function TransporteurQuickOnboard() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [interestedIds, setInterestedIds] = useState<Set<string>>(new Set());
   const [publishedRoute, setPublishedRoute] = useState<{ o: string; d: string } | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const formRef = useRef<HTMLDivElement>(null);
   const successRef = useRef<HTMLDivElement>(null);
+
+  // Read prefill from URL + persist source
+  useEffect(() => {
+    const qPhone = params.get("phone");
+    const qName = params.get("name");
+    const qSrc = params.get("src") || params.get("utm_source");
+    if (qPhone) setPhone(cleanPhoneInput(qPhone));
+    if (qName) setName(qName.slice(0, 80));
+    if (qSrc) {
+      try { sessionStorage.setItem("kkt_src", qSrc); } catch {}
+    }
+    // Page view
+    track("landing_view", { source: qSrc || undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-detect existing session (prefill)
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getUser();
       if (data.user) {
-        setPhone(data.user.phone || "");
         const { data: profile } = await supabase
           .from("profiles")
           .select("full_name")
           .eq("user_id", data.user.id)
           .maybeSingle();
-        if (profile?.full_name) setName(profile.full_name);
+        if (profile?.full_name) setName((n) => n || profile.full_name);
         const { data: gp } = await supabase
           .from("gp_profiles")
           .select("id, business_name, phone")
@@ -70,8 +116,8 @@ export default function TransporteurQuickOnboard() {
           .maybeSingle();
         if (gp) {
           setCreatedGpId(gp.id);
-          if (!name) setName(gp.business_name);
-          if (!phone) setPhone(gp.phone);
+          setName((n) => n || gp.business_name);
+          setPhone((p) => p || gp.phone || "");
         }
       }
     })();
@@ -79,110 +125,45 @@ export default function TransporteurQuickOnboard() {
   }, []);
 
   const goToForm = () => {
+    track("cta_start");
     setStep("form");
-    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      track("form_view");
+    }, 50);
   };
 
+  const phoneClean = useMemo(() => phone.replace(/\D/g, ""), [phone]);
   const formValid = useMemo(
-    () => name.trim() && phone.trim() && origin.trim() && destination.trim() && date && Number(capacity) > 0,
-    [name, phone, origin, destination, date, capacity]
+    () =>
+      name.trim().length >= 2 &&
+      phoneClean.length >= 8 &&
+      origin.trim().length >= 2 &&
+      destination.trim().length >= 2 &&
+      origin.trim().toLowerCase() !== destination.trim().toLowerCase() &&
+      !!date &&
+      Number(capacity) > 0 &&
+      Number(capacity) <= 200,
+    [name, phoneClean, origin, destination, date, capacity]
   );
 
-  /**
-   * Lazy account creation:
-   * - if user not authenticated → create with phone-derived email + random password (silent)
-   * - then create gp_profile if missing
-   * - then create gp_offers (departure) with status=active
-   */
-  const handlePublish = async () => {
-    if (!formValid) {
-      toast.error("Remplissez tous les champs");
-      return;
-    }
-    setSubmitting(true);
+  const refreshOpportunities = async (route?: { o: string; d: string }) => {
+    const r = route || publishedRoute;
+    if (!r) return;
+    setRefreshing(true);
     try {
-      // 1) Auth (silent)
-      let user = (await supabase.auth.getUser()).data.user;
-      if (!user) {
-        const cleanPhone = phone.replace(/\D/g, "");
-        const email = `t${cleanPhone}@konnekt.beta`;
-        const password = `Knkt!${cleanPhone}${Math.floor(Math.random() * 9000 + 1000)}`;
-        const { data: signUp, error: suErr } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/t`,
-            data: { full_name: name },
-          },
-        });
-        if (suErr) throw suErr;
-        user = signUp.user;
-        if (!user) throw new Error("Compte non créé");
-      }
-
-      // 2) GP profile (create if missing)
-      let gpId = createdGpId;
-      if (!gpId) {
-        const { data: existing } = await supabase
-          .from("gp_profiles")
-          .select("id")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        if (existing) {
-          gpId = existing.id;
-        } else {
-          const insertGp: any = {
-            user_id: user.id,
-            business_name: name,
-            phone,
-            whatsapp: phone,
-            city: origin,
-            country_code: "SN",
-            gp_type: "bagages_international",
-            status: "verified", // bêta = visible immédiatement
-            kyc_status: "pending",
-            kyc_level: 0,
-          };
-          const { data: gpRow, error: gpErr } = await (supabase.from("gp_profiles") as any)
-            .insert(insertGp)
-            .select("id")
-            .single();
-          if (gpErr) throw gpErr;
-          gpId = gpRow.id;
-        }
-        setCreatedGpId(gpId);
-      }
-
-      // 3) Départ (gp_offers) — status active, available_capacity = total
-      const cap = Number(capacity);
-      const offerPayload: any = {
-        gp_id: gpId,
-        origin_city: origin.trim(),
-        destination_city: destination.trim(),
-        departure_date: date,
-        total_capacity: cap,
-        available_capacity: cap,
-        price_per_kg: 0,
-        currency: "XOF",
-        transport_type: "bagages_international",
-        status: "active",
-      };
-      const { error: offErr } = await (supabase.from("gp_offers") as any).insert(offerPayload);
-      if (offErr) throw offErr;
-
-      // 4) Charger opportunités matchées (route exacte d'abord, puis fallback)
       const { data: matched } = await supabase
         .from("custom_requests")
         .select("id, origin_city, destination_city, weight_estimate, description, pickup_date_from, request_number")
         .eq("status", "open")
         .eq("transport_type", "bagages_international")
-        .ilike("origin_city", origin.trim())
-        .ilike("destination_city", destination.trim())
+        .ilike("origin_city", r.o)
+        .ilike("destination_city", r.d)
+        .order("created_at", { ascending: false })
         .limit(10);
 
       let opps = (matched as Opportunity[]) || [];
       if (opps.length === 0) {
-        // Fallback : afficher les plus récentes pour ne jamais montrer un écran vide
         const { data: latest } = await supabase
           .from("custom_requests")
           .select("id, origin_city, destination_city, weight_estimate, description, pickup_date_from, request_number")
@@ -193,9 +174,70 @@ export default function TransporteurQuickOnboard() {
         opps = (latest as Opportunity[]) || [];
       }
       setOpportunities(opps);
-      setPublishedRoute({ o: origin.trim(), d: destination.trim() });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Realtime + polling while success view is open
+  useEffect(() => {
+    if (step !== "success" || !publishedRoute) return;
+    const channel = supabase
+      .channel("beta_opportunities")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "custom_requests" },
+        () => { void refreshOpportunities(); }
+      )
+      .subscribe();
+    const interval = window.setInterval(() => { void refreshOpportunities(); }, 30000);
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, publishedRoute]);
+
+  const handlePublish = async () => {
+    if (!formValid) {
+      toast.error("Vérifiez les champs (téléphone, villes différentes, capacité)");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const session_id = getSessionId();
+      const source = (() => { try { return sessionStorage.getItem("kkt_src"); } catch { return null; } })();
+
+      const { data, error } = await supabase.functions.invoke("beta-onboard", {
+        body: {
+          name: name.trim(),
+          phone: phone.trim(),
+          origin_city: origin.trim(),
+          destination_city: destination.trim(),
+          departure_date: date,
+          capacity_kg: Number(capacity),
+          session_id,
+          source,
+        },
+      });
+      if (error) throw error;
+      if (!data?.gp_id) throw new Error("Réponse invalide du serveur");
+
+      setCreatedGpId(data.gp_id);
+
+      // Persist returned session if provided (so transporter is logged in for the dashboard)
+      if (data.session?.access_token && data.session?.refresh_token) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+      }
+
+      const route = { o: origin.trim(), d: destination.trim() };
+      setPublishedRoute(route);
       setStep("success");
       toast.success("Votre départ est actif");
+      await refreshOpportunities(route);
       setTimeout(() => successRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
     } catch (e: any) {
       toast.error(e.message || "Erreur lors de la publication");
@@ -206,11 +248,10 @@ export default function TransporteurQuickOnboard() {
 
   const handleInterest = (op: Opportunity) => {
     setInterestedIds((prev) => new Set(prev).add(op.id));
-    // Best-effort enregistrement en base (silencieux)
+    track("interest_clicked", { request_id: op.id, request_number: op.request_number });
     if (createdGpId) {
-      (supabase.from("transporter_interests") as any)
-        .insert({ gp_id: createdGpId, custom_request_id: op.id, status: "pending" })
-        .then(() => {});
+      void (supabase.from("transporter_interests") as any)
+        .insert({ gp_id: createdGpId, custom_request_id: op.id, status: "pending" });
     }
     toast.success("Demande envoyée");
   };
@@ -258,7 +299,6 @@ export default function TransporteurQuickOnboard() {
           Aucun effort supplémentaire.
         </p>
 
-        {/* Trust signals */}
         <div className="mt-7 space-y-2">
           <div className="flex items-center gap-2.5 text-sm text-white/80">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -303,7 +343,7 @@ export default function TransporteurQuickOnboard() {
               <FieldRow icon={<User className="w-4 h-4" />} label="Nom">
                 <Input
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => setName(e.target.value.slice(0, 80))}
                   placeholder="Votre nom"
                   className="h-12 rounded-xl bg-white/5 border-white/10 text-white placeholder:text-white/30"
                 />
@@ -312,7 +352,7 @@ export default function TransporteurQuickOnboard() {
               <FieldRow icon={<Phone className="w-4 h-4" />} label="WhatsApp">
                 <Input
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(cleanPhoneInput(e.target.value))}
                   placeholder="+221 77 000 00 00"
                   inputMode="tel"
                   className="h-12 rounded-xl bg-white/5 border-white/10 text-white placeholder:text-white/30"
@@ -323,7 +363,7 @@ export default function TransporteurQuickOnboard() {
                 <FieldRow icon={<MapPin className="w-4 h-4" />} label="Départ">
                   <Input
                     value={origin}
-                    onChange={(e) => setOrigin(e.target.value)}
+                    onChange={(e) => setOrigin(e.target.value.slice(0, 60))}
                     placeholder="Dakar"
                     className="h-12 rounded-xl bg-white/5 border-white/10 text-white placeholder:text-white/30"
                   />
@@ -331,7 +371,7 @@ export default function TransporteurQuickOnboard() {
                 <FieldRow icon={<MapPin className="w-4 h-4" />} label="Destination">
                   <Input
                     value={destination}
-                    onChange={(e) => setDestination(e.target.value)}
+                    onChange={(e) => setDestination(e.target.value.slice(0, 60))}
                     placeholder="Paris"
                     className="h-12 rounded-xl bg-white/5 border-white/10 text-white placeholder:text-white/30"
                   />
@@ -343,6 +383,7 @@ export default function TransporteurQuickOnboard() {
                   <Input
                     type="date"
                     value={date}
+                    min={new Date().toISOString().slice(0, 10)}
                     onChange={(e) => setDate(e.target.value)}
                     className="h-12 rounded-xl bg-white/5 border-white/10 text-white"
                   />
@@ -351,6 +392,8 @@ export default function TransporteurQuickOnboard() {
                   <Input
                     type="number"
                     inputMode="numeric"
+                    min={1}
+                    max={200}
                     value={capacity}
                     onChange={(e) => setCapacity(e.target.value)}
                     placeholder="20"
@@ -387,7 +430,6 @@ export default function TransporteurQuickOnboard() {
             transition={{ duration: 0.4 }}
             className="px-6 pb-32 max-w-xl mx-auto border-t border-white/10 pt-10"
           >
-            {/* Success */}
             <div className="flex items-start gap-3 p-5 rounded-2xl bg-emerald-500/10 border border-emerald-400/20">
               <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0 mt-0.5" />
               <div>
@@ -398,7 +440,6 @@ export default function TransporteurQuickOnboard() {
               </div>
             </div>
 
-            {/* WhatsApp confirmation */}
             <a
               href={whatsappConfirmHref}
               target="_blank"
@@ -409,13 +450,16 @@ export default function TransporteurQuickOnboard() {
               Recevoir la confirmation sur WhatsApp
             </a>
 
-            {/* Activation: opportunités */}
             <div className="mt-10">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Colis disponibles pour votre trajet</h3>
-                {opportunities.length > 0 && (
-                  <span className="text-xs text-white/40">{opportunities.length} match</span>
-                )}
+                <button
+                  onClick={() => refreshOpportunities()}
+                  className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80"
+                >
+                  <RefreshCw className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`} />
+                  {opportunities.length > 0 ? `${opportunities.length} match` : "Actualiser"}
+                </button>
               </div>
 
               {opportunities.length === 0 ? (
@@ -480,7 +524,6 @@ export default function TransporteurQuickOnboard() {
               )}
             </div>
 
-            {/* Loop : ajouter un autre départ */}
             <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Button
                 variant="outline"
@@ -496,7 +539,7 @@ export default function TransporteurQuickOnboard() {
               </Button>
               <Button
                 className="h-12 rounded-2xl bg-white text-black hover:bg-white/90"
-                onClick={() => nav("/transporteur/beta")}
+                onClick={() => nav("/t/dashboard")}
               >
                 <Truck className="w-4 h-4 mr-2" />
                 Mon dashboard

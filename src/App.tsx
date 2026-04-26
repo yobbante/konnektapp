@@ -19,6 +19,8 @@ import { SmartScrollTop } from "@/hooks/useSmartScrollTop";
 import Index from "./pages/Index";
 import TransporteurBetaDashboard from "./pages/transporteur/TransporteurBetaDashboard";
 import TransporteurQuickOnboard from "./pages/TransporteurQuickOnboard";
+import TransporteurMiniDashboard from "./pages/TransporteurMiniDashboard";
+import AdminBetaTracking from "./pages/AdminBetaTracking";
 import Offres from "./pages/Offres";
 import OfferDetail from "./pages/OfferDetail";
 import SmartBookingPage from "./pages/SmartBookingPage";
@@ -189,6 +191,7 @@ const App = () => (
             ============================================ */}
             <Route path="/" element={<Index />} />
             <Route path="/t" element={<TransporteurQuickOnboard />} />
+            <Route path="/t/dashboard" element={<TransporteurMiniDashboard />} />
             <Route path="/transporteur/beta" element={<TransporteurBetaDashboard />} />
             <Route path="/offres" element={<Navigate to="/freight-board" replace />} />
             <Route path="/offres/:id" element={<OfferDetail />} />
@@ -392,6 +395,7 @@ const App = () => (
             <Route path="/admin/order/:orderId" element={<AdminOrderDetail />} />
             <Route path="/admin/messages" element={<AdminMessages />} />
             <Route path="/admin/transporter-interests" element={<AdminTransporterInterests />} />
+            <Route path="/admin/beta-tracking" element={<AdminBetaTracking />} />
             
             {/* ============================================
                 AGENT LOGISTIQUE - Dashboard livreur Konnekt

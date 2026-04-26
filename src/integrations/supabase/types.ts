@@ -128,6 +128,54 @@ export type Database = {
           },
         ]
       }
+      beta_tracking_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          gp_id: string | null
+          id: string
+          metadata: Json
+          session_id: string | null
+          source: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          gp_id?: string | null
+          id?: string
+          metadata?: Json
+          session_id?: string | null
+          source?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          gp_id?: string | null
+          id?: string
+          metadata?: Json
+          session_id?: string | null
+          source?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beta_tracking_events_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "gp_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beta_tracking_events_gp_id_fkey"
+            columns: ["gp_id"]
+            isOneToOne: false
+            referencedRelation: "public_gp_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       call_signals: {
         Row: {
           callee_id: string
