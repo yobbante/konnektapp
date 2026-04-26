@@ -23,6 +23,7 @@ const PUBLIC_ROUTES = [
   "/track",
   "/deliver",
   "/public-tracking",
+  "/t",
 ];
 
 // Routes réservées aux admins
