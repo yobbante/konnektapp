@@ -42,4 +42,7 @@ verify_jwt = false
 [functions.external-list-departures]
 verify_jwt = false
 
+[functions.beta-onboard]
+verify_jwt = false
+
 
