@@ -130,7 +130,9 @@ Deno.serve(async (req) => {
       .insert({
         gp_id: gpId,
         origin_city: origin,
+        origin_country: "SN",
         destination_city: destination,
+        destination_country: "FR",
         departure_date: date,
         total_capacity: capacity,
         available_capacity: capacity,
