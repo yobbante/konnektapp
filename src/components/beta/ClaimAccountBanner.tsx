@@ -86,23 +86,23 @@ export function ClaimAccountBanner() {
     <motion.div
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-secondary/30 bg-gradient-to-br from-secondary/15 via-secondary/5 to-transparent p-4 relative overflow-hidden"
+      className="rounded-2xl border border-secondary/40 bg-gradient-to-br from-secondary/15 via-secondary/5 to-transparent p-4 relative overflow-hidden"
     >
       <button
         onClick={dismiss}
         aria-label="Plus tard"
-        className="absolute top-2 right-2 h-7 w-7 rounded-full text-foreground/40 hover:text-foreground/80 hover:bg-foreground/5 flex items-center justify-center transition-colors"
+        className="absolute top-2 right-2 h-7 w-7 rounded-full text-[hsl(var(--k-scan-text-muted))] hover:text-[hsl(var(--k-scan-text))]/85 hover:bg-[hsl(var(--k-scan-text))]/5 flex items-center justify-center transition-colors"
       >
         <X className="w-3.5 h-3.5" />
       </button>
 
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-xl bg-secondary/20 border border-secondary/30 flex items-center justify-center shrink-0">
+        <div className="w-9 h-9 rounded-xl bg-secondary/20 border border-secondary/40 flex items-center justify-center shrink-0">
           <Shield className="w-4 h-4 text-secondary" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold text-foreground">Sécurisez votre compte</div>
-          <p className="text-xs text-foreground/60 mt-0.5 leading-relaxed">
+          <div className="text-sm font-semibold text-[hsl(var(--k-scan-text))]">Sécurisez votre compte</div>
+          <p className="text-xs text-[hsl(var(--k-scan-text))]/75 mt-0.5 leading-relaxed">
             Votre historique sera transféré sur votre dashboard GP complet à l'ouverture officielle.
           </p>
 
@@ -137,7 +137,7 @@ export function ClaimAccountBanner() {
                     <Button
                       onClick={handleGoogle}
                       disabled={submitting}
-                      className="w-full h-10 rounded-xl bg-foreground text-background hover:bg-foreground/90 text-xs font-semibold gap-2"
+                      className="w-full h-10 rounded-xl bg-[hsl(var(--k-scan-text))] text-[hsl(var(--k-scan-bg-top))] hover:bg-[hsl(var(--k-scan-text))]/90 text-xs font-semibold gap-2"
                     >
                       {submitting ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -149,7 +149,7 @@ export function ClaimAccountBanner() {
                     <Button
                       onClick={() => setMode("email")}
                       variant="outline"
-                      className="w-full h-10 rounded-xl border-foreground/15 hover:bg-foreground/5 text-xs font-semibold gap-2"
+                      className="w-full h-10 rounded-xl border-[hsl(var(--k-scan-text))]/15 hover:bg-[hsl(var(--k-scan-text))]/5 text-xs font-semibold gap-2"
                     >
                       <Mail className="w-4 h-4" />
                       Utiliser un email
@@ -158,24 +158,24 @@ export function ClaimAccountBanner() {
                 ) : (
                   <div className="space-y-2.5">
                     <div>
-                      <Label className="text-[11px] text-foreground/50">Email</Label>
+                      <Label className="text-[11px] text-[hsl(var(--k-scan-text-muted))]">Email</Label>
                       <Input
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="vous@exemple.com"
-                        className="h-10 rounded-xl bg-foreground/5 border-foreground/10 mt-1"
+                        className="h-10 rounded-xl bg-[hsl(var(--k-scan-text))]/8 border-foreground/10 mt-1"
                         autoComplete="email"
                       />
                     </div>
                     <div>
-                      <Label className="text-[11px] text-foreground/50">Mot de passe (≥ 8 caractères)</Label>
+                      <Label className="text-[11px] text-[hsl(var(--k-scan-text-muted))]">Mot de passe (≥ 8 caractères)</Label>
                       <Input
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="h-10 rounded-xl bg-foreground/5 border-foreground/10 mt-1"
+                        className="h-10 rounded-xl bg-[hsl(var(--k-scan-text))]/8 border-foreground/10 mt-1"
                         autoComplete="new-password"
                       />
                     </div>
@@ -184,7 +184,7 @@ export function ClaimAccountBanner() {
                         onClick={() => setMode("choose")}
                         variant="ghost"
                         size="sm"
-                        className="h-9 text-xs text-foreground/60"
+                        className="h-9 text-xs text-[hsl(var(--k-scan-text))]/75"
                       >
                         Retour
                       </Button>
