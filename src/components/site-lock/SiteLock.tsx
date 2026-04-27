@@ -91,6 +91,18 @@ export function SiteLock({ children }: { children: React.ReactNode }) {
     }
   }, [params, settings]);
 
+  // Auto-grant partner access once a visitor lands on the beta onboarding flow (/t...).
+  // This way, after publishing a departure, navigating to /transporteur/beta or any
+  // other route never shows the countdown again on this device.
+  useEffect(() => {
+    if (location.pathname === "/t" || location.pathname.startsWith("/t/")) {
+      if (!hasPartnerAccess) {
+        try { localStorage.setItem(PARTNER_KEY, "1"); } catch {}
+        setHasPartnerAccess(true);
+      }
+    }
+  }, [location.pathname, hasPartnerAccess]);
+
   const launchDate = useMemo(
     () => (settings ? new Date(settings.launch_at) : new Date("2027-06-01T00:00:00Z")),
     [settings]
