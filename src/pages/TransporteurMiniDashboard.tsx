@@ -227,7 +227,7 @@ export default function TransporteurMiniDashboard() {
           </button>
         </div>
         <div className="mt-3 flex items-center gap-2 text-[11px] text-[hsl(var(--k-scan-text))]/40">
-          <span className={`w-1.5 h-1.5 rounded-full ${refreshing ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
+          <span className={`w-1.5 h-1.5 rounded-full ${refreshing ? "bg-[hsl(var(--success))] animate-pulse" : "bg-[hsl(var(--k-scan-text-muted))]/40"}`} />
           {refreshing ? "Mise à jour…" : `Mis à jour ${formatAgo(now, lastUpdate)}`}
         </div>
       </header>
@@ -296,7 +296,7 @@ export default function TransporteurMiniDashboard() {
               </div>
 
               {assigned.length === 0 ? (
-                <Card className="bg-gradient-to-br from-amber-500/5 to-transparent border-secondary/20 p-6 text-center">
+                <Card className="bg-gradient-to-br from-secondary/5 to-transparent border-secondary/20 p-6 text-center">
                   <Inbox className="w-5 h-5 text-secondary/60 mx-auto mb-2" />
                   <p className="text-sm text-[hsl(var(--k-scan-text))]/70">Aucune mission attribuée pour l'instant</p>
                   <p className="text-xs text-[hsl(var(--k-scan-text))]/40 mt-1">
@@ -306,7 +306,7 @@ export default function TransporteurMiniDashboard() {
               ) : (
                 <div className="space-y-2.5">
                   {assigned.map((i) => (
-                    <Card key={i.id} className="bg-gradient-to-br from-amber-500/10 to-transparent border-secondary/30 p-4">
+                    <Card key={i.id} className="bg-gradient-to-br from-secondary/15 to-transparent border-secondary/30 p-4">
                       <div className="flex items-start justify-between gap-3 mb-2">
                         <div className="min-w-0">
                           <div className="font-semibold truncate flex items-center gap-2">
@@ -432,7 +432,7 @@ function LaunchStatusBanner({
   if (!info) {
     return (
       <div className="rounded-2xl border border-[hsl(var(--k-scan-text))]/10 bg-[hsl(var(--k-scan-text))]/[0.03] px-4 py-3 flex items-center gap-2 text-[11px] text-[hsl(var(--k-scan-text))]/40">
-        <span className="w-1.5 h-1.5 rounded-full bg-white/20 animate-pulse" />
+        <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--k-scan-text-muted))]/30 animate-pulse" />
         Vérification du statut de lancement…
       </div>
     );
@@ -445,7 +445,7 @@ function LaunchStatusBanner({
   if (launched) {
     return (
       <div className="rounded-2xl border border-[hsl(var(--success))]/30 bg-[hsl(var(--success))]/10 px-4 py-3 flex items-center gap-2.5">
-        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        <span className="w-2 h-2 rounded-full bg-[hsl(var(--success))] animate-pulse" />
         <div className="flex-1 min-w-0">
           <div className="text-xs font-semibold text-[hsl(var(--success))]">Plateforme lancée 🎉</div>
           <div className="text-[11px] text-[hsl(var(--success))]/70">Bascule automatique vers votre dashboard complet…</div>
@@ -465,7 +465,7 @@ function LaunchStatusBanner({
     : `${minutes}m ${String(seconds).padStart(2, "0")}s`;
 
   return (
-    <div className="rounded-2xl border border-secondary/25 bg-gradient-to-r from-amber-500/10 to-transparent px-4 py-3 flex items-center gap-2.5">
+    <div className="rounded-2xl border border-secondary/25 bg-gradient-to-r from-secondary/15 to-transparent px-4 py-3 flex items-center gap-2.5">
       <Sparkles className="w-3.5 h-3.5 text-secondary shrink-0" />
       <div className="flex-1 min-w-0">
         <div className="text-xs font-semibold text-secondary">Lancement en cours</div>
