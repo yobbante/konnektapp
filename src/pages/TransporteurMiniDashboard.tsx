@@ -58,7 +58,7 @@ export default function TransporteurMiniDashboard() {
           .select("is_locked, launch_at")
           .maybeSingle();
         if (cancelled || !data) return;
-        const cfg = data as { is_locked: boolean; launch_at: string };
+        const cfg = data as unknown as { is_locked: boolean; launch_at: string };
         const launched = !cfg.is_locked || new Date(cfg.launch_at).getTime() <= Date.now();
         if (launched) {
           try { localStorage.setItem("kkt_launched", "1"); } catch {}
