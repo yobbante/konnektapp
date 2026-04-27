@@ -47,30 +47,61 @@ export default function TransporteurMiniDashboard() {
   const [now, setNow] = useState<Date>(new Date());
   const gpIdRef = useRef<string | null>(null);
 
+  // Launch state for banner + debounced auto-redirect.
+  const [launchInfo, setLaunchInfo] = useState<{ is_locked: boolean; launch_at: string } | null>(null);
+  const launchConfirmRef = useRef(0); // require 2 successful checks before redirect
+  const lastRedirectAtRef = useRef<number>(0);
+
   // Auto-redirect to /gp/apercu once the launch countdown ends.
-  // Works after refresh and across tabs (storage event + interval poll).
+  // Anti-loop guard: needs 2 consecutive positive checks, cooldown 60s,
+  // and a session marker so a flapping network never bounces the user.
   useEffect(() => {
     let cancelled = false;
+    const REDIRECT_COOLDOWN_MS = 60_000;
+
+    const safeRedirect = () => {
+      const now = Date.now();
+      const lastClient = (() => {
+        try { return Number(sessionStorage.getItem("kkt_last_redirect_at") || "0"); } catch { return 0; }
+      })();
+      if (now - lastRedirectAtRef.current < REDIRECT_COOLDOWN_MS) return;
+      if (now - lastClient < REDIRECT_COOLDOWN_MS) return;
+      lastRedirectAtRef.current = now;
+      try { sessionStorage.setItem("kkt_last_redirect_at", String(now)); } catch {}
+      try { localStorage.setItem("kkt_launched", "1"); } catch {}
+      nav("/gp/apercu", { replace: true });
+    };
+
     const checkLaunch = async () => {
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("app_lock_settings" as any)
           .select("is_locked, launch_at")
           .maybeSingle();
-        if (cancelled || !data) return;
+        if (cancelled) return;
+        if (error || !data) {
+          // Network/latency issue: reset confirmation counter, never redirect blindly
+          launchConfirmRef.current = 0;
+          return;
+        }
         const cfg = data as unknown as { is_locked: boolean; launch_at: string };
+        if (!cancelled) setLaunchInfo(cfg);
         const launched = !cfg.is_locked || new Date(cfg.launch_at).getTime() <= Date.now();
         if (launched) {
-          try { localStorage.setItem("kkt_launched", "1"); } catch {}
-          nav("/gp/apercu", { replace: true });
+          launchConfirmRef.current += 1;
+          if (launchConfirmRef.current >= 2) safeRedirect();
+        } else {
+          launchConfirmRef.current = 0;
         }
-      } catch { /* noop */ }
+      } catch {
+        launchConfirmRef.current = 0;
+      }
     };
-    // Initial + every 30s + cross-tab sync
+
     void checkLaunch();
-    const id = window.setInterval(checkLaunch, 30000);
+    const id = window.setInterval(checkLaunch, 30_000);
     const onStorage = (e: StorageEvent) => {
-      if (e.key === "kkt_launched" && e.newValue === "1") nav("/gp/apercu", { replace: true });
+      if (e.key === "kkt_launched" && e.newValue === "1") safeRedirect();
     };
     window.addEventListener("storage", onStorage);
     return () => { cancelled = true; clearInterval(id); window.removeEventListener("storage", onStorage); };
@@ -199,6 +230,12 @@ export default function TransporteurMiniDashboard() {
           {refreshing ? "Mise à jour…" : `Mis à jour ${formatAgo(now, lastUpdate)}`}
         </div>
       </header>
+
+      {/* LAUNCH STATUS BANNER */}
+      <section className="px-6 max-w-xl mx-auto -mt-2 mb-4">
+        <LaunchStatusBanner info={launchInfo} now={now} />
+      </section>
+
 
       {/* DEPARTURES */}
       <section className="px-6 max-w-xl mx-auto">
@@ -381,4 +418,59 @@ function StatusBadge({ status }: { status: string }) {
   };
   const m = map[status] || map.pending;
   return <Badge variant="outline" className={`${m.cls} text-[10px] shrink-0`}>{m.label}</Badge>;
+}
+
+function LaunchStatusBanner({
+  info,
+  now,
+}: {
+  info: { is_locked: boolean; launch_at: string } | null;
+  now: Date;
+}) {
+  if (!info) {
+    return (
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 flex items-center gap-2 text-[11px] text-white/40">
+        <span className="w-1.5 h-1.5 rounded-full bg-white/20 animate-pulse" />
+        Vérification du statut de lancement…
+      </div>
+    );
+  }
+
+  const launchTs = new Date(info.launch_at).getTime();
+  const diff = launchTs - now.getTime();
+  const launched = !info.is_locked || diff <= 0;
+
+  if (launched) {
+    return (
+      <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 flex items-center gap-2.5">
+        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        <div className="flex-1 min-w-0">
+          <div className="text-xs font-semibold text-emerald-200">Plateforme lancée 🎉</div>
+          <div className="text-[11px] text-emerald-200/70">Bascule automatique vers votre dashboard complet…</div>
+        </div>
+        <Loader2 className="w-3.5 h-3.5 text-emerald-300 animate-spin" />
+      </div>
+    );
+  }
+
+  const days = Math.floor(diff / 86_400_000);
+  const hours = Math.floor((diff % 86_400_000) / 3_600_000);
+  const minutes = Math.floor((diff % 3_600_000) / 60_000);
+  const seconds = Math.floor((diff % 60_000) / 1000);
+  const cd =
+    days > 0 ? `${days}j ${String(hours).padStart(2, "0")}h`
+    : hours > 0 ? `${hours}h ${String(minutes).padStart(2, "0")}m`
+    : `${minutes}m ${String(seconds).padStart(2, "0")}s`;
+
+  return (
+    <div className="rounded-2xl border border-amber-400/25 bg-gradient-to-r from-amber-500/10 to-transparent px-4 py-3 flex items-center gap-2.5">
+      <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+      <div className="flex-1 min-w-0">
+        <div className="text-xs font-semibold text-amber-200">Lancement en cours</div>
+        <div className="text-[11px] text-amber-200/70">
+          Bascule auto vers <span className="font-mono text-amber-100">/gp/apercu</span> dans <span className="tabular-nums font-semibold">{cd}</span>
+        </div>
+      </div>
+    </div>
+  );
 }
