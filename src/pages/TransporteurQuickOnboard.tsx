@@ -350,7 +350,7 @@ export default function TransporteurQuickOnboard() {
             Des colis sont déjà disponibles cette semaine
           </div>
           <div className="flex items-center gap-2.5 text-sm text-[hsl(var(--k-scan-text))]/80">
-            <span className="w-1.5 h-1.5 rounded-full bg-white/60" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--k-scan-text))]/60" />
             Accès bêta — transporteurs sélectionnés
           </div>
         </div>
