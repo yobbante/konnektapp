@@ -281,7 +281,11 @@ export default function TransporteurQuickOnboard() {
       await refreshOpportunities(route);
       setTimeout(() => successRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
     } catch (e: any) {
-      toast.error(e.message || "Erreur lors de la publication. Vérifiez votre connexion.");
+      const friendly = friendlyError(e?.message || "");
+      toast.error(friendly, {
+        description: "Si le problème persiste, contactez-nous sur WhatsApp.",
+        duration: 6000,
+      });
     } finally {
       setSubmitting(false);
     }
