@@ -1,8 +1,9 @@
-// Mini dashboard transporteur (post-onboarding) — frictionless.
-// Affiche "Mes départs actifs" et "Mes demandes envoyées" avec auto-refresh temps réel.
+// Mini dashboard transporteur beta (pré-lancement) — actif jusqu'à la fin du countdown.
+// Sections : Départs actifs · Demandes attribuées par Yobbante · Demandes envoyées (en attente).
+// Après la fin du countdown, les transporteurs basculeront automatiquement sur /gp/apercu.
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Truck, Plus, Package, ArrowLeft, MessageCircle, MapPin, Calendar, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
+import { Truck, Plus, Package, ArrowLeft, MessageCircle, Calendar, Loader2, RefreshCw, Sparkles, Inbox, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -206,39 +207,127 @@ export default function TransporteurMiniDashboard() {
         )}
       </section>
 
-      {/* INTERESTS */}
-      <section className="px-6 max-w-xl mx-auto mt-10">
-        <h2 className="text-sm uppercase tracking-wider text-white/40 flex items-center gap-2 mb-3">
-          <MessageCircle className="w-3.5 h-3.5" /> Mes demandes envoyées
-        </h2>
+      {/* DEMANDES ATTRIBUÉES PAR YOBBANTE (status: validated, in_progress) */}
+      {(() => {
+        const assigned = interests.filter((i) => i.status === "validated" || i.status === "in_progress");
+        const pending = interests.filter((i) => i.status === "pending");
+        const past = interests.filter((i) => i.status === "completed" || i.status === "declined");
 
-        {interests.length === 0 ? (
-          <Card className="bg-white/5 border-white/10 p-6 text-center">
-            <Package className="w-5 h-5 text-white/30 mx-auto mb-2" />
-            <p className="text-sm text-white/60">Aucune demande envoyée</p>
-            <p className="text-xs text-white/40 mt-1">Cliquez "Je suis intéressé" sur une opportunité.</p>
-          </Card>
-        ) : (
-          <div className="space-y-2.5">
-            {interests.map((i) => (
-              <Card key={i.id} className="bg-white/5 border-white/10 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="font-semibold truncate">
-                      {i.custom_requests?.origin_city} → {i.custom_requests?.destination_city}
-                    </div>
-                    <div className="text-xs text-white/50 mt-0.5 flex items-center gap-2">
-                      <span>{i.custom_requests?.request_number}</span>
-                      {i.custom_requests?.weight_estimate && <span>· {i.custom_requests.weight_estimate} kg</span>}
-                    </div>
-                  </div>
-                  <StatusBadge status={i.status} />
+        return (
+          <>
+            <section className="px-6 max-w-xl mx-auto mt-10">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm uppercase tracking-wider text-amber-300/90 flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5" /> Attribuées par Yobbante
+                </h2>
+                {assigned.length > 0 && (
+                  <Badge className="bg-amber-500/15 text-amber-300 border-amber-400/20 text-[10px]">
+                    {assigned.length} active{assigned.length > 1 ? "s" : ""}
+                  </Badge>
+                )}
+              </div>
+
+              {assigned.length === 0 ? (
+                <Card className="bg-gradient-to-br from-amber-500/5 to-transparent border-amber-400/15 p-6 text-center">
+                  <Inbox className="w-5 h-5 text-amber-300/60 mx-auto mb-2" />
+                  <p className="text-sm text-white/70">Aucune mission attribuée pour l'instant</p>
+                  <p className="text-xs text-white/40 mt-1">
+                    Yobbante vous notifiera dès qu'une demande client sera validée pour vous.
+                  </p>
+                </Card>
+              ) : (
+                <div className="space-y-2.5">
+                  {assigned.map((i) => (
+                    <Card key={i.id} className="bg-gradient-to-br from-amber-500/10 to-transparent border-amber-400/30 p-4">
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div className="min-w-0">
+                          <div className="font-semibold truncate flex items-center gap-2">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                            {i.custom_requests?.origin_city} → {i.custom_requests?.destination_city}
+                          </div>
+                          <div className="text-xs text-white/60 mt-1 flex items-center gap-2 flex-wrap">
+                            <span className="font-mono">{i.custom_requests?.request_number}</span>
+                            {i.custom_requests?.weight_estimate && (
+                              <span>· {i.custom_requests.weight_estimate} kg</span>
+                            )}
+                            {i.custom_requests?.pickup_date_from && (
+                              <span className="flex items-center gap-1">
+                                · <Calendar className="w-3 h-3" />
+                                {format(new Date(i.custom_requests.pickup_date_from), "d MMM", { locale: fr })}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <StatusBadge status={i.status} />
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between">
+                        <p className="text-[11px] text-amber-200/80">
+                          ✓ Mission validée — préparez l'enlèvement
+                        </p>
+                        <button
+                          onClick={() => nav("/t")}
+                          className="text-[11px] text-amber-300 hover:text-amber-200 flex items-center gap-1"
+                        >
+                          <MessageCircle className="w-3 h-3" /> Contact
+                        </button>
+                      </div>
+                    </Card>
+                  ))}
                 </div>
-              </Card>
-            ))}
-          </div>
-        )}
-      </section>
+              )}
+            </section>
+
+            {/* DEMANDES ENVOYÉES (en attente de validation admin) */}
+            <section className="px-6 max-w-xl mx-auto mt-10">
+              <h2 className="text-sm uppercase tracking-wider text-white/40 flex items-center gap-2 mb-3">
+                <MessageCircle className="w-3.5 h-3.5" /> Mes demandes envoyées
+                {pending.length > 0 && (
+                  <span className="text-[10px] text-white/30">({pending.length} en attente)</span>
+                )}
+              </h2>
+
+              {pending.length === 0 && past.length === 0 ? (
+                <Card className="bg-white/5 border-white/10 p-6 text-center">
+                  <Package className="w-5 h-5 text-white/30 mx-auto mb-2" />
+                  <p className="text-sm text-white/60">Aucune demande envoyée</p>
+                  <p className="text-xs text-white/40 mt-1">Cliquez "Je suis intéressé" sur une opportunité.</p>
+                </Card>
+              ) : (
+                <div className="space-y-2.5">
+                  {[...pending, ...past].map((i) => (
+                    <Card key={i.id} className="bg-white/5 border-white/10 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="font-semibold truncate">
+                            {i.custom_requests?.origin_city} → {i.custom_requests?.destination_city}
+                          </div>
+                          <div className="text-xs text-white/50 mt-0.5 flex items-center gap-2">
+                            <span>{i.custom_requests?.request_number}</span>
+                            {i.custom_requests?.weight_estimate && <span>· {i.custom_requests.weight_estimate} kg</span>}
+                          </div>
+                        </div>
+                        <StatusBadge status={i.status} />
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* Info beta footer */}
+            <section className="px-6 max-w-xl mx-auto mt-10">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 flex gap-3">
+                <AlertCircle className="w-4 h-4 text-white/40 shrink-0 mt-0.5" />
+                <div className="text-[11px] text-white/50 leading-relaxed">
+                  <span className="text-white/70 font-medium">Mode beta actif.</span> Vous accédez au mini-dashboard
+                  transporteur. À l'ouverture officielle, vous basculerez automatiquement sur le tableau de bord
+                  complet GP avec toutes les fonctionnalités.
+                </div>
+              </div>
+            </section>
+          </>
+        );
+      })()}
     </div>
   );
 }
