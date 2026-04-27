@@ -327,43 +327,43 @@ export default function TransporteurQuickOnboard() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-[hsl(var(--k-scan-bg-top))] text-[hsl(var(--k-scan-text))]">
       {/* ======================= LANDING ======================= */}
       <section className="px-6 pt-16 pb-10 max-w-xl mx-auto">
-        <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-white/40 mb-6">
+        <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-[hsl(var(--k-scan-text))]/40 mb-6">
           <Sparkles className="w-3 h-3" /> Konnekt · Accès Bêta
         </div>
 
         <h1 className="text-4xl sm:text-5xl font-bold leading-[1.05] tracking-tight">
           Remplissez vos trajets<br />
-          <span className="text-white/50">avec des colis.</span>
+          <span className="text-[hsl(var(--k-scan-text))]/50">avec des colis.</span>
         </h1>
 
-        <p className="text-base text-white/60 mt-5 leading-relaxed">
+        <p className="text-base text-[hsl(var(--k-scan-text))]/60 mt-5 leading-relaxed">
           Gagnez de l'argent sur vos trajets existants.<br />
           Aucun effort supplémentaire.
         </p>
 
         <div className="mt-7 space-y-2">
-          <div className="flex items-center gap-2.5 text-sm text-white/80">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <div className="flex items-center gap-2.5 text-sm text-[hsl(var(--k-scan-text))]/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--success))] animate-pulse" />
             Des colis sont déjà disponibles cette semaine
           </div>
-          <div className="flex items-center gap-2.5 text-sm text-white/80">
-            <span className="w-1.5 h-1.5 rounded-full bg-white/60" />
+          <div className="flex items-center gap-2.5 text-sm text-[hsl(var(--k-scan-text))]/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--k-scan-text))]/60" />
             Accès bêta — transporteurs sélectionnés
           </div>
         </div>
 
         <div className="mt-8 flex flex-wrap gap-2">
-          <Badge className="bg-white text-black hover:bg-white/90 rounded-full">Transporteur fondateur</Badge>
-          <Badge variant="outline" className="border-white/20 text-white/80 rounded-full">0% commission</Badge>
+          <Badge className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full">Transporteur fondateur</Badge>
+          <Badge variant="outline" className="border-[hsl(var(--k-scan-text))]/20 text-[hsl(var(--k-scan-text))]/80 rounded-full">0% commission</Badge>
         </div>
 
         {step === "landing" && (
           <Button
             onClick={goToForm}
-            className="mt-10 w-full h-14 rounded-2xl bg-white text-black hover:bg-white/90 text-base font-semibold"
+            className="mt-10 w-full h-14 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 text-base font-semibold"
           >
             Commencer
             <ArrowRight className="w-5 h-5 ml-2" />
@@ -379,10 +379,10 @@ export default function TransporteurQuickOnboard() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
-            className="px-6 pb-10 max-w-xl mx-auto border-t border-white/10 pt-10"
+            className="px-6 pb-10 max-w-xl mx-auto border-t border-[hsl(var(--k-scan-text))]/10 pt-10"
           >
             <h2 className="text-xl font-semibold mb-1">Votre premier départ</h2>
-            <p className="text-sm text-white/50 mb-6">Tout sur un seul écran. Moins d'une minute.</p>
+            <p className="text-sm text-[hsl(var(--k-scan-text))]/50 mb-6">Tout sur un seul écran. Moins d'une minute.</p>
 
             <div className="space-y-4">
               <FieldRow icon={<User className="w-4 h-4" />} label="Nom">
@@ -390,7 +390,7 @@ export default function TransporteurQuickOnboard() {
                   value={name}
                   onChange={(e) => setName(e.target.value.slice(0, 80))}
                   placeholder="Votre nom"
-                  className="h-12 rounded-xl bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                  className="h-12 rounded-xl bg-[hsl(var(--k-scan-text))]/5 border-[hsl(var(--k-scan-text))]/10 text-[hsl(var(--k-scan-text))] placeholder:text-[hsl(var(--k-scan-text))]/30"
                 />
               </FieldRow>
 
@@ -400,7 +400,7 @@ export default function TransporteurQuickOnboard() {
                   onChange={(e) => setPhone(cleanPhoneInput(e.target.value))}
                   placeholder="+221 77 000 00 00"
                   inputMode="tel"
-                  className="h-12 rounded-xl bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                  className="h-12 rounded-xl bg-[hsl(var(--k-scan-text))]/5 border-[hsl(var(--k-scan-text))]/10 text-[hsl(var(--k-scan-text))] placeholder:text-[hsl(var(--k-scan-text))]/30"
                 />
               </FieldRow>
 
@@ -410,7 +410,7 @@ export default function TransporteurQuickOnboard() {
                     value={origin}
                     onChange={(e) => setOrigin(e.target.value.slice(0, 60))}
                     placeholder="Dakar"
-                    className="h-12 rounded-xl bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                    className="h-12 rounded-xl bg-[hsl(var(--k-scan-text))]/5 border-[hsl(var(--k-scan-text))]/10 text-[hsl(var(--k-scan-text))] placeholder:text-[hsl(var(--k-scan-text))]/30"
                   />
                 </FieldRow>
                 <FieldRow icon={<MapPin className="w-4 h-4" />} label="Destination">
@@ -418,7 +418,7 @@ export default function TransporteurQuickOnboard() {
                     value={destination}
                     onChange={(e) => setDestination(e.target.value.slice(0, 60))}
                     placeholder="Paris"
-                    className="h-12 rounded-xl bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                    className="h-12 rounded-xl bg-[hsl(var(--k-scan-text))]/5 border-[hsl(var(--k-scan-text))]/10 text-[hsl(var(--k-scan-text))] placeholder:text-[hsl(var(--k-scan-text))]/30"
                   />
                 </FieldRow>
               </div>
@@ -430,7 +430,7 @@ export default function TransporteurQuickOnboard() {
                     value={date}
                     min={new Date().toISOString().slice(0, 10)}
                     onChange={(e) => setDate(e.target.value)}
-                    className="h-12 rounded-xl bg-white/5 border-white/10 text-white"
+                    className="h-12 rounded-xl bg-[hsl(var(--k-scan-text))]/5 border-[hsl(var(--k-scan-text))]/10 text-[hsl(var(--k-scan-text))]"
                   />
                 </FieldRow>
                 <FieldRow icon={<Weight className="w-4 h-4" />} label="Capacité (kg)">
@@ -442,7 +442,7 @@ export default function TransporteurQuickOnboard() {
                     value={capacity}
                     onChange={(e) => setCapacity(e.target.value)}
                     placeholder="20"
-                    className="h-12 rounded-xl bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                    className="h-12 rounded-xl bg-[hsl(var(--k-scan-text))]/5 border-[hsl(var(--k-scan-text))]/10 text-[hsl(var(--k-scan-text))] placeholder:text-[hsl(var(--k-scan-text))]/30"
                   />
                 </FieldRow>
               </div>
@@ -452,7 +452,7 @@ export default function TransporteurQuickOnboard() {
               <Button
                 onClick={handlePublish}
                 disabled={!formValid || submitting}
-                className="mt-7 w-full h-14 rounded-2xl bg-white text-black hover:bg-white/90 text-base font-semibold disabled:opacity-40"
+                className="mt-7 w-full h-14 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 text-base font-semibold disabled:opacity-40"
               >
                 {submitting ? (
                   <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Publication…</>
@@ -473,13 +473,13 @@ export default function TransporteurQuickOnboard() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="px-6 pb-32 max-w-xl mx-auto border-t border-white/10 pt-10"
+            className="px-6 pb-32 max-w-xl mx-auto border-t border-[hsl(var(--k-scan-text))]/10 pt-10"
           >
-            <div className="flex items-start gap-3 p-5 rounded-2xl bg-emerald-500/10 border border-emerald-400/20">
-              <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 p-5 rounded-2xl bg-[hsl(var(--success))]/10 border border-[hsl(var(--success))]/25">
+              <CheckCircle2 className="w-6 h-6 text-[hsl(var(--success))] shrink-0 mt-0.5" />
               <div>
                 <div className="font-semibold">Votre départ est actif</div>
-                <p className="text-sm text-white/60 mt-1">
+                <p className="text-sm text-[hsl(var(--k-scan-text))]/60 mt-1">
                   Nous vous envoyons des colis correspondant à votre trajet.
                 </p>
               </div>
@@ -489,7 +489,7 @@ export default function TransporteurQuickOnboard() {
               href={whatsappConfirmHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 flex items-center justify-center gap-2 h-12 rounded-2xl border border-white/15 hover:bg-white/5 text-sm font-medium transition-colors"
+              className="mt-4 flex items-center justify-center gap-2 h-12 rounded-2xl border border-[hsl(var(--k-scan-text))]/15 hover:bg-[hsl(var(--k-scan-text))]/5 text-sm font-medium transition-colors"
             >
               <MessageCircle className="w-4 h-4" />
               Recevoir la confirmation sur WhatsApp
@@ -500,7 +500,7 @@ export default function TransporteurQuickOnboard() {
                 <h3 className="text-lg font-semibold">Colis disponibles pour votre trajet</h3>
                 <button
                   onClick={() => refreshOpportunities()}
-                  className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white/80"
+                  className="flex items-center gap-1.5 text-xs text-[hsl(var(--k-scan-text))]/50 hover:text-[hsl(var(--k-scan-text))]/80"
                 >
                   <RefreshCw className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`} />
                   {opportunities.length > 0 ? `${opportunities.length} match` : "Actualiser"}
@@ -508,20 +508,20 @@ export default function TransporteurQuickOnboard() {
               </div>
 
               {opportunities.length === 0 ? (
-                <Card className="bg-white/5 border-white/10 p-6 text-center">
-                  <Package className="w-6 h-6 text-white/30 mx-auto mb-2" />
-                  <p className="text-sm text-white/70">Des colis sont en cours d'ajout</p>
-                  <p className="text-xs text-white/40 mt-1">Vous serez notifié dès qu'une opportunité correspond.</p>
+                <Card className="bg-[hsl(var(--k-scan-text))]/5 border-[hsl(var(--k-scan-text))]/10 p-6 text-center">
+                  <Package className="w-6 h-6 text-[hsl(var(--k-scan-text))]/30 mx-auto mb-2" />
+                  <p className="text-sm text-[hsl(var(--k-scan-text))]/70">Des colis sont en cours d'ajout</p>
+                  <p className="text-xs text-[hsl(var(--k-scan-text))]/40 mt-1">Vous serez notifié dès qu'une opportunité correspond.</p>
                 </Card>
               ) : (
                 <div className="space-y-2.5">
                   {opportunities.map((op) => {
                     const interested = interestedIds.has(op.id);
                     return (
-                      <Card key={op.id} className="bg-white/5 border-white/10 p-4">
+                      <Card key={op.id} className="bg-[hsl(var(--k-scan-text))]/5 border-[hsl(var(--k-scan-text))]/10 p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <div className="flex items-center gap-2 text-white/40 text-xs mb-1">
+                            <div className="flex items-center gap-2 text-[hsl(var(--k-scan-text))]/40 text-xs mb-1">
                               <Package className="w-3.5 h-3.5" />
                               {op.weight_estimate ? `${op.weight_estimate} kg` : "Poids à confirmer"}
                             </div>
@@ -529,25 +529,25 @@ export default function TransporteurQuickOnboard() {
                               {op.origin_city} → {op.destination_city}
                             </div>
                             {op.pickup_date_from && (
-                              <div className="text-xs text-white/50 mt-0.5">
+                              <div className="text-xs text-[hsl(var(--k-scan-text))]/50 mt-0.5">
                                 À partir du {format(new Date(op.pickup_date_from), "d MMM", { locale: fr })}
                               </div>
                             )}
                           </div>
-                          <Badge variant="outline" className="border-white/15 text-white/60 text-[10px] shrink-0">
+                          <Badge variant="outline" className="border-[hsl(var(--k-scan-text))]/15 text-[hsl(var(--k-scan-text))]/60 text-[10px] shrink-0">
                             {op.request_number.split("-").pop()}
                           </Badge>
                         </div>
 
                         <div className="mt-3 flex items-center gap-2">
                           {interested ? (
-                            <Badge className="bg-emerald-500/15 text-emerald-300 border-emerald-400/20 rounded-full">
+                            <Badge className="bg-[hsl(var(--success))]/15 text-[hsl(var(--success))] border-[hsl(var(--success))]/25 rounded-full">
                               <CheckCircle2 className="w-3 h-3 mr-1" /> Demande envoyée
                             </Badge>
                           ) : (
                             <Button
                               size="sm"
-                              className="bg-white text-black hover:bg-white/90 rounded-full"
+                              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
                               onClick={() => handleInterest(op)}
                             >
                               Je suis intéressé
@@ -557,7 +557,7 @@ export default function TransporteurQuickOnboard() {
                             href={whatsappOpportunityHref(op)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-white/15 hover:bg-white/5 text-xs"
+                            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-[hsl(var(--k-scan-text))]/15 hover:bg-[hsl(var(--k-scan-text))]/5 text-xs"
                           >
                             <MessageCircle className="w-3 h-3" /> WhatsApp
                           </a>
@@ -572,7 +572,7 @@ export default function TransporteurQuickOnboard() {
             <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Button
                 variant="outline"
-                className="h-12 rounded-2xl border-white/15 text-white hover:bg-white/5"
+                className="h-12 rounded-2xl border-[hsl(var(--k-scan-text))]/15 text-[hsl(var(--k-scan-text))] hover:bg-[hsl(var(--k-scan-text))]/5"
                 onClick={() => {
                   setOrigin(""); setDestination(""); setDate(""); setCapacity("");
                   setStep("form");
@@ -583,7 +583,7 @@ export default function TransporteurQuickOnboard() {
                 Ajouter un autre départ
               </Button>
               <Button
-                className="h-12 rounded-2xl bg-white text-black hover:bg-white/90"
+                className="h-12 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={() => nav("/t/dashboard")}
               >
                 <Truck className="w-4 h-4 mr-2" />
@@ -600,7 +600,7 @@ export default function TransporteurQuickOnboard() {
 function FieldRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
     <div>
-      <Label className="flex items-center gap-1.5 text-xs text-white/50 mb-1.5">
+      <Label className="flex items-center gap-1.5 text-xs text-[hsl(var(--k-scan-text))]/50 mb-1.5">
         {icon} {label}
       </Label>
       {children}
