@@ -41,6 +41,10 @@ export default function TransporteurMiniDashboard() {
   const [departures, setDepartures] = useState<Departure[]>([]);
   const [interests, setInterests] = useState<Interest[]>([]);
   const [gpId, setGpId] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [now, setNow] = useState<Date>(new Date());
+  const gpIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -56,13 +60,62 @@ export default function TransporteurMiniDashboard() {
       if (!gp) { nav("/t"); return; }
       if (cancelled) return;
       setGpId(gp.id);
+      gpIdRef.current = gp.id;
 
       await Promise.all([loadDepartures(gp.id), loadInterests(gp.id)]);
-      if (!cancelled) setLoading(false);
+      if (!cancelled) {
+        setLoading(false);
+        setLastUpdate(new Date());
+      }
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-refresh: realtime + 20s polling + ticker for "il y a Xs" indicator
+  useEffect(() => {
+    if (!gpId) return;
+
+    const refresh = async () => {
+      if (!gpIdRef.current) return;
+      setRefreshing(true);
+      try {
+        await Promise.all([loadDepartures(gpIdRef.current), loadInterests(gpIdRef.current)]);
+        setLastUpdate(new Date());
+      } finally {
+        setRefreshing(false);
+      }
+    };
+
+    const channel = supabase
+      .channel("mini_dashboard_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "gp_offers" }, () => { void refresh(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "transporter_interests" }, () => { void refresh(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "custom_requests" }, () => { void refresh(); })
+      .subscribe();
+
+    const interval = window.setInterval(() => { void refresh(); }, 20000);
+    const tick = window.setInterval(() => setNow(new Date()), 1000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+      clearInterval(tick);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gpId]);
+
+  const manualRefresh = async () => {
+    if (!gpId) return;
+    setRefreshing(true);
+    try {
+      await Promise.all([loadDepartures(gpId), loadInterests(gpId)]);
+      setLastUpdate(new Date());
+      toast.success("Mis à jour");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const loadDepartures = async (id: string) => {
     const { data } = await supabase
