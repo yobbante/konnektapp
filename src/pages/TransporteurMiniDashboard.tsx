@@ -1,8 +1,8 @@
 // Mini dashboard transporteur (post-onboarding) — frictionless.
-// Affiche "Mes départs actifs" et "Mes demandes envoyées".
-import { useEffect, useState } from "react";
+// Affiche "Mes départs actifs" et "Mes demandes envoyées" avec auto-refresh temps réel.
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Truck, Plus, Package, ArrowLeft, MessageCircle, MapPin, Calendar, CheckCircle2, Loader2 } from "lucide-react";
+import { Truck, Plus, Package, ArrowLeft, MessageCircle, MapPin, Calendar, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
