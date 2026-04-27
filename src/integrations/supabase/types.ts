@@ -1924,6 +1924,8 @@ export type Database = {
           base_origin_city: string | null
           base_origin_country: string | null
           base_price_per_kg: number | null
+          beta_claimed_at: string | null
+          beta_claimed_email: string | null
           business_name: string
           business_registration_url: string | null
           city: string
@@ -1981,6 +1983,8 @@ export type Database = {
           base_origin_city?: string | null
           base_origin_country?: string | null
           base_price_per_kg?: number | null
+          beta_claimed_at?: string | null
+          beta_claimed_email?: string | null
           business_name: string
           business_registration_url?: string | null
           city: string
@@ -2038,6 +2042,8 @@ export type Database = {
           base_origin_city?: string | null
           base_origin_country?: string | null
           base_price_per_kg?: number | null
+          beta_claimed_at?: string | null
+          beta_claimed_email?: string | null
           business_name?: string
           business_registration_url?: string | null
           city?: string
