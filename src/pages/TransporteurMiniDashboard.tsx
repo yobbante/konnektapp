@@ -243,6 +243,16 @@ export default function TransporteurMiniDashboard() {
   );
 }
 
+function formatAgo(now: Date, then: Date) {
+  const s = Math.max(0, Math.floor((now.getTime() - then.getTime()) / 1000));
+  if (s < 5) return "à l'instant";
+  if (s < 60) return `il y a ${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `il y a ${m} min`;
+  const h = Math.floor(m / 60);
+  return `il y a ${h}h`;
+}
+
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
     pending: { label: "En attente", cls: "bg-white/10 text-white/70 border-white/15" },
