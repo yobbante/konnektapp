@@ -220,12 +220,10 @@ export default function TransporteurQuickOnboard() {
           source,
         },
       });
-      if (error) throw error;
-      if (!data?.gp_id) throw new Error("Réponse invalide du serveur");
+      if (error) throw new Error(error.message || "Connexion au serveur impossible. Réessayez.");
+      if (!data?.gp_id || !data?.user_id) throw new Error("Réponse invalide du serveur");
 
-      setCreatedGpId(data.gp_id);
-
-      // Persist returned session if provided (so transporter is logged in for the dashboard)
+      // Persist session BEFORE marking account ready
       if (data.session?.access_token && data.session?.refresh_token) {
         await supabase.auth.setSession({
           access_token: data.session.access_token,
@@ -233,6 +231,14 @@ export default function TransporteurQuickOnboard() {
         });
       }
 
+      // Verification fallback — confirm the account is actually usable
+      const { data: check } = await supabase.auth.getUser();
+      if (!check?.user) {
+        // Account created but session not active — still proceed but warn
+        toast.warning("Compte créé. Connectez-vous pour accéder au tableau de bord.");
+      }
+
+      setCreatedGpId(data.gp_id);
       const route = { o: origin.trim(), d: destination.trim() };
       setPublishedRoute(route);
       setStep("success");
@@ -240,7 +246,7 @@ export default function TransporteurQuickOnboard() {
       await refreshOpportunities(route);
       setTimeout(() => successRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
     } catch (e: any) {
-      toast.error(e.message || "Erreur lors de la publication");
+      toast.error(e.message || "Erreur lors de la publication. Vérifiez votre connexion.");
     } finally {
       setSubmitting(false);
     }
