@@ -47,6 +47,35 @@ export default function TransporteurMiniDashboard() {
   const [now, setNow] = useState<Date>(new Date());
   const gpIdRef = useRef<string | null>(null);
 
+  // Auto-redirect to /gp/apercu once the launch countdown ends.
+  // Works after refresh and across tabs (storage event + interval poll).
+  useEffect(() => {
+    let cancelled = false;
+    const checkLaunch = async () => {
+      try {
+        const { data } = await supabase
+          .from("app_lock_settings" as any)
+          .select("is_locked, launch_at")
+          .maybeSingle();
+        if (cancelled || !data) return;
+        const cfg = data as { is_locked: boolean; launch_at: string };
+        const launched = !cfg.is_locked || new Date(cfg.launch_at).getTime() <= Date.now();
+        if (launched) {
+          try { localStorage.setItem("kkt_launched", "1"); } catch {}
+          nav("/gp/apercu", { replace: true });
+        }
+      } catch { /* noop */ }
+    };
+    // Initial + every 30s + cross-tab sync
+    void checkLaunch();
+    const id = window.setInterval(checkLaunch, 30000);
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "kkt_launched" && e.newValue === "1") nav("/gp/apercu", { replace: true });
+    };
+    window.addEventListener("storage", onStorage);
+    return () => { cancelled = true; clearInterval(id); window.removeEventListener("storage", onStorage); };
+  }, [nav]);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
