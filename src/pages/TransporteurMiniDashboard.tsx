@@ -330,7 +330,7 @@ export default function TransporteurMiniDashboard() {
                       </div>
                       <div className="mt-3 pt-3 border-t border-[var(--foreground)]/10 flex items-center justify-between">
                         <p className="text-[11px] text-secondary/80">
-                          ✓ Mission validée — préparez l'enlèvement
+                          Mission validée — préparez l'enlèvement
                         </p>
                         <button
                           onClick={() => nav("/t")}
@@ -447,7 +447,7 @@ function LaunchStatusBanner({
       <div className="rounded-2xl border border-[hsl(var(--success))]/30 bg-[hsl(var(--success))]/10 px-4 py-3 flex items-center gap-2.5">
         <span className="w-2 h-2 rounded-full bg-[hsl(var(--success))] animate-pulse" />
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-semibold text-[hsl(var(--success))]">Plateforme lancée 🎉</div>
+          <div className="text-xs font-semibold text-[hsl(var(--success))]">Plateforme lancée</div>
           <div className="text-[11px] text-[hsl(var(--success))]/70">Bascule automatique vers votre dashboard complet…</div>
         </div>
         <Loader2 className="w-3.5 h-3.5 text-[hsl(var(--success))] animate-spin" />

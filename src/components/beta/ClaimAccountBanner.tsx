@@ -125,7 +125,7 @@ export function ClaimAccountBanner() {
         throw new Error((res as any).error);
       }
       track("claim_success", { method });
-      toast.success("Compte sécurisé ✓", { description: "Votre historique est maintenant relié à votre nouveau compte." });
+      toast.success("Compte sécurisé", { description: "Votre historique est maintenant relié à votre nouveau compte." });
       setNeedsClaim(false);
       setOpen(false);
       return true;

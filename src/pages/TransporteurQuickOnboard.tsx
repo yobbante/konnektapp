@@ -305,7 +305,7 @@ export default function TransporteurQuickOnboard() {
   const whatsappConfirmHref = useMemo(() => {
     if (!publishedRoute) return "#";
     const msg = encodeURIComponent(
-      `Mon départ ${publishedRoute.o} → ${publishedRoute.d} est actif sur Konnekt ✅\nJe suis prêt à recevoir des colis.`
+      `Mon départ ${publishedRoute.o} → ${publishedRoute.d} est actif sur Konnekt.\nJe suis prêt à recevoir des colis.`
     );
     return `https://wa.me/${KONNEKT_WHATSAPP}?text=${msg}`;
   }, [publishedRoute]);
@@ -319,9 +319,9 @@ export default function TransporteurQuickOnboard() {
         `Bonjour Konnekt,`,
         `Je suis intéressé par la demande *${op.request_number}*.`,
         ``,
-        `📍 ${op.origin_city} → ${op.destination_city}`,
-        `📅 ${dateStr}`,
-        `⚖️ ${op.weight_estimate ? op.weight_estimate + " kg" : "à confirmer"}`,
+        `Trajet : ${op.origin_city} → ${op.destination_city}`,
+        `Date : ${dateStr}`,
+        `Poids : ${op.weight_estimate ? op.weight_estimate + " kg" : "à confirmer"}`,
       ].join("\n")
     );
     return `https://wa.me/${KONNEKT_WHATSAPP}?text=${msg}`;
