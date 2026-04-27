@@ -419,3 +419,58 @@ function StatusBadge({ status }: { status: string }) {
   const m = map[status] || map.pending;
   return <Badge variant="outline" className={`${m.cls} text-[10px] shrink-0`}>{m.label}</Badge>;
 }
+
+function LaunchStatusBanner({
+  info,
+  now,
+}: {
+  info: { is_locked: boolean; launch_at: string } | null;
+  now: Date;
+}) {
+  if (!info) {
+    return (
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 flex items-center gap-2 text-[11px] text-white/40">
+        <span className="w-1.5 h-1.5 rounded-full bg-white/20 animate-pulse" />
+        Vérification du statut de lancement…
+      </div>
+    );
+  }
+
+  const launchTs = new Date(info.launch_at).getTime();
+  const diff = launchTs - now.getTime();
+  const launched = !info.is_locked || diff <= 0;
+
+  if (launched) {
+    return (
+      <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 flex items-center gap-2.5">
+        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        <div className="flex-1 min-w-0">
+          <div className="text-xs font-semibold text-emerald-200">Plateforme lancée 🎉</div>
+          <div className="text-[11px] text-emerald-200/70">Bascule automatique vers votre dashboard complet…</div>
+        </div>
+        <Loader2 className="w-3.5 h-3.5 text-emerald-300 animate-spin" />
+      </div>
+    );
+  }
+
+  const days = Math.floor(diff / 86_400_000);
+  const hours = Math.floor((diff % 86_400_000) / 3_600_000);
+  const minutes = Math.floor((diff % 3_600_000) / 60_000);
+  const seconds = Math.floor((diff % 60_000) / 1000);
+  const cd =
+    days > 0 ? `${days}j ${String(hours).padStart(2, "0")}h`
+    : hours > 0 ? `${hours}h ${String(minutes).padStart(2, "0")}m`
+    : `${minutes}m ${String(seconds).padStart(2, "0")}s`;
+
+  return (
+    <div className="rounded-2xl border border-amber-400/25 bg-gradient-to-r from-amber-500/10 to-transparent px-4 py-3 flex items-center gap-2.5">
+      <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+      <div className="flex-1 min-w-0">
+        <div className="text-xs font-semibold text-amber-200">Lancement en cours</div>
+        <div className="text-[11px] text-amber-200/70">
+          Bascule auto vers <span className="font-mono text-amber-100">/gp/apercu</span> dans <span className="tabular-nums font-semibold">{cd}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
