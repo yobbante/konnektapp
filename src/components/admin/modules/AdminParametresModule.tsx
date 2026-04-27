@@ -7,6 +7,7 @@ import { AdminMessageTemplates } from "@/components/admin/AdminMessageTemplates"
 import { AdminAutoMessageTemplates } from "@/components/admin/AdminAutoMessageTemplates";
 import { AdminPermissionsManager } from "@/components/admin/AdminPermissionsManager";
 import { AdminActiveCities } from "@/components/admin/AdminActiveCities";
+import { AdminAppLockPanel } from "@/components/admin/AdminAppLockPanel";
 
 export function AdminParametresModule() {
   return (
@@ -15,6 +16,7 @@ export function AdminParametresModule() {
         <Settings className="w-5 h-5 text-gray-500" />
         Paramètres Globaux
       </h2>
+      <AdminAppLockPanel />
       <AdminConfigPanel />
       <AdminActiveCities />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
