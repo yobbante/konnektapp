@@ -548,3 +548,87 @@ function LaunchStatusBanner({
     </div>
   );
 }
+
+function QuickAction({
+  icon,
+  label,
+  sublabel,
+  onClick,
+  tone = "muted",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  sublabel: string;
+  onClick: () => void;
+  tone?: "primary" | "secondary" | "muted" | "locked";
+}) {
+  const toneCls =
+    tone === "primary"
+      ? "border-primary/25 bg-primary/10 text-primary"
+      : tone === "secondary"
+      ? "border-secondary/25 bg-secondary/10 text-secondary"
+      : tone === "locked"
+      ? "border-foreground/10 bg-foreground/[0.03] text-foreground/40"
+      : "border-foreground/10 bg-foreground/[0.04] text-foreground/70";
+  return (
+    <button
+      onClick={onClick}
+      className={`text-left rounded-2xl border p-3 transition hover:bg-foreground/5 ${toneCls}`}
+    >
+      <div className="flex items-center gap-2 mb-1">
+        <span className="w-7 h-7 rounded-lg bg-foreground/5 flex items-center justify-center">
+          {icon}
+        </span>
+        <span className="text-sm font-semibold">{label}</span>
+      </div>
+      <p className="text-[11px] text-foreground/50 leading-snug">{sublabel}</p>
+    </button>
+  );
+}
+
+function StatTile({
+  value,
+  label,
+  tone = "default",
+}: {
+  value: number;
+  label: string;
+  tone?: "default" | "secondary";
+}) {
+  const valueCls = tone === "secondary" ? "text-secondary" : "text-foreground";
+  return (
+    <div className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-3 text-center">
+      <div className={`text-2xl font-bold tabular-nums ${valueCls}`}>{value}</div>
+      <div className="text-[10px] uppercase tracking-wider text-foreground/40 mt-1">
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function SettingRow({
+  title,
+  description,
+  locked,
+}: {
+  title: string;
+  description: string;
+  locked?: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4 flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <div className="text-sm font-semibold text-foreground">{title}</div>
+        <p className="text-[11px] text-foreground/50 mt-0.5">{description}</p>
+      </div>
+      {locked && (
+        <Badge
+          variant="outline"
+          className="text-[10px] border-foreground/15 text-foreground/50 shrink-0"
+        >
+          Verrouillé
+        </Badge>
+      )}
+    </div>
+  );
+}
