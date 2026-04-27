@@ -417,6 +417,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthGuard>
+        </SiteLock>
         </BrowserRouter>
       </GlobalNotificationProvider>
     </TooltipProvider>
