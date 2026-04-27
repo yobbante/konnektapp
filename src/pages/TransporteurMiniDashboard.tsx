@@ -150,8 +150,24 @@ export default function TransporteurMiniDashboard() {
         <button onClick={() => nav("/t")} className="text-xs text-white/40 hover:text-white/70 flex items-center gap-1 mb-4">
           <ArrowLeft className="w-3 h-3" /> Retour
         </button>
-        <h1 className="text-3xl font-bold tracking-tight">Mon espace transporteur</h1>
-        <p className="text-sm text-white/50 mt-1">Vos départs et opportunités</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Mon espace transporteur</h1>
+            <p className="text-sm text-white/50 mt-1">Vos départs et opportunités</p>
+          </div>
+          <button
+            onClick={manualRefresh}
+            disabled={refreshing}
+            aria-label="Actualiser"
+            className="shrink-0 mt-1 h-9 w-9 rounded-full border border-white/15 hover:bg-white/5 flex items-center justify-center transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin text-emerald-400" : "text-white/60"}`} />
+          </button>
+        </div>
+        <div className="mt-3 flex items-center gap-2 text-[11px] text-white/40">
+          <span className={`w-1.5 h-1.5 rounded-full ${refreshing ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
+          {refreshing ? "Mise à jour…" : `Mis à jour ${formatAgo(now, lastUpdate)}`}
+        </div>
       </header>
 
       {/* DEPARTURES */}
