@@ -38,6 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format, isAfter, startOfDay, formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { useBetaRedirectGuard } from "@/hooks/useBetaRedirectGuard";
 
 interface DashboardData {
   wallet: {balance: number;pending: number;totalMonth: number;commissionRate: number;commissionDue: number;currency: string;totalEarned: number;totalWithdrawn: number;locked: number;} | null;
@@ -69,6 +70,7 @@ export default function GPApercuPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
+  useBetaRedirectGuard();
   const { gpProfile, loading: profileLoading, pendingCount, activeCount, reload: reloadProfile } = useGPProfile();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
