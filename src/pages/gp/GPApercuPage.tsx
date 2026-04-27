@@ -275,6 +275,10 @@ export default function GPApercuPage() {
       activeTab="aujourdhui"
       onNewVoyage={() => setShowVoyageForm(true)}>
 
+      <div className="px-4 pt-3">
+        <BetaRedirectInfoBanner />
+      </div>
+
       {!isPending &&
       <GPKYCProgressCard
         kycLevel={gpProfile.kyc_level ?? 0}
