@@ -128,6 +128,45 @@ export type Database = {
           },
         ]
       }
+      app_lock_settings: {
+        Row: {
+          bypass_paths: string[]
+          created_at: string
+          id: string
+          is_locked: boolean
+          launch_at: string
+          message: string
+          partner_token: string
+          singleton: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          bypass_paths?: string[]
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          launch_at?: string
+          message?: string
+          partner_token?: string
+          singleton?: boolean
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          bypass_paths?: string[]
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          launch_at?: string
+          message?: string
+          partner_token?: string
+          singleton?: boolean
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       beta_tracking_events: {
         Row: {
           created_at: string
