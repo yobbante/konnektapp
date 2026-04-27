@@ -9,6 +9,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { SiteLock } from "@/components/site-lock/SiteLock";
 import { GlobalNotificationProvider } from "@/components/notifications/GlobalNotificationProvider";
 // OfflineIndicator removed — app-like experience, no PWA indicators
 import { RoleSwitchPopup } from "@/components/profile/RoleSwitchPopup";
