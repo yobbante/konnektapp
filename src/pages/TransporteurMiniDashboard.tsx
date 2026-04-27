@@ -1,8 +1,8 @@
 // Mini dashboard transporteur (post-onboarding) — frictionless.
-// Affiche "Mes départs actifs" et "Mes demandes envoyées".
-import { useEffect, useState } from "react";
+// Affiche "Mes départs actifs" et "Mes demandes envoyées" avec auto-refresh temps réel.
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Truck, Plus, Package, ArrowLeft, MessageCircle, MapPin, Calendar, CheckCircle2, Loader2 } from "lucide-react";
+import { Truck, Plus, Package, ArrowLeft, MessageCircle, MapPin, Calendar, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +41,10 @@ export default function TransporteurMiniDashboard() {
   const [departures, setDepartures] = useState<Departure[]>([]);
   const [interests, setInterests] = useState<Interest[]>([]);
   const [gpId, setGpId] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [now, setNow] = useState<Date>(new Date());
+  const gpIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -56,13 +60,62 @@ export default function TransporteurMiniDashboard() {
       if (!gp) { nav("/t"); return; }
       if (cancelled) return;
       setGpId(gp.id);
+      gpIdRef.current = gp.id;
 
       await Promise.all([loadDepartures(gp.id), loadInterests(gp.id)]);
-      if (!cancelled) setLoading(false);
+      if (!cancelled) {
+        setLoading(false);
+        setLastUpdate(new Date());
+      }
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-refresh: realtime + 20s polling + ticker for "il y a Xs" indicator
+  useEffect(() => {
+    if (!gpId) return;
+
+    const refresh = async () => {
+      if (!gpIdRef.current) return;
+      setRefreshing(true);
+      try {
+        await Promise.all([loadDepartures(gpIdRef.current), loadInterests(gpIdRef.current)]);
+        setLastUpdate(new Date());
+      } finally {
+        setRefreshing(false);
+      }
+    };
+
+    const channel = supabase
+      .channel("mini_dashboard_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "gp_offers" }, () => { void refresh(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "transporter_interests" }, () => { void refresh(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "custom_requests" }, () => { void refresh(); })
+      .subscribe();
+
+    const interval = window.setInterval(() => { void refresh(); }, 20000);
+    const tick = window.setInterval(() => setNow(new Date()), 1000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+      clearInterval(tick);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gpId]);
+
+  const manualRefresh = async () => {
+    if (!gpId) return;
+    setRefreshing(true);
+    try {
+      await Promise.all([loadDepartures(gpId), loadInterests(gpId)]);
+      setLastUpdate(new Date());
+      toast.success("Mis à jour");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const loadDepartures = async (id: string) => {
     const { data } = await supabase
@@ -97,8 +150,24 @@ export default function TransporteurMiniDashboard() {
         <button onClick={() => nav("/t")} className="text-xs text-white/40 hover:text-white/70 flex items-center gap-1 mb-4">
           <ArrowLeft className="w-3 h-3" /> Retour
         </button>
-        <h1 className="text-3xl font-bold tracking-tight">Mon espace transporteur</h1>
-        <p className="text-sm text-white/50 mt-1">Vos départs et opportunités</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Mon espace transporteur</h1>
+            <p className="text-sm text-white/50 mt-1">Vos départs et opportunités</p>
+          </div>
+          <button
+            onClick={manualRefresh}
+            disabled={refreshing}
+            aria-label="Actualiser"
+            className="shrink-0 mt-1 h-9 w-9 rounded-full border border-white/15 hover:bg-white/5 flex items-center justify-center transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin text-emerald-400" : "text-white/60"}`} />
+          </button>
+        </div>
+        <div className="mt-3 flex items-center gap-2 text-[11px] text-white/40">
+          <span className={`w-1.5 h-1.5 rounded-full ${refreshing ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
+          {refreshing ? "Mise à jour…" : `Mis à jour ${formatAgo(now, lastUpdate)}`}
+        </div>
       </header>
 
       {/* DEPARTURES */}
@@ -172,6 +241,16 @@ export default function TransporteurMiniDashboard() {
       </section>
     </div>
   );
+}
+
+function formatAgo(now: Date, then: Date) {
+  const s = Math.max(0, Math.floor((now.getTime() - then.getTime()) / 1000));
+  if (s < 5) return "à l'instant";
+  if (s < 60) return `il y a ${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `il y a ${m} min`;
+  const h = Math.floor(m / 60);
+  return `il y a ${h}h`;
 }
 
 function StatusBadge({ status }: { status: string }) {
