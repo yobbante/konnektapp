@@ -198,6 +198,45 @@ export default function TransporteurQuickOnboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, publishedRoute]);
 
+  // Friendly mapping of low-level errors → user-facing messages
+  const friendlyError = (raw: string): string => {
+    const m = raw.toLowerCase();
+    if (m.includes("failed to fetch") || m.includes("networkerror") || m.includes("load failed"))
+      return "Connexion impossible. Vérifiez votre Internet et réessayez.";
+    if (m.includes("timeout") || m.includes("timed out"))
+      return "Le serveur met trop de temps à répondre. Nouvelle tentative…";
+    if (m.includes("auth")) return "Création du compte impossible. Réessayez dans un instant.";
+    if (m.includes("offer")) return "Le départ n'a pas pu être enregistré. Réessayez.";
+    if (m.includes("gp:")) return "Profil transporteur non créé. Réessayez.";
+    if (m.includes("server") || m.includes("500") || m.includes("503"))
+      return "Le service est momentanément indisponible. Réessayez.";
+    return raw || "Erreur inconnue. Réessayez.";
+  };
+
+  const invokeWithRetry = async (payload: Record<string, any>, maxAttempts = 3) => {
+    let lastErr: any = null;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const res = await supabase.functions.invoke("beta-onboard", { body: payload });
+        if (res.error) throw new Error(res.error.message || "Edge function error");
+        if (!res.data?.gp_id || !res.data?.user_id) throw new Error("Réponse invalide du serveur");
+        return res.data;
+      } catch (e: any) {
+        lastErr = e;
+        const msg = (e?.message || "").toLowerCase();
+        // Don't retry on validation errors (400) — only on network/server failures
+        if (msg.includes("invalide") || msg.includes("champs")) break;
+        if (attempt < maxAttempts) {
+          toast.message(`Tentative ${attempt}/${maxAttempts} échouée — nouvelle tentative…`, {
+            duration: 1500,
+          });
+          await new Promise((r) => setTimeout(r, 800 * attempt)); // 800ms, 1600ms
+        }
+      }
+    }
+    throw lastErr || new Error("Échec après plusieurs tentatives");
+  };
+
   const handlePublish = async () => {
     if (!formValid) {
       toast.error("Vérifiez les champs (téléphone, villes différentes, capacité)");
@@ -208,20 +247,16 @@ export default function TransporteurQuickOnboard() {
       const session_id = getSessionId();
       const source = (() => { try { return sessionStorage.getItem("kkt_src"); } catch { return null; } })();
 
-      const { data, error } = await supabase.functions.invoke("beta-onboard", {
-        body: {
-          name: name.trim(),
-          phone: phone.trim(),
-          origin_city: origin.trim(),
-          destination_city: destination.trim(),
-          departure_date: date,
-          capacity_kg: Number(capacity),
-          session_id,
-          source,
-        },
+      const data = await invokeWithRetry({
+        name: name.trim(),
+        phone: phone.trim(),
+        origin_city: origin.trim(),
+        destination_city: destination.trim(),
+        departure_date: date,
+        capacity_kg: Number(capacity),
+        session_id,
+        source,
       });
-      if (error) throw new Error(error.message || "Connexion au serveur impossible. Réessayez.");
-      if (!data?.gp_id || !data?.user_id) throw new Error("Réponse invalide du serveur");
 
       // Persist session BEFORE marking account ready
       if (data.session?.access_token && data.session?.refresh_token) {
