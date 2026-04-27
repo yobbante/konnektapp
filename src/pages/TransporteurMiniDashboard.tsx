@@ -47,30 +47,61 @@ export default function TransporteurMiniDashboard() {
   const [now, setNow] = useState<Date>(new Date());
   const gpIdRef = useRef<string | null>(null);
 
+  // Launch state for banner + debounced auto-redirect.
+  const [launchInfo, setLaunchInfo] = useState<{ is_locked: boolean; launch_at: string } | null>(null);
+  const launchConfirmRef = useRef(0); // require 2 successful checks before redirect
+  const lastRedirectAtRef = useRef<number>(0);
+
   // Auto-redirect to /gp/apercu once the launch countdown ends.
-  // Works after refresh and across tabs (storage event + interval poll).
+  // Anti-loop guard: needs 2 consecutive positive checks, cooldown 60s,
+  // and a session marker so a flapping network never bounces the user.
   useEffect(() => {
     let cancelled = false;
+    const REDIRECT_COOLDOWN_MS = 60_000;
+
+    const safeRedirect = () => {
+      const now = Date.now();
+      const lastClient = (() => {
+        try { return Number(sessionStorage.getItem("kkt_last_redirect_at") || "0"); } catch { return 0; }
+      })();
+      if (now - lastRedirectAtRef.current < REDIRECT_COOLDOWN_MS) return;
+      if (now - lastClient < REDIRECT_COOLDOWN_MS) return;
+      lastRedirectAtRef.current = now;
+      try { sessionStorage.setItem("kkt_last_redirect_at", String(now)); } catch {}
+      try { localStorage.setItem("kkt_launched", "1"); } catch {}
+      nav("/gp/apercu", { replace: true });
+    };
+
     const checkLaunch = async () => {
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("app_lock_settings" as any)
           .select("is_locked, launch_at")
           .maybeSingle();
-        if (cancelled || !data) return;
+        if (cancelled) return;
+        if (error || !data) {
+          // Network/latency issue: reset confirmation counter, never redirect blindly
+          launchConfirmRef.current = 0;
+          return;
+        }
         const cfg = data as unknown as { is_locked: boolean; launch_at: string };
+        if (!cancelled) setLaunchInfo(cfg);
         const launched = !cfg.is_locked || new Date(cfg.launch_at).getTime() <= Date.now();
         if (launched) {
-          try { localStorage.setItem("kkt_launched", "1"); } catch {}
-          nav("/gp/apercu", { replace: true });
+          launchConfirmRef.current += 1;
+          if (launchConfirmRef.current >= 2) safeRedirect();
+        } else {
+          launchConfirmRef.current = 0;
         }
-      } catch { /* noop */ }
+      } catch {
+        launchConfirmRef.current = 0;
+      }
     };
-    // Initial + every 30s + cross-tab sync
+
     void checkLaunch();
-    const id = window.setInterval(checkLaunch, 30000);
+    const id = window.setInterval(checkLaunch, 30_000);
     const onStorage = (e: StorageEvent) => {
-      if (e.key === "kkt_launched" && e.newValue === "1") nav("/gp/apercu", { replace: true });
+      if (e.key === "kkt_launched" && e.newValue === "1") safeRedirect();
     };
     window.addEventListener("storage", onStorage);
     return () => { cancelled = true; clearInterval(id); window.removeEventListener("storage", onStorage); };
