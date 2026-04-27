@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { CityCombobox } from "@/components/beta/CityCombobox";
 
 const KONNEKT_WHATSAPP = "221770000000"; // numéro support à remplacer
 
@@ -406,20 +407,10 @@ export default function TransporteurQuickOnboard() {
 
               <div className="grid grid-cols-2 gap-3">
                 <FieldRow icon={<MapPin className="w-4 h-4" />} label="Départ">
-                  <Input
-                    value={origin}
-                    onChange={(e) => setOrigin(e.target.value.slice(0, 60))}
-                    placeholder="Dakar"
-                    className="h-12 rounded-xl bg-[hsl(var(--k-scan-text))]/5 border-[hsl(var(--k-scan-text))]/10 text-[hsl(var(--k-scan-text))] placeholder:text-[hsl(var(--k-scan-text))]/30"
-                  />
+                  <CityCombobox value={origin} onChange={(v) => setOrigin(v.slice(0, 60))} placeholder="Dakar" />
                 </FieldRow>
                 <FieldRow icon={<MapPin className="w-4 h-4" />} label="Destination">
-                  <Input
-                    value={destination}
-                    onChange={(e) => setDestination(e.target.value.slice(0, 60))}
-                    placeholder="Paris"
-                    className="h-12 rounded-xl bg-[hsl(var(--k-scan-text))]/5 border-[hsl(var(--k-scan-text))]/10 text-[hsl(var(--k-scan-text))] placeholder:text-[hsl(var(--k-scan-text))]/30"
-                  />
+                  <CityCombobox value={destination} onChange={(v) => setDestination(v.slice(0, 60))} placeholder="Paris" />
                 </FieldRow>
               </div>
 
