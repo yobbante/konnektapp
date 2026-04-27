@@ -238,6 +238,78 @@ export default function TransporteurMiniDashboard() {
         <ClaimAccountBanner />
       </section>
 
+      {/* QUICK ACTIONS */}
+      <section className="px-6 max-w-xl mx-auto mb-6">
+        <h2 className="text-sm uppercase tracking-wider text-foreground/40 mb-3">Actions rapides</h2>
+        <div className="grid grid-cols-2 gap-2.5">
+          <QuickAction
+            icon={<Plus className="w-4 h-4" />}
+            label="Nouveau départ"
+            sublabel="Publier un trajet"
+            onClick={() => nav("/t")}
+            tone="primary"
+          />
+          <QuickAction
+            icon={<Inbox className="w-4 h-4" />}
+            label="Demandes"
+            sublabel="Opportunités client"
+            onClick={() => nav("/t")}
+            tone="secondary"
+          />
+          <QuickAction
+            icon={<MessageCircle className="w-4 h-4" />}
+            label="Mon profil"
+            sublabel="Coordonnées beta"
+            onClick={() => nav("/t")}
+            tone="muted"
+          />
+          <QuickAction
+            icon={<Package className="w-4 h-4" />}
+            label="Wallet (à venir)"
+            sublabel="Disponible au lancement"
+            onClick={() => toast.info("Disponible au lancement officiel")}
+            tone="locked"
+          />
+        </div>
+      </section>
+
+      {/* STATS */}
+      <section className="px-6 max-w-xl mx-auto mb-6">
+        <h2 className="text-sm uppercase tracking-wider text-foreground/40 mb-3">Statistiques</h2>
+        {(() => {
+          const activeDep = departures.length;
+          const assigned = interests.filter((i) => i.status === "validated" || i.status === "in_progress").length;
+          const pendingI = interests.filter((i) => i.status === "pending").length;
+          return (
+            <div className="grid grid-cols-3 gap-2.5">
+              <StatTile value={activeDep} label="Départs actifs" />
+              <StatTile value={assigned} label="Attribuées" tone="secondary" />
+              <StatTile value={pendingI} label="En attente" />
+            </div>
+          );
+        })()}
+      </section>
+
+      {/* PARAMÈTRES PRIX & RESTRICTIONS (preview verrouillé beta) */}
+      <section className="px-6 max-w-xl mx-auto mb-6">
+        <h2 className="text-sm uppercase tracking-wider text-foreground/40 mb-3">Paramètres</h2>
+        <div className="space-y-2.5">
+          <SettingRow
+            title="Tarification au kilo"
+            description="Définissez votre prix par kg et tranches"
+            locked
+          />
+          <SettingRow
+            title="Restrictions de transport"
+            description="Catégories interdites, taille max, etc."
+            locked
+          />
+        </div>
+        <p className="text-[11px] text-foreground/40 mt-3 leading-relaxed">
+          Ces paramètres seront éditables dès l'activation de votre compte
+          GP au lancement officiel.
+        </p>
+      </section>
 
       {/* DEPARTURES */}
       <section className="px-6 max-w-xl mx-auto">
@@ -473,6 +545,90 @@ function LaunchStatusBanner({
           Bascule auto vers <span className="font-mono text-secondary">/gp/apercu</span> dans <span className="tabular-nums font-semibold">{cd}</span>
         </div>
       </div>
+    </div>
+  );
+}
+
+function QuickAction({
+  icon,
+  label,
+  sublabel,
+  onClick,
+  tone = "muted",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  sublabel: string;
+  onClick: () => void;
+  tone?: "primary" | "secondary" | "muted" | "locked";
+}) {
+  const toneCls =
+    tone === "primary"
+      ? "border-primary/25 bg-primary/10 text-primary"
+      : tone === "secondary"
+      ? "border-secondary/25 bg-secondary/10 text-secondary"
+      : tone === "locked"
+      ? "border-foreground/10 bg-foreground/[0.03] text-foreground/40"
+      : "border-foreground/10 bg-foreground/[0.04] text-foreground/70";
+  return (
+    <button
+      onClick={onClick}
+      className={`text-left rounded-2xl border p-3 transition hover:bg-foreground/5 ${toneCls}`}
+    >
+      <div className="flex items-center gap-2 mb-1">
+        <span className="w-7 h-7 rounded-lg bg-foreground/5 flex items-center justify-center">
+          {icon}
+        </span>
+        <span className="text-sm font-semibold">{label}</span>
+      </div>
+      <p className="text-[11px] text-foreground/50 leading-snug">{sublabel}</p>
+    </button>
+  );
+}
+
+function StatTile({
+  value,
+  label,
+  tone = "default",
+}: {
+  value: number;
+  label: string;
+  tone?: "default" | "secondary";
+}) {
+  const valueCls = tone === "secondary" ? "text-secondary" : "text-foreground";
+  return (
+    <div className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-3 text-center">
+      <div className={`text-2xl font-bold tabular-nums ${valueCls}`}>{value}</div>
+      <div className="text-[10px] uppercase tracking-wider text-foreground/40 mt-1">
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function SettingRow({
+  title,
+  description,
+  locked,
+}: {
+  title: string;
+  description: string;
+  locked?: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4 flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <div className="text-sm font-semibold text-foreground">{title}</div>
+        <p className="text-[11px] text-foreground/50 mt-0.5">{description}</p>
+      </div>
+      {locked && (
+        <Badge
+          variant="outline"
+          className="text-[10px] border-foreground/15 text-foreground/50 shrink-0"
+        >
+          Verrouillé
+        </Badge>
+      )}
     </div>
   );
 }

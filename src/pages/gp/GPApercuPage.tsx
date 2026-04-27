@@ -39,6 +39,7 @@ import { format, isAfter, startOfDay, formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useBetaRedirectGuard } from "@/hooks/useBetaRedirectGuard";
+import { BetaRedirectInfoBanner } from "@/components/beta/BetaRedirectInfoBanner";
 
 interface DashboardData {
   wallet: {balance: number;pending: number;totalMonth: number;commissionRate: number;commissionDue: number;currency: string;totalEarned: number;totalWithdrawn: number;locked: number;} | null;
@@ -274,6 +275,10 @@ export default function GPApercuPage() {
       activeOrdersCount={activeCount}
       activeTab="aujourdhui"
       onNewVoyage={() => setShowVoyageForm(true)}>
+
+      <div className="px-4 pt-3">
+        <BetaRedirectInfoBanner />
+      </div>
 
       {!isPending &&
       <GPKYCProgressCard
