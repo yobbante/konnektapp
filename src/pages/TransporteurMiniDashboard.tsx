@@ -232,9 +232,10 @@ export default function TransporteurMiniDashboard() {
         </div>
       </header>
 
-      {/* LAUNCH STATUS BANNER */}
-      <section className="px-6 max-w-xl mx-auto -mt-2 mb-4">
+      {/* LAUNCH STATUS BANNER + CLAIM ACCOUNT */}
+      <section className="px-6 max-w-xl mx-auto -mt-2 mb-4 space-y-3">
         <LaunchStatusBanner info={launchInfo} now={now} />
+        <ClaimAccountBanner />
       </section>
 
 
