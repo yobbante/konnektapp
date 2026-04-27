@@ -200,34 +200,34 @@ export default function TransporteurMiniDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[hsl(var(--k-scan-bg-top))] text-[hsl(var(--k-scan-text))] flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-[hsl(var(--k-scan-text))]/40" />
+      <div className="min-h-screen bg-background text-[var(--foreground)] flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-[var(--foreground)]/40" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--k-scan-bg-top))] text-[hsl(var(--k-scan-text))] pb-24">
+    <div className="min-h-screen bg-background text-[var(--foreground)] pb-24">
       <header className="px-6 pt-12 pb-6 max-w-xl mx-auto">
-        <button onClick={() => nav("/t")} className="text-xs text-[hsl(var(--k-scan-text))]/40 hover:text-[hsl(var(--k-scan-text))]/70 flex items-center gap-1 mb-4">
+        <button onClick={() => nav("/t")} className="text-xs text-[var(--foreground)]/40 hover:text-[var(--foreground)]/70 flex items-center gap-1 mb-4">
           <ArrowLeft className="w-3 h-3" /> Retour
         </button>
         <div className="flex items-start justify-between gap-3">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Mon espace transporteur</h1>
-            <p className="text-sm text-[hsl(var(--k-scan-text))]/50 mt-1">Vos départs et opportunités</p>
+            <p className="text-sm text-[var(--foreground)]/50 mt-1">Vos départs et opportunités</p>
           </div>
           <button
             onClick={manualRefresh}
             disabled={refreshing}
             aria-label="Actualiser"
-            className="shrink-0 mt-1 h-9 w-9 rounded-full border border-[hsl(var(--k-scan-text))]/15 hover:bg-[hsl(var(--k-scan-text))]/5 flex items-center justify-center transition-colors disabled:opacity-50"
+            className="shrink-0 mt-1 h-9 w-9 rounded-full border border-[var(--foreground)]/15 hover:bg-[var(--foreground)]/5 flex items-center justify-center transition-colors disabled:opacity-50"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin text-[hsl(var(--success))]" : "text-[hsl(var(--k-scan-text))]/60"}`} />
+            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin text-[hsl(var(--success))]" : "text-[var(--foreground)]/60"}`} />
           </button>
         </div>
-        <div className="mt-3 flex items-center gap-2 text-[11px] text-[hsl(var(--k-scan-text))]/40">
-          <span className={`w-1.5 h-1.5 rounded-full ${refreshing ? "bg-[hsl(var(--success))] animate-pulse" : "bg-[hsl(var(--k-scan-text-muted))]/40"}`} />
+        <div className="mt-3 flex items-center gap-2 text-[11px] text-[var(--foreground)]/40">
+          <span className={`w-1.5 h-1.5 rounded-full ${refreshing ? "bg-[hsl(var(--success))] animate-pulse" : "bg-[var(--muted-foreground)]/40"}`} />
           {refreshing ? "Mise à jour…" : `Mis à jour ${formatAgo(now, lastUpdate)}`}
         </div>
       </header>
@@ -242,17 +242,17 @@ export default function TransporteurMiniDashboard() {
       {/* DEPARTURES */}
       <section className="px-6 max-w-xl mx-auto">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm uppercase tracking-wider text-[hsl(var(--k-scan-text))]/40 flex items-center gap-2">
+          <h2 className="text-sm uppercase tracking-wider text-[var(--foreground)]/40 flex items-center gap-2">
             <Truck className="w-3.5 h-3.5" /> Mes départs actifs
           </h2>
-          <Button size="sm" variant="outline" className="h-8 rounded-full border-[hsl(var(--k-scan-text))]/15 text-xs" onClick={() => nav("/t")}>
+          <Button size="sm" variant="outline" className="h-8 rounded-full border-[var(--foreground)]/15 text-xs" onClick={() => nav("/t")}>
             <Plus className="w-3 h-3 mr-1" /> Ajouter
           </Button>
         </div>
 
         {departures.length === 0 ? (
-          <Card className="bg-[hsl(var(--k-scan-text))]/5 border-[hsl(var(--k-scan-text))]/10 p-6 text-center">
-            <p className="text-sm text-[hsl(var(--k-scan-text))]/60">Aucun départ actif</p>
+          <Card className="bg-[var(--foreground)]/5 border-[var(--foreground)]/10 p-6 text-center">
+            <p className="text-sm text-[var(--foreground)]/60">Aucun départ actif</p>
             <Button className="mt-3 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full" size="sm" onClick={() => nav("/t")}>
               Publier un départ
             </Button>
@@ -260,12 +260,12 @@ export default function TransporteurMiniDashboard() {
         ) : (
           <div className="space-y-2.5">
             {departures.map((d) => (
-              <Card key={d.id} className="bg-[hsl(var(--k-scan-text))]/5 border-[hsl(var(--k-scan-text))]/10 p-4">
+              <Card key={d.id} className="bg-[var(--foreground)]/5 border-[var(--foreground)]/10 p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="font-semibold">{d.origin_city} → {d.destination_city}</div>
                   <Badge className="bg-[hsl(var(--success))]/15 text-[hsl(var(--success))] border-[hsl(var(--success))]/25 text-[10px]">Actif</Badge>
                 </div>
-                <div className="flex items-center gap-4 text-xs text-[hsl(var(--k-scan-text))]/50">
+                <div className="flex items-center gap-4 text-xs text-[var(--foreground)]/50">
                   <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{format(new Date(d.departure_date), "d MMM yyyy", { locale: fr })}</span>
                   <span>{d.available_capacity}/{d.total_capacity} kg</span>
                 </div>
@@ -298,8 +298,8 @@ export default function TransporteurMiniDashboard() {
               {assigned.length === 0 ? (
                 <Card className="bg-gradient-to-br from-secondary/5 to-transparent border-secondary/20 p-6 text-center">
                   <Inbox className="w-5 h-5 text-secondary/60 mx-auto mb-2" />
-                  <p className="text-sm text-[hsl(var(--k-scan-text))]/70">Aucune mission attribuée pour l'instant</p>
-                  <p className="text-xs text-[hsl(var(--k-scan-text))]/40 mt-1">
+                  <p className="text-sm text-[var(--foreground)]/70">Aucune mission attribuée pour l'instant</p>
+                  <p className="text-xs text-[var(--foreground)]/40 mt-1">
                     Yobbante vous notifiera dès qu'une demande client sera validée pour vous.
                   </p>
                 </Card>
@@ -313,7 +313,7 @@ export default function TransporteurMiniDashboard() {
                             <Sparkles className="w-3.5 h-3.5 text-secondary shrink-0" />
                             {i.custom_requests?.origin_city} → {i.custom_requests?.destination_city}
                           </div>
-                          <div className="text-xs text-[hsl(var(--k-scan-text))]/60 mt-1 flex items-center gap-2 flex-wrap">
+                          <div className="text-xs text-[var(--foreground)]/60 mt-1 flex items-center gap-2 flex-wrap">
                             <span className="font-mono">{i.custom_requests?.request_number}</span>
                             {i.custom_requests?.weight_estimate && (
                               <span>· {i.custom_requests.weight_estimate} kg</span>
@@ -328,7 +328,7 @@ export default function TransporteurMiniDashboard() {
                         </div>
                         <StatusBadge status={i.status} />
                       </div>
-                      <div className="mt-3 pt-3 border-t border-[hsl(var(--k-scan-text))]/10 flex items-center justify-between">
+                      <div className="mt-3 pt-3 border-t border-[var(--foreground)]/10 flex items-center justify-between">
                         <p className="text-[11px] text-secondary/80">
                           ✓ Mission validée — préparez l'enlèvement
                         </p>
@@ -347,29 +347,29 @@ export default function TransporteurMiniDashboard() {
 
             {/* DEMANDES ENVOYÉES (en attente de validation admin) */}
             <section className="px-6 max-w-xl mx-auto mt-10">
-              <h2 className="text-sm uppercase tracking-wider text-[hsl(var(--k-scan-text))]/40 flex items-center gap-2 mb-3">
+              <h2 className="text-sm uppercase tracking-wider text-[var(--foreground)]/40 flex items-center gap-2 mb-3">
                 <MessageCircle className="w-3.5 h-3.5" /> Mes demandes envoyées
                 {pending.length > 0 && (
-                  <span className="text-[10px] text-[hsl(var(--k-scan-text))]/30">({pending.length} en attente)</span>
+                  <span className="text-[10px] text-[var(--foreground)]/30">({pending.length} en attente)</span>
                 )}
               </h2>
 
               {pending.length === 0 && past.length === 0 ? (
-                <Card className="bg-[hsl(var(--k-scan-text))]/5 border-[hsl(var(--k-scan-text))]/10 p-6 text-center">
-                  <Package className="w-5 h-5 text-[hsl(var(--k-scan-text))]/30 mx-auto mb-2" />
-                  <p className="text-sm text-[hsl(var(--k-scan-text))]/60">Aucune demande envoyée</p>
-                  <p className="text-xs text-[hsl(var(--k-scan-text))]/40 mt-1">Cliquez "Je suis intéressé" sur une opportunité.</p>
+                <Card className="bg-[var(--foreground)]/5 border-[var(--foreground)]/10 p-6 text-center">
+                  <Package className="w-5 h-5 text-[var(--foreground)]/30 mx-auto mb-2" />
+                  <p className="text-sm text-[var(--foreground)]/60">Aucune demande envoyée</p>
+                  <p className="text-xs text-[var(--foreground)]/40 mt-1">Cliquez "Je suis intéressé" sur une opportunité.</p>
                 </Card>
               ) : (
                 <div className="space-y-2.5">
                   {[...pending, ...past].map((i) => (
-                    <Card key={i.id} className="bg-[hsl(var(--k-scan-text))]/5 border-[hsl(var(--k-scan-text))]/10 p-4">
+                    <Card key={i.id} className="bg-[var(--foreground)]/5 border-[var(--foreground)]/10 p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="font-semibold truncate">
                             {i.custom_requests?.origin_city} → {i.custom_requests?.destination_city}
                           </div>
-                          <div className="text-xs text-[hsl(var(--k-scan-text))]/50 mt-0.5 flex items-center gap-2">
+                          <div className="text-xs text-[var(--foreground)]/50 mt-0.5 flex items-center gap-2">
                             <span>{i.custom_requests?.request_number}</span>
                             {i.custom_requests?.weight_estimate && <span>· {i.custom_requests.weight_estimate} kg</span>}
                           </div>
@@ -384,10 +384,10 @@ export default function TransporteurMiniDashboard() {
 
             {/* Info beta footer */}
             <section className="px-6 max-w-xl mx-auto mt-10">
-              <div className="rounded-2xl border border-[hsl(var(--k-scan-text))]/10 bg-[hsl(var(--k-scan-text))]/[0.03] p-4 flex gap-3">
-                <AlertCircle className="w-4 h-4 text-[hsl(var(--k-scan-text))]/40 shrink-0 mt-0.5" />
-                <div className="text-[11px] text-[hsl(var(--k-scan-text))]/50 leading-relaxed">
-                  <span className="text-[hsl(var(--k-scan-text))]/70 font-medium">Mode beta actif.</span> Vous accédez au mini-dashboard
+              <div className="rounded-2xl border border-[var(--foreground)]/10 bg-[var(--foreground)]/[0.03] p-4 flex gap-3">
+                <AlertCircle className="w-4 h-4 text-[var(--foreground)]/40 shrink-0 mt-0.5" />
+                <div className="text-[11px] text-[var(--foreground)]/50 leading-relaxed">
+                  <span className="text-[var(--foreground)]/70 font-medium">Mode beta actif.</span> Vous accédez au mini-dashboard
                   transporteur. À l'ouverture officielle, vous basculerez automatiquement sur le tableau de bord
                   complet GP avec toutes les fonctionnalités.
                 </div>
@@ -412,7 +412,7 @@ function formatAgo(now: Date, then: Date) {
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
-    pending: { label: "En attente", cls: "bg-[hsl(var(--k-scan-text))]/10 text-[hsl(var(--k-scan-text))]/70 border-[hsl(var(--k-scan-text))]/15" },
+    pending: { label: "En attente", cls: "bg-[var(--foreground)]/10 text-[var(--foreground)]/70 border-[var(--foreground)]/15" },
     validated: { label: "Validée", cls: "bg-[hsl(var(--transport-maritime))]/15 text-[hsl(var(--transport-maritime))] border-[hsl(var(--transport-maritime))]/25" },
     in_progress: { label: "En cours", cls: "bg-secondary/15 text-secondary border-secondary/25" },
     completed: { label: "Terminée", cls: "bg-[hsl(var(--success))]/15 text-[hsl(var(--success))] border-[hsl(var(--success))]/25" },
@@ -431,8 +431,8 @@ function LaunchStatusBanner({
 }) {
   if (!info) {
     return (
-      <div className="rounded-2xl border border-[hsl(var(--k-scan-text))]/10 bg-[hsl(var(--k-scan-text))]/[0.03] px-4 py-3 flex items-center gap-2 text-[11px] text-[hsl(var(--k-scan-text))]/40">
-        <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--k-scan-text-muted))]/30 animate-pulse" />
+      <div className="rounded-2xl border border-[var(--foreground)]/10 bg-[var(--foreground)]/[0.03] px-4 py-3 flex items-center gap-2 text-[11px] text-[var(--foreground)]/40">
+        <span className="w-1.5 h-1.5 rounded-full bg-[var(--muted-foreground)]/30 animate-pulse" />
         Vérification du statut de lancement…
       </div>
     );
