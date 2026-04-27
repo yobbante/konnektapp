@@ -5666,6 +5666,45 @@ export type Database = {
         }
         Relationships: []
       }
+      shipments: {
+        Row: {
+          carrier: string | null
+          created_at: string
+          destination_city: string | null
+          id: string
+          konnekt_external_id: string
+          last_event_at: string | null
+          metadata: Json
+          origin_city: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          carrier?: string | null
+          created_at?: string
+          destination_city?: string | null
+          id?: string
+          konnekt_external_id: string
+          last_event_at?: string | null
+          metadata?: Json
+          origin_city?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          carrier?: string | null
+          created_at?: string
+          destination_city?: string | null
+          id?: string
+          konnekt_external_id?: string
+          last_event_at?: string | null
+          metadata?: Json
+          origin_city?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subscription_invoices: {
         Row: {
           amount: number
@@ -5836,6 +5875,47 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      timeline_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          occurred_at: string
+          payload: Json
+          shipment_id: string
+          source: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          occurred_at?: string
+          payload?: Json
+          shipment_id: string
+          source?: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          occurred_at?: string
+          payload?: Json
+          shipment_id?: string
+          source?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timeline_events_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
             referencedColumns: ["id"]
           },
         ]
