@@ -1,8 +1,9 @@
-// Mini dashboard transporteur (post-onboarding) — frictionless.
-// Affiche "Mes départs actifs" et "Mes demandes envoyées" avec auto-refresh temps réel.
+// Mini dashboard transporteur beta (pré-lancement) — actif jusqu'à la fin du countdown.
+// Sections : Départs actifs · Demandes attribuées par Yobbante · Demandes envoyées (en attente).
+// Après la fin du countdown, les transporteurs basculeront automatiquement sur /gp/apercu.
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Truck, Plus, Package, ArrowLeft, MessageCircle, MapPin, Calendar, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
+import { Truck, Plus, Package, ArrowLeft, MessageCircle, Calendar, Loader2, RefreshCw, Sparkles, Inbox, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
