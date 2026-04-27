@@ -184,6 +184,7 @@ const App = () => (
           <AppleNotificationContainer />
           <RoleSwitchPopup />
           <DeliveryCodePopup />
+          <SiteLock>
           <AuthGuard>
           <Routes>
             {/* ============================================
