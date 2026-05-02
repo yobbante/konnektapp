@@ -48,64 +48,28 @@ export default function TransporteurMiniDashboard() {
   const [now, setNow] = useState<Date>(new Date());
   const gpIdRef = useRef<string | null>(null);
 
-  // Launch state for banner + debounced auto-redirect.
+  // Launch state — affiché en bannière (countdown / lancé). Aucune redirection forcée.
   const [launchInfo, setLaunchInfo] = useState<{ is_locked: boolean; launch_at: string } | null>(null);
-  const launchConfirmRef = useRef(0); // require 2 successful checks before redirect
-  const lastRedirectAtRef = useRef<number>(0);
 
-  // Auto-redirect to /gp/apercu once the launch countdown ends.
-  // Anti-loop guard: needs 2 consecutive positive checks, cooldown 60s,
-  // and a session marker so a flapping network never bounces the user.
+  // Blocage désactivé : on lit uniquement l'état du lock pour l'afficher dans la
+  // bannière (countdown / lancement), sans jamais forcer la redirection.
   useEffect(() => {
     let cancelled = false;
-    const REDIRECT_COOLDOWN_MS = 60_000;
-
-    const safeRedirect = () => {
-      const now = Date.now();
-      const lastClient = (() => {
-        try { return Number(sessionStorage.getItem("kkt_last_redirect_at") || "0"); } catch { return 0; }
-      })();
-      if (now - lastRedirectAtRef.current < REDIRECT_COOLDOWN_MS) return;
-      if (now - lastClient < REDIRECT_COOLDOWN_MS) return;
-      lastRedirectAtRef.current = now;
-      try { sessionStorage.setItem("kkt_last_redirect_at", String(now)); } catch {}
-      try { localStorage.setItem("kkt_launched", "1"); } catch {}
-      nav("/gp/apercu", { replace: true });
-    };
-
     const checkLaunch = async () => {
       try {
         const { data, error } = await supabase
           .from("app_lock_settings" as any)
           .select("is_locked, launch_at")
           .maybeSingle();
-        if (cancelled) return;
-        if (error || !data) {
-          // Network/latency issue: reset confirmation counter, never redirect blindly
-          launchConfirmRef.current = 0;
-          return;
-        }
-        const cfg = data as unknown as { is_locked: boolean; launch_at: string };
-        if (!cancelled) setLaunchInfo(cfg);
-        const launched = !cfg.is_locked || new Date(cfg.launch_at).getTime() <= Date.now();
-        if (launched) {
-          launchConfirmRef.current += 1;
-          if (launchConfirmRef.current >= 2) safeRedirect();
-        } else {
-          launchConfirmRef.current = 0;
-        }
+        if (cancelled || error || !data) return;
+        setLaunchInfo(data as unknown as { is_locked: boolean; launch_at: string });
       } catch {
-        launchConfirmRef.current = 0;
+        /* silent */
       }
     };
-
     void checkLaunch();
     const id = window.setInterval(checkLaunch, 30_000);
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === "kkt_launched" && e.newValue === "1") safeRedirect();
-    };
-    window.addEventListener("storage", onStorage);
-    return () => { cancelled = true; clearInterval(id); window.removeEventListener("storage", onStorage); };
+    return () => { cancelled = true; clearInterval(id); };
   }, [nav]);
 
   useEffect(() => {
@@ -520,9 +484,8 @@ function LaunchStatusBanner({
         <span className="w-2 h-2 rounded-full bg-[hsl(var(--success))] animate-pulse" />
         <div className="flex-1 min-w-0">
           <div className="text-xs font-semibold text-[hsl(var(--success))]">Plateforme lancée</div>
-          <div className="text-[11px] text-[hsl(var(--success))]/70">Bascule automatique vers votre dashboard complet…</div>
+          <div className="text-[11px] text-[hsl(var(--success))]/80">Votre dashboard GP complet est désormais accessible.</div>
         </div>
-        <Loader2 className="w-3.5 h-3.5 text-[hsl(var(--success))] animate-spin" />
       </div>
     );
   }
@@ -537,12 +500,12 @@ function LaunchStatusBanner({
     : `${minutes}m ${String(seconds).padStart(2, "0")}s`;
 
   return (
-    <div className="rounded-2xl border border-secondary/25 bg-gradient-to-r from-secondary/15 to-transparent px-4 py-3 flex items-center gap-2.5">
-      <Sparkles className="w-3.5 h-3.5 text-secondary shrink-0" />
+    <div className="rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/10 to-transparent px-4 py-3 flex items-center gap-2.5">
+      <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
       <div className="flex-1 min-w-0">
-        <div className="text-xs font-semibold text-secondary">Lancement en cours</div>
-        <div className="text-[11px] text-secondary/70">
-          Bascule auto vers <span className="font-mono text-secondary">/gp/apercu</span> dans <span className="tabular-nums font-semibold">{cd}</span>
+        <div className="text-xs font-semibold text-primary">Lancement officiel</div>
+        <div className="text-[11px] text-primary/80">
+          Compte à rebours&nbsp;: <span className="tabular-nums font-semibold">{cd}</span>
         </div>
       </div>
     </div>
