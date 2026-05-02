@@ -53,59 +53,25 @@ export default function TransporteurMiniDashboard() {
   const launchConfirmRef = useRef(0); // require 2 successful checks before redirect
   const lastRedirectAtRef = useRef<number>(0);
 
-  // Auto-redirect to /gp/apercu once the launch countdown ends.
-  // Anti-loop guard: needs 2 consecutive positive checks, cooldown 60s,
-  // and a session marker so a flapping network never bounces the user.
+  // Blocage désactivé : on lit uniquement l'état du lock pour l'afficher dans la
+  // bannière (countdown / lancement), sans jamais forcer la redirection.
   useEffect(() => {
     let cancelled = false;
-    const REDIRECT_COOLDOWN_MS = 60_000;
-
-    const safeRedirect = () => {
-      const now = Date.now();
-      const lastClient = (() => {
-        try { return Number(sessionStorage.getItem("kkt_last_redirect_at") || "0"); } catch { return 0; }
-      })();
-      if (now - lastRedirectAtRef.current < REDIRECT_COOLDOWN_MS) return;
-      if (now - lastClient < REDIRECT_COOLDOWN_MS) return;
-      lastRedirectAtRef.current = now;
-      try { sessionStorage.setItem("kkt_last_redirect_at", String(now)); } catch {}
-      try { localStorage.setItem("kkt_launched", "1"); } catch {}
-      nav("/gp/apercu", { replace: true });
-    };
-
     const checkLaunch = async () => {
       try {
         const { data, error } = await supabase
           .from("app_lock_settings" as any)
           .select("is_locked, launch_at")
           .maybeSingle();
-        if (cancelled) return;
-        if (error || !data) {
-          // Network/latency issue: reset confirmation counter, never redirect blindly
-          launchConfirmRef.current = 0;
-          return;
-        }
-        const cfg = data as unknown as { is_locked: boolean; launch_at: string };
-        if (!cancelled) setLaunchInfo(cfg);
-        const launched = !cfg.is_locked || new Date(cfg.launch_at).getTime() <= Date.now();
-        if (launched) {
-          launchConfirmRef.current += 1;
-          if (launchConfirmRef.current >= 2) safeRedirect();
-        } else {
-          launchConfirmRef.current = 0;
-        }
+        if (cancelled || error || !data) return;
+        setLaunchInfo(data as unknown as { is_locked: boolean; launch_at: string });
       } catch {
-        launchConfirmRef.current = 0;
+        /* silent */
       }
     };
-
     void checkLaunch();
     const id = window.setInterval(checkLaunch, 30_000);
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === "kkt_launched" && e.newValue === "1") safeRedirect();
-    };
-    window.addEventListener("storage", onStorage);
-    return () => { cancelled = true; clearInterval(id); window.removeEventListener("storage", onStorage); };
+    return () => { cancelled = true; clearInterval(id); };
   }, [nav]);
 
   useEffect(() => {
