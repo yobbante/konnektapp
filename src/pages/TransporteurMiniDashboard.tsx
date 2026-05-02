@@ -484,9 +484,8 @@ function LaunchStatusBanner({
         <span className="w-2 h-2 rounded-full bg-[hsl(var(--success))] animate-pulse" />
         <div className="flex-1 min-w-0">
           <div className="text-xs font-semibold text-[hsl(var(--success))]">Plateforme lancée</div>
-          <div className="text-[11px] text-[hsl(var(--success))]/70">Bascule automatique vers votre dashboard complet…</div>
+          <div className="text-[11px] text-[hsl(var(--success))]/80">Votre dashboard GP complet est désormais accessible.</div>
         </div>
-        <Loader2 className="w-3.5 h-3.5 text-[hsl(var(--success))] animate-spin" />
       </div>
     );
   }
@@ -501,12 +500,12 @@ function LaunchStatusBanner({
     : `${minutes}m ${String(seconds).padStart(2, "0")}s`;
 
   return (
-    <div className="rounded-2xl border border-secondary/25 bg-gradient-to-r from-secondary/15 to-transparent px-4 py-3 flex items-center gap-2.5">
-      <Sparkles className="w-3.5 h-3.5 text-secondary shrink-0" />
+    <div className="rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/10 to-transparent px-4 py-3 flex items-center gap-2.5">
+      <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
       <div className="flex-1 min-w-0">
-        <div className="text-xs font-semibold text-secondary">Lancement en cours</div>
-        <div className="text-[11px] text-secondary/70">
-          Bascule auto vers <span className="font-mono text-secondary">/gp/apercu</span> dans <span className="tabular-nums font-semibold">{cd}</span>
+        <div className="text-xs font-semibold text-primary">Lancement officiel</div>
+        <div className="text-[11px] text-primary/80">
+          Compte à rebours&nbsp;: <span className="tabular-nums font-semibold">{cd}</span>
         </div>
       </div>
     </div>
