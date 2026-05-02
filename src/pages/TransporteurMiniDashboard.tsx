@@ -48,10 +48,8 @@ export default function TransporteurMiniDashboard() {
   const [now, setNow] = useState<Date>(new Date());
   const gpIdRef = useRef<string | null>(null);
 
-  // Launch state for banner + debounced auto-redirect.
+  // Launch state — affiché en bannière (countdown / lancé). Aucune redirection forcée.
   const [launchInfo, setLaunchInfo] = useState<{ is_locked: boolean; launch_at: string } | null>(null);
-  const launchConfirmRef = useRef(0); // require 2 successful checks before redirect
-  const lastRedirectAtRef = useRef<number>(0);
 
   // Blocage désactivé : on lit uniquement l'état du lock pour l'afficher dans la
   // bannière (countdown / lancement), sans jamais forcer la redirection.
