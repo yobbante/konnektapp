@@ -329,47 +329,88 @@ export default function TransporteurQuickOnboard() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* ======================= LANDING ======================= */}
-      <section className="px-6 pt-16 pb-10 max-w-xl mx-auto">
-        <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-foreground/40 mb-6">
-          <Sparkles className="w-3 h-3" /> Konnekt · Accès Bêta
-        </div>
+      {/* ======================= HERO LANDING ======================= */}
+      <section className="relative overflow-hidden">
+        {/* Konnekt brand gradient backdrop */}
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/10 via-background to-secondary/10"
+        />
+        <div
+          aria-hidden
+          className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-primary/15 blur-3xl -z-10"
+        />
+        <div
+          aria-hidden
+          className="absolute -bottom-32 -left-24 w-80 h-80 rounded-full bg-secondary/15 blur-3xl -z-10"
+        />
 
-        <h1 className="text-4xl sm:text-5xl font-bold leading-[1.05] tracking-tight">
-          Remplissez vos trajets<br />
-          <span className="text-foreground/50">avec des colis.</span>
-        </h1>
-
-        <p className="text-base text-foreground/60 mt-5 leading-relaxed">
-          Gagnez de l'argent sur vos trajets existants.<br />
-          Aucun effort supplémentaire.
-        </p>
-
-        <div className="mt-7 space-y-2">
-          <div className="flex items-center gap-2.5 text-sm text-foreground/80">
-            <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--success))] animate-pulse" />
-            Des colis sont déjà disponibles cette semaine
+        <div className="px-6 pt-14 pb-12 max-w-xl mx-auto">
+          {/* Brand row */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold shadow-md shadow-primary/20">
+                K
+              </div>
+              <div className="leading-tight">
+                <div className="text-sm font-semibold tracking-tight">Konnekt</div>
+                <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                  Accès Bêta
+                </div>
+              </div>
+            </div>
+            <Badge variant="outline" className="rounded-full border-primary/30 text-primary bg-primary/5 text-[10px] uppercase tracking-wider">
+              Fondateur
+            </Badge>
           </div>
-          <div className="flex items-center gap-2.5 text-sm text-foreground/80">
-            <span className="w-1.5 h-1.5 rounded-full bg-foreground/60" />
-            Accès bêta — transporteurs sélectionnés
+
+          <h1 className="text-4xl sm:text-5xl font-bold leading-[1.05] tracking-tight">
+            Remplissez vos trajets
+            <br />
+            <span className="bg-gradient-to-r from-primary to-[hsl(var(--teal-dark))] bg-clip-text text-transparent">
+              avec des colis.
+            </span>
+          </h1>
+
+          <p className="text-base text-foreground/70 mt-5 leading-relaxed">
+            Gagnez de l'argent sur vos trajets existants.
+            <br />
+            Aucun effort supplémentaire.
+          </p>
+
+          <div className="mt-7 space-y-2.5">
+            <div className="flex items-center gap-2.5 text-sm text-foreground/85">
+              <span className="w-1.5 h-1.5 rounded-full bg-[hsl(var(--success))] animate-pulse" />
+              Des colis sont déjà disponibles cette semaine
+            </div>
+            <div className="flex items-center gap-2.5 text-sm text-foreground/85">
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
+              Accès bêta — transporteurs sélectionnés
+            </div>
           </div>
-        </div>
 
-        <div className="mt-8 flex flex-wrap gap-2">
-          <Badge className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full">Transporteur fondateur</Badge>
-          <Badge variant="outline" className="border-foreground/20 text-foreground/80 rounded-full">0% commission</Badge>
-        </div>
+          <div className="mt-7 flex flex-wrap gap-2">
+            <Badge className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full">
+              0% commission
+            </Badge>
+            <Badge variant="outline" className="border-secondary/40 text-secondary bg-secondary/5 rounded-full">
+              Paiement direct WhatsApp
+            </Badge>
+            <Badge variant="outline" className="border-foreground/15 text-foreground/70 rounded-full">
+              Sans engagement
+            </Badge>
+          </div>
 
-        {step === "landing" && (
-          <Button
-            onClick={goToForm}
-            className="mt-10 w-full h-14 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 text-base font-semibold"
-          >
-            Commencer
-            <ArrowRight className="w-5 h-5 ml-2" />
-          </Button>
-        )}
+          {step === "landing" && (
+            <Button
+              onClick={goToForm}
+              className="mt-10 w-full h-14 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 text-base font-semibold shadow-lg shadow-primary/20"
+            >
+              Commencer
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+          )}
+        </div>
       </section>
 
       {/* ======================= FORM ======================= */}
