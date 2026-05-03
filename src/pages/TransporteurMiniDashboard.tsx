@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ClaimAccountBanner } from "@/components/beta/ClaimAccountBanner";
+import { BetaApercuLinkBanner } from "@/components/beta/BetaApercuLinkBanner";
 
 interface Departure {
   id: string;
@@ -200,6 +201,7 @@ export default function TransporteurMiniDashboard() {
       <section className="px-6 max-w-xl mx-auto -mt-2 mb-4 space-y-3">
         <LaunchStatusBanner info={launchInfo} now={now} />
         <ClaimAccountBanner />
+        <BetaApercuLinkBanner />
       </section>
 
       {/* QUICK ACTIONS */}
