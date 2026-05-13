@@ -463,6 +463,9 @@ export default function TransporteurMiniDashboard() {
               )}
             </section>
 
+            {/* Section parrainage transporteurs beta */}
+            <BetaReferralSection gpReference={gpReference} invitedCount={invitedCount} />
+
             {/* Info beta footer */}
             <section className="px-6 max-w-xl mx-auto mt-10">
               <div className="rounded-2xl border border-foreground/10 bg-foreground/[0.03] p-4 flex gap-3">
