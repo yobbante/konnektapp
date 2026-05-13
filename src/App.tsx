@@ -194,6 +194,7 @@ const App = () => (
             ============================================ */}
             <Route path="/" element={<Index />} />
             <Route path="/t" element={<TransporteurQuickOnboard />} />
+            <Route path="/beta" element={<BetaLandingPage />} />
             <Route path="/t/dashboard" element={<TransporteurMiniDashboard />} />
             <Route path="/transporteur/beta" element={<TransporteurBetaDashboard />} />
             <Route path="/offres" element={<Navigate to="/freight-board" replace />} />
