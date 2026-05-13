@@ -150,6 +150,21 @@ export default function KonnektLanding() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Force light mode + neutral theme on the marketing landing
+  useEffect(() => {
+    const root = document.documentElement;
+    const hadDark = root.classList.contains("dark");
+    const removed: string[] = [];
+    ["theme-admin", "theme-transporter", "theme-client", "theme-routier", "theme-maritime", "theme-aerien"].forEach((c) => {
+      if (root.classList.contains(c)) { removed.push(c); root.classList.remove(c); }
+    });
+    root.classList.remove("dark");
+    return () => {
+      if (hadDark) root.classList.add("dark");
+      removed.forEach((c) => root.classList.add(c));
+    };
+  }, []);
+
   // Scroll-spy for letters
   useEffect(() => {
     const observer = new IntersectionObserver(
