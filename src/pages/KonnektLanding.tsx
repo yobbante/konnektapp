@@ -195,7 +195,7 @@ export default function KonnektLanding() {
       >
         <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3.5">
           <Link to="/" className="flex items-center gap-2">
-            <span className="w-7 h-7 rounded-md bg-foreground text-background grid place-items-center font-bold text-sm tracking-tight">K</span>
+            <span className="w-7 h-7 rounded-md bg-primary text-primary-foreground grid place-items-center font-bold text-sm tracking-tight">K</span>
             <div className="flex flex-col leading-none">
               <span className="font-bold text-[15px] tracking-tight">KONNEKT</span>
               <span className="text-[10px] text-muted-foreground tracking-wide">by Yobbanté</span>
@@ -214,7 +214,7 @@ export default function KonnektLanding() {
               <Button variant="ghost" size="sm" className="text-sm">Se connecter</Button>
             </Link>
             <Link to="/beta">
-              <Button size="sm" className="bg-foreground hover:bg-foreground/90 text-background rounded-lg px-3.5 text-sm font-semibold">
+              <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-3.5 text-sm font-semibold shadow-sm">
                 Rejoindre la bêta <ArrowRight className="w-3.5 h-3.5 ml-1" />
               </Button>
             </Link>
