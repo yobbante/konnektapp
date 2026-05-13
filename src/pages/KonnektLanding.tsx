@@ -270,7 +270,7 @@ export default function KonnektLanding() {
 
           <h1 className="text-5xl md:text-7xl lg:text-[88px] font-bold tracking-tight leading-[0.95] mt-8">
             Le transport,<br />
-            <span className="text-muted-foreground">connecté.</span>
+            <span className="text-primary">connecté.</span>
           </h1>
 
           <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto mt-6 leading-relaxed">
@@ -279,7 +279,7 @@ export default function KonnektLanding() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 mt-10 justify-center">
-            <Link to="/beta" className="inline-flex items-center justify-center gap-2 bg-foreground text-background rounded-lg px-6 py-3.5 font-semibold text-sm shadow-md hover:bg-foreground/90 transition-colors">
+            <Link to="/beta" className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-lg px-6 py-3.5 font-semibold text-sm shadow-md hover:bg-primary/90 transition-colors">
               Rejoindre la bêta <ArrowRight className="w-4 h-4" />
             </Link>
             <a href="#services" className="inline-flex items-center justify-center gap-2 border border-border bg-card hover:bg-muted text-foreground rounded-lg px-6 py-3.5 font-semibold text-sm transition-colors">
