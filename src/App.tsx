@@ -20,6 +20,7 @@ import { SmartScrollTop } from "@/hooks/useSmartScrollTop";
 import Index from "./pages/Index";
 import TransporteurBetaDashboard from "./pages/transporteur/TransporteurBetaDashboard";
 import TransporteurQuickOnboard from "./pages/TransporteurQuickOnboard";
+import BetaLandingPage from "./pages/BetaLandingPage";
 import TransporteurMiniDashboard from "./pages/TransporteurMiniDashboard";
 import AdminBetaTracking from "./pages/AdminBetaTracking";
 import Offres from "./pages/Offres";
