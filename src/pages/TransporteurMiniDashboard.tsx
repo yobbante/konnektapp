@@ -272,14 +272,16 @@ export default function TransporteurMiniDashboard() {
       <section className="px-6 max-w-xl mx-auto mb-6">
         <h2 className="text-sm uppercase tracking-wider text-foreground/40 mb-3">Statistiques</h2>
         {(() => {
-          const activeDep = departures.length;
-          const assigned = interests.filter((i) => i.status === "validated" || i.status === "in_progress").length;
+          const total = interests.length + departures.length;
           const pendingI = interests.filter((i) => i.status === "pending").length;
+          const completed = interests.filter((i) => i.status === "completed").length;
+          const gains = completed * 0; // gains réels disponibles au lancement
           return (
-            <div className="grid grid-cols-3 gap-2.5">
-              <StatTile value={activeDep} label="Départs actifs" />
-              <StatTile value={assigned} label="Attribuées" tone="secondary" />
-              <StatTile value={pendingI} label="En attente" />
+            <div className="grid grid-cols-4 gap-2">
+              <StatTile value={total} label="Missions" />
+              <StatTile value={pendingI} label="En attente" tone="secondary" />
+              <StatTile value={completed} label="Complétées" />
+              <StatTile value={gains} label="Gains FCFA" />
             </div>
           );
         })()}
