@@ -18,6 +18,7 @@ import { ThemeInitializer } from "@/components/ThemeInitializer";
 import { AppleNotificationContainer } from "@/components/ui/AppleNotification";
 import { SmartScrollTop } from "@/hooks/useSmartScrollTop";
 import Index from "./pages/Index";
+import KonnektLanding from "./pages/KonnektLanding";
 import TransporteurBetaDashboard from "./pages/transporteur/TransporteurBetaDashboard";
 import TransporteurQuickOnboard from "./pages/TransporteurQuickOnboard";
 import BetaLandingPage from "./pages/BetaLandingPage";
