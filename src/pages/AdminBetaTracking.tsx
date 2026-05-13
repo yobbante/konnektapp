@@ -1,4 +1,4 @@
-// Admin Beta Tracking Dashboard — funnel + cohorts par source WhatsApp.
+// Admin Beta Tracking Dashboard — funnel + cohortes + GP list + chart 30j.
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -15,6 +15,15 @@ interface Event {
   user_id: string | null;
   metadata: any;
   created_at: string;
+}
+
+interface GPRow {
+  id: string;
+  business_name: string;
+  city: string | null;
+  status: string | null;
+  created_at: string;
+  total_deliveries: number | null;
 }
 
 const EVENT_LABELS: Record<string, string> = {
