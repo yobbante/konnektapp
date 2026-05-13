@@ -2523,6 +2523,33 @@ export type Database = {
         }
         Relationships: []
       }
+      konnekt_beta_referrals: {
+        Row: {
+          created_at: string
+          gp_ref: string
+          id: string
+          registered_gp_id: string | null
+          registered_user_id: string
+          source: string | null
+        }
+        Insert: {
+          created_at?: string
+          gp_ref: string
+          id?: string
+          registered_gp_id?: string | null
+          registered_user_id: string
+          source?: string | null
+        }
+        Update: {
+          created_at?: string
+          gp_ref?: string
+          id?: string
+          registered_gp_id?: string | null
+          registered_user_id?: string
+          source?: string | null
+        }
+        Relationships: []
+      }
       konnekt_ledger: {
         Row: {
           amount_display: number

@@ -49,3 +49,6 @@ verify_jwt = false
 
 [functions.konnekt-webhook]
 verify_jwt = false
+
+[functions.beta-register]
+verify_jwt = false
