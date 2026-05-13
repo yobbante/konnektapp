@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ClaimAccountBanner } from "@/components/beta/ClaimAccountBanner";
 import { BetaApercuLinkBanner } from "@/components/beta/BetaApercuLinkBanner";
+import { BetaInviteBadge } from "@/components/beta/BetaInviteBadge";
+import { BetaReferralSection } from "@/components/beta/BetaReferralSection";
 
 interface Departure {
   id: string;
@@ -44,6 +46,9 @@ export default function TransporteurMiniDashboard() {
   const [departures, setDepartures] = useState<Departure[]>([]);
   const [interests, setInterests] = useState<Interest[]>([]);
   const [gpId, setGpId] = useState<string | null>(null);
+  const [gpReference, setGpReference] = useState<string>("");
+  const [firstName, setFirstName] = useState<string>("");
+  const [invitedCount, setInvitedCount] = useState<number>(0);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [now, setNow] = useState<Date>(new Date());
@@ -81,13 +86,25 @@ export default function TransporteurMiniDashboard() {
 
       const { data: gp } = await supabase
         .from("gp_profiles")
-        .select("id")
+        .select("id, business_name")
         .eq("user_id", u.user.id)
         .maybeSingle();
       if (!gp) { nav("/t"); return; }
       if (cancelled) return;
       setGpId(gp.id);
       gpIdRef.current = gp.id;
+      setGpReference(gp.id.slice(0, 4).toUpperCase());
+
+      // Load profile first name (profiles.user_id == auth.uid)
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", u.user.id)
+        .maybeSingle();
+      const fn = (prof?.full_name as string | undefined)?.split(" ")[0]
+        || (gp.business_name as string | undefined)?.split(" ")[0]
+        || "";
+      setFirstName(fn);
 
       await Promise.all([loadDepartures(gp.id), loadInterests(gp.id)]);
       if (!cancelled) {
@@ -178,9 +195,20 @@ export default function TransporteurMiniDashboard() {
           <ArrowLeft className="w-3 h-3" /> Retour
         </button>
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Mon espace transporteur</h1>
-            <p className="text-sm text-foreground/50 mt-1">Vos départs et opportunités</p>
+          <div className="min-w-0">
+            <h1 className="text-3xl font-bold tracking-tight">
+              Bonjour{firstName ? `, ${firstName}` : ""}.
+            </h1>
+            <p
+              className="mt-1 tabular-nums"
+              style={{
+                fontFamily: "ui-monospace, SFMono-Regular, monospace",
+                fontSize: "11px",
+                color: "#F5C518",
+              }}
+            >
+              Partenaire Konnekt · GP{gpReference}
+            </p>
           </div>
           <button
             onClick={manualRefresh}
@@ -197,8 +225,9 @@ export default function TransporteurMiniDashboard() {
         </div>
       </header>
 
-      {/* LAUNCH STATUS BANNER + CLAIM ACCOUNT */}
+      {/* LAUNCH STATUS BANNER + BETA INVITE + CLAIM ACCOUNT */}
       <section className="px-6 max-w-xl mx-auto -mt-2 mb-4 space-y-3">
+        <BetaInviteBadge />
         <LaunchStatusBanner info={launchInfo} now={now} />
         <ClaimAccountBanner />
         <BetaApercuLinkBanner />
@@ -243,14 +272,16 @@ export default function TransporteurMiniDashboard() {
       <section className="px-6 max-w-xl mx-auto mb-6">
         <h2 className="text-sm uppercase tracking-wider text-foreground/40 mb-3">Statistiques</h2>
         {(() => {
-          const activeDep = departures.length;
-          const assigned = interests.filter((i) => i.status === "validated" || i.status === "in_progress").length;
+          const total = interests.length + departures.length;
           const pendingI = interests.filter((i) => i.status === "pending").length;
+          const completed = interests.filter((i) => i.status === "completed").length;
+          const gains = completed * 0; // gains réels disponibles au lancement
           return (
-            <div className="grid grid-cols-3 gap-2.5">
-              <StatTile value={activeDep} label="Départs actifs" />
-              <StatTile value={assigned} label="Attribuées" tone="secondary" />
-              <StatTile value={pendingI} label="En attente" />
+            <div className="grid grid-cols-4 gap-2">
+              <StatTile value={total} label="Missions" />
+              <StatTile value={pendingI} label="En attente" tone="secondary" />
+              <StatTile value={completed} label="Complétées" />
+              <StatTile value={gains} label="Gains FCFA" />
             </div>
           );
         })()}
@@ -414,11 +445,26 @@ export default function TransporteurMiniDashboard() {
                         </div>
                         <StatusBadge status={i.status} />
                       </div>
+                      {i.status === "pending" && (
+                        <div className="mt-3 pt-3 border-t border-foreground/10">
+                          <Button
+                            size="sm"
+                            onClick={() => nav("/t")}
+                            className="w-full h-8 rounded-full text-xs font-semibold"
+                            style={{ background: "#F5C518", color: "#000" }}
+                          >
+                            Confirmer disponibilité
+                          </Button>
+                        </div>
+                      )}
                     </Card>
                   ))}
                 </div>
               )}
             </section>
+
+            {/* Section parrainage transporteurs beta */}
+            <BetaReferralSection gpReference={gpReference} invitedCount={invitedCount} />
 
             {/* Info beta footer */}
             <section className="px-6 max-w-xl mx-auto mt-10">

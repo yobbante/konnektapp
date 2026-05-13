@@ -1,4 +1,4 @@
-// Admin Beta Tracking Dashboard — funnel + cohorts par source WhatsApp.
+// Admin Beta Tracking Dashboard — funnel + cohortes + GP list + chart 30j.
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -17,6 +17,15 @@ interface Event {
   created_at: string;
 }
 
+interface GPRow {
+  id: string;
+  business_name: string;
+  city: string | null;
+  status: string | null;
+  created_at: string;
+  total_deliveries: number | null;
+}
+
 const EVENT_LABELS: Record<string, string> = {
   cta_start: "Clic Commencer",
   form_view: "Vue formulaire",
@@ -24,22 +33,61 @@ const EVENT_LABELS: Record<string, string> = {
   interest_clicked: "Intéressé",
 };
 
+type GPFilter = "all" | "registered" | "not_registered";
+
 export default function AdminBetaTracking() {
   const [events, setEvents] = useState<Event[]>([]);
+  const [gps, setGps] = useState<GPRow[]>([]);
+  const [gpFilter, setGpFilter] = useState<GPFilter>("all");
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("beta_tracking_events" as any)
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(2000);
-    setEvents((data as unknown as Event[]) || []);
+    const [{ data: ev }, { data: g }] = await Promise.all([
+      supabase
+        .from("beta_tracking_events" as any)
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(2000),
+      supabase
+        .from("gp_profiles")
+        .select("id, business_name, city, status, created_at, total_deliveries")
+        .order("created_at", { ascending: false })
+        .limit(500),
+    ]);
+    setEvents((ev as unknown as Event[]) || []);
+    setGps((g as unknown as GPRow[]) || []);
     setLoading(false);
   };
 
   useEffect(() => { load(); }, []);
+
+  // Inscriptions par jour sur 30 derniers jours
+  const dailyChart = useMemo(() => {
+    const days: { day: string; count: number }[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      const count = gps.filter((g) => g.created_at?.slice(0, 10) === key).length;
+      days.push({ day: key, count });
+    }
+    return days;
+  }, [gps]);
+
+  const filteredGps = useMemo(() => {
+    if (gpFilter === "registered") return gps.filter((g) => g.status === "verified" || g.status === "active");
+    if (gpFilter === "not_registered") return gps.filter((g) => !g.status || g.status === "pending");
+    return gps;
+  }, [gps, gpFilter]);
+
+  const conversionRate = gps.length
+    ? Math.round((gps.filter((g) => g.status === "verified" || g.status === "active").length / gps.length) * 100)
+    : 0;
+
+  const totalMissions = gps.reduce((s, g) => s + (g.total_deliveries || 0), 0);
 
   const funnel = useMemo(() => {
     const distinct = (type: string) => new Set(
@@ -117,6 +165,102 @@ export default function AdminBetaTracking() {
                       <td className="text-right">{s.pub}</td>
                       <td className="text-right">{s.interest}</td>
                       <td className="text-right font-semibold">{s.rate}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+          {/* Stats Konnekt beta */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6 mb-3">
+            <Kpi icon={<Users className="w-4 h-4" />} label="GP invités" value={gps.length} />
+            <Kpi
+              icon={<Users className="w-4 h-4" />}
+              label="Inscrits"
+              value={gps.filter((g) => g.status === "verified" || g.status === "active").length}
+            />
+            <Kpi icon={<TrendingUp className="w-4 h-4" />} label="Taux conv." value={`${conversionRate}%`} highlight />
+            <Kpi icon={<Send className="w-4 h-4" />} label="Missions assignées" value={totalMissions} />
+          </div>
+
+          {/* Chart inscriptions 30j */}
+          <Card className="p-4 mb-6" style={{ background: "#111111" }}>
+            <h2 className="text-sm font-semibold mb-3 text-white">Inscriptions par jour (30 derniers jours)</h2>
+            {(() => {
+              const max = Math.max(1, ...dailyChart.map((d) => d.count));
+              return (
+                <div className="flex items-end gap-1 h-32">
+                  {dailyChart.map((d) => (
+                    <div key={d.day} className="flex-1 flex flex-col items-center gap-1" title={`${d.day} · ${d.count}`}>
+                      <div
+                        className="w-full rounded-t"
+                        style={{
+                          height: `${(d.count / max) * 100}%`,
+                          minHeight: d.count > 0 ? "4px" : "1px",
+                          background: d.count > 0 ? "#3B82F6" : "rgba(255,255,255,0.08)",
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+            <div className="flex justify-between text-[10px] text-white/40 mt-2 tabular-nums">
+              <span>{dailyChart[0]?.day}</span>
+              <span>{dailyChart[dailyChart.length - 1]?.day}</span>
+            </div>
+          </Card>
+
+          {/* Liste GP */}
+          <Card className="p-4">
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <h2 className="text-sm font-semibold">Liste GP ({filteredGps.length})</h2>
+              <div className="flex gap-1">
+                {([
+                  { k: "all", label: "Tous" },
+                  { k: "registered", label: "Inscrits" },
+                  { k: "not_registered", label: "Non inscrits" },
+                ] as const).map((opt) => (
+                  <Button
+                    key={opt.k}
+                    size="sm"
+                    variant={gpFilter === opt.k ? "default" : "outline"}
+                    onClick={() => setGpFilter(opt.k)}
+                    className="h-7 text-xs"
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs text-muted-foreground">
+                  <tr className="border-b">
+                    <th className="text-left py-2">Réf</th>
+                    <th className="text-left py-2">Nom</th>
+                    <th className="text-left py-2">Ville</th>
+                    <th className="text-left py-2">Inscrit le</th>
+                    <th className="text-right py-2">Missions</th>
+                    <th className="text-right py-2">Statut</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredGps.length === 0 ? (
+                    <tr><td colSpan={6} className="text-center py-4 text-muted-foreground">Aucun GP</td></tr>
+                  ) : filteredGps.slice(0, 100).map((g) => (
+                    <tr key={g.id} className="border-b last:border-0">
+                      <td className="py-2 font-mono text-xs">GP{g.id.slice(0, 4).toUpperCase()}</td>
+                      <td className="py-2 truncate max-w-[140px]">{g.business_name}</td>
+                      <td className="py-2 text-muted-foreground">{g.city || "—"}</td>
+                      <td className="py-2 text-xs text-muted-foreground">
+                        {new Date(g.created_at).toLocaleDateString("fr-FR")}
+                      </td>
+                      <td className="py-2 text-right tabular-nums">{g.total_deliveries || 0}</td>
+                      <td className="py-2 text-right">
+                        <Badge variant="outline" className="text-[10px]">{g.status || "pending"}</Badge>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
