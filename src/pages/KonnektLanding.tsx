@@ -240,7 +240,7 @@ export default function KonnektLanding() {
                 </div>
                 <div className="mt-auto pb-6">
                   <Link to="/beta" onClick={() => setOpen(false)}>
-                    <Button className="w-full bg-foreground text-background rounded-lg py-3 font-semibold">
+                    <Button className="w-full bg-primary text-primary-foreground rounded-lg py-3 font-semibold">
                       Rejoindre la bêta
                     </Button>
                   </Link>
