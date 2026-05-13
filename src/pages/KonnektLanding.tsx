@@ -101,7 +101,7 @@ function LetterRail({ active }: { active: number }) {
         >
           <span
             className={`w-8 h-8 grid place-items-center rounded-full text-xs font-bold tracking-widest border transition-colors ${
-              active === i ? "bg-foreground text-background border-foreground" : "border-border text-foreground"
+              active === i ? "bg-primary text-primary-foreground border-primary" : "border-border text-foreground"
             }`}
           >
             {l.ch}
