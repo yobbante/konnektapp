@@ -101,7 +101,7 @@ function LetterRail({ active }: { active: number }) {
         >
           <span
             className={`w-8 h-8 grid place-items-center rounded-full text-xs font-bold tracking-widest border transition-colors ${
-              active === i ? "bg-foreground text-background border-foreground" : "border-border text-foreground"
+              active === i ? "bg-primary text-primary-foreground border-primary" : "border-border text-foreground"
             }`}
           >
             {l.ch}
@@ -195,7 +195,7 @@ export default function KonnektLanding() {
       >
         <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3.5">
           <Link to="/" className="flex items-center gap-2">
-            <span className="w-7 h-7 rounded-md bg-foreground text-background grid place-items-center font-bold text-sm tracking-tight">K</span>
+            <span className="w-7 h-7 rounded-md bg-primary text-primary-foreground grid place-items-center font-bold text-sm tracking-tight">K</span>
             <div className="flex flex-col leading-none">
               <span className="font-bold text-[15px] tracking-tight">KONNEKT</span>
               <span className="text-[10px] text-muted-foreground tracking-wide">by Yobbanté</span>
@@ -214,7 +214,7 @@ export default function KonnektLanding() {
               <Button variant="ghost" size="sm" className="text-sm">Se connecter</Button>
             </Link>
             <Link to="/beta">
-              <Button size="sm" className="bg-foreground hover:bg-foreground/90 text-background rounded-lg px-3.5 text-sm font-semibold">
+              <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-3.5 text-sm font-semibold shadow-sm">
                 Rejoindre la bêta <ArrowRight className="w-3.5 h-3.5 ml-1" />
               </Button>
             </Link>
@@ -240,7 +240,7 @@ export default function KonnektLanding() {
                 </div>
                 <div className="mt-auto pb-6">
                   <Link to="/beta" onClick={() => setOpen(false)}>
-                    <Button className="w-full bg-foreground text-background rounded-lg py-3 font-semibold">
+                    <Button className="w-full bg-primary text-primary-foreground rounded-lg py-3 font-semibold">
                       Rejoindre la bêta
                     </Button>
                   </Link>
@@ -270,7 +270,7 @@ export default function KonnektLanding() {
 
           <h1 className="text-5xl md:text-7xl lg:text-[88px] font-bold tracking-tight leading-[0.95] mt-8">
             Le transport,<br />
-            <span className="text-muted-foreground">connecté.</span>
+            <span className="text-primary">connecté.</span>
           </h1>
 
           <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto mt-6 leading-relaxed">
@@ -279,7 +279,7 @@ export default function KonnektLanding() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 mt-10 justify-center">
-            <Link to="/beta" className="inline-flex items-center justify-center gap-2 bg-foreground text-background rounded-lg px-6 py-3.5 font-semibold text-sm shadow-md hover:bg-foreground/90 transition-colors">
+            <Link to="/beta" className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-lg px-6 py-3.5 font-semibold text-sm shadow-md hover:bg-primary/90 transition-colors">
               Rejoindre la bêta <ArrowRight className="w-4 h-4" />
             </Link>
             <a href="#services" className="inline-flex items-center justify-center gap-2 border border-border bg-card hover:bg-muted text-foreground rounded-lg px-6 py-3.5 font-semibold text-sm transition-colors">
@@ -314,9 +314,9 @@ export default function KonnektLanding() {
         <div className="flex items-center gap-2 py-4 animate-marquee w-max">
           {[...letters, ...letters].map((l, i) => (
             <div key={i} className="flex items-center gap-3 px-5 whitespace-nowrap">
-              <span className="w-7 h-7 grid place-items-center rounded-full bg-foreground text-background text-xs font-bold">{l.ch}</span>
+              <span className="w-7 h-7 grid place-items-center rounded-full bg-primary text-primary-foreground text-xs font-bold">{l.ch}</span>
               <span className="text-xs uppercase tracking-widest font-semibold text-foreground">{l.word}</span>
-              <span className="w-1 h-1 rounded-full bg-border" />
+              <span className="w-1 h-1 rounded-full bg-primary/40" />
             </div>
           ))}
         </div>
@@ -432,7 +432,7 @@ export default function KonnektLanding() {
                   </li>
                 ))}
               </ul>
-              <Link to={aud.cta.to} className="inline-flex items-center gap-2 mt-8 bg-foreground text-background rounded-lg px-5 py-3 text-sm font-semibold hover:bg-foreground/90 transition-colors">
+              <Link to={aud.cta.to} className="inline-flex items-center gap-2 mt-8 bg-primary text-primary-foreground rounded-lg px-5 py-3 text-sm font-semibold hover:bg-primary/90 transition-colors shadow-sm">
                 {aud.cta.label} <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -522,20 +522,28 @@ export default function KonnektLanding() {
       </section>
 
       {/* ───── CTA FINAL ───── */}
-      <section className="px-4 py-20 md:py-28 bg-foreground text-background border-b border-foreground">
-        <div className="max-w-3xl mx-auto text-center">
-          <p className="text-[11px] font-semibold tracking-widest text-primary uppercase">Konnekt</p>
+      <section className="relative px-4 py-20 md:py-28 bg-primary text-primary-foreground border-b border-primary overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-[0.08] pointer-events-none"
+          style={{
+            backgroundImage:
+              "linear-gradient(hsl(var(--primary-foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary-foreground)) 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+          }}
+        />
+        <div className="relative max-w-3xl mx-auto text-center">
+          <p className="text-[11px] font-semibold tracking-widest text-primary-foreground/80 uppercase">Konnekt</p>
           <h2 className="text-3xl md:text-5xl font-bold tracking-tight mt-3 leading-tight">
             Le transport sénégalais. Connecté, enfin.
           </h2>
-          <p className="text-base text-background/60 mt-5 max-w-xl mx-auto">
+          <p className="text-base text-primary-foreground/80 mt-5 max-w-xl mx-auto">
             Téléchargez l'app ou rejoignez la bêta. Gratuit, sans engagement.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 mt-10 justify-center">
-            <a href="#" className="inline-flex items-center justify-center gap-2 bg-background text-foreground rounded-lg px-6 py-3.5 font-semibold text-sm hover:bg-background/90 transition-colors">
+            <a href="#" className="inline-flex items-center justify-center gap-2 bg-background text-primary rounded-lg px-6 py-3.5 font-semibold text-sm hover:bg-background/95 transition-colors shadow-md">
               <Smartphone className="w-4 h-4" /> Télécharger l'app
             </a>
-            <Link to="/beta" className="inline-flex items-center justify-center gap-2 border border-background/30 text-background rounded-lg px-6 py-3.5 font-semibold text-sm hover:bg-background/10 transition-colors">
+            <Link to="/beta" className="inline-flex items-center justify-center gap-2 border border-primary-foreground/40 text-primary-foreground rounded-lg px-6 py-3.5 font-semibold text-sm hover:bg-primary-foreground/10 transition-colors">
               Rejoindre la bêta <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -548,7 +556,7 @@ export default function KonnektLanding() {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
             <div className="col-span-2">
               <div className="flex items-center gap-2">
-                <span className="w-7 h-7 rounded-md bg-foreground text-background grid place-items-center font-bold text-sm">K</span>
+                <span className="w-7 h-7 rounded-md bg-primary text-primary-foreground grid place-items-center font-bold text-sm">K</span>
                 <span className="font-bold tracking-tight">KONNEKT</span>
               </div>
               <p className="text-sm text-muted-foreground mt-3 max-w-xs leading-relaxed">
