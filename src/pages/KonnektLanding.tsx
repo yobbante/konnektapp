@@ -556,7 +556,7 @@ export default function KonnektLanding() {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
             <div className="col-span-2">
               <div className="flex items-center gap-2">
-                <span className="w-7 h-7 rounded-md bg-foreground text-background grid place-items-center font-bold text-sm">K</span>
+                <span className="w-7 h-7 rounded-md bg-primary text-primary-foreground grid place-items-center font-bold text-sm">K</span>
                 <span className="font-bold tracking-tight">KONNEKT</span>
               </div>
               <p className="text-sm text-muted-foreground mt-3 max-w-xs leading-relaxed">
