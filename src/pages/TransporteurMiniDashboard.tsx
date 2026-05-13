@@ -86,13 +86,26 @@ export default function TransporteurMiniDashboard() {
 
       const { data: gp } = await supabase
         .from("gp_profiles")
-        .select("id")
+        .select("id, business_name")
         .eq("user_id", u.user.id)
         .maybeSingle();
       if (!gp) { nav("/t"); return; }
       if (cancelled) return;
       setGpId(gp.id);
       gpIdRef.current = gp.id;
+      setGpReference(gp.id.slice(0, 4).toUpperCase());
+
+      // Load profile first name
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("first_name, full_name")
+        .eq("id", u.user.id)
+        .maybeSingle();
+      const fn = (prof?.first_name as string | undefined)
+        || (prof?.full_name as string | undefined)?.split(" ")[0]
+        || (gp.business_name as string | undefined)?.split(" ")[0]
+        || "";
+      setFirstName(fn);
 
       await Promise.all([loadDepartures(gp.id), loadInterests(gp.id)]);
       if (!cancelled) {
