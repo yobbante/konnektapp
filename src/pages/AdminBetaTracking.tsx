@@ -172,6 +172,102 @@ export default function AdminBetaTracking() {
             </div>
           </Card>
 
+          {/* Stats Konnekt beta */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6 mb-3">
+            <Kpi icon={<Users className="w-4 h-4" />} label="GP invités" value={gps.length} />
+            <Kpi
+              icon={<Users className="w-4 h-4" />}
+              label="Inscrits"
+              value={gps.filter((g) => g.status === "verified" || g.status === "active").length}
+            />
+            <Kpi icon={<TrendingUp className="w-4 h-4" />} label="Taux conv." value={`${conversionRate}%`} highlight />
+            <Kpi icon={<Send className="w-4 h-4" />} label="Missions assignées" value={totalMissions} />
+          </div>
+
+          {/* Chart inscriptions 30j */}
+          <Card className="p-4 mb-6" style={{ background: "#111111" }}>
+            <h2 className="text-sm font-semibold mb-3 text-white">Inscriptions par jour (30 derniers jours)</h2>
+            {(() => {
+              const max = Math.max(1, ...dailyChart.map((d) => d.count));
+              return (
+                <div className="flex items-end gap-1 h-32">
+                  {dailyChart.map((d) => (
+                    <div key={d.day} className="flex-1 flex flex-col items-center gap-1" title={`${d.day} · ${d.count}`}>
+                      <div
+                        className="w-full rounded-t"
+                        style={{
+                          height: `${(d.count / max) * 100}%`,
+                          minHeight: d.count > 0 ? "4px" : "1px",
+                          background: d.count > 0 ? "#3B82F6" : "rgba(255,255,255,0.08)",
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+            <div className="flex justify-between text-[10px] text-white/40 mt-2 tabular-nums">
+              <span>{dailyChart[0]?.day}</span>
+              <span>{dailyChart[dailyChart.length - 1]?.day}</span>
+            </div>
+          </Card>
+
+          {/* Liste GP */}
+          <Card className="p-4">
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <h2 className="text-sm font-semibold">Liste GP ({filteredGps.length})</h2>
+              <div className="flex gap-1">
+                {([
+                  { k: "all", label: "Tous" },
+                  { k: "registered", label: "Inscrits" },
+                  { k: "not_registered", label: "Non inscrits" },
+                ] as const).map((opt) => (
+                  <Button
+                    key={opt.k}
+                    size="sm"
+                    variant={gpFilter === opt.k ? "default" : "outline"}
+                    onClick={() => setGpFilter(opt.k)}
+                    className="h-7 text-xs"
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs text-muted-foreground">
+                  <tr className="border-b">
+                    <th className="text-left py-2">Réf</th>
+                    <th className="text-left py-2">Nom</th>
+                    <th className="text-left py-2">Ville</th>
+                    <th className="text-left py-2">Inscrit le</th>
+                    <th className="text-right py-2">Missions</th>
+                    <th className="text-right py-2">Statut</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredGps.length === 0 ? (
+                    <tr><td colSpan={6} className="text-center py-4 text-muted-foreground">Aucun GP</td></tr>
+                  ) : filteredGps.slice(0, 100).map((g) => (
+                    <tr key={g.id} className="border-b last:border-0">
+                      <td className="py-2 font-mono text-xs">GP{g.id.slice(0, 4).toUpperCase()}</td>
+                      <td className="py-2 truncate max-w-[140px]">{g.business_name}</td>
+                      <td className="py-2 text-muted-foreground">{g.city || "—"}</td>
+                      <td className="py-2 text-xs text-muted-foreground">
+                        {new Date(g.created_at).toLocaleDateString("fr-FR")}
+                      </td>
+                      <td className="py-2 text-right tabular-nums">{g.total_deliveries || 0}</td>
+                      <td className="py-2 text-right">
+                        <Badge variant="outline" className="text-[10px]">{g.status || "pending"}</Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
           {/* Recent events */}
           <Card className="p-4">
             <h2 className="text-sm font-semibold mb-3">Évènements récents</h2>
