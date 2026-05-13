@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ClaimAccountBanner } from "@/components/beta/ClaimAccountBanner";
 import { BetaApercuLinkBanner } from "@/components/beta/BetaApercuLinkBanner";
+import { BetaInviteBadge } from "@/components/beta/BetaInviteBadge";
+import { BetaReferralSection } from "@/components/beta/BetaReferralSection";
 
 interface Departure {
   id: string;
