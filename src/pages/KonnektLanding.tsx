@@ -522,20 +522,28 @@ export default function KonnektLanding() {
       </section>
 
       {/* ───── CTA FINAL ───── */}
-      <section className="px-4 py-20 md:py-28 bg-foreground text-background border-b border-foreground">
-        <div className="max-w-3xl mx-auto text-center">
-          <p className="text-[11px] font-semibold tracking-widest text-primary uppercase">Konnekt</p>
+      <section className="relative px-4 py-20 md:py-28 bg-primary text-primary-foreground border-b border-primary overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-[0.08] pointer-events-none"
+          style={{
+            backgroundImage:
+              "linear-gradient(hsl(var(--primary-foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary-foreground)) 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+          }}
+        />
+        <div className="relative max-w-3xl mx-auto text-center">
+          <p className="text-[11px] font-semibold tracking-widest text-primary-foreground/80 uppercase">Konnekt</p>
           <h2 className="text-3xl md:text-5xl font-bold tracking-tight mt-3 leading-tight">
             Le transport sénégalais. Connecté, enfin.
           </h2>
-          <p className="text-base text-background/60 mt-5 max-w-xl mx-auto">
+          <p className="text-base text-primary-foreground/80 mt-5 max-w-xl mx-auto">
             Téléchargez l'app ou rejoignez la bêta. Gratuit, sans engagement.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 mt-10 justify-center">
-            <a href="#" className="inline-flex items-center justify-center gap-2 bg-background text-foreground rounded-lg px-6 py-3.5 font-semibold text-sm hover:bg-background/90 transition-colors">
+            <a href="#" className="inline-flex items-center justify-center gap-2 bg-background text-primary rounded-lg px-6 py-3.5 font-semibold text-sm hover:bg-background/95 transition-colors shadow-md">
               <Smartphone className="w-4 h-4" /> Télécharger l'app
             </a>
-            <Link to="/beta" className="inline-flex items-center justify-center gap-2 border border-background/30 text-background rounded-lg px-6 py-3.5 font-semibold text-sm hover:bg-background/10 transition-colors">
+            <Link to="/beta" className="inline-flex items-center justify-center gap-2 border border-primary-foreground/40 text-primary-foreground rounded-lg px-6 py-3.5 font-semibold text-sm hover:bg-primary-foreground/10 transition-colors">
               Rejoindre la bêta <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
