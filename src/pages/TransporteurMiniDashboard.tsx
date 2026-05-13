@@ -46,6 +46,9 @@ export default function TransporteurMiniDashboard() {
   const [departures, setDepartures] = useState<Departure[]>([]);
   const [interests, setInterests] = useState<Interest[]>([]);
   const [gpId, setGpId] = useState<string | null>(null);
+  const [gpReference, setGpReference] = useState<string>("");
+  const [firstName, setFirstName] = useState<string>("");
+  const [invitedCount, setInvitedCount] = useState<number>(0);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [now, setNow] = useState<Date>(new Date());
