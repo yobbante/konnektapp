@@ -432,7 +432,7 @@ export default function KonnektLanding() {
                   </li>
                 ))}
               </ul>
-              <Link to={aud.cta.to} className="inline-flex items-center gap-2 mt-8 bg-foreground text-background rounded-lg px-5 py-3 text-sm font-semibold hover:bg-foreground/90 transition-colors">
+              <Link to={aud.cta.to} className="inline-flex items-center gap-2 mt-8 bg-primary text-primary-foreground rounded-lg px-5 py-3 text-sm font-semibold hover:bg-primary/90 transition-colors shadow-sm">
                 {aud.cta.label} <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
