@@ -314,9 +314,9 @@ export default function KonnektLanding() {
         <div className="flex items-center gap-2 py-4 animate-marquee w-max">
           {[...letters, ...letters].map((l, i) => (
             <div key={i} className="flex items-center gap-3 px-5 whitespace-nowrap">
-              <span className="w-7 h-7 grid place-items-center rounded-full bg-foreground text-background text-xs font-bold">{l.ch}</span>
+              <span className="w-7 h-7 grid place-items-center rounded-full bg-primary text-primary-foreground text-xs font-bold">{l.ch}</span>
               <span className="text-xs uppercase tracking-widest font-semibold text-foreground">{l.word}</span>
-              <span className="w-1 h-1 rounded-full bg-border" />
+              <span className="w-1 h-1 rounded-full bg-primary/40" />
             </div>
           ))}
         </div>
