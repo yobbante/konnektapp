@@ -192,7 +192,8 @@ const App = () => (
             {/* ============================================
                 PUBLIC ROUTES - Accessibles sans authentification
             ============================================ */}
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<KonnektLanding />} />
+            <Route path="/app" element={<Index />} />
             <Route path="/t" element={<TransporteurQuickOnboard />} />
             <Route path="/beta" element={<BetaLandingPage />} />
             <Route path="/t/dashboard" element={<TransporteurMiniDashboard />} />
