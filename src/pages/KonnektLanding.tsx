@@ -182,7 +182,7 @@ export default function KonnektLanding() {
       </section>
 
       {/* MODES */}
-      <section className="py-16 px-4 bg-background">
+      <section className="py-16 px-4 bg-white">
         <div className="max-w-sm mx-auto">
           <SectionLabel>TOUS LES MODES</SectionLabel>
           <h2 className="text-2xl font-bold text-foreground text-center max-w-xs mx-auto mt-2 mb-8">
