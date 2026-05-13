@@ -33,22 +33,61 @@ const EVENT_LABELS: Record<string, string> = {
   interest_clicked: "Intéressé",
 };
 
+type GPFilter = "all" | "registered" | "not_registered";
+
 export default function AdminBetaTracking() {
   const [events, setEvents] = useState<Event[]>([]);
+  const [gps, setGps] = useState<GPRow[]>([]);
+  const [gpFilter, setGpFilter] = useState<GPFilter>("all");
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("beta_tracking_events" as any)
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(2000);
-    setEvents((data as unknown as Event[]) || []);
+    const [{ data: ev }, { data: g }] = await Promise.all([
+      supabase
+        .from("beta_tracking_events" as any)
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(2000),
+      supabase
+        .from("gp_profiles")
+        .select("id, business_name, city, status, created_at, total_deliveries")
+        .order("created_at", { ascending: false })
+        .limit(500),
+    ]);
+    setEvents((ev as unknown as Event[]) || []);
+    setGps((g as unknown as GPRow[]) || []);
     setLoading(false);
   };
 
   useEffect(() => { load(); }, []);
+
+  // Inscriptions par jour sur 30 derniers jours
+  const dailyChart = useMemo(() => {
+    const days: { day: string; count: number }[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      const count = gps.filter((g) => g.created_at?.slice(0, 10) === key).length;
+      days.push({ day: key, count });
+    }
+    return days;
+  }, [gps]);
+
+  const filteredGps = useMemo(() => {
+    if (gpFilter === "registered") return gps.filter((g) => g.status === "verified" || g.status === "active");
+    if (gpFilter === "not_registered") return gps.filter((g) => !g.status || g.status === "pending");
+    return gps;
+  }, [gps, gpFilter]);
+
+  const conversionRate = gps.length
+    ? Math.round((gps.filter((g) => g.status === "verified" || g.status === "active").length / gps.length) * 100)
+    : 0;
+
+  const totalMissions = gps.reduce((s, g) => s + (g.total_deliveries || 0), 0);
 
   const funnel = useMemo(() => {
     const distinct = (type: string) => new Set(
