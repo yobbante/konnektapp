@@ -195,9 +195,20 @@ export default function TransporteurMiniDashboard() {
           <ArrowLeft className="w-3 h-3" /> Retour
         </button>
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Mon espace transporteur</h1>
-            <p className="text-sm text-foreground/50 mt-1">Vos départs et opportunités</p>
+          <div className="min-w-0">
+            <h1 className="text-3xl font-bold tracking-tight">
+              Bonjour{firstName ? `, ${firstName}` : ""}.
+            </h1>
+            <p
+              className="mt-1 tabular-nums"
+              style={{
+                fontFamily: "ui-monospace, SFMono-Regular, monospace",
+                fontSize: "11px",
+                color: "#F5C518",
+              }}
+            >
+              Partenaire Konnekt · GP{gpReference}
+            </p>
           </div>
           <button
             onClick={manualRefresh}
