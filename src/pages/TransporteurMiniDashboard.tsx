@@ -445,6 +445,18 @@ export default function TransporteurMiniDashboard() {
                         </div>
                         <StatusBadge status={i.status} />
                       </div>
+                      {i.status === "pending" && (
+                        <div className="mt-3 pt-3 border-t border-foreground/10">
+                          <Button
+                            size="sm"
+                            onClick={() => nav("/t")}
+                            className="w-full h-8 rounded-full text-xs font-semibold"
+                            style={{ background: "#F5C518", color: "#000" }}
+                          >
+                            Confirmer disponibilité
+                          </Button>
+                        </div>
+                      )}
                     </Card>
                   ))}
                 </div>
