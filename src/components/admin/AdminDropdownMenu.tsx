@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { 
   ChevronDown, Settings, Users, Truck, Package, 
   MessageSquare, AlertTriangle, Shield, Award, LogOut, Home, Route, Cog, Building, UserCheck,
-  BarChart3, FileText, Wallet
+  BarChart3, FileText, Wallet, LineChart
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
