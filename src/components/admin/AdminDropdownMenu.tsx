@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { 
   ChevronDown, Settings, Users, Truck, Package, 
   MessageSquare, AlertTriangle, Shield, Award, LogOut, Home, Route, Cog, Building, UserCheck,
-  BarChart3, FileText, Wallet
+  BarChart3, FileText, Wallet, LineChart
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -49,6 +49,7 @@ const menuSections = [
   {
     title: "Gouvernance",
     items: [
+      { id: "beta-tracking", label: "Tracking Bêta", icon: LineChart, isLink: true, href: "/admin/beta-tracking" },
       { id: "finance", label: "Finance & Wallets", icon: Wallet },
       { id: "stats", label: "Statistiques", icon: BarChart3 },
       { id: "reputation", label: "Réputation", icon: Award },
