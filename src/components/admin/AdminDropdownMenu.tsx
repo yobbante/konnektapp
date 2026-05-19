@@ -49,6 +49,7 @@ const menuSections = [
   {
     title: "Gouvernance",
     items: [
+      { id: "beta-tracking", label: "Tracking Bêta", icon: LineChart, isLink: true, href: "/admin/beta-tracking" },
       { id: "finance", label: "Finance & Wallets", icon: Wallet },
       { id: "stats", label: "Statistiques", icon: BarChart3 },
       { id: "reputation", label: "Réputation", icon: Award },
