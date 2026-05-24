@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
+import { WhatsAppFloatingButton } from "@/components/WhatsAppFloatingButton";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { SiteLock } from "@/components/site-lock/SiteLock";
 import { GlobalNotificationProvider } from "@/components/notifications/GlobalNotificationProvider";
@@ -187,6 +188,7 @@ const App = () => (
           <AppleNotificationContainer />
           <RoleSwitchPopup />
           <DeliveryCodePopup />
+          <WhatsAppFloatingButton />
           <AuthGuard>
           <Routes>
             {/* ============================================
