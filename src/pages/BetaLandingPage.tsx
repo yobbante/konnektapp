@@ -1,23 +1,49 @@
 /**
- * /beta — Konnekt beta registration (light corporate redesign)
+ * /beta — Konnekt beta registration (light corporate redesign, no password)
  *
  * - Reads `?ref=GPxxxx` to pre-fill from gp_profiles
+ * - Pas de mot de passe : l'identifiant est le téléphone, activation par
+ *   notre équipe via WhatsApp dans les 24h.
  * - Inline per-field validation
- * - Calls beta-register edge function
- * - On success: success card + auto-redirect to /t/dashboard
+ * - Calls beta-register edge function (un mot de passe aléatoire est généré
+ *   côté client pour rester compatible avec le backend existant)
+ * - On success: page de confirmation WhatsApp (pas de redirection auto)
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
-  Loader2, Check, ArrowRight, ArrowLeft, ShieldCheck,
-  Truck, Briefcase, Building2, Users,
+  Loader2, Check, ArrowRight, ArrowLeft, ShieldCheck, MessageCircle,
+  Truck, Briefcase, Building2, Users, Phone,
   Luggage, Plane, Ship, Zap, Bike, Car,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 /* ───────── Data ───────── */
 
-const CITIES = ["Dakar", "Thiès", "Saint-Louis", "Ziguinchor", "Kaolack", "Touba", "Mbour", "Autre"];
+const CITY_GROUPS: { label: string; cities: string[] }[] = [
+  {
+    label: "Europe",
+    cities: [
+      "Paris", "Lyon", "Marseille", "Bordeaux",
+      "Madrid", "Barcelone", "Rome", "Milan",
+      "Bruxelles", "Amsterdam", "Genève",
+      "Londres", "Lisbonne",
+    ],
+  },
+  {
+    label: "Amérique",
+    cities: ["New York", "Montréal", "Toronto", "Washington DC", "Miami"],
+  },
+  {
+    label: "Afrique (hors Sénégal)",
+    cities: ["Abidjan", "Conakry", "Bamako", "Douala", "Libreville"],
+  },
+  {
+    label: "Sénégal",
+    cities: ["Dakar", "Thiès", "Saint-Louis", "Ziguinchor", "Kaolack", "Touba", "Mbour"],
+  },
+];
+const ALL_CITIES = [...CITY_GROUPS.flatMap((g) => g.cities), "Autre"];
 
 const ROLES = [
   { id: "gp",          label: "GP / Voyageur",      sub: "Bagages accompagnés",     icon: Briefcase },
@@ -36,6 +62,9 @@ const MODES = [
   { id: "mobility",              label: "Mobility",     icon: Car },
 ];
 
+const KONNEKT_WA = "221781221891";
+const KONNEKT_TEL = "+221 78 460 40 03";
+
 type RoleId = typeof ROLES[number]["id"];
 
 /* ───────── Helpers ───────── */
@@ -46,12 +75,17 @@ function cleanPhone(v: string) {
   return plus + t.replace(/[^\d]/g, "");
 }
 
-type Errors = Partial<Record<"first" | "last" | "phone" | "city" | "role" | "modes" | "pwd" | "pwd2", string>>;
+function randomPassword() {
+  // Mot de passe aléatoire interne (l'utilisateur ne s'en sert jamais)
+  const a = crypto.getRandomValues(new Uint8Array(18));
+  return "K!" + Array.from(a, (b) => b.toString(16).padStart(2, "0")).join("").slice(0, 22);
+}
+
+type Errors = Partial<Record<"first" | "last" | "phone" | "city" | "role" | "modes", string>>;
 
 /* ───────── Page ───────── */
 
 export default function BetaLandingPage() {
-  const navigate = useNavigate();
   const [params] = useSearchParams();
   const ref = (params.get("ref") || "").trim();
   const refClean = ref.replace(/^GP/i, "").toLowerCase();
@@ -63,15 +97,12 @@ export default function BetaLandingPage() {
   const [whatsapp, setWhatsapp] = useState("");
   const [role, setRole] = useState<RoleId | "">("");
   const [city, setCity] = useState("Dakar");
+  const [citiesServed, setCitiesServed] = useState("");
   const [modes, setModes] = useState<string[]>([]);
-  const [pwd, setPwd] = useState("");
-  const [pwd2, setPwd2] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [done, setDone] = useState(false);
-  const [resultRef, setResultRef] = useState<string>("");
-  const [redirectIn, setRedirectIn] = useState(5);
   const initialized = useRef(false);
 
   /* Force light mode while on /beta */
@@ -93,7 +124,7 @@ export default function BetaLandingPage() {
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
-    document.title = hasRef ? "Konnekt Bêta — Bienvenue partenaire" : "Konnekt — Rejoindre la bêta";
+    document.title = hasRef ? "Konnekt Bêta — Bienvenue partenaire" : "Konnekt — Rejoindre";
     if (!hasRef) return;
     void (async () => {
       const { data } = await supabase
@@ -127,10 +158,8 @@ export default function BetaLandingPage() {
     if (!city) e.city = "Sélectionnez une ville";
     if (!role) e.role = "Sélectionnez un rôle";
     if (modes.length === 0) e.modes = "Choisissez au moins un mode";
-    if (pwd.length < 6) e.pwd = "Au moins 6 caractères";
-    if (pwd2 !== pwd) e.pwd2 = "Ne correspond pas";
     return e;
-  }, [first, last, phone, city, role, modes, pwd, pwd2]);
+  }, [first, last, phone, city, role, modes]);
 
   const valid = Object.keys(errors).length === 0;
 
@@ -144,7 +173,6 @@ export default function BetaLandingPage() {
     setTouched((t) => ({ ...t, __submit: true }));
     setServerError(null);
     if (!valid) {
-      // scroll to first error
       const el = document.querySelector("[data-error='1']");
       el?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
@@ -159,19 +187,15 @@ export default function BetaLandingPage() {
           phone: phone.trim(),
           whatsapp: whatsapp.trim() || phone.trim(),
           city,
+          cities_served: citiesServed.trim() || null,
           modes,
           role,
-          password: pwd,
+          password: randomPassword(), // jamais montré à l'utilisateur
           source: hasRef ? "whatsapp_partner" : "beta_landing",
         },
       });
       if (error) throw new Error(error.message);
       if ((data as any)?.error) throw new Error((data as any).error);
-      const session = (data as any)?.session;
-      if (session?.access_token && session?.refresh_token) {
-        await supabase.auth.setSession(session);
-      }
-      setResultRef((data as any)?.gp_ref || refClean.toUpperCase().slice(0, 4) || "XXXX");
       setDone(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e: any) {
@@ -180,17 +204,6 @@ export default function BetaLandingPage() {
       setSubmitting(false);
     }
   };
-
-  /* Auto-redirect after success */
-  useEffect(() => {
-    if (!done) return;
-    if (redirectIn <= 0) {
-      navigate("/t/dashboard");
-      return;
-    }
-    const t = setTimeout(() => setRedirectIn((s) => s - 1), 1000);
-    return () => clearTimeout(t);
-  }, [done, redirectIn, navigate]);
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
@@ -207,7 +220,7 @@ export default function BetaLandingPage() {
           </Link>
           <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-semibold border border-primary/30 bg-primary/10 text-primary rounded-full px-2.5 py-1">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            Bêta
+            Accès prioritaire
           </span>
         </div>
       </header>
@@ -219,13 +232,13 @@ export default function BetaLandingPage() {
               {/* HERO */}
               <section className="text-center mb-8">
                 <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight">
-                  Recevez plus de missions.<br />
-                  <span className="text-primary">Partout au Sénégal.</span>
+                  Recevez vos missions{" "}
+                  <span className="text-primary">Yobbanté</span> ici.
                 </h1>
                 <p className="text-sm md:text-base text-muted-foreground mt-3 max-w-md mx-auto leading-relaxed">
-                  Konnekt connecte les transporteurs vérifiés aux particuliers et entreprises qui ont besoin d'eux.
+                  Inscription en 2 minutes. Notre équipe vous active sur WhatsApp dans les 24h.
                 </p>
-                <div className="flex items-center justify-center gap-4 mt-5 text-xs text-muted-foreground">
+                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mt-5 text-xs text-muted-foreground">
                   <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-primary" /> Gratuit</span>
                   <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-primary" /> 2 minutes</span>
                   <span className="inline-flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5 text-primary" /> Sécurisé</span>
@@ -296,18 +309,37 @@ export default function BetaLandingPage() {
                   </div>
                 </Field>
 
-                {/* Zone */}
-                <Field label="Zone d'activité" required error={showErr("city") ? errors.city : undefined}>
+                {/* Ville de base */}
+                <Field
+                  label="Ville de base"
+                  required
+                  hint="Où vous résidez principalement"
+                  error={showErr("city") ? errors.city : undefined}
+                >
                   <select
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     onBlur={() => setTouched((t) => ({ ...t, city: true }))}
                     className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm text-foreground appearance-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                   >
-                    {CITIES.map((c) => (
-                      <option key={c} value={c}>{c}</option>
+                    {CITY_GROUPS.map((g) => (
+                      <optgroup key={g.label} label={g.label}>
+                        {g.cities.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </optgroup>
                     ))}
+                    <option value="Autre">Autre</option>
                   </select>
+                </Field>
+
+                {/* Villes desservies */}
+                <Field label="Villes desservies" hint="Séparez les villes par des virgules">
+                  <KInput
+                    value={citiesServed}
+                    onChange={setCitiesServed}
+                    placeholder="Ex : Paris, Dakar, Lyon, New York..."
+                  />
                 </Field>
 
                 {/* Modes recherchés */}
@@ -335,14 +367,16 @@ export default function BetaLandingPage() {
                   </div>
                 </Field>
 
-                {/* Mot de passe */}
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Mot de passe" required hint="Min. 6 caractères" error={showErr("pwd") ? errors.pwd : undefined}>
-                    <KInput value={pwd} onChange={setPwd} onBlur={() => setTouched((t) => ({ ...t, pwd: true }))} type="password" placeholder="••••••" invalid={!!showErr("pwd")} />
-                  </Field>
-                  <Field label="Confirmer" required error={showErr("pwd2") ? errors.pwd2 : undefined}>
-                    <KInput value={pwd2} onChange={setPwd2} onBlur={() => setTouched((t) => ({ ...t, pwd2: true }))} type="password" placeholder="••••••" invalid={!!showErr("pwd2")} />
-                  </Field>
+                {/* Bloc info — pas de mot de passe */}
+                <div
+                  className="mt-5 flex items-start gap-3 rounded-xl"
+                  style={{ backgroundColor: "#F5F5F5", padding: "12px 20px", borderRadius: 12 }}
+                >
+                  <MessageCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: "#25D366" }} strokeWidth={2} />
+                  <p className="text-xs md:text-sm text-foreground leading-relaxed">
+                    Votre numéro de téléphone est votre identifiant. Pas de mot de passe —
+                    nous vous envoyons un code WhatsApp pour activer votre compte.
+                  </p>
                 </div>
 
                 <p className="text-[11px] text-muted-foreground mt-5 leading-relaxed">
@@ -363,7 +397,7 @@ export default function BetaLandingPage() {
                   className="w-full mt-5 inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg py-3.5 font-semibold text-sm shadow-md disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                 >
                   {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {hasRef ? "Activer mon compte Konnekt" : "Rejoindre la bêta"}
+                  {hasRef ? "Activer mon compte Konnekt" : "Rejoindre Konnekt"}
                   {!submitting && <ArrowRight className="w-4 h-4" />}
                 </button>
               </div>
@@ -374,7 +408,7 @@ export default function BetaLandingPage() {
               </p>
             </>
           ) : (
-            <SuccessBlock firstName={first} gpRef={resultRef} hasRef={hasRef} redirectIn={redirectIn} onSkip={() => navigate("/t/dashboard")} />
+            <ConfirmationBlock firstName={first} />
           )}
         </div>
       </main>
@@ -433,47 +467,64 @@ function KInput({
   );
 }
 
-function SuccessBlock({
-  firstName, gpRef, hasRef, redirectIn, onSkip,
-}: {
-  firstName: string;
-  gpRef: string;
-  hasRef: boolean;
-  redirectIn: number;
-  onSkip: () => void;
-}) {
+function ConfirmationBlock({ firstName }: { firstName: string }) {
+  const waText = encodeURIComponent(
+    `Salam, je viens de m'inscrire sur Konnekt.\nMon prénom : ${firstName || "—"}`
+  );
   return (
     <div className="bg-card border border-border rounded-2xl p-7 text-center shadow-sm">
       <div className="flex justify-center mb-5">
-        <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary/30 grid place-items-center">
-          <Check className="w-8 h-8 text-primary" strokeWidth={2.5} />
+        <div className="w-20 h-20 rounded-full bg-primary/10 border border-primary/30 grid place-items-center">
+          <Check className="w-10 h-10 text-primary" strokeWidth={2.5} />
         </div>
       </div>
+
       <h2 className="text-2xl font-bold tracking-tight">
-        {hasRef ? `Bienvenue, ${firstName} !` : "Inscription confirmée !"}
+        Inscription reçue{firstName ? `, ${firstName}` : ""} !
       </h2>
-      <p className="text-sm text-muted-foreground mt-3 max-w-sm mx-auto leading-relaxed">
-        {hasRef
-          ? "Votre compte Konnekt est actif. Retrouvez vos missions Yobbanté directement dans l'application."
-          : "Vous êtes parmi les premiers transporteurs sur la plateforme. Bienvenue !"}
+
+      <p className="text-sm text-muted-foreground mt-4 max-w-md mx-auto leading-relaxed">
+        Notre équipe Konnekt vous contacte sur WhatsApp dans les
+        <span className="font-semibold text-foreground"> 24 heures </span>
+        pour activer votre compte.
       </p>
 
-      {gpRef && (
-        <div className="mt-5 inline-flex items-center gap-2 bg-muted border border-border rounded-full px-3 py-1.5 text-xs">
-          <span className="text-muted-foreground">Réf.</span>
-          <span className="font-mono font-semibold text-foreground">GP{gpRef}</span>
+      <div className="mt-6 bg-muted/60 border border-border rounded-xl px-4 py-4 text-left">
+        <div className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-2">
+          En attendant, enregistrez ce numéro
         </div>
-      )}
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-base font-bold text-foreground">+221 78 122 18 91</div>
+            <div className="text-xs text-muted-foreground mt-0.5">Nom : Konnekt GP</div>
+          </div>
+          <a
+            href={`tel:+${KONNEKT_WA}`}
+            className="w-10 h-10 rounded-full bg-background border border-border grid place-items-center text-foreground hover:bg-muted transition-colors"
+            aria-label="Appeler Konnekt"
+          >
+            <Phone className="w-4 h-4" />
+          </a>
+        </div>
+      </div>
 
-      <button
-        onClick={onSkip}
-        className="w-full mt-6 inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg py-3.5 font-semibold text-sm shadow-md transition-colors"
+      <a
+        href={`https://wa.me/${KONNEKT_WA}?text=${waText}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="w-full mt-5 inline-flex items-center justify-center gap-2 text-white rounded-lg py-3.5 font-semibold text-sm shadow-md transition-transform hover:scale-[1.01] active:scale-[0.99]"
+        style={{ backgroundColor: "#25D366" }}
       >
-        Accéder à mon tableau de bord <ArrowRight className="w-4 h-4" />
-      </button>
+        <MessageCircle className="w-4 h-4" />
+        Écrire à Konnekt sur WhatsApp
+        <ArrowRight className="w-4 h-4" />
+      </a>
 
       <p className="text-xs text-muted-foreground mt-4">
-        Redirection automatique dans <span className="font-semibold text-foreground">{redirectIn}s</span>…
+        Ou appelez-nous :{" "}
+        <a href={`tel:${KONNEKT_TEL.replace(/\s/g, "")}`} className="text-foreground font-semibold hover:underline">
+          {KONNEKT_TEL}
+        </a>
       </p>
     </div>
   );
