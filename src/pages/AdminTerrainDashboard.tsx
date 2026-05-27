@@ -97,7 +97,7 @@ export default function AdminTerrainDashboard() {
   const refreshData = useCallback(async () => {
     setRefreshing(true);
     try {
-      const [ordersRes, logisticsRes, disputesRes, agentsRes] = await Promise.all([
+      const [ordersRes, logisticsRes, disputesRes, agentsRes, betaRes] = await Promise.all([
         supabase
           .from("orders")
           .select("id, order_number, status, logistics_status, origin_city, destination_city, weight, created_at, total_price, gp_id, client_id, recipient_name, delivery_code, description, gp_profile:gp_profiles(business_name)")
@@ -116,7 +116,14 @@ export default function AdminTerrainDashboard() {
           .from("user_roles")
           .select("id")
           .eq("role", "agent_logistique"),
+        supabase
+          .from("gp_profiles")
+          .select("id", { count: "exact", head: true })
+          .eq("beta_source", "konnekt_beta")
+          .neq("status", "verified"),
       ]);
+
+      setBetaPendingCount(betaRes.count || 0);
 
       const rawOrders = (ordersRes.data || []).map((o: any) => ({
         ...o,
