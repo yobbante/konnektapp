@@ -15,6 +15,7 @@ import {
   Loader2, Check, ArrowRight, ArrowLeft, ShieldCheck, MessageCircle,
   Truck, Briefcase, Building2, Users, Phone,
   Luggage, Plane, Ship, Zap, Bike, Car,
+  Clock, Smartphone, Package,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -526,6 +527,79 @@ function ConfirmationBlock({ firstName }: { firstName: string }) {
           {KONNEKT_TEL}
         </a>
       </p>
+
+      {/* Timeline — Que se passe-t-il ensuite ? */}
+      <NextStepsTimeline />
+    </div>
+  );
+}
+
+function NextStepsTimeline() {
+  const steps = [
+    {
+      key: "now",
+      label: "Immédiat",
+      title: "Vous recevez un WhatsApp de confirmation sur le +221 78 122 18 91",
+      Icon: Check,
+      color: "#16A34A",
+      bg: "#DCFCE7",
+    },
+    {
+      key: "24h",
+      label: "Sous 24h",
+      title: "Notre équipe examine votre profil et active votre compte",
+      Icon: Clock,
+      color: "#3DAA8A",
+      bg: "rgba(61,170,138,0.12)",
+    },
+    {
+      key: "activation",
+      label: "Après activation",
+      title: "Vous recevez vos identifiants par WhatsApp pour vous connecter sur usekonnekt.com/gp",
+      Icon: Smartphone,
+      color: "#6B7280",
+      bg: "#F3F4F6",
+    },
+    {
+      key: "missions",
+      label: "Missions",
+      title: "Vous recevez vos premières missions directement sur WhatsApp",
+      Icon: Package,
+      color: "#6B7280",
+      bg: "#F3F4F6",
+    },
+  ];
+  return (
+    <div className="mt-8 text-left">
+      <h3 className="text-sm font-bold text-foreground mb-4">Que se passe-t-il ensuite ?</h3>
+      <ol className="relative">
+        <span
+          aria-hidden
+          className="absolute left-[15px] top-2 bottom-2 w-px bg-border"
+        />
+        {steps.map((s, i) => {
+          const { Icon } = s;
+          return (
+            <li key={s.key} className={`relative flex gap-3 ${i === steps.length - 1 ? "" : "pb-5"}`}>
+              <div
+                className="relative z-10 w-8 h-8 rounded-full grid place-items-center flex-shrink-0 border"
+                style={{ backgroundColor: s.bg, borderColor: s.color }}
+              >
+                <Icon className="w-4 h-4" style={{ color: s.color }} strokeWidth={2.25} />
+              </div>
+              <div className="flex-1 pt-0.5">
+                <div
+                  className="text-[10px] uppercase tracking-widest font-semibold mb-0.5"
+                  style={{ color: s.color }}
+                >
+                  Étape {i + 1} · {s.label}
+                </div>
+                <p className="text-sm text-foreground leading-snug">{s.title}</p>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
     </div>
   );
 }

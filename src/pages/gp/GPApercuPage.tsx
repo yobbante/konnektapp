@@ -280,6 +280,8 @@ export default function GPApercuPage() {
         <BetaRedirectInfoBanner />
       </div>
 
+      <KonnektWelcomeBanner gpProfile={gpProfile} />
+
       {!isPending &&
       <GPKYCProgressCard
         kycLevel={gpProfile.kyc_level ?? 0}
@@ -963,4 +965,68 @@ function MiniStat({ label, value, icon: Icon, color }: {label: string;value: str
       <p className="text-[10px] text-muted-foreground mt-0.5">{label}</p>
     </div>);
 
+}
+
+function KonnektWelcomeBanner({ gpProfile }: { gpProfile: any }) {
+  const KEY = "konnekt_gp_welcome_dismissed";
+  const initialFirst =
+    (typeof window !== "undefined" && sessionStorage.getItem("konnekt_gp_first_name")) ||
+    (gpProfile?.business_name || "").split(/\s+/)[0] ||
+    "";
+  const [open, setOpen] = useState(() => {
+    if (typeof window === "undefined") return false;
+    if (localStorage.getItem(KEY)) return false;
+    return sessionStorage.getItem("konnekt_gp_first_login") === "1";
+  });
+  if (!open) return null;
+  const dismiss = () => {
+    localStorage.setItem(KEY, "1");
+    sessionStorage.removeItem("konnekt_gp_first_login");
+    setOpen(false);
+  };
+  return (
+    <div className="px-4 pt-3">
+      <div
+        className="rounded-2xl p-4 border shadow-sm"
+        style={{ backgroundColor: "rgba(61,170,138,0.08)", borderColor: "rgba(61,170,138,0.3)" }}
+      >
+        <div className="flex items-start gap-3">
+          <div
+            className="w-9 h-9 rounded-full grid place-items-center text-white font-bold flex-shrink-0"
+            style={{ backgroundColor: "#3DAA8A" }}
+          >
+            K
+          </div>
+          <div className="flex-1">
+            <h3 className="font-bold text-sm" style={{ color: "#0D1B2A" }}>
+              Bienvenue {initialFirst} !
+            </h3>
+            <p className="text-xs text-foreground/80 mt-1 leading-relaxed">
+              Votre espace Konnekt est prêt. Le bot WhatsApp
+              <span className="font-semibold"> (+221 78 122 18 91) </span>
+              reste votre outil principal pour les missions au quotidien.
+              Ce dashboard vous donne une vue complète de votre activité.
+            </p>
+            <div className="flex flex-wrap gap-2 mt-3">
+              <a
+                href="https://wa.me/221781221891?text=AIDE"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-white text-xs font-semibold px-3.5 py-2 rounded-lg"
+                style={{ backgroundColor: "#25D366" }}
+              >
+                Écrire au bot WhatsApp →
+              </a>
+              <button
+                onClick={dismiss}
+                className="text-xs font-medium text-foreground/60 hover:text-foreground px-2"
+              >
+                Masquer
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
