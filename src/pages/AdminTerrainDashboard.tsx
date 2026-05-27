@@ -14,7 +14,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Shield, RefreshCw, ScanLine, Package, Truck, AlertTriangle,
-  Eye, MapPin, Users, BarChart3
+  Eye, MapPin, Users, BarChart3, Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
