@@ -211,6 +211,32 @@ export default function AdminTerrainDashboard() {
 
       {/* Tab Content */}
       <main className="px-4 py-4 max-w-3xl mx-auto">
+        {/* Beta Konnekt pending counter */}
+        {betaPendingCount > 0 && (
+          <button
+            onClick={() => {
+              setActiveTab("logistique");
+              setLogistiqueSubTab("beta");
+            }}
+            className="w-full mb-3 flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl bg-amber-400/15 border border-amber-400/40 hover:bg-amber-400/25 transition-colors text-left"
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-amber-400 flex items-center justify-center shrink-0">
+                <Sparkles className="w-4 h-4 text-slate-900" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">
+                  {betaPendingCount} demande{betaPendingCount > 1 ? "s" : ""} Konnekt beta en attente
+                </p>
+                <p className="text-[10px] text-amber-800/70 dark:text-amber-200/60">
+                  Cliquer pour valider
+                </p>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-amber-900 dark:text-amber-200">→</span>
+          </button>
+        )}
+
         {activeTab === "overview" && (
           <TerrainOverviewTab stats={stats} orders={orders} onTabChange={setActiveTab} onRefresh={refreshData} />
         )}
@@ -221,12 +247,13 @@ export default function AdminTerrainDashboard() {
           <TerrainColisTab orders={orders} onRefresh={refreshData} />
         )}
         {activeTab === "logistique" && (
-          <TerrainLogistiqueTab orders={orders} onRefresh={refreshData} />
+          <TerrainLogistiqueTab orders={orders} onRefresh={refreshData} defaultSubTab={logistiqueSubTab} />
         )}
         {activeTab === "alertes" && (
           <TerrainAlertesTab orders={orders} onRefresh={refreshData} />
         )}
       </main>
+
 
       {/* Terrain Mobile Nav — 5 tabs, scan dominant */}
       <nav
