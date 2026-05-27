@@ -14,7 +14,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Shield, RefreshCw, ScanLine, Package, Truck, AlertTriangle,
-  Eye, MapPin, Users, BarChart3
+  Eye, MapPin, Users, BarChart3, Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -71,6 +71,8 @@ export default function AdminTerrainDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("overview");
+  const [logistiqueSubTab, setLogistiqueSubTab] = useState<string>("gps");
+  const [betaPendingCount, setBetaPendingCount] = useState(0);
   const [orders, setOrders] = useState<TerrainOrder[]>([]);
   const [stats, setStats] = useState<TerrainStats>({
     colisACollecter: 0,
@@ -95,7 +97,7 @@ export default function AdminTerrainDashboard() {
   const refreshData = useCallback(async () => {
     setRefreshing(true);
     try {
-      const [ordersRes, logisticsRes, disputesRes, agentsRes] = await Promise.all([
+      const [ordersRes, logisticsRes, disputesRes, agentsRes, betaRes] = await Promise.all([
         supabase
           .from("orders")
           .select("id, order_number, status, logistics_status, origin_city, destination_city, weight, created_at, total_price, gp_id, client_id, recipient_name, delivery_code, description, gp_profile:gp_profiles(business_name)")
@@ -114,7 +116,14 @@ export default function AdminTerrainDashboard() {
           .from("user_roles")
           .select("id")
           .eq("role", "agent_logistique"),
+        supabase
+          .from("gp_profiles")
+          .select("id", { count: "exact", head: true })
+          .eq("beta_source", "konnekt_beta")
+          .neq("status", "verified"),
       ]);
+
+      setBetaPendingCount(betaRes.count || 0);
 
       const rawOrders = (ordersRes.data || []).map((o: any) => ({
         ...o,
@@ -202,6 +211,32 @@ export default function AdminTerrainDashboard() {
 
       {/* Tab Content */}
       <main className="px-4 py-4 max-w-3xl mx-auto">
+        {/* Beta Konnekt pending counter */}
+        {betaPendingCount > 0 && (
+          <button
+            onClick={() => {
+              setActiveTab("logistique");
+              setLogistiqueSubTab("beta");
+            }}
+            className="w-full mb-3 flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl bg-amber-400/15 border border-amber-400/40 hover:bg-amber-400/25 transition-colors text-left"
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-amber-400 flex items-center justify-center shrink-0">
+                <Sparkles className="w-4 h-4 text-slate-900" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">
+                  {betaPendingCount} demande{betaPendingCount > 1 ? "s" : ""} Konnekt beta en attente
+                </p>
+                <p className="text-[10px] text-amber-800/70 dark:text-amber-200/60">
+                  Cliquer pour valider
+                </p>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-amber-900 dark:text-amber-200">→</span>
+          </button>
+        )}
+
         {activeTab === "overview" && (
           <TerrainOverviewTab stats={stats} orders={orders} onTabChange={setActiveTab} onRefresh={refreshData} />
         )}
@@ -212,12 +247,13 @@ export default function AdminTerrainDashboard() {
           <TerrainColisTab orders={orders} onRefresh={refreshData} />
         )}
         {activeTab === "logistique" && (
-          <TerrainLogistiqueTab orders={orders} onRefresh={refreshData} />
+          <TerrainLogistiqueTab orders={orders} onRefresh={refreshData} defaultSubTab={logistiqueSubTab} />
         )}
         {activeTab === "alertes" && (
           <TerrainAlertesTab orders={orders} onRefresh={refreshData} />
         )}
       </main>
+
 
       {/* Terrain Mobile Nav — 5 tabs, scan dominant */}
       <nav

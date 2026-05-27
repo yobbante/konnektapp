@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
 
     // 3) Upsert gp_profile (link to user_id, refresh basic info)
     let gpId: string | null = existingGp?.id || null;
-    const gpPayload: Record<string, unknown> = {
+    const baseGpPayload: Record<string, unknown> = {
       user_id: userId,
       business_name: fullName,
       phone: phoneRaw,
@@ -119,16 +119,18 @@ Deno.serve(async (req) => {
       city,
       country_code: "SN",
       gp_type: "bagages_international",
-      status: "verified",
       kyc_status: "pending",
       kyc_level: 0,
+      beta_source: "konnekt_beta",
     };
     if (gpId) {
-      await admin.from("gp_profiles").update(gpPayload).eq("id", gpId);
+      // Existing seeded profile (claim) — keep current status, just tag beta_source
+      await admin.from("gp_profiles").update(baseGpPayload).eq("id", gpId);
     } else {
+      // Brand-new signup — pending until admin validates from /admin/terrain
       const { data: gp, error: gpErr } = await admin
         .from("gp_profiles")
-        .insert(gpPayload as any)
+        .insert({ ...baseGpPayload, status: "pending" } as any)
         .select("id")
         .single();
       if (gpErr) return bad(`GP: ${gpErr.message}`, 500);
