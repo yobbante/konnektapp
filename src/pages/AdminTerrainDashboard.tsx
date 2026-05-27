@@ -71,6 +71,8 @@ export default function AdminTerrainDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("overview");
+  const [logistiqueSubTab, setLogistiqueSubTab] = useState<string>("gps");
+  const [betaPendingCount, setBetaPendingCount] = useState(0);
   const [orders, setOrders] = useState<TerrainOrder[]>([]);
   const [stats, setStats] = useState<TerrainStats>({
     colisACollecter: 0,
