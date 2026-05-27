@@ -200,6 +200,8 @@ const App = () => (
             <Route path="/t" element={<TransporteurQuickOnboard />} />
             <Route path="/beta" element={<BetaLandingPage />} />
             <Route path="/invite" element={<Navigate to="/beta" replace />} />
+            <Route path="/konnekt/gp" element={<KonnektGPLogin />} />
+            <Route path="/konnekt" element={<Navigate to="/konnekt/gp" replace />} />
             <Route path="/t/dashboard" element={<TransporteurMiniDashboard />} />
             <Route path="/transporteur/beta" element={<TransporteurBetaDashboard />} />
             <Route path="/offres" element={<Navigate to="/freight-board" replace />} />
