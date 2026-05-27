@@ -280,6 +280,8 @@ export default function GPApercuPage() {
         <BetaRedirectInfoBanner />
       </div>
 
+      <KonnektWelcomeBanner gpProfile={gpProfile} />
+
       {!isPending &&
       <GPKYCProgressCard
         kycLevel={gpProfile.kyc_level ?? 0}
