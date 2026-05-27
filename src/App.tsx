@@ -23,6 +23,7 @@ import KonnektLanding from "./pages/KonnektLanding";
 import TransporteurBetaDashboard from "./pages/transporteur/TransporteurBetaDashboard";
 import TransporteurQuickOnboard from "./pages/TransporteurQuickOnboard";
 import BetaLandingPage from "./pages/BetaLandingPage";
+import KonnektGPLogin from "./pages/KonnektGPLogin";
 import TransporteurMiniDashboard from "./pages/TransporteurMiniDashboard";
 import AdminBetaTracking from "./pages/AdminBetaTracking";
 import Offres from "./pages/Offres";
