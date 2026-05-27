@@ -1030,5 +1030,3 @@ function KonnektWelcomeBanner({ gpProfile }: { gpProfile: any }) {
     </div>
   );
 }
-
-}
