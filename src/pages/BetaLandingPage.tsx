@@ -15,6 +15,7 @@ import {
   Loader2, Check, ArrowRight, ArrowLeft, ShieldCheck, MessageCircle,
   Truck, Briefcase, Building2, Users, Phone,
   Luggage, Plane, Ship, Zap, Bike, Car,
+  Clock, Smartphone, Package,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
