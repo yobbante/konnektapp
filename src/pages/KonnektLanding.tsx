@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
+import { useKonnektPublicStats } from "@/hooks/useKonnektPublicStats";
 import {
   Menu, ArrowRight, Check, Handshake, MessageCircle, Globe2, Quote,
   Truck, Ship, Plane, Briefcase, Building2, Luggage, Car, Zap,
@@ -100,6 +102,8 @@ function Avatar({ initials, color }: { initials: string; color: string }) {
 export default function KonnektLanding() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const liveStats = useKonnektPublicStats();
+
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
