@@ -255,11 +255,10 @@ export default function BetaLandingPage() {
               {/* HERO */}
               <section className="text-center mb-8">
                 <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight">
-                  Recevez vos missions{" "}
-                  <span className="text-primary">Yobbanté</span> ici.
+                  Rejoignez le réseau <span className="text-primary">Konnekt</span>.
                 </h1>
                 <p className="text-sm md:text-base text-muted-foreground mt-3 max-w-md mx-auto leading-relaxed">
-                  Inscription en 2 minutes. Notre équipe vous active sur WhatsApp dans les 24h.
+                  Déclarez vos trajets, recevez des colis à transporter, gérez vos missions depuis votre téléphone.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mt-5 text-xs text-muted-foreground">
                   <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-primary" /> Gratuit</span>
