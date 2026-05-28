@@ -50,8 +50,9 @@ export function useKonnektPublicStats(): KonnektPublicStats {
             .select("id", { count: "exact", head: true })
             .eq("status", "delivered"),
           supabase
-            .from("gp_trips")
-            .select("departure_country, arrival_country")
+            .from("gp_routes")
+            .select("origin_country, destination_country")
+            .eq("is_active", true)
             .limit(1000),
         ]);
 
@@ -59,8 +60,8 @@ export function useKonnektPublicStats(): KonnektPublicStats {
 
         const countries = new Set<string>();
         (tripsRes.data || []).forEach((t: any) => {
-          if (t.departure_country) countries.add(String(t.departure_country).toUpperCase());
-          if (t.arrival_country) countries.add(String(t.arrival_country).toUpperCase());
+          if (t.origin_country) countries.add(String(t.origin_country).toUpperCase());
+          if (t.destination_country) countries.add(String(t.destination_country).toUpperCase());
         });
 
         const tCount = gpRes.count ?? 0;
