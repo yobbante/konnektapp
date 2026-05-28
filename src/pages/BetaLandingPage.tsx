@@ -290,20 +290,23 @@ export default function BetaLandingPage() {
                   </Field>
                 </div>
 
-                {/* Téléphone */}
+                {/* Téléphone avec sélecteur pays */}
                 <Field label="Téléphone" required hint="Sera votre identifiant Konnekt" error={showErr("phone") ? errors.phone : undefined}>
-                  <KInput
-                    value={phone}
-                    onChange={(v) => setPhone(cleanPhone(v))}
+                  <PhoneCountrySelect
+                    country={phoneCountry}
+                    value={phoneLocal}
+                    onChange={(local, c) => { setPhoneLocal(local); setPhoneCountry(c); }}
                     onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
-                    placeholder="+221 77 000 00 00"
-                    type="tel"
                     invalid={!!showErr("phone")}
                   />
                 </Field>
 
                 <Field label="WhatsApp" hint="Si différent du téléphone">
-                  <KInput value={whatsapp} onChange={(v) => setWhatsapp(cleanPhone(v))} placeholder="+221 76 000 00 00" type="tel" />
+                  <PhoneCountrySelect
+                    country={whatsappCountry}
+                    value={whatsappLocal}
+                    onChange={(local, c) => { setWhatsappLocal(local); setWhatsappCountry(c); }}
+                  />
                 </Field>
 
                 {/* Rôle */}
