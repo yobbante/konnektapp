@@ -329,6 +329,44 @@ export default function KonnektLanding() {
       </section>
 
       {/* ───── SERVICES ───── */}
+      {/* ───── NOS SOLUTIONS ───── */}
+      <section id="solutions" className="px-4 py-16 md:py-24 border-b border-border">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-10">
+            <p className="text-[11px] font-semibold tracking-widest text-primary uppercase">Nos solutions</p>
+            <h2 className="text-3xl md:text-5xl font-bold tracking-tight mt-3 leading-tight">
+              Une page dédiée pour chaque mode
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+            {[
+              { Icon: Luggage, title: "GP Bagages", sub: "Bagages diaspora", to: "/transport/gp-bagages" },
+              { Icon: Truck, title: "Transport routier", sub: "Longue distance Afrique", to: "/transport/routier" },
+              { Icon: Ship, title: "Fret maritime", sub: "Conteneurs & ports", to: "/transport/maritime" },
+              { Icon: Plane, title: "Fret aérien", sub: "Cargo express monde", to: "/transport/aerien" },
+              { Icon: Zap, title: "Coursiers", sub: "Livraison urbaine Dakar", to: "/transport/coursier" },
+              { Icon: Building2, title: "Entreprises", sub: "Logistique B2B", to: "/transport/entreprise" },
+            ].map(({ Icon, title, sub, to }) => (
+              <Link
+                key={to}
+                to={to}
+                className="group bg-card border border-border rounded-2xl p-5 transition-all hover:border-primary/40 hover:-translate-y-0.5"
+              >
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Icon className="w-5 h-5 text-primary" strokeWidth={1.75} />
+                </div>
+                <h3 className="text-base font-semibold text-foreground mt-4 tracking-tight">{title}</h3>
+                <p className="text-sm text-muted-foreground mt-1 leading-snug">{sub}</p>
+                <div className="mt-4 pt-3 border-t border-border text-[11px] uppercase tracking-widest text-primary font-semibold inline-flex items-center gap-1">
+                  Découvrir <ArrowRight className="w-3 h-3" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ───── SERVICES ───── */}
       <section id="services" className="px-4 py-16 md:py-24 border-b border-border">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-end justify-between flex-wrap gap-6 mb-10">
