@@ -144,8 +144,17 @@ export default function BetaLandingPage() {
         const [f, ...rest] = name.split(/\s+/);
         if (f) setFirst((s) => s || f);
         if (rest.length) setLast((s) => s || rest.join(" "));
-        if ((data as any).phone) setPhone((p) => (p === "+221 " ? (data as any).phone : p));
-        if ((data as any).whatsapp) setWhatsapp((w) => w || (data as any).whatsapp);
+        if ((data as any).phone) {
+          const p = String((data as any).phone).replace(/[^\d+]/g, "");
+          // Try strip leading +XXX prefix if present
+          const m = p.match(/^\+?(\d+)/);
+          if (m) setPhoneLocal((cur) => cur || m[1].slice(-9));
+        }
+        if ((data as any).whatsapp) {
+          const w = String((data as any).whatsapp).replace(/[^\d+]/g, "");
+          const m = w.match(/^\+?(\d+)/);
+          if (m) setWhatsappLocal((cur) => cur || m[1].slice(-9));
+        }
         if ((data as any).city) setCity((data as any).city);
         setRole("gp");
         setModes(["bagages_international"]);
@@ -155,17 +164,23 @@ export default function BetaLandingPage() {
 
   const refLabel = useMemo(() => (hasRef ? `GP${refClean.toUpperCase().slice(0, 4)}` : ""), [hasRef, refClean]);
 
+  const fullPhone = useMemo(() => buildFullPhone(phoneLocal, phoneCountry), [phoneLocal, phoneCountry]);
+  const fullWhatsapp = useMemo(
+    () => (whatsappLocal ? buildFullPhone(whatsappLocal, whatsappCountry) : fullPhone),
+    [whatsappLocal, whatsappCountry, fullPhone],
+  );
+
   /* Validation */
   const errors = useMemo<Errors>(() => {
     const e: Errors = {};
     if (first.trim().length < 2) e.first = "Au moins 2 caractères";
     if (last.trim().length < 1) e.last = "Requis";
-    if (phone.replace(/\D/g, "").length < 8) e.phone = "Numéro invalide (min. 8 chiffres)";
+    if (phoneLocal.replace(/\D/g, "").length < 7) e.phone = "Numéro invalide (min. 7 chiffres)";
     if (!city) e.city = "Sélectionnez une ville";
     if (!role) e.role = "Sélectionnez un rôle";
     if (modes.length === 0) e.modes = "Choisissez au moins un mode";
     return e;
-  }, [first, last, phone, city, role, modes]);
+  }, [first, last, phoneLocal, city, role, modes]);
 
   const valid = Object.keys(errors).length === 0;
 
@@ -190,8 +205,10 @@ export default function BetaLandingPage() {
           ref: hasRef ? refClean : null,
           first_name: first.trim(),
           last_name: last.trim(),
-          phone: phone.trim(),
-          whatsapp: whatsapp.trim() || phone.trim(),
+          phone: fullPhone,
+          whatsapp: fullWhatsapp,
+          country_code: phoneCountry,
+          default_currency: currencyFromPhone(fullPhone),
           city,
           cities_served: citiesServed.trim() || null,
           modes,
