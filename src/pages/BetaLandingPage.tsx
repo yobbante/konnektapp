@@ -11,6 +11,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import {
   Loader2, Check, ArrowRight, ArrowLeft, ShieldCheck, MessageCircle,
   Truck, Briefcase, Building2, Users, Phone,
@@ -18,6 +19,8 @@ import {
   Clock, Smartphone, Package,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { PhoneCountrySelect, buildFullPhone } from "@/components/PhoneCountrySelect";
+import { detectDefaultCountry, currencyFromPhone } from "@/lib/phoneCurrency";
 
 /* ───────── Data ───────── */
 
@@ -94,8 +97,10 @@ export default function BetaLandingPage() {
 
   const [first, setFirst] = useState("");
   const [last, setLast] = useState("");
-  const [phone, setPhone] = useState("+221 ");
-  const [whatsapp, setWhatsapp] = useState("");
+  const [phoneCountry, setPhoneCountry] = useState<string>(() => detectDefaultCountry());
+  const [phoneLocal, setPhoneLocal] = useState("");
+  const [whatsappCountry, setWhatsappCountry] = useState<string>(() => detectDefaultCountry());
+  const [whatsappLocal, setWhatsappLocal] = useState("");
   const [role, setRole] = useState<RoleId | "">("");
   const [city, setCity] = useState("Dakar");
   const [citiesServed, setCitiesServed] = useState("");
@@ -139,8 +144,17 @@ export default function BetaLandingPage() {
         const [f, ...rest] = name.split(/\s+/);
         if (f) setFirst((s) => s || f);
         if (rest.length) setLast((s) => s || rest.join(" "));
-        if ((data as any).phone) setPhone((p) => (p === "+221 " ? (data as any).phone : p));
-        if ((data as any).whatsapp) setWhatsapp((w) => w || (data as any).whatsapp);
+        if ((data as any).phone) {
+          const p = String((data as any).phone).replace(/[^\d+]/g, "");
+          // Try strip leading +XXX prefix if present
+          const m = p.match(/^\+?(\d+)/);
+          if (m) setPhoneLocal((cur) => cur || m[1].slice(-9));
+        }
+        if ((data as any).whatsapp) {
+          const w = String((data as any).whatsapp).replace(/[^\d+]/g, "");
+          const m = w.match(/^\+?(\d+)/);
+          if (m) setWhatsappLocal((cur) => cur || m[1].slice(-9));
+        }
         if ((data as any).city) setCity((data as any).city);
         setRole("gp");
         setModes(["bagages_international"]);
@@ -150,17 +164,23 @@ export default function BetaLandingPage() {
 
   const refLabel = useMemo(() => (hasRef ? `GP${refClean.toUpperCase().slice(0, 4)}` : ""), [hasRef, refClean]);
 
+  const fullPhone = useMemo(() => buildFullPhone(phoneLocal, phoneCountry), [phoneLocal, phoneCountry]);
+  const fullWhatsapp = useMemo(
+    () => (whatsappLocal ? buildFullPhone(whatsappLocal, whatsappCountry) : fullPhone),
+    [whatsappLocal, whatsappCountry, fullPhone],
+  );
+
   /* Validation */
   const errors = useMemo<Errors>(() => {
     const e: Errors = {};
     if (first.trim().length < 2) e.first = "Au moins 2 caractères";
     if (last.trim().length < 1) e.last = "Requis";
-    if (phone.replace(/\D/g, "").length < 8) e.phone = "Numéro invalide (min. 8 chiffres)";
+    if (phoneLocal.replace(/\D/g, "").length < 7) e.phone = "Numéro invalide (min. 7 chiffres)";
     if (!city) e.city = "Sélectionnez une ville";
     if (!role) e.role = "Sélectionnez un rôle";
     if (modes.length === 0) e.modes = "Choisissez au moins un mode";
     return e;
-  }, [first, last, phone, city, role, modes]);
+  }, [first, last, phoneLocal, city, role, modes]);
 
   const valid = Object.keys(errors).length === 0;
 
@@ -185,8 +205,10 @@ export default function BetaLandingPage() {
           ref: hasRef ? refClean : null,
           first_name: first.trim(),
           last_name: last.trim(),
-          phone: phone.trim(),
-          whatsapp: whatsapp.trim() || phone.trim(),
+          phone: fullPhone,
+          whatsapp: fullWhatsapp,
+          country_code: phoneCountry,
+          default_currency: currencyFromPhone(fullPhone),
           city,
           cities_served: citiesServed.trim() || null,
           modes,
@@ -233,11 +255,10 @@ export default function BetaLandingPage() {
               {/* HERO */}
               <section className="text-center mb-8">
                 <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight">
-                  Recevez vos missions{" "}
-                  <span className="text-primary">Yobbanté</span> ici.
+                  Rejoignez le réseau <span className="text-primary">Konnekt</span>.
                 </h1>
                 <p className="text-sm md:text-base text-muted-foreground mt-3 max-w-md mx-auto leading-relaxed">
-                  Inscription en 2 minutes. Notre équipe vous active sur WhatsApp dans les 24h.
+                  Déclarez vos trajets, recevez des colis à transporter, gérez vos missions depuis votre téléphone.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mt-5 text-xs text-muted-foreground">
                   <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-primary" /> Gratuit</span>
@@ -268,20 +289,23 @@ export default function BetaLandingPage() {
                   </Field>
                 </div>
 
-                {/* Téléphone */}
+                {/* Téléphone avec sélecteur pays */}
                 <Field label="Téléphone" required hint="Sera votre identifiant Konnekt" error={showErr("phone") ? errors.phone : undefined}>
-                  <KInput
-                    value={phone}
-                    onChange={(v) => setPhone(cleanPhone(v))}
+                  <PhoneCountrySelect
+                    country={phoneCountry}
+                    value={phoneLocal}
+                    onChange={(local, c) => { setPhoneLocal(local); setPhoneCountry(c); }}
                     onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
-                    placeholder="+221 77 000 00 00"
-                    type="tel"
                     invalid={!!showErr("phone")}
                   />
                 </Field>
 
                 <Field label="WhatsApp" hint="Si différent du téléphone">
-                  <KInput value={whatsapp} onChange={(v) => setWhatsapp(cleanPhone(v))} placeholder="+221 76 000 00 00" type="tel" />
+                  <PhoneCountrySelect
+                    country={whatsappCountry}
+                    value={whatsappLocal}
+                    onChange={(local, c) => { setWhatsappLocal(local); setWhatsappCountry(c); }}
+                  />
                 </Field>
 
                 {/* Rôle */}

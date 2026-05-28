@@ -202,6 +202,12 @@ const App = () => (
             <Route path="/invite" element={<Navigate to="/beta" replace />} />
             <Route path="/konnekt/gp" element={<KonnektGPLogin />} />
             <Route path="/konnekt" element={<Navigate to="/konnekt/gp" replace />} />
+            {/* Connexion GP dédiée (routes système réservées : /gp/connexion, /gp/dashboard, /gp/profil…) */}
+            <Route path="/gp/connexion" element={<KonnektGPLogin />} />
+            <Route path="/gp/login" element={<Navigate to="/gp/connexion" replace />} />
+            <Route path="/gp/profil" element={<Navigate to="/gp/profil-public" replace />} />
+            <Route path="/gp/missions" element={<Navigate to="/gp/demandes" replace />} />
+            <Route path="/gp/departs" element={<Navigate to="/gp/calendrier" replace />} />
             <Route path="/t/dashboard" element={<TransporteurMiniDashboard />} />
             <Route path="/transporteur/beta" element={<TransporteurBetaDashboard />} />
             <Route path="/offres" element={<Navigate to="/freight-board" replace />} />

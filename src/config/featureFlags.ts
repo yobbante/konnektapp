@@ -1,11 +1,11 @@
 /**
  * Feature Flags — Module activation
- * 
- * GP_ONLY mode: Only GP (bagages) module is active.
- * Set GP_ONLY_MODE = false to re-enable all modules.
+ *
+ * GP_ONLY mode désactivé pour le lancement public du 01/07/2026.
+ * Tous les modes de transport sont à nouveau accessibles.
  */
 
-export const GP_ONLY_MODE = true;
+export const GP_ONLY_MODE = false;
 
 export const ENABLED_TRANSPORT_MODES = GP_ONLY_MODE
   ? ["bagages_international", "bagages_accompagnes", "navette", "voyageur"]

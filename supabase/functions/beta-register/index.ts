@@ -17,6 +17,9 @@ interface Payload {
   last_name: string;
   phone: string;
   whatsapp?: string;
+  country_code?: string;
+  default_currency?: string;
+  role?: string;
   city: string;
   modes: string[];
   password: string;
@@ -117,7 +120,8 @@ Deno.serve(async (req) => {
       phone: phoneRaw,
       whatsapp,
       city,
-      country_code: "SN",
+      country_code: (body.country_code || "SN").toUpperCase(),
+      default_currency: (body.default_currency || "XOF").toUpperCase(),
       gp_type: "bagages_international",
       kyc_status: "pending",
       kyc_level: 0,

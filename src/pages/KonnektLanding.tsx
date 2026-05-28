@@ -133,10 +133,7 @@ export default function KonnektLanding() {
         <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3.5">
           <Link to="/" className="flex items-center gap-2">
             <span className="w-7 h-7 rounded-md bg-primary text-primary-foreground grid place-items-center font-bold text-sm tracking-tight">K</span>
-            <div className="flex flex-col leading-none">
-              <span className="font-bold text-[15px] tracking-tight">KONNEKT</span>
-              <span className="text-[10px] text-muted-foreground tracking-wide">by Yobbanté</span>
-            </div>
+            <span className="font-bold text-[15px] tracking-tight">KONNEKT</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
@@ -203,9 +200,9 @@ export default function KonnektLanding() {
           </div>
 
           <h1 className="text-4xl md:text-6xl lg:text-[68px] font-bold tracking-tight leading-[1.05] mt-7">
-            Transporteurs,<br />
-            gérez vos missions{" "}
-            <span className="text-primary">Yobbanté</span> ici.
+            Gérez vos trajets<br />
+            et missions de transport,{" "}
+            <span className="text-primary">partout dans le monde</span>.
           </h1>
 
           <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto mt-6 leading-relaxed">
@@ -213,7 +210,7 @@ export default function KonnektLanding() {
             tout depuis WhatsApp et Konnekt.
           </p>
 
-          {/* Encart connexion Yobbanté */}
+          {/* Nos partenaires opérateurs */}
           <div
             className="mt-6 mx-auto max-w-xl text-left rounded-lg px-5 py-3"
             style={{
@@ -224,8 +221,8 @@ export default function KonnektLanding() {
             <p className="flex items-start gap-2.5 text-sm text-foreground leading-relaxed">
               <Handshake className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" strokeWidth={2} />
               <span>
-                <span className="font-semibold">Transporteurs partenaires Yobbanté</span>{" "}
-                — vos missions arrivent directement ici.
+                <span className="font-semibold">Nos partenaires opérateurs</span> —{" "}
+                Konnekt est partenaire de Yobbanté. Les transporteurs Konnekt reçoivent des missions Yobbanté directement dans leur dashboard.
               </span>
             </p>
           </div>

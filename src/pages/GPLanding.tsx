@@ -168,7 +168,7 @@ export default function GPLanding() {
                     <ArrowRight className="w-5 h-5" />
                   </Button>
                 </Link>
-                <Link to="/auth">
+                <Link to="/gp/connexion">
                   <Button variant="hero-outline" size="lg">
                     J'ai déjà un compte
                   </Button>
