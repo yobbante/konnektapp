@@ -10,12 +10,15 @@ import {
   LayoutDashboard, Package, Users, Wallet, ScanLine,
   AlertTriangle, Shield, PackageOpen, ArrowLeftRight,
   Settings, UserCheck, RefreshCw, Search, ChevronLeft,
-  ChevronRight, MoreHorizontal, FileText, Award, HeadphonesIcon, UserRound
+  ChevronRight, MoreHorizontal, FileText, Award, HeadphonesIcon, UserRound, LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 export type AdminModule =
   | "overview" | "colis" | "gp" | "transporteurs" | "finance" | "scan"
