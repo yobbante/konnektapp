@@ -246,12 +246,12 @@ export default function KonnektLanding() {
             <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-primary" /> Via navigateur</span>
           </div>
 
-          {/* Stats qualitatives */}
+          {/* Stats réelles (live depuis la base) */}
           <div className="mt-12 grid grid-cols-3 max-w-2xl mx-auto border-t border-border pt-8 gap-2">
             {[
-              { n: "Des centaines", l: "de transporteurs" },
-              { n: "Partout", l: "Sénégal & diaspora" },
-              { n: "Garanti", l: "Paiement après mission" },
+              { n: liveStats.transporteurs, l: "transporteurs actifs" },
+              { n: liveStats.pays, l: "pays couverts" },
+              { n: liveStats.livraisons, l: "livraisons réussies" },
             ].map((s) => (
               <div key={s.l} className="text-center border-r border-border last:border-r-0 px-2">
                 <div className="text-lg md:text-2xl font-bold tracking-tight text-foreground">{s.n}</div>
