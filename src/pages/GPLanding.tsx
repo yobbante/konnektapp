@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { 
   ArrowRight, CheckCircle, Users, TrendingUp, Shield, 
   Wallet, BarChart3, Clock, Star, Package, Globe, Truck, 
@@ -124,6 +125,13 @@ export default function GPLanding() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>Devenir GP Konnekt — Tous modes de transport</title>
+        <meta name="description" content="Routier, maritime, aérien, express, agences : rejoignez Konnekt et recevez des demandes de transport sécurisées." />
+        <link rel="canonical" href="https://usekonnekt.com/devenir-gp" />
+        <meta property="og:title" content="Devenir transporteur sur Konnekt" />
+        <meta property="og:url" content="https://usekonnekt.com/devenir-gp" />
+      </Helmet>
       <Header />
       
       {/* Hero */}

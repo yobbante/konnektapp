@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
+import { useKonnektPublicStats } from "@/hooks/useKonnektPublicStats";
 import {
   Menu, ArrowRight, Check, Handshake, MessageCircle, Globe2, Quote,
   Truck, Ship, Plane, Briefcase, Building2, Luggage, Car, Zap,
@@ -100,6 +102,8 @@ function Avatar({ initials, color }: { initials: string; color: string }) {
 export default function KonnektLanding() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const liveStats = useKonnektPublicStats();
+
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -124,6 +128,15 @@ export default function KonnektLanding() {
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
+      <Helmet>
+        <title>Konnekt — Plateforme des transporteurs partenaires Yobbanté</title>
+        <meta name="description" content="Konnekt connecte GP, transporteurs routiers, maritimes et aériens à des milliers de missions. Inscription gratuite, paiement sécurisé." />
+        <link rel="canonical" href="https://usekonnekt.com/" />
+        <meta property="og:title" content="Konnekt — Transporteurs partenaires Yobbanté" />
+        <meta property="og:description" content="Recevez des missions de transport, confirmez vos livraisons, soyez payé." />
+        <meta property="og:url" content="https://usekonnekt.com/" />
+        <meta property="og:type" content="website" />
+      </Helmet>
       {/* ───── NAV ───── */}
       <header
         className={`sticky top-0 z-50 bg-background/85 backdrop-blur-md border-b transition-colors safe-area-x ${
@@ -246,12 +259,12 @@ export default function KonnektLanding() {
             <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-primary" /> Via navigateur</span>
           </div>
 
-          {/* Stats qualitatives */}
+          {/* Stats réelles (live depuis la base) */}
           <div className="mt-12 grid grid-cols-3 max-w-2xl mx-auto border-t border-border pt-8 gap-2">
             {[
-              { n: "Des centaines", l: "de transporteurs" },
-              { n: "Partout", l: "Sénégal & diaspora" },
-              { n: "Garanti", l: "Paiement après mission" },
+              { n: liveStats.transporteurs, l: "transporteurs actifs" },
+              { n: liveStats.pays, l: "pays couverts" },
+              { n: liveStats.livraisons, l: "livraisons réussies" },
             ].map((s) => (
               <div key={s.l} className="text-center border-r border-border last:border-r-0 px-2">
                 <div className="text-lg md:text-2xl font-bold tracking-tight text-foreground">{s.n}</div>
