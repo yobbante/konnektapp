@@ -87,6 +87,14 @@ export function UnifiedAdminLayout({
 }: UnifiedAdminLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({ title: "Déconnexion réussie" });
+    navigate("/");
+  };
 
   const activeItem = ALL_MODULES.find(m => m.id === activeModule);
   const moreModules = ALL_MODULES.filter(m => !BOTTOM_NAV_ITEMS.includes(m.id));
