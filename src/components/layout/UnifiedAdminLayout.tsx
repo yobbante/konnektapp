@@ -165,8 +165,26 @@ export function UnifiedAdminLayout({
 
         {/* Sidebar Footer */}
         {!sidebarCollapsed && (
-          <div className="p-3 border-t border-border">
+          <div className="p-3 border-t border-border space-y-2">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Déconnexion</span>
+            </button>
             <p className="text-[10px] text-muted-foreground text-center">Konnekt Admin V3</p>
+          </div>
+        )}
+        {sidebarCollapsed && (
+          <div className="p-2 border-t border-border flex justify-center">
+            <button
+              onClick={handleLogout}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+              title="Déconnexion"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         )}
       </aside>
@@ -214,6 +232,15 @@ export function UnifiedAdminLayout({
                 className="bg-white/10 hover:bg-white/20 w-8 h-8 rounded-lg"
               >
                 <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleLogout}
+                className="bg-white/10 hover:bg-white/20 hover:text-red-300 w-8 h-8 rounded-lg transition-colors"
+                title="Déconnexion"
+              >
+                <LogOut className="w-4 h-4" />
               </Button>
             </div>
           </div>
@@ -325,6 +352,19 @@ export function UnifiedAdminLayout({
                 </div>
               );
             })}
+          </div>
+
+          {/* Déconnexion mobile */}
+          <div className="border-t border-border pt-4 mt-2">
+            <button
+              onClick={() => { handleLogout(); setMoreSheetOpen(false); }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-destructive/10 text-destructive transition-colors"
+            >
+              <div className="w-9 h-9 rounded-xl bg-destructive/10 flex items-center justify-center">
+                <LogOut className="w-4 h-4" />
+              </div>
+              <span className="flex-1 text-left font-medium text-sm">Déconnexion</span>
+            </button>
           </div>
         </SheetContent>
       </Sheet>
