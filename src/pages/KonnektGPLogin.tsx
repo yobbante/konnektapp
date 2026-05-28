@@ -104,6 +104,12 @@ export default function KonnektGPLogin() {
 
   return (
     <div className="min-h-screen bg-white text-[#0D1B2A] font-sans">
+      <Helmet>
+        <title>Konnekt GP — Connexion</title>
+        <meta name="description" content="Espace connexion pour les transporteurs partenaires Konnekt. Téléphone + code WhatsApp." />
+        <link rel="canonical" href="https://usekonnekt.com/gp/connexion" />
+        <meta name="robots" content="noindex,nofollow" />
+      </Helmet>
       {/* HEADER */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-black/5">
         <div className="max-w-md mx-auto flex items-center justify-between px-4 py-3.5">
@@ -156,17 +162,15 @@ export default function KonnektGPLogin() {
           {/* Form */}
           <div className="mt-5 bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
             <label className="block text-xs font-semibold mb-1.5">Téléphone</label>
-            <div className="relative">
-              <Phone className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(cleanPhone(e.target.value))}
-                placeholder="+221 77 000 00 00"
-                className="w-full bg-white border border-black/15 rounded-lg pl-9 pr-3 py-2.5 text-sm outline-none focus:ring-2 focus:border-[#3DAA8A]"
-                style={{ ["--tw-ring-color" as any]: "rgba(61,170,138,0.3)" }}
-              />
-            </div>
+            <PhoneCountrySelect
+              value={localPhone}
+              country={country}
+              onChange={(local, c) => {
+                setLocalPhone(local);
+                setCountry(c);
+              }}
+              placeholder="77 000 00 00"
+            />
 
             <label className="block text-xs font-semibold mb-1.5 mt-4">Code WhatsApp (4 chiffres)</label>
             <div className="relative">
