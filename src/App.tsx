@@ -20,6 +20,7 @@ import { AppleNotificationContainer } from "@/components/ui/AppleNotification";
 import { SmartScrollTop } from "@/hooks/useSmartScrollTop";
 import Index from "./pages/Index";
 import KonnektLanding from "./pages/KonnektLanding";
+import TransportModePage from "./pages/transport/TransportModePage";
 import TransporteurBetaDashboard from "./pages/transporteur/TransporteurBetaDashboard";
 import TransporteurQuickOnboard from "./pages/TransporteurQuickOnboard";
 import BetaLandingPage from "./pages/BetaLandingPage";
@@ -196,6 +197,7 @@ const App = () => (
                 PUBLIC ROUTES - Accessibles sans authentification
             ============================================ */}
             <Route path="/" element={<KonnektLanding />} />
+            <Route path="/transport/:slug" element={<TransportModePage />} />
             <Route path="/app" element={<Index />} />
             <Route path="/t" element={<TransporteurQuickOnboard />} />
             <Route path="/beta" element={<BetaLandingPage />} />
