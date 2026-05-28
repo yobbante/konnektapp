@@ -36,9 +36,13 @@ type State =
 
 export default function KonnektGPLogin() {
   const navigate = useNavigate();
-  const [phone, setPhone] = useState("+221 ");
+  const detectedCountry = useDetectedCountry();
+  const [country, setCountry] = useState(detectedCountry);
+  const [localPhone, setLocalPhone] = useState("");
   const [code, setCode] = useState("");
   const [state, setState] = useState<State>({ kind: "idle" });
+
+  const fullPhone = buildFullPhone(localPhone, country);
 
   /* Force light mode */
   useEffect(() => {
@@ -53,7 +57,7 @@ export default function KonnektGPLogin() {
 
   const submit = async () => {
     setState({ kind: "loading" });
-    const cleanedPhone = phone.replace(/\D/g, "");
+    const cleanedPhone = fullPhone.replace(/\D/g, "");
     const cleanedCode = code.trim().toLowerCase();
 
     if (cleanedPhone.length < 8 || cleanedCode.length !== 4) {
