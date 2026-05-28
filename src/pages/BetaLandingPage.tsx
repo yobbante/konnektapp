@@ -11,6 +11,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import {
   Loader2, Check, ArrowRight, ArrowLeft, ShieldCheck, MessageCircle,
   Truck, Briefcase, Building2, Users, Phone,
@@ -18,6 +19,8 @@ import {
   Clock, Smartphone, Package,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { PhoneCountrySelect, buildFullPhone } from "@/components/PhoneCountrySelect";
+import { detectDefaultCountry, currencyFromPhone } from "@/lib/phoneCurrency";
 
 /* ───────── Data ───────── */
 
@@ -94,8 +97,10 @@ export default function BetaLandingPage() {
 
   const [first, setFirst] = useState("");
   const [last, setLast] = useState("");
-  const [phone, setPhone] = useState("+221 ");
-  const [whatsapp, setWhatsapp] = useState("");
+  const [phoneCountry, setPhoneCountry] = useState<string>(() => detectDefaultCountry());
+  const [phoneLocal, setPhoneLocal] = useState("");
+  const [whatsappCountry, setWhatsappCountry] = useState<string>(() => detectDefaultCountry());
+  const [whatsappLocal, setWhatsappLocal] = useState("");
   const [role, setRole] = useState<RoleId | "">("");
   const [city, setCity] = useState("Dakar");
   const [citiesServed, setCitiesServed] = useState("");
