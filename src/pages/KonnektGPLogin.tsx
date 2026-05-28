@@ -8,11 +8,13 @@
  */
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  ArrowLeft, ArrowRight, Loader2, MessageCircle, Phone, ShieldCheck, KeyRound,
+  ArrowLeft, ArrowRight, Loader2, MessageCircle, ShieldCheck, KeyRound,
   AlertTriangle, Info,
 } from "lucide-react";
+import { PhoneCountrySelect, useDetectedCountry, buildFullPhone } from "@/components/PhoneCountrySelect";
 
 const KONNEKT_WA = "221781221891";
 const SUPPORT_TEL = "+221 78 460 40 03";
