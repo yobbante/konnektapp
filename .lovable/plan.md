@@ -1,80 +1,80 @@
+# Plan — Déblocage complet Konnekt (lancement 01/07/2026)
 
-# Refonte landing page Konnekt — corporate, épurée, interactive
+Requête lourde en 8 parties. Avant d'attaquer, j'ai besoin de clarifications structurelles, sinon je vais devoir faire des hypothèses qui risquent de casser des choses ou de produire du faux.
 
-## Direction visuelle
+## Ce que je peux faire en confiance
 
-- **Style** : corporate fintech / logistique premium (référence : Linear, Stripe, Maersk).
-- **Palette** : light mode (blanc + crème + foncé `hsl(220 20% 20%)`), accent teal `--primary` et orange `--secondary` parcimonieux.
-- **Typo** : Inter, hiérarchie tranchée — display 56-72px, corps 15-16px, tracking serré sur les titres.
-- **Zéro emoji** partout. Toutes les icônes via Lucide (`Truck`, `Ship`, `Plane`, `Bike`, `Luggage`, `Building2`, `Car`, `Zap`).
-- **Motifs** : grille fine (1px borders), cartes plates avec hover subtil, lignes de séparation, pas de gradient lourd.
+**Partie 5 — Recentrage marque (landing + /beta)**
+Modifs purement textuelles sur `KonnektLanding.tsx` et `BetaLandingPage.tsx`. Pas d'ambiguïté.
 
-## Concept éditorial : "K · O · N · N · E · K · T"
+**Partie 6 — SEO**
+- `index.html` pour le sitewide (titre + description par défaut + og + canonical).
+- Installation `react-helmet-async` + `HelmetProvider` dans `main.tsx`.
+- `<Helmet>` par page sur `/`, `/beta`, `/gp`.
 
-Les 7 lettres du logo deviennent un fil narratif. Chaque lettre porte un mot-clé corporate qui s'enchaîne en scroll :
+**Partie 7 — /gp/connexion**
+- Renommer la route `/gp/login` (actuellement `KonnektGPLogin`) en `/gp/connexion` (garder l'ancienne en redirect).
+- Vérifier qu'aucune route `/gp/:slug` ne capture `connexion`/`dashboard`/`profil`/`missions`/`departs`.
+- Pointer "J'ai déjà un compte" sur `/gp` vers `/gp/connexion`.
 
-```
-K — Kinetic       (mouvement temps réel)
-O — Operate       (opérations multi-modes)
-N — Network       (réseau de transporteurs)
-N — Native        (mobile-first Sénégal/Afrique)
-E — Earnings      (paiements garantis)
-K — Konnect       (mise en relation instantanée)
-T — Trust         (KYC, escrow, assurance)
-```
+**Partie 4 — Sélecteur pays téléphone**
+Utiliser `src/lib/phoneCountryCodes.ts` qui existe déjà. Détection via `navigator.language` (FR→+33, US→+1, défaut→+221). Appliqué sur `/beta` et `/gp/connexion`.
 
-Affiché en bandeau sticky vertical à gauche sur desktop, et en frise horizontale animée sur mobile.
+**Partie 8 — Devise auto via indicatif**
+Mapping indicatif→devise au moment du signup/login, stocké dans `gp_profiles` (colonne `currency` à ajouter si absente — je vérifierai avant).
 
-## Structure des sections (8 blocs)
+**Partie 2 — Date de lancement & verrou**
+- Maj `app_lock_settings.launch_at` → 2026-07-01.
+- Désactiver `is_locked` (la plateforme doit être accessible).
+- Le composant `SiteLock` reste en place mais inactif tant que `is_locked=false`.
 
-1. **Hero minimal**
-   - Eyebrow "BÊTA · Sénégal" + titre énorme `Le transport, connecté.`
-   - Sous-titre 1 phrase + 2 CTA (Télécharger l'app / Rejoindre la bêta).
-   - Pas de stats bruyants — 1 ligne discrète "200+ transporteurs · 8 modes · 5 régions".
+## Ce qui nécessite des décisions de votre part
 
-2. **Bandeau lettres K-O-N-N-E-K-T** (interactif)
-   - Frise horizontale, chaque lettre cliquable → scroll-spy qui surligne la lettre active.
-   - Sur desktop : barre fixe à gauche pendant tout le scroll.
+### A. Partie 1 — "Débloquer tous les modes de transport"
 
-3. **Les 8 services** (grille interactive)
-   - Source : `transportConfig` (express, routier, maritime, aérien, voyageur GP, agence, bagages international, mobility).
-   - Cartes uniformes avec icône Lucide, titre, description courte, micro-stat (ex : "Délai moyen 24h").
-   - Hover : ligne d'accent + flèche révélée. Mobile : grid 2 cols.
+Le projet a un flag global `GP_ONLY_MODE = true` dans `src/config/featureFlags.ts` qui filtre routier/maritime/aérien/mobility partout (navigation, dashboards, recherche, etc.). Il y a aussi une mémoire projet `GP ONLY MODE filtering` qui documente ce comportement comme intentionnel.
 
-4. **Pour qui ?** (toggle Transporteurs / Entreprises / Diaspora)
-   - Tabs élégants ; le contenu change avec 3 bénéfices ciblés par audience.
+**Question 1 :** Je passe `GP_ONLY_MODE = false` globalement ? Cela réactive d'un coup :
+- Tous les onglets transport (routier, maritime, aérien, mobility) dans les nav clients/transporteurs
+- Toutes les pages `/routier/*`, `/maritime/*`, `/aerien/*`, `/mobility/*` dans la home
+- L'admin board complet
+- Les sélecteurs de mode dans les formulaires
 
-5. **Comment ça marche** (3 étapes minimalistes)
-   - Numérotation type "01 / 02 / 03", lignes verticales, pas de cercles colorés.
+Risque : ces modules existent mais n'ont jamais été testés en lancement réel. Je recommande oui mais je veux votre validation explicite avant de toucher le flag.
 
-6. **Preuve & confiance**
-   - Logos partenaires (placeholders), 3 témoignages courts en carousel, badges "KYC vérifié · Escrow · Assurance".
+### B. Partie 1 — Formulaire /beta multi-rôles
 
-7. **CTA final** (bandeau pleine largeur teal)
-   - Single-focus : téléchargement app + lien bêta.
+Aujourd'hui `/beta` capture **uniquement des GP** (nom, téléphone, ville, trajets). Vous demandez d'ajouter 4 rôles : GP / Transporteur Pro / Particulier / Entreprise.
 
-8. **Footer corporate**
-   - 4 colonnes : Produit, Services, Entreprise, Légal. Bandeau bas avec mention `by Yobbanté`.
+**Question 2 :** Que se passe-t-il quand un "Particulier" ou une "Entreprise" s'inscrit sur `/beta` ?
+- Option a) Sélecteur de rôle en haut + le même formulaire simplifié (juste tag différent en DB) → rapide.
+- Option b) 4 formulaires distincts avec champs spécifiques (SIRET pour entreprise, etc.) → grosse refonte.
 
-## Interactions / animations
+Je pars sur (a) sauf indication contraire — un champ `role` ajouté à la table `beta_requests` (ou équivalent) + tag.
 
-- Apparition au scroll (fade + translate, 200ms, easing standard).
-- Scroll-spy lettres K-O-N-N-E-K-T ↔ sections.
-- Hover cartes services : élévation discrète + traînée d'accent.
-- Marquee des modes en hero : conservée mais sans emoji, uniquement icônes Lucide + label.
-- Aucune librairie nouvelle : Tailwind + animations CSS existantes (`animate-fade-up`, `animate-marquee`).
+### C. Partie 3 — Chiffres réels sur /gp
 
-## Implémentation technique
+Les tables `transporteurs` et `dossiers` mentionnées **n'existent pas** dans ce projet. Les équivalents sont :
+- `gp_profiles` (avec `status='verified'` ≈ actif)
+- `orders` ou `bookings` (avec un état "livré")
 
-- Réécriture complète de `src/pages/KonnektLanding.tsx`.
-- Création de petits sous-composants colocalisés en haut du fichier (ServiceCard, LetterRail, AudienceTabs, StepRow).
-- Tokens : uniquement variables sémantiques (`bg-background`, `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`, `text-primary`, `text-secondary`, `text-transport-*`).
-- Icônes pour les 8 services tirées directement de `transportConfig[type].icon`.
-- Aucune modification des routes, du backend, ni des autres pages.
-- Mobile-first (viewport 390px), desktop ≥768px enrichit avec rail latéral des lettres.
+**Question 3 :** Je mappe ainsi ?
+- "Transporteurs actifs" = `count(gp_profiles WHERE status='verified')`
+- "Livraisons réalisées" = `count(orders WHERE status='delivered')` (ou équivalent — je vérifierai le nom exact)
+- "Pays couverts" = pays distincts dans les trajets actifs des GP vérifiés
 
-## Hors scope
+Et fetch côté client via Supabase au chargement de `/gp`, avec fallback "—" si 0.
 
-- Pas de changement de copy stratégique (on garde la promesse actuelle).
-- Pas de nouvelles routes ni d'images générées.
-- Pas de modification des sections `/beta`, `/auth`, `/app`.
+## Ordre d'exécution proposé (après vos réponses)
+
+1. Partie 2 (verrou off, date)
+2. Partie 1A (flag + navigation) — sous réserve Q1
+3. Partie 1B (formulaire beta multi-rôles) — sous réserve Q2
+4. Partie 7 (route /gp/connexion)
+5. Partie 4 (sélecteur téléphone)
+6. Partie 8 (devise auto + migration colonne si besoin)
+7. Partie 3 (chiffres réels) — sous réserve Q3
+8. Partie 5 (textes marque)
+9. Partie 6 (SEO + Helmet)
+
+Répondez aux 3 questions et j'enchaîne tout d'une traite.
