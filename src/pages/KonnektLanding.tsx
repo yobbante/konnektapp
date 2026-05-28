@@ -128,6 +128,15 @@ export default function KonnektLanding() {
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
+      <Helmet>
+        <title>Konnekt — Plateforme des transporteurs partenaires Yobbanté</title>
+        <meta name="description" content="Konnekt connecte GP, transporteurs routiers, maritimes et aériens à des milliers de missions. Inscription gratuite, paiement sécurisé." />
+        <link rel="canonical" href="https://usekonnekt.com/" />
+        <meta property="og:title" content="Konnekt — Transporteurs partenaires Yobbanté" />
+        <meta property="og:description" content="Recevez des missions de transport, confirmez vos livraisons, soyez payé." />
+        <meta property="og:url" content="https://usekonnekt.com/" />
+        <meta property="og:type" content="website" />
+      </Helmet>
       {/* ───── NAV ───── */}
       <header
         className={`sticky top-0 z-50 bg-background/85 backdrop-blur-md border-b transition-colors safe-area-x ${
