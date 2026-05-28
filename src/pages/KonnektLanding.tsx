@@ -150,6 +150,28 @@ export default function KonnektLanding() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
+            <div className="relative group">
+              <button className="hover:text-foreground transition-colors inline-flex items-center gap-1">
+                Solutions
+                <span className="text-xs">▾</span>
+              </button>
+              <div className="absolute left-1/2 -translate-x-1/2 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                <div className="bg-popover border border-border rounded-xl shadow-lg p-2 w-56">
+                  {[
+                    { l: "GP Bagages", to: "/transport/gp-bagages" },
+                    { l: "Transport routier", to: "/transport/routier" },
+                    { l: "Fret maritime", to: "/transport/maritime" },
+                    { l: "Fret aérien", to: "/transport/aerien" },
+                    { l: "Coursiers", to: "/transport/coursier" },
+                    { l: "Entreprises", to: "/transport/entreprise" },
+                  ].map((i) => (
+                    <Link key={i.to} to={i.to} className="block px-3 py-2 rounded-lg text-sm text-foreground hover:bg-muted">
+                      {i.l}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
             <a href="#services" className="hover:text-foreground transition-colors">Services</a>
             <a href="#faq" className="hover:text-foreground transition-colors">FAQ</a>
             <a href="#confiance" className="hover:text-foreground transition-colors">Confiance</a>
@@ -179,6 +201,18 @@ export default function KonnektLanding() {
                     { l: "Confiance", h: "#confiance" },
                   ].map((i) => (
                     <a key={i.l} href={i.h} onClick={() => setOpen(false)} className="px-3 py-3 rounded-lg text-base font-medium hover:bg-muted">{i.l}</a>
+                  ))}
+                  <div className="h-px bg-border my-3" />
+                  <p className="px-3 text-[11px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">Solutions</p>
+                  {[
+                    { l: "GP Bagages", to: "/transport/gp-bagages" },
+                    { l: "Transport routier", to: "/transport/routier" },
+                    { l: "Fret maritime", to: "/transport/maritime" },
+                    { l: "Fret aérien", to: "/transport/aerien" },
+                    { l: "Coursiers", to: "/transport/coursier" },
+                    { l: "Entreprises", to: "/transport/entreprise" },
+                  ].map((i) => (
+                    <Link key={i.to} to={i.to} onClick={() => setOpen(false)} className="px-3 py-3 rounded-lg text-base font-medium hover:bg-muted">{i.l}</Link>
                   ))}
                   <div className="h-px bg-border my-3" />
                   <Link to="/auth" onClick={() => setOpen(false)} className="px-3 py-3 rounded-lg text-base font-medium hover:bg-muted">Se connecter</Link>
