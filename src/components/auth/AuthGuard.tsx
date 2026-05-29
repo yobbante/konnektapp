@@ -297,11 +297,12 @@ export function AuthGuard({ children }: AuthGuardProps) {
       // Reuse GP profile from earlier check — only treat as GP if registration is complete
       const isGP = isGPRegistrationComplete;
 
-      // Enforce strict route access
       if (isAdminRoute(pathname) && !hasAdminAccess) {
         console.warn("Access denied: Admin route requires admin/moderator role");
+        toast.error("Accès non autorisé");
         navigate(isGP ? "/gp/dashboard" : isMobilityTransporter ? "/mobility/apercu" : "/client/dashboard", { replace: true });
         return;
+      }
       }
 
       // Agent route enforcement — strict redirect
