@@ -184,8 +184,8 @@ export default function KonnektLanding() {
             </Sheet>
           </div>
         </div>
-        </div>
       </header>
+
 
       {/* ───── HERO ───── */}
       <section className="relative px-4 pt-16 pb-20 md:pt-28 md:pb-28 overflow-hidden" style={{ backgroundColor: NAVY }}>
