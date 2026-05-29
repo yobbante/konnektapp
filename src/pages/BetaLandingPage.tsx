@@ -457,7 +457,8 @@ export default function BetaLandingPage() {
               </p>
             </>
           ) : (
-            <ConfirmationBlock firstName={first} />
+            <ConfirmationBlock firstName={first} phone={fullPhone} />
+
           )}
         </div>
       </main>
