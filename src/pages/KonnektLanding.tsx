@@ -8,11 +8,13 @@ import {
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import konnektLogo from "@/assets/konnekt-k-logo.png";
 
 /* ────────────────────────── Brand ────────────────────────── */
 
 const NAVY = "#0D1B2A";
 const GREEN = "#3DAA8A";
+const GREEN_DARK = "#2C8A6E";
 
 /* ────────────────────────── Data ────────────────────────── */
 
