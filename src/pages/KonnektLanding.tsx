@@ -120,28 +120,28 @@ export default function KonnektLanding() {
       <header
         className="sticky top-0 z-50 backdrop-blur-md border-b transition-colors safe-area-x"
         style={{
-          backgroundColor: scrolled ? "rgba(13,27,42,0.95)" : "rgba(13,27,42,0.85)",
-          borderColor: scrolled ? "rgba(255,255,255,0.1)" : "transparent",
+          backgroundColor: scrolled ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.85)",
+          borderColor: scrolled ? "rgba(13,27,42,0.08)" : "transparent",
         }}
       >
         <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3.5">
-          <Link to="/" className="flex items-center gap-2 text-white">
-            <span className="w-7 h-7 rounded-md grid place-items-center font-bold text-sm tracking-tight" style={{ backgroundColor: GREEN, color: NAVY }}>K</span>
-            <span className="font-bold text-[15px] tracking-tight">KONNEKT</span>
+          <Link to="/" className="flex items-center gap-2" style={{ color: NAVY }}>
+            <img src={konnektLogo} alt="Konnekt" className="w-8 h-8 object-contain" />
+            <span className="font-display font-extrabold text-[16px] tracking-tight">KONNEKT</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-white/70">
-            <a href="#modes" onClick={scrollToModes} className="hover:text-white transition-colors">Solutions</a>
-            <a href="#fonctionnement" className="hover:text-white transition-colors">Comment ça marche</a>
-            <a href="#temoignages" className="hover:text-white transition-colors">Témoignages</a>
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#0D1B2A]/70">
+            <a href="#modes" onClick={scrollToModes} className="hover:text-[#0D1B2A] transition-colors">Solutions</a>
+            <a href="#fonctionnement" className="hover:text-[#0D1B2A] transition-colors">Comment ça marche</a>
+            <a href="#temoignages" className="hover:text-[#0D1B2A] transition-colors">Témoignages</a>
           </nav>
 
           <div className="hidden md:flex items-center gap-2">
             <Link to="/gp/connexion">
-              <Button variant="ghost" size="sm" className="text-sm text-white hover:bg-white/10 hover:text-white">Se connecter</Button>
+              <Button variant="ghost" size="sm" className="text-sm text-[#0D1B2A] hover:bg-[#0D1B2A]/5 hover:text-[#0D1B2A]">Se connecter</Button>
             </Link>
             <Link to="/beta">
-              <Button size="sm" className="rounded-lg px-3.5 text-sm font-semibold shadow-sm" style={{ backgroundColor: GREEN, color: NAVY }}>
+              <Button size="sm" className="rounded-lg px-3.5 text-sm font-semibold shadow-sm" style={{ backgroundColor: GREEN, color: "#ffffff" }}>
                 Rejoindre <ArrowRight className="w-3.5 h-3.5 ml-1" />
               </Button>
             </Link>
@@ -150,31 +150,40 @@ export default function KonnektLanding() {
           <div className="md:hidden">
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
-                <button aria-label="Menu" className="p-2 -mr-2 text-white"><Menu className="w-5 h-5" /></button>
+                <button aria-label="Menu" className="p-2 -mr-2 rounded-lg transition-colors hover:bg-[#0D1B2A]/5" style={{ color: NAVY }}><Menu className="w-6 h-6" /></button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[82%] flex flex-col">
-                <div className="flex flex-col gap-1 mt-8">
-                  <a href="#modes" onClick={() => setOpen(false)} className="px-3 py-3 rounded-lg text-base font-medium hover:bg-muted">Solutions</a>
-                  <a href="#fonctionnement" onClick={() => setOpen(false)} className="px-3 py-3 rounded-lg text-base font-medium hover:bg-muted">Comment ça marche</a>
-                  <a href="#temoignages" onClick={() => setOpen(false)} className="px-3 py-3 rounded-lg text-base font-medium hover:bg-muted">Témoignages</a>
-                  <div className="h-px bg-border my-3" />
-                  <p className="px-3 text-[11px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">Solutions</p>
-                  {transportModes.map((i) => (
-                    <Link key={i.to} to={i.to} onClick={() => setOpen(false)} className="px-3 py-3 rounded-lg text-base font-medium hover:bg-muted">{i.title}</Link>
-                  ))}
-                  <div className="h-px bg-border my-3" />
-                  <Link to="/gp/connexion" onClick={() => setOpen(false)} className="px-3 py-3 rounded-lg text-base font-medium hover:bg-muted">Se connecter</Link>
+              <SheetContent side="right" className="w-[86%] max-w-sm flex flex-col p-0 bg-white">
+                <div className="flex items-center gap-2 px-5 pt-6 pb-5 border-b border-gray-100">
+                  <img src={konnektLogo} alt="Konnekt" className="w-8 h-8 object-contain" />
+                  <span className="font-display font-extrabold text-[16px] tracking-tight" style={{ color: NAVY }}>KONNEKT</span>
                 </div>
-                <div className="mt-auto pb-6">
+                <div className="flex-1 overflow-y-auto overscroll-contain px-3 py-4">
+                  <p className="px-3 text-[11px] uppercase tracking-widest text-gray-400 font-semibold mb-2">Navigation</p>
+                  <a href="#modes" onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-lg text-[15px] font-medium text-[#0D1B2A] hover:bg-gray-50 transition-colors">Solutions</a>
+                  <a href="#fonctionnement" onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-lg text-[15px] font-medium text-[#0D1B2A] hover:bg-gray-50 transition-colors">Comment ça marche</a>
+                  <a href="#temoignages" onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-lg text-[15px] font-medium text-[#0D1B2A] hover:bg-gray-50 transition-colors">Témoignages</a>
+                  <div className="h-px bg-gray-100 my-4" />
+                  <p className="px-3 text-[11px] uppercase tracking-widest text-gray-400 font-semibold mb-2">Modes de transport</p>
+                  {transportModes.map((i) => (
+                    <Link key={i.to} to={i.to} onClick={() => setOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[15px] font-medium text-[#0D1B2A] hover:bg-gray-50 transition-colors">
+                      <i.Icon className="w-4 h-4 flex-shrink-0" style={{ color: GREEN }} strokeWidth={1.75} />
+                      {i.title}
+                    </Link>
+                  ))}
+                  <div className="h-px bg-gray-100 my-4" />
+                  <Link to="/gp/connexion" onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-lg text-[15px] font-medium text-[#0D1B2A] hover:bg-gray-50 transition-colors">Se connecter</Link>
+                </div>
+                <div className="px-5 pb-7 pt-3 border-t border-gray-100">
                   <Link to="/beta" onClick={() => setOpen(false)}>
-                    <Button className="w-full rounded-lg py-3 font-semibold" style={{ backgroundColor: GREEN, color: NAVY }}>
-                      Rejoindre le réseau
+                    <Button className="w-full rounded-xl py-5 font-semibold text-[15px]" style={{ backgroundColor: GREEN, color: "#ffffff" }}>
+                      Rejoindre le réseau <ArrowRight className="w-4 h-4 ml-1.5" />
                     </Button>
                   </Link>
                 </div>
               </SheetContent>
             </Sheet>
           </div>
+        </div>
         </div>
       </header>
 
