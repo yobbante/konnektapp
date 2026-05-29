@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { PageLoader } from "@/components/ui/PageLoader";
+import { toast } from "sonner";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -119,6 +120,15 @@ const isAdminRoute = (pathname: string): boolean => {
 
 const isTransporterRoute = (pathname: string): boolean => {
   return TRANSPORTER_ROUTES.some(route => pathname.startsWith(route));
+};
+
+// Une route est "protégée connue" si elle correspond à un espace nécessitant une session.
+// Les routes inconnues (404) ne le sont pas → on laisse la page 404 s'afficher pour les visiteurs.
+const isKnownProtectedRoute = (pathname: string): boolean => {
+  if (isAdminRoute(pathname)) return true;
+  if (isTransporterRoute(pathname)) return true;
+  if (AGENT_ROUTES.some(route => pathname.startsWith(route))) return true;
+  return false;
 };
 
 const isMobilityRoute = (pathname: string): boolean => {
@@ -287,9 +297,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
       // Reuse GP profile from earlier check — only treat as GP if registration is complete
       const isGP = isGPRegistrationComplete;
 
-      // Enforce strict route access
       if (isAdminRoute(pathname) && !hasAdminAccess) {
         console.warn("Access denied: Admin route requires admin/moderator role");
+        toast.error("Accès non autorisé");
         navigate(isGP ? "/gp/dashboard" : isMobilityTransporter ? "/mobility/apercu" : "/client/dashboard", { replace: true });
         return;
       }
@@ -340,8 +350,20 @@ export function AuthGuard({ children }: AuthGuardProps) {
       const isPublic = isPublicRoute(location.pathname);
       
       if (!session && !isPublic) {
-        navigate("/auth", { state: { returnTo: location.pathname }, replace: true });
-        setAuthenticated(false);
+        // Visiteur non connecté sur une route protégée connue (admin, transporteur, agent)
+        if (isKnownProtectedRoute(location.pathname)) {
+          const message = isAdminRoute(location.pathname)
+            ? "Accès réservé aux administrateurs"
+            : undefined;
+          navigate("/auth", {
+            state: { returnTo: location.pathname, message },
+            replace: true,
+          });
+          setAuthenticated(false);
+        } else {
+          // Route inconnue (404) → laisser la page s'afficher pour les visiteurs
+          setAuthenticated(true);
+        }
       } else {
         setAuthenticated(!!session || isPublic);
         if (session) {

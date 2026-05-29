@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +25,7 @@ function getEntryFlowData() {
 export default function AuthPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const { toast } = useToast();
   const { detectUserRoleAndRedirect } = useSmartRedirect();
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -41,6 +42,15 @@ export default function AuthPage() {
       setMode(modeParam === "signup" ? "register" : "login");
     }
   }, [searchParams]);
+
+  // Message d'accès (ex : redirection depuis une route admin protégée)
+  useEffect(() => {
+    const message = (location.state as { message?: string } | null)?.message;
+    if (message) {
+      toast({ title: message, variant: "destructive" });
+    }
+  }, [location.state, toast]);
+
 
   // Vérifier si l'utilisateur est déjà connecté
   useEffect(() => {

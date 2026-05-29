@@ -21,9 +21,9 @@ const footerLinks = {
     { label: "Paramètres", href: "/settings" },
   ],
   legal: [
-    { label: "Conditions d'utilisation", href: "#" },
-    { label: "Politique de confidentialité", href: "#" },
-    { label: "Mentions légales", href: "#" },
+    { label: "Conditions d'utilisation", href: "/cgu" },
+    { label: "Politique de confidentialité", href: "/confidentialite" },
+    { label: "Mentions légales", href: "/cgu" },
   ],
 };
 

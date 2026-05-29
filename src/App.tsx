@@ -300,6 +300,7 @@ const App = () => (
             <Route path="/gp/navettes" element={<GPNavettesPage />} />
             <Route path="/aide" element={<AideFAQPage />} />
             <Route path="/cgu" element={<CGUPage />} />
+            <Route path="/confidentialite" element={<CGUPage />} />
             <Route path="/a-propos" element={<AProposPage />} />
             <Route path="/transporter/profile" element={<TransporterProfile />} />
             

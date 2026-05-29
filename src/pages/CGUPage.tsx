@@ -2,14 +2,16 @@
  * CGU & Confidentialité — Terms of Service and Privacy Policy
  */
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, FileText, Shield, Scale } from "lucide-react";
 
 type Tab = "cgu" | "privacy";
 
 export default function CGUPage() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>("cgu");
+  const location = useLocation();
+  const isPrivacyRoute = location.pathname.startsWith("/confidentialite");
+  const [tab, setTab] = useState<Tab>(isPrivacyRoute ? "privacy" : "cgu");
 
   return (
     <div className="min-h-screen bg-background">
