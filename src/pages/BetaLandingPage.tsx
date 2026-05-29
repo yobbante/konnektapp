@@ -14,9 +14,10 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import {
   Loader2, Check, ArrowRight, ArrowLeft, ShieldCheck, MessageCircle,
-  Truck, Briefcase, Building2, Users, Phone,
+  Truck, Briefcase, Building2, Users,
   Luggage, Plane, Ship, Zap, Bike, Car,
-  Clock, Smartphone, Package,
+  Clock, Smartphone,
+
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PhoneCountrySelect, buildFullPhone } from "@/components/PhoneCountrySelect";
