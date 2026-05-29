@@ -3,99 +3,66 @@ import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useKonnektPublicStats } from "@/hooks/useKonnektPublicStats";
 import {
-  Menu, ArrowRight, Check, Handshake, MessageCircle, Globe2, Quote,
-  Truck, Ship, Plane, Briefcase, Building2, Luggage, Car, Zap,
-  ShieldCheck, Activity, Wallet,
+  Menu, ArrowRight, Quote, Instagram, Linkedin,
+  Truck, Ship, Plane, Building2, Luggage, Zap,
+  Users, Globe2, Layers, ShieldCheck,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import {
-  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
-} from "@/components/ui/accordion";
+
+/* ────────────────────────── Brand ────────────────────────── */
+
+const NAVY = "#0D1B2A";
+const GREEN = "#3DAA8A";
 
 /* ────────────────────────── Data ────────────────────────── */
 
-const services = [
-  { icon: Luggage, title: "GP International", sub: "Bagages diaspora", meta: "International" },
-  { icon: Truck, title: "Routier", sub: "Fret commercial", meta: "Inter-villes" },
-  { icon: Ship, title: "Maritime", sub: "Conteneurs & fret mer", meta: "Multi-ports" },
-  { icon: Plane, title: "Aérien", sub: "Cargo air rapide", meta: "Express" },
-  { icon: Zap, title: "Coursier Express", sub: "Livraison urbaine", meta: "Sous 2h" },
-  { icon: Building2, title: "Agence", sub: "Billetterie & groupage", meta: "B2B / B2C" },
-  { icon: Car, title: "Mobility", sub: "Navettes & VTC", meta: "Privé & groupé" },
-  { icon: Briefcase, title: "Voyageur GP", sub: "Bagages accompagnés", meta: "Tous trajets" },
+const transportModes = [
+  { Icon: Luggage, title: "GP Bagages", desc: "Rentabilisez vos bagages sur vos trajets internationaux.", to: "/transport/gp-bagages" },
+  { Icon: Truck, title: "Routier", desc: "Trouvez du fret sur vos trajets longue distance en Afrique.", to: "/transport/routier" },
+  { Icon: Ship, title: "Maritime", desc: "Remplissez vos conteneurs entre les ports.", to: "/transport/maritime" },
+  { Icon: Plane, title: "Aérien", desc: "Optimisez votre capacité cargo sur vos vols.", to: "/transport/aerien" },
+  { Icon: Zap, title: "Coursier", desc: "Livraison urbaine rapide en ville.", to: "/transport/coursier" },
+  { Icon: Building2, title: "Entreprise", desc: "Solutions logistiques B2B sur mesure.", to: "/transport/entreprise" },
 ];
 
-const featuredTestimonial = {
-  quote: "Mes missions Yobbanté arrivent automatiquement. Paiement rapide, aucun litige.",
-  name: "Moussa S.",
-  role: "GP Express · Dakar",
-  initials: "MS",
-  color: "#3DAA8A",
-};
-
-const otherTestimonials = [
-  { quote: "Trois à quatre missions de plus par semaine. L'interface est claire, je ne perds plus de temps.", name: "Ibrahima F.", role: "Taxi · Dakar", initials: "IF", color: "#0EA5E9" },
-  { quote: "J'opère Dakar–Bamako. Konnekt me trouve du fret dans les deux sens.", name: "Cheikh D.", role: "Routier · Sahel", initials: "CD", color: "#F59E0B" },
-];
-
-const faqs = [
+const steps = [
   {
-    q: "C'est gratuit ?",
-    a: "Oui, totalement gratuit pour les transporteurs.",
+    n: "1",
+    title: "Créez votre profil",
+    desc: "Inscription en 3 minutes. Déclarez vos trajets et votre capacité disponible.",
   },
   {
-    q: "Quel lien avec Yobbanté ?",
-    a: "Konnekt est la plateforme officielle des transporteurs partenaires Yobbanté. Vos missions Yobbanté arrivent ici.",
+    n: "2",
+    title: "Recevez des demandes",
+    desc: "Des colis à transporter vous sont proposés selon vos trajets. Vous acceptez ce qui vous convient.",
   },
   {
-    q: "J'utilise déjà le bot WhatsApp 122. Pourquoi Konnekt ?",
-    a: "Le bot continue de fonctionner. Konnekt vous donne en plus un tableau de bord pour voir toutes vos missions, déclarer vos départs, et gérer votre profil.",
-  },
-  {
-    q: "Que se passe-t-il après mon inscription ?",
-    a: "Notre équipe vous contacte sur WhatsApp dans les 24h pour activer votre compte.",
-  },
-  {
-    q: "Comment je reçois mon argent ?",
-    a: "Wave ou Orange Money, après chaque mission.",
+    n: "3",
+    title: "Soyez payé",
+    desc: "Paiement sécurisé après livraison. Wave, Orange Money ou virement.",
   },
 ];
 
-const trust = [
-  { icon: ShieldCheck, label: "KYC vérifié" },
-  { icon: Wallet, label: "Paiement garanti" },
-  { icon: Activity, label: "Suivi temps réel" },
+const partners = ["Wave", "Orange Money", "DHL", "Colissimo", "UPS", "Yobbanté"];
+
+const testimonials = [
+  {
+    quote: "Je déclare mon trajet Paris-Dakar et je reçois des demandes directement. C'est simple et fiable.",
+    name: "Ibrahima F.",
+    role: "GP Paris",
+  },
+  {
+    quote: "En 6 mois, j'ai transporté plus de 200kg de colis. Konnekt gère tout, moi je voyage.",
+    name: "Moussa S.",
+    role: "GP Dakar-New York",
+  },
+  {
+    quote: "La plateforme idéale pour gérer mes trajets professionnels et rentabiliser mes voyages.",
+    name: "Cheikh D.",
+    role: "Transporteur routier",
+  },
 ];
-
-/* ────────────────────────── Subcomponents ────────────────────────── */
-
-function ServiceCard({ icon: Icon, title, sub, meta }: { icon: any; title: string; sub: string; meta: string }) {
-  return (
-    <div className="group relative bg-card border border-border rounded-2xl p-5 transition-all hover:border-primary/40 hover:-translate-y-0.5">
-      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-        <Icon className="w-5 h-5 text-primary" strokeWidth={1.75} />
-      </div>
-      <h3 className="text-base font-semibold text-foreground mt-4 tracking-tight">{title}</h3>
-      <p className="text-sm text-muted-foreground mt-1 leading-snug">{sub}</p>
-      <div className="mt-4 pt-3 border-t border-border text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
-        {meta}
-      </div>
-    </div>
-  );
-}
-
-function Avatar({ initials, color }: { initials: string; color: string }) {
-  return (
-    <div
-      className="w-11 h-11 rounded-full grid place-items-center text-white text-sm font-bold flex-shrink-0"
-      style={{ backgroundColor: color }}
-      aria-hidden
-    >
-      {initials}
-    </div>
-  );
-}
 
 /* ────────────────────────── Page ────────────────────────── */
 
@@ -104,6 +71,12 @@ export default function KonnektLanding() {
   const [open, setOpen] = useState(false);
   const liveStats = useKonnektPublicStats();
 
+  const metrics = [
+    { Icon: Users, value: "20+", label: "Transporteurs actifs" },
+    { Icon: Globe2, value: "25", label: "Pays couverts" },
+    { Icon: Layers, value: "6", label: "Modes de transport" },
+    { Icon: ShieldCheck, value: "100%", label: "Paiement sécurisé" },
+  ];
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -126,63 +99,49 @@ export default function KonnektLanding() {
     };
   }, []);
 
+  const scrollToModes = (e: React.MouseEvent) => {
+    e.preventDefault();
+    document.getElementById("modes")?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
-    <div className="min-h-screen bg-background font-sans text-foreground">
+    <div className="min-h-screen bg-white font-sans text-[#0D1B2A]">
       <Helmet>
-        <title>Konnekt — Plateforme des transporteurs partenaires Yobbanté</title>
-        <meta name="description" content="Konnekt connecte GP, transporteurs routiers, maritimes et aériens à des milliers de missions. Inscription gratuite, paiement sécurisé." />
+        <title>Konnekt — La marketplace des transporteurs internationaux</title>
+        <meta name="description" content="Konnekt connecte vos trajets à des colis à transporter. GP, routier, maritime, aérien : déclarez vos trajets et soyez payé en toute sécurité." />
         <link rel="canonical" href="https://usekonnekt.com/" />
-        <meta property="og:title" content="Konnekt — Transporteurs partenaires Yobbanté" />
-        <meta property="og:description" content="Recevez des missions de transport, confirmez vos livraisons, soyez payé." />
+        <meta property="og:title" content="Konnekt — La marketplace des transporteurs internationaux" />
+        <meta property="og:description" content="Connectez vos trajets à des colis à transporter. De Dakar à Paris, New York ou Dubai." />
         <meta property="og:url" content="https://usekonnekt.com/" />
         <meta property="og:type" content="website" />
       </Helmet>
+
       {/* ───── NAV ───── */}
       <header
-        className={`sticky top-0 z-50 bg-background/85 backdrop-blur-md border-b transition-colors safe-area-x ${
-          scrolled ? "border-border" : "border-transparent"
-        }`}
+        className="sticky top-0 z-50 backdrop-blur-md border-b transition-colors safe-area-x"
+        style={{
+          backgroundColor: scrolled ? "rgba(13,27,42,0.95)" : "rgba(13,27,42,0.85)",
+          borderColor: scrolled ? "rgba(255,255,255,0.1)" : "transparent",
+        }}
       >
         <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3.5">
-          <Link to="/" className="flex items-center gap-2">
-            <span className="w-7 h-7 rounded-md bg-primary text-primary-foreground grid place-items-center font-bold text-sm tracking-tight">K</span>
+          <Link to="/" className="flex items-center gap-2 text-white">
+            <span className="w-7 h-7 rounded-md grid place-items-center font-bold text-sm tracking-tight" style={{ backgroundColor: GREEN, color: NAVY }}>K</span>
             <span className="font-bold text-[15px] tracking-tight">KONNEKT</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
-            <div className="relative group">
-              <button className="hover:text-foreground transition-colors inline-flex items-center gap-1">
-                Solutions
-                <span className="text-xs">▾</span>
-              </button>
-              <div className="absolute left-1/2 -translate-x-1/2 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                <div className="bg-popover border border-border rounded-xl shadow-lg p-2 w-56">
-                  {[
-                    { l: "GP Bagages", to: "/transport/gp-bagages" },
-                    { l: "Transport routier", to: "/transport/routier" },
-                    { l: "Fret maritime", to: "/transport/maritime" },
-                    { l: "Fret aérien", to: "/transport/aerien" },
-                    { l: "Coursiers", to: "/transport/coursier" },
-                    { l: "Entreprises", to: "/transport/entreprise" },
-                  ].map((i) => (
-                    <Link key={i.to} to={i.to} className="block px-3 py-2 rounded-lg text-sm text-foreground hover:bg-muted">
-                      {i.l}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <a href="#services" className="hover:text-foreground transition-colors">Services</a>
-            <a href="#faq" className="hover:text-foreground transition-colors">FAQ</a>
-            <a href="#confiance" className="hover:text-foreground transition-colors">Confiance</a>
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-white/70">
+            <a href="#modes" onClick={scrollToModes} className="hover:text-white transition-colors">Solutions</a>
+            <a href="#fonctionnement" className="hover:text-white transition-colors">Comment ça marche</a>
+            <a href="#temoignages" className="hover:text-white transition-colors">Témoignages</a>
           </nav>
 
           <div className="hidden md:flex items-center gap-2">
-            <Link to="/auth">
-              <Button variant="ghost" size="sm" className="text-sm">Se connecter</Button>
+            <Link to="/gp/connexion">
+              <Button variant="ghost" size="sm" className="text-sm text-white hover:bg-white/10 hover:text-white">Se connecter</Button>
             </Link>
             <Link to="/beta">
-              <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-3.5 text-sm font-semibold shadow-sm">
+              <Button size="sm" className="rounded-lg px-3.5 text-sm font-semibold shadow-sm" style={{ backgroundColor: GREEN, color: NAVY }}>
                 Rejoindre <ArrowRight className="w-3.5 h-3.5 ml-1" />
               </Button>
             </Link>
@@ -191,36 +150,25 @@ export default function KonnektLanding() {
           <div className="md:hidden">
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
-                <button aria-label="Menu" className="p-2 -mr-2"><Menu className="w-5 h-5" /></button>
+                <button aria-label="Menu" className="p-2 -mr-2 text-white"><Menu className="w-5 h-5" /></button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[82%] flex flex-col">
                 <div className="flex flex-col gap-1 mt-8">
-                  {[
-                    { l: "Services", h: "#services" },
-                    { l: "FAQ", h: "#faq" },
-                    { l: "Confiance", h: "#confiance" },
-                  ].map((i) => (
-                    <a key={i.l} href={i.h} onClick={() => setOpen(false)} className="px-3 py-3 rounded-lg text-base font-medium hover:bg-muted">{i.l}</a>
-                  ))}
+                  <a href="#modes" onClick={() => setOpen(false)} className="px-3 py-3 rounded-lg text-base font-medium hover:bg-muted">Solutions</a>
+                  <a href="#fonctionnement" onClick={() => setOpen(false)} className="px-3 py-3 rounded-lg text-base font-medium hover:bg-muted">Comment ça marche</a>
+                  <a href="#temoignages" onClick={() => setOpen(false)} className="px-3 py-3 rounded-lg text-base font-medium hover:bg-muted">Témoignages</a>
                   <div className="h-px bg-border my-3" />
                   <p className="px-3 text-[11px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">Solutions</p>
-                  {[
-                    { l: "GP Bagages", to: "/transport/gp-bagages" },
-                    { l: "Transport routier", to: "/transport/routier" },
-                    { l: "Fret maritime", to: "/transport/maritime" },
-                    { l: "Fret aérien", to: "/transport/aerien" },
-                    { l: "Coursiers", to: "/transport/coursier" },
-                    { l: "Entreprises", to: "/transport/entreprise" },
-                  ].map((i) => (
-                    <Link key={i.to} to={i.to} onClick={() => setOpen(false)} className="px-3 py-3 rounded-lg text-base font-medium hover:bg-muted">{i.l}</Link>
+                  {transportModes.map((i) => (
+                    <Link key={i.to} to={i.to} onClick={() => setOpen(false)} className="px-3 py-3 rounded-lg text-base font-medium hover:bg-muted">{i.title}</Link>
                   ))}
                   <div className="h-px bg-border my-3" />
-                  <Link to="/auth" onClick={() => setOpen(false)} className="px-3 py-3 rounded-lg text-base font-medium hover:bg-muted">Se connecter</Link>
+                  <Link to="/gp/connexion" onClick={() => setOpen(false)} className="px-3 py-3 rounded-lg text-base font-medium hover:bg-muted">Se connecter</Link>
                 </div>
                 <div className="mt-auto pb-6">
                   <Link to="/beta" onClick={() => setOpen(false)}>
-                    <Button className="w-full bg-primary text-primary-foreground rounded-lg py-3 font-semibold">
-                      Rejoindre Konnekt
+                    <Button className="w-full rounded-lg py-3 font-semibold" style={{ backgroundColor: GREEN, color: NAVY }}>
+                      Rejoindre le réseau
                     </Button>
                   </Link>
                 </div>
@@ -231,134 +179,74 @@ export default function KonnektLanding() {
       </header>
 
       {/* ───── HERO ───── */}
-      <section className="relative px-4 pt-14 pb-16 md:pt-24 md:pb-24 border-b border-border overflow-hidden">
+      <section className="relative px-4 pt-16 pb-20 md:pt-28 md:pb-28 overflow-hidden" style={{ backgroundColor: NAVY }}>
         <div
-          className="absolute inset-0 opacity-[0.04] pointer-events-none"
+          className="absolute inset-0 opacity-[0.05] pointer-events-none"
           style={{
             backgroundImage:
-              "linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
+              "linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)",
+            backgroundSize: "52px 52px",
           }}
         />
         <div className="relative max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 border border-border rounded-full px-3 py-1 text-[11px] font-medium tracking-widest uppercase text-muted-foreground bg-card">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            Accès prioritaire · Sénégal & diaspora
-          </div>
-
-          <h1 className="text-4xl md:text-6xl lg:text-[68px] font-bold tracking-tight leading-[1.05] mt-7">
-            Gérez vos trajets<br />
-            et missions de transport,{" "}
-            <span className="text-primary">partout dans le monde</span>.
+          <h1 className="text-4xl md:text-6xl lg:text-[70px] font-bold tracking-tight leading-[1.05] text-white">
+            La plateforme des<br className="hidden sm:block" /> transporteurs{" "}
+            <span style={{ color: GREEN }}>internationaux.</span>
           </h1>
 
-          <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto mt-6 leading-relaxed">
-            Recevez vos colis à transporter, confirmez vos livraisons, et soyez payé —
-            tout depuis WhatsApp et Konnekt.
+          <p className="text-base md:text-xl text-white/70 max-w-2xl mx-auto mt-7 leading-relaxed">
+            Connectez vos trajets à des colis à transporter.
+            De Dakar à Paris, New York ou Dubai.
           </p>
 
-          {/* Nos partenaires opérateurs */}
-          <div
-            className="mt-6 mx-auto max-w-xl text-left rounded-lg px-5 py-3"
-            style={{
-              backgroundColor: "rgba(61, 170, 138, 0.10)",
-              borderLeft: "3px solid #3DAA8A",
-            }}
-          >
-            <p className="flex items-start gap-2.5 text-sm text-foreground leading-relaxed">
-              <Handshake className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" strokeWidth={2} />
-              <span>
-                <span className="font-semibold">Nos partenaires opérateurs</span> —{" "}
-                Konnekt est partenaire de Yobbanté. Les transporteurs Konnekt reçoivent des missions Yobbanté directement dans leur dashboard.
-              </span>
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3 mt-8 justify-center">
-            <Link to="/beta" className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-lg px-6 py-3.5 font-semibold text-sm shadow-md hover:bg-primary/90 transition-colors">
-              Rejoindre Konnekt <ArrowRight className="w-4 h-4" />
+          <div className="flex flex-col sm:flex-row gap-3 mt-10 justify-center">
+            <Link to="/beta" className="inline-flex items-center justify-center gap-2 rounded-lg px-7 py-3.5 font-semibold text-sm shadow-lg transition-transform hover:-translate-y-0.5" style={{ backgroundColor: GREEN, color: NAVY }}>
+              Rejoindre le réseau <ArrowRight className="w-4 h-4" />
             </Link>
-            <a href="#services" className="inline-flex items-center justify-center gap-2 border border-border bg-card hover:bg-muted text-foreground rounded-lg px-6 py-3.5 font-semibold text-sm transition-colors">
-              Découvrir les services
+            <a href="#modes" onClick={scrollToModes} className="inline-flex items-center justify-center gap-2 border border-white/25 text-white rounded-lg px-7 py-3.5 font-semibold text-sm hover:bg-white/10 transition-colors">
+              Découvrir les solutions
             </a>
           </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-7 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-primary" /> Gratuit</span>
-            <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-primary" /> 2 minutes</span>
-            <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-primary" /> Sénégal & diaspora</span>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-3 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-primary" /> Via WhatsApp</span>
-            <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-primary" /> Via navigateur</span>
-          </div>
-
-          {/* Stats réelles (live depuis la base) */}
-          <div className="mt-12 grid grid-cols-3 max-w-2xl mx-auto border-t border-border pt-8 gap-2">
-            {[
-              { n: liveStats.transporteurs, l: "transporteurs actifs" },
-              { n: liveStats.pays, l: "pays couverts" },
-              { n: liveStats.livraisons, l: "livraisons réussies" },
-            ].map((s) => (
-              <div key={s.l} className="text-center border-r border-border last:border-r-0 px-2">
-                <div className="text-lg md:text-2xl font-bold tracking-tight text-foreground">{s.n}</div>
-                <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium mt-1">{s.l}</div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
-      {/* ───── FEATURED TESTIMONIAL (juste après le hero) ───── */}
-      <section className="px-4 py-12 md:py-16 border-b border-border bg-muted/30">
-        <div className="max-w-3xl mx-auto">
-          <figure className="bg-card border border-border rounded-2xl p-6 md:p-8 shadow-sm relative">
-            <Quote className="absolute top-5 right-5 w-7 h-7 text-primary/20" />
-            <blockquote className="text-lg md:text-xl leading-relaxed text-foreground font-medium pr-8">
-              « {featuredTestimonial.quote} »
-            </blockquote>
-            <figcaption className="mt-5 pt-5 border-t border-border flex items-center gap-3">
-              <Avatar initials={featuredTestimonial.initials} color={featuredTestimonial.color} />
-              <div>
-                <div className="text-sm font-semibold text-foreground">{featuredTestimonial.name}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">{featuredTestimonial.role}</div>
-              </div>
-            </figcaption>
-          </figure>
+      {/* ───── CHIFFRES CLÉS ───── */}
+      <section className="px-4 py-12 md:py-16 border-b border-gray-100" style={{ backgroundColor: NAVY }}>
+        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4">
+          {metrics.map((m) => (
+            <div key={m.label} className="text-center">
+              <div className="text-4xl md:text-5xl font-bold tracking-tight" style={{ color: GREEN }}>{m.value}</div>
+              <div className="text-xs md:text-sm text-white/55 mt-2 font-medium">{m.label}</div>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* ───── SERVICES ───── */}
-      {/* ───── NOS SOLUTIONS ───── */}
-      <section id="solutions" className="px-4 py-16 md:py-24 border-b border-border">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-10">
-            <p className="text-[11px] font-semibold tracking-widest text-primary uppercase">Nos solutions</p>
-            <h2 className="text-3xl md:text-5xl font-bold tracking-tight mt-3 leading-tight">
-              Une page dédiée pour chaque mode
+      {/* ───── MODES DE TRANSPORT ───── */}
+      <section id="modes" className="px-4 py-16 md:py-24 bg-gray-50 border-b border-gray-100">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: GREEN }}>Nos solutions</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-3 leading-tight">
+              Un mode de transport, une page dédiée
             </h2>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-            {[
-              { Icon: Luggage, title: "GP Bagages", sub: "Bagages diaspora", to: "/transport/gp-bagages" },
-              { Icon: Truck, title: "Transport routier", sub: "Longue distance Afrique", to: "/transport/routier" },
-              { Icon: Ship, title: "Fret maritime", sub: "Conteneurs & ports", to: "/transport/maritime" },
-              { Icon: Plane, title: "Fret aérien", sub: "Cargo express monde", to: "/transport/aerien" },
-              { Icon: Zap, title: "Coursiers", sub: "Livraison urbaine Dakar", to: "/transport/coursier" },
-              { Icon: Building2, title: "Entreprises", sub: "Logistique B2B", to: "/transport/entreprise" },
-            ].map(({ Icon, title, sub, to }) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {transportModes.map(({ Icon, title, desc, to }) => (
               <Link
                 key={to}
                 to={to}
-                className="group bg-card border border-border rounded-2xl p-5 transition-all hover:border-primary/40 hover:-translate-y-0.5"
+                className="group bg-white border border-gray-200 rounded-2xl p-6 transition-all hover:border-[#3DAA8A]/50 hover:shadow-md flex items-start gap-5"
               >
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Icon className="w-5 h-5 text-primary" strokeWidth={1.75} />
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "rgba(61,170,138,0.1)" }}>
+                  <Icon className="w-7 h-7" style={{ color: GREEN }} strokeWidth={1.5} />
                 </div>
-                <h3 className="text-base font-semibold text-foreground mt-4 tracking-tight">{title}</h3>
-                <p className="text-sm text-muted-foreground mt-1 leading-snug">{sub}</p>
-                <div className="mt-4 pt-3 border-t border-border text-[11px] uppercase tracking-widest text-primary font-semibold inline-flex items-center gap-1">
-                  Découvrir <ArrowRight className="w-3 h-3" />
+                <div className="min-w-0">
+                  <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
+                  <p className="text-sm text-gray-500 mt-1 leading-snug">{desc}</p>
+                  <div className="mt-3 text-sm font-semibold inline-flex items-center gap-1" style={{ color: GREEN }}>
+                    En savoir plus <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+                  </div>
                 </div>
               </Link>
             ))}
@@ -366,94 +254,78 @@ export default function KonnektLanding() {
         </div>
       </section>
 
-      {/* ───── SERVICES ───── */}
-      <section id="services" className="px-4 py-16 md:py-24 border-b border-border">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-end justify-between flex-wrap gap-6 mb-10">
-            <div>
-              <p className="text-[11px] font-semibold tracking-widest text-primary uppercase">Services</p>
-              <h2 className="text-3xl md:text-5xl font-bold tracking-tight mt-3 max-w-xl leading-tight">
-                Tous vos modes de transport.
-              </h2>
-            </div>
-            <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
-              Une plateforme pour vos missions Yobbanté et au-delà — choisissez les modes qui correspondent à votre activité.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-            {services.map((s) => <ServiceCard key={s.title} {...s} />)}
-          </div>
-        </div>
-      </section>
-
-      {/* ───── FAQ ───── */}
-      <section id="faq" className="px-4 py-16 md:py-24 border-b border-border bg-muted/30">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-10">
-            <p className="text-[11px] font-semibold tracking-widest text-primary uppercase">FAQ</p>
-            <h2 className="text-3xl md:text-5xl font-bold tracking-tight mt-3 leading-tight">
-              Questions fréquentes
+      {/* ───── COMMENT ÇA MARCHE ───── */}
+      <section id="fonctionnement" className="px-4 py-16 md:py-24 border-b border-gray-100">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <p className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: GREEN }}>Comment ça marche</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-3 leading-tight">
+              Trois étapes pour commencer
             </h2>
           </div>
-
-          <Accordion type="single" collapsible className="bg-card border border-border rounded-2xl px-5 md:px-7 shadow-sm">
-            {faqs.map((f, i) => (
-              <AccordionItem key={i} value={`item-${i}`} className={i === faqs.length - 1 ? "border-b-0" : ""}>
-                <AccordionTrigger className="text-left text-base font-semibold text-foreground hover:no-underline py-5">
-                  {f.q}
-                </AccordionTrigger>
-                <AccordionContent className="text-sm text-muted-foreground leading-relaxed pb-5">
-                  {f.a}
-                </AccordionContent>
-              </AccordionItem>
+          <div className="relative grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-6">
+            {/* connecting line on desktop */}
+            <div className="hidden md:block absolute top-7 left-[16.66%] right-[16.66%] h-px bg-gray-200" />
+            {steps.map((s) => (
+              <div key={s.n} className="relative text-center">
+                <div className="w-14 h-14 rounded-full grid place-items-center text-2xl font-bold mx-auto relative z-10 border-4 border-white" style={{ backgroundColor: "rgba(61,170,138,0.12)", color: GREEN }}>
+                  {s.n}
+                </div>
+                <h3 className="text-lg font-semibold tracking-tight mt-5">{s.title}</h3>
+                <p className="text-sm text-gray-500 mt-2 leading-relaxed max-w-xs mx-auto">{s.desc}</p>
+              </div>
             ))}
-          </Accordion>
-
-          <div className="mt-8 text-center">
-            <a
-              href="https://wa.me/221781221891"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
-            >
-              <MessageCircle className="w-4 h-4" /> Une autre question ? Écrivez-nous sur WhatsApp
-            </a>
           </div>
         </div>
       </section>
 
-      {/* ───── CONFIANCE — autres témoignages ───── */}
-      <section id="confiance" className="px-4 py-16 md:py-24 border-b border-border">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-end justify-between flex-wrap gap-6 mb-10">
-            <div>
-              <p className="text-[11px] font-semibold tracking-widest text-primary uppercase">Confiance</p>
-              <h2 className="text-3xl md:text-5xl font-bold tracking-tight mt-3 leading-tight max-w-xl">
-                Ils utilisent Konnekt au quotidien.
-              </h2>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {trust.map((t) => (
-                <span key={t.label} className="inline-flex items-center gap-1.5 border border-border rounded-full px-3 py-1.5 text-xs font-medium bg-card">
-                  <t.icon className="w-3.5 h-3.5 text-primary" strokeWidth={2} />
-                  {t.label}
+      {/* ───── CAROUSEL PARTENAIRES ───── */}
+      <section className="px-4 py-14 md:py-16 bg-white border-b border-gray-100 overflow-hidden">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-center text-sm font-medium text-gray-400 mb-8">Ils nous font confiance</p>
+          <div className="relative overflow-hidden" style={{ maskImage: "linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent)", WebkitMaskImage: "linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent)" }}>
+            <div className="flex gap-16 w-max animate-konnekt-marquee">
+              {[...partners, ...partners].map((p, i) => (
+                <span
+                  key={i}
+                  className="text-xl md:text-2xl font-bold text-gray-300 whitespace-nowrap grayscale select-none"
+                >
+                  {p}
                 </span>
               ))}
             </div>
           </div>
+        </div>
+        <style>{`
+          @keyframes konnekt-marquee {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+          }
+          .animate-konnekt-marquee {
+            animation: konnekt-marquee 24s linear infinite;
+          }
+        `}</style>
+      </section>
 
-          <div className="grid md:grid-cols-2 gap-4">
-            {otherTestimonials.map((t) => (
-              <figure key={t.name} className="bg-card border border-border rounded-2xl p-6 flex flex-col">
-                <blockquote className="text-base leading-relaxed text-foreground flex-1">
-                  « {t.quote} »
+      {/* ───── TÉMOIGNAGES ───── */}
+      <section id="temoignages" className="px-4 py-16 md:py-24 bg-gray-50 border-b border-gray-100">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: GREEN }}>Témoignages</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-3 leading-tight">
+              Ils utilisent Konnekt
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {testimonials.map((t) => (
+              <figure key={t.name} className="bg-white border border-gray-200 rounded-2xl p-6 flex flex-col relative">
+                <Quote className="absolute top-5 right-5 w-7 h-7" style={{ color: "rgba(61,170,138,0.18)" }} />
+                <blockquote className="text-[15px] leading-relaxed text-gray-700 italic flex-1 pr-6">
+                  {t.quote}
                 </blockquote>
-                <figcaption className="mt-6 pt-6 border-t border-border flex items-center gap-3">
-                  <Avatar initials={t.initials} color={t.color} />
-                  <div>
-                    <div className="text-sm font-semibold">{t.name}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">{t.role}</div>
-                  </div>
+                <figcaption className="mt-6 pt-5 border-t border-gray-100">
+                  <div className="text-sm font-bold" style={{ color: GREEN }}>{t.name}</div>
+                  <div className="text-xs text-gray-400 mt-0.5">{t.role}</div>
                 </figcaption>
               </figure>
             ))}
@@ -462,72 +334,71 @@ export default function KonnektLanding() {
       </section>
 
       {/* ───── CTA FINAL ───── */}
-      <section className="relative px-4 py-16 md:py-24 bg-primary text-primary-foreground border-b border-primary overflow-hidden">
+      <section className="relative px-4 py-16 md:py-24 overflow-hidden" style={{ backgroundColor: NAVY }}>
         <div
-          className="absolute inset-0 opacity-[0.08] pointer-events-none"
+          className="absolute inset-0 opacity-[0.06] pointer-events-none"
           style={{
             backgroundImage:
-              "linear-gradient(hsl(var(--primary-foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary-foreground)) 1px, transparent 1px)",
+              "linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)",
             backgroundSize: "48px 48px",
           }}
         />
         <div className="relative max-w-3xl mx-auto text-center">
-          <p className="text-[11px] font-semibold tracking-widest text-primary-foreground/80 uppercase">Konnekt</p>
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight mt-3 leading-tight">
-            Prêt à recevoir vos missions Yobbanté ?
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight leading-tight text-white">
+            Rejoignez le réseau Konnekt
           </h2>
-          <p className="text-base text-primary-foreground/85 mt-5 max-w-xl mx-auto">
-            Inscription en 2 minutes. Notre équipe vous contacte sur WhatsApp dans les 24h.
+          <p className="text-base text-white/70 mt-5 max-w-xl mx-auto">
+            Inscription en 3 minutes. Déclarez vos trajets et commencez à recevoir des demandes.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 mt-10 justify-center">
-            <Link to="/beta" className="inline-flex items-center justify-center gap-2 bg-background text-primary rounded-lg px-6 py-3.5 font-semibold text-sm hover:bg-background/95 transition-colors shadow-md">
-              Rejoindre Konnekt <ArrowRight className="w-4 h-4" />
+          <div className="flex justify-center mt-10">
+            <Link to="/beta" className="inline-flex items-center justify-center gap-2 rounded-lg px-7 py-3.5 font-semibold text-sm shadow-lg transition-transform hover:-translate-y-0.5" style={{ backgroundColor: GREEN, color: NAVY }}>
+              Rejoindre le réseau <ArrowRight className="w-4 h-4" />
             </Link>
-            <a
-              href="https://wa.me/221781221891"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 border border-primary-foreground/40 text-primary-foreground rounded-lg px-6 py-3.5 font-semibold text-sm hover:bg-primary-foreground/10 transition-colors"
-            >
-              <MessageCircle className="w-4 h-4" /> Écrire sur WhatsApp
-            </a>
           </div>
         </div>
       </section>
 
       {/* ───── FOOTER ───── */}
-      <footer className="px-4 py-14 bg-background safe-area-x safe-area-bottom">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="col-span-2">
+      <footer className="px-4 py-14 text-white safe-area-x safe-area-bottom" style={{ backgroundColor: NAVY }}>
+        <div className="max-w-5xl mx-auto">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8">
+            <div className="max-w-sm">
               <div className="flex items-center gap-2">
-                <span className="w-7 h-7 rounded-md bg-primary text-primary-foreground grid place-items-center font-bold text-sm">K</span>
+                <span className="w-7 h-7 rounded-md grid place-items-center font-bold text-sm" style={{ backgroundColor: GREEN, color: NAVY }}>K</span>
                 <span className="font-bold tracking-tight">KONNEKT</span>
               </div>
-              <p className="text-sm text-muted-foreground mt-3 max-w-xs leading-relaxed">
-                La plateforme officielle des transporteurs partenaires <span className="font-medium text-foreground">Yobbanté</span> · Sénégal & diaspora.
+              <p className="text-sm text-white/60 mt-4 leading-relaxed">
+                Konnekt — La marketplace des transporteurs internationaux.
               </p>
-              <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
-                <Globe2 className="w-3.5 h-3.5" /> Dakar · Sénégal
-              </div>
             </div>
-            {[
-              { t: "Produit", l: ["Services", "Rejoindre", "FAQ"] },
-              { t: "Légal", l: ["CGU", "Confidentialité", "Mentions"] },
-            ].map((c) => (
-              <div key={c.t}>
-                <div className="text-xs font-semibold uppercase tracking-widest text-foreground">{c.t}</div>
+
+            <div className="flex flex-col gap-8 sm:flex-row sm:gap-16">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-widest text-white/80">Liens utiles</div>
                 <ul className="mt-4 space-y-2.5">
-                  {c.l.map((i) => (
-                    <li key={i}><a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">{i}</a></li>
-                  ))}
+                  <li><Link to="/a-propos" className="text-sm text-white/60 hover:text-white transition-colors">À propos</Link></li>
+                  <li><Link to="/beta" className="text-sm text-white/60 hover:text-white transition-colors">Rejoindre le réseau</Link></li>
+                  <li><Link to="/gp/connexion" className="text-sm text-white/60 hover:text-white transition-colors">Se connecter</Link></li>
+                  <li><Link to="/cgu" className="text-sm text-white/60 hover:text-white transition-colors">CGU</Link></li>
+                  <li><Link to="/confidentialite" className="text-sm text-white/60 hover:text-white transition-colors">Confidentialité</Link></li>
                 </ul>
               </div>
-            ))}
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-widest text-white/80">Réseaux</div>
+                <div className="mt-4 flex items-center gap-3">
+                  <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-9 h-9 rounded-full grid place-items-center bg-white/10 hover:bg-white/20 transition-colors">
+                    <Instagram className="w-4 h-4" />
+                  </a>
+                  <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="w-9 h-9 rounded-full grid place-items-center bg-white/10 hover:bg-white/20 transition-colors">
+                    <Linkedin className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="mt-12 pt-6 border-t border-border flex items-center justify-between flex-wrap gap-3 text-xs text-muted-foreground">
-            <span>© 2026 Konnekt · Tous droits réservés</span>
-            <span>+221 78 122 18 91 · +221 78 460 40 03</span>
+
+          <div className="mt-12 pt-6 border-t border-white/10 text-xs text-white/50">
+            © 2026 Konnekt. Tous droits réservés.
           </div>
         </div>
       </footer>
