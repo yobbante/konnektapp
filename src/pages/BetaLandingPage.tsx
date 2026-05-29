@@ -517,138 +517,99 @@ function KInput({
   );
 }
 
-function ConfirmationBlock({ firstName }: { firstName: string }) {
+function ConfirmationBlock({ firstName, phone }: { firstName: string; phone: string }) {
   const waText = encodeURIComponent(
-    `Salam, je viens de m'inscrire sur Konnekt.\nMon prénom : ${firstName || "—"}`
+    `Bonjour, je viens de m'inscrire sur Konnekt.\nMon prénom : ${firstName || "—"}`
   );
+
+  const steps = [
+    { label: "Inscription", Icon: Check, state: "done" as const },
+    { label: "Validation équipe", sub: "24-48h", Icon: Clock, state: "pending" as const },
+    { label: "Activation WhatsApp", Icon: MessageCircle, state: "todo" as const },
+    { label: "Accès dashboard", Icon: Smartphone, state: "todo" as const },
+  ];
+
   return (
-    <div className="bg-card border border-border rounded-2xl p-7 text-center shadow-sm">
+    <div className="bg-card border border-border rounded-2xl p-6 md:p-7 shadow-sm">
       <div className="flex justify-center mb-5">
         <div className="w-20 h-20 rounded-full bg-primary/10 border border-primary/30 grid place-items-center">
           <Check className="w-10 h-10 text-primary" strokeWidth={2.5} />
         </div>
       </div>
 
-      <h2 className="text-2xl font-bold tracking-tight">
-        Inscription reçue{firstName ? `, ${firstName}` : ""} !
-      </h2>
-
-      <p className="text-sm text-muted-foreground mt-4 max-w-md mx-auto leading-relaxed">
-        Notre équipe Konnekt vous contacte sur WhatsApp dans les
-        <span className="font-semibold text-foreground"> 24 heures </span>
-        pour activer votre compte.
+      <h2 className="text-2xl font-bold tracking-tight text-center">Inscription reçue !</h2>
+      <p className="text-sm text-muted-foreground mt-2 text-center">
+        Bienvenue dans Konnekt{firstName ? `, ${firstName}` : ""}.
       </p>
 
-      <div className="mt-6 bg-muted/60 border border-border rounded-xl px-4 py-4 text-left">
-        <div className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-2">
-          En attendant, enregistrez ce numéro
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <div className="text-base font-bold text-foreground">+221 78 122 18 91</div>
-            <div className="text-xs text-muted-foreground mt-0.5">Nom : Konnekt GP</div>
+      {/* Timeline horizontale 4 étapes */}
+      <div className="mt-7 flex items-start justify-between">
+        {steps.map((s, i) => {
+          const { Icon } = s;
+          const isDone = s.state === "done";
+          const isPending = s.state === "pending";
+          const circle = isDone
+            ? "bg-primary border-primary text-primary-foreground"
+            : isPending
+              ? "bg-primary/10 border-primary text-primary"
+              : "bg-muted border-border text-muted-foreground";
+          return (
+            <div key={s.label} className="flex flex-col items-center flex-1 relative">
+              {i < steps.length - 1 && (
+                <span
+                  aria-hidden
+                  className={`absolute top-4 left-1/2 w-full h-0.5 ${isDone ? "bg-primary" : "bg-border"}`}
+                />
+              )}
+              <div className={`relative z-10 w-8 h-8 rounded-full grid place-items-center border ${circle}`}>
+                <Icon className="w-4 h-4" strokeWidth={2.25} />
+              </div>
+              <div className="text-[10px] font-semibold text-foreground mt-2 text-center leading-tight px-1">
+                {s.label}
+              </div>
+              {s.sub && <div className="text-[9px] text-muted-foreground mt-0.5">{s.sub}</div>}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Message important encadré */}
+      <div className="mt-7 rounded-xl border border-primary/30 bg-primary/5 px-4 py-4 text-left">
+        <p className="text-sm text-foreground leading-relaxed">
+          Pour vous connecter, vous devrez d'abord envoyer un message à notre bot WhatsApp
+          depuis votre numéro{" "}
+          <span className="font-semibold">{phone || "—"}</span> :
+        </p>
+        <div className="mt-3 space-y-1.5 text-sm">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-foreground">+221 78 122 18 91</span>
+            <span className="text-xs text-muted-foreground">(depuis l'étranger)</span>
           </div>
-          <a
-            href={`tel:+${KONNEKT_WA}`}
-            className="w-10 h-10 rounded-full bg-background border border-border grid place-items-center text-foreground hover:bg-muted transition-colors"
-            aria-label="Appeler Konnekt"
-          >
-            <Phone className="w-4 h-4" />
-          </a>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-foreground">122</span>
+            <span className="text-xs text-muted-foreground">(depuis le Sénégal)</span>
+          </div>
         </div>
       </div>
 
+      {/* Bouton vert pleine largeur */}
       <a
         href={`https://wa.me/${KONNEKT_WA}?text=${waText}`}
         target="_blank"
         rel="noopener noreferrer"
         className="w-full mt-5 inline-flex items-center justify-center gap-2 text-white rounded-lg py-3.5 font-semibold text-sm shadow-md transition-transform hover:scale-[1.01] active:scale-[0.99]"
-        style={{ backgroundColor: "#25D366" }}
+        style={{ backgroundColor: "#3DAA8A" }}
       >
         <MessageCircle className="w-4 h-4" />
-        Écrire à Konnekt sur WhatsApp
+        Écrire au bot maintenant
         <ArrowRight className="w-4 h-4" />
       </a>
 
-      <p className="text-xs text-muted-foreground mt-4">
-        Ou appelez-nous :{" "}
-        <a href={`tel:${KONNEKT_TEL.replace(/\s/g, "")}`} className="text-foreground font-semibold hover:underline">
-          {KONNEKT_TEL}
-        </a>
+      {/* Texte secondaire */}
+      <p className="text-xs text-muted-foreground mt-4 text-center leading-relaxed">
+        Vous recevrez vos identifiants de connexion par WhatsApp après validation de votre profil.
       </p>
-
-      {/* Timeline — Que se passe-t-il ensuite ? */}
-      <NextStepsTimeline />
     </div>
   );
 }
 
-function NextStepsTimeline() {
-  const steps = [
-    {
-      key: "now",
-      label: "Immédiat",
-      title: "Vous recevez un WhatsApp de confirmation sur le +221 78 122 18 91",
-      Icon: Check,
-      color: "#16A34A",
-      bg: "#DCFCE7",
-    },
-    {
-      key: "24h",
-      label: "Sous 24h",
-      title: "Notre équipe examine votre profil et active votre compte",
-      Icon: Clock,
-      color: "#3DAA8A",
-      bg: "rgba(61,170,138,0.12)",
-    },
-    {
-      key: "activation",
-      label: "Après activation",
-      title: "Vous recevez vos identifiants par WhatsApp pour vous connecter sur usekonnekt.com/gp",
-      Icon: Smartphone,
-      color: "#6B7280",
-      bg: "#F3F4F6",
-    },
-    {
-      key: "missions",
-      label: "Missions",
-      title: "Vous recevez vos premières missions directement sur WhatsApp",
-      Icon: Package,
-      color: "#6B7280",
-      bg: "#F3F4F6",
-    },
-  ];
-  return (
-    <div className="mt-8 text-left">
-      <h3 className="text-sm font-bold text-foreground mb-4">Que se passe-t-il ensuite ?</h3>
-      <ol className="relative">
-        <span
-          aria-hidden
-          className="absolute left-[15px] top-2 bottom-2 w-px bg-border"
-        />
-        {steps.map((s, i) => {
-          const { Icon } = s;
-          return (
-            <li key={s.key} className={`relative flex gap-3 ${i === steps.length - 1 ? "" : "pb-5"}`}>
-              <div
-                className="relative z-10 w-8 h-8 rounded-full grid place-items-center flex-shrink-0 border"
-                style={{ backgroundColor: s.bg, borderColor: s.color }}
-              >
-                <Icon className="w-4 h-4" style={{ color: s.color }} strokeWidth={2.25} />
-              </div>
-              <div className="flex-1 pt-0.5">
-                <div
-                  className="text-[10px] uppercase tracking-widest font-semibold mb-0.5"
-                  style={{ color: s.color }}
-                >
-                  Étape {i + 1} · {s.label}
-                </div>
-                <p className="text-sm text-foreground leading-snug">{s.title}</p>
-              </div>
-            </li>
-          );
-        })}
-      </ol>
-    </div>
-  );
-}
