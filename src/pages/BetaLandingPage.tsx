@@ -71,7 +71,6 @@ const MODES = [
 ];
 
 const KONNEKT_WA = "221781221891";
-const KONNEKT_TEL = "+221 78 460 40 03";
 
 type RoleId = typeof ROLES[number]["id"];
 
