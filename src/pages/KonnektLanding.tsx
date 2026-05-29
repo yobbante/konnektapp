@@ -221,12 +221,14 @@ export default function KonnektLanding() {
 
 
       {/* ───── CHIFFRES CLÉS ───── */}
-      <section className="px-4 py-12 md:py-16 border-b border-gray-100" style={{ backgroundColor: NAVY }}>
+      <section className="px-4 py-12 md:py-16 border-b border-gray-100 bg-gray-50">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4">
           {metrics.map((m) => (
             <div key={m.label} className="text-center">
-              <div className="text-4xl md:text-5xl font-bold tracking-tight" style={{ color: GREEN }}>{m.value}</div>
-              <div className="text-xs md:text-sm text-white/55 mt-2 font-medium">{m.label}</div>
+              <div className="font-display text-4xl md:text-5xl font-extrabold tracking-tight" style={{ color: GREEN_DARK }}>{m.value}</div>
+              <div className="text-xs md:text-sm text-[#0D1B2A]/55 mt-2 font-medium">{m.label}</div>
+            </div>
+          ))}
             </div>
           ))}
         </div>
