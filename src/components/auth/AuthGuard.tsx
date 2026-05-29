@@ -121,6 +121,15 @@ const isTransporterRoute = (pathname: string): boolean => {
   return TRANSPORTER_ROUTES.some(route => pathname.startsWith(route));
 };
 
+// Une route est "protégée connue" si elle correspond à un espace nécessitant une session.
+// Les routes inconnues (404) ne le sont pas → on laisse la page 404 s'afficher pour les visiteurs.
+const isKnownProtectedRoute = (pathname: string): boolean => {
+  if (isAdminRoute(pathname)) return true;
+  if (isTransporterRoute(pathname)) return true;
+  if (AGENT_ROUTES.some(route => pathname.startsWith(route))) return true;
+  return false;
+};
+
 const isMobilityRoute = (pathname: string): boolean => {
   return MOBILITY_ROUTES.some(route => pathname.startsWith(route));
 };
