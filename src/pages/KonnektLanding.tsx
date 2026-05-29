@@ -363,37 +363,37 @@ export default function KonnektLanding() {
 
 
       {/* ───── FOOTER ───── */}
-      <footer className="px-4 py-14 text-white safe-area-x safe-area-bottom" style={{ backgroundColor: NAVY }}>
+      <footer className="px-4 py-14 safe-area-x safe-area-bottom bg-white border-t border-gray-100" style={{ color: NAVY }}>
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8">
             <div className="max-w-sm">
               <div className="flex items-center gap-2">
-                <span className="w-7 h-7 rounded-md grid place-items-center font-bold text-sm" style={{ backgroundColor: GREEN, color: NAVY }}>K</span>
-                <span className="font-bold tracking-tight">KONNEKT</span>
+                <img src={konnektLogo} alt="Konnekt" className="w-8 h-8 object-contain" />
+                <span className="font-display font-extrabold tracking-tight">KONNEKT</span>
               </div>
-              <p className="text-sm text-white/60 mt-4 leading-relaxed">
+              <p className="text-sm text-[#0D1B2A]/60 mt-4 leading-relaxed">
                 Konnekt — La marketplace des transporteurs internationaux.
               </p>
             </div>
 
             <div className="flex flex-col gap-8 sm:flex-row sm:gap-16">
               <div>
-                <div className="text-xs font-semibold uppercase tracking-widest text-white/80">Liens utiles</div>
+                <div className="text-xs font-semibold uppercase tracking-widest text-[#0D1B2A]/70">Liens utiles</div>
                 <ul className="mt-4 space-y-2.5">
-                  <li><Link to="/a-propos" className="text-sm text-white/60 hover:text-white transition-colors">À propos</Link></li>
-                  <li><Link to="/beta" className="text-sm text-white/60 hover:text-white transition-colors">Rejoindre le réseau</Link></li>
-                  <li><Link to="/gp/connexion" className="text-sm text-white/60 hover:text-white transition-colors">Se connecter</Link></li>
-                  <li><Link to="/cgu" className="text-sm text-white/60 hover:text-white transition-colors">CGU</Link></li>
-                  <li><Link to="/confidentialite" className="text-sm text-white/60 hover:text-white transition-colors">Confidentialité</Link></li>
+                  <li><Link to="/a-propos" className="text-sm text-[#0D1B2A]/60 hover:text-[#0D1B2A] transition-colors">À propos</Link></li>
+                  <li><Link to="/beta" className="text-sm text-[#0D1B2A]/60 hover:text-[#0D1B2A] transition-colors">Rejoindre le réseau</Link></li>
+                  <li><Link to="/gp/connexion" className="text-sm text-[#0D1B2A]/60 hover:text-[#0D1B2A] transition-colors">Se connecter</Link></li>
+                  <li><Link to="/cgu" className="text-sm text-[#0D1B2A]/60 hover:text-[#0D1B2A] transition-colors">CGU</Link></li>
+                  <li><Link to="/confidentialite" className="text-sm text-[#0D1B2A]/60 hover:text-[#0D1B2A] transition-colors">Confidentialité</Link></li>
                 </ul>
               </div>
               <div>
-                <div className="text-xs font-semibold uppercase tracking-widest text-white/80">Réseaux</div>
+                <div className="text-xs font-semibold uppercase tracking-widest text-[#0D1B2A]/70">Réseaux</div>
                 <div className="mt-4 flex items-center gap-3">
-                  <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-9 h-9 rounded-full grid place-items-center bg-white/10 hover:bg-white/20 transition-colors">
+                  <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-9 h-9 rounded-full grid place-items-center bg-[#0D1B2A]/5 hover:bg-[#0D1B2A]/10 transition-colors">
                     <Instagram className="w-4 h-4" />
                   </a>
-                  <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="w-9 h-9 rounded-full grid place-items-center bg-white/10 hover:bg-white/20 transition-colors">
+                  <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="w-9 h-9 rounded-full grid place-items-center bg-[#0D1B2A]/5 hover:bg-[#0D1B2A]/10 transition-colors">
                     <Linkedin className="w-4 h-4" />
                   </a>
                 </div>
@@ -401,11 +401,12 @@ export default function KonnektLanding() {
             </div>
           </div>
 
-          <div className="mt-12 pt-6 border-t border-white/10 text-xs text-white/50">
+          <div className="mt-12 pt-6 border-t border-gray-100 text-xs text-[#0D1B2A]/50">
             © 2026 Konnekt. Tous droits réservés.
           </div>
         </div>
       </footer>
+
     </div>
   );
 }
