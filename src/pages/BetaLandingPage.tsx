@@ -99,13 +99,13 @@ export default function BetaLandingPage() {
   const hasRef = /^[0-9a-f]{4,8}$/.test(refClean);
 
   const [first, setFirst] = useState("");
+  const [last, setLast] = useState("");
+  const [phoneCountry, setPhoneCountry] = useState<string>(() => detectDefaultCountry());
+  const [phoneLocal, setPhoneLocal] = useState("");
   const [whatsappCountry, setWhatsappCountry] = useState<string>(() => detectDefaultCountry());
   const [whatsappLocal, setWhatsappLocal] = useState("");
   const whatsappDirty = useRef(false);
 
-  const [phoneLocal, setPhoneLocal] = useState("");
-  const [whatsappCountry, setWhatsappCountry] = useState<string>(() => detectDefaultCountry());
-  const [whatsappLocal, setWhatsappLocal] = useState("");
   const [role, setRole] = useState<RoleId | "">("");
   const [city, setCity] = useState("Dakar");
   const [citiesServed, setCitiesServed] = useState("");
