@@ -45,7 +45,6 @@ export function ScrollToTopButton() {
             <ChevronUp className="w-6 h-6" />
           </Button>
         </motion.div>
-        </motion.div>
       )}
     </AnimatePresence>
   );
