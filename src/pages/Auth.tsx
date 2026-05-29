@@ -43,6 +43,15 @@ export default function AuthPage() {
     }
   }, [searchParams]);
 
+  // Message d'accès (ex : redirection depuis une route admin protégée)
+  useEffect(() => {
+    const message = (location.state as { message?: string } | null)?.message;
+    if (message) {
+      toast({ title: message, variant: "destructive" });
+    }
+  }, [location.state, toast]);
+
+
   // Vérifier si l'utilisateur est déjà connecté
   useEffect(() => {
     const checkExistingSession = async () => {
