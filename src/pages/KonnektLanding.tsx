@@ -361,8 +361,6 @@ export default function KonnektLanding() {
         </div>
       </section>
 
-        </div>
-      </section>
 
       {/* ───── FOOTER ───── */}
       <footer className="px-4 py-14 text-white safe-area-x safe-area-bottom" style={{ backgroundColor: NAVY }}>
