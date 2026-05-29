@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { useKonnektPublicStats } from "@/hooks/useKonnektPublicStats";
 import {
   Menu, ArrowRight, Quote, Instagram, Linkedin,
   Truck, Ship, Plane, Building2, Luggage, Zap,
@@ -69,7 +68,6 @@ const testimonials = [
 export default function KonnektLanding() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const liveStats = useKonnektPublicStats();
 
   const metrics = [
     { Icon: Users, value: "20+", label: "Transporteurs actifs" },
