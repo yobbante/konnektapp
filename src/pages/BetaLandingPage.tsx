@@ -307,7 +307,12 @@ export default function BetaLandingPage() {
                   <PhoneCountrySelect
                     country={phoneCountry}
                     value={phoneLocal}
-                    onChange={(local, c) => { setPhoneLocal(local); setPhoneCountry(c); }}
+                    onChange={(local, c) => {
+                      setPhoneLocal(local);
+                      setPhoneCountry(c);
+                      // Sync WhatsApp indicatif unless user edited it manually
+                      if (!whatsappDirty.current) setWhatsappCountry(c);
+                    }}
                     onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
                     invalid={!!showErr("phone")}
                   />
@@ -317,8 +322,13 @@ export default function BetaLandingPage() {
                   <PhoneCountrySelect
                     country={whatsappCountry}
                     value={whatsappLocal}
-                    onChange={(local, c) => { setWhatsappLocal(local); setWhatsappCountry(c); }}
+                    onChange={(local, c) => {
+                      whatsappDirty.current = true;
+                      setWhatsappLocal(local);
+                      setWhatsappCountry(c);
+                    }}
                   />
+
                 </Field>
 
                 {/* Rôle */}
