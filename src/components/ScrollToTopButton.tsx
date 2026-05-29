@@ -38,9 +38,7 @@ export function ScrollToTopButton() {
           className="fixed bottom-40 right-4 z-40 md:bottom-8"
         >
           <Button
-            onClick={scrollToTop}
-            size="icon"
-            className="w-12 h-12 rounded-full shadow-xl bg-primary text-primary-foreground hover:bg-primary/90 border-2 border-primary-foreground/20"
+          className="fixed bottom-24 right-4 z-40 hidden md:block md:bottom-8"
           >
             <ChevronUp className="w-6 h-6" />
           </Button>
