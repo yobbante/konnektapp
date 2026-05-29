@@ -188,36 +188,37 @@ export default function KonnektLanding() {
 
 
       {/* ───── HERO ───── */}
-      <section className="relative px-4 pt-16 pb-20 md:pt-28 md:pb-28 overflow-hidden" style={{ backgroundColor: NAVY }}>
+      <section className="relative px-4 pt-16 pb-20 md:pt-28 md:pb-28 overflow-hidden bg-white">
         <div
-          className="absolute inset-0 opacity-[0.05] pointer-events-none"
+          className="absolute inset-0 opacity-[0.55] pointer-events-none"
           style={{
             backgroundImage:
-              "linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)",
+              "linear-gradient(rgba(13,27,42,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(13,27,42,0.05) 1px, transparent 1px)",
             backgroundSize: "52px 52px",
           }}
         />
         <div className="relative max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl lg:text-[70px] font-bold tracking-tight leading-[1.05] text-white">
-            La plateforme des<br className="hidden sm:block" /> transporteurs{" "}
-            <span style={{ color: GREEN }}>internationaux.</span>
+          <h1 className="font-display text-4xl md:text-6xl lg:text-[68px] font-extrabold tracking-tight leading-[1.05]" style={{ color: NAVY }}>
+            Gérez vos trajets<br className="hidden sm:block" /> et{" "}
+            <span style={{ color: GREEN_DARK }}>missions de transport</span>,<br className="hidden sm:block" /> partout dans le monde.
           </h1>
 
-          <p className="text-base md:text-xl text-white/70 max-w-2xl mx-auto mt-7 leading-relaxed">
+          <p className="text-base md:text-xl text-[#0D1B2A]/60 max-w-2xl mx-auto mt-7 leading-relaxed">
             Connectez vos trajets à des colis à transporter.
             De Dakar à Paris, New York ou Dubai.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 mt-10 justify-center">
-            <Link to="/beta" className="inline-flex items-center justify-center gap-2 rounded-lg px-7 py-3.5 font-semibold text-sm shadow-lg transition-transform hover:-translate-y-0.5" style={{ backgroundColor: GREEN, color: NAVY }}>
+            <Link to="/beta" className="inline-flex items-center justify-center gap-2 rounded-lg px-7 py-3.5 font-semibold text-sm shadow-lg transition-transform hover:-translate-y-0.5" style={{ backgroundColor: GREEN, color: "#ffffff" }}>
               Rejoindre le réseau <ArrowRight className="w-4 h-4" />
             </Link>
-            <a href="#modes" onClick={scrollToModes} className="inline-flex items-center justify-center gap-2 border border-white/25 text-white rounded-lg px-7 py-3.5 font-semibold text-sm hover:bg-white/10 transition-colors">
+            <a href="#modes" onClick={scrollToModes} className="inline-flex items-center justify-center gap-2 border rounded-lg px-7 py-3.5 font-semibold text-sm transition-colors hover:bg-[#0D1B2A]/5" style={{ borderColor: "rgba(13,27,42,0.2)", color: NAVY }}>
               Découvrir les solutions
             </a>
           </div>
         </div>
       </section>
+
 
       {/* ───── CHIFFRES CLÉS ───── */}
       <section className="px-4 py-12 md:py-16 border-b border-gray-100" style={{ backgroundColor: NAVY }}>
