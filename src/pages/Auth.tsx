@@ -25,6 +25,7 @@ function getEntryFlowData() {
 export default function AuthPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const { toast } = useToast();
   const { detectUserRoleAndRedirect } = useSmartRedirect();
   const [mode, setMode] = useState<"login" | "register">("login");
