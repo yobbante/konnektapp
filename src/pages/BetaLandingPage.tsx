@@ -249,7 +249,8 @@ export default function BetaLandingPage() {
           <Link to="/" className="flex items-center gap-2">
             <ArrowLeft className="w-4 h-4 text-muted-foreground" />
             <span className="w-7 h-7 rounded-md bg-primary text-primary-foreground grid place-items-center font-bold text-sm">K</span>
-            <div class="flex flex-col leading-none">
+            <div className="flex flex-col leading-none">
+
               <span className="font-bold text-[15px] tracking-tight">KONNEKT</span>
             </div>
 
