@@ -303,7 +303,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
         navigate(isGP ? "/gp/dashboard" : isMobilityTransporter ? "/mobility/apercu" : "/client/dashboard", { replace: true });
         return;
       }
-      }
 
       // Agent route enforcement — strict redirect
       const isOnAgentRoute = AGENT_ROUTES.some(route => pathname.startsWith(route));
