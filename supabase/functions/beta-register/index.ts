@@ -114,6 +114,18 @@ Deno.serve(async (req) => {
 
     // 3) Upsert gp_profile (link to user_id, refresh basic info)
     let gpId: string | null = existingGp?.id || null;
+
+    // Map role/modes -> gp_type (valid enum value)
+    const role = (body.role || "").toLowerCase();
+    let gpType = "bagages_international";
+    if (role === "coursier" || modes.includes("express") || modes.includes("moto")) gpType = "express";
+    else if (role === "agence") gpType = "agence";
+    else if (role === "transporteur") {
+      if (modes.includes("maritime")) gpType = "maritime";
+      else if (modes.includes("aerien")) gpType = "aerien";
+      else gpType = "routier";
+    } else if (role === "gp" || modes.includes("bagages_international")) gpType = "bagages_international";
+
     const baseGpPayload: Record<string, unknown> = {
       user_id: userId,
       business_name: fullName,
@@ -122,14 +134,28 @@ Deno.serve(async (req) => {
       city,
       country_code: (body.country_code || "SN").toUpperCase(),
       default_currency: (body.default_currency || "XOF").toUpperCase(),
-      gp_type: "bagages_international",
+      gp_type: gpType,
       kyc_status: "pending",
       kyc_level: 0,
       beta_source: "konnekt_beta",
     };
+
+    // If we don't have a gpId yet, the auth user may already own a profile
+    // (e.g. a previous attempt). Avoid the unique-constraint error on user_id.
+    if (!gpId) {
+      const { data: existingByUser } = await admin
+        .from("gp_profiles")
+        .select("id")
+        .eq("user_id", userId)
+        .limit(1)
+        .maybeSingle();
+      if (existingByUser) gpId = (existingByUser as any).id;
+    }
+
     if (gpId) {
-      // Existing seeded profile (claim) — keep current status, just tag beta_source
-      await admin.from("gp_profiles").update(baseGpPayload).eq("id", gpId);
+      // Existing profile (claim or retry) — keep current status, refresh info
+      const { error: upErr } = await admin.from("gp_profiles").update(baseGpPayload).eq("id", gpId);
+      if (upErr) return bad(`GP_UPDATE: ${upErr.message}`, 500);
     } else {
       // Brand-new signup — pending until admin validates from /admin/terrain
       const { data: gp, error: gpErr } = await admin
@@ -137,9 +163,10 @@ Deno.serve(async (req) => {
         .insert({ ...baseGpPayload, status: "pending" } as any)
         .select("id")
         .single();
-      if (gpErr) return bad(`GP: ${gpErr.message}`, 500);
+      if (gpErr) return bad(`GP_INSERT: ${gpErr.message}`, 500);
       gpId = (gp as any).id;
     }
+
 
     // 4) Profile name sync
     try {

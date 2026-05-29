@@ -250,6 +250,27 @@ export default function KonnektGPLogin() {
             )}
           </div>
 
+          {/* Fallback email */}
+          <div className="mt-6">
+            <div className="flex items-center gap-3">
+              <span className="flex-1 h-px bg-black/10" />
+              <span className="text-xs text-black/40 font-medium">ou</span>
+              <span className="flex-1 h-px bg-black/10" />
+            </div>
+            <Link
+              to="/auth?mode=login"
+              className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-lg border py-3 font-semibold text-sm transition-colors"
+              style={{ borderColor: "rgba(61,170,138,0.4)", color: "#3DAA8A" }}
+            >
+              Se connecter avec mon adresse email
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <p className="mt-3 text-xs text-black/50 text-center leading-relaxed">
+              Les GP basés hors du Sénégal peuvent utiliser leur email pour se connecter.
+            </p>
+          </div>
+
+
           <p className="text-center text-xs text-black/50 mt-6">
             Pas encore inscrit ?{" "}
             <Link to="/beta" className="font-semibold" style={{ color: "#3DAA8A" }}>
