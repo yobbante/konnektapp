@@ -345,27 +345,22 @@ export default function KonnektLanding() {
       </section>
 
       {/* ───── CTA FINAL ───── */}
-      <section className="relative px-4 py-16 md:py-24 overflow-hidden" style={{ backgroundColor: NAVY }}>
-        <div
-          className="absolute inset-0 opacity-[0.06] pointer-events-none"
-          style={{
-            backgroundImage:
-              "linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-          }}
-        />
+      <section className="relative px-4 py-16 md:py-24 overflow-hidden bg-gray-50 border-t border-gray-100">
         <div className="relative max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight leading-tight text-white">
+          <h2 className="font-display text-3xl md:text-5xl font-extrabold tracking-tight leading-tight" style={{ color: NAVY }}>
             Rejoignez le réseau Konnekt
           </h2>
-          <p className="text-base text-white/70 mt-5 max-w-xl mx-auto">
+          <p className="text-base text-[#0D1B2A]/60 mt-5 max-w-xl mx-auto">
             Inscription en 3 minutes. Déclarez vos trajets et commencez à recevoir des demandes.
           </p>
           <div className="flex justify-center mt-10">
-            <Link to="/beta" className="inline-flex items-center justify-center gap-2 rounded-lg px-7 py-3.5 font-semibold text-sm shadow-lg transition-transform hover:-translate-y-0.5" style={{ backgroundColor: GREEN, color: NAVY }}>
+            <Link to="/beta" className="inline-flex items-center justify-center gap-2 rounded-lg px-7 py-3.5 font-semibold text-sm shadow-lg transition-transform hover:-translate-y-0.5" style={{ backgroundColor: GREEN, color: "#ffffff" }}>
               Rejoindre le réseau <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
+        </div>
+      </section>
+
         </div>
       </section>
 
