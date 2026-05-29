@@ -238,7 +238,7 @@ export default function KonnektLanding() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: GREEN }}>Nos solutions</p>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-3 leading-tight">
+            <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight mt-3 leading-tight">
               Un mode de transport, une page dédiée
             </h2>
           </div>
@@ -270,7 +270,7 @@ export default function KonnektLanding() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: GREEN }}>Comment ça marche</p>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-3 leading-tight">
+            <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight mt-3 leading-tight">
               Trois étapes pour commencer
             </h2>
           </div>
@@ -323,7 +323,7 @@ export default function KonnektLanding() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: GREEN }}>Témoignages</p>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-3 leading-tight">
+            <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight mt-3 leading-tight">
               Ils utilisent Konnekt
             </h2>
           </div>
