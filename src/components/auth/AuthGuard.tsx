@@ -349,8 +349,20 @@ export function AuthGuard({ children }: AuthGuardProps) {
       const isPublic = isPublicRoute(location.pathname);
       
       if (!session && !isPublic) {
-        navigate("/auth", { state: { returnTo: location.pathname }, replace: true });
-        setAuthenticated(false);
+        // Visiteur non connecté sur une route protégée connue (admin, transporteur, agent)
+        if (isKnownProtectedRoute(location.pathname)) {
+          const message = isAdminRoute(location.pathname)
+            ? "Accès réservé aux administrateurs"
+            : undefined;
+          navigate("/auth", {
+            state: { returnTo: location.pathname, message },
+            replace: true,
+          });
+          setAuthenticated(false);
+        } else {
+          // Route inconnue (404) → laisser la page s'afficher pour les visiteurs
+          setAuthenticated(true);
+        }
       } else {
         setAuthenticated(!!session || isPublic);
         if (session) {
