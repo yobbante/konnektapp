@@ -15,10 +15,10 @@ export default {
         xl: "1280px",
       },
     },
+    extend: {
       fontFamily: {
         sans: ["Manrope", "Inter", "system-ui", "sans-serif"],
         display: ["Sora", "Manrope", "system-ui", "sans-serif"],
-      },
       },
       colors: {
         border: "hsl(var(--border))",
