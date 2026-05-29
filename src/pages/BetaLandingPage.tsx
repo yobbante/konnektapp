@@ -52,9 +52,12 @@ const ALL_CITIES = [...CITY_GROUPS.flatMap((g) => g.cities), "Autre"];
 const ROLES = [
   { id: "gp",          label: "GP / Voyageur",      sub: "Bagages accompagnés",     icon: Briefcase },
   { id: "transporteur", label: "Transporteur Pro", sub: "Routier, maritime, aérien", icon: Truck },
+  { id: "coursier",    label: "Coursier",           sub: "Livraison urbaine",        icon: Bike },
+  { id: "agence",      label: "Agence",             sub: "Billetterie & groupage",   icon: Building2 },
   { id: "client",      label: "Particulier",        sub: "J'envoie des colis",       icon: Users },
   { id: "entreprise",  label: "Entreprise",         sub: "Logistique B2B",           icon: Building2 },
 ] as const;
+
 
 const MODES = [
   { id: "bagages_international", label: "GP Bagages",   icon: Luggage },
