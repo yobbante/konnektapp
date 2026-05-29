@@ -229,10 +229,9 @@ export default function KonnektLanding() {
               <div className="text-xs md:text-sm text-[#0D1B2A]/55 mt-2 font-medium">{m.label}</div>
             </div>
           ))}
-            </div>
-          ))}
         </div>
       </section>
+
 
       {/* ───── MODES DE TRANSPORT ───── */}
       <section id="modes" className="px-4 py-16 md:py-24 bg-gray-50 border-b border-gray-100">
