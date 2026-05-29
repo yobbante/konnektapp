@@ -8,11 +8,13 @@ import {
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import konnektLogo from "@/assets/konnekt-k-logo.png";
 
 /* ────────────────────────── Brand ────────────────────────── */
 
 const NAVY = "#0D1B2A";
 const GREEN = "#3DAA8A";
+const GREEN_DARK = "#2C8A6E";
 
 /* ────────────────────────── Data ────────────────────────── */
 
@@ -118,28 +120,28 @@ export default function KonnektLanding() {
       <header
         className="sticky top-0 z-50 backdrop-blur-md border-b transition-colors safe-area-x"
         style={{
-          backgroundColor: scrolled ? "rgba(13,27,42,0.95)" : "rgba(13,27,42,0.85)",
-          borderColor: scrolled ? "rgba(255,255,255,0.1)" : "transparent",
+          backgroundColor: scrolled ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.85)",
+          borderColor: scrolled ? "rgba(13,27,42,0.08)" : "transparent",
         }}
       >
         <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3.5">
-          <Link to="/" className="flex items-center gap-2 text-white">
-            <span className="w-7 h-7 rounded-md grid place-items-center font-bold text-sm tracking-tight" style={{ backgroundColor: GREEN, color: NAVY }}>K</span>
-            <span className="font-bold text-[15px] tracking-tight">KONNEKT</span>
+          <Link to="/" className="flex items-center gap-2" style={{ color: NAVY }}>
+            <img src={konnektLogo} alt="Konnekt" className="w-8 h-8 object-contain" />
+            <span className="font-display font-extrabold text-[16px] tracking-tight">KONNEKT</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-white/70">
-            <a href="#modes" onClick={scrollToModes} className="hover:text-white transition-colors">Solutions</a>
-            <a href="#fonctionnement" className="hover:text-white transition-colors">Comment ça marche</a>
-            <a href="#temoignages" className="hover:text-white transition-colors">Témoignages</a>
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#0D1B2A]/70">
+            <a href="#modes" onClick={scrollToModes} className="hover:text-[#0D1B2A] transition-colors">Solutions</a>
+            <a href="#fonctionnement" className="hover:text-[#0D1B2A] transition-colors">Comment ça marche</a>
+            <a href="#temoignages" className="hover:text-[#0D1B2A] transition-colors">Témoignages</a>
           </nav>
 
           <div className="hidden md:flex items-center gap-2">
             <Link to="/gp/connexion">
-              <Button variant="ghost" size="sm" className="text-sm text-white hover:bg-white/10 hover:text-white">Se connecter</Button>
+              <Button variant="ghost" size="sm" className="text-sm text-[#0D1B2A] hover:bg-[#0D1B2A]/5 hover:text-[#0D1B2A]">Se connecter</Button>
             </Link>
             <Link to="/beta">
-              <Button size="sm" className="rounded-lg px-3.5 text-sm font-semibold shadow-sm" style={{ backgroundColor: GREEN, color: NAVY }}>
+              <Button size="sm" className="rounded-lg px-3.5 text-sm font-semibold shadow-sm" style={{ backgroundColor: GREEN, color: "#ffffff" }}>
                 Rejoindre <ArrowRight className="w-3.5 h-3.5 ml-1" />
               </Button>
             </Link>
@@ -148,25 +150,33 @@ export default function KonnektLanding() {
           <div className="md:hidden">
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
-                <button aria-label="Menu" className="p-2 -mr-2 text-white"><Menu className="w-5 h-5" /></button>
+                <button aria-label="Menu" className="p-2 -mr-2 rounded-lg transition-colors hover:bg-[#0D1B2A]/5" style={{ color: NAVY }}><Menu className="w-6 h-6" /></button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[82%] flex flex-col">
-                <div className="flex flex-col gap-1 mt-8">
-                  <a href="#modes" onClick={() => setOpen(false)} className="px-3 py-3 rounded-lg text-base font-medium hover:bg-muted">Solutions</a>
-                  <a href="#fonctionnement" onClick={() => setOpen(false)} className="px-3 py-3 rounded-lg text-base font-medium hover:bg-muted">Comment ça marche</a>
-                  <a href="#temoignages" onClick={() => setOpen(false)} className="px-3 py-3 rounded-lg text-base font-medium hover:bg-muted">Témoignages</a>
-                  <div className="h-px bg-border my-3" />
-                  <p className="px-3 text-[11px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">Solutions</p>
-                  {transportModes.map((i) => (
-                    <Link key={i.to} to={i.to} onClick={() => setOpen(false)} className="px-3 py-3 rounded-lg text-base font-medium hover:bg-muted">{i.title}</Link>
-                  ))}
-                  <div className="h-px bg-border my-3" />
-                  <Link to="/gp/connexion" onClick={() => setOpen(false)} className="px-3 py-3 rounded-lg text-base font-medium hover:bg-muted">Se connecter</Link>
+              <SheetContent side="right" className="w-[86%] max-w-sm flex flex-col p-0 bg-white">
+                <div className="flex items-center gap-2 px-5 pt-6 pb-5 border-b border-gray-100">
+                  <img src={konnektLogo} alt="Konnekt" className="w-8 h-8 object-contain" />
+                  <span className="font-display font-extrabold text-[16px] tracking-tight" style={{ color: NAVY }}>KONNEKT</span>
                 </div>
-                <div className="mt-auto pb-6">
+                <div className="flex-1 overflow-y-auto overscroll-contain px-3 py-4">
+                  <p className="px-3 text-[11px] uppercase tracking-widest text-gray-400 font-semibold mb-2">Navigation</p>
+                  <a href="#modes" onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-lg text-[15px] font-medium text-[#0D1B2A] hover:bg-gray-50 transition-colors">Solutions</a>
+                  <a href="#fonctionnement" onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-lg text-[15px] font-medium text-[#0D1B2A] hover:bg-gray-50 transition-colors">Comment ça marche</a>
+                  <a href="#temoignages" onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-lg text-[15px] font-medium text-[#0D1B2A] hover:bg-gray-50 transition-colors">Témoignages</a>
+                  <div className="h-px bg-gray-100 my-4" />
+                  <p className="px-3 text-[11px] uppercase tracking-widest text-gray-400 font-semibold mb-2">Modes de transport</p>
+                  {transportModes.map((i) => (
+                    <Link key={i.to} to={i.to} onClick={() => setOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[15px] font-medium text-[#0D1B2A] hover:bg-gray-50 transition-colors">
+                      <i.Icon className="w-4 h-4 flex-shrink-0" style={{ color: GREEN }} strokeWidth={1.75} />
+                      {i.title}
+                    </Link>
+                  ))}
+                  <div className="h-px bg-gray-100 my-4" />
+                  <Link to="/gp/connexion" onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-lg text-[15px] font-medium text-[#0D1B2A] hover:bg-gray-50 transition-colors">Se connecter</Link>
+                </div>
+                <div className="px-5 pb-7 pt-3 border-t border-gray-100">
                   <Link to="/beta" onClick={() => setOpen(false)}>
-                    <Button className="w-full rounded-lg py-3 font-semibold" style={{ backgroundColor: GREEN, color: NAVY }}>
-                      Rejoindre le réseau
+                    <Button className="w-full rounded-xl py-5 font-semibold text-[15px]" style={{ backgroundColor: GREEN, color: "#ffffff" }}>
+                      Rejoindre le réseau <ArrowRight className="w-4 h-4 ml-1.5" />
                     </Button>
                   </Link>
                 </div>
@@ -176,56 +186,59 @@ export default function KonnektLanding() {
         </div>
       </header>
 
+
       {/* ───── HERO ───── */}
-      <section className="relative px-4 pt-16 pb-20 md:pt-28 md:pb-28 overflow-hidden" style={{ backgroundColor: NAVY }}>
+      <section className="relative px-4 pt-16 pb-20 md:pt-28 md:pb-28 overflow-hidden bg-white">
         <div
-          className="absolute inset-0 opacity-[0.05] pointer-events-none"
+          className="absolute inset-0 opacity-[0.55] pointer-events-none"
           style={{
             backgroundImage:
-              "linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)",
+              "linear-gradient(rgba(13,27,42,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(13,27,42,0.05) 1px, transparent 1px)",
             backgroundSize: "52px 52px",
           }}
         />
         <div className="relative max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl lg:text-[70px] font-bold tracking-tight leading-[1.05] text-white">
-            La plateforme des<br className="hidden sm:block" /> transporteurs{" "}
-            <span style={{ color: GREEN }}>internationaux.</span>
+          <h1 className="font-display text-4xl md:text-6xl lg:text-[68px] font-extrabold tracking-tight leading-[1.05]" style={{ color: NAVY }}>
+            Gérez vos trajets<br className="hidden sm:block" /> et{" "}
+            <span style={{ color: GREEN_DARK }}>missions de transport</span>,<br className="hidden sm:block" /> partout dans le monde.
           </h1>
 
-          <p className="text-base md:text-xl text-white/70 max-w-2xl mx-auto mt-7 leading-relaxed">
+          <p className="text-base md:text-xl text-[#0D1B2A]/60 max-w-2xl mx-auto mt-7 leading-relaxed">
             Connectez vos trajets à des colis à transporter.
             De Dakar à Paris, New York ou Dubai.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 mt-10 justify-center">
-            <Link to="/beta" className="inline-flex items-center justify-center gap-2 rounded-lg px-7 py-3.5 font-semibold text-sm shadow-lg transition-transform hover:-translate-y-0.5" style={{ backgroundColor: GREEN, color: NAVY }}>
+            <Link to="/beta" className="inline-flex items-center justify-center gap-2 rounded-lg px-7 py-3.5 font-semibold text-sm shadow-lg transition-transform hover:-translate-y-0.5" style={{ backgroundColor: GREEN, color: "#ffffff" }}>
               Rejoindre le réseau <ArrowRight className="w-4 h-4" />
             </Link>
-            <a href="#modes" onClick={scrollToModes} className="inline-flex items-center justify-center gap-2 border border-white/25 text-white rounded-lg px-7 py-3.5 font-semibold text-sm hover:bg-white/10 transition-colors">
+            <a href="#modes" onClick={scrollToModes} className="inline-flex items-center justify-center gap-2 border rounded-lg px-7 py-3.5 font-semibold text-sm transition-colors hover:bg-[#0D1B2A]/5" style={{ borderColor: "rgba(13,27,42,0.2)", color: NAVY }}>
               Découvrir les solutions
             </a>
           </div>
         </div>
       </section>
 
+
       {/* ───── CHIFFRES CLÉS ───── */}
-      <section className="px-4 py-12 md:py-16 border-b border-gray-100" style={{ backgroundColor: NAVY }}>
+      <section className="px-4 py-12 md:py-16 border-b border-gray-100 bg-gray-50">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4">
           {metrics.map((m) => (
             <div key={m.label} className="text-center">
-              <div className="text-4xl md:text-5xl font-bold tracking-tight" style={{ color: GREEN }}>{m.value}</div>
-              <div className="text-xs md:text-sm text-white/55 mt-2 font-medium">{m.label}</div>
+              <div className="font-display text-4xl md:text-5xl font-extrabold tracking-tight" style={{ color: GREEN_DARK }}>{m.value}</div>
+              <div className="text-xs md:text-sm text-[#0D1B2A]/55 mt-2 font-medium">{m.label}</div>
             </div>
           ))}
         </div>
       </section>
+
 
       {/* ───── MODES DE TRANSPORT ───── */}
       <section id="modes" className="px-4 py-16 md:py-24 bg-gray-50 border-b border-gray-100">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: GREEN }}>Nos solutions</p>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-3 leading-tight">
+            <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight mt-3 leading-tight">
               Un mode de transport, une page dédiée
             </h2>
           </div>
@@ -257,7 +270,7 @@ export default function KonnektLanding() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: GREEN }}>Comment ça marche</p>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-3 leading-tight">
+            <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight mt-3 leading-tight">
               Trois étapes pour commencer
             </h2>
           </div>
@@ -310,7 +323,7 @@ export default function KonnektLanding() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-[11px] font-semibold tracking-widest uppercase" style={{ color: GREEN }}>Témoignages</p>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-3 leading-tight">
+            <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight mt-3 leading-tight">
               Ils utilisent Konnekt
             </h2>
           </div>
@@ -332,62 +345,55 @@ export default function KonnektLanding() {
       </section>
 
       {/* ───── CTA FINAL ───── */}
-      <section className="relative px-4 py-16 md:py-24 overflow-hidden" style={{ backgroundColor: NAVY }}>
-        <div
-          className="absolute inset-0 opacity-[0.06] pointer-events-none"
-          style={{
-            backgroundImage:
-              "linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-          }}
-        />
+      <section className="relative px-4 py-16 md:py-24 overflow-hidden bg-gray-50 border-t border-gray-100">
         <div className="relative max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight leading-tight text-white">
+          <h2 className="font-display text-3xl md:text-5xl font-extrabold tracking-tight leading-tight" style={{ color: NAVY }}>
             Rejoignez le réseau Konnekt
           </h2>
-          <p className="text-base text-white/70 mt-5 max-w-xl mx-auto">
+          <p className="text-base text-[#0D1B2A]/60 mt-5 max-w-xl mx-auto">
             Inscription en 3 minutes. Déclarez vos trajets et commencez à recevoir des demandes.
           </p>
           <div className="flex justify-center mt-10">
-            <Link to="/beta" className="inline-flex items-center justify-center gap-2 rounded-lg px-7 py-3.5 font-semibold text-sm shadow-lg transition-transform hover:-translate-y-0.5" style={{ backgroundColor: GREEN, color: NAVY }}>
+            <Link to="/beta" className="inline-flex items-center justify-center gap-2 rounded-lg px-7 py-3.5 font-semibold text-sm shadow-lg transition-transform hover:-translate-y-0.5" style={{ backgroundColor: GREEN, color: "#ffffff" }}>
               Rejoindre le réseau <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
       </section>
 
+
       {/* ───── FOOTER ───── */}
-      <footer className="px-4 py-14 text-white safe-area-x safe-area-bottom" style={{ backgroundColor: NAVY }}>
+      <footer className="px-4 py-14 safe-area-x safe-area-bottom bg-white border-t border-gray-100" style={{ color: NAVY }}>
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8">
             <div className="max-w-sm">
               <div className="flex items-center gap-2">
-                <span className="w-7 h-7 rounded-md grid place-items-center font-bold text-sm" style={{ backgroundColor: GREEN, color: NAVY }}>K</span>
-                <span className="font-bold tracking-tight">KONNEKT</span>
+                <img src={konnektLogo} alt="Konnekt" className="w-8 h-8 object-contain" />
+                <span className="font-display font-extrabold tracking-tight">KONNEKT</span>
               </div>
-              <p className="text-sm text-white/60 mt-4 leading-relaxed">
+              <p className="text-sm text-[#0D1B2A]/60 mt-4 leading-relaxed">
                 Konnekt — La marketplace des transporteurs internationaux.
               </p>
             </div>
 
             <div className="flex flex-col gap-8 sm:flex-row sm:gap-16">
               <div>
-                <div className="text-xs font-semibold uppercase tracking-widest text-white/80">Liens utiles</div>
+                <div className="text-xs font-semibold uppercase tracking-widest text-[#0D1B2A]/70">Liens utiles</div>
                 <ul className="mt-4 space-y-2.5">
-                  <li><Link to="/a-propos" className="text-sm text-white/60 hover:text-white transition-colors">À propos</Link></li>
-                  <li><Link to="/beta" className="text-sm text-white/60 hover:text-white transition-colors">Rejoindre le réseau</Link></li>
-                  <li><Link to="/gp/connexion" className="text-sm text-white/60 hover:text-white transition-colors">Se connecter</Link></li>
-                  <li><Link to="/cgu" className="text-sm text-white/60 hover:text-white transition-colors">CGU</Link></li>
-                  <li><Link to="/confidentialite" className="text-sm text-white/60 hover:text-white transition-colors">Confidentialité</Link></li>
+                  <li><Link to="/a-propos" className="text-sm text-[#0D1B2A]/60 hover:text-[#0D1B2A] transition-colors">À propos</Link></li>
+                  <li><Link to="/beta" className="text-sm text-[#0D1B2A]/60 hover:text-[#0D1B2A] transition-colors">Rejoindre le réseau</Link></li>
+                  <li><Link to="/gp/connexion" className="text-sm text-[#0D1B2A]/60 hover:text-[#0D1B2A] transition-colors">Se connecter</Link></li>
+                  <li><Link to="/cgu" className="text-sm text-[#0D1B2A]/60 hover:text-[#0D1B2A] transition-colors">CGU</Link></li>
+                  <li><Link to="/confidentialite" className="text-sm text-[#0D1B2A]/60 hover:text-[#0D1B2A] transition-colors">Confidentialité</Link></li>
                 </ul>
               </div>
               <div>
-                <div className="text-xs font-semibold uppercase tracking-widest text-white/80">Réseaux</div>
+                <div className="text-xs font-semibold uppercase tracking-widest text-[#0D1B2A]/70">Réseaux</div>
                 <div className="mt-4 flex items-center gap-3">
-                  <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-9 h-9 rounded-full grid place-items-center bg-white/10 hover:bg-white/20 transition-colors">
+                  <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-9 h-9 rounded-full grid place-items-center bg-[#0D1B2A]/5 hover:bg-[#0D1B2A]/10 transition-colors">
                     <Instagram className="w-4 h-4" />
                   </a>
-                  <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="w-9 h-9 rounded-full grid place-items-center bg-white/10 hover:bg-white/20 transition-colors">
+                  <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="w-9 h-9 rounded-full grid place-items-center bg-[#0D1B2A]/5 hover:bg-[#0D1B2A]/10 transition-colors">
                     <Linkedin className="w-4 h-4" />
                   </a>
                 </div>
@@ -395,11 +401,12 @@ export default function KonnektLanding() {
             </div>
           </div>
 
-          <div className="mt-12 pt-6 border-t border-white/10 text-xs text-white/50">
+          <div className="mt-12 pt-6 border-t border-gray-100 text-xs text-[#0D1B2A]/50">
             © 2026 Konnekt. Tous droits réservés.
           </div>
         </div>
       </footer>
+
     </div>
   );
 }
