@@ -282,6 +282,9 @@ export default function GPApercuPage() {
 
       <KonnektWelcomeBanner gpProfile={gpProfile} />
 
+      <YobbanteMissionsSection reference={(gpProfile as any)?.reference ?? null} />
+
+
       {!isPending &&
       <GPKYCProgressCard
         kycLevel={gpProfile.kyc_level ?? 0}
