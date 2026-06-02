@@ -136,6 +136,14 @@ const ARTICLES: Record<string, Article> = {
             t: "p",
             text: "Les GPs permettent d'envoyer des colis moins cher et souvent plus vite que les transporteurs classiques. Vous avez le choix entre les Grands Porteurs, les services express internationaux et la poste traditionnelle.",
           },
+          {
+            t: "p",
+            text: "Pour la diaspora sénégalaise, le GP est devenu la solution préférée : il combine un coût réduit, des délais courts et une remise en main propre du colis à un proche. Là où les transporteurs classiques facturent au tarif fort et imposent des formalités, le GP voyage de toute façon et partage simplement la capacité disponible dans ses bagages.",
+          },
+          {
+            t: "p",
+            text: "Le choix dépend de votre priorité : si vous cherchez le prix le plus bas et un délai raisonnable, le GP est imbattable. Si vous avez besoin d'une livraison en 24 à 48h pour un envoi urgent, l'express international reste une option, mais à un coût nettement supérieur.",
+          },
         ],
       },
       {
