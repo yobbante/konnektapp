@@ -218,67 +218,159 @@ export default function AdminMessages() {
       </div>
 
       <div className="flex-1 flex">
-        {/* Conversation List */}
+        {/* Left panel */}
         <div className={`w-full md:w-80 border-r border-border ${selectedConversation ? "hidden md:block" : ""}`}>
-          <div className="p-4 border-b border-border">
-            <h2 className="font-semibold flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Toutes les conversations
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              {conversations.length} conversation{conversations.length > 1 ? "s" : ""}
-            </p>
+          {/* Tabs */}
+          <div className="flex border-b border-border">
+            <button
+              onClick={() => setActiveTab("conversations")}
+              className={`flex-1 py-3 text-sm font-medium transition-colors ${
+                activeTab === "conversations"
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-muted-foreground"
+              }`}
+            >
+              Conversations
+            </button>
+            <button
+              onClick={() => setActiveTab("onboarding")}
+              className={`flex-1 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                activeTab === "onboarding"
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-muted-foreground"
+              }`}
+            >
+              Onboarding GP
+              {signups.length > 0 && (
+                <Badge variant="secondary" className="text-[10px] px-1.5">{signups.length}</Badge>
+              )}
+            </button>
           </div>
 
-          <div className="overflow-y-auto max-h-[calc(100vh-180px)]">
-            {conversations.length === 0 ? (
-              <div className="p-8 text-center">
-                <MessageCircle className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">Aucune conversation</p>
+          {activeTab === "conversations" ? (
+            <>
+              <div className="p-4 border-b border-border">
+                <h2 className="font-semibold flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Toutes les conversations
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {conversations.length} conversation{conversations.length > 1 ? "s" : ""}
+                </p>
               </div>
-            ) : (
-              conversations.map((conv) => (
-                <motion.button
-                  key={conv.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  onClick={() => handleSelectConversation(conv)}
-                  className={`w-full p-4 text-left border-b border-border transition-colors hover:bg-accent/50 ${
-                    selectedConversation === conv.id ? "bg-accent" : ""
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <MessageCircle className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="font-medium text-sm truncate">{conv.client_name}</p>
-                        {conv.order_number && (
-                          <Badge variant="secondary" className="text-xs flex-shrink-0">
-                            {conv.order_number}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground truncate">
-                        ↔ {conv.gp_name}
-                      </p>
-                      {conv.last_message_at && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(conv.last_message_at).toLocaleDateString("fr-FR", {
-                            day: "numeric",
-                            month: "short",
-                            hour: "2-digit",
-                            minute: "2-digit"
-                          })}
-                        </p>
-                      )}
-                    </div>
+
+              <div className="overflow-y-auto max-h-[calc(100vh-220px)]">
+                {conversations.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <MessageCircle className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">Aucune conversation</p>
                   </div>
-                </motion.button>
-              ))
-            )}
-          </div>
+                ) : (
+                  conversations.map((conv) => (
+                    <motion.button
+                      key={conv.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      onClick={() => handleSelectConversation(conv)}
+                      className={`w-full p-4 text-left border-b border-border transition-colors hover:bg-accent/50 ${
+                        selectedConversation === conv.id ? "bg-accent" : ""
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <MessageCircle className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-medium text-sm truncate">{conv.client_name}</p>
+                            {conv.order_number && (
+                              <Badge variant="secondary" className="text-xs flex-shrink-0">
+                                {conv.order_number}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate">
+                            ↔ {conv.gp_name}
+                          </p>
+                          {conv.last_message_at && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {new Date(conv.last_message_at).toLocaleDateString("fr-FR", {
+                                day: "numeric",
+                                month: "short",
+                                hour: "2-digit",
+                                minute: "2-digit"
+                              })}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </motion.button>
+                  ))
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="p-4 border-b border-border">
+                <h2 className="font-semibold flex items-center gap-2">
+                  <UserPlus className="w-5 h-5" />
+                  Inscriptions Konnekt
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {signups.length} nouveau{signups.length > 1 ? "x" : ""} GP a valider
+                </p>
+              </div>
+
+              <div className="overflow-y-auto max-h-[calc(100vh-220px)]">
+                {signups.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <UserPlus className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">Aucune inscription en attente</p>
+                  </div>
+                ) : (
+                  signups.map((s) => (
+                    <motion.div
+                      key={s.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="w-full p-4 border-b border-border"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Phone className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-medium text-sm truncate">{s.sender_phone}</p>
+                            <Badge className="text-[10px] flex-shrink-0">Konnekt</Badge>
+                          </div>
+                          {s.message_body && (
+                            <p className="text-xs text-muted-foreground truncate mt-1">{s.message_body}</p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(s.created_at).toLocaleDateString("fr-FR", {
+                              day: "numeric",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit"
+                            })}
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-2 h-7 text-xs"
+                            onClick={() => navigate("/admin/terrain")}
+                          >
+                            Valider dans Terrain
+                          </Button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Chat View */}
