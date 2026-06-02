@@ -70,7 +70,7 @@ const MODES = [
   { id: "mobility",              label: "Mobility",     icon: Car },
 ];
 
-const KONNEKT_WA = "221781221891";
+const KONNEKT_WA = "221789269756";
 
 type RoleId = typeof ROLES[number]["id"];
 
@@ -578,15 +578,15 @@ function ConfirmationBlock({ firstName, phone }: { firstName: string; phone: str
         </p>
         <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-primary">
           <MessageCircle className="w-3.5 h-3.5" />
-          <span>Yobbante GP</span>
+          <span>Konnekt</span>
         </div>
         <div className="mt-2 space-y-1.5 text-sm">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-foreground">+221 78 122 18 91</span>
+            <span className="font-bold text-foreground">+221 78 926 97 56</span>
             <span className="text-xs text-muted-foreground">(depuis l'étranger)</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="font-bold text-foreground">122</span>
+            <span className="font-bold text-foreground">926</span>
             <span className="text-xs text-muted-foreground">(depuis le Sénégal)</span>
           </div>
         </div>

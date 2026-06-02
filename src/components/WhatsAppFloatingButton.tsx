@@ -12,7 +12,7 @@ export function WhatsAppFloatingButton() {
 
   return (
     <a
-      href="https://wa.me/221781221891"
+      href="https://wa.me/221789269756"
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Besoin d'aide ? Écrivez-nous sur WhatsApp"
