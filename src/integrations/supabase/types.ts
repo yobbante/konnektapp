@@ -1945,16 +1945,20 @@ export type Database = {
           id_type: string | null
           insurance_document_url: string | null
           international_destinations: string[] | null
+          is_active: boolean
           kyc_level: number
           kyc_status: string
           last_warning_at: string | null
           max_response_delay_hours: number | null
           navette_locked_at: string | null
+          nom: string | null
           phone: string
           phone_secondary: string | null
+          prenom: string | null
           price_locked_at: string | null
           rating: number | null
           reception_address: string | null
+          reference: string | null
           road_type: Database["public"]["Enums"]["road_type"] | null
           selfie_url: string | null
           status: Database["public"]["Enums"]["gp_status"]
@@ -2005,16 +2009,20 @@ export type Database = {
           id_type?: string | null
           insurance_document_url?: string | null
           international_destinations?: string[] | null
+          is_active?: boolean
           kyc_level?: number
           kyc_status?: string
           last_warning_at?: string | null
           max_response_delay_hours?: number | null
           navette_locked_at?: string | null
+          nom?: string | null
           phone: string
           phone_secondary?: string | null
+          prenom?: string | null
           price_locked_at?: string | null
           rating?: number | null
           reception_address?: string | null
+          reference?: string | null
           road_type?: Database["public"]["Enums"]["road_type"] | null
           selfie_url?: string | null
           status?: Database["public"]["Enums"]["gp_status"]
@@ -2065,16 +2073,20 @@ export type Database = {
           id_type?: string | null
           insurance_document_url?: string | null
           international_destinations?: string[] | null
+          is_active?: boolean
           kyc_level?: number
           kyc_status?: string
           last_warning_at?: string | null
           max_response_delay_hours?: number | null
           navette_locked_at?: string | null
+          nom?: string | null
           phone?: string
           phone_secondary?: string | null
+          prenom?: string | null
           price_locked_at?: string | null
           rating?: number | null
           reception_address?: string | null
+          reference?: string | null
           road_type?: Database["public"]["Enums"]["road_type"] | null
           selfie_url?: string | null
           status?: Database["public"]["Enums"]["gp_status"]
