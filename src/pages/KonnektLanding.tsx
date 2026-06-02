@@ -45,7 +45,7 @@ const steps = [
   },
 ];
 
-const partners = ["Wave", "Orange Money", "DHL", "Colissimo", "UPS", "Yobbanté"];
+const partners = ["Wave", "Orange Money", "DHL", "Colissimo", "Chronopost"];
 
 const testimonials = [
   {
