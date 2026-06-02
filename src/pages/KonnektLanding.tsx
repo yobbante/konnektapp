@@ -114,6 +114,18 @@ export default function KonnektLanding() {
         <meta property="og:description" content="Connectez vos trajets à des colis à transporter. De Dakar à Paris, New York ou Dubai." />
         <meta property="og:url" content="https://usekonnekt.com/" />
         <meta property="og:type" content="website" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "Konnekt",
+          url: "https://usekonnekt.com",
+          description: "Marketplace internationale des transporteurs. GP, routiers, maritimes, aeriens.",
+          contactPoint: {
+            "@type": "ContactPoint",
+            telephone: "+221784604003",
+            contactType: "customer service",
+          },
+        })}</script>
       </Helmet>
 
       {/* ───── NAV ───── */}
