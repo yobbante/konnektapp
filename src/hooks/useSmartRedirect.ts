@@ -116,32 +116,32 @@ export function useSmartRedirect() {
         .maybeSingle();
 
       if (gpProfile) {
-        // GP Occasionnel = client, don't redirect to GP dashboard
+        // GP Occasionnel = client, ne jamais rediriger vers le dashboard GP
         if (gpProfile.gp_type === "occasionnel") {
-          navigate("/");
-          return { 
-            success: true, 
-            destination: "/", 
-            role: "client" 
+          navigate("/app");
+          return {
+            success: true,
+            destination: "/app",
+            role: "client"
           };
         }
-        // Route based on gp_type - all GPs go to their overview page
+        // GP (transporteur) → dashboard GP. Routier garde son espace.
         const isRoutier = gpProfile.gp_type === "routier";
-        const destination = isRoutier ? "/routier/apercu" : "/gp/apercu";
+        const destination = isRoutier ? "/routier/apercu" : "/gp/dashboard";
         navigate(destination);
-        return { 
-          success: true, 
-          destination, 
-          role: "transporteur" 
+        return {
+          success: true,
+          destination,
+          role: "gp"
         };
       }
 
-      // 4. Client standard → Accueil (car pas de pending action = login depuis header)
-      navigate("/");
-      return { 
-        success: true, 
-        destination: "/", 
-        role: "client" 
+      // 4. Client standard (role = 'user') → /app
+      navigate("/app");
+      return {
+        success: true,
+        destination: "/app",
+        role: "user"
       };
 
     } catch (error) {
