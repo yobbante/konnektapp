@@ -114,6 +114,18 @@ export default function KonnektLanding() {
         <meta property="og:description" content="Connectez vos trajets à des colis à transporter. De Dakar à Paris, New York ou Dubai." />
         <meta property="og:url" content="https://usekonnekt.com/" />
         <meta property="og:type" content="website" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "Konnekt",
+          url: "https://usekonnekt.com",
+          description: "Marketplace internationale des transporteurs. GP, routiers, maritimes, aeriens.",
+          contactPoint: {
+            "@type": "ContactPoint",
+            telephone: "+221784604003",
+            contactType: "customer service",
+          },
+        })}</script>
       </Helmet>
 
       {/* ───── NAV ───── */}
@@ -385,6 +397,15 @@ export default function KonnektLanding() {
                   <li><Link to="/gp/connexion" className="text-sm text-[#0D1B2A]/60 hover:text-[#0D1B2A] transition-colors">Se connecter</Link></li>
                   <li><Link to="/cgu" className="text-sm text-[#0D1B2A]/60 hover:text-[#0D1B2A] transition-colors">CGU</Link></li>
                   <li><Link to="/confidentialite" className="text-sm text-[#0D1B2A]/60 hover:text-[#0D1B2A] transition-colors">Confidentialité</Link></li>
+                </ul>
+              </div>
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-widest text-[#0D1B2A]/70">Ressources</div>
+                <ul className="mt-4 space-y-2.5">
+                  <li><Link to="/blog/gp-dakar-paris" className="text-sm text-[#0D1B2A]/60 hover:text-[#0D1B2A] transition-colors">Guide GP Dakar-Paris</Link></li>
+                  <li><Link to="/blog/envoyer-colis-dakar-paris" className="text-sm text-[#0D1B2A]/60 hover:text-[#0D1B2A] transition-colors">Envoyer un colis Dakar-Paris</Link></li>
+                  <li><Link to="/blog/konnekt-senegal" className="text-sm text-[#0D1B2A]/60 hover:text-[#0D1B2A] transition-colors">Konnekt Sénégal</Link></li>
+                  <li><Link to="/blog/grand-porteur-definition" className="text-sm text-[#0D1B2A]/60 hover:text-[#0D1B2A] transition-colors">Qu'est-ce qu'un GP ?</Link></li>
                 </ul>
               </div>
               <div>

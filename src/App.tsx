@@ -21,6 +21,7 @@ import { SmartScrollTop } from "@/hooks/useSmartScrollTop";
 import Index from "./pages/Index";
 import KonnektLanding from "./pages/KonnektLanding";
 import TransportModePage from "./pages/transport/TransportModePage";
+import BlogArticlePage from "./pages/blog/BlogArticlePage";
 import TransporteurBetaDashboard from "./pages/transporteur/TransporteurBetaDashboard";
 import TransporteurQuickOnboard from "./pages/TransporteurQuickOnboard";
 import BetaLandingPage from "./pages/BetaLandingPage";
@@ -198,6 +199,7 @@ const App = () => (
             ============================================ */}
             <Route path="/" element={<KonnektLanding />} />
             <Route path="/transport/:slug" element={<TransportModePage />} />
+            <Route path="/blog/:slug" element={<BlogArticlePage />} />
             <Route path="/app" element={<Index />} />
             <Route path="/t" element={<TransporteurQuickOnboard />} />
             <Route path="/beta" element={<BetaLandingPage />} />
