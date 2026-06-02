@@ -794,6 +794,39 @@ export type Database = {
           },
         ]
       }
+      dossiers: {
+        Row: {
+          assigned_transporteur_ref: string | null
+          created_at: string
+          id: string
+          poids: number | null
+          ref: string
+          status: string
+          updated_at: string
+          ville: string | null
+        }
+        Insert: {
+          assigned_transporteur_ref?: string | null
+          created_at?: string
+          id?: string
+          poids?: number | null
+          ref: string
+          status?: string
+          updated_at?: string
+          ville?: string | null
+        }
+        Update: {
+          assigned_transporteur_ref?: string | null
+          created_at?: string
+          id?: string
+          poids?: number | null
+          ref?: string
+          status?: string
+          updated_at?: string
+          ville?: string | null
+        }
+        Relationships: []
+      }
       escrow_logs: {
         Row: {
           action: string
@@ -3044,6 +3077,42 @@ export type Database = {
           min_spent?: number
           name?: string
           perks?: string[] | null
+        }
+        Relationships: []
+      }
+      manual_departures: {
+        Row: {
+          created_at: string
+          date_depart: string | null
+          destination: string | null
+          gp_profile_id: string | null
+          gp_reference: string | null
+          id: string
+          poids_kg: number | null
+          sender_phone: string | null
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          date_depart?: string | null
+          destination?: string | null
+          gp_profile_id?: string | null
+          gp_reference?: string | null
+          id?: string
+          poids_kg?: number | null
+          sender_phone?: string | null
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          date_depart?: string | null
+          destination?: string | null
+          gp_profile_id?: string | null
+          gp_reference?: string | null
+          id?: string
+          poids_kg?: number | null
+          sender_phone?: string | null
+          source?: string
         }
         Relationships: []
       }
@@ -6303,6 +6372,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      transporteurs: {
+        Row: {
+          created_at: string
+          id: string
+          nom: string | null
+          prenom: string | null
+          reference: string | null
+          telephone_1: string | null
+          telephone_2: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nom?: string | null
+          prenom?: string | null
+          reference?: string | null
+          telephone_1?: string | null
+          telephone_2?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nom?: string | null
+          prenom?: string | null
+          reference?: string | null
+          telephone_1?: string | null
+          telephone_2?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       tva_records: {
         Row: {

@@ -1,0 +1,248 @@
+// gp-bot — Bot WhatsApp unifie Konnekt / Yobbante (numero 926)
+// Identification unifiee (transporteurs + profiles role gp), MES MISSIONS,
+// DEP (depart dans les 2 systemes), STATUS (stats perso).
+// Public endpoint (verify_jwt = false).
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+const ADMIN_PHONE = "+221784604003";
+
+const ONBOARD_REPLY = `Salam !
+Vous n etes pas encore enregistre.
+Inscrivez-vous gratuitement :
+usekonnekt.com/beta
+
+Deja inscrit ? Envoyez votre prenom.`;
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function normalize(text: string): string {
+  return (text || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s\/]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function digitsOnly(phone: string): string {
+  return (phone || "").replace(/\D/g, "");
+}
+
+function extractMessage(body: any): { sender: string; text: string } {
+  let sender = body.from ?? body.From ?? body.sender_phone ?? body.sender ?? "";
+  let text = body.body ?? body.Body ?? body.message ?? body.text ?? "";
+  try {
+    const msg = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+    if (msg) {
+      sender = sender || msg.from || "";
+      text = text || msg.text?.body || "";
+    }
+  } catch (_) { /* ignore */ }
+  return { sender: String(sender), text: String(text) };
+}
+
+// Compare deux numeros sur les 9 derniers chiffres (numero national)
+function phoneMatches(a: string, b: string): boolean {
+  const da = digitsOnly(a);
+  const db = digitsOnly(b);
+  if (da.length < 8 || db.length < 8) return false;
+  return da === db || da.slice(-9) === db.slice(-9);
+}
+
+const ACTIVE_DOSSIER_EXCLUDE = ["DELIVERED", "CANCELLED"];
+
+async function getActiveMissions(admin: any, ref: string) {
+  if (!ref) return [];
+  const { data } = await admin
+    .from("dossiers")
+    .select("ref, ville, poids, status")
+    .eq("assigned_transporteur_ref", ref)
+    .not("status", "in", `(${ACTIVE_DOSSIER_EXCLUDE.join(",")})`);
+  return data ?? [];
+}
+
+function dossierStatusLabel(status: string): string {
+  const map: Record<string, string> = {
+    CREATED: "A collecter",
+    TO_COLLECT: "A collecter",
+    COLLECTED: "Collecte",
+    WEIGHT_PENDING: "Poids a enregistrer",
+    IN_TRANSIT: "En transit",
+  };
+  return map[status] || status;
+}
+
+function formatMissions(missions: any[]): string {
+  if (!missions.length) return "Vous n avez aucune mission active.";
+  const lines = missions.map((m) => {
+    const label = dossierStatusLabel(m.status);
+    const action = m.status === "WEIGHT_PENDING"
+      ? `POIDS ${m.ref} [kg]kg`
+      : `COLLECTE ${m.ref}`;
+    return `${m.ref} · ${m.ville ?? "?"} · ${m.poids ?? "?"}kg\nStatut : ${label}\n→ ${action}`;
+  });
+  return `Vos missions actives :\n\n${lines.join("\n\n")}`;
+}
+
+// DEP Paris 15/06 25kg
+function parseDep(normalized: string): { dest: string; date: string; kg: number } | null {
+  const m = normalized.match(/^dep\s+(.+?)\s+(\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?)\s+(\d+(?:\.\d+)?)\s*kg?$/);
+  if (!m) return null;
+  return { dest: m[1].trim(), date: m[2], kg: parseFloat(m[3]) };
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
+
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+  const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!SUPABASE_URL || !SERVICE_ROLE) return json({ error: "Server misconfigured" }, 500);
+
+  let body: any;
+  try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+
+  const { sender, text } = extractMessage(body);
+  if (!sender) return json({ error: "Missing sender" }, 400);
+
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const normalized = normalize(text);
+
+  // ----- PARTIE 1 : Identification unifiee -----
+  // 1) Table transporteurs (Yobbante)
+  const { data: transporteurs } = await admin
+    .from("transporteurs")
+    .select("telephone_1, telephone_2, prenom, nom, reference");
+  const yobbante = (transporteurs ?? []).find((t: any) =>
+    phoneMatches(t.telephone_1 ?? "", sender) || phoneMatches(t.telephone_2 ?? "", sender)
+  ) || null;
+
+  // 2) Table profiles (Konnekt, GP)
+  const { data: profilesGp } = await admin
+    .from("profiles")
+    .select("user_id, full_name, phone")
+    .eq("is_gp", true);
+  const konnektProfile = (profilesGp ?? []).find((p: any) => phoneMatches(p.phone ?? "", sender)) || null;
+
+  // Reference GP cote Konnekt (gp_profiles)
+  let gpProfile: any = null;
+  if (konnektProfile) {
+    const { data: gp } = await admin
+      .from("gp_profiles")
+      .select("id, reference, business_name, prenom, nom, phone")
+      .eq("user_id", konnektProfile.user_id)
+      .maybeSingle();
+    gpProfile = gp || null;
+  }
+  if (!gpProfile) {
+    // Fallback: match direct sur gp_profiles.phone
+    const { data: gpRows } = await admin
+      .from("gp_profiles")
+      .select("id, reference, business_name, prenom, nom, phone");
+    gpProfile = (gpRows ?? []).find((g: any) => phoneMatches(g.phone ?? "", sender)) || null;
+  }
+
+  const isUnified = !!yobbante && (!!konnektProfile || !!gpProfile);
+  const reference = gpProfile?.reference || yobbante?.reference || null;
+  const knownName = gpProfile?.prenom || gpProfile?.business_name || yobbante?.prenom || "GP";
+
+  // Inconnu dans les deux -> onboarding Konnekt + notif admin
+  if (!yobbante && !konnektProfile && !gpProfile) {
+    await admin.from("whatsapp_inbound_messages").insert({
+      sender_phone: sender,
+      message_body: text,
+      tag: "unknown_926",
+      is_known_gp: false,
+      bot_reply: ONBOARD_REPLY,
+      raw_payload: body,
+    });
+    const adminNote = `Nouveau contact inconnu sur 926 :\n${sender} · A identifier`;
+    await admin.from("whatsapp_inbound_messages").insert({
+      sender_phone: ADMIN_PHONE,
+      message_body: adminNote,
+      tag: "admin_notification",
+      is_known_gp: false,
+      raw_payload: { source: "unknown_926", from: sender },
+    });
+    return json({ handled: true, type: "onboarding", reply: ONBOARD_REPLY, admin_notify: { to: ADMIN_PHONE, message: adminNote } });
+  }
+
+  // ----- PARTIE 3 : DEP cree dans les 2 systemes -----
+  const dep = parseDep(normalized);
+  if (dep) {
+    await admin.from("manual_departures").insert({
+      gp_reference: reference,
+      gp_profile_id: gpProfile?.id ?? null,
+      destination: dep.dest,
+      date_depart: dep.date,
+      poids_kg: dep.kg,
+      source: "whatsapp_926",
+      sender_phone: sender,
+    });
+    const reply = `Depart enregistre :\n${dep.dest} · ${dep.date} · ${dep.kg}kg\n${gpProfile ? "Visible dans votre dashboard Konnekt." : "Merci !"}`;
+    await admin.from("whatsapp_inbound_messages").insert({
+      sender_phone: sender, message_body: text, tag: "dep_declared", is_known_gp: true, bot_reply: reply, raw_payload: body,
+    });
+    return json({ handled: true, type: "dep", reply });
+  }
+
+  // ----- PARTIE 2 : MES MISSIONS -----
+  if (normalized === "1" || normalized.includes("mes missions")) {
+    const missions = await getActiveMissions(admin, reference);
+    const reply = formatMissions(missions);
+    await admin.from("whatsapp_inbound_messages").insert({
+      sender_phone: sender, message_body: text, tag: "mes_missions", is_known_gp: true, bot_reply: reply, raw_payload: body,
+    });
+    return json({ handled: true, type: "missions", reply, unified: isUnified });
+  }
+
+  // ----- PARTIE 4 : STATUS (stats perso) -----
+  if (normalized === "status" || normalized.includes("tableau de bord")) {
+    const missions = await getActiveMissions(admin, reference);
+    let delivered = 0, monthCount = 0; let nextDep: any = null;
+    if (reference) {
+      const { count: delCount } = await admin
+        .from("dossiers").select("*", { count: "exact", head: true })
+        .eq("assigned_transporteur_ref", reference).eq("status", "DELIVERED");
+      delivered = delCount || 0;
+      const since = new Date(); since.setDate(1);
+      const { count: mCount } = await admin
+        .from("dossiers").select("*", { count: "exact", head: true })
+        .eq("assigned_transporteur_ref", reference).gte("created_at", since.toISOString());
+      monthCount = mCount || 0;
+    }
+    if (gpProfile?.id) {
+      const { data: deps } = await admin
+        .from("manual_departures").select("destination, date_depart")
+        .eq("gp_profile_id", gpProfile.id).order("created_at", { ascending: false }).limit(1);
+      nextDep = deps?.[0] || null;
+    }
+    const reply = `Votre tableau de bord :\nMissions ce mois : ${monthCount}\nLivraisons reussies : ${delivered}\nEn cours : ${missions.length}\nProchain depart : ${nextDep ? `${nextDep.date_depart} · ${nextDep.destination}` : "aucun"}\n\nVotre profil Konnekt :\nusekonnekt.com/gp/dashboard`;
+    await admin.from("whatsapp_inbound_messages").insert({
+      sender_phone: sender, message_body: text, tag: "status", is_known_gp: true, bot_reply: reply, raw_payload: body,
+    });
+    return json({ handled: true, type: "status", reply });
+  }
+
+  // Profil connu mais commande non reconnue -> menu
+  const menu = `Bonjour ${knownName} !\n\n1 ou MES MISSIONS : vos missions actives\nDEP [ville] [date] [kg] : declarer un depart\nSTATUS : votre tableau de bord`;
+  await admin.from("whatsapp_inbound_messages").insert({
+    sender_phone: sender, message_body: text, tag: "menu", is_known_gp: true, bot_reply: menu, raw_payload: body,
+  });
+  return json({ handled: true, type: "menu", reply: menu, unified: isUnified });
+});

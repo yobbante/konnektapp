@@ -30,6 +30,7 @@ import { DocumentVerificationSheet } from "@/components/gp/DocumentVerificationS
 import { PremiumCTABanner } from "@/components/gp/PremiumCTABanner";
 import { ShareOfferButton } from "@/components/share/ShareOfferButton";
 import { SuperGPBadge } from "@/components/gp/SuperGPBadge";
+import { YobbanteMissionsSection } from "@/components/gp/YobbanteMissionsSection";
 import { useGPProfile } from "@/hooks/useGPProfile";
 import { isGPPremium } from "@/lib/premiumGating";
 import { getOrderStatusLabel, getOrderStatusColor } from "@/lib/transportTypes";
@@ -281,6 +282,9 @@ export default function GPApercuPage() {
       </div>
 
       <KonnektWelcomeBanner gpProfile={gpProfile} />
+
+      <YobbanteMissionsSection reference={(gpProfile as any)?.reference ?? null} />
+
 
       {!isPending &&
       <GPKYCProgressCard
