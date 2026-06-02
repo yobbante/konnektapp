@@ -40,19 +40,15 @@ export function currencyFromPhone(phone: string): Currency {
   return code ? currencyFromDialCode(code) : "XOF";
 }
 
-/** Détecte le pays par défaut via navigator.language (FR→FR, en-US→US, défaut→SN). */
+/**
+ * Détecte le pays par défaut via navigator.language.
+ * Règle: fr-SN / sn → SN (+221), fr-FR → FR (+33), en-US → US (+1), sinon → SN (+221).
+ */
 export function detectDefaultCountry(): string {
   if (typeof navigator === "undefined") return "SN";
   const lang = (navigator.language || "").toLowerCase();
-  if (lang.startsWith("fr-fr") || lang === "fr") return "FR";
-  if (lang.startsWith("en-us") || lang === "en") return "US";
-  if (lang.startsWith("fr-be")) return "BE";
-  if (lang.startsWith("fr-ch")) return "CH";
-  if (lang.startsWith("fr-ca")) return "CA";
-  if (lang.startsWith("en-gb")) return "GB";
-  if (lang.startsWith("es")) return "ES";
-  if (lang.startsWith("it")) return "IT";
-  if (lang.startsWith("de")) return "DE";
-  if (lang.startsWith("pt")) return "PT";
+  if (lang.includes("fr-sn") || lang.includes("sn")) return "SN";
+  if (lang.includes("fr-fr")) return "FR";
+  if (lang.includes("en-us")) return "US";
   return "SN";
 }

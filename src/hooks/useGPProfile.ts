@@ -49,7 +49,8 @@ export function useGPProfile() {
   const loadProfile = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { navigate("/auth"); return; }
+      // Non connecté → page de connexion GP dédiée (jamais le flow d'inscription)
+      if (!user) { navigate("/gp/connexion"); return; }
 
       const { data: profile } = await supabase
         .from("gp_profiles")
@@ -57,7 +58,8 @@ export function useGPProfile() {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (!profile) { navigate("/gp/inscription"); return; }
+      // Connecté mais sans profil GP → connexion GP (ne pas charger le flow d'inscription)
+      if (!profile) { navigate("/gp/connexion"); return; }
       setGpProfile(profile as GPProfileData);
 
       // Load order counts
