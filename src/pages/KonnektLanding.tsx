@@ -30,18 +30,18 @@ const transportModes = [
 const steps = [
   {
     n: "1",
-    title: "Créez votre profil",
-    desc: "Inscription en 3 minutes. Déclarez vos trajets et votre capacité disponible.",
+    title: "Inscris-toi en 2 min",
+    desc: "Formulaire simple, sans mot de passe.",
   },
   {
     n: "2",
-    title: "Recevez des demandes",
-    desc: "Des colis à transporter vous sont proposés selon vos trajets. Vous acceptez ce qui vous convient.",
+    title: "Reçois ta validation",
+    desc: "Notre équipe active ton compte sous 24h par WhatsApp.",
   },
   {
     n: "3",
-    title: "Soyez payé",
-    desc: "Paiement sécurisé après livraison. Wave, Orange Money ou virement.",
+    title: "Accède à tes missions",
+    desc: "Dashboard web + bot WhatsApp.",
   },
 ];
 
