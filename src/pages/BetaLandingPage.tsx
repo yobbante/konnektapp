@@ -135,7 +135,6 @@ export default function BetaLandingPage() {
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
-    document.title = hasRef ? "Konnekt Bêta — Bienvenue partenaire" : "Konnekt — Rejoindre";
     if (!hasRef) return;
     void (async () => {
       const { data } = await supabase
