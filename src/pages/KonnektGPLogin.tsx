@@ -17,8 +17,8 @@ import {
 import { PhoneCountrySelect, useDetectedCountry, buildFullPhone } from "@/components/PhoneCountrySelect";
 
 const KONNEKT_WA = "221781221891";
-const SUPPORT_TEL = "+221 78 460 40 03";
-const SUPPORT_TEL_RAW = "221784604003";
+const SUPPORT_TEL = "+221 78 122 18 91";
+const SUPPORT_TEL_RAW = "221781221891";
 
 function cleanPhone(v: string) {
   const t = v.trim();
