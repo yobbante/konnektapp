@@ -329,7 +329,29 @@ const ARTICLES: Record<string, Article> = {
           },
           {
             t: "p",
-            text: "Pour comparer concrètement les options, consultez notre comparatif des prix et délais pour envoyer un colis Dakar-Paris.",
+            text: "Pour comparer concrètement les options, consultez notre comparatif des prix et délais pour envoyer un colis Dakar-Paris. La différence de prix s'explique simplement : le GP voyage de toute manière et ne facture que l'espace partagé, sans les frais fixes d'un transporteur professionnel.",
+          },
+        ],
+      },
+      {
+        h2: "Le GP est-il fiable ?",
+        blocks: [
+          {
+            t: "p",
+            text: "La principale crainte des expéditeurs concerne la fiabilité. C'est précisément ce que résolvent les plateformes comme Konnekt : chaque GP est identifié, vérifié et noté. Le paiement est sécurisé et n'est libéré qu'une fois le colis livré, ce qui protège à la fois l'expéditeur et le transporteur.",
+          },
+          {
+            t: "p",
+            text: "Cette professionnalisation transforme une pratique autrefois informelle en un véritable service de transport. Le GP devient un acteur de confiance, suivi du dépôt jusqu'à la remise finale du colis à destination.",
+          },
+        ],
+      },
+      {
+        h2: "Comment devenir GP ?",
+        blocks: [
+          {
+            t: "p",
+            text: "Devenir GP est accessible à tout voyageur régulier. Il suffit de s'inscrire en quelques minutes, de déclarer ses trajets et sa capacité disponible, puis d'accepter les colis proposés. Pour vous lancer, suivez notre guide complet pour devenir GP Dakar-Paris ou rejoignez directement le réseau Konnekt.",
           },
         ],
       },
