@@ -309,6 +309,10 @@ const ARTICLES: Record<string, Article> = {
             t: "p",
             text: "Un Grand Porteur est un particulier qui voyage régulièrement entre deux pays et transporte des colis dans ses bagages contre rémunération. C'est un maillon essentiel du transport informel devenu professionnel grâce à des plateformes comme Konnekt.",
           },
+          {
+            t: "p",
+            text: "Le terme « Grand Porteur » est particulièrement répandu au sein de la diaspora africaine, où l'envoi de colis vers le pays d'origine est une pratique courante. Le GP profite de ses bagages autorisés pour rendre service tout en générant un revenu complémentaire à chaque voyage.",
+          },
         ],
       },
       {
