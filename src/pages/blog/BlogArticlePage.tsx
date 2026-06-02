@@ -257,6 +257,23 @@ const ARTICLES: Record<string, Article> = {
             t: "p",
             text: "Paris, Lyon, Marseille, New York, Montréal, Dubai, Abidjan, Douala et 25+ destinations. Le réseau Konnekt couvre les principaux corridors de la diaspora et du commerce ouest-africain.",
           },
+          {
+            t: "p",
+            text: "Chaque corridor a ses spécificités : l'axe Dakar-Paris est le plus actif grâce aux nombreux vols quotidiens, tandis que les liaisons vers New York et Montréal répondent aux besoins de la diaspora nord-américaine. Vers Dubai, Abidjan et Douala, Konnekt facilite aussi bien le transport personnel que le petit commerce.",
+          },
+        ],
+      },
+      {
+        h2: "Tous les modes de transport",
+        blocks: [
+          {
+            t: "p",
+            text: "Au-delà des GPs, Konnekt rassemble les transporteurs routiers pour le fret terrestre en Afrique de l'Ouest, le fret maritime pour les conteneurs et gros volumes, le fret aérien pour les envois rapides et les coursiers pour la livraison urbaine. Cette approche multimodale fait de Konnekt une plateforme unique au Sénégal.",
+          },
+          {
+            t: "p",
+            text: "Que vous soyez un particulier qui envoie un colis ou un professionnel qui expédie régulièrement, vous trouvez sur Konnekt le mode de transport adapté à votre budget et à votre délai. Pour comprendre le rôle central du GP, lisez notre définition du Grand Porteur.",
+          },
         ],
       },
     ],
