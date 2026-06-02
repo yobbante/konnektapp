@@ -239,6 +239,10 @@ const ARTICLES: Record<string, Article> = {
             t: "p",
             text: "Chaque transporteur est vérifié, noté et suivi pour garantir la fiabilité. Pour mieux comprendre l'acteur clé de l'écosystème, lisez notre définition du Grand Porteur.",
           },
+          {
+            t: "p",
+            text: "Née au Sénégal, Konnekt répond à un besoin concret : rendre le transport de colis simple, abordable et fiable entre l'Afrique de l'Ouest et le reste du monde. La plateforme centralise les demandes, organise la mise en relation et sécurise les paiements, ce qui supprime l'incertitude des arrangements informels.",
+          },
         ],
       },
       {
