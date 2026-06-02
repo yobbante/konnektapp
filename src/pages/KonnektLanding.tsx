@@ -122,7 +122,7 @@ export default function KonnektLanding() {
           description: "Marketplace internationale des transporteurs. GP, routiers, maritimes, aeriens.",
           contactPoint: {
             "@type": "ContactPoint",
-            telephone: "+221784604003",
+            telephone: "+221786078080",
             contactType: "customer service",
           },
         })}</script>
