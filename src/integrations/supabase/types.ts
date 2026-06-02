@@ -6568,6 +6568,39 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_inbound_messages: {
+        Row: {
+          bot_reply: string | null
+          created_at: string
+          id: string
+          is_known_gp: boolean
+          message_body: string | null
+          raw_payload: Json | null
+          sender_phone: string
+          tag: string | null
+        }
+        Insert: {
+          bot_reply?: string | null
+          created_at?: string
+          id?: string
+          is_known_gp?: boolean
+          message_body?: string | null
+          raw_payload?: Json | null
+          sender_phone: string
+          tag?: string | null
+        }
+        Update: {
+          bot_reply?: string | null
+          created_at?: string
+          id?: string
+          is_known_gp?: boolean
+          message_body?: string | null
+          raw_payload?: Json | null
+          sender_phone?: string
+          tag?: string | null
+        }
+        Relationships: []
+      }
       withdrawal_requests: {
         Row: {
           admin_notes: string | null

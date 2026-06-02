@@ -52,3 +52,6 @@ verify_jwt = false
 
 [functions.beta-register]
 verify_jwt = false
+
+[functions.webhook-whatsapp]
+verify_jwt = false
