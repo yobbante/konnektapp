@@ -400,6 +400,15 @@ export default function KonnektLanding() {
                 </ul>
               </div>
               <div>
+                <div className="text-xs font-semibold uppercase tracking-widest text-[#0D1B2A]/70">Ressources</div>
+                <ul className="mt-4 space-y-2.5">
+                  <li><Link to="/blog/gp-dakar-paris" className="text-sm text-[#0D1B2A]/60 hover:text-[#0D1B2A] transition-colors">Guide GP Dakar-Paris</Link></li>
+                  <li><Link to="/blog/envoyer-colis-dakar-paris" className="text-sm text-[#0D1B2A]/60 hover:text-[#0D1B2A] transition-colors">Envoyer un colis Dakar-Paris</Link></li>
+                  <li><Link to="/blog/konnekt-senegal" className="text-sm text-[#0D1B2A]/60 hover:text-[#0D1B2A] transition-colors">Konnekt Sénégal</Link></li>
+                  <li><Link to="/blog/grand-porteur-definition" className="text-sm text-[#0D1B2A]/60 hover:text-[#0D1B2A] transition-colors">Qu'est-ce qu'un GP ?</Link></li>
+                </ul>
+              </div>
+              <div>
                 <div className="text-xs font-semibold uppercase tracking-widest text-[#0D1B2A]/70">Réseaux</div>
                 <div className="mt-4 flex items-center gap-3">
                   <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-9 h-9 rounded-full grid place-items-center bg-[#0D1B2A]/5 hover:bg-[#0D1B2A]/10 transition-colors">
