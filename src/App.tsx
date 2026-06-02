@@ -21,6 +21,7 @@ import { SmartScrollTop } from "@/hooks/useSmartScrollTop";
 import Index from "./pages/Index";
 import KonnektLanding from "./pages/KonnektLanding";
 import TransportModePage from "./pages/transport/TransportModePage";
+import BlogArticlePage from "./pages/blog/BlogArticlePage";
 import TransporteurBetaDashboard from "./pages/transporteur/TransporteurBetaDashboard";
 import TransporteurQuickOnboard from "./pages/TransporteurQuickOnboard";
 import BetaLandingPage from "./pages/BetaLandingPage";
