@@ -235,10 +235,10 @@ export default function BetaLandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
       <Helmet>
-        <title>Konnekt Beta — Rejoignez la plateforme des transporteurs</title>
-        <meta name="description" content="Inscription beta Konnekt : GP, transporteurs routiers, maritimes, aériens. Recevez vos missions Yobbanté." />
+        <title>Rejoindre Konnekt — Inscription transporteur</title>
+        <meta name="description" content="Inscription beta Konnekt : GP, transporteurs routiers, maritimes, aériens. Recevez vos missions de transport." />
         <link rel="canonical" href="https://usekonnekt.com/beta" />
-        <meta property="og:title" content="Konnekt Beta — Inscription transporteurs" />
+        <meta property="og:title" content="Rejoindre Konnekt — Inscription transporteur" />
         <meta property="og:url" content="https://usekonnekt.com/beta" />
         <meta property="og:type" content="website" />
       </Helmet>
