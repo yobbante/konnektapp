@@ -198,6 +198,7 @@ const App = () => (
             ============================================ */}
             <Route path="/" element={<KonnektLanding />} />
             <Route path="/transport/:slug" element={<TransportModePage />} />
+            <Route path="/blog/:slug" element={<BlogArticlePage />} />
             <Route path="/app" element={<Index />} />
             <Route path="/t" element={<TransporteurQuickOnboard />} />
             <Route path="/beta" element={<BetaLandingPage />} />
