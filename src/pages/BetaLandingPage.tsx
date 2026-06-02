@@ -254,10 +254,7 @@ export default function BetaLandingPage() {
             </div>
 
           </Link>
-          <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-semibold border border-primary/30 bg-primary/10 text-primary rounded-full px-2.5 py-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            Accès prioritaire
-          </span>
+
         </div>
       </header>
 
