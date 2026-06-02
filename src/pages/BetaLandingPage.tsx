@@ -576,7 +576,11 @@ function ConfirmationBlock({ firstName, phone }: { firstName: string; phone: str
           depuis votre numéro{" "}
           <span className="font-semibold">{phone || "—"}</span> :
         </p>
-        <div className="mt-3 space-y-1.5 text-sm">
+        <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-primary">
+          <MessageCircle className="w-3.5 h-3.5" />
+          <span>Yobbante GP</span>
+        </div>
+        <div className="mt-2 space-y-1.5 text-sm">
           <div className="flex items-center gap-2">
             <span className="font-bold text-foreground">+221 78 122 18 91</span>
             <span className="text-xs text-muted-foreground">(depuis l'étranger)</span>
