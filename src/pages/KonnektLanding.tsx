@@ -313,7 +313,7 @@ export default function KonnektLanding() {
             to { transform: translateX(-50%); }
           }
           .animate-konnekt-marquee {
-            animation: konnekt-marquee 24s linear infinite;
+            animation: konnekt-marquee 40s linear infinite;
           }
         `}</style>
       </section>
