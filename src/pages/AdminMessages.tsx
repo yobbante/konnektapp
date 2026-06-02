@@ -22,6 +22,13 @@ interface Conversation {
   order_number?: string;
 }
 
+interface KonnektSignup {
+  id: string;
+  sender_phone: string;
+  message_body: string | null;
+  created_at: string;
+}
+
 export default function AdminMessages() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
