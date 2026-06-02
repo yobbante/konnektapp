@@ -42,6 +42,8 @@ export default function AdminMessages() {
   const [selectedContactName, setSelectedContactName] = useState<string>("Conversation");
   const [loading, setLoading] = useState(true);
   const [showNewConversation, setShowNewConversation] = useState(false);
+  const [activeTab, setActiveTab] = useState<"conversations" | "onboarding">("conversations");
+  const [signups, setSignups] = useState<KonnektSignup[]>([]);
 
   useEffect(() => {
     if (!roleLoading && !hasAdminAccess) {
@@ -52,8 +54,23 @@ export default function AdminMessages() {
   useEffect(() => {
     if (hasAdminAccess) {
       fetchConversations();
+      fetchSignups();
     }
   }, [hasAdminAccess]);
+
+  const fetchSignups = async () => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from("whatsapp_inbound_messages")
+        .select("id, sender_phone, message_body, created_at")
+        .eq("tag", "konnekt_signup")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setSignups((data as KonnektSignup[]) || []);
+    } catch (error) {
+      console.error("Error fetching signups:", error);
+    }
+  };
 
   const fetchConversations = async () => {
     try {
