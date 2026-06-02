@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { MessageCircle, ArrowLeft, Users, Shield, Plus } from "lucide-react";
+import { MessageCircle, ArrowLeft, Users, Shield, Plus, UserPlus, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
