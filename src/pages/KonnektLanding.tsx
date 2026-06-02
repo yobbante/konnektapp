@@ -232,6 +232,36 @@ export default function KonnektLanding() {
       </section>
 
 
+      {/* ───── ORIENTATION ───── */}
+      <section className="px-4 py-12 md:py-16 bg-white border-b border-gray-100">
+        <div className="max-w-5xl mx-auto grid gap-5 md:grid-cols-2">
+          {/* Card 1 — Transporteur */}
+          <div className="rounded-2xl border p-6 md:p-8 flex flex-col" style={{ borderColor: "rgba(13,27,42,0.12)", backgroundColor: "#fff" }}>
+            <div className="w-12 h-12 rounded-xl grid place-items-center mb-4" style={{ backgroundColor: "rgba(61,170,138,0.12)" }}>
+              <Truck className="w-6 h-6" style={{ color: GREEN_DARK }} />
+            </div>
+            <h3 className="font-display text-xl md:text-2xl font-bold tracking-tight" style={{ color: NAVY }}>Vous transportez ?</h3>
+            <p className="text-sm md:text-base text-[#0D1B2A]/60 mt-2 leading-relaxed">Inscrivez-vous gratuitement.</p>
+            <Link to="/beta" className="mt-5 inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 font-semibold text-sm shadow-md transition-transform hover:-translate-y-0.5 self-start" style={{ backgroundColor: GREEN, color: "#ffffff" }}>
+              Rejoindre Konnekt <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          {/* Card 2 — Expéditeur */}
+          <div className="rounded-2xl border p-6 md:p-8 flex flex-col" style={{ borderColor: "rgba(13,27,42,0.12)", backgroundColor: "#fff" }}>
+            <div className="w-12 h-12 rounded-xl grid place-items-center mb-4" style={{ backgroundColor: "rgba(13,27,42,0.08)" }}>
+              <Luggage className="w-6 h-6" style={{ color: NAVY }} />
+            </div>
+            <h3 className="font-display text-xl md:text-2xl font-bold tracking-tight" style={{ color: NAVY }}>Vous envoyez des colis ?</h3>
+            <p className="text-sm md:text-base text-[#0D1B2A]/60 mt-2 leading-relaxed">Trouvez un transporteur vérifié.</p>
+            <a href="https://yobbante.com" target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center justify-center gap-2 border rounded-lg px-5 py-3 font-semibold text-sm transition-colors hover:bg-[#0D1B2A]/5 self-start" style={{ borderColor: "rgba(13,27,42,0.2)", color: NAVY }}>
+              Envoyer depuis Dakar <ArrowRight className="w-4 h-4" />
+            </a>
+          </div>
+        </div>
+      </section>
+
+
       {/* ───── CHIFFRES CLÉS ───── */}
       <section className="px-4 py-12 md:py-16 border-b border-gray-100 bg-gray-50">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4">
