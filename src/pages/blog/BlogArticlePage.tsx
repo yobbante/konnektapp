@@ -326,6 +326,10 @@ const ARTICLES: Record<string, Article> = {
             t: "p",
             text: "Sur un corridor populaire comme Dakar-Paris, le GP peut transporter jusqu'à 23kg de colis par voyage. Voyez notre guide pour devenir GP Dakar-Paris.",
           },
+          {
+            t: "p",
+            text: "Concrètement, le déroulé est toujours le même : annonce du voyage, réservation par les expéditeurs, collecte des colis avant le départ, transport dans les bagages enregistrés, puis remise à destination. Grâce à une plateforme comme Konnekt, chaque étape est tracée et le paiement reste bloqué tant que le colis n'est pas livré, ce qui sécurise les deux parties.",
+          },
         ],
       },
       {
