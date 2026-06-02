@@ -99,13 +99,15 @@ Deno.serve(async (req) => {
   const { data: gpRows } = await admin
     .from("gp_profiles")
     .select("id, phone, whatsapp, whatsapp_phone, phone_secondary");
-  const isKnownGp = (gpRows ?? []).some((g: any) => {
+  // Compare sur les 9 derniers chiffres (numero national) pour eviter
+  // les faux positifs lies aux indicatifs pays.
+  const senderTail = senderDigits.slice(-9);
+  const isKnownGp = senderDigits.length >= 8 && (gpRows ?? []).some((g: any) => {
     const candidates = [g.phone, g.whatsapp, g.whatsapp_phone, g.phone_secondary]
       .filter(Boolean)
-      .map((p: string) => digitsOnly(p));
-    return candidates.some(
-      (c) => c && (c === senderDigits || c.endsWith(senderDigits) || senderDigits.endsWith(c)),
-    );
+      .map((p: string) => digitsOnly(p))
+      .filter((c: string) => c.length >= 8);
+    return candidates.some((c: string) => c === senderDigits || c.slice(-9) === senderTail);
   });
 
   // 2) DETECTION INSCRIPTION KONNEKT — AVANT toute commande GP
