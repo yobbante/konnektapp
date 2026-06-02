@@ -51,7 +51,7 @@ interface AgentInfo {
   missionsCount: number;
 }
 
-const KONNEKT_BOT = "221781221891";
+const KONNEKT_BOT = "221789269756";
 
 function buildActivationWaUrl(gp: BetaGP) {
   const phone = (gp.whatsapp || gp.phone || "").replace(/\D/g, "");

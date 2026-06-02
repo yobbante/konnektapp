@@ -16,9 +16,9 @@ import {
 } from "lucide-react";
 import { PhoneCountrySelect, useDetectedCountry, buildFullPhone } from "@/components/PhoneCountrySelect";
 
-const KONNEKT_WA = "221781221891";
-const SUPPORT_TEL = "+221 78 122 18 91";
-const SUPPORT_TEL_RAW = "221781221891";
+const KONNEKT_WA = "221789269756";
+const SUPPORT_TEL = "+221 78 926 97 56";
+const SUPPORT_TEL_RAW = "221789269756";
 
 function cleanPhone(v: string) {
   const t = v.trim();

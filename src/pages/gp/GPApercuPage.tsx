@@ -1003,13 +1003,13 @@ function KonnektWelcomeBanner({ gpProfile }: { gpProfile: any }) {
             </h3>
             <p className="text-xs text-foreground/80 mt-1 leading-relaxed">
               Votre espace Konnekt est prêt. Le bot WhatsApp
-              <span className="font-semibold"> (+221 78 122 18 91) </span>
+              <span className="font-semibold"> (+221 78 926 97 56) </span>
               reste votre outil principal pour les missions au quotidien.
               Ce dashboard vous donne une vue complète de votre activité.
             </p>
             <div className="flex flex-wrap gap-2 mt-3">
               <a
-                href="https://wa.me/221781221891?text=AIDE"
+                href="https://wa.me/221789269756?text=AIDE"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-white text-xs font-semibold px-3.5 py-2 rounded-lg"
