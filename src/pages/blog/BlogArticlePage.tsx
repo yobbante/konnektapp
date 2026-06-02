@@ -187,6 +187,23 @@ const ARTICLES: Record<string, Article> = {
               "Documents",
             ],
           },
+          {
+            t: "p",
+            text: "Certains articles restent interdits ou réglementés : produits dangereux, liquides inflammables, denrées périssables et marchandises soumises à des restrictions douanières. En cas de doute, vérifiez toujours la réglementation avant de confier votre colis à un GP.",
+          },
+        ],
+      },
+      {
+        h2: "Conseils pour bien envoyer",
+        blocks: [
+          {
+            t: "p",
+            text: "Emballez soigneusement vos affaires dans un sac ou un carton solide, indiquez clairement le contenu et le destinataire, et déclarez la valeur réelle des objets. Un colis bien préparé passe la douane plus facilement et arrive en bon état.",
+          },
+          {
+            t: "p",
+            text: "Anticipez les périodes de forte demande comme les fêtes ou les vacances : les places de GP partent vite et les prix peuvent grimper. Réserver tôt vous garantit un meilleur tarif et un départ rapide. Pour devenir vous-même transporteur, lisez notre guide pour devenir GP Dakar-Paris.",
+          },
         ],
       },
     ],
