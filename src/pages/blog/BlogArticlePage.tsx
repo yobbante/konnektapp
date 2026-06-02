@@ -91,6 +91,10 @@ const ARTICLES: Record<string, Article> = {
             t: "p",
             text: "L'inscription prend moins de 2 minutes sur usekonnekt.com. Le formulaire est simple, sans mot de passe. Notre équipe active votre compte sous 24h par WhatsApp, puis vous accédez à votre dashboard web et au bot WhatsApp pour gérer vos missions.",
           },
+          {
+            t: "p",
+            text: "Une fois validé, vous publiez vos trajets Dakar-Paris avec vos dates et votre capacité. Les expéditeurs réservent, vous acceptez ce qui vous convient, puis vous collectez et transportez les colis. Après chaque livraison confirmée, votre paiement est libéré automatiquement par Wave ou Orange Money, sans avance ni risque.",
+          },
         ],
       },
       {
