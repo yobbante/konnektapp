@@ -9,6 +9,10 @@ import { supabase } from "@/integrations/supabase/client";
 export interface GPProfileData {
   id: string;
   business_name: string;
+  prenom: string | null;
+  nom: string | null;
+  is_active: boolean;
+  reference: string | null;
   gp_type: string;
   status: string;
   base_origin_city: string | null;
