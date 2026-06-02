@@ -34,7 +34,7 @@ export default function GPLanding() {
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: NAVY }}>
       <Helmet>
-        <title>Rejoignez le réseau Konnekt — Transporteurs</title>
+        <title>Espace transporteur Konnekt</title>
         <meta
           name="description"
           content="Gérez vos missions de transport partout dans le monde. Inscription gratuite, paiement Wave ou Orange Money, dashboard web et bot WhatsApp."

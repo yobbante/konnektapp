@@ -20,7 +20,7 @@ export interface KonnektPublicStats {
 
 const FALLBACK: KonnektPublicStats = {
   transporteurs: "Des centaines",
-  livraisons: "Garanti",
+  livraisons: "24h",
   pays: "Partout",
   loading: true,
 };
