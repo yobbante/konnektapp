@@ -12,7 +12,7 @@ export function WhatsAppFloatingButton() {
 
   return (
     <a
-      href="https://wa.me/221789269756"
+      href="https://wa.me/221789269756?text=Bonjour%20Konnekt%2C%20je%20viens%20de%20m%27inscrire%20sur%20la%20plateforme.%20Je%20suis%20pr%C3%AAt%20%C3%A0%20rejoindre%20le%20r%C3%A9seau%20et%20recevoir%20mes%20missions."
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Besoin d'aide ? Écrivez-nous sur WhatsApp"
@@ -24,7 +24,12 @@ export function WhatsAppFloatingButton() {
         zIndex: 9999,
       }}
     >
-      <MessageCircle className="w-7 h-7" strokeWidth={2} />
+      <span
+        className="absolute inset-0 rounded-full animate-ping"
+        style={{ backgroundColor: "#25D366", opacity: 0.45 }}
+        aria-hidden="true"
+      />
+      <MessageCircle className="relative w-7 h-7" strokeWidth={2} />
       <span className="pointer-events-none absolute right-full mr-3 whitespace-nowrap rounded-md bg-foreground text-background text-xs font-medium px-2.5 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity hidden md:block">
         Besoin d'aide ? Écrivez-nous sur WhatsApp
       </span>
