@@ -2000,7 +2000,7 @@ export type Database = {
           total_reviews: number | null
           transport_license_url: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
           verified_at: string | null
           whatsapp: string | null
           whatsapp_phone: string | null
@@ -2064,7 +2064,7 @@ export type Database = {
           total_reviews?: number | null
           transport_license_url?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
           verified_at?: string | null
           whatsapp?: string | null
           whatsapp_phone?: string | null
@@ -2128,7 +2128,7 @@ export type Database = {
           total_reviews?: number | null
           transport_license_url?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           verified_at?: string | null
           whatsapp?: string | null
           whatsapp_phone?: string | null
@@ -7156,6 +7156,7 @@ export type Database = {
         | "premium"
         | "suspended"
         | "rejected"
+        | "pending_whatsapp"
       gp_subscription: "free" | "premium" | "pro"
       gp_type:
         | "express"
@@ -7384,6 +7385,7 @@ export const Constants = {
         "premium",
         "suspended",
         "rejected",
+        "pending_whatsapp",
       ],
       gp_subscription: ["free", "premium", "pro"],
       gp_type: [
