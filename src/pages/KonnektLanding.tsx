@@ -3,8 +3,11 @@ import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import {
   Menu, ArrowRight, Quote, FileText, MessageCircle, Wallet,
-  Lock, CreditCard, MapPin, X,
+  Lock, CreditCard, MapPin, X, Apple, Smartphone, Bell, TrendingUp,
 } from "lucide-react";
+import {
+  Accordion, AccordionItem, AccordionTrigger, AccordionContent,
+} from "@/components/ui/accordion";
 import konnektLogo from "@/assets/konnekt-k-logo.png";
 
 /* ────────────────────────── Brand tokens ────────────────────────── */
