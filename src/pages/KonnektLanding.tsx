@@ -3,8 +3,11 @@ import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import {
   Menu, ArrowRight, Quote, FileText, MessageCircle, Wallet,
-  Lock, CreditCard, MapPin, X,
+  Lock, CreditCard, MapPin, X, Apple, Smartphone, Bell, TrendingUp,
 } from "lucide-react";
+import {
+  Accordion, AccordionItem, AccordionTrigger, AccordionContent,
+} from "@/components/ui/accordion";
 import konnektLogo from "@/assets/konnekt-k-logo.png";
 
 /* ────────────────────────── Brand tokens ────────────────────────── */
@@ -72,8 +75,36 @@ const testimonials = [
   },
 ];
 
+const faqs = [
+  {
+    q: "Comment fonctionne Konnekt ?",
+    a: "Vous déclarez vos trajets entre Dakar et l'Europe. Avant chaque départ, les colis disponibles sur votre route vous sont proposés directement sur WhatsApp. Vous acceptez, vous transportez, vous êtes payé.",
+  },
+  {
+    q: "Combien ça coûte de s'inscrire ?",
+    a: "L'inscription est totalement gratuite et sans engagement. Vous ne payez rien : c'est vous qui êtes rémunéré pour chaque mission acceptée.",
+  },
+  {
+    q: "Quand suis-je payé ?",
+    a: "Dès que la livraison est confirmée, votre paiement est déclenché immédiatement via Wave ou Orange Money. Le virement arrive généralement le jour même.",
+  },
+  {
+    q: "Comment recevoir mes missions ?",
+    a: "Toutes vos missions arrivent directement sur votre WhatsApp avant chaque départ : destination, poids, date et rémunération. Vous gérez tout depuis votre téléphone.",
+  },
+  {
+    q: "Mes paiements sont-ils sécurisés ?",
+    a: "Oui. Votre rémunération est sécurisée dès la confirmation de collecte du colis. Aucun risque d'impayé : Konnekt garantit chaque transaction.",
+  },
+  {
+    q: "Sur quelles destinations puis-je transporter ?",
+    a: "Konnekt couvre 36 destinations, principalement entre Dakar et l'Europe (Paris, Madrid…), ainsi que vers New York et Dubai. La liste s'agrandit chaque mois.",
+  },
+];
+
 const WHATSAPP_LINK =
   "https://wa.me/221789269756?text=Bonjour%20Konnekt%2C%20je%20viens%20de%20m%27inscrire%20sur%20la%20plateforme.%20Je%20suis%20pr%C3%AAt%20%C3%A0%20rejoindre%20le%20r%C3%A9seau%20et%20recevoir%20mes%20missions.";
+
 
 /* ────────────────────────── Page ────────────────────────── */
 export default function KonnektLanding() {
@@ -356,6 +387,118 @@ export default function KonnektLanding() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ───── SECTION · TÉLÉCHARGER L'APP ───── */}
+      <section className="bg-white px-5 py-16 md:py-24 overflow-hidden">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+          {/* Left */}
+          <div>
+            <p className="text-[12px] font-bold tracking-[0.2em] uppercase" style={{ color: TEAL }}>Application</p>
+            <h2 className="mt-3 font-black tracking-tight text-4xl md:text-[56px]" style={{ color: DARK }}>
+              Konnekt dans votre poche.
+            </h2>
+            <p className="mt-5 text-[18px] leading-relaxed max-w-md" style={{ color: GRAY }}>
+              Recevez vos missions, suivez vos colis et touchez vos paiements depuis votre téléphone. Disponible bientôt sur iOS et Android.
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+              <a
+                href="#"
+                className="inline-flex items-center gap-3 rounded-full px-6 py-3.5 text-white transition-transform hover:-translate-y-0.5"
+                style={{ backgroundColor: DARK }}
+              >
+                <Apple className="w-6 h-6" />
+                <span className="text-left leading-tight">
+                  <span className="block text-[11px] opacity-70">Télécharger sur</span>
+                  <span className="block text-[15px] font-semibold">App Store</span>
+                </span>
+              </a>
+              <a
+                href="#"
+                className="inline-flex items-center gap-3 rounded-full px-6 py-3.5 text-white transition-transform hover:-translate-y-0.5"
+                style={{ backgroundColor: DARK }}
+              >
+                <Smartphone className="w-6 h-6" />
+                <span className="text-left leading-tight">
+                  <span className="block text-[11px] opacity-70">Disponible sur</span>
+                  <span className="block text-[15px] font-semibold">Google Play</span>
+                </span>
+              </a>
+            </div>
+          </div>
+
+          {/* Right — phone mockup */}
+          <div className="relative hidden md:flex justify-center items-center">
+            <div
+              className="absolute w-[420px] h-[420px] rounded-full"
+              style={{ background: "radial-gradient(circle, hsl(168 60% 42% / 0.18), transparent 70%)" }}
+            />
+            <div
+              className="relative w-[260px] rounded-[2.5rem] bg-white p-3 shadow-2xl"
+              style={{ transform: "rotate(-6deg)", border: "1px solid rgba(13,27,42,0.06)" }}
+            >
+              <div className="rounded-[2rem] overflow-hidden" style={{ backgroundColor: "#F8F9FA" }}>
+                {/* App header */}
+                <div className="px-4 py-4 text-white" style={{ backgroundColor: TEAL_DARK }}>
+                  <p className="text-[11px] opacity-80">Bonjour 👋</p>
+                  <p className="text-[16px] font-bold">Vos missions</p>
+                </div>
+                {/* App body */}
+                <div className="p-4 space-y-3 min-h-[300px]">
+                  <div className="bg-white rounded-2xl p-3 shadow-sm flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg grid place-items-center" style={{ backgroundColor: "hsl(168 60% 42% / 0.12)" }}>
+                      <Bell className="w-4 h-4" style={{ color: TEAL_DARK }} />
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-semibold" style={{ color: DARK }}>Dakar → Paris</p>
+                      <p className="text-[11px]" style={{ color: GRAY }}>12 kg · 18 000 FCFA</p>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-2xl p-3 shadow-sm flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg grid place-items-center" style={{ backgroundColor: "hsl(24 85% 55% / 0.12)" }}>
+                      <TrendingUp className="w-4 h-4" style={{ color: ORANGE }} />
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-semibold" style={{ color: DARK }}>Gains du mois</p>
+                      <p className="text-[11px]" style={{ color: GRAY }}>124 000 FCFA</p>
+                    </div>
+                  </div>
+                  <div className="rounded-2xl p-3 text-white" style={{ backgroundColor: TEAL }}>
+                    <p className="text-[12px] font-semibold">Prochain départ</p>
+                    <p className="text-[11px] opacity-90">15/06 · Dakar → Madrid</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ───── SECTION · FAQ ───── */}
+      <section id="faq" className="px-5 py-16 md:py-24" style={{ backgroundColor: "#F8F9FA" }}>
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-[12px] font-bold tracking-[0.2em] uppercase" style={{ color: TEAL }}>FAQ</p>
+            <h2 className="mt-3 font-black tracking-tight text-4xl md:text-[56px]" style={{ color: DARK }}>Questions fréquentes.</h2>
+          </div>
+          <Accordion type="single" collapsible className="space-y-3">
+            {faqs.map((f, i) => (
+              <AccordionItem
+                key={i}
+                value={`item-${i}`}
+                className="bg-white border-none rounded-2xl px-5"
+                style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}
+              >
+                <AccordionTrigger className="text-left text-[16px] font-semibold hover:no-underline" style={{ color: DARK }}>
+                  {f.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-[15px] leading-relaxed" style={{ color: GRAY }}>
+                  {f.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </div>
       </section>
 
