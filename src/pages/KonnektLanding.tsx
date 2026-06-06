@@ -390,6 +390,118 @@ export default function KonnektLanding() {
         </div>
       </section>
 
+      {/* ───── SECTION · TÉLÉCHARGER L'APP ───── */}
+      <section className="bg-white px-5 py-16 md:py-24 overflow-hidden">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+          {/* Left */}
+          <div>
+            <p className="text-[12px] font-bold tracking-[0.2em] uppercase" style={{ color: TEAL }}>Application</p>
+            <h2 className="mt-3 font-black tracking-tight text-4xl md:text-[56px]" style={{ color: DARK }}>
+              Konnekt dans votre poche.
+            </h2>
+            <p className="mt-5 text-[18px] leading-relaxed max-w-md" style={{ color: GRAY }}>
+              Recevez vos missions, suivez vos colis et touchez vos paiements depuis votre téléphone. Disponible bientôt sur iOS et Android.
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+              <a
+                href="#"
+                className="inline-flex items-center gap-3 rounded-full px-6 py-3.5 text-white transition-transform hover:-translate-y-0.5"
+                style={{ backgroundColor: DARK }}
+              >
+                <Apple className="w-6 h-6" />
+                <span className="text-left leading-tight">
+                  <span className="block text-[11px] opacity-70">Télécharger sur</span>
+                  <span className="block text-[15px] font-semibold">App Store</span>
+                </span>
+              </a>
+              <a
+                href="#"
+                className="inline-flex items-center gap-3 rounded-full px-6 py-3.5 text-white transition-transform hover:-translate-y-0.5"
+                style={{ backgroundColor: DARK }}
+              >
+                <Smartphone className="w-6 h-6" />
+                <span className="text-left leading-tight">
+                  <span className="block text-[11px] opacity-70">Disponible sur</span>
+                  <span className="block text-[15px] font-semibold">Google Play</span>
+                </span>
+              </a>
+            </div>
+          </div>
+
+          {/* Right — phone mockup */}
+          <div className="relative hidden md:flex justify-center items-center">
+            <div
+              className="absolute w-[420px] h-[420px] rounded-full"
+              style={{ background: "radial-gradient(circle, hsl(168 60% 42% / 0.18), transparent 70%)" }}
+            />
+            <div
+              className="relative w-[260px] rounded-[2.5rem] bg-white p-3 shadow-2xl"
+              style={{ transform: "rotate(-6deg)", border: "1px solid rgba(13,27,42,0.06)" }}
+            >
+              <div className="rounded-[2rem] overflow-hidden" style={{ backgroundColor: "#F8F9FA" }}>
+                {/* App header */}
+                <div className="px-4 py-4 text-white" style={{ backgroundColor: TEAL_DARK }}>
+                  <p className="text-[11px] opacity-80">Bonjour 👋</p>
+                  <p className="text-[16px] font-bold">Vos missions</p>
+                </div>
+                {/* App body */}
+                <div className="p-4 space-y-3 min-h-[300px]">
+                  <div className="bg-white rounded-2xl p-3 shadow-sm flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg grid place-items-center" style={{ backgroundColor: "hsl(168 60% 42% / 0.12)" }}>
+                      <Bell className="w-4 h-4" style={{ color: TEAL_DARK }} />
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-semibold" style={{ color: DARK }}>Dakar → Paris</p>
+                      <p className="text-[11px]" style={{ color: GRAY }}>12 kg · 18 000 FCFA</p>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-2xl p-3 shadow-sm flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg grid place-items-center" style={{ backgroundColor: "hsl(24 85% 55% / 0.12)" }}>
+                      <TrendingUp className="w-4 h-4" style={{ color: ORANGE }} />
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-semibold" style={{ color: DARK }}>Gains du mois</p>
+                      <p className="text-[11px]" style={{ color: GRAY }}>124 000 FCFA</p>
+                    </div>
+                  </div>
+                  <div className="rounded-2xl p-3 text-white" style={{ backgroundColor: TEAL }}>
+                    <p className="text-[12px] font-semibold">Prochain départ</p>
+                    <p className="text-[11px] opacity-90">15/06 · Dakar → Madrid</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ───── SECTION · FAQ ───── */}
+      <section id="faq" className="px-5 py-16 md:py-24" style={{ backgroundColor: "#F8F9FA" }}>
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-[12px] font-bold tracking-[0.2em] uppercase" style={{ color: TEAL }}>FAQ</p>
+            <h2 className="mt-3 font-black tracking-tight text-4xl md:text-[56px]" style={{ color: DARK }}>Questions fréquentes.</h2>
+          </div>
+          <Accordion type="single" collapsible className="space-y-3">
+            {faqs.map((f, i) => (
+              <AccordionItem
+                key={i}
+                value={`item-${i}`}
+                className="bg-white border-none rounded-2xl px-5"
+                style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}
+              >
+                <AccordionTrigger className="text-left text-[16px] font-semibold hover:no-underline" style={{ color: DARK }}>
+                  {f.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-[15px] leading-relaxed" style={{ color: GRAY }}>
+                  {f.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+      </section>
+
       {/* ───── SECTION 6 · CTA FINAL ───── */}
       <section id="cta" className="px-5 py-20 md:py-28 text-center" style={{ backgroundColor: TEAL_DARK }}>
         <div className="max-w-2xl mx-auto">
