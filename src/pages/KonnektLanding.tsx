@@ -75,8 +75,36 @@ const testimonials = [
   },
 ];
 
+const faqs = [
+  {
+    q: "Comment fonctionne Konnekt ?",
+    a: "Vous déclarez vos trajets entre Dakar et l'Europe. Avant chaque départ, les colis disponibles sur votre route vous sont proposés directement sur WhatsApp. Vous acceptez, vous transportez, vous êtes payé.",
+  },
+  {
+    q: "Combien ça coûte de s'inscrire ?",
+    a: "L'inscription est totalement gratuite et sans engagement. Vous ne payez rien : c'est vous qui êtes rémunéré pour chaque mission acceptée.",
+  },
+  {
+    q: "Quand suis-je payé ?",
+    a: "Dès que la livraison est confirmée, votre paiement est déclenché immédiatement via Wave ou Orange Money. Le virement arrive généralement le jour même.",
+  },
+  {
+    q: "Comment recevoir mes missions ?",
+    a: "Toutes vos missions arrivent directement sur votre WhatsApp avant chaque départ : destination, poids, date et rémunération. Vous gérez tout depuis votre téléphone.",
+  },
+  {
+    q: "Mes paiements sont-ils sécurisés ?",
+    a: "Oui. Votre rémunération est sécurisée dès la confirmation de collecte du colis. Aucun risque d'impayé : Konnekt garantit chaque transaction.",
+  },
+  {
+    q: "Sur quelles destinations puis-je transporter ?",
+    a: "Konnekt couvre 36 destinations, principalement entre Dakar et l'Europe (Paris, Madrid…), ainsi que vers New York et Dubai. La liste s'agrandit chaque mois.",
+  },
+];
+
 const WHATSAPP_LINK =
   "https://wa.me/221789269756?text=Bonjour%20Konnekt%2C%20je%20viens%20de%20m%27inscrire%20sur%20la%20plateforme.%20Je%20suis%20pr%C3%AAt%20%C3%A0%20rejoindre%20le%20r%C3%A9seau%20et%20recevoir%20mes%20missions.";
+
 
 /* ────────────────────────── Page ────────────────────────── */
 export default function KonnektLanding() {
