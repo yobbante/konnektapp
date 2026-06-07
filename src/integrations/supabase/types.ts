@@ -6377,6 +6377,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          navettes: string[]
           nom: string | null
           prenom: string | null
           reference: string | null
@@ -6387,6 +6388,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          navettes?: string[]
           nom?: string | null
           prenom?: string | null
           reference?: string | null
@@ -6397,6 +6399,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          navettes?: string[]
           nom?: string | null
           prenom?: string | null
           reference?: string | null
