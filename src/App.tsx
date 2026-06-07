@@ -23,6 +23,7 @@ import KonnektLanding from "./pages/KonnektLanding";
 import TransportModePage from "./pages/transport/TransportModePage";
 import BlogArticlePage from "./pages/blog/BlogArticlePage";
 import RejoindreGP from "./pages/RejoindreGP";
+import OnboardingGP from "./pages/OnboardingGP";
 import TransporteurBetaDashboard from "./pages/transporteur/TransporteurBetaDashboard";
 import TransporteurQuickOnboard from "./pages/TransporteurQuickOnboard";
 import BetaLandingPage from "./pages/BetaLandingPage";
@@ -205,6 +206,7 @@ const App = () => (
             <Route path="/t" element={<TransporteurQuickOnboard />} />
             <Route path="/beta" element={<BetaLandingPage />} />
             <Route path="/rejoindre-gp" element={<RejoindreGP />} />
+            <Route path="/onboarding/:ref" element={<OnboardingGP />} />
             <Route path="/invite" element={<Navigate to="/beta" replace />} />
             <Route path="/konnekt/gp" element={<KonnektGPLogin />} />
             <Route path="/konnekt" element={<Navigate to="/konnekt/gp" replace />} />
