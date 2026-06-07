@@ -1783,6 +1783,36 @@ export type Database = {
           },
         ]
       }
+      gp_onboarding_events: {
+        Row: {
+          created_at: string
+          event: string
+          id: string
+          konnekt_user_id: string | null
+          metadata: Json
+          occurred_at: string
+          ref_gp: string
+        }
+        Insert: {
+          created_at?: string
+          event: string
+          id?: string
+          konnekt_user_id?: string | null
+          metadata?: Json
+          occurred_at?: string
+          ref_gp: string
+        }
+        Update: {
+          created_at?: string
+          event?: string
+          id?: string
+          konnekt_user_id?: string | null
+          metadata?: Json
+          occurred_at?: string
+          ref_gp?: string
+        }
+        Relationships: []
+      }
       gp_price_adjustment_history: {
         Row: {
           action: string
