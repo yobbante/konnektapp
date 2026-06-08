@@ -610,4 +610,78 @@ export default function AdminMessages() {
   );
 }
 
+function WaThreadDetail({ thread }: { thread: WaThread }) {
+  const [messages, setMessages] = useState<any[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await (supabase as any)
+        .from("gp_messages")
+        .select("id, message, direction, created_at, lu")
+        .eq("telephone", thread.telephone)
+        .order("created_at", { ascending: true });
+      setMessages((data as any[]) || []);
+      await (supabase as any)
+        .from("gp_messages")
+        .update({ lu: true })
+        .eq("telephone", thread.telephone)
+        .eq("direction", "in")
+        .eq("lu", false);
+    };
+    load();
+  }, [thread.telephone]);
+
+  const openWa = () => {
+    const num = (thread.telephone || "").replace(/[^0-9]/g, "");
+    window.open(`https://wa.me/${num}`, "_blank");
+  };
+
+  return (
+    <div className="flex-1 flex flex-col">
+      <div className="p-4 border-b border-border flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+            <Phone className="w-5 h-5 text-green-600" />
+          </div>
+          <div>
+            <p className="font-semibold text-sm">{thread.gp_name}</p>
+            <p className="text-xs text-muted-foreground">{thread.telephone}</p>
+          </div>
+        </div>
+        <Button size="sm" onClick={openWa}>
+          <MessageCircle className="w-4 h-4 mr-1" />
+          Répondre WhatsApp
+        </Button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {messages.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center mt-8">Aucun message</p>
+        ) : (
+          messages.map((m) => (
+            <div
+              key={m.id}
+              className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
+                m.direction === "out"
+                  ? "ml-auto bg-primary text-primary-foreground"
+                  : "bg-muted"
+              }`}
+            >
+              <p>{m.message}</p>
+              <p className="text-[10px] opacity-70 mt-1">
+                {new Date(m.created_at).toLocaleString("fr-FR", {
+                  day: "numeric",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
 export { AdminMessages };
+
