@@ -490,7 +490,7 @@ export default function AdminMessages() {
                       </div>
                     </button>
                     <div className="px-3 pb-3 -mt-1">
-                      <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => navigate("/admin/terrain")}>
+                      <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => navigate("/admin/gp-onboarding")}>
                         Valider dans Terrain
                       </Button>
                     </div>
