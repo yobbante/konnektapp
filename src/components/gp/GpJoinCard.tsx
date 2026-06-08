@@ -154,6 +154,7 @@ export function GpJoinCard({
   refGp,
   onRegistered,
 }: GpJoinCardProps) {
+  const navigate = useNavigate();
   const [step, setStep] = useState<1 | 2>(1);
 
   const [prenom, setPrenom] = useState(initialPrenom);
