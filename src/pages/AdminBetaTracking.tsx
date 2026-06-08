@@ -140,7 +140,7 @@ export default function AdminBetaTracking() {
         .limit(500),
       supabase
         .from("transporteurs" as any)
-        .select("id, reference, prenom, nom, telephone_1, telephone_2, navettes, created_at, welcome_sent_at")
+        .select("id, reference, prenom, nom, telephone_1, telephone_2, navettes, created_at, welcome_sent_at, form_completed_at, whatsapp_clicked_at, whatsapp_confirmed_at")
         .order("created_at", { ascending: false })
         .limit(1000),
       supabase
