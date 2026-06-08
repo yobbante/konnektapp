@@ -466,7 +466,7 @@ export default function AdminBetaTracking() {
                   ) : filteredGps.slice(0, 200).map((g) => {
                     const open = expanded === g.key;
                     return (
-                      <>
+                      <Fragment key={g.key}>
                         <tr
                           key={g.key}
                           className="border-b last:border-0 cursor-pointer hover:bg-muted/40 transition-colors"
