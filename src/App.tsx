@@ -30,6 +30,7 @@ import BetaLandingPage from "./pages/BetaLandingPage";
 import KonnektGPLogin from "./pages/KonnektGPLogin";
 import TransporteurMiniDashboard from "./pages/TransporteurMiniDashboard";
 import AdminBetaTracking from "./pages/AdminBetaTracking";
+import AdminGPOnboarding from "./pages/AdminGPOnboarding";
 import Offres from "./pages/Offres";
 import OfferDetail from "./pages/OfferDetail";
 import SmartBookingPage from "./pages/SmartBookingPage";
@@ -422,6 +423,7 @@ const App = () => (
             <Route path="/admin/messages" element={<AdminMessages />} />
             <Route path="/admin/transporter-interests" element={<AdminTransporterInterests />} />
             <Route path="/admin/beta-tracking" element={<AdminBetaTracking />} />
+            <Route path="/admin/gp-onboarding" element={<AdminGPOnboarding />} />
             
             {/* ============================================
                 AGENT LOGISTIQUE - Dashboard livreur Konnekt
