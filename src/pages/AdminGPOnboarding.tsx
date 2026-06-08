@@ -23,8 +23,16 @@ interface OnboardingEvent {
   occurred_at: string;
 }
 
+interface OnboardingTrack {
+  reference: string;
+  form_completed_at: string | null;
+  whatsapp_clicked_at: string | null;
+  whatsapp_confirmed_at: string | null;
+}
+
 export default function AdminGPOnboarding() {
   const [events, setEvents] = useState<OnboardingEvent[]>([]);
+  const [tracks, setTracks] = useState<Record<string, OnboardingTrack>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
@@ -36,6 +44,15 @@ export default function AdminGPOnboarding() {
       .order("occurred_at", { ascending: false })
       .limit(2000);
     setEvents((data as unknown as OnboardingEvent[]) || []);
+
+    const { data: tr } = await supabase
+      .from("transporteurs" as any)
+      .select("reference, form_completed_at, whatsapp_clicked_at, whatsapp_confirmed_at");
+    const map: Record<string, OnboardingTrack> = {};
+    ((tr as unknown as OnboardingTrack[]) || []).forEach((t) => {
+      if (t.reference) map[t.reference.toUpperCase()] = t;
+    });
+    setTracks(map);
     setLoading(false);
   };
 
