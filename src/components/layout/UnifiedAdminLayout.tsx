@@ -361,8 +361,17 @@ export function UnifiedAdminLayout({
             })}
           </div>
 
-          {/* Déconnexion mobile */}
-          <div className="border-t border-border pt-4 mt-2">
+          {/* Tracking + Déconnexion mobile */}
+          <div className="border-t border-border pt-4 mt-2 space-y-1">
+            <button
+              onClick={() => { navigate("/admin/beta-tracking"); setMoreSheetOpen(false); }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted transition-colors"
+            >
+              <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
+                <Activity className="w-4 h-4" />
+              </div>
+              <span className="flex-1 text-left font-medium text-sm">Tracking Bêta GP</span>
+            </button>
             <button
               onClick={() => { handleLogout(); setMoreSheetOpen(false); }}
               className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-destructive/10 text-destructive transition-colors"
