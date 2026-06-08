@@ -44,16 +44,33 @@ export default function OnboardingGP() {
       } | null = null;
 
       try {
-        const { data, error } = await supabase.functions.invoke("get-gp-data", {
-          body: { ref_gp: normalizedRef },
-        });
-        console.log("[OnboardingGP] get-gp-data", normalizedRef, { data, error });
-        if (error) {
-          console.error("[OnboardingGP] get-gp-data error:", error.message);
+        const res = await fetch(
+          "https://tlvuextleczdsqxoguyq.supabase.co/functions/v1/gp-lookup",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-konnekt-key": "konnekt-yobbante-2026",
+            },
+            body: JSON.stringify({ ref_gp: normalizedRef }),
+          }
+        );
+        if (res.ok) {
+          const payload = await res.json().catch(() => null);
+          console.log("[OnboardingGP] gp-lookup", normalizedRef, payload);
+          known =
+            (payload as { data?: typeof known } | null)?.data ??
+            (payload as typeof known | null) ??
+            null;
+          // Guard against an empty object response
+          if (known && !known.prenom && !known.nom && !known.telephone_1 && !known.telephone_2) {
+            known = null;
+          }
+        } else {
+          console.warn("[OnboardingGP] gp-lookup HTTP", res.status);
         }
-        known = (data as { data?: typeof known } | null)?.data ?? null;
       } catch (e) {
-        console.error("[OnboardingGP] get-gp-data invoke failed:", e);
+        console.error("[OnboardingGP] gp-lookup fetch failed:", e);
       }
 
       if (!known) {
