@@ -2,8 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  MessageCircle, ArrowLeft, Users, Plus, UserPlus, Phone, MessageSquare,
-  Send, Sparkles, Check, CheckCheck, Search, Zap, FileText, X, RefreshCw, Bot,
+  MessageCircle, ArrowLeft, Plus, UserPlus, Phone, MessageSquare,
+  Send, CheckCheck, Search, Zap, FileText, RefreshCw, Bot,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
