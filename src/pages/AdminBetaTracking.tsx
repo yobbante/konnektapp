@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw, TrendingUp, Users, Send, MousePointerClick } from "lucide-react";
+import { UnifiedAdminLayout } from "@/components/layout/UnifiedAdminLayout";
 
 interface Event {
   id: string;
