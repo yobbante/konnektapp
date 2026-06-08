@@ -10,7 +10,7 @@ import {
   LayoutDashboard, Package, Users, Wallet, ScanLine,
   AlertTriangle, Shield, PackageOpen, ArrowLeftRight,
   Settings, UserCheck, RefreshCw, Search, ChevronLeft,
-  ChevronRight, MoreHorizontal, FileText, Award, HeadphonesIcon, UserRound, LogOut
+  ChevronRight, MoreHorizontal, FileText, Award, HeadphonesIcon, UserRound, LogOut, Activity
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
