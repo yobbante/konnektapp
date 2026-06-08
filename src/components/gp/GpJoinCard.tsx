@@ -35,6 +35,17 @@ import { ChevronDown } from "lucide-react";
 const TEAL = "#0D9488";
 const TEAL_DARK = "#0F766E";
 
+/** Devises supportées + exemple de tarif/kg adapté à chaque monnaie. */
+const CURRENCIES = [
+  { code: "XOF", symbol: "FCFA", placeholder: "5000" },
+  { code: "EUR", symbol: "€", placeholder: "8" },
+  { code: "USD", symbol: "$", placeholder: "9" },
+  { code: "CAD", symbol: "C$", placeholder: "12" },
+  { code: "GBP", symbol: "£", placeholder: "7" },
+  { code: "MAD", symbol: "DH", placeholder: "80" },
+  { code: "AED", symbol: "AED", placeholder: "30" },
+];
+
 const WHATSAPP_LINK =
   "https://wa.me/221789269756?text=Bonjour%20Konnekt%2C%20je%20viens%20de%20m%27inscrire%20comme%20GP.%20Je%20souhaite%20activer%20mon%20compte%20et%20recevoir%20mes%20missions.";
 
