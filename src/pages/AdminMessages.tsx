@@ -306,6 +306,21 @@ export default function AdminMessages() {
           {/* Tabs */}
           <div className="flex border-b border-border">
             <button
+              onClick={() => setActiveTab("whatsapp")}
+              className={`flex-1 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                activeTab === "whatsapp"
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-muted-foreground"
+              }`}
+            >
+              WhatsApp GP
+              {waThreads.reduce((a, t) => a + t.unread, 0) > 0 && (
+                <Badge className="text-[10px] px-1.5 bg-red-500">
+                  {waThreads.reduce((a, t) => a + t.unread, 0)}
+                </Badge>
+              )}
+            </button>
+            <button
               onClick={() => setActiveTab("conversations")}
               className={`flex-1 py-3 text-sm font-medium transition-colors ${
                 activeTab === "conversations"
