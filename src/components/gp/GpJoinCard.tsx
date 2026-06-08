@@ -212,6 +212,7 @@ export function GpJoinCard({
           destCity,
           destCountry,
           pricePerKg: pricePerKg ? Number(pricePerKg) : null,
+          currency: currencyCode,
         },
       });
       if (error) throw error;
