@@ -133,6 +133,13 @@ export default function AdminMessages() {
         .order("created_at", { ascending: false });
       const rows = (msgs as any[]) || [];
 
+      // Conversations bot WhatsApp (entrants GP + réponses bot)
+      const { data: inbound } = await (supabase as any)
+        .from("whatsapp_inbound_messages")
+        .select("sender_phone, message_body, bot_reply, created_at")
+        .order("created_at", { ascending: false });
+      const inRows = (inbound as any[]) || [];
+
       const { data: regEvents } = await (supabase as any)
         .from("gp_onboarding_events")
         .select("ref_gp, event");
@@ -141,9 +148,11 @@ export default function AdminMessages() {
       );
       const knownRefs = new Set(((regEvents as any[]) || []).map((e) => e.ref_gp));
 
+      const keyOf = (phone?: string | null) => normPhone(phone || "");
+
       const map = new Map<string, WaThread>();
       for (const r of rows) {
-        const key = r.telephone || r.ref_gp;
+        const key = keyOf(r.telephone) || r.ref_gp;
         if (!key) continue;
         if (!map.has(key)) {
           const status: WaThread["status"] = registeredRefs.has(r.ref_gp)
@@ -165,7 +174,35 @@ export default function AdminMessages() {
         if (!r.lu && r.direction === "in") t.unread += 1;
       }
 
-      const threads = Array.from(map.values());
+      // Ajoute / fusionne les conversations bot WhatsApp par numéro
+      for (const r of inRows) {
+        if (!r.sender_phone) continue;
+        const key = keyOf(r.sender_phone);
+        if (!key) continue;
+        const last = r.bot_reply || r.message_body || "";
+        if (!map.has(key)) {
+          map.set(key, {
+            telephone: r.sender_phone,
+            ref_gp: null,
+            gp_name: r.sender_phone,
+            last_message: last,
+            last_at: r.created_at,
+            unread: 0,
+            status: "unknown",
+          });
+        } else {
+          const t = map.get(key)!;
+          // garde le message le plus récent comme aperçu
+          if (new Date(r.created_at).getTime() > new Date(t.last_at).getTime()) {
+            t.last_message = last;
+            t.last_at = r.created_at;
+          }
+        }
+      }
+
+      const threads = Array.from(map.values()).sort(
+        (a, b) => new Date(b.last_at).getTime() - new Date(a.last_at).getTime()
+      );
       const refs = threads.map((t) => t.ref_gp).filter(Boolean);
       if (refs.length > 0) {
         const { data: profs } = await supabase
@@ -179,7 +216,7 @@ export default function AdminMessages() {
       }
       setWaThreads(threads);
       // keep selected thread fresh
-      setWaSelected((prev) => (prev ? threads.find((t) => t.telephone === prev.telephone) || prev : prev));
+      setWaSelected((prev) => (prev ? threads.find((t) => normPhone(t.telephone) === normPhone(prev.telephone)) || prev : prev));
     } catch (error) {
       console.error("Error fetching WhatsApp threads:", error);
     }
@@ -258,7 +295,7 @@ export default function AdminMessages() {
     return true;
   });
 
-  const hasDetail = !!selectedConversation || (activeTab === "whatsapp" && !!waSelected);
+  const hasDetail = !!selectedConversation || (!!waSelected && activeTab !== "conversations");
 
   if (roleLoading || loading) {
     return (
@@ -293,6 +330,7 @@ export default function AdminMessages() {
                 </Button>
               </div>
             </div>
+            <LineStatus />
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
               <Input
@@ -422,20 +460,39 @@ export default function AdminMessages() {
                 <EmptyList icon={<UserPlus className="w-12 h-12" />} text="Aucune inscription en attente" />
               ) : (
                 signups.map((s) => (
-                  <div key={s.id} className="w-full p-3 border-b border-border/60">
-                    <div className="flex items-start gap-3">
-                      <Avatar name={s.sender_phone} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="font-semibold text-sm truncate">{s.sender_phone}</p>
-                          <Badge className="text-[10px]">Konnekt</Badge>
+                  <div key={s.id} className="w-full border-b border-border/60">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedConversation(null);
+                        setWaSelected({
+                          telephone: s.sender_phone,
+                          ref_gp: null,
+                          gp_name: s.sender_phone,
+                          last_message: s.message_body || "",
+                          last_at: s.created_at,
+                          unread: 0,
+                          status: "onboarding",
+                        });
+                      }}
+                      className="w-full p-3 text-left transition-colors hover:bg-accent/50"
+                    >
+                      <div className="flex items-start gap-3">
+                        <Avatar name={s.sender_phone} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-semibold text-sm truncate">{s.sender_phone}</p>
+                            <Badge className="text-[10px]">Konnekt</Badge>
+                          </div>
+                          {s.message_body && <p className="text-xs text-muted-foreground truncate mt-1">{s.message_body}</p>}
+                          <p className="text-[10px] text-muted-foreground mt-1">{fmtDate(s.created_at)}</p>
                         </div>
-                        {s.message_body && <p className="text-xs text-muted-foreground truncate mt-1">{s.message_body}</p>}
-                        <p className="text-[10px] text-muted-foreground mt-1">{fmtDate(s.created_at)}</p>
-                        <Button variant="outline" size="sm" className="mt-2 h-7 text-xs" onClick={() => navigate("/admin/terrain")}>
-                          Valider dans Terrain
-                        </Button>
                       </div>
+                    </button>
+                    <div className="px-3 pb-3 -mt-1">
+                      <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => navigate("/admin/terrain")}>
+                        Valider dans Terrain
+                      </Button>
                     </div>
                   </div>
                 ))
@@ -454,7 +511,7 @@ export default function AdminMessages() {
               onBack={() => setSelectedConversation(null)}
               contactName={selectedContactName}
             />
-          ) : activeTab === "whatsapp" && waSelected ? (
+          ) : waSelected && activeTab !== "conversations" ? (
             <WaThreadDetail
               key={waSelected.telephone}
               thread={waSelected}
@@ -500,12 +557,55 @@ function WaThreadDetail({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
-    const { data } = await (supabase as any)
+    const key = normPhone(thread.telephone);
+
+    // 1) Réponses manuelles admin (gp_messages)
+    const { data: gp } = await (supabase as any)
       .from("gp_messages")
       .select("id, message, direction, created_at, lu")
       .eq("telephone", thread.telephone)
       .order("created_at", { ascending: true });
-    setMessages((data as any[]) || []);
+
+    // 2) Conversation bot WhatsApp (whatsapp_inbound_messages)
+    const { data: inbound } = await (supabase as any)
+      .from("whatsapp_inbound_messages")
+      .select("id, sender_phone, message_body, bot_reply, created_at")
+      .order("created_at", { ascending: true });
+
+    const merged: any[] = [];
+    for (const m of ((gp as any[]) || [])) {
+      merged.push({
+        id: `gp-${m.id}`,
+        message: m.message,
+        direction: m.direction,
+        created_at: m.created_at,
+        source: m.direction === "out" ? "admin" : "gp",
+      });
+    }
+    for (const r of ((inbound as any[]) || [])) {
+      if (normPhone(r.sender_phone) !== key) continue;
+      if (r.message_body) {
+        merged.push({
+          id: `in-${r.id}`,
+          message: r.message_body,
+          direction: "in",
+          created_at: r.created_at,
+          source: "gp",
+        });
+      }
+      if (r.bot_reply) {
+        merged.push({
+          id: `bot-${r.id}`,
+          message: r.bot_reply,
+          direction: "out",
+          created_at: r.created_at,
+          source: "bot",
+        });
+      }
+    }
+    merged.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    setMessages(merged);
+
     await (supabase as any)
       .from("gp_messages")
       .update({ lu: true })
@@ -613,22 +713,34 @@ function WaThreadDetail({
         {messages.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center mt-8">Aucun message</p>
         ) : (
-          messages.map((m) => (
-            <div
-              key={m.id}
-              className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm shadow-sm ${
-                m.direction === "out"
-                  ? "ml-auto bg-[hsl(96,44%,68%)] text-foreground rounded-br-sm"
-                  : "bg-white text-foreground rounded-bl-sm dark:bg-card"
-              }`}
-            >
-              <p className="whitespace-pre-wrap break-words">{m.message}</p>
-              <p className="text-[10px] opacity-60 mt-1 flex items-center justify-end gap-1">
-                {fmtTime(m.created_at)}
-                {m.direction === "out" && <CheckCheck className="w-3 h-3" />}
-              </p>
-            </div>
-          ))
+          messages.map((m) => {
+            const isBot = m.source === "bot";
+            const isAdmin = m.source === "admin";
+            const out = m.direction === "out";
+            return (
+              <div
+                key={m.id}
+                className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm shadow-sm ${
+                  isBot
+                    ? "ml-auto bg-blue-500/10 text-foreground rounded-br-sm border border-blue-500/20"
+                    : isAdmin
+                    ? "ml-auto bg-[hsl(96,44%,68%)] text-foreground rounded-br-sm"
+                    : "bg-white text-foreground rounded-bl-sm dark:bg-card"
+                }`}
+              >
+                {isBot && (
+                  <p className="text-[10px] font-semibold text-blue-600 flex items-center gap-1 mb-0.5">
+                    <Bot className="w-3 h-3" /> Bot auto
+                  </p>
+                )}
+                <p className="whitespace-pre-wrap break-words">{m.message}</p>
+                <p className="text-[10px] opacity-60 mt-1 flex items-center justify-end gap-1">
+                  {fmtTime(m.created_at)}
+                  {out && <CheckCheck className="w-3 h-3" />}
+                </p>
+              </div>
+            );
+          })
         )}
       </div>
 
@@ -721,6 +833,42 @@ function WaThreadDetail({
 }
 
 /* ============ small helpers ============ */
+/* ============ Statut live de la ligne WhatsApp 926 (bot) ============ */
+function LineStatus() {
+  const [state, setState] = useState<"checking" | "online" | "offline">("checking");
+
+  const check = useCallback(async () => {
+    setState("checking");
+    try {
+      const { data, error } = await supabase.functions.invoke("gp-bot", { body: { ping: true } });
+      if (!error && (data as any)?.status === "ok") setState("online");
+      else setState("offline");
+    } catch {
+      setState("offline");
+    }
+  }, []);
+
+  useEffect(() => { check(); }, [check]);
+
+  const color = state === "online" ? "bg-green-500" : state === "offline" ? "bg-red-500" : "bg-amber-500";
+  const label =
+    state === "online" ? "Ligne 926 connectée" : state === "offline" ? "Ligne 926 hors ligne" : "Vérification 926...";
+
+  return (
+    <button
+      type="button"
+      onClick={check}
+      className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+      title="Tester la connexion du bot WhatsApp"
+    >
+      <span className={`w-2 h-2 rounded-full ${color} ${state === "checking" ? "animate-pulse" : ""}`} />
+      <Bot className="w-3.5 h-3.5" />
+      {label}
+      <RefreshCw className="w-3 h-3 opacity-60" />
+    </button>
+  );
+}
+
 function Avatar({ name, green }: { name: string; green?: boolean }) {
   const initials = (name || "?").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   return (
@@ -746,6 +894,10 @@ function fmtDate(d: string) {
 }
 function fmtTime(d: string) {
   return new Date(d).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
+function normPhone(p: string) {
+  const d = (p || "").replace(/\D/g, "");
+  return d.length >= 9 ? d.slice(-9) : d;
 }
 
 export { AdminMessages };

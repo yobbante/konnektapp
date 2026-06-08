@@ -105,6 +105,10 @@ function parseDep(normalized: string): { dest: string; date: string; kg: number 
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  // Health-check (statut ligne 926) — aucun effet de bord
+  if (req.method === "GET") return json({ status: "ok", line: "926" });
+
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -113,6 +117,9 @@ Deno.serve(async (req) => {
 
   let body: any;
   try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+
+  // Ping de santé via POST { ping: true } — aucun effet de bord
+  if (body && body.ping === true) return json({ status: "ok", line: "926" });
 
   const { sender, text } = extractMessage(body);
   if (!sender) return json({ error: "Missing sender" }, 400);
