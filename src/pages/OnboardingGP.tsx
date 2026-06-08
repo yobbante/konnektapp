@@ -12,11 +12,12 @@ import {
   Search,
   X,
 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PhoneInputWithCode } from "@/components/ui/PhoneInputWithCode";
+import { PHONE_COUNTRIES } from "@/components/ui/PhoneInputWithCode";
 import { KonnektPageLoader } from "@/components/ui/KonnektLoader";
 import { toast } from "@/hooks/use-toast";
 import { WORLD_CITIES } from "@/lib/worldCities";
