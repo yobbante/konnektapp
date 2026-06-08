@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { MessageCircle, ArrowLeft, Users, Shield, Plus, UserPlus, Phone } from "lucide-react";
+import { MessageCircle, ArrowLeft, Users, Shield, Plus, UserPlus, Phone, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +29,19 @@ interface KonnektSignup {
   created_at: string;
 }
 
+type WaFilter = "all" | "unread" | "onboarding" | "registered";
+
+interface WaThread {
+  telephone: string;
+  ref_gp: string | null;
+  gp_name: string;
+  last_message: string;
+  last_at: string;
+  unread: number;
+  status: "onboarding" | "registered" | "unknown";
+}
+
+
 export default function AdminMessages() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -42,8 +55,11 @@ export default function AdminMessages() {
   const [selectedContactName, setSelectedContactName] = useState<string>("Conversation");
   const [loading, setLoading] = useState(true);
   const [showNewConversation, setShowNewConversation] = useState(false);
-  const [activeTab, setActiveTab] = useState<"conversations" | "onboarding">("conversations");
+  const [activeTab, setActiveTab] = useState<"whatsapp" | "conversations" | "onboarding">("whatsapp");
   const [signups, setSignups] = useState<KonnektSignup[]>([]);
+  const [waThreads, setWaThreads] = useState<WaThread[]>([]);
+  const [waFilter, setWaFilter] = useState<WaFilter>("all");
+  const [waSelected, setWaSelected] = useState<WaThread | null>(null);
 
   useEffect(() => {
     if (!roleLoading && !hasAdminAccess) {
@@ -55,8 +71,75 @@ export default function AdminMessages() {
     if (hasAdminAccess) {
       fetchConversations();
       fetchSignups();
+      fetchWaThreads();
     }
   }, [hasAdminAccess]);
+
+  const fetchWaThreads = async () => {
+    try {
+      const { data: msgs } = await (supabase as any)
+        .from("gp_messages")
+        .select("ref_gp, telephone, message, direction, lu, created_at")
+        .order("created_at", { ascending: false });
+
+      const rows = (msgs as any[]) || [];
+
+      // Registered ref_gp set from onboarding events
+      const { data: regEvents } = await (supabase as any)
+        .from("gp_onboarding_events")
+        .select("ref_gp, event");
+      const registeredRefs = new Set(
+        ((regEvents as any[]) || [])
+          .filter((e) => e.event === "registered")
+          .map((e) => e.ref_gp)
+      );
+      const knownRefs = new Set(((regEvents as any[]) || []).map((e) => e.ref_gp));
+
+      const map = new Map<string, WaThread>();
+      for (const r of rows) {
+        const key = r.telephone || r.ref_gp;
+        if (!key) continue;
+        if (!map.has(key)) {
+          const status: WaThread["status"] = registeredRefs.has(r.ref_gp)
+            ? "registered"
+            : knownRefs.has(r.ref_gp)
+            ? "onboarding"
+            : "unknown";
+          map.set(key, {
+            telephone: r.telephone,
+            ref_gp: r.ref_gp,
+            gp_name: r.ref_gp || r.telephone,
+            last_message: r.message || "",
+            last_at: r.created_at,
+            unread: 0,
+            status,
+          });
+        }
+        const t = map.get(key)!;
+        if (!r.lu && r.direction === "in") t.unread += 1;
+      }
+
+      const threads = Array.from(map.values());
+      // Enrich gp_name from gp_profiles when possible
+      const refs = threads.map((t) => t.ref_gp).filter(Boolean);
+      if (refs.length > 0) {
+        const { data: profs } = await supabase
+          .from("gp_profiles")
+          .select("reference, business_name")
+          .in("reference", refs as string[]);
+        const nameMap = new Map(
+          ((profs as any[]) || []).map((p) => [p.reference, p.business_name])
+        );
+        threads.forEach((t) => {
+          if (t.ref_gp && nameMap.get(t.ref_gp)) t.gp_name = nameMap.get(t.ref_gp);
+        });
+      }
+      setWaThreads(threads);
+    } catch (error) {
+      console.error("Error fetching WhatsApp threads:", error);
+    }
+  };
+
 
   const fetchSignups = async () => {
     try {
@@ -223,6 +306,21 @@ export default function AdminMessages() {
           {/* Tabs */}
           <div className="flex border-b border-border">
             <button
+              onClick={() => setActiveTab("whatsapp")}
+              className={`flex-1 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                activeTab === "whatsapp"
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-muted-foreground"
+              }`}
+            >
+              WhatsApp GP
+              {waThreads.reduce((a, t) => a + t.unread, 0) > 0 && (
+                <Badge className="text-[10px] px-1.5 bg-red-500">
+                  {waThreads.reduce((a, t) => a + t.unread, 0)}
+                </Badge>
+              )}
+            </button>
+            <button
               onClick={() => setActiveTab("conversations")}
               className={`flex-1 py-3 text-sm font-medium transition-colors ${
                 activeTab === "conversations"
@@ -247,7 +345,111 @@ export default function AdminMessages() {
             </button>
           </div>
 
-          {activeTab === "conversations" ? (
+          {activeTab === "whatsapp" ? (
+            <>
+              <div className="p-3 border-b border-border space-y-2">
+                <h2 className="font-semibold flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5" />
+                  Messages WhatsApp GP
+                </h2>
+                <div className="flex gap-1.5 flex-wrap">
+                  {([
+                    { id: "all", label: "Tous" },
+                    { id: "unread", label: "Non lus" },
+                    { id: "onboarding", label: "Onboarding" },
+                    { id: "registered", label: "Inscrits" },
+                  ] as { id: WaFilter; label: string }[]).map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => setWaFilter(f.id)}
+                      className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                        waFilter === f.id
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="overflow-y-auto max-h-[calc(100vh-260px)]">
+                {(() => {
+                  const filtered = waThreads.filter((t) => {
+                    if (waFilter === "unread") return t.unread > 0;
+                    if (waFilter === "onboarding") return t.status === "onboarding";
+                    if (waFilter === "registered") return t.status === "registered";
+                    return true;
+                  });
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="p-8 text-center">
+                        <MessageSquare className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+                        <p className="text-sm text-muted-foreground">Aucun message</p>
+                      </div>
+                    );
+                  }
+                  return filtered.map((t) => (
+                    <motion.div
+                      key={t.telephone || t.ref_gp}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className={`w-full p-4 text-left border-b border-border transition-colors hover:bg-accent/50 cursor-pointer ${
+                        waSelected?.telephone === t.telephone ? "bg-accent" : ""
+                      }`}
+                      onClick={() => setWaSelected(t)}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                          <Phone className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-medium text-sm truncate">{t.gp_name}</p>
+                            {t.unread > 0 && (
+                              <Badge className="text-[10px] flex-shrink-0 bg-red-500">{t.unread}</Badge>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">
+                            {t.ref_gp || t.telephone}
+                            {t.status === "registered" && " · Inscrit"}
+                            {t.status === "onboarding" && " · Onboarding"}
+                          </p>
+                          {t.last_message && (
+                            <p className="text-xs text-muted-foreground truncate mt-1">{t.last_message}</p>
+                          )}
+                          <div className="flex items-center justify-between gap-2 mt-2">
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(t.last_at).toLocaleDateString("fr-FR", {
+                                day: "numeric",
+                                month: "short",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const num = (t.telephone || "").replace(/[^0-9]/g, "");
+                                window.open(`https://wa.me/${num}`, "_blank");
+                              }}
+                            >
+                              <MessageCircle className="w-3 h-3 mr-1" />
+                              Répondre
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ));
+                })()}
+              </div>
+            </>
+          ) : activeTab === "conversations" ? (
             <>
               <div className="p-4 border-b border-border">
                 <h2 className="font-semibold flex items-center gap-2">
@@ -383,6 +585,8 @@ export default function AdminMessages() {
               onBack={() => setSelectedConversation(null)}
               contactName={selectedContactName}
             />
+          ) : activeTab === "whatsapp" && waSelected ? (
+            <WaThreadDetail thread={waSelected} />
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
@@ -406,4 +610,78 @@ export default function AdminMessages() {
   );
 }
 
+function WaThreadDetail({ thread }: { thread: WaThread }) {
+  const [messages, setMessages] = useState<any[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await (supabase as any)
+        .from("gp_messages")
+        .select("id, message, direction, created_at, lu")
+        .eq("telephone", thread.telephone)
+        .order("created_at", { ascending: true });
+      setMessages((data as any[]) || []);
+      await (supabase as any)
+        .from("gp_messages")
+        .update({ lu: true })
+        .eq("telephone", thread.telephone)
+        .eq("direction", "in")
+        .eq("lu", false);
+    };
+    load();
+  }, [thread.telephone]);
+
+  const openWa = () => {
+    const num = (thread.telephone || "").replace(/[^0-9]/g, "");
+    window.open(`https://wa.me/${num}`, "_blank");
+  };
+
+  return (
+    <div className="flex-1 flex flex-col">
+      <div className="p-4 border-b border-border flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+            <Phone className="w-5 h-5 text-green-600" />
+          </div>
+          <div>
+            <p className="font-semibold text-sm">{thread.gp_name}</p>
+            <p className="text-xs text-muted-foreground">{thread.telephone}</p>
+          </div>
+        </div>
+        <Button size="sm" onClick={openWa}>
+          <MessageCircle className="w-4 h-4 mr-1" />
+          Répondre WhatsApp
+        </Button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {messages.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center mt-8">Aucun message</p>
+        ) : (
+          messages.map((m) => (
+            <div
+              key={m.id}
+              className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
+                m.direction === "out"
+                  ? "ml-auto bg-primary text-primary-foreground"
+                  : "bg-muted"
+              }`}
+            >
+              <p>{m.message}</p>
+              <p className="text-[10px] opacity-70 mt-1">
+                {new Date(m.created_at).toLocaleString("fr-FR", {
+                  day: "numeric",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
 export { AdminMessages };
+

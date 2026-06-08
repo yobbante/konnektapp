@@ -47,6 +47,13 @@ const menuSections = [
     ],
   },
   {
+    title: "Suivi & Tracking",
+    items: [
+      { id: "gp-onboarding", label: "Suivi onboarding", icon: UserCheck, isLink: true, href: "/admin/gp-onboarding" },
+      { id: "tracking-gp", label: "Tracking GP", icon: Route, isLink: true, href: "/tracking" },
+    ],
+  },
+  {
     title: "Gouvernance",
     items: [
       { id: "beta-tracking", label: "Tracking Bêta", icon: LineChart, isLink: true, href: "/admin/beta-tracking" },
