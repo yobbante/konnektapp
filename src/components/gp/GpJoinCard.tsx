@@ -261,7 +261,20 @@ export function GpJoinCard({
           premières missions.
         </p>
 
-        <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="block mt-6">
+        <a
+          href={WHATSAPP_LINK}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block mt-6"
+          onClick={() => {
+            const ref = (refGp || "").trim().toUpperCase();
+            if (/^GP\d{4}$/.test(ref)) {
+              supabase.functions
+                .invoke("gp-onboarding-track", { body: { ref_gp: ref, event: "whatsapp_clicked" } })
+                .catch(() => {/* best-effort */});
+            }
+          }}
+        >
           <Button
             className="w-full text-base text-white gap-2"
             style={{ height: 52, borderRadius: 12, fontWeight: 700, backgroundColor: "#25D366" }}
