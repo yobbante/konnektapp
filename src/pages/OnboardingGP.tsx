@@ -45,6 +45,95 @@ const inputStyle: React.CSSProperties = {
   fontSize: 15,
 };
 
+/** Self-contained phone input with light styling (white field, teal focus). */
+function StyledPhoneInput({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const findCountry = () => {
+    const m = PHONE_COUNTRIES.find((c) => value.startsWith(c.dial));
+    return m?.code ?? "SN";
+  };
+  const [selectedCode, setSelectedCode] = useState(findCountry);
+  const [open, setOpen] = useState(false);
+  const country = PHONE_COUNTRIES.find((c) => c.code === selectedCode) || PHONE_COUNTRIES[0];
+  const local = value.startsWith(country.dial) ? value.slice(country.dial.length).trim() : "";
+
+  return (
+    <div className="relative flex">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1 px-2.5 shrink-0"
+        style={{
+          backgroundColor: "#F9FAFB",
+          border: "1.5px solid #D1D5DB",
+          borderRight: "none",
+          borderTopLeftRadius: 10,
+          borderBottomLeftRadius: 10,
+          color: "#111827",
+          height: 48,
+        }}
+      >
+        <span className="text-base">{country.flag}</span>
+        <span className="text-xs font-medium" style={{ color: "#374151" }}>{country.dial}</span>
+        <ChevronDown className="w-3 h-3" style={{ color: "#9CA3AF" }} />
+      </button>
+      <input
+        type="tel"
+        placeholder="77 123 45 67"
+        value={local}
+        onChange={(e) => {
+          const raw = e.target.value.replace(/[^0-9\s]/g, "");
+          onChange(`${country.dial}${raw}`);
+        }}
+        onFocus={(e) => (e.currentTarget.style.borderColor = TEAL)}
+        onBlur={(e) => (e.currentTarget.style.borderColor = "#D1D5DB")}
+        className="flex-1 px-3 outline-none"
+        style={{
+          backgroundColor: "#FFFFFF",
+          border: "1.5px solid #D1D5DB",
+          borderTopRightRadius: 10,
+          borderBottomRightRadius: 10,
+          color: "#111827",
+          fontSize: 15,
+          height: 48,
+        }}
+      />
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div
+            className="absolute left-0 top-full mt-1 z-50 w-64 max-h-60 overflow-auto bg-white"
+            style={{ border: "1px solid #E5E7EB", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.12)" }}
+          >
+            {PHONE_COUNTRIES.map((c) => (
+              <button
+                key={`${c.code}-${c.dial}`}
+                type="button"
+                onClick={() => {
+                  onChange(`${c.dial}${local}`);
+                  setSelectedCode(c.code);
+                  setOpen(false);
+                }}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left hover:bg-gray-50"
+                style={{ color: "#111827" }}
+              >
+                <span className="text-base">{c.flag}</span>
+                <span className="flex-1 truncate">{c.name}</span>
+                <span className="text-xs" style={{ color: "#6B7280" }}>{c.dial}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function OnboardingGP() {
   const { ref } = useParams<{ ref: string }>();
   const navigate = useNavigate();
