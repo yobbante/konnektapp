@@ -459,20 +459,39 @@ export default function AdminMessages() {
                 <EmptyList icon={<UserPlus className="w-12 h-12" />} text="Aucune inscription en attente" />
               ) : (
                 signups.map((s) => (
-                  <div key={s.id} className="w-full p-3 border-b border-border/60">
-                    <div className="flex items-start gap-3">
-                      <Avatar name={s.sender_phone} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="font-semibold text-sm truncate">{s.sender_phone}</p>
-                          <Badge className="text-[10px]">Konnekt</Badge>
+                  <div key={s.id} className="w-full border-b border-border/60">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedConversation(null);
+                        setWaSelected({
+                          telephone: s.sender_phone,
+                          ref_gp: null,
+                          gp_name: s.sender_phone,
+                          last_message: s.message_body || "",
+                          last_at: s.created_at,
+                          unread: 0,
+                          status: "onboarding",
+                        });
+                      }}
+                      className="w-full p-3 text-left transition-colors hover:bg-accent/50"
+                    >
+                      <div className="flex items-start gap-3">
+                        <Avatar name={s.sender_phone} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-semibold text-sm truncate">{s.sender_phone}</p>
+                            <Badge className="text-[10px]">Konnekt</Badge>
+                          </div>
+                          {s.message_body && <p className="text-xs text-muted-foreground truncate mt-1">{s.message_body}</p>}
+                          <p className="text-[10px] text-muted-foreground mt-1">{fmtDate(s.created_at)}</p>
                         </div>
-                        {s.message_body && <p className="text-xs text-muted-foreground truncate mt-1">{s.message_body}</p>}
-                        <p className="text-[10px] text-muted-foreground mt-1">{fmtDate(s.created_at)}</p>
-                        <Button variant="outline" size="sm" className="mt-2 h-7 text-xs" onClick={() => navigate("/admin/terrain")}>
-                          Valider dans Terrain
-                        </Button>
                       </div>
+                    </button>
+                    <div className="px-3 pb-3 -mt-1">
+                      <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => navigate("/admin/terrain")}>
+                        Valider dans Terrain
+                      </Button>
                     </div>
                   </div>
                 ))
