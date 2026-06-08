@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { MessageCircle, ArrowLeft, Users, Shield, Plus, UserPlus, Phone } from "lucide-react";
+import { MessageCircle, ArrowLeft, Users, Shield, Plus, UserPlus, Phone, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +28,19 @@ interface KonnektSignup {
   message_body: string | null;
   created_at: string;
 }
+
+type WaFilter = "all" | "unread" | "onboarding" | "registered";
+
+interface WaThread {
+  telephone: string;
+  ref_gp: string | null;
+  gp_name: string;
+  last_message: string;
+  last_at: string;
+  unread: number;
+  status: "onboarding" | "registered" | "unknown";
+}
+
 
 export default function AdminMessages() {
   const navigate = useNavigate();
