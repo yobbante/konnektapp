@@ -416,7 +416,7 @@ export default function AdminBetaTracking() {
               return (
                 <div className="flex items-end gap-1 h-32">
                   {dailyChart.map((d) => (
-                    <div key={d.day} className="flex-1 flex flex-col items-center gap-1" title={`${d.day} · ${d.count}`}>
+                    <div key={d.day} className="flex-1 h-full flex flex-col justify-end items-center gap-1" title={`${d.day} · ${d.count}`}>
                       <div
                         className="w-full rounded-t"
                         style={{
