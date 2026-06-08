@@ -264,24 +264,28 @@ export function UnifiedAdminLayout({
               ) : null}
             </div>
             <div className="flex items-center gap-2">
-              <div className="relative hidden sm:block w-64">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" />
-                <Input
-                  placeholder="Rechercher..."
-                  className="pl-8 h-8 bg-white/10 border-white/20 text-white placeholder:text-white/40 text-sm rounded-lg"
-                  value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                />
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onRefresh}
-                disabled={refreshing}
-                className="bg-white/10 hover:bg-white/20 w-8 h-8 rounded-lg"
-              >
-                <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
-              </Button>
+              {onSearchChange && (
+                <div className="relative hidden sm:block w-64">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" />
+                  <Input
+                    placeholder="Rechercher..."
+                    className="pl-8 h-8 bg-white/10 border-white/20 text-white placeholder:text-white/40 text-sm rounded-lg"
+                    value={searchQuery}
+                    onChange={(e) => onSearchChange(e.target.value)}
+                  />
+                </div>
+              )}
+              {onRefresh && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onRefresh}
+                  disabled={refreshing}
+                  className="bg-white/10 hover:bg-white/20 w-8 h-8 rounded-lg"
+                >
+                  <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
