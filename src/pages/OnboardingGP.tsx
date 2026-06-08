@@ -41,10 +41,16 @@ export default function OnboardingGP() {
         .maybeSingle();
 
       if (known) {
-        if (known.prenom) setPrenom(known.prenom);
-        if (known.nom) setNom(known.nom);
+        // Si prénom manquant, on bascule le nom unique dans le champ Prénom.
+        if (known.prenom) {
+          setPrenom(known.prenom);
+          setNom(known.nom || "");
+        } else if (known.nom) {
+          setPrenom(known.nom);
+          setNom("");
+        }
         const tel = known.telephone_1 || known.telephone_2;
-        if (tel) setPhone(tel);
+        if (tel) setPhone(tel.replace(/\s/g, ""));
 
         try {
           const { data } = await supabase.functions.invoke("gp-onboarding-track", {
