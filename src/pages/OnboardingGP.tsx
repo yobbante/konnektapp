@@ -337,7 +337,7 @@ export default function OnboardingGP() {
                 <Label style={{ color: "#374151", fontWeight: 600, fontSize: 14 }}>
                   Téléphone WhatsApp *
                 </Label>
-                <PhoneInputWithCode value={phone} onChange={setPhone} defaultCountry="SN" size="lg" />
+                <StyledPhoneInput value={phone} onChange={setPhone} />
                 <p className="text-xs" style={{ color: "#6B7280" }}>
                   Format international, ex : +221789269756
                 </p>
