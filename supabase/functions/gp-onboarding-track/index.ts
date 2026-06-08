@@ -13,7 +13,7 @@ const WHATSAPP_ACCESS_TOKEN = Deno.env.get("WHATSAPP_ACCESS_TOKEN");
 
 interface Payload {
   ref_gp?: string;
-  event?: "link_opened" | "registered";
+  event?: "link_opened" | "registered" | "whatsapp_clicked";
   konnekt_user_id?: string | null;
 }
 
