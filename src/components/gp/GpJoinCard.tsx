@@ -140,6 +140,8 @@ export interface GpJoinCardProps {
   initialPrenom?: string;
   initialNom?: string;
   initialPhone?: string;
+  /** Référence GP (GP1234) pour le suivi d'onboarding. */
+  refGp?: string;
   /** Called after a successful registration (for ref tracking). */
   onRegistered?: (konnektUserId: string | null) => void | Promise<void>;
 }
@@ -148,6 +150,7 @@ export function GpJoinCard({
   initialPrenom = "",
   initialNom = "",
   initialPhone = "+221",
+  refGp,
   onRegistered,
 }: GpJoinCardProps) {
   const [step, setStep] = useState<1 | 2>(1);
