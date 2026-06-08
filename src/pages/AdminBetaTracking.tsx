@@ -117,7 +117,8 @@ export default function AdminBetaTracking() {
   }, [events]);
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6 max-w-6xl mx-auto">
+    <UnifiedAdminLayout activeModule="overview" standalone activeRoute="tracking">
+      <div className="max-w-6xl mx-auto">
       <header className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Beta Tracking</h1>
