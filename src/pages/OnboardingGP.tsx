@@ -12,11 +12,12 @@ import {
   Search,
   X,
 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PhoneInputWithCode } from "@/components/ui/PhoneInputWithCode";
+import { PHONE_COUNTRIES } from "@/components/ui/PhoneInputWithCode";
 import { KonnektPageLoader } from "@/components/ui/KonnektLoader";
 import { toast } from "@/hooks/use-toast";
 import { WORLD_CITIES } from "@/lib/worldCities";
@@ -43,6 +44,95 @@ const inputStyle: React.CSSProperties = {
   color: "#111827",
   fontSize: 15,
 };
+
+/** Self-contained phone input with light styling (white field, teal focus). */
+function StyledPhoneInput({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const findCountry = () => {
+    const m = PHONE_COUNTRIES.find((c) => value.startsWith(c.dial));
+    return m?.code ?? "SN";
+  };
+  const [selectedCode, setSelectedCode] = useState(findCountry);
+  const [open, setOpen] = useState(false);
+  const country = PHONE_COUNTRIES.find((c) => c.code === selectedCode) || PHONE_COUNTRIES[0];
+  const local = value.startsWith(country.dial) ? value.slice(country.dial.length).trim() : "";
+
+  return (
+    <div className="relative flex">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1 px-2.5 shrink-0"
+        style={{
+          backgroundColor: "#F9FAFB",
+          border: "1.5px solid #D1D5DB",
+          borderRight: "none",
+          borderTopLeftRadius: 10,
+          borderBottomLeftRadius: 10,
+          color: "#111827",
+          height: 48,
+        }}
+      >
+        <span className="text-base">{country.flag}</span>
+        <span className="text-xs font-medium" style={{ color: "#374151" }}>{country.dial}</span>
+        <ChevronDown className="w-3 h-3" style={{ color: "#9CA3AF" }} />
+      </button>
+      <input
+        type="tel"
+        placeholder="77 123 45 67"
+        value={local}
+        onChange={(e) => {
+          const raw = e.target.value.replace(/[^0-9\s]/g, "");
+          onChange(`${country.dial}${raw}`);
+        }}
+        onFocus={(e) => (e.currentTarget.style.borderColor = TEAL)}
+        onBlur={(e) => (e.currentTarget.style.borderColor = "#D1D5DB")}
+        className="flex-1 px-3 outline-none"
+        style={{
+          backgroundColor: "#FFFFFF",
+          border: "1.5px solid #D1D5DB",
+          borderTopRightRadius: 10,
+          borderBottomRightRadius: 10,
+          color: "#111827",
+          fontSize: 15,
+          height: 48,
+        }}
+      />
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div
+            className="absolute left-0 top-full mt-1 z-50 w-64 max-h-60 overflow-auto bg-white"
+            style={{ border: "1px solid #E5E7EB", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.12)" }}
+          >
+            {PHONE_COUNTRIES.map((c) => (
+              <button
+                key={`${c.code}-${c.dial}`}
+                type="button"
+                onClick={() => {
+                  onChange(`${c.dial}${local}`);
+                  setSelectedCode(c.code);
+                  setOpen(false);
+                }}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left hover:bg-gray-50"
+                style={{ color: "#111827" }}
+              >
+                <span className="text-base">{c.flag}</span>
+                <span className="flex-1 truncate">{c.name}</span>
+                <span className="text-xs" style={{ color: "#6B7280" }}>{c.dial}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function OnboardingGP() {
   const { ref } = useParams<{ ref: string }>();
@@ -90,14 +180,15 @@ export default function OnboardingGP() {
     (async () => {
       const { data: known } = await supabase
         .from("transporteurs")
-        .select("prenom, nom, telephone_1")
+        .select("prenom, nom, telephone_1, telephone_2")
         .ilike("reference", normalizedRef)
         .maybeSingle();
 
       if (known) {
         if (known.prenom) setPrenom(known.prenom);
         if (known.nom) setNom(known.nom);
-        if (known.telephone_1) setPhone(known.telephone_1);
+        const tel = known.telephone_1 || known.telephone_2;
+        if (tel) setPhone(tel);
 
         try {
           const { data } = await supabase.functions.invoke("gp-onboarding-track", {
@@ -246,7 +337,7 @@ export default function OnboardingGP() {
                 <Label style={{ color: "#374151", fontWeight: 600, fontSize: 14 }}>
                   Téléphone WhatsApp *
                 </Label>
-                <PhoneInputWithCode value={phone} onChange={setPhone} defaultCountry="SN" size="lg" />
+                <StyledPhoneInput value={phone} onChange={setPhone} />
                 <p className="text-xs" style={{ color: "#6B7280" }}>
                   Format international, ex : +221789269756
                 </p>
