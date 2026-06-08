@@ -167,6 +167,13 @@ export function UnifiedAdminLayout({
         {!sidebarCollapsed && (
           <div className="p-3 border-t border-border space-y-2">
             <button
+              onClick={() => navigate("/admin/beta-tracking")}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            >
+              <Activity className="w-4 h-4" />
+              <span>Tracking Bêta GP</span>
+            </button>
+            <button
               onClick={handleLogout}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
             >
