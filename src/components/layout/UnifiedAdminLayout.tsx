@@ -10,7 +10,7 @@ import {
   LayoutDashboard, Package, Users, Wallet, ScanLine,
   AlertTriangle, Shield, PackageOpen, ArrowLeftRight,
   Settings, UserCheck, RefreshCw, Search, ChevronLeft,
-  ChevronRight, MoreHorizontal, FileText, Award, HeadphonesIcon, UserRound, LogOut
+  ChevronRight, MoreHorizontal, FileText, Award, HeadphonesIcon, UserRound, LogOut, Activity
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -166,6 +166,13 @@ export function UnifiedAdminLayout({
         {/* Sidebar Footer */}
         {!sidebarCollapsed && (
           <div className="p-3 border-t border-border space-y-2">
+            <button
+              onClick={() => navigate("/admin/beta-tracking")}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            >
+              <Activity className="w-4 h-4" />
+              <span>Tracking Bêta GP</span>
+            </button>
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
@@ -354,8 +361,17 @@ export function UnifiedAdminLayout({
             })}
           </div>
 
-          {/* Déconnexion mobile */}
-          <div className="border-t border-border pt-4 mt-2">
+          {/* Tracking + Déconnexion mobile */}
+          <div className="border-t border-border pt-4 mt-2 space-y-1">
+            <button
+              onClick={() => { navigate("/admin/beta-tracking"); setMoreSheetOpen(false); }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted transition-colors"
+            >
+              <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
+                <Activity className="w-4 h-4" />
+              </div>
+              <span className="flex-1 text-left font-medium text-sm">Tracking Bêta GP</span>
+            </button>
             <button
               onClick={() => { handleLogout(); setMoreSheetOpen(false); }}
               className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-destructive/10 text-destructive transition-colors"
