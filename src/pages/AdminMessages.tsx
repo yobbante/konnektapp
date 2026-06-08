@@ -295,7 +295,7 @@ export default function AdminMessages() {
     return true;
   });
 
-  const hasDetail = !!selectedConversation || (activeTab === "whatsapp" && !!waSelected);
+  const hasDetail = !!selectedConversation || (!!waSelected && activeTab !== "conversations");
 
   if (roleLoading || loading) {
     return (
