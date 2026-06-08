@@ -34,11 +34,22 @@ export default function OnboardingGP() {
     sessionStorage.setItem(REF_STORAGE_KEY, normalizedRef);
 
     (async () => {
-      const { data: known } = await supabase
+      // La référence GP (ex: GP9391) est stockée dans la colonne `reference`
+      // de la table `transporteurs`.
+      const { data: known, error } = await supabase
         .from("transporteurs")
         .select("prenom, nom, telephone_1, telephone_2")
         .ilike("reference", normalizedRef)
         .maybeSingle();
+
+      console.log("[OnboardingGP] fetch", normalizedRef, { known, error });
+
+      if (error) {
+        console.error("[OnboardingGP] SELECT error:", error.message);
+      }
+      if (!known) {
+        console.warn(`[OnboardingGP] Aucun GP trouvé pour ${normalizedRef} — formulaire vide.`);
+      }
 
       if (known) {
         // Si prénom manquant, on bascule le nom unique dans le champ Prénom.
