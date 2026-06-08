@@ -136,7 +136,28 @@ Deno.serve(async (req) => {
       console.error("[gp-onboarding-track] webhook failed", String(whErr));
     }
 
-    return json({ ok: true, already_registered });
+    // On registration: send the Konnekt welcome WhatsApp from the 926 number.
+    // Only once per GP (skip if welcome already sent).
+    let welcome_sent = false;
+    if (event === "registered") {
+      const { data: gp } = await admin
+        .from("transporteurs")
+        .select("prenom, telephone_1, welcome_sent_at")
+        .ilike("reference", ref_gp)
+        .maybeSingle();
+
+      if (gp?.telephone_1 && !gp.welcome_sent_at) {
+        welcome_sent = await sendWhatsApp(gp.telephone_1, buildWelcomeMessage(gp.prenom ?? ""));
+        if (welcome_sent) {
+          await admin
+            .from("transporteurs")
+            .update({ welcome_sent_at: new Date().toISOString() })
+            .ilike("reference", ref_gp);
+        }
+      }
+    }
+
+    return json({ ok: true, already_registered, welcome_sent });
   } catch (e) {
     console.error("[gp-onboarding-track] error", String((e as Error).message || e));
     return json({ error: String((e as Error).message || e) }, 500);
