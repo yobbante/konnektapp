@@ -133,6 +133,13 @@ export default function AdminMessages() {
         .order("created_at", { ascending: false });
       const rows = (msgs as any[]) || [];
 
+      // Conversations bot WhatsApp (entrants GP + réponses bot)
+      const { data: inbound } = await (supabase as any)
+        .from("whatsapp_inbound_messages")
+        .select("sender_phone, message_body, bot_reply, created_at")
+        .order("created_at", { ascending: false });
+      const inRows = (inbound as any[]) || [];
+
       const { data: regEvents } = await (supabase as any)
         .from("gp_onboarding_events")
         .select("ref_gp, event");
@@ -141,9 +148,11 @@ export default function AdminMessages() {
       );
       const knownRefs = new Set(((regEvents as any[]) || []).map((e) => e.ref_gp));
 
+      const keyOf = (phone?: string | null) => normPhone(phone || "");
+
       const map = new Map<string, WaThread>();
       for (const r of rows) {
-        const key = r.telephone || r.ref_gp;
+        const key = keyOf(r.telephone) || r.ref_gp;
         if (!key) continue;
         if (!map.has(key)) {
           const status: WaThread["status"] = registeredRefs.has(r.ref_gp)
@@ -165,7 +174,35 @@ export default function AdminMessages() {
         if (!r.lu && r.direction === "in") t.unread += 1;
       }
 
-      const threads = Array.from(map.values());
+      // Ajoute / fusionne les conversations bot WhatsApp par numéro
+      for (const r of inRows) {
+        if (!r.sender_phone) continue;
+        const key = keyOf(r.sender_phone);
+        if (!key) continue;
+        const last = r.bot_reply || r.message_body || "";
+        if (!map.has(key)) {
+          map.set(key, {
+            telephone: r.sender_phone,
+            ref_gp: null,
+            gp_name: r.sender_phone,
+            last_message: last,
+            last_at: r.created_at,
+            unread: 0,
+            status: "unknown",
+          });
+        } else {
+          const t = map.get(key)!;
+          // garde le message le plus récent comme aperçu
+          if (new Date(r.created_at).getTime() > new Date(t.last_at).getTime()) {
+            t.last_message = last;
+            t.last_at = r.created_at;
+          }
+        }
+      }
+
+      const threads = Array.from(map.values()).sort(
+        (a, b) => new Date(b.last_at).getTime() - new Date(a.last_at).getTime()
+      );
       const refs = threads.map((t) => t.ref_gp).filter(Boolean);
       if (refs.length > 0) {
         const { data: profs } = await supabase
@@ -179,7 +216,7 @@ export default function AdminMessages() {
       }
       setWaThreads(threads);
       // keep selected thread fresh
-      setWaSelected((prev) => (prev ? threads.find((t) => t.telephone === prev.telephone) || prev : prev));
+      setWaSelected((prev) => (prev ? threads.find((t) => normPhone(t.telephone) === normPhone(prev.telephone)) || prev : prev));
     } catch (error) {
       console.error("Error fetching WhatsApp threads:", error);
     }
