@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
     if (!REF_REGEX.test(ref_gp)) {
       return json({ error: "Invalid ref_gp format" }, 400);
     }
-    if (event !== "link_opened" && event !== "registered") {
+    if (event !== "link_opened" && event !== "registered" && event !== "whatsapp_clicked") {
       return json({ error: "Invalid event" }, 400);
     }
 
@@ -119,6 +119,25 @@ Deno.serve(async (req) => {
       occurred_at: timestamp,
     });
     if (insertErr) throw insertErr;
+
+    // ----- Suivi onboarding sur le registre GP (transporteurs) -----
+    // form_completed_at : formulaire validé (étape 2 → inscription réussie)
+    if (event === "registered") {
+      await admin
+        .from("transporteurs")
+        .update({ form_completed_at: timestamp })
+        .ilike("reference", ref_gp)
+        .is("form_completed_at", null);
+    }
+    // whatsapp_clicked_at : clic sur "Activer mon compte sur WhatsApp"
+    if (event === "whatsapp_clicked") {
+      await admin
+        .from("transporteurs")
+        .update({ whatsapp_clicked_at: timestamp })
+        .ilike("reference", ref_gp)
+        .is("whatsapp_clicked_at", null);
+    }
+
 
     // Fire the webhook to Yobbanté (server-side, best-effort)
     const webhookPayload =
