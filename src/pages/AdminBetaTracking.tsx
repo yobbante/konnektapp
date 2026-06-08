@@ -6,9 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Loader2, RefreshCw, TrendingUp, Users, Send, MousePointerClick,
-  ChevronDown, ChevronUp, MessageCircle, ArrowUpDown, MapPin, Phone, Clock, FileText,
+  ChevronDown, ChevronUp, MessageCircle, ArrowUpDown, MapPin, Phone, Clock, FileText, Copy,
 } from "lucide-react";
 import { UnifiedAdminLayout } from "@/components/layout/UnifiedAdminLayout";
+import { toast } from "@/hooks/use-toast";
 
 interface Event {
   id: string;
@@ -273,11 +274,24 @@ export default function AdminBetaTracking() {
     return steps.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
   };
 
-  const askDossier = (g: GP) => {
+  const dossierLink = (g: GP) => {
     const num = normPhone(g.phone);
     const firstName = g.name.split(" ")[0] || "";
     const msg = `Bonjour ${firstName}, ici l'équipe Konnekt. Pour finaliser votre dossier GP (réf ${g.ref}), merci de nous transmettre : pièce d'identité, photo/selfie, et justificatif de voyage. Merci !`;
-    window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, "_blank");
+    return `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
+  };
+
+  const askDossier = (g: GP) => {
+    window.open(dossierLink(g), "_blank");
+  };
+
+  const copyDossierLink = async (g: GP) => {
+    try {
+      await navigator.clipboard.writeText(dossierLink(g));
+      toast({ title: "Lien copié", description: "Lien wa.me copié dans le presse-papier." });
+    } catch {
+      toast({ title: "Échec de la copie", description: "Copiez le lien manuellement.", variant: "destructive" });
+    }
   };
 
   // Inscriptions par jour sur 30 derniers jours (profils)
@@ -547,16 +561,31 @@ export default function AdminBetaTracking() {
                                   </div>
                                 </div>
                               </div>
-                              <div className="mt-4 flex gap-2">
-                                <Button
-                                  size="sm"
-                                  className="h-8 text-xs"
-                                  disabled={!normPhone(g.phone)}
-                                  onClick={(e) => { e.stopPropagation(); askDossier(g); }}
-                                >
-                                  <MessageCircle className="w-3.5 h-3.5 mr-1.5" /> Demander compléments (WhatsApp)
-                                </Button>
+                              <div className="mt-4 space-y-2">
+                                <div className="flex flex-wrap gap-2">
+                                  <Button
+                                    size="sm"
+                                    className="h-8 text-xs"
+                                    disabled={!normPhone(g.phone)}
+                                    onClick={(e) => { e.stopPropagation(); askDossier(g); }}
+                                  >
+                                    <MessageCircle className="w-3.5 h-3.5 mr-1.5" /> Demander compléments (WhatsApp)
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-8 text-xs"
+                                    disabled={!normPhone(g.phone)}
+                                    onClick={(e) => { e.stopPropagation(); copyDossierLink(g); }}
+                                  >
+                                    <Copy className="w-3.5 h-3.5 mr-1.5" /> Copier le lien wa.me
+                                  </Button>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground">
+                                  Si la fenêtre WhatsApp ne s'ouvre pas (envoi automatique limité à 24h), copiez le lien wa.me et collez-le dans votre navigateur ou WhatsApp.
+                                </p>
                               </div>
+
                             </td>
                           </tr>
                         )}
