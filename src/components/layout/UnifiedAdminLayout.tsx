@@ -334,7 +334,7 @@ export function UnifiedAdminLayout({
               <motion.button
                 key={modId}
                 whileTap={{ scale: 0.9 }}
-                onClick={() => onModuleChange(modId)}
+                onClick={() => handleModuleClick(modId)}
                 className={cn(
                   "flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors",
                   isScan ? "" : isActive ? "text-white" : "text-white/40"
