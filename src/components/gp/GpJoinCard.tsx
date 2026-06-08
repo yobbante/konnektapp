@@ -10,6 +10,7 @@
  * La création du profil se fait via l'edge function `rejoindre-gp`.
  */
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   MessageCircle,
@@ -153,6 +154,7 @@ export function GpJoinCard({
   refGp,
   onRegistered,
 }: GpJoinCardProps) {
+  const navigate = useNavigate();
   const [step, setStep] = useState<1 | 2>(1);
 
   const [prenom, setPrenom] = useState(initialPrenom);
@@ -247,18 +249,10 @@ export function GpJoinCard({
           <CheckCircle2 className="w-9 h-9" style={{ color: TEAL }} />
         </div>
         <h2 className="text-2xl font-bold" style={{ color: "#111827" }}>
-          Bienvenue dans le réseau, {prenom.trim()} !
+          Dernière étape, {prenom.trim()} !
         </h2>
         <p className="mt-2 text-sm" style={{ color: "#6B7280" }}>
-          Votre navette{" "}
-          <span className="font-semibold" style={{ color: TEAL_DARK }}>
-            {getFlag(originCountry)} {originCity} → {destCity} {getFlag(destCountry)}
-          </span>{" "}
-          est enregistrée.
-        </p>
-        <p className="mt-3 text-sm leading-relaxed" style={{ color: "#6B7280" }}>
-          Dernière étape : confirmez sur WhatsApp pour activer votre compte et recevoir vos
-          premières missions.
+          Confirmez sur WhatsApp pour recevoir vos missions
         </p>
 
         <a
@@ -283,12 +277,30 @@ export function GpJoinCard({
             Activer mon compte sur WhatsApp →
           </Button>
         </a>
-        <p className="mt-3" style={{ color: "#6B7280", fontSize: 13 }}>
-          Cette étape est indispensable pour recevoir vos missions.
+
+        {/* Séparateur "ou" */}
+        <div className="flex items-center gap-3 my-5">
+          <div className="flex-1 h-px" style={{ backgroundColor: "#E5E7EB" }} />
+          <span className="text-xs font-medium" style={{ color: "#9CA3AF" }}>ou</span>
+          <div className="flex-1 h-px" style={{ backgroundColor: "#E5E7EB" }} />
+        </div>
+
+        <button
+          type="button"
+          onClick={() => navigate("/gp/dashboard")}
+          className="text-sm font-semibold"
+          style={{ color: TEAL_DARK }}
+        >
+          Accéder à mon espace GP →
+        </button>
+
+        <p className="mt-6 text-xs leading-relaxed" style={{ color: "#6B7280" }}>
+          L'activation WhatsApp est recommandée pour recevoir vos missions en temps réel.
         </p>
       </motion.div>
     );
   }
+
 
   return (
     <div>
@@ -476,7 +488,7 @@ export function GpJoinCard({
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = TEAL_DARK)}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = TEAL)}
             >
-              {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Activer mon compte GP →"}
+              {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Continuer →"}
             </Button>
           </div>
 
