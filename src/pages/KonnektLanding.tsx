@@ -177,7 +177,14 @@ export default function KonnektLanding() {
             <a href="#cta" onClick={scrollTo("cta")} className="hover:text-[#0D1B2A] transition-colors">Rejoindre</a>
           </nav>
 
-          <div className="hidden md:block">
+          <div className="hidden md:flex items-center gap-4">
+            <Link
+              to="/gp/connexion"
+              className="text-[14px] font-semibold transition-colors hover:text-[#0D1B2A]"
+              style={{ color: GRAY }}
+            >
+              Se connecter
+            </Link>
             <Link
               to="/rejoindre-gp"
               className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[14px] font-semibold text-white transition-transform hover:-translate-y-0.5"
