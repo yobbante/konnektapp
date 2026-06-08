@@ -298,17 +298,19 @@ export function UnifiedAdminLayout({
             </div>
           </div>
           {/* Mobile search */}
-          <div className="px-4 pb-2.5 sm:hidden">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" />
-              <Input
-                placeholder="Rechercher colis, GP, commandes..."
-                className="pl-8 h-9 bg-white/10 border-white/20 text-white placeholder:text-white/40 text-sm rounded-lg"
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-              />
+          {onSearchChange && (
+            <div className="px-4 pb-2.5 sm:hidden">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" />
+                <Input
+                  placeholder="Rechercher colis, GP, commandes..."
+                  className="pl-8 h-9 bg-white/10 border-white/20 text-white placeholder:text-white/40 text-sm rounded-lg"
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </header>
 
         {/* Page Content */}
