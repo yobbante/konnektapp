@@ -15,6 +15,13 @@ import {
 } from "@/components/ui/table";
 import { Loader2, RefreshCw, MousePointerClick, UserCheck, Link2 } from "lucide-react";
 
+function fmtShort(value: string | null | undefined): string {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return "—";
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
 interface OnboardingEvent {
   id: string;
   ref_gp: string;
