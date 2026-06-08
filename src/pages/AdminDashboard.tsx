@@ -31,11 +31,16 @@ import { assertValidGpStatus, type GpStatus } from "@/lib/enumMappings";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const { isAdmin, isModerator, loading: roleLoading } = useUserRole();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeModule, setActiveModule] = useState<AdminModule>("overview");
+  const VALID_MODULES: AdminModule[] = ["overview","colis","gp","transporteurs","finance","scan","litiges","assurance","manuel","taux","parametres","kyc","clients","demandes","reputation","support","mobility"];
+  const initialModule = (searchParams.get("m") as AdminModule) || "overview";
+  const [activeModule, setActiveModule] = useState<AdminModule>(
+    VALID_MODULES.includes(initialModule) ? initialModule : "overview"
+  );
   const [searchQuery, setSearchQuery] = useState("");
 
   // Data
