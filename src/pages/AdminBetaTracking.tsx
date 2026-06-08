@@ -274,11 +274,24 @@ export default function AdminBetaTracking() {
     return steps.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
   };
 
-  const askDossier = (g: GP) => {
+  const dossierLink = (g: GP) => {
     const num = normPhone(g.phone);
     const firstName = g.name.split(" ")[0] || "";
     const msg = `Bonjour ${firstName}, ici l'équipe Konnekt. Pour finaliser votre dossier GP (réf ${g.ref}), merci de nous transmettre : pièce d'identité, photo/selfie, et justificatif de voyage. Merci !`;
-    window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, "_blank");
+    return `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
+  };
+
+  const askDossier = (g: GP) => {
+    window.open(dossierLink(g), "_blank");
+  };
+
+  const copyDossierLink = async (g: GP) => {
+    try {
+      await navigator.clipboard.writeText(dossierLink(g));
+      toast({ title: "Lien copié", description: "Lien wa.me copié dans le presse-papier." });
+    } catch {
+      toast({ title: "Échec de la copie", description: "Copiez le lien manuellement.", variant: "destructive" });
+    }
   };
 
   // Inscriptions par jour sur 30 derniers jours (profils)
