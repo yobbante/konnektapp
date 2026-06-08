@@ -1512,6 +1512,36 @@ export type Database = {
           },
         ]
       }
+      gp_messages: {
+        Row: {
+          created_at: string
+          direction: string
+          id: string
+          lu: boolean
+          message: string | null
+          ref_gp: string | null
+          telephone: string
+        }
+        Insert: {
+          created_at?: string
+          direction?: string
+          id?: string
+          lu?: boolean
+          message?: string | null
+          ref_gp?: string | null
+          telephone: string
+        }
+        Update: {
+          created_at?: string
+          direction?: string
+          id?: string
+          lu?: boolean
+          message?: string | null
+          ref_gp?: string | null
+          telephone?: string
+        }
+        Relationships: []
+      }
       gp_navette_change_requests: {
         Row: {
           admin_notes: string | null
