@@ -385,12 +385,12 @@ export function UnifiedAdminLayout({
                   </p>
                   <div className="grid grid-cols-3 gap-2">
                     {groupModules.map((mod) => {
-                      const isActive = activeModule === mod.id;
+                      const isActive = activeModule === mod.id && !activeRoute;
                       return (
                         <button
                           key={mod.id}
                           onClick={() => {
-                            onModuleChange(mod.id);
+                            handleModuleClick(mod.id);
                             setMoreSheetOpen(false);
                           }}
                           className={cn(
