@@ -193,26 +193,37 @@ export default function KonnektLanding() {
         </div>
       </header>
 
-      {/* Mobile menu */}
+      {/* Mobile menu — déroulé sobre & épuré */}
       {open && (
         <div className="fixed inset-0 z-[60] md:hidden">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
-          <div className="absolute top-0 right-0 w-[82%] max-w-xs h-full bg-white p-6 flex flex-col">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-2">
-                <img src={konnektLogo} alt="Konnekt" className="w-7 h-7 object-contain" />
-                <span className="font-extrabold text-[16px]" style={{ color: TEAL_DARK }}>Konnekt</span>
-              </div>
-              <button onClick={() => setOpen(false)} aria-label="Fermer" style={{ color: DARK }}><X className="w-6 h-6" /></button>
-            </div>
-            <nav className="flex flex-col gap-1 text-[15px] font-medium" style={{ color: DARK }}>
+          <div className="absolute inset-0 bg-black/20" onClick={() => setOpen(false)} />
+          <div
+            className="absolute top-[68px] inset-x-4 rounded-2xl bg-white p-4 origin-top animate-in fade-in slide-in-from-top-2 duration-200"
+            style={{ boxShadow: "0 12px 40px rgba(0,0,0,0.12)", border: "1px solid rgba(13,27,42,0.06)" }}
+          >
+            <nav className="flex flex-col text-[15px] font-medium" style={{ color: DARK }}>
               <a href="#fonctionnement" onClick={scrollTo("fonctionnement")} className="py-3 border-b border-gray-100">Comment ça marche</a>
               <a href="#confiance" onClick={scrollTo("confiance")} className="py-3 border-b border-gray-100">Pour qui</a>
               <a href="#cta" onClick={scrollTo("cta")} className="py-3 border-b border-gray-100">Rejoindre</a>
             </nav>
-            <Link to="/rejoindre-gp" onClick={() => setOpen(false)} className="mt-auto inline-flex items-center justify-center gap-2 rounded-full py-3.5 font-semibold text-white" style={{ backgroundColor: TEAL }}>
-              Rejoindre le réseau <ArrowRight className="w-4 h-4" />
-            </Link>
+            <div className="mt-4 flex flex-col gap-2.5">
+              <Link
+                to="/rejoindre-gp"
+                onClick={() => setOpen(false)}
+                className="inline-flex items-center justify-center gap-2 rounded-full py-3 font-semibold text-white"
+                style={{ backgroundColor: TEAL }}
+              >
+                Rejoindre le réseau <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                to="/gp/connexion"
+                onClick={() => setOpen(false)}
+                className="inline-flex items-center justify-center gap-2 rounded-full py-3 font-semibold border-2 transition-colors hover:bg-[hsl(168_60%_42%/0.06)]"
+                style={{ borderColor: TEAL, color: TEAL_DARK }}
+              >
+                Se connecter
+              </Link>
+            </div>
           </div>
         </div>
       )}
