@@ -833,6 +833,42 @@ function WaThreadDetail({
 }
 
 /* ============ small helpers ============ */
+/* ============ Statut live de la ligne WhatsApp 926 (bot) ============ */
+function LineStatus() {
+  const [state, setState] = useState<"checking" | "online" | "offline">("checking");
+
+  const check = useCallback(async () => {
+    setState("checking");
+    try {
+      const { data, error } = await supabase.functions.invoke("gp-bot", { body: { ping: true } });
+      if (!error && (data as any)?.status === "ok") setState("online");
+      else setState("offline");
+    } catch {
+      setState("offline");
+    }
+  }, []);
+
+  useEffect(() => { check(); }, [check]);
+
+  const color = state === "online" ? "bg-green-500" : state === "offline" ? "bg-red-500" : "bg-amber-500";
+  const label =
+    state === "online" ? "Ligne 926 connectée" : state === "offline" ? "Ligne 926 hors ligne" : "Vérification 926...";
+
+  return (
+    <button
+      type="button"
+      onClick={check}
+      className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+      title="Tester la connexion du bot WhatsApp"
+    >
+      <span className={`w-2 h-2 rounded-full ${color} ${state === "checking" ? "animate-pulse" : ""}`} />
+      <Bot className="w-3.5 h-3.5" />
+      {label}
+      <RefreshCw className="w-3 h-3 opacity-60" />
+    </button>
+  );
+}
+
 function Avatar({ name, green }: { name: string; green?: boolean }) {
   const initials = (name || "?").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   return (
