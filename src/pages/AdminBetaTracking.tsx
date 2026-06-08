@@ -286,7 +286,8 @@ export default function AdminBetaTracking() {
           </Card>
         </>
       )}
-    </div>
+      </div>
+    </UnifiedAdminLayout>
   );
 }
 
