@@ -40,6 +40,10 @@ Deno.serve(async (req) => {
     const destCountry = (body.destCountry || "").trim().toUpperCase();
     const pricePerKg =
       typeof body.pricePerKg === "number" && body.pricePerKg > 0 ? body.pricePerKg : null;
+    const allowedCurrencies = ["XOF", "EUR", "USD", "CAD", "GBP", "MAD", "AED"];
+    const currency = allowedCurrencies.includes((body.currency || "").toUpperCase())
+      ? (body.currency as string).toUpperCase()
+      : "XOF";
 
     if (!prenom || !nom || phone.length < 8) {
       return new Response(JSON.stringify({ error: "Champs obligatoires manquants" }), {
