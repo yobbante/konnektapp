@@ -226,7 +226,7 @@ export default function KonnektLanding() {
               className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold"
               style={{ backgroundColor: "hsl(168 60% 42% / 0.1)", color: TEAL_DARK }}
             >
-              🚀 Accès bêta ouvert
+              Accès bêta ouvert
             </span>
 
             <h1 className="mt-6 tracking-tight leading-[1.02] text-[48px] md:text-[72px]">
