@@ -34,19 +34,28 @@ export default function OnboardingGP() {
     sessionStorage.setItem(REF_STORAGE_KEY, normalizedRef);
 
     (async () => {
-      // La référence GP (ex: GP9391) est stockée dans la colonne `reference`
-      // de la table `transporteurs`.
-      const { data: known, error } = await supabase
-        .from("transporteurs")
-        .select("prenom, nom, telephone_1, telephone_2")
-        .ilike("reference", normalizedRef)
-        .maybeSingle();
+      // Les données des GPs sont dans le projet Supabase Yobbanté.
+      // On les récupère via l'edge function `get-gp-data`.
+      let known: {
+        prenom: string | null;
+        nom: string | null;
+        telephone_1: string | null;
+        telephone_2: string | null;
+      } | null = null;
 
-      console.log("[OnboardingGP] fetch", normalizedRef, { known, error });
-
-      if (error) {
-        console.error("[OnboardingGP] SELECT error:", error.message);
+      try {
+        const { data, error } = await supabase.functions.invoke("get-gp-data", {
+          body: { ref_gp: normalizedRef },
+        });
+        console.log("[OnboardingGP] get-gp-data", normalizedRef, { data, error });
+        if (error) {
+          console.error("[OnboardingGP] get-gp-data error:", error.message);
+        }
+        known = (data as { data?: typeof known } | null)?.data ?? null;
+      } catch (e) {
+        console.error("[OnboardingGP] get-gp-data invoke failed:", e);
       }
+
       if (!known) {
         console.warn(`[OnboardingGP] Aucun GP trouvé pour ${normalizedRef} — formulaire vide.`);
       }
