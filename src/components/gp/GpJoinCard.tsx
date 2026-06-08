@@ -10,6 +10,7 @@
  * La création du profil se fait via l'edge function `rejoindre-gp`.
  */
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   MessageCircle,
