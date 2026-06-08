@@ -693,22 +693,34 @@ function WaThreadDetail({
         {messages.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center mt-8">Aucun message</p>
         ) : (
-          messages.map((m) => (
-            <div
-              key={m.id}
-              className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm shadow-sm ${
-                m.direction === "out"
-                  ? "ml-auto bg-[hsl(96,44%,68%)] text-foreground rounded-br-sm"
-                  : "bg-white text-foreground rounded-bl-sm dark:bg-card"
-              }`}
-            >
-              <p className="whitespace-pre-wrap break-words">{m.message}</p>
-              <p className="text-[10px] opacity-60 mt-1 flex items-center justify-end gap-1">
-                {fmtTime(m.created_at)}
-                {m.direction === "out" && <CheckCheck className="w-3 h-3" />}
-              </p>
-            </div>
-          ))
+          messages.map((m) => {
+            const isBot = m.source === "bot";
+            const isAdmin = m.source === "admin";
+            const out = m.direction === "out";
+            return (
+              <div
+                key={m.id}
+                className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm shadow-sm ${
+                  isBot
+                    ? "ml-auto bg-blue-500/10 text-foreground rounded-br-sm border border-blue-500/20"
+                    : isAdmin
+                    ? "ml-auto bg-[hsl(96,44%,68%)] text-foreground rounded-br-sm"
+                    : "bg-white text-foreground rounded-bl-sm dark:bg-card"
+                }`}
+              >
+                {isBot && (
+                  <p className="text-[10px] font-semibold text-blue-600 flex items-center gap-1 mb-0.5">
+                    <Bot className="w-3 h-3" /> Bot auto
+                  </p>
+                )}
+                <p className="whitespace-pre-wrap break-words">{m.message}</p>
+                <p className="text-[10px] opacity-60 mt-1 flex items-center justify-end gap-1">
+                  {fmtTime(m.created_at)}
+                  {out && <CheckCheck className="w-3 h-3" />}
+                </p>
+              </div>
+            );
+          })
         )}
       </div>
 
