@@ -784,5 +784,9 @@ function fmtDate(d: string) {
 function fmtTime(d: string) {
   return new Date(d).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 }
+function normPhone(p: string) {
+  const d = (p || "").replace(/\D/g, "");
+  return d.length >= 9 ? d.slice(-9) : d;
+}
 
 export { AdminMessages };
