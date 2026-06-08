@@ -510,7 +510,7 @@ export default function AdminMessages() {
               onBack={() => setSelectedConversation(null)}
               contactName={selectedContactName}
             />
-          ) : activeTab === "whatsapp" && waSelected ? (
+          ) : waSelected && activeTab !== "conversations" ? (
             <WaThreadDetail
               key={waSelected.telephone}
               thread={waSelected}
