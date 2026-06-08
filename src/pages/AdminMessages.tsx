@@ -585,6 +585,8 @@ export default function AdminMessages() {
               onBack={() => setSelectedConversation(null)}
               contactName={selectedContactName}
             />
+          ) : activeTab === "whatsapp" && waSelected ? (
+            <WaThreadDetail thread={waSelected} />
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
