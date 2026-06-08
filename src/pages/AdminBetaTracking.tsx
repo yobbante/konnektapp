@@ -530,6 +530,21 @@ export default function AdminBetaTracking() {
                                       <span className="text-muted-foreground ml-auto tabular-nums">{new Date(s.at).toLocaleString("fr-FR")}</span>
                                     </div>
                                   ))}
+                                  <div className="border-t border-border/50 mt-2 pt-2 space-y-1.5">
+                                    {[
+                                      { label: "Formulaire complété", at: g.formCompletedAt },
+                                      { label: "WA cliqué", at: g.whatsappClickedAt },
+                                      { label: "WA confirmé", at: g.whatsappConfirmedAt },
+                                    ].map((s) => (
+                                      <div key={s.label} className="flex items-center gap-2">
+                                        <Clock className="w-3 h-3 text-muted-foreground shrink-0" />
+                                        <span className="font-medium">{s.label}</span>
+                                        <span className="text-muted-foreground ml-auto tabular-nums">
+                                          {s.at ? new Date(s.at).toLocaleString("fr-FR") : "—"}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
                               </div>
                               <div className="mt-4 flex gap-2">
