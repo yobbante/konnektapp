@@ -561,16 +561,31 @@ export default function AdminBetaTracking() {
                                   </div>
                                 </div>
                               </div>
-                              <div className="mt-4 flex gap-2">
-                                <Button
-                                  size="sm"
-                                  className="h-8 text-xs"
-                                  disabled={!normPhone(g.phone)}
-                                  onClick={(e) => { e.stopPropagation(); askDossier(g); }}
-                                >
-                                  <MessageCircle className="w-3.5 h-3.5 mr-1.5" /> Demander compléments (WhatsApp)
-                                </Button>
+                              <div className="mt-4 space-y-2">
+                                <div className="flex flex-wrap gap-2">
+                                  <Button
+                                    size="sm"
+                                    className="h-8 text-xs"
+                                    disabled={!normPhone(g.phone)}
+                                    onClick={(e) => { e.stopPropagation(); askDossier(g); }}
+                                  >
+                                    <MessageCircle className="w-3.5 h-3.5 mr-1.5" /> Demander compléments (WhatsApp)
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-8 text-xs"
+                                    disabled={!normPhone(g.phone)}
+                                    onClick={(e) => { e.stopPropagation(); copyDossierLink(g); }}
+                                  >
+                                    <Copy className="w-3.5 h-3.5 mr-1.5" /> Copier le lien wa.me
+                                  </Button>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground">
+                                  Si la fenêtre WhatsApp ne s'ouvre pas (envoi automatique limité à 24h), copiez le lien wa.me et collez-le dans votre navigateur ou WhatsApp.
+                                </p>
                               </div>
+
                             </td>
                           </tr>
                         )}
