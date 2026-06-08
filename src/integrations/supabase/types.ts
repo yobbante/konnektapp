@@ -6414,6 +6414,7 @@ export type Database = {
           telephone_1: string | null
           telephone_2: string | null
           updated_at: string
+          welcome_sent_at: string | null
         }
         Insert: {
           created_at?: string
@@ -6425,6 +6426,7 @@ export type Database = {
           telephone_1?: string | null
           telephone_2?: string | null
           updated_at?: string
+          welcome_sent_at?: string | null
         }
         Update: {
           created_at?: string
@@ -6436,6 +6438,7 @@ export type Database = {
           telephone_1?: string | null
           telephone_2?: string | null
           updated_at?: string
+          welcome_sent_at?: string | null
         }
         Relationships: []
       }
