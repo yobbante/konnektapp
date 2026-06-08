@@ -13,6 +13,7 @@ interface Payload {
   destCity?: string;
   destCountry?: string;
   pricePerKg?: number | null;
+  currency?: string | null;
   // legacy (ignored, kept for backward compat)
   destinations?: string[];
   modes?: string[];
@@ -39,6 +40,10 @@ Deno.serve(async (req) => {
     const destCountry = (body.destCountry || "").trim().toUpperCase();
     const pricePerKg =
       typeof body.pricePerKg === "number" && body.pricePerKg > 0 ? body.pricePerKg : null;
+    const allowedCurrencies = ["XOF", "EUR", "USD", "CAD", "GBP", "MAD", "AED"];
+    const currency = allowedCurrencies.includes((body.currency || "").toUpperCase())
+      ? (body.currency as string).toUpperCase()
+      : "XOF";
 
     if (!prenom || !nom || phone.length < 8) {
       return new Response(JSON.stringify({ error: "Champs obligatoires manquants" }), {
@@ -65,6 +70,7 @@ Deno.serve(async (req) => {
       base_origin_country: originCountry,
       beta_source: "rejoindre-gp",
       is_active: false,
+      default_currency: currency,
     };
     if (destCity) {
       record.base_destination_city = destCity;

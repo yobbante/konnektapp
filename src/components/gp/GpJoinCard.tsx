@@ -35,6 +35,17 @@ import { ChevronDown } from "lucide-react";
 const TEAL = "#0D9488";
 const TEAL_DARK = "#0F766E";
 
+/** Devises supportées + exemple de tarif/kg adapté à chaque monnaie. */
+const CURRENCIES = [
+  { code: "XOF", symbol: "FCFA", placeholder: "5000" },
+  { code: "EUR", symbol: "€", placeholder: "8" },
+  { code: "USD", symbol: "$", placeholder: "9" },
+  { code: "CAD", symbol: "C$", placeholder: "12" },
+  { code: "GBP", symbol: "£", placeholder: "7" },
+  { code: "MAD", symbol: "DH", placeholder: "80" },
+  { code: "AED", symbol: "AED", placeholder: "30" },
+];
+
 const WHATSAPP_LINK =
   "https://wa.me/221789269756?text=Bonjour%20Konnekt%2C%20je%20viens%20de%20m%27inscrire%20comme%20GP.%20Je%20souhaite%20activer%20mon%20compte%20et%20recevoir%20mes%20missions.";
 
@@ -150,6 +161,8 @@ export function GpJoinCard({
   const [destCity, setDestCity] = useState("Paris");
   const [destCountry, setDestCountry] = useState("FR");
   const [pricePerKg, setPricePerKg] = useState("");
+  const [currencyCode, setCurrencyCode] = useState("XOF");
+  const currency = CURRENCIES.find((c) => c.code === currencyCode) || CURRENCIES[0];
 
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -199,6 +212,7 @@ export function GpJoinCard({
           destCity,
           destCountry,
           pricePerKg: pricePerKg ? Number(pricePerKg) : null,
+          currency: currencyCode,
         },
       });
       if (error) throw error;
@@ -382,35 +396,58 @@ export function GpJoinCard({
               <Coins className="w-4 h-4" style={{ color: TEAL }} />
               Tarif indicatif par kg <span style={{ color: "#9CA3AF", fontWeight: 400 }}>· optionnel</span>
             </Label>
-            <div className="relative">
-              <Input
-                type="number"
-                inputMode="numeric"
-                value={pricePerKg}
-                onChange={(e) => setPricePerKg(e.target.value)}
-                placeholder="Ex : 5000"
-                style={{ ...inputStyle, paddingRight: 64 }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = TEAL)}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "#D1D5DB")}
-              />
-              <span
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium"
-                style={{ color: "#9CA3AF" }}
+            <div className="flex gap-2">
+              <div className="relative flex-1 min-w-0">
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  value={pricePerKg}
+                  onChange={(e) => setPricePerKg(e.target.value)}
+                  placeholder={`Ex : ${currency.placeholder}`}
+                  style={{ ...inputStyle, paddingRight: 38 }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = TEAL)}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "#D1D5DB")}
+                />
+                <span
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium pointer-events-none"
+                  style={{ color: "#9CA3AF" }}
+                >
+                  /kg
+                </span>
+              </div>
+              <select
+                value={currencyCode}
+                onChange={(e) => setCurrencyCode(e.target.value)}
+                aria-label="Devise"
+                className="shrink-0 px-2 outline-none"
+                style={{
+                  backgroundColor: "#F9FAFB",
+                  border: "1.5px solid #D1D5DB",
+                  borderRadius: 10,
+                  height: 48,
+                  color: "#111827",
+                  fontSize: 14,
+                  fontWeight: 600,
+                }}
               >
-                FCFA/kg
-              </span>
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.symbol}
+                  </option>
+                ))}
+              </select>
             </div>
             <p className="text-xs" style={{ color: "#6B7280" }}>
-              Vous pourrez l'ajuster à tout moment.
+              Tarif en {currency.symbol}/kg · ajustable à tout moment.
             </p>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-2.5">
             <Button
               type="button"
               onClick={() => setStep(1)}
               variant="outline"
-              className="shrink-0"
+              className="shrink-0 px-4"
               style={{ height: 52, borderRadius: 12, fontWeight: 600 }}
             >
               Retour
@@ -418,7 +455,7 @@ export function GpJoinCard({
             <Button
               type="submit"
               disabled={submitting}
-              className="flex-1 text-base text-white"
+              className="flex-1 min-w-0 text-sm sm:text-base text-white px-2"
               style={{ height: 52, borderRadius: 12, fontWeight: 700, backgroundColor: TEAL }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = TEAL_DARK)}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = TEAL)}

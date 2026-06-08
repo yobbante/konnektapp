@@ -404,9 +404,13 @@ export function SearchableCitySelect({
   const isMobile = useIsMobile();
   const { cities: activeCities } = useActiveCities();
 
-  // Build city list from active platform cities
+  // Build city list from active platform cities, then append every other world
+  // city ("Autre" — toutes les villes du monde) at the bottom of the list.
   const platformCities = useMemo(() => {
-    return activeCities.map(c => ({ city: c.city, country: c.country_code, flag: c.flag }));
+    const active = activeCities.map(c => ({ city: c.city, country: c.country_code, flag: c.flag }));
+    const seen = new Set(active.map(c => `${c.city}|${c.country}`));
+    const extras = WORLD_CITIES.filter(c => !seen.has(`${c.city}|${c.country}`));
+    return [...active, ...extras];
   }, [activeCities]);
 
   const currentCity = useMemo(() => {
