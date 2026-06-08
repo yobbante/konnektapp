@@ -22,7 +22,7 @@ const SIGNUP_PATTERNS = [
 ];
 
 const SIGNUP_REPLY = `Salam !
-Bienvenue sur Yobbante GP.
+Bienvenue sur Konnekt.
 Votre inscription a bien ete recue. Notre equipe l active sous 24h.
 
 En attendant :
