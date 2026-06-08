@@ -156,6 +156,7 @@ export default function OnboardingGP() {
             initialPrenom={prenom}
             initialNom={nom}
             initialPhone={phone}
+            refGp={refGp}
             onRegistered={handleRegistered}
           />
         </div>
