@@ -67,23 +67,29 @@ const GROUP_LABELS: Record<string, string> = {
 interface UnifiedAdminLayoutProps {
   children: ReactNode;
   activeModule: AdminModule;
-  onModuleChange: (module: AdminModule) => void;
-  searchQuery: string;
-  onSearchChange: (q: string) => void;
-  onRefresh: () => void;
+  onModuleChange?: (module: AdminModule) => void;
+  searchQuery?: string;
+  onSearchChange?: (q: string) => void;
+  onRefresh?: () => void;
   refreshing?: boolean;
   subtitle?: string;
+  /** When true, module clicks navigate to /admin instead of calling onModuleChange */
+  standalone?: boolean;
+  /** Highlights a dedicated route item (Messages / Tracking) in the sidebar */
+  activeRoute?: "messages" | "tracking";
 }
 
 export function UnifiedAdminLayout({
   children,
   activeModule,
   onModuleChange,
-  searchQuery,
+  searchQuery = "",
   onSearchChange,
   onRefresh,
   refreshing = false,
   subtitle,
+  standalone = false,
+  activeRoute,
 }: UnifiedAdminLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
@@ -94,6 +100,14 @@ export function UnifiedAdminLayout({
     await supabase.auth.signOut();
     toast({ title: "Déconnexion réussie" });
     navigate("/");
+  };
+
+  const handleModuleClick = (id: AdminModule) => {
+    if (standalone) {
+      navigate(`/admin?m=${id}`);
+    } else {
+      onModuleChange?.(id);
+    }
   };
 
   const activeItem = ALL_MODULES.find(m => m.id === activeModule);
