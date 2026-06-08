@@ -537,12 +537,55 @@ function WaThreadDetail({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
-    const { data } = await (supabase as any)
+    const key = normPhone(thread.telephone);
+
+    // 1) Réponses manuelles admin (gp_messages)
+    const { data: gp } = await (supabase as any)
       .from("gp_messages")
       .select("id, message, direction, created_at, lu")
       .eq("telephone", thread.telephone)
       .order("created_at", { ascending: true });
-    setMessages((data as any[]) || []);
+
+    // 2) Conversation bot WhatsApp (whatsapp_inbound_messages)
+    const { data: inbound } = await (supabase as any)
+      .from("whatsapp_inbound_messages")
+      .select("id, sender_phone, message_body, bot_reply, created_at")
+      .order("created_at", { ascending: true });
+
+    const merged: any[] = [];
+    for (const m of ((gp as any[]) || [])) {
+      merged.push({
+        id: `gp-${m.id}`,
+        message: m.message,
+        direction: m.direction,
+        created_at: m.created_at,
+        source: m.direction === "out" ? "admin" : "gp",
+      });
+    }
+    for (const r of ((inbound as any[]) || [])) {
+      if (normPhone(r.sender_phone) !== key) continue;
+      if (r.message_body) {
+        merged.push({
+          id: `in-${r.id}`,
+          message: r.message_body,
+          direction: "in",
+          created_at: r.created_at,
+          source: "gp",
+        });
+      }
+      if (r.bot_reply) {
+        merged.push({
+          id: `bot-${r.id}`,
+          message: r.bot_reply,
+          direction: "out",
+          created_at: r.created_at,
+          source: "bot",
+        });
+      }
+    }
+    merged.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    setMessages(merged);
+
     await (supabase as any)
       .from("gp_messages")
       .update({ lu: true })
