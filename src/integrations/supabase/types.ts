@@ -6436,6 +6436,7 @@ export type Database = {
       transporteurs: {
         Row: {
           created_at: string
+          form_completed_at: string | null
           id: string
           navettes: string[]
           nom: string | null
@@ -6445,9 +6446,12 @@ export type Database = {
           telephone_2: string | null
           updated_at: string
           welcome_sent_at: string | null
+          whatsapp_clicked_at: string | null
+          whatsapp_confirmed_at: string | null
         }
         Insert: {
           created_at?: string
+          form_completed_at?: string | null
           id?: string
           navettes?: string[]
           nom?: string | null
@@ -6457,9 +6461,12 @@ export type Database = {
           telephone_2?: string | null
           updated_at?: string
           welcome_sent_at?: string | null
+          whatsapp_clicked_at?: string | null
+          whatsapp_confirmed_at?: string | null
         }
         Update: {
           created_at?: string
+          form_completed_at?: string | null
           id?: string
           navettes?: string[]
           nom?: string | null
@@ -6469,6 +6476,8 @@ export type Database = {
           telephone_2?: string | null
           updated_at?: string
           welcome_sent_at?: string | null
+          whatsapp_clicked_at?: string | null
+          whatsapp_confirmed_at?: string | null
         }
         Relationships: []
       }
