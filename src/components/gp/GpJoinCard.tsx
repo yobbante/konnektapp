@@ -488,7 +488,7 @@ export function GpJoinCard({
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = TEAL_DARK)}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = TEAL)}
             >
-              {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Activer mon compte GP →"}
+              {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Continuer →"}
             </Button>
           </div>
 
