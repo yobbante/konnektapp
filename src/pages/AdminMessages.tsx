@@ -203,20 +203,27 @@ export default function AdminMessages() {
       const threads = Array.from(map.values()).sort(
         (a, b) => new Date(b.last_at).getTime() - new Date(a.last_at).getTime()
       );
+      // Show all 926 conversations immediately — name enrichment must never block the list
+      setWaThreads(threads);
+      setWaSelected((prev) => (prev ? threads.find((t) => normPhone(t.telephone) === normPhone(prev.telephone)) || prev : prev));
+
       const refs = threads.map((t) => t.ref_gp).filter(Boolean);
       if (refs.length > 0) {
-        const { data: profs } = await supabase
-          .from("gp_profiles")
-          .select("reference, business_name")
-          .in("reference", refs as string[]);
-        const nameMap = new Map(((profs as any[]) || []).map((p) => [p.reference, p.business_name]));
-        threads.forEach((t) => {
-          if (t.ref_gp && nameMap.get(t.ref_gp)) t.gp_name = nameMap.get(t.ref_gp);
-        });
+        try {
+          const { data: profs } = await supabase
+            .from("gp_profiles")
+            .select("reference, business_name")
+            .in("reference", refs as string[]);
+          const nameMap = new Map(((profs as any[]) || []).map((p) => [p.reference, p.business_name]));
+          if (nameMap.size > 0) {
+            setWaThreads((cur) =>
+              cur.map((t) => (t.ref_gp && nameMap.get(t.ref_gp) ? { ...t, gp_name: nameMap.get(t.ref_gp) } : t))
+            );
+          }
+        } catch (e) {
+          console.error("WhatsApp name enrichment failed (non-blocking):", e);
+        }
       }
-      setWaThreads(threads);
-      // keep selected thread fresh
-      setWaSelected((prev) => (prev ? threads.find((t) => normPhone(t.telephone) === normPhone(prev.telephone)) || prev : prev));
     } catch (error) {
       console.error("Error fetching WhatsApp threads:", error);
     }

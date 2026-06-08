@@ -54,6 +54,9 @@ interface TransporteurRow {
   navettes: string[] | null;
   created_at: string;
   welcome_sent_at: string | null;
+  form_completed_at: string | null;
+  whatsapp_clicked_at: string | null;
+  whatsapp_confirmed_at: string | null;
 }
 
 interface OnboardingEvent {
@@ -84,6 +87,9 @@ interface GP {
   betaSource: string | null;
   routes: string[];
   welcomeSentAt: string | null;
+  formCompletedAt: string | null;
+  whatsappClickedAt: string | null;
+  whatsappConfirmedAt: string | null;
 }
 
 const EVENT_LABELS: Record<string, string> = {
@@ -134,7 +140,7 @@ export default function AdminBetaTracking() {
         .limit(500),
       supabase
         .from("transporteurs" as any)
-        .select("id, reference, prenom, nom, telephone_1, telephone_2, navettes, created_at, welcome_sent_at")
+        .select("id, reference, prenom, nom, telephone_1, telephone_2, navettes, created_at, welcome_sent_at, form_completed_at, whatsapp_clicked_at, whatsapp_confirmed_at")
         .order("created_at", { ascending: false })
         .limit(1000),
       supabase
@@ -184,6 +190,9 @@ export default function AdminBetaTracking() {
         betaSource: p.beta_source,
         routes: [...(p.zones_covered || []), ...(p.international_destinations || [])],
         welcomeSentAt: null,
+        formCompletedAt: null,
+        whatsappClickedAt: null,
+        whatsappConfirmedAt: null,
       });
     }
 
@@ -214,6 +223,9 @@ export default function AdminBetaTracking() {
         betaSource: "yobbante",
         routes: t.navettes || [],
         welcomeSentAt: t.welcome_sent_at,
+        formCompletedAt: t.form_completed_at,
+        whatsappClickedAt: t.whatsapp_clicked_at,
+        whatsappConfirmedAt: t.whatsapp_confirmed_at,
       });
     }
 
@@ -404,7 +416,7 @@ export default function AdminBetaTracking() {
               return (
                 <div className="flex items-end gap-1 h-32">
                   {dailyChart.map((d) => (
-                    <div key={d.day} className="flex-1 flex flex-col items-center gap-1" title={`${d.day} · ${d.count}`}>
+                    <div key={d.day} className="flex-1 h-full flex flex-col justify-end items-center gap-1" title={`${d.day} · ${d.count}`}>
                       <div
                         className="w-full rounded-t"
                         style={{
@@ -518,6 +530,21 @@ export default function AdminBetaTracking() {
                                       <span className="text-muted-foreground ml-auto tabular-nums">{new Date(s.at).toLocaleString("fr-FR")}</span>
                                     </div>
                                   ))}
+                                  <div className="border-t border-border/50 mt-2 pt-2 space-y-1.5">
+                                    {[
+                                      { label: "Formulaire complété", at: g.formCompletedAt },
+                                      { label: "WA cliqué", at: g.whatsappClickedAt },
+                                      { label: "WA confirmé", at: g.whatsappConfirmedAt },
+                                    ].map((s) => (
+                                      <div key={s.label} className="flex items-center gap-2">
+                                        <Clock className="w-3 h-3 text-muted-foreground shrink-0" />
+                                        <span className="font-medium">{s.label}</span>
+                                        <span className="text-muted-foreground ml-auto tabular-nums">
+                                          {s.at ? new Date(s.at).toLocaleString("fr-FR") : "—"}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
                               </div>
                               <div className="mt-4 flex gap-2">
