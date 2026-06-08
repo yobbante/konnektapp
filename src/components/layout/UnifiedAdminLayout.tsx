@@ -10,7 +10,8 @@ import {
   LayoutDashboard, Package, Users, Wallet, ScanLine,
   AlertTriangle, Shield, PackageOpen, ArrowLeftRight,
   Settings, UserCheck, RefreshCw, Search, ChevronLeft,
-  ChevronRight, MoreHorizontal, FileText, Award, HeadphonesIcon, UserRound, LogOut, Activity
+  ChevronRight, MoreHorizontal, FileText, Award, HeadphonesIcon, UserRound, LogOut, Activity,
+  MessageSquare
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -67,23 +68,29 @@ const GROUP_LABELS: Record<string, string> = {
 interface UnifiedAdminLayoutProps {
   children: ReactNode;
   activeModule: AdminModule;
-  onModuleChange: (module: AdminModule) => void;
-  searchQuery: string;
-  onSearchChange: (q: string) => void;
-  onRefresh: () => void;
+  onModuleChange?: (module: AdminModule) => void;
+  searchQuery?: string;
+  onSearchChange?: (q: string) => void;
+  onRefresh?: () => void;
   refreshing?: boolean;
   subtitle?: string;
+  /** When true, module clicks navigate to /admin instead of calling onModuleChange */
+  standalone?: boolean;
+  /** Highlights a dedicated route item (Messages / Tracking) in the sidebar */
+  activeRoute?: "messages" | "tracking";
 }
 
 export function UnifiedAdminLayout({
   children,
   activeModule,
   onModuleChange,
-  searchQuery,
+  searchQuery = "",
   onSearchChange,
   onRefresh,
   refreshing = false,
   subtitle,
+  standalone = false,
+  activeRoute,
 }: UnifiedAdminLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
@@ -94,6 +101,14 @@ export function UnifiedAdminLayout({
     await supabase.auth.signOut();
     toast({ title: "Déconnexion réussie" });
     navigate("/");
+  };
+
+  const handleModuleClick = (id: AdminModule) => {
+    if (standalone) {
+      navigate(`/admin?m=${id}`);
+    } else {
+      onModuleChange?.(id);
+    }
   };
 
   const activeItem = ALL_MODULES.find(m => m.id === activeModule);
@@ -140,11 +155,11 @@ export function UnifiedAdminLayout({
                 )}
                 {sidebarCollapsed && <div className="h-px bg-border mx-2 my-1" />}
                 {groupModules.map((mod) => {
-                  const isActive = activeModule === mod.id;
+                  const isActive = activeModule === mod.id && !activeRoute;
                   return (
                     <button
                       key={mod.id}
-                      onClick={() => onModuleChange(mod.id)}
+                      onClick={() => handleModuleClick(mod.id)}
                       className={cn(
                         "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
                         isActive
@@ -165,12 +180,29 @@ export function UnifiedAdminLayout({
 
         {/* Sidebar Footer */}
         {!sidebarCollapsed && (
-          <div className="p-3 border-t border-border space-y-2">
+          <div className="p-3 border-t border-border space-y-1">
+            <button
+              onClick={() => navigate("/admin/messages")}
+              className={cn(
+                "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors",
+                activeRoute === "messages"
+                  ? "bg-primary/10 text-primary font-semibold"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <MessageSquare className={cn("w-4 h-4", activeRoute === "messages" ? "text-primary" : "text-green-500")} />
+              <span>Messagerie</span>
+            </button>
             <button
               onClick={() => navigate("/admin/beta-tracking")}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              className={cn(
+                "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors",
+                activeRoute === "tracking"
+                  ? "bg-primary/10 text-primary font-semibold"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
             >
-              <Activity className="w-4 h-4" />
+              <Activity className={cn("w-4 h-4", activeRoute === "tracking" ? "text-primary" : "text-amber-500")} />
               <span>Tracking Bêta GP</span>
             </button>
             <button
@@ -214,32 +246,46 @@ export function UnifiedAdminLayout({
               </div>
             </div>
             <div className="hidden md:flex items-center gap-2">
-              {activeItem && (
+              {activeRoute === "messages" ? (
+                <>
+                  <MessageSquare className="w-5 h-5" />
+                  <h1 className="text-lg font-bold">Messagerie</h1>
+                </>
+              ) : activeRoute === "tracking" ? (
+                <>
+                  <Activity className="w-5 h-5" />
+                  <h1 className="text-lg font-bold">Tracking Bêta GP</h1>
+                </>
+              ) : activeItem ? (
                 <>
                   <activeItem.icon className="w-5 h-5" />
                   <h1 className="text-lg font-bold">{activeItem.label}</h1>
                 </>
-              )}
+              ) : null}
             </div>
             <div className="flex items-center gap-2">
-              <div className="relative hidden sm:block w-64">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" />
-                <Input
-                  placeholder="Rechercher..."
-                  className="pl-8 h-8 bg-white/10 border-white/20 text-white placeholder:text-white/40 text-sm rounded-lg"
-                  value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                />
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onRefresh}
-                disabled={refreshing}
-                className="bg-white/10 hover:bg-white/20 w-8 h-8 rounded-lg"
-              >
-                <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
-              </Button>
+              {onSearchChange && (
+                <div className="relative hidden sm:block w-64">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" />
+                  <Input
+                    placeholder="Rechercher..."
+                    className="pl-8 h-8 bg-white/10 border-white/20 text-white placeholder:text-white/40 text-sm rounded-lg"
+                    value={searchQuery}
+                    onChange={(e) => onSearchChange(e.target.value)}
+                  />
+                </div>
+              )}
+              {onRefresh && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onRefresh}
+                  disabled={refreshing}
+                  className="bg-white/10 hover:bg-white/20 w-8 h-8 rounded-lg"
+                >
+                  <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
@@ -252,17 +298,19 @@ export function UnifiedAdminLayout({
             </div>
           </div>
           {/* Mobile search */}
-          <div className="px-4 pb-2.5 sm:hidden">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" />
-              <Input
-                placeholder="Rechercher colis, GP, commandes..."
-                className="pl-8 h-9 bg-white/10 border-white/20 text-white placeholder:text-white/40 text-sm rounded-lg"
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-              />
+          {onSearchChange && (
+            <div className="px-4 pb-2.5 sm:hidden">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50" />
+                <Input
+                  placeholder="Rechercher colis, GP, commandes..."
+                  className="pl-8 h-9 bg-white/10 border-white/20 text-white placeholder:text-white/40 text-sm rounded-lg"
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </header>
 
         {/* Page Content */}
@@ -279,14 +327,14 @@ export function UnifiedAdminLayout({
         <div className="flex items-center justify-around h-16">
           {BOTTOM_NAV_ITEMS.map((modId) => {
             const mod = ALL_MODULES.find(m => m.id === modId)!;
-            const isActive = activeModule === modId;
+            const isActive = activeModule === modId && !activeRoute;
             const isScan = modId === "scan";
 
             return (
               <motion.button
                 key={modId}
                 whileTap={{ scale: 0.9 }}
-                onClick={() => onModuleChange(modId)}
+                onClick={() => handleModuleClick(modId)}
                 className={cn(
                   "flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors",
                   isScan ? "" : isActive ? "text-white" : "text-white/40"
@@ -337,12 +385,12 @@ export function UnifiedAdminLayout({
                   </p>
                   <div className="grid grid-cols-3 gap-2">
                     {groupModules.map((mod) => {
-                      const isActive = activeModule === mod.id;
+                      const isActive = activeModule === mod.id && !activeRoute;
                       return (
                         <button
                           key={mod.id}
                           onClick={() => {
-                            onModuleChange(mod.id);
+                            handleModuleClick(mod.id);
                             setMoreSheetOpen(false);
                           }}
                           className={cn(
@@ -361,8 +409,17 @@ export function UnifiedAdminLayout({
             })}
           </div>
 
-          {/* Tracking + Déconnexion mobile */}
+          {/* Messagerie + Tracking + Déconnexion mobile */}
           <div className="border-t border-border pt-4 mt-2 space-y-1">
+            <button
+              onClick={() => { navigate("/admin/messages"); setMoreSheetOpen(false); }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted transition-colors"
+            >
+              <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
+                <MessageSquare className="w-4 h-4" />
+              </div>
+              <span className="flex-1 text-left font-medium text-sm">Messagerie</span>
+            </button>
             <button
               onClick={() => { navigate("/admin/beta-tracking"); setMoreSheetOpen(false); }}
               className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted transition-colors"

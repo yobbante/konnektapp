@@ -5,7 +5,7 @@
  * Litiges, Reputation, Support, KYC, Assurance, Taux, Paramètres
  */
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -31,11 +31,16 @@ import { assertValidGpStatus, type GpStatus } from "@/lib/enumMappings";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const { isAdmin, isModerator, loading: roleLoading } = useUserRole();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeModule, setActiveModule] = useState<AdminModule>("overview");
+  const VALID_MODULES: AdminModule[] = ["overview","colis","gp","transporteurs","finance","scan","litiges","assurance","manuel","taux","parametres","kyc","clients","demandes","reputation","support","mobility"];
+  const initialModule = (searchParams.get("m") as AdminModule) || "overview";
+  const [activeModule, setActiveModule] = useState<AdminModule>(
+    VALID_MODULES.includes(initialModule) ? initialModule : "overview"
+  );
   const [searchQuery, setSearchQuery] = useState("");
 
   // Data
@@ -166,7 +171,7 @@ export default function AdminDashboard() {
   return (
     <UnifiedAdminLayout
       activeModule={activeModule}
-      onModuleChange={setActiveModule}
+      onModuleChange={(m) => { setActiveModule(m); if (searchParams.get("m")) setSearchParams({}, { replace: true }); }}
       searchQuery={searchQuery}
       onSearchChange={setSearchQuery}
       onRefresh={refreshData}

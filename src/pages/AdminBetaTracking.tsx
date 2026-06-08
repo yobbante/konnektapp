@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw, TrendingUp, Users, Send, MousePointerClick } from "lucide-react";
+import { UnifiedAdminLayout } from "@/components/layout/UnifiedAdminLayout";
 
 interface Event {
   id: string;
@@ -117,7 +118,8 @@ export default function AdminBetaTracking() {
   }, [events]);
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6 max-w-6xl mx-auto">
+    <UnifiedAdminLayout activeModule="overview" standalone activeRoute="tracking">
+      <div className="max-w-6xl mx-auto">
       <header className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Beta Tracking</h1>
@@ -285,7 +287,8 @@ export default function AdminBetaTracking() {
           </Card>
         </>
       )}
-    </div>
+      </div>
+    </UnifiedAdminLayout>
   );
 }
 
