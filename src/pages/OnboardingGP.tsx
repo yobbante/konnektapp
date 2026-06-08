@@ -180,14 +180,15 @@ export default function OnboardingGP() {
     (async () => {
       const { data: known } = await supabase
         .from("transporteurs")
-        .select("prenom, nom, telephone_1")
+        .select("prenom, nom, telephone_1, telephone_2")
         .ilike("reference", normalizedRef)
         .maybeSingle();
 
       if (known) {
         if (known.prenom) setPrenom(known.prenom);
         if (known.nom) setNom(known.nom);
-        if (known.telephone_1) setPhone(known.telephone_1);
+        const tel = known.telephone_1 || known.telephone_2;
+        if (tel) setPhone(tel);
 
         try {
           const { data } = await supabase.functions.invoke("gp-onboarding-track", {
