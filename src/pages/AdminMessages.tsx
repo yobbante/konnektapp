@@ -68,7 +68,6 @@ export default function AdminMessages() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { hasAdminAccess, loading: roleLoading, userId } = useUserRole();
-  const { toast } = useToast();
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(
