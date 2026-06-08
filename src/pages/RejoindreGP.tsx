@@ -96,8 +96,24 @@ export default function RejoindreGP() {
         </motion.div>
       </section>
 
+      {/* FORM */}
+      <section id="form-section" className="px-5 py-12 max-w-2xl mx-auto scroll-mt-4">
+        <div
+          className="bg-white"
+          style={{ border: "1px solid #E5E7EB", borderRadius: 16, padding: 28, boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}
+        >
+          <div className="flex items-center gap-2 mb-5">
+            <Plane className="w-5 h-5" style={{ color: TEAL }} />
+            <h2 className="text-2xl font-bold" style={{ color: NAVY }}>
+              Inscription GP
+            </h2>
+          </div>
+          <GpJoinCard />
+        </div>
+      </section>
+
       {/* HOW IT WORKS */}
-      <section className="px-5 py-12 max-w-2xl mx-auto">
+      <section className="px-5 pb-12 max-w-2xl mx-auto">
         <h2 className="text-xl font-bold text-center mb-7" style={{ color: NAVY }}>
           Comment ça marche
         </h2>
@@ -114,22 +130,6 @@ export default function RejoindreGP() {
               <p className="text-xs mt-1" style={{ color: "#6B7280" }}>{s.desc}</p>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* FORM */}
-      <section id="form-section" className="px-5 pb-12 max-w-2xl mx-auto scroll-mt-4">
-        <div
-          className="bg-white"
-          style={{ border: "1px solid #E5E7EB", borderRadius: 16, padding: 28, boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}
-        >
-          <div className="flex items-center gap-2 mb-5">
-            <Plane className="w-5 h-5" style={{ color: TEAL }} />
-            <h2 className="text-2xl font-bold" style={{ color: NAVY }}>
-              Inscription GP
-            </h2>
-          </div>
-          <GpJoinCard />
         </div>
       </section>
 
