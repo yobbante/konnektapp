@@ -171,7 +171,7 @@ export default function AdminDashboard() {
   return (
     <UnifiedAdminLayout
       activeModule={activeModule}
-      onModuleChange={setActiveModule}
+      onModuleChange={(m) => { setActiveModule(m); if (searchParams.get("m")) setSearchParams({}, { replace: true }); }}
       searchQuery={searchQuery}
       onSearchChange={setSearchQuery}
       onRefresh={refreshData}
