@@ -161,6 +161,8 @@ export function GpJoinCard({
   const [destCity, setDestCity] = useState("Paris");
   const [destCountry, setDestCountry] = useState("FR");
   const [pricePerKg, setPricePerKg] = useState("");
+  const [currencyCode, setCurrencyCode] = useState("XOF");
+  const currency = CURRENCIES.find((c) => c.code === currencyCode) || CURRENCIES[0];
 
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
