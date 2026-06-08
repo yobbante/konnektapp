@@ -327,7 +327,7 @@ export function UnifiedAdminLayout({
         <div className="flex items-center justify-around h-16">
           {BOTTOM_NAV_ITEMS.map((modId) => {
             const mod = ALL_MODULES.find(m => m.id === modId)!;
-            const isActive = activeModule === modId;
+            const isActive = activeModule === modId && !activeRoute;
             const isScan = modId === "scan";
 
             return (
