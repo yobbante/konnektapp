@@ -70,6 +70,7 @@ Deno.serve(async (req) => {
       base_origin_country: originCountry,
       beta_source: "rejoindre-gp",
       is_active: false,
+      default_currency: currency,
     };
     if (destCity) {
       record.base_destination_city = destCity;
