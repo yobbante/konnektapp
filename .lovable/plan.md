@@ -1,46 +1,50 @@
-## Objectif
+# Messagerie admin Konnekt — conversation complète + statut 926
 
-Corriger la liste GP de `/admin/beta-tracking` pour : (1) afficher les **vraies références**, (2) ne plus rendre des GP invisibles comme Tiyah, (3) ajouter un **tri intelligent**, une **ligne dépliable** avec toutes les infos + le tracking horodaté, et un **bouton WhatsApp** pour réclamer les compléments de dossier.
+Objectif: pouvoir ouvrir/interagir avec chaque message, voir **l'intégralité** de la conversation bot↔GP, répondre en libre ou via templates, rendre l'onglet Onboarding cliquable, et afficher en direct si la ligne WhatsApp **926** (le bot) est connectée.
 
-## Diagnostic (déjà confirmé en base)
+## Constat technique
+- La conversation réelle bot↔GP vit dans `whatsapp_inbound_messages` : `message_body` = message entrant du GP, `bot_reply` = réponse automatique du bot.
+- Les réponses manuelles de l'admin vivent dans `gp_messages`.
+- Aujourd'hui le détail (`WaThreadDetail`) ne lit **que** `gp_messages` → tout l'historique bot est invisible.
+- L'onglet Onboarding (`whatsapp_inbound_messages` tag `konnekt_signup`) affiche des cartes statiques non cliquables.
+- La ligne « 926 » est gérée par l'edge function `gp-bot` (et `webhook-whatsapp`).
 
-- La liste lit uniquement `gp_profiles`. La réf affichée est fabriquée (`GP` + 4 chars de l'UUID) — ce ne sont pas les vraies réfs.
-- Les vraies réfs existent dans `gp_profiles.reference` (souvent vide), et surtout dans la table `transporteurs` (réfs Yobbanté: `GP7880`…) et `gp_onboarding_events.ref_gp` (`GP9391`, `GP9779`…).
-- « Tiyah » n'existe nulle part dans la base Konnekt (aucun profil créé après 11:20 aujourd'hui). Décision retenue : la liste fusionnera **profils Konnekt + GP référencés Yobbanté (`transporteurs`)**, sans inclure les simples ouvertures de lien.
+## 1. Conversation complète bot↔GP (fusion des sources)
+Dans `WaThreadDetail.load()`, charger et fusionner par téléphone, triés par date :
+- `gp_messages` (in/out manuels) — comme aujourd'hui.
+- `whatsapp_inbound_messages` filtrés sur le même numéro :
+  - chaque ligne → un message **entrant** (`message_body`, direction `in`).
+  - si `bot_reply` non vide → un message **sortant** marqué « Bot » (libellé + icône `Bot`, style distinct du message admin manuel).
+- Affichage : 3 styles de bulles → GP (entrant, blanc), Bot (sortant, teinté + badge « Bot auto »), Admin (sortant vert). Tri chronologique unique.
 
-## Modifications (uniquement `src/pages/AdminBetaTracking.tsx`)
+La liste des threads WhatsApp (`fetchWaThreads`) sera aussi alimentée par `whatsapp_inbound_messages` (groupé par `sender_phone`) en plus de `gp_messages`, pour que chaque GP ayant parlé au bot apparaisse (dédup par numéro).
 
-### 1. Chargement des données
-- Charger en plus la table `transporteurs` (`reference, prenom, nom, telephone_1, telephone_2, navettes, created_at, welcome_sent_at`) et `gp_onboarding_events` (`ref_gp, event, occurred_at`).
-- Construire une liste **unifiée**, dédupliquée par référence :
-  - Source A = `gp_profiles` (profil complet : ville, statut, missions, KYC, téléphone…).
-  - Source B = `transporteurs` (GP invités Yobbanté pas encore profil complet) — ajoutés seulement si leur réf n'est pas déjà couverte par un profil.
-  - Réf affichée = `reference` réelle si disponible (profil ou transporteur), sinon fallback actuel.
-  - Rapprochement profil↔transporteur par `reference` puis, à défaut, par téléphone normalisé.
+## 2. Onglet Onboarding cliquable (séparé)
+- Les cartes d'inscription restent dans leur onglet, mais deviennent cliquables : un clic ouvre le détail unifié de la conversation pour ce numéro (même `WaThreadDetail`, donc composer + historique complet).
+- On conserve le bouton « Valider dans Terrain » à l'intérieur du détail.
 
-### 2. Vraies références
-- Colonne « Réf » = la vraie référence (`GP7880`, etc.). Plus de réf dérivée de l'UUID sauf absence totale d'info.
+## 3. Composer : libre + templates (déjà présent, généralisé)
+- Le composer (message libre, toggle Templates, envoi enregistré / ouverture WhatsApp) existe déjà dans `WaThreadDetail`. Il devient accessible depuis l'onglet Onboarding via le clic ci-dessus.
+- Aucune régression sur l'envoi (`gp_messages` insert + `wa.me`).
 
-### 3. Tri intelligent
-- En-têtes de colonnes cliquables (Réf, Nom, Ville, Inscrit le, Missions, Statut) avec tri asc/desc et indicateur de flèche.
-- Tri par défaut : date d'inscription décroissante.
-- Conserver les filtres existants Tous / Inscrits / Non inscrits, + ajout d'un onglet « Yobbanté (non inscrits) » pour les réfs présentes seulement dans `transporteurs`.
+## 4. Statut « 926 connecté » — test live de l'edge function
+- Ajouter un endpoint santé sans effet de bord dans `gp-bot` : si la requête contient `{ ping: true }` (ou méthode GET), renvoyer `{ status: "ok" }` immédiatement, **sans** écrire en base ni traiter de message.
+- Côté frontend (header de la messagerie), un petit badge « Ligne 926 » :
+  - au chargement, appelle `supabase.functions.invoke("gp-bot", { body: { ping: true } })`.
+  - réponse OK → point vert « 926 connectée », erreur/timeout → point rouge « 926 hors ligne ».
+  - bouton refresh pour re-tester.
 
-### 4. Ligne dépliable (clic)
-- Au clic sur une ligne, dépliage d'un panneau détail affichant :
-  - Identité : prénom/nom, business_name, téléphone(s)/WhatsApp, ville, pays, navettes/itinéraires.
-  - Statut & dossier : statut, `kyc_status`/`kyc_level`, abonnement, total missions, note, source beta.
-  - **Tracking horodaté** : timeline construite depuis `gp_onboarding_events` filtrée sur la réf (lien ouvert, inscrit…) + date de création + `welcome_sent_at`, chaque étape avec heure (`toLocaleString fr-FR`).
-- Animation de dépliage légère (conforme au standard, sans jitter).
+## Section technique
+- Fichier principal: `src/pages/AdminMessages.tsx`
+  - `fetchWaThreads`: union `gp_messages` + `whatsapp_inbound_messages` (groupés par numéro normalisé), dédup, statut inchangé.
+  - `WaThreadDetail.load`: merge des deux tables → timeline triée avec champ `source` (`gp` | `bot` | `inbound`) pour le style de bulle.
+  - Onglet Onboarding: remplacer le `<div>` non cliquable par un `<button>` qui set `waSelected` (thread construit depuis le `sender_phone`).
+  - Header: composant `LineStatus` qui ping `gp-bot`.
+- Edge function `supabase/functions/gp-bot/index.ts`: court-circuit `ping`/GET → `{status:"ok"}` avant toute logique/insert.
+- Pas de migration DB nécessaire (lecture seule des tables existantes).
 
-### 5. Bouton compléments de dossier
-- Dans le panneau détail : bouton **« Demander compléments (WhatsApp) »** qui ouvre `wa.me/<téléphone normalisé>` avec un message pré-rempli listant les pièces manquantes (template court). Aucun enregistrement en base.
-- Bouton désactivé si aucun numéro disponible.
-
-## Hors périmètre
-- Pas de migration ni de modification de schéma.
-- Pas de changement à la logique d'onboarding, de soumission ou de tracking côté `OnboardingGP`.
-- Aucune autre section du dashboard touchée.
-
-## Note sur Tiyah
-Comme aucune donnée « Tiyah » n'existe côté Konnekt, elle n'apparaîtra que si son inscription a créé un profil ou une entrée `transporteurs`. Après ce correctif, tout GP présent dans l'une de ces deux tables sera visible avec sa vraie réf ; si Tiyah reste absente, c'est que son inscription n'a rien écrit côté Konnekt (problème côté flux d'inscription, à traiter séparément).
+## Vérification
+- Ouvrir une conversation (ex: +33751390284) et confirmer que le message GP de 12:25 + la réponse bot Yobbanté apparaissent dans le bon ordre.
+- Cliquer une carte Onboarding → la conversation s'ouvre avec composer.
+- Tester template + message libre (enregistré, puis WhatsApp).
+- Vérifier le badge 926 (vert si `gp-bot` répond au ping).
