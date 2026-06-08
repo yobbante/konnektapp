@@ -345,7 +345,111 @@ export default function AdminMessages() {
             </button>
           </div>
 
-          {activeTab === "conversations" ? (
+          {activeTab === "whatsapp" ? (
+            <>
+              <div className="p-3 border-b border-border space-y-2">
+                <h2 className="font-semibold flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5" />
+                  Messages WhatsApp GP
+                </h2>
+                <div className="flex gap-1.5 flex-wrap">
+                  {([
+                    { id: "all", label: "Tous" },
+                    { id: "unread", label: "Non lus" },
+                    { id: "onboarding", label: "Onboarding" },
+                    { id: "registered", label: "Inscrits" },
+                  ] as { id: WaFilter; label: string }[]).map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => setWaFilter(f.id)}
+                      className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                        waFilter === f.id
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="overflow-y-auto max-h-[calc(100vh-260px)]">
+                {(() => {
+                  const filtered = waThreads.filter((t) => {
+                    if (waFilter === "unread") return t.unread > 0;
+                    if (waFilter === "onboarding") return t.status === "onboarding";
+                    if (waFilter === "registered") return t.status === "registered";
+                    return true;
+                  });
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="p-8 text-center">
+                        <MessageSquare className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+                        <p className="text-sm text-muted-foreground">Aucun message</p>
+                      </div>
+                    );
+                  }
+                  return filtered.map((t) => (
+                    <motion.div
+                      key={t.telephone || t.ref_gp}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className={`w-full p-4 text-left border-b border-border transition-colors hover:bg-accent/50 cursor-pointer ${
+                        waSelected?.telephone === t.telephone ? "bg-accent" : ""
+                      }`}
+                      onClick={() => setWaSelected(t)}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                          <Phone className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-medium text-sm truncate">{t.gp_name}</p>
+                            {t.unread > 0 && (
+                              <Badge className="text-[10px] flex-shrink-0 bg-red-500">{t.unread}</Badge>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">
+                            {t.ref_gp || t.telephone}
+                            {t.status === "registered" && " · Inscrit"}
+                            {t.status === "onboarding" && " · Onboarding"}
+                          </p>
+                          {t.last_message && (
+                            <p className="text-xs text-muted-foreground truncate mt-1">{t.last_message}</p>
+                          )}
+                          <div className="flex items-center justify-between gap-2 mt-2">
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(t.last_at).toLocaleDateString("fr-FR", {
+                                day: "numeric",
+                                month: "short",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const num = (t.telephone || "").replace(/[^0-9]/g, "");
+                                window.open(`https://wa.me/${num}`, "_blank");
+                              }}
+                            >
+                              <MessageCircle className="w-3 h-3 mr-1" />
+                              Répondre
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ));
+                })()}
+              </div>
+            </>
+          ) : activeTab === "conversations" ? (
             <>
               <div className="p-4 border-b border-border">
                 <h2 className="font-semibold flex items-center gap-2">
