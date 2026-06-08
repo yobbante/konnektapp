@@ -179,12 +179,29 @@ export function UnifiedAdminLayout({
 
         {/* Sidebar Footer */}
         {!sidebarCollapsed && (
-          <div className="p-3 border-t border-border space-y-2">
+          <div className="p-3 border-t border-border space-y-1">
+            <button
+              onClick={() => navigate("/admin/messages")}
+              className={cn(
+                "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors",
+                activeRoute === "messages"
+                  ? "bg-primary/10 text-primary font-semibold"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <MessageSquare className={cn("w-4 h-4", activeRoute === "messages" ? "text-primary" : "text-green-500")} />
+              <span>Messagerie</span>
+            </button>
             <button
               onClick={() => navigate("/admin/beta-tracking")}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              className={cn(
+                "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors",
+                activeRoute === "tracking"
+                  ? "bg-primary/10 text-primary font-semibold"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
             >
-              <Activity className="w-4 h-4" />
+              <Activity className={cn("w-4 h-4", activeRoute === "tracking" ? "text-primary" : "text-amber-500")} />
               <span>Tracking Bêta GP</span>
             </button>
             <button
