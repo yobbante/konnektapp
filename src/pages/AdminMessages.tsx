@@ -55,8 +55,11 @@ export default function AdminMessages() {
   const [selectedContactName, setSelectedContactName] = useState<string>("Conversation");
   const [loading, setLoading] = useState(true);
   const [showNewConversation, setShowNewConversation] = useState(false);
-  const [activeTab, setActiveTab] = useState<"conversations" | "onboarding">("conversations");
+  const [activeTab, setActiveTab] = useState<"whatsapp" | "conversations" | "onboarding">("whatsapp");
   const [signups, setSignups] = useState<KonnektSignup[]>([]);
+  const [waThreads, setWaThreads] = useState<WaThread[]>([]);
+  const [waFilter, setWaFilter] = useState<WaFilter>("all");
+  const [waSelected, setWaSelected] = useState<WaThread | null>(null);
 
   useEffect(() => {
     if (!roleLoading && !hasAdminAccess) {
@@ -68,8 +71,75 @@ export default function AdminMessages() {
     if (hasAdminAccess) {
       fetchConversations();
       fetchSignups();
+      fetchWaThreads();
     }
   }, [hasAdminAccess]);
+
+  const fetchWaThreads = async () => {
+    try {
+      const { data: msgs } = await (supabase as any)
+        .from("gp_messages")
+        .select("ref_gp, telephone, message, direction, lu, created_at")
+        .order("created_at", { ascending: false });
+
+      const rows = (msgs as any[]) || [];
+
+      // Registered ref_gp set from onboarding events
+      const { data: regEvents } = await (supabase as any)
+        .from("gp_onboarding_events")
+        .select("ref_gp, event");
+      const registeredRefs = new Set(
+        ((regEvents as any[]) || [])
+          .filter((e) => e.event === "registered")
+          .map((e) => e.ref_gp)
+      );
+      const knownRefs = new Set(((regEvents as any[]) || []).map((e) => e.ref_gp));
+
+      const map = new Map<string, WaThread>();
+      for (const r of rows) {
+        const key = r.telephone || r.ref_gp;
+        if (!key) continue;
+        if (!map.has(key)) {
+          const status: WaThread["status"] = registeredRefs.has(r.ref_gp)
+            ? "registered"
+            : knownRefs.has(r.ref_gp)
+            ? "onboarding"
+            : "unknown";
+          map.set(key, {
+            telephone: r.telephone,
+            ref_gp: r.ref_gp,
+            gp_name: r.ref_gp || r.telephone,
+            last_message: r.message || "",
+            last_at: r.created_at,
+            unread: 0,
+            status,
+          });
+        }
+        const t = map.get(key)!;
+        if (!r.lu && r.direction === "in") t.unread += 1;
+      }
+
+      const threads = Array.from(map.values());
+      // Enrich gp_name from gp_profiles when possible
+      const refs = threads.map((t) => t.ref_gp).filter(Boolean);
+      if (refs.length > 0) {
+        const { data: profs } = await supabase
+          .from("gp_profiles")
+          .select("reference, business_name")
+          .in("reference", refs as string[]);
+        const nameMap = new Map(
+          ((profs as any[]) || []).map((p) => [p.reference, p.business_name])
+        );
+        threads.forEach((t) => {
+          if (t.ref_gp && nameMap.get(t.ref_gp)) t.gp_name = nameMap.get(t.ref_gp);
+        });
+      }
+      setWaThreads(threads);
+    } catch (error) {
+      console.error("Error fetching WhatsApp threads:", error);
+    }
+  };
+
 
   const fetchSignups = async () => {
     try {
