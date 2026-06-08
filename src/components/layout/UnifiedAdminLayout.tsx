@@ -246,12 +246,22 @@ export function UnifiedAdminLayout({
               </div>
             </div>
             <div className="hidden md:flex items-center gap-2">
-              {activeItem && (
+              {activeRoute === "messages" ? (
+                <>
+                  <MessageSquare className="w-5 h-5" />
+                  <h1 className="text-lg font-bold">Messagerie</h1>
+                </>
+              ) : activeRoute === "tracking" ? (
+                <>
+                  <Activity className="w-5 h-5" />
+                  <h1 className="text-lg font-bold">Tracking Bêta GP</h1>
+                </>
+              ) : activeItem ? (
                 <>
                   <activeItem.icon className="w-5 h-5" />
                   <h1 className="text-lg font-bold">{activeItem.label}</h1>
                 </>
-              )}
+              ) : null}
             </div>
             <div className="flex items-center gap-2">
               <div className="relative hidden sm:block w-64">
