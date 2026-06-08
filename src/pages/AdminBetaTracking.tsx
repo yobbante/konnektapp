@@ -533,7 +533,7 @@ export default function AdminBetaTracking() {
                             </td>
                           </tr>
                         )}
-                      </>
+                      </Fragment>
                     );
                   })}
                 </tbody>
