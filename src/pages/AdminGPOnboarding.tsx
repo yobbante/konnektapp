@@ -154,13 +154,18 @@ export default function AdminGPOnboarding() {
             <TableHeader>
               <TableRow>
                 <TableHead>Réf GP</TableHead>
-                <TableHead>Événement</TableHead>
+                <TableHead>Inscrit</TableHead>
+                <TableHead>Formulaire ✓</TableHead>
+                <TableHead>WA cliqué</TableHead>
+                <TableHead>WA confirmé ✅</TableHead>
                 <TableHead>Konnekt User ID</TableHead>
                 <TableHead>Date</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((e) => (
+              {filtered.map((e) => {
+                const t = tracks[(e.ref_gp || "").toUpperCase()];
+                return (
                 <TableRow key={e.id}>
                   <TableCell className="font-mono font-medium">{e.ref_gp}</TableCell>
                   <TableCell>
@@ -170,6 +175,9 @@ export default function AdminGPOnboarding() {
                       {e.event === "registered" ? "Inscrit" : "Lien ouvert"}
                     </Badge>
                   </TableCell>
+                  <TableCell className="text-sm whitespace-nowrap">{fmtShort(t?.form_completed_at)}</TableCell>
+                  <TableCell className="text-sm whitespace-nowrap">{fmtShort(t?.whatsapp_clicked_at)}</TableCell>
+                  <TableCell className="text-sm whitespace-nowrap">{fmtShort(t?.whatsapp_confirmed_at)}</TableCell>
                   <TableCell className="font-mono text-xs">
                     {e.konnekt_user_id || "—"}
                   </TableCell>
@@ -177,7 +185,8 @@ export default function AdminGPOnboarding() {
                     {new Date(e.occurred_at).toLocaleString("fr-FR")}
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         )}
