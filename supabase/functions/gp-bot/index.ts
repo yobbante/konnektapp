@@ -168,6 +168,18 @@ Deno.serve(async (req) => {
   const reference = gpProfile?.reference || yobbante?.reference || null;
   const knownName = gpProfile?.prenom || gpProfile?.business_name || yobbante?.prenom || "GP";
 
+  // Suivi onboarding : 1er message entrant d'un GP ayant cliqué "Activer sur WhatsApp"
+  // → whatsapp_confirmed_at (uniquement si whatsapp_clicked_at non null et pas déjà confirmé)
+  if (reference) {
+    await admin
+      .from("transporteurs")
+      .update({ whatsapp_confirmed_at: new Date().toISOString() })
+      .ilike("reference", reference)
+      .not("whatsapp_clicked_at", "is", null)
+      .is("whatsapp_confirmed_at", null);
+  }
+
+
   // Inconnu dans les deux -> onboarding Konnekt + notif admin
   if (!yobbante && !konnektProfile && !gpProfile) {
     await admin.from("whatsapp_inbound_messages").insert({
