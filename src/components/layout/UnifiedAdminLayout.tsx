@@ -154,11 +154,11 @@ export function UnifiedAdminLayout({
                 )}
                 {sidebarCollapsed && <div className="h-px bg-border mx-2 my-1" />}
                 {groupModules.map((mod) => {
-                  const isActive = activeModule === mod.id;
+                  const isActive = activeModule === mod.id && !activeRoute;
                   return (
                     <button
                       key={mod.id}
-                      onClick={() => onModuleChange(mod.id)}
+                      onClick={() => handleModuleClick(mod.id)}
                       className={cn(
                         "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
                         isActive
