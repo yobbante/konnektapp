@@ -13,6 +13,7 @@ interface Payload {
   destCity?: string;
   destCountry?: string;
   pricePerKg?: number | null;
+  currency?: string | null;
   // legacy (ignored, kept for backward compat)
   destinations?: string[];
   modes?: string[];
