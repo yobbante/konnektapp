@@ -88,18 +88,19 @@ export default function OnboardingGP() {
         }
         const tel = known.telephone_1 || known.telephone_2;
         if (tel) setPhone(tel.replace(/\s/g, ""));
+      }
 
-        try {
-          const { data } = await supabase.functions.invoke("gp-onboarding-track", {
-            body: { ref_gp: normalizedRef, event: "link_opened" },
-          });
-          if (data?.already_registered) {
-            navigate("/gp/connexion", { replace: true });
-            return;
-          }
-        } catch {
-          /* tracking is best-effort */
+      // Tracking "link_opened" — enregistré à chaque ouverture de la page (best-effort)
+      try {
+        const { data } = await supabase.functions.invoke("gp-onboarding-track", {
+          body: { ref_gp: normalizedRef, event: "link_opened" },
+        });
+        if (data?.already_registered) {
+          navigate("/gp/connexion", { replace: true });
+          return;
         }
+      } catch {
+        /* tracking is best-effort */
       }
 
       setLoading(false);
