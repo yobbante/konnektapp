@@ -515,6 +515,7 @@ export default function AdminBetaTracking() {
                     <SortableTh k="city" label="Ville" />
                     <SortableTh k="createdAt" label="Inscrit le" />
                     <SortableTh k="missions" label="Missions" align="right" />
+                    <th className="text-right py-2">Bot</th>
                     <SortableTh k="status" label="Statut" align="right" />
                   </tr>
                 </thead>
