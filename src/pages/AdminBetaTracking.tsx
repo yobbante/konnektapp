@@ -573,7 +573,14 @@ export default function AdminBetaTracking() {
                           <td className="py-2 text-right tabular-nums">{g.missions}</td>
                           <td className="py-2 text-right">
                             {(() => {
-                              const bs = botStatus(g);
+                              const ref = g.realRef ? g.ref.toUpperCase() : null;
+                              const evs = ref ? onbByRef.get(ref) : null;
+                              const bs = botStatus({
+                                linkOpenedAt: g.linkOpenedAt || (evs?.has("link_opened") ? "x" : null),
+                                formCompletedAt: g.formCompletedAt || (evs?.has("registered") ? "x" : null),
+                                whatsappClickedAt: g.whatsappClickedAt || (evs?.has("whatsapp_clicked") ? "x" : null),
+                                whatsappConfirmedAt: g.whatsappConfirmedAt || (ref && confirmedRefs.has(ref) ? "x" : null),
+                              });
                               return bs
                                 ? <Badge variant="outline" className={`text-[10px] ${bs.cls}`}>{bs.label}</Badge>
                                 : <span className="text-muted-foreground/50">—</span>;
