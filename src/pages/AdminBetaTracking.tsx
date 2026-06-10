@@ -334,7 +334,9 @@ export default function AdminBetaTracking() {
         .filter((e) => (e.ref_gp || "").toUpperCase() === ref)
         .forEach((e) => steps.push({ label: ONB_LABELS[e.event] || e.event, at: e.occurred_at }));
     }
-    steps.push({ label: g.origin === "yobbante" ? "Ajouté (Yobbanté)" : "Profil créé", at: g.createdAt });
+    if (g.origin !== "onboarding") {
+      steps.push({ label: g.origin === "yobbante" ? "Ajouté (Yobbanté)" : "Profil créé", at: g.createdAt });
+    }
     if (g.welcomeSentAt) steps.push({ label: "Bienvenue envoyée", at: g.welcomeSentAt });
     return steps.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
   };
