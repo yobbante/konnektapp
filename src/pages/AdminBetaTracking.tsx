@@ -55,6 +55,7 @@ interface TransporteurRow {
   navettes: string[] | null;
   created_at: string;
   welcome_sent_at: string | null;
+  link_opened_at: string | null;
   form_completed_at: string | null;
   whatsapp_clicked_at: string | null;
   whatsapp_confirmed_at: string | null;
@@ -88,6 +89,7 @@ interface GP {
   betaSource: string | null;
   routes: string[];
   welcomeSentAt: string | null;
+  linkOpenedAt: string | null;
   formCompletedAt: string | null;
   whatsappClickedAt: string | null;
   whatsappConfirmedAt: string | null;
@@ -112,6 +114,15 @@ type SortDir = "asc" | "desc";
 
 const REGISTERED = new Set(["verified", "active"]);
 const normPhone = (p?: string | null) => (p || "").replace(/[^0-9]/g, "");
+
+// Statut Bot (funnel onboarding) à partir des dates suivies
+function botStatus(g: { linkOpenedAt: string | null; formCompletedAt: string | null; whatsappClickedAt: string | null; whatsappConfirmedAt: string | null; }) {
+  if (g.whatsappConfirmedAt) return { label: "ACTIF ✅", cls: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30" };
+  if (g.whatsappClickedAt) return { label: "WhatsApp cliqué", cls: "bg-amber-500/15 text-amber-600 border-amber-500/30" };
+  if (g.formCompletedAt) return { label: "Formulaire ✓", cls: "bg-amber-500/15 text-amber-600 border-amber-500/30" };
+  if (g.linkOpenedAt) return { label: "Lien ouvert", cls: "bg-amber-500/15 text-amber-600 border-amber-500/30" };
+  return null;
+}
 
 export default function AdminBetaTracking() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -141,7 +152,7 @@ export default function AdminBetaTracking() {
         .limit(500),
       supabase
         .from("transporteurs" as any)
-        .select("id, reference, prenom, nom, telephone_1, telephone_2, navettes, created_at, welcome_sent_at, form_completed_at, whatsapp_clicked_at, whatsapp_confirmed_at")
+        .select("id, reference, prenom, nom, telephone_1, telephone_2, navettes, created_at, welcome_sent_at, link_opened_at, form_completed_at, whatsapp_clicked_at, whatsapp_confirmed_at")
         .order("created_at", { ascending: false })
         .limit(1000),
       supabase
@@ -191,6 +202,7 @@ export default function AdminBetaTracking() {
         betaSource: p.beta_source,
         routes: [...(p.zones_covered || []), ...(p.international_destinations || [])],
         welcomeSentAt: null,
+        linkOpenedAt: null,
         formCompletedAt: null,
         whatsappClickedAt: null,
         whatsappConfirmedAt: null,
@@ -224,6 +236,7 @@ export default function AdminBetaTracking() {
         betaSource: "yobbante",
         routes: t.navettes || [],
         welcomeSentAt: t.welcome_sent_at,
+        linkOpenedAt: t.link_opened_at,
         formCompletedAt: t.form_completed_at,
         whatsappClickedAt: t.whatsapp_clicked_at,
         whatsappConfirmedAt: t.whatsapp_confirmed_at,
@@ -327,6 +340,15 @@ export default function AdminBetaTracking() {
     return { start, view, pub, interest, activation };
   }, [events]);
 
+  // Funnel onboarding GP : Invités → Lien ouvert → Formulaire → WhatsApp cliqué → Actifs
+  const onbFunnel = useMemo(() => ({
+    invited: transporteurs.length,
+    linkOpened: transporteurs.filter((t) => t.link_opened_at).length,
+    formCompleted: transporteurs.filter((t) => t.form_completed_at).length,
+    waClicked: transporteurs.filter((t) => t.whatsapp_clicked_at).length,
+    active: transporteurs.filter((t) => t.whatsapp_confirmed_at).length,
+  }), [transporteurs]);
+
   const sources = useMemo(() => {
     const map = new Map<string, { start: number; pub: number; interest: number }>();
     for (const e of events) {
@@ -370,6 +392,16 @@ export default function AdminBetaTracking() {
         <div className="flex items-center justify-center h-48"><Loader2 className="w-6 h-6 animate-spin" /></div>
       ) : (
         <>
+          {/* Funnel onboarding GP (bot 926) */}
+          <h2 className="text-sm font-semibold mb-2">Funnel onboarding GP</h2>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+            <Kpi icon={<Users className="w-4 h-4" />} label="Invités" value={onbFunnel.invited} />
+            <Kpi icon={<MousePointerClick className="w-4 h-4" />} label="Lien ouvert" value={onbFunnel.linkOpened} />
+            <Kpi icon={<FileText className="w-4 h-4" />} label="Formulaire" value={onbFunnel.formCompleted} />
+            <Kpi icon={<MessageCircle className="w-4 h-4" />} label="WhatsApp cliqué" value={onbFunnel.waClicked} />
+            <Kpi icon={<TrendingUp className="w-4 h-4" />} label="Actifs" value={onbFunnel.active} highlight />
+          </div>
+
           {/* Funnel */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
             <Kpi icon={<MousePointerClick className="w-4 h-4" />} label="Clic Commencer" value={funnel.start} />
@@ -483,12 +515,13 @@ export default function AdminBetaTracking() {
                     <SortableTh k="city" label="Ville" />
                     <SortableTh k="createdAt" label="Inscrit le" />
                     <SortableTh k="missions" label="Missions" align="right" />
+                    <th className="text-right py-2">Bot</th>
                     <SortableTh k="status" label="Statut" align="right" />
                   </tr>
                 </thead>
                 <tbody>
                   {filteredGps.length === 0 ? (
-                    <tr><td colSpan={7} className="text-center py-4 text-muted-foreground">Aucun GP</td></tr>
+                    <tr><td colSpan={8} className="text-center py-4 text-muted-foreground">Aucun GP</td></tr>
                   ) : filteredGps.slice(0, 200).map((g) => {
                     const open = expanded === g.key;
                     return (
@@ -511,12 +544,20 @@ export default function AdminBetaTracking() {
                           </td>
                           <td className="py-2 text-right tabular-nums">{g.missions}</td>
                           <td className="py-2 text-right">
+                            {(() => {
+                              const bs = botStatus(g);
+                              return bs
+                                ? <Badge variant="outline" className={`text-[10px] ${bs.cls}`}>{bs.label}</Badge>
+                                : <span className="text-muted-foreground/50">—</span>;
+                            })()}
+                          </td>
+                          <td className="py-2 text-right">
                             <Badge variant="outline" className="text-[10px]">{g.status}</Badge>
                           </td>
                         </tr>
                         {open && (
                           <tr key={`${g.key}-d`} className="bg-muted/20">
-                            <td colSpan={7} className="p-4">
+                            <td colSpan={8} className="p-4">
                               <div className="grid md:grid-cols-3 gap-4">
                                 {/* Identité */}
                                 <div className="space-y-1.5 text-xs">

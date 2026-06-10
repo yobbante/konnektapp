@@ -121,6 +121,14 @@ Deno.serve(async (req) => {
     if (insertErr) throw insertErr;
 
     // ----- Suivi onboarding sur le registre GP (transporteurs) -----
+    // link_opened_at : première ouverture de la page d'invitation
+    if (event === "link_opened") {
+      await admin
+        .from("transporteurs")
+        .update({ link_opened_at: timestamp })
+        .ilike("reference", ref_gp)
+        .is("link_opened_at", null);
+    }
     // form_completed_at : formulaire validé (étape 2 → inscription réussie)
     if (event === "registered") {
       await admin
