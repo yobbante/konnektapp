@@ -15,7 +15,7 @@ import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Loader2, MessageCircle, MapPin, Plane, Package, Wallet, User,
-  Plus, Pencil, Trash2, ArrowRight, ArrowLeft, Check, Calendar, Scale, Coins,
+  Plus, Pencil, Trash2, ArrowRight, Check,
 } from "lucide-react";
 
 const TEAL = "#0D9488";
