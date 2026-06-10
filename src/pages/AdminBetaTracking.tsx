@@ -77,7 +77,7 @@ interface GP {
   status: string;
   createdAt: string;
   missions: number;
-  origin: "profile" | "yobbante";
+  origin: "profile" | "yobbante" | "onboarding";
   phone: string | null;
   // detail
   phones: string[];
@@ -108,7 +108,7 @@ const ONB_LABELS: Record<string, string> = {
   registered: "Inscrit",
 };
 
-type GPFilter = "all" | "registered" | "not_registered" | "yobbante";
+type GPFilter = "all" | "registered" | "not_registered" | "yobbante" | "onboarding";
 type SortKey = "ref" | "name" | "city" | "createdAt" | "missions" | "status";
 type SortDir = "asc" | "desc";
 
@@ -249,14 +249,60 @@ export default function AdminBetaTracking() {
       });
     }
 
+    // Leads onboarding : réfs ayant une activité (lien/formulaire) mais pas encore de profil/transporteur
+    const onbMap = new Map<string, Map<string, string>>();
+    for (const e of onboarding) {
+      const ref = (e.ref_gp || "").trim().toUpperCase();
+      if (!ref) continue;
+      if (!onbMap.has(ref)) onbMap.set(ref, new Map());
+      const m = onbMap.get(ref)!;
+      if (!m.has(e.event)) m.set(e.event, e.occurred_at); // onboarding trié desc → plus récent
+    }
+    for (const [ref, m] of onbMap) {
+      if (seenRefs.has(ref)) continue; // déjà couvert par un profil/transporteur
+      const linkOpenedAt = m.get("link_opened") || null;
+      const formCompletedAt = m.get("registered") || null;
+      const waClickedAt = m.get("whatsapp_clicked") || null;
+      const firstAt =
+        [...m.values()].sort((a, b) => new Date(a).getTime() - new Date(b).getTime())[0] ||
+        new Date().toISOString();
+      list.push({
+        key: `o-${ref}`,
+        ref,
+        realRef: true,
+        name: "—",
+        city: null,
+        status: waClickedAt ? "wa_clicked" : formCompletedAt ? "form_completed" : "link_opened",
+        createdAt: firstAt,
+        missions: 0,
+        origin: "onboarding",
+        phone: null,
+        phones: [],
+        country: null,
+        kycStatus: null,
+        kycLevel: null,
+        subscription: null,
+        rating: null,
+        betaSource: "onboarding",
+        routes: [],
+        welcomeSentAt: null,
+        linkOpenedAt,
+        formCompletedAt,
+        whatsappClickedAt: waClickedAt,
+        whatsappConfirmedAt: null,
+      });
+    }
+
     return list;
-  }, [profiles, transporteurs]);
+  }, [profiles, transporteurs, onboarding]);
+
 
   const filteredGps = useMemo(() => {
     let arr = allGps;
     if (gpFilter === "registered") arr = arr.filter((g) => REGISTERED.has(g.status));
     else if (gpFilter === "not_registered") arr = arr.filter((g) => g.origin === "profile" && !REGISTERED.has(g.status));
     else if (gpFilter === "yobbante") arr = arr.filter((g) => g.origin === "yobbante");
+    else if (gpFilter === "onboarding") arr = arr.filter((g) => g.origin === "onboarding");
 
     const dir = sortDir === "asc" ? 1 : -1;
     return [...arr].sort((a, b) => {
@@ -288,7 +334,9 @@ export default function AdminBetaTracking() {
         .filter((e) => (e.ref_gp || "").toUpperCase() === ref)
         .forEach((e) => steps.push({ label: ONB_LABELS[e.event] || e.event, at: e.occurred_at }));
     }
-    steps.push({ label: g.origin === "yobbante" ? "Ajouté (Yobbanté)" : "Profil créé", at: g.createdAt });
+    if (g.origin !== "onboarding") {
+      steps.push({ label: g.origin === "yobbante" ? "Ajouté (Yobbanté)" : "Profil créé", at: g.createdAt });
+    }
     if (g.welcomeSentAt) steps.push({ label: "Bienvenue envoyée", at: g.welcomeSentAt });
     return steps.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
   };
@@ -528,6 +576,7 @@ export default function AdminBetaTracking() {
                   { k: "registered", label: "Inscrits" },
                   { k: "not_registered", label: "Non inscrits" },
                   { k: "yobbante", label: "Yobbanté" },
+                  { k: "onboarding", label: "Leads onboarding" },
                 ] as const).map((opt) => (
                   <Button
                     key={opt.k}
