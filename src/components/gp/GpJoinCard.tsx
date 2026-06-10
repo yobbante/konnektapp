@@ -171,6 +171,31 @@ export function GpJoinCard({
 
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [waClicked, setWaClicked] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+  const [showNumber, setShowNumber] = useState(false);
+
+  // Polling Supabase toutes les 5s sur whatsapp_confirmed_at (projet Yobbanté via get-gp-data).
+  useEffect(() => {
+    if (!waClicked || confirmed) return;
+    const ref = (refGp || "").trim().toUpperCase();
+    if (!/^GP\d{4}$/.test(ref)) return;
+    const poll = async () => {
+      try {
+        const { data } = await supabase
+          .from("transporteurs")
+          .select("whatsapp_confirmed_at")
+          .eq("reference", ref)
+          .maybeSingle();
+        if (data?.whatsapp_confirmed_at) setConfirmed(true);
+      } catch {
+        /* best-effort */
+      }
+    };
+    poll();
+    const id = setInterval(poll, 5000);
+    return () => clearInterval(id);
+  }, [waClicked, confirmed, refGp]);
 
   const cleanPhone = phone.replace(/\s/g, "");
   const identityValid =
