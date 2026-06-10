@@ -89,6 +89,7 @@ interface GP {
   betaSource: string | null;
   routes: string[];
   welcomeSentAt: string | null;
+  linkOpenedAt: string | null;
   formCompletedAt: string | null;
   whatsappClickedAt: string | null;
   whatsappConfirmedAt: string | null;
