@@ -302,6 +302,7 @@ export default function AdminBetaTracking() {
     if (gpFilter === "registered") arr = arr.filter((g) => REGISTERED.has(g.status));
     else if (gpFilter === "not_registered") arr = arr.filter((g) => g.origin === "profile" && !REGISTERED.has(g.status));
     else if (gpFilter === "yobbante") arr = arr.filter((g) => g.origin === "yobbante");
+    else if (gpFilter === "onboarding") arr = arr.filter((g) => g.origin === "onboarding");
 
     const dir = sortDir === "asc" ? 1 : -1;
     return [...arr].sort((a, b) => {
