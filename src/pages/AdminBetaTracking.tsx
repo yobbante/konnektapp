@@ -340,14 +340,42 @@ export default function AdminBetaTracking() {
     return { start, view, pub, interest, activation };
   }, [events]);
 
+  // Évènements onboarding agrégés par réf GP (source réelle du funnel)
+  const onbByRef = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const e of onboarding) {
+      const ref = (e.ref_gp || "").toUpperCase();
+      if (!ref) continue;
+      if (!map.has(ref)) map.set(ref, new Set());
+      map.get(ref)!.add(e.event);
+    }
+    return map;
+  }, [onboarding]);
+
+  // Confirmations WhatsApp (bot 926) par réf, depuis le registre transporteurs
+  const confirmedRefs = useMemo(() => {
+    const s = new Set<string>();
+    for (const t of transporteurs) {
+      if (t.whatsapp_confirmed_at && t.reference) s.add(t.reference.toUpperCase());
+    }
+    return s;
+  }, [transporteurs]);
+
   // Funnel onboarding GP : Invités → Lien ouvert → Formulaire → WhatsApp cliqué → Actifs
-  const onbFunnel = useMemo(() => ({
-    invited: transporteurs.length,
-    linkOpened: transporteurs.filter((t) => t.link_opened_at).length,
-    formCompleted: transporteurs.filter((t) => t.form_completed_at).length,
-    waClicked: transporteurs.filter((t) => t.whatsapp_clicked_at).length,
-    active: transporteurs.filter((t) => t.whatsapp_confirmed_at).length,
-  }), [transporteurs]);
+  const onbFunnel = useMemo(() => {
+    const countEvent = (ev: string) => {
+      let n = 0;
+      for (const set of onbByRef.values()) if (set.has(ev)) n++;
+      return n;
+    };
+    return {
+      invited: onbByRef.size,
+      linkOpened: countEvent("link_opened"),
+      formCompleted: countEvent("registered"),
+      waClicked: countEvent("whatsapp_clicked"),
+      active: confirmedRefs.size,
+    };
+  }, [onbByRef, confirmedRefs]);
 
   const sources = useMemo(() => {
     const map = new Map<string, { start: number; pub: number; interest: number }>();
@@ -545,7 +573,14 @@ export default function AdminBetaTracking() {
                           <td className="py-2 text-right tabular-nums">{g.missions}</td>
                           <td className="py-2 text-right">
                             {(() => {
-                              const bs = botStatus(g);
+                              const ref = g.realRef ? g.ref.toUpperCase() : null;
+                              const evs = ref ? onbByRef.get(ref) : null;
+                              const bs = botStatus({
+                                linkOpenedAt: g.linkOpenedAt || (evs?.has("link_opened") ? "x" : null),
+                                formCompletedAt: g.formCompletedAt || (evs?.has("registered") ? "x" : null),
+                                whatsappClickedAt: g.whatsappClickedAt || (evs?.has("whatsapp_clicked") ? "x" : null),
+                                whatsappConfirmedAt: g.whatsappConfirmedAt || (ref && confirmedRefs.has(ref) ? "x" : null),
+                              });
                               return bs
                                 ? <Badge variant="outline" className={`text-[10px] ${bs.cls}`}>{bs.label}</Badge>
                                 : <span className="text-muted-foreground/50">—</span>;
