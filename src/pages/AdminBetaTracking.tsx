@@ -193,6 +193,7 @@ export default function AdminBetaTracking() {
         betaSource: p.beta_source,
         routes: [...(p.zones_covered || []), ...(p.international_destinations || [])],
         welcomeSentAt: null,
+        linkOpenedAt: null,
         formCompletedAt: null,
         whatsappClickedAt: null,
         whatsappConfirmedAt: null,
