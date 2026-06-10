@@ -55,6 +55,7 @@ interface TransporteurRow {
   navettes: string[] | null;
   created_at: string;
   welcome_sent_at: string | null;
+  link_opened_at: string | null;
   form_completed_at: string | null;
   whatsapp_clicked_at: string | null;
   whatsapp_confirmed_at: string | null;
