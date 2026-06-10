@@ -3142,7 +3142,9 @@ export type Database = {
       }
       manual_departures: {
         Row: {
+          capacite_kg: number | null
           created_at: string
+          currency: string | null
           date_depart: string | null
           destination: string | null
           gp_profile_id: string | null
@@ -3151,9 +3153,14 @@ export type Database = {
           poids_kg: number | null
           sender_phone: string | null
           source: string
+          tarif_par_kg: number | null
+          ville_arrivee: string | null
+          ville_depart: string | null
         }
         Insert: {
+          capacite_kg?: number | null
           created_at?: string
+          currency?: string | null
           date_depart?: string | null
           destination?: string | null
           gp_profile_id?: string | null
@@ -3162,9 +3169,14 @@ export type Database = {
           poids_kg?: number | null
           sender_phone?: string | null
           source?: string
+          tarif_par_kg?: number | null
+          ville_arrivee?: string | null
+          ville_depart?: string | null
         }
         Update: {
+          capacite_kg?: number | null
           created_at?: string
+          currency?: string | null
           date_depart?: string | null
           destination?: string | null
           gp_profile_id?: string | null
@@ -3173,6 +3185,9 @@ export type Database = {
           poids_kg?: number | null
           sender_phone?: string | null
           source?: string
+          tarif_par_kg?: number | null
+          ville_arrivee?: string | null
+          ville_depart?: string | null
         }
         Relationships: []
       }
@@ -5845,7 +5860,9 @@ export type Database = {
       }
       shipments: {
         Row: {
+          assigned_gp: string | null
           carrier: string | null
+          client_prenom: string | null
           created_at: string
           destination_city: string | null
           id: string
@@ -5853,11 +5870,15 @@ export type Database = {
           last_event_at: string | null
           metadata: Json
           origin_city: string | null
+          poids_reel: number | null
           status: string
+          tracking_id: string | null
           updated_at: string
         }
         Insert: {
+          assigned_gp?: string | null
           carrier?: string | null
+          client_prenom?: string | null
           created_at?: string
           destination_city?: string | null
           id?: string
@@ -5865,11 +5886,15 @@ export type Database = {
           last_event_at?: string | null
           metadata?: Json
           origin_city?: string | null
+          poids_reel?: number | null
           status?: string
+          tracking_id?: string | null
           updated_at?: string
         }
         Update: {
+          assigned_gp?: string | null
           carrier?: string | null
+          client_prenom?: string | null
           created_at?: string
           destination_city?: string | null
           id?: string
@@ -5877,7 +5902,9 @@ export type Database = {
           last_event_at?: string | null
           metadata?: Json
           origin_city?: string | null
+          poids_reel?: number | null
           status?: string
+          tracking_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -6435,6 +6462,10 @@ export type Database = {
       }
       transporteurs: {
         Row: {
+          beta_migrated_at: string | null
+          beta_notes_conditions: string | null
+          beta_tarif_defaut: number | null
+          beta_wizard_completed_at: string | null
           created_at: string
           form_completed_at: string | null
           id: string
@@ -6443,6 +6474,7 @@ export type Database = {
           nom: string | null
           prenom: string | null
           reference: string | null
+          residence_city: string | null
           telephone_1: string | null
           telephone_2: string | null
           updated_at: string
@@ -6451,6 +6483,10 @@ export type Database = {
           whatsapp_confirmed_at: string | null
         }
         Insert: {
+          beta_migrated_at?: string | null
+          beta_notes_conditions?: string | null
+          beta_tarif_defaut?: number | null
+          beta_wizard_completed_at?: string | null
           created_at?: string
           form_completed_at?: string | null
           id?: string
@@ -6459,6 +6495,7 @@ export type Database = {
           nom?: string | null
           prenom?: string | null
           reference?: string | null
+          residence_city?: string | null
           telephone_1?: string | null
           telephone_2?: string | null
           updated_at?: string
@@ -6467,6 +6504,10 @@ export type Database = {
           whatsapp_confirmed_at?: string | null
         }
         Update: {
+          beta_migrated_at?: string | null
+          beta_notes_conditions?: string | null
+          beta_tarif_defaut?: number | null
+          beta_wizard_completed_at?: string | null
           created_at?: string
           form_completed_at?: string | null
           id?: string
@@ -6475,6 +6516,7 @@ export type Database = {
           nom?: string | null
           prenom?: string | null
           reference?: string | null
+          residence_city?: string | null
           telephone_1?: string | null
           telephone_2?: string | null
           updated_at?: string
