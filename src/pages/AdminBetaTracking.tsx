@@ -340,6 +340,15 @@ export default function AdminBetaTracking() {
     return { start, view, pub, interest, activation };
   }, [events]);
 
+  // Funnel onboarding GP : Invités → Lien ouvert → Formulaire → WhatsApp cliqué → Actifs
+  const onbFunnel = useMemo(() => ({
+    invited: transporteurs.length,
+    linkOpened: transporteurs.filter((t) => t.link_opened_at).length,
+    formCompleted: transporteurs.filter((t) => t.form_completed_at).length,
+    waClicked: transporteurs.filter((t) => t.whatsapp_clicked_at).length,
+    active: transporteurs.filter((t) => t.whatsapp_confirmed_at).length,
+  }), [transporteurs]);
+
   const sources = useMemo(() => {
     const map = new Map<string, { start: number; pub: number; interest: number }>();
     for (const e of events) {
