@@ -77,7 +77,7 @@ interface GP {
   status: string;
   createdAt: string;
   missions: number;
-  origin: "profile" | "yobbante";
+  origin: "profile" | "yobbante" | "onboarding";
   phone: string | null;
   // detail
   phones: string[];
@@ -108,7 +108,7 @@ const ONB_LABELS: Record<string, string> = {
   registered: "Inscrit",
 };
 
-type GPFilter = "all" | "registered" | "not_registered" | "yobbante";
+type GPFilter = "all" | "registered" | "not_registered" | "yobbante" | "onboarding";
 type SortKey = "ref" | "name" | "city" | "createdAt" | "missions" | "status";
 type SortDir = "asc" | "desc";
 
