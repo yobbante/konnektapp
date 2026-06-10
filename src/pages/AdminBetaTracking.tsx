@@ -249,8 +249,53 @@ export default function AdminBetaTracking() {
       });
     }
 
+    // Leads onboarding : réfs ayant une activité (lien/formulaire) mais pas encore de profil/transporteur
+    const onbMap = new Map<string, Map<string, string>>();
+    for (const e of onboarding) {
+      const ref = (e.ref_gp || "").trim().toUpperCase();
+      if (!ref) continue;
+      if (!onbMap.has(ref)) onbMap.set(ref, new Map());
+      const m = onbMap.get(ref)!;
+      if (!m.has(e.event)) m.set(e.event, e.occurred_at); // onboarding trié desc → plus récent
+    }
+    for (const [ref, m] of onbMap) {
+      if (seenRefs.has(ref)) continue; // déjà couvert par un profil/transporteur
+      const linkOpenedAt = m.get("link_opened") || null;
+      const formCompletedAt = m.get("registered") || null;
+      const waClickedAt = m.get("whatsapp_clicked") || null;
+      const firstAt =
+        [...m.values()].sort((a, b) => new Date(a).getTime() - new Date(b).getTime())[0] ||
+        new Date().toISOString();
+      list.push({
+        key: `o-${ref}`,
+        ref,
+        realRef: true,
+        name: "—",
+        city: null,
+        status: waClickedAt ? "wa_clicked" : formCompletedAt ? "form_completed" : "link_opened",
+        createdAt: firstAt,
+        missions: 0,
+        origin: "onboarding",
+        phone: null,
+        phones: [],
+        country: null,
+        kycStatus: null,
+        kycLevel: null,
+        subscription: null,
+        rating: null,
+        betaSource: "onboarding",
+        routes: [],
+        welcomeSentAt: null,
+        linkOpenedAt,
+        formCompletedAt,
+        whatsappClickedAt: waClickedAt,
+        whatsappConfirmedAt: null,
+      });
+    }
+
     return list;
-  }, [profiles, transporteurs]);
+  }, [profiles, transporteurs, onboarding]);
+
 
   const filteredGps = useMemo(() => {
     let arr = allGps;
