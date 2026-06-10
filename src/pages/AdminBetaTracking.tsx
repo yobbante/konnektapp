@@ -170,6 +170,12 @@ export default function AdminBetaTracking() {
 
   useEffect(() => { load(); }, []);
 
+  // Actualisation automatique toutes les 15 secondes (sans spinner plein écran)
+  useEffect(() => {
+    const id = setInterval(() => { load(); }, 15000);
+    return () => clearInterval(id);
+  }, []);
+
   // Build unified GP list (profils Konnekt + transporteurs Yobbanté non-inscrits)
   const allGps = useMemo<GP[]>(() => {
     const list: GP[] = [];
