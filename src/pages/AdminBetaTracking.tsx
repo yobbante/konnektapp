@@ -170,6 +170,12 @@ export default function AdminBetaTracking() {
 
   useEffect(() => { load(); }, []);
 
+  // Actualisation automatique toutes les 15 secondes (sans spinner plein écran)
+  useEffect(() => {
+    const id = setInterval(() => { load(); }, 15000);
+    return () => clearInterval(id);
+  }, []);
+
   // Build unified GP list (profils Konnekt + transporteurs Yobbanté non-inscrits)
   const allGps = useMemo<GP[]>(() => {
     const list: GP[] = [];
@@ -340,14 +346,16 @@ export default function AdminBetaTracking() {
     return { start, view, pub, interest, activation };
   }, [events]);
 
-  // Évènements onboarding agrégés par réf GP (source réelle du funnel)
+  // Évènements onboarding agrégés par réf GP (event -> date la plus récente)
   const onbByRef = useMemo(() => {
-    const map = new Map<string, Set<string>>();
+    const map = new Map<string, Map<string, string>>();
     for (const e of onboarding) {
       const ref = (e.ref_gp || "").toUpperCase();
       if (!ref) continue;
-      if (!map.has(ref)) map.set(ref, new Set());
-      map.get(ref)!.add(e.event);
+      if (!map.has(ref)) map.set(ref, new Map());
+      const evMap = map.get(ref)!;
+      // onboarding est trié par occurred_at desc → on garde la 1re vue (la plus récente)
+      if (!evMap.has(e.event)) evMap.set(e.event, e.occurred_at);
     }
     return map;
   }, [onboarding]);
@@ -621,19 +629,25 @@ export default function AdminBetaTracking() {
                                     </div>
                                   ))}
                                   <div className="border-t border-border/50 mt-2 pt-2 space-y-1.5">
-                                    {[
-                                      { label: "Formulaire complété", at: g.formCompletedAt },
-                                      { label: "WA cliqué", at: g.whatsappClickedAt },
-                                      { label: "WA confirmé", at: g.whatsappConfirmedAt },
-                                    ].map((s) => (
-                                      <div key={s.label} className="flex items-center gap-2">
-                                        <Clock className="w-3 h-3 text-muted-foreground shrink-0" />
-                                        <span className="font-medium">{s.label}</span>
-                                        <span className="text-muted-foreground ml-auto tabular-nums">
-                                          {s.at ? new Date(s.at).toLocaleString("fr-FR") : "—"}
-                                        </span>
-                                      </div>
-                                    ))}
+                                    {(() => {
+                                      const ref = g.realRef ? g.ref.toUpperCase() : null;
+                                      const evMap = ref ? onbByRef.get(ref) : null;
+                                      const rows = [
+                                        { label: "Lien ouvert", at: g.linkOpenedAt || evMap?.get("link_opened") || null },
+                                        { label: "Formulaire complété", at: g.formCompletedAt || evMap?.get("registered") || null },
+                                        { label: "WA cliqué", at: g.whatsappClickedAt || evMap?.get("whatsapp_clicked") || null },
+                                        { label: "WA confirmé", at: g.whatsappConfirmedAt || (ref && confirmedRefs.has(ref) ? "x" : null) },
+                                      ];
+                                      return rows.map((s) => (
+                                        <div key={s.label} className="flex items-center gap-2">
+                                          <Clock className="w-3 h-3 text-muted-foreground shrink-0" />
+                                          <span className="font-medium">{s.label}</span>
+                                          <span className="text-muted-foreground ml-auto tabular-nums">
+                                            {s.at ? (s.at === "x" ? "✓" : new Date(s.at).toLocaleString("fr-FR")) : "—"}
+                                          </span>
+                                        </div>
+                                      ));
+                                    })()}
                                   </div>
                                 </div>
                               </div>
