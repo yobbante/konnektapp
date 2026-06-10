@@ -17,9 +17,13 @@ interface Payload {
   konnekt_user_id?: string | null;
 }
 
-function buildWelcomeMessage(prenom: string): string {
+function buildWelcomeMessage(prenom: string, ref_gp: string): string {
   const name = prenom?.trim() || "";
+  const dashboardUrl = `https://usekonnekt.com/gp/${ref_gp}`;
   return `Bienvenue sur Konnekt ${name} ! 🎉
+
+Votre espace GP :
+${dashboardUrl}
 
 Votre compte transporteur est activé. Voici comment commencer :
 
@@ -174,7 +178,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (gp?.telephone_1 && !gp.welcome_sent_at) {
-        welcome_sent = await sendWhatsApp(gp.telephone_1, buildWelcomeMessage(gp.prenom ?? ""));
+        welcome_sent = await sendWhatsApp(gp.telephone_1, buildWelcomeMessage(gp.prenom ?? "", ref_gp));
         if (welcome_sent) {
           await admin
             .from("transporteurs")

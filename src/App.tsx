@@ -66,6 +66,7 @@ import AdminOrderDetail from "./pages/AdminOrderDetail";
 import PostBookingForm from "./pages/PostBookingForm";
 import BookingConfirmation from "./pages/BookingConfirmation";
 import GPProfile from "./pages/GPProfile";
+import GpRouteResolver from "./pages/GpRouteResolver";
 import TransporterProfile from "./pages/TransporterProfile";
 import Favorites from "./pages/Favorites";
 import FavoriteTransporters from "./pages/FavoriteTransporters";
@@ -223,7 +224,7 @@ const App = () => (
             <Route path="/offres/:id" element={<OfferDetail />} />
             <Route path="/freight-board" element={<FreightMarketplace />} />
             <Route path="/tracking" element={<Tracking />} />
-            <Route path="/gp/:gpId" element={<GPProfile />} />
+            <Route path="/gp/:gpId" element={<GpRouteResolver />} />
             <Route path="/client/transporteurs/:gpId" element={<ClientTransporterProfile />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
