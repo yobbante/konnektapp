@@ -1,18 +1,19 @@
 /**
- * /konnekt/gp — Login GP simplifié (téléphone + code 4 chiffres WhatsApp)
+ * /gp/connexion — Fallback "J'ai perdu mon lien GP"
  *
- * Prototype frontend :
- * - Le téléphone identifie le GP (table gp_profiles)
- * - Le code à 4 chiffres = 4 premiers caractères de la référence GP (id)
- * - Aucun mot de passe
+ * Le flow principal d'accès GP se fait via le lien personnalisé
+ * usekonnekt.com/gp/[ref_gp]. Cette page sert UNIQUEMENT de secours :
+ * le GP entre son téléphone → on retrouve sa référence dans `transporteurs`
+ * → on lui affiche son lien personnel et un bouton pour le recevoir sur
+ * WhatsApp depuis le 926. Aucun code, aucun mot de passe.
  */
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  ArrowLeft, ArrowRight, Loader2, MessageCircle, ShieldCheck, KeyRound,
-  AlertTriangle, Info,
+  ArrowLeft, ArrowRight, Loader2, MessageCircle, Info,
+  AlertTriangle, LinkIcon, CheckCircle2,
 } from "lucide-react";
 import { PhoneCountrySelect, useDetectedCountry, buildFullPhone } from "@/components/PhoneCountrySelect";
 
@@ -20,33 +21,24 @@ const KONNEKT_WA = "221789269756";
 const SUPPORT_TEL = "+221 78 926 97 56";
 const SUPPORT_TEL_RAW = "221789269756";
 
-function cleanPhone(v: string) {
-  const t = v.trim();
-  const plus = t.startsWith("+") ? "+" : "";
-  return plus + t.replace(/[^\d]/g, "");
-}
-
 type State =
   | { kind: "idle" }
   | { kind: "loading" }
   | { kind: "not_found" }
-  | { kind: "pending_activation"; firstName?: string }
-  | { kind: "wrong_code" }
-  | { kind: "ok"; firstName?: string; gpId: string };
+  | { kind: "ok"; firstName?: string; ref: string };
 
 export default function KonnektGPLogin() {
   const navigate = useNavigate();
   const detectedCountry = useDetectedCountry();
   const [country, setCountry] = useState(detectedCountry);
   const [localPhone, setLocalPhone] = useState("");
-  const [code, setCode] = useState("");
   const [state, setState] = useState<State>({ kind: "idle" });
 
   const fullPhone = buildFullPhone(localPhone, country);
 
   /* Force light mode */
   useEffect(() => {
-    document.title = "Konnekt GP — Connexion";
+    document.title = "Konnekt GP — Retrouver mon lien";
     const root = document.documentElement;
     const hadDark = root.classList.contains("dark");
     root.classList.remove("dark");
@@ -58,58 +50,49 @@ export default function KonnektGPLogin() {
   const submit = async () => {
     setState({ kind: "loading" });
     const cleanedPhone = fullPhone.replace(/\D/g, "");
-    const cleanedCode = code.trim().toLowerCase();
-
-    if (cleanedPhone.length < 8 || cleanedCode.length !== 4) {
-      setState({ kind: "wrong_code" });
+    if (cleanedPhone.length < 8) {
+      setState({ kind: "not_found" });
       return;
     }
 
-    // Lookup by phone (or whatsapp)
+    const tail = cleanedPhone.slice(-8);
     const { data, error } = await supabase
-      .from("gp_profiles")
-      .select("id, business_name, status, phone, whatsapp")
-      .or(`phone.ilike.%${cleanedPhone.slice(-8)},whatsapp.ilike.%${cleanedPhone.slice(-8)}`)
+      .from("transporteurs")
+      .select("reference, prenom, telephone_1, telephone_2")
+      .or(`telephone_1.ilike.%${tail},telephone_2.ilike.%${tail}`)
       .limit(1)
       .maybeSingle();
 
-    if (error || !data) {
+    if (error || !data || !(data as any).reference) {
       setState({ kind: "not_found" });
       return;
     }
 
     const gp = data as any;
-    const refPart = String(gp.id || "").replace(/[^0-9a-f]/gi, "").slice(0, 4).toLowerCase();
-    const codeOk = refPart && refPart === cleanedCode;
-
-    if (gp.status && gp.status !== "active" && gp.status !== "verified") {
-      const fn = (gp.business_name || "").split(/\s+/)[0];
-      setState({ kind: "pending_activation", firstName: fn });
-      return;
-    }
-
-    if (!codeOk) {
-      setState({ kind: "wrong_code" });
-      return;
-    }
-
-    const fn = (gp.business_name || "").split(/\s+/)[0];
-    sessionStorage.setItem("konnekt_gp_first_login", "1");
-    sessionStorage.setItem("konnekt_gp_first_name", fn || "");
-    setState({ kind: "ok", firstName: fn, gpId: gp.id });
-    setTimeout(() => navigate("/gp/apercu"), 600);
+    setState({
+      kind: "ok",
+      firstName: (gp.prenom || "").split(/\s+/)[0],
+      ref: gp.reference,
+    });
   };
 
   const isLoading = state.kind === "loading";
+  const personalLink =
+    state.kind === "ok" ? `https://usekonnekt.com/gp/${state.ref}` : "";
+  const waMessage =
+    state.kind === "ok"
+      ? `Bonjour, voici mon lien GP Konnekt : ${personalLink}`
+      : "";
 
   return (
     <div className="min-h-screen bg-white text-[#0D1B2A] font-sans">
       <Helmet>
-        <title>Konnekt GP — Connexion</title>
-        <meta name="description" content="Espace connexion pour les transporteurs partenaires Konnekt. Téléphone + code WhatsApp." />
+        <title>Konnekt GP — Retrouver mon lien</title>
+        <meta name="description" content="Retrouvez votre lien d'accès GP Konnekt avec votre numéro de téléphone." />
         <link rel="canonical" href="https://usekonnekt.com/gp/connexion" />
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
+
       {/* HEADER */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-black/5">
         <div className="max-w-md mx-auto flex items-center justify-between px-4 py-3.5">
@@ -141,10 +124,11 @@ export default function KonnektGPLogin() {
       <main className="px-4 py-10">
         <div className="max-w-md mx-auto">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-center">
-            Connectez-vous à Konnekt
+            Retrouvez votre lien GP
           </h1>
           <p className="text-sm text-black/60 text-center mt-2">
-            Réservé aux GP partenaires activés.
+            Vous accédez normalement à votre espace via votre lien personnel.
+            Vous l'avez perdu ? Entrez votre téléphone.
           </p>
 
           {/* Encart d'aide */}
@@ -154,122 +138,90 @@ export default function KonnektGPLogin() {
           >
             <Info className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: "#3DAA8A" }} />
             <p className="text-sm leading-relaxed">
-              Connectez-vous avec votre <span className="font-semibold">téléphone</span>{" "}
-              et le <span className="font-semibold">code à 4 chiffres</span> reçu par WhatsApp.
+              Entrez le <span className="font-semibold">téléphone</span> utilisé lors de votre inscription.
+              Nous retrouvons votre lien d'accès personnel.
             </p>
           </div>
 
           {/* Form */}
-          <div className="mt-5 bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
-            <label className="block text-xs font-semibold mb-1.5">Téléphone</label>
-            <PhoneCountrySelect
-              value={localPhone}
-              country={country}
-              onChange={(local, c) => {
-                setLocalPhone(local);
-                setCountry(c);
-              }}
-              placeholder="77 000 00 00"
-            />
-
-            <label className="block text-xs font-semibold mb-1.5 mt-4">Code WhatsApp (4 chiffres)</label>
-            <div className="relative">
-              <KeyRound className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-black/40" />
-              <input
-                inputMode="text"
-                autoComplete="one-time-code"
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\s/g, "").slice(0, 4))}
-                placeholder="ex. A12F"
-                className="w-full bg-white border border-black/15 rounded-lg pl-9 pr-3 py-2.5 text-sm tracking-[0.4em] uppercase outline-none focus:ring-2 focus:border-[#3DAA8A]"
-                style={{ ["--tw-ring-color" as any]: "rgba(61,170,138,0.3)" }}
+          {state.kind !== "ok" && (
+            <div className="mt-5 bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
+              <label className="block text-xs font-semibold mb-1.5">Téléphone</label>
+              <PhoneCountrySelect
+                value={localPhone}
+                country={country}
+                onChange={(local, c) => {
+                  setLocalPhone(local);
+                  setCountry(c);
+                }}
+                placeholder="77 000 00 00"
               />
-            </div>
 
-            <button
-              type="button"
-              disabled={isLoading}
-              onClick={submit}
-              className="w-full mt-5 inline-flex items-center justify-center gap-2 text-white rounded-lg py-3.5 font-semibold text-sm shadow-md disabled:opacity-60"
-              style={{ backgroundColor: "#3DAA8A" }}
-            >
-              {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-              Me connecter
-              {!isLoading && <ArrowRight className="w-4 h-4" />}
-            </button>
-
-            {/* States */}
-            {state.kind === "ok" && (
-              <div className="mt-4 text-sm rounded-lg px-3 py-2.5 border flex items-center gap-2"
-                style={{ borderColor: "rgba(22,163,74,0.3)", backgroundColor: "rgba(22,163,74,0.08)", color: "#15803D" }}
+              <button
+                type="button"
+                disabled={isLoading}
+                onClick={submit}
+                className="w-full mt-5 inline-flex items-center justify-center gap-2 text-white rounded-lg py-3.5 font-semibold text-sm shadow-md disabled:opacity-60"
+                style={{ backgroundColor: "#3DAA8A" }}
               >
-                <ShieldCheck className="w-4 h-4" /> Bienvenue {state.firstName || ""}, redirection…
-              </div>
-            )}
+                {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                Retrouver mon lien
+                {!isLoading && <ArrowRight className="w-4 h-4" />}
+              </button>
 
-            {state.kind === "wrong_code" && (
-              <div className="mt-4 text-sm rounded-lg px-3 py-2.5 border flex items-start gap-2"
-                style={{ borderColor: "rgba(220,38,38,0.25)", backgroundColor: "rgba(220,38,38,0.06)", color: "#B91C1C" }}
-              >
-                <AlertTriangle className="w-4 h-4 mt-0.5" />
-                <div>
-                  Code à 4 chiffres incorrect. Vérifiez le code reçu par WhatsApp ou demandez-le à nouveau.
+              {state.kind === "not_found" && (
+                <div className="mt-4 text-sm rounded-lg px-3 py-3 border"
+                  style={{ borderColor: "rgba(220,38,38,0.25)", backgroundColor: "rgba(220,38,38,0.06)", color: "#B91C1C" }}
+                >
+                  <div className="font-semibold mb-1 flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4" /> Numéro non trouvé
+                  </div>
+                  <p className="leading-relaxed">
+                    Pas encore inscrit ?{" "}
+                    <Link to="/beta" className="font-semibold underline">Rejoindre Konnekt</Link>
+                  </p>
+                  <p className="mt-2">
+                    Ou contactez :{" "}
+                    <a href={`tel:${SUPPORT_TEL_RAW}`} className="font-semibold underline">{SUPPORT_TEL}</a>
+                  </p>
                 </div>
-              </div>
-            )}
-
-            {state.kind === "pending_activation" && (
-              <div className="mt-4 text-sm rounded-lg px-3 py-3 border"
-                style={{ borderColor: "rgba(234,179,8,0.35)", backgroundColor: "rgba(234,179,8,0.08)", color: "#92400E" }}
-              >
-                <div className="font-semibold mb-1">Compte en cours d'activation</div>
-                <p className="leading-relaxed">
-                  Votre compte est en cours d'activation. Vous recevrez vos identifiants sous 24h.
-                </p>
-                <p className="mt-2">
-                  Questions :{" "}
-                  <a href={`tel:${SUPPORT_TEL_RAW}`} className="font-semibold underline">{SUPPORT_TEL}</a>
-                </p>
-              </div>
-            )}
-
-            {state.kind === "not_found" && (
-              <div className="mt-4 text-sm rounded-lg px-3 py-3 border"
-                style={{ borderColor: "rgba(220,38,38,0.25)", backgroundColor: "rgba(220,38,38,0.06)", color: "#B91C1C" }}
-              >
-                <div className="font-semibold mb-1">Numéro non trouvé</div>
-                <p className="leading-relaxed">
-                  Inscrivez-vous d'abord sur{" "}
-                  <Link to="/beta" className="font-semibold underline">usekonnekt.com</Link>
-                </p>
-                <p className="mt-2">
-                  Ou contactez :{" "}
-                  <a href={`tel:${SUPPORT_TEL_RAW}`} className="font-semibold underline">{SUPPORT_TEL}</a>
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Fallback email */}
-          <div className="mt-6">
-            <div className="flex items-center gap-3">
-              <span className="flex-1 h-px bg-black/10" />
-              <span className="text-xs text-black/40 font-medium">ou</span>
-              <span className="flex-1 h-px bg-black/10" />
+              )}
             </div>
-            <Link
-              to="/auth?mode=login"
-              className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-lg border py-3 font-semibold text-sm transition-colors"
-              style={{ borderColor: "rgba(61,170,138,0.4)", color: "#3DAA8A" }}
-            >
-              Se connecter avec mon adresse email
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <p className="mt-3 text-xs text-black/50 text-center leading-relaxed">
-              Les GP basés hors du Sénégal peuvent utiliser leur email pour se connecter.
-            </p>
-          </div>
+          )}
 
+          {/* Success — lien retrouvé */}
+          {state.kind === "ok" && (
+            <div className="mt-5 bg-white border rounded-2xl p-5 shadow-sm"
+              style={{ borderColor: "rgba(22,163,74,0.3)" }}>
+              <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: "#15803D" }}>
+                <CheckCircle2 className="w-5 h-5" /> Lien retrouvé{state.firstName ? `, ${state.firstName} !` : " !"}
+              </div>
+
+              <div className="mt-4 flex items-center gap-2 rounded-lg px-3 py-3 border border-black/10 bg-black/[0.02]">
+                <LinkIcon className="w-4 h-4 flex-shrink-0" style={{ color: "#3DAA8A" }} />
+                <span className="text-sm break-all">{personalLink}</span>
+              </div>
+
+              <a
+                href={`https://wa.me/${KONNEKT_WA}?text=${encodeURIComponent(waMessage)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full mt-4 inline-flex items-center justify-center gap-2 text-white rounded-lg py-3.5 font-semibold text-sm shadow-md"
+                style={{ backgroundColor: "#25D366" }}
+              >
+                <MessageCircle className="w-4 h-4" /> Recevoir mon lien sur WhatsApp
+              </a>
+
+              <button
+                type="button"
+                onClick={() => navigate(`/gp/${state.ref}`)}
+                className="w-full mt-3 inline-flex items-center justify-center gap-2 rounded-lg py-3 font-semibold text-sm border"
+                style={{ borderColor: "rgba(61,170,138,0.4)", color: "#3DAA8A" }}
+              >
+                Ouvrir mon espace GP <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
 
           <p className="text-center text-xs text-black/50 mt-6">
             Pas encore inscrit ?{" "}
