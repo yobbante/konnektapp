@@ -6438,6 +6438,7 @@ export type Database = {
           created_at: string
           form_completed_at: string | null
           id: string
+          link_opened_at: string | null
           navettes: string[]
           nom: string | null
           prenom: string | null
@@ -6453,6 +6454,7 @@ export type Database = {
           created_at?: string
           form_completed_at?: string | null
           id?: string
+          link_opened_at?: string | null
           navettes?: string[]
           nom?: string | null
           prenom?: string | null
@@ -6468,6 +6470,7 @@ export type Database = {
           created_at?: string
           form_completed_at?: string | null
           id?: string
+          link_opened_at?: string | null
           navettes?: string[]
           nom?: string | null
           prenom?: string | null
