@@ -227,6 +227,7 @@ export default function AdminBetaTracking() {
         betaSource: "yobbante",
         routes: t.navettes || [],
         welcomeSentAt: t.welcome_sent_at,
+        linkOpenedAt: t.link_opened_at,
         formCompletedAt: t.form_completed_at,
         whatsappClickedAt: t.whatsapp_clicked_at,
         whatsappConfirmedAt: t.whatsapp_confirmed_at,
