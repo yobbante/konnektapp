@@ -261,6 +261,96 @@ export function GpJoinCard({
   };
 
   if (success) {
+    // ÉTAT 3 — Compte activé après confirmation WhatsApp
+    if (confirmed) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center py-4"
+        >
+          <div
+            className="w-16 h-16 rounded-full grid place-items-center mx-auto mb-4"
+            style={{ backgroundColor: `${TEAL}1A` }}
+          >
+            <CheckCircle2 className="w-9 h-9" style={{ color: TEAL }} />
+          </div>
+          <h2 className="text-2xl font-bold" style={{ color: "#111827" }}>
+            ✅ Compte activé !
+          </h2>
+          <p className="mt-2 text-base" style={{ color: "#374151" }}>
+            Bienvenue sur Konnekt, {prenom.trim()} !
+          </p>
+          <Button
+            type="button"
+            onClick={() => navigate("/gp/dashboard")}
+            className="w-full text-base text-white gap-1.5 mt-6"
+            style={{ height: 52, borderRadius: 12, fontWeight: 700, backgroundColor: TEAL }}
+          >
+            Accéder à mon espace GP <ArrowRight className="w-5 h-5" />
+          </Button>
+        </motion.div>
+      );
+    }
+
+    // ÉTAT 2 — En attente de confirmation après clic WhatsApp
+    if (waClicked) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center py-4"
+        >
+          <div
+            className="w-16 h-16 rounded-full grid place-items-center mx-auto mb-4"
+            style={{ backgroundColor: "#FEF3C7" }}
+          >
+            <Loader2 className="w-9 h-9 animate-spin" style={{ color: "#D97706" }} />
+          </div>
+          <h2 className="text-xl font-bold" style={{ color: "#111827" }}>
+            ⏳ En attente de confirmation WhatsApp…
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed" style={{ color: "#6B7280" }}>
+            Vous avez envoyé le message ? Votre compte sera activé dans les 30 secondes.
+          </p>
+
+          <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="block mt-6">
+            <Button
+              className="w-full text-base text-white gap-2"
+              style={{ height: 52, borderRadius: 12, fontWeight: 700, backgroundColor: "#25D366" }}
+            >
+              <MessageCircle className="w-5 h-5" />
+              Rouvrir WhatsApp
+            </Button>
+          </a>
+
+          <button
+            type="button"
+            onClick={() => setShowNumber(true)}
+            className="mt-4 text-sm font-semibold"
+            style={{ color: TEAL_DARK }}
+          >
+            Je n'arrive pas à envoyer →
+          </button>
+
+          {showNumber && (
+            <div
+              className="mt-4 p-4 rounded-xl"
+              style={{ backgroundColor: "#F9FAFB", border: "1px solid #E5E7EB" }}
+            >
+              <p className="text-xs" style={{ color: "#6B7280" }}>
+                Envoyez un message WhatsApp à ce numéro :
+              </p>
+              <p className="mt-1 text-lg font-bold tracking-wide" style={{ color: "#111827" }}>
+                +221 78 926 97 56
+              </p>
+            </div>
+          )}
+        </motion.div>
+      );
+    }
+
+    // ÉTAT 1 — Inscription enregistrée, inviter à activer sur WhatsApp
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.97 }}
@@ -292,6 +382,7 @@ export function GpJoinCard({
                 .invoke("gp-onboarding-track", { body: { ref_gp: ref, event: "whatsapp_clicked" } })
                 .catch(() => {/* best-effort */});
             }
+            setWaClicked(true);
           }}
         >
           <Button
@@ -299,9 +390,13 @@ export function GpJoinCard({
             style={{ height: 52, borderRadius: 12, fontWeight: 700, backgroundColor: "#25D366" }}
           >
             <MessageCircle className="w-5 h-5" />
-            Activer mon compte sur WhatsApp →
+            📲 Activer mon compte sur WhatsApp
           </Button>
         </a>
+
+        <p className="mt-3 text-sm leading-relaxed" style={{ color: "#6B7280" }}>
+          Appuyez sur Envoyer dans WhatsApp pour finaliser. C'est la dernière étape.
+        </p>
 
         {/* Séparateur "ou" */}
         <div className="flex items-center gap-3 my-5">
@@ -318,10 +413,6 @@ export function GpJoinCard({
         >
           Accéder à mon espace GP →
         </button>
-
-        <p className="mt-6 text-xs leading-relaxed" style={{ color: "#6B7280" }}>
-          L'activation WhatsApp est recommandée pour recevoir vos missions en temps réel.
-        </p>
       </motion.div>
     );
   }
