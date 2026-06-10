@@ -115,6 +115,15 @@ type SortDir = "asc" | "desc";
 const REGISTERED = new Set(["verified", "active"]);
 const normPhone = (p?: string | null) => (p || "").replace(/[^0-9]/g, "");
 
+// Statut Bot (funnel onboarding) à partir des dates suivies
+function botStatus(g: { linkOpenedAt: string | null; formCompletedAt: string | null; whatsappClickedAt: string | null; whatsappConfirmedAt: string | null; }) {
+  if (g.whatsappConfirmedAt) return { label: "ACTIF ✅", cls: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30" };
+  if (g.whatsappClickedAt) return { label: "WhatsApp cliqué", cls: "bg-amber-500/15 text-amber-600 border-amber-500/30" };
+  if (g.formCompletedAt) return { label: "Formulaire ✓", cls: "bg-amber-500/15 text-amber-600 border-amber-500/30" };
+  if (g.linkOpenedAt) return { label: "Lien ouvert", cls: "bg-amber-500/15 text-amber-600 border-amber-500/30" };
+  return null;
+}
+
 export default function AdminBetaTracking() {
   const [events, setEvents] = useState<Event[]>([]);
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
