@@ -623,19 +623,25 @@ export default function AdminBetaTracking() {
                                     </div>
                                   ))}
                                   <div className="border-t border-border/50 mt-2 pt-2 space-y-1.5">
-                                    {[
-                                      { label: "Formulaire complété", at: g.formCompletedAt },
-                                      { label: "WA cliqué", at: g.whatsappClickedAt },
-                                      { label: "WA confirmé", at: g.whatsappConfirmedAt },
-                                    ].map((s) => (
-                                      <div key={s.label} className="flex items-center gap-2">
-                                        <Clock className="w-3 h-3 text-muted-foreground shrink-0" />
-                                        <span className="font-medium">{s.label}</span>
-                                        <span className="text-muted-foreground ml-auto tabular-nums">
-                                          {s.at ? new Date(s.at).toLocaleString("fr-FR") : "—"}
-                                        </span>
-                                      </div>
-                                    ))}
+                                    {(() => {
+                                      const ref = g.realRef ? g.ref.toUpperCase() : null;
+                                      const evMap = ref ? onbByRef.get(ref) : null;
+                                      const rows = [
+                                        { label: "Lien ouvert", at: g.linkOpenedAt || evMap?.get("link_opened") || null },
+                                        { label: "Formulaire complété", at: g.formCompletedAt || evMap?.get("registered") || null },
+                                        { label: "WA cliqué", at: g.whatsappClickedAt || evMap?.get("whatsapp_clicked") || null },
+                                        { label: "WA confirmé", at: g.whatsappConfirmedAt || (ref && confirmedRefs.has(ref) ? "x" : null) },
+                                      ];
+                                      return rows.map((s) => (
+                                        <div key={s.label} className="flex items-center gap-2">
+                                          <Clock className="w-3 h-3 text-muted-foreground shrink-0" />
+                                          <span className="font-medium">{s.label}</span>
+                                          <span className="text-muted-foreground ml-auto tabular-nums">
+                                            {s.at ? (s.at === "x" ? "✓" : new Date(s.at).toLocaleString("fr-FR")) : "—"}
+                                          </span>
+                                        </div>
+                                      ));
+                                    })()}
                                   </div>
                                 </div>
                               </div>
