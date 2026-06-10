@@ -392,6 +392,16 @@ export default function AdminBetaTracking() {
         <div className="flex items-center justify-center h-48"><Loader2 className="w-6 h-6 animate-spin" /></div>
       ) : (
         <>
+          {/* Funnel onboarding GP (bot 926) */}
+          <h2 className="text-sm font-semibold mb-2">Funnel onboarding GP</h2>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+            <Kpi icon={<Users className="w-4 h-4" />} label="Invités" value={onbFunnel.invited} />
+            <Kpi icon={<MousePointerClick className="w-4 h-4" />} label="Lien ouvert" value={onbFunnel.linkOpened} />
+            <Kpi icon={<FileText className="w-4 h-4" />} label="Formulaire" value={onbFunnel.formCompleted} />
+            <Kpi icon={<MessageCircle className="w-4 h-4" />} label="WhatsApp cliqué" value={onbFunnel.waClicked} />
+            <Kpi icon={<TrendingUp className="w-4 h-4" />} label="Actifs" value={onbFunnel.active} highlight />
+          </div>
+
           {/* Funnel */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
             <Kpi icon={<MousePointerClick className="w-4 h-4" />} label="Clic Commencer" value={funnel.start} />
