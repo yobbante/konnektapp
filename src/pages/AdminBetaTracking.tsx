@@ -574,6 +574,7 @@ export default function AdminBetaTracking() {
                   { k: "registered", label: "Inscrits" },
                   { k: "not_registered", label: "Non inscrits" },
                   { k: "yobbante", label: "Yobbanté" },
+                  { k: "onboarding", label: "Leads onboarding" },
                 ] as const).map((opt) => (
                   <Button
                     key={opt.k}
