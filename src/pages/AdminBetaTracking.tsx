@@ -544,6 +544,14 @@ export default function AdminBetaTracking() {
                           </td>
                           <td className="py-2 text-right tabular-nums">{g.missions}</td>
                           <td className="py-2 text-right">
+                            {(() => {
+                              const bs = botStatus(g);
+                              return bs
+                                ? <Badge variant="outline" className={`text-[10px] ${bs.cls}`}>{bs.label}</Badge>
+                                : <span className="text-muted-foreground/50">—</span>;
+                            })()}
+                          </td>
+                          <td className="py-2 text-right">
                             <Badge variant="outline" className="text-[10px]">{g.status}</Badge>
                           </td>
                         </tr>
