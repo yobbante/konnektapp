@@ -521,7 +521,7 @@ export default function AdminBetaTracking() {
                 </thead>
                 <tbody>
                   {filteredGps.length === 0 ? (
-                    <tr><td colSpan={7} className="text-center py-4 text-muted-foreground">Aucun GP</td></tr>
+                    <tr><td colSpan={8} className="text-center py-4 text-muted-foreground">Aucun GP</td></tr>
                   ) : filteredGps.slice(0, 200).map((g) => {
                     const open = expanded === g.key;
                     return (
@@ -557,7 +557,7 @@ export default function AdminBetaTracking() {
                         </tr>
                         {open && (
                           <tr key={`${g.key}-d`} className="bg-muted/20">
-                            <td colSpan={7} className="p-4">
+                            <td colSpan={8} className="p-4">
                               <div className="grid md:grid-cols-3 gap-4">
                                 {/* Identité */}
                                 <div className="space-y-1.5 text-xs">
