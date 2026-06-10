@@ -340,14 +340,16 @@ export default function AdminBetaTracking() {
     return { start, view, pub, interest, activation };
   }, [events]);
 
-  // Évènements onboarding agrégés par réf GP (source réelle du funnel)
+  // Évènements onboarding agrégés par réf GP (event -> date la plus récente)
   const onbByRef = useMemo(() => {
-    const map = new Map<string, Set<string>>();
+    const map = new Map<string, Map<string, string>>();
     for (const e of onboarding) {
       const ref = (e.ref_gp || "").toUpperCase();
       if (!ref) continue;
-      if (!map.has(ref)) map.set(ref, new Set());
-      map.get(ref)!.add(e.event);
+      if (!map.has(ref)) map.set(ref, new Map());
+      const evMap = map.get(ref)!;
+      // onboarding est trié par occurred_at desc → on garde la 1re vue (la plus récente)
+      if (!evMap.has(e.event)) evMap.set(e.event, e.occurred_at);
     }
     return map;
   }, [onboarding]);
