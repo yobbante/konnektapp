@@ -40,17 +40,122 @@ function digitsOnly(phone: string): string {
   return (phone || "").replace(/\D/g, "");
 }
 
-function extractMessage(body: any): { sender: string; text: string } {
+function extractMessage(body: any): { sender: string; text: string; imageId: string | null } {
   let sender = body.from ?? body.From ?? body.sender_phone ?? body.sender ?? "";
   let text = body.body ?? body.Body ?? body.message ?? body.text ?? "";
+  // Image directe (formats simples)
+  let imageId: string | null = body.image_id ?? body.media_id ?? body.image?.id ?? null;
   try {
     const msg = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
     if (msg) {
       sender = sender || msg.from || "";
-      text = text || msg.text?.body || "";
+      text = text || msg.text?.body || msg.image?.caption || "";
+      if (!imageId && msg.type === "image" && msg.image?.id) imageId = msg.image.id;
     }
   } catch (_) { /* ignore */ }
-  return { sender: String(sender), text: String(text) };
+  return { sender: String(sender), text: String(text), imageId: imageId ? String(imageId) : null };
+}
+
+// --- Vision flyer : telechargement media Meta + extraction Claude ---
+const WHATSAPP_ACCESS_TOKEN = Deno.env.get("WHATSAPP_ACCESS_TOKEN");
+const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+
+async function downloadWhatsAppImage(mediaId: string): Promise<{ base64: string; mediaType: string } | null> {
+  if (!WHATSAPP_ACCESS_TOKEN) {
+    console.warn("[gp-bot] WHATSAPP_ACCESS_TOKEN manquant — impossible de telecharger l'image");
+    return null;
+  }
+  try {
+    // 1) Resoudre l'URL du media
+    const metaRes = await fetch(`https://graph.facebook.com/v21.0/${mediaId}`, {
+      headers: { Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}` },
+    });
+    if (!metaRes.ok) {
+      console.error("[gp-bot] media meta fetch failed", metaRes.status, await metaRes.text());
+      return null;
+    }
+    const meta = await metaRes.json();
+    const url = meta?.url;
+    const mediaType = meta?.mime_type || "image/jpeg";
+    if (!url) return null;
+    // 2) Telecharger le binaire (auth requise)
+    const binRes = await fetch(url, { headers: { Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}` } });
+    if (!binRes.ok) {
+      console.error("[gp-bot] media download failed", binRes.status);
+      return null;
+    }
+    const buf = new Uint8Array(await binRes.arrayBuffer());
+    let binary = "";
+    for (let i = 0; i < buf.length; i++) binary += String.fromCharCode(buf[i]);
+    return { base64: btoa(binary), mediaType };
+  } catch (e) {
+    console.error("[gp-bot] downloadWhatsAppImage error", String(e));
+    return null;
+  }
+}
+
+interface FlyerData {
+  ville_depart: string | null;
+  ville_arrivee: string | null;
+  date_depart: string | null;
+  capacite_kg: number | null;
+}
+
+async function extractFlyerWithClaude(base64: string, mediaType: string): Promise<FlyerData | null> {
+  if (!ANTHROPIC_API_KEY) {
+    console.warn("[gp-bot] ANTHROPIC_API_KEY manquant — extraction impossible");
+    return null;
+  }
+  const system = `Tu es un assistant qui extrait les infos de départ depuis un flyer de transporteur GP. Réponds UNIQUEMENT en JSON strict :
+{
+  ville_depart: string,
+  ville_arrivee: string,
+  date_depart: string (format JJ/MM),
+  capacite_kg: number ou null
+}
+Si une info est absente, mets null.`;
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 512,
+        system,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
+              { type: "text", text: "Extrais les infos de depart de ce flyer." },
+            ],
+          },
+        ],
+      }),
+    });
+    if (!res.ok) {
+      console.error("[gp-bot] Claude API failed", res.status, await res.text());
+      return null;
+    }
+    const data = await res.json();
+    const raw = data?.content?.[0]?.text ?? "";
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) return null;
+    const parsed = JSON.parse(match[0]);
+    return {
+      ville_depart: parsed.ville_depart ?? null,
+      ville_arrivee: parsed.ville_arrivee ?? null,
+      date_depart: parsed.date_depart ?? null,
+      capacite_kg: typeof parsed.capacite_kg === "number" ? parsed.capacite_kg : null,
+    };
+  } catch (e) {
+    console.error("[gp-bot] extractFlyerWithClaude error", String(e));
+    return null;
+  }
 }
 
 // Compare deux numeros sur les 9 derniers chiffres (numero national)
@@ -96,11 +201,33 @@ function formatMissions(missions: any[]): string {
   return `Vos missions actives :\n\n${lines.join("\n\n")}`;
 }
 
-// DEP Paris 15/06 25kg
-function parseDep(normalized: string): { dest: string; date: string; kg: number } | null {
+// DEP Paris 15/06 25kg  (ancien format)
+// DEP Paris Dakar 15/06 25  (nouveau format : depart arrivee date capacite)
+function parseDep(normalized: string): { origin: string | null; dest: string; date: string; kg: number | null } | null {
+  // Nouveau format 4 champs : DEP <ville_depart> <ville_arrivee> <date> <capacite>
+  const m4 = normalized.match(/^dep\s+(\S+)\s+(\S+)\s+(\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?)\s+(\d+(?:\.\d+)?)\s*kg?$/);
+  if (m4) {
+    return { origin: m4[1].trim(), dest: m4[2].trim(), date: m4[3], kg: parseFloat(m4[4]) };
+  }
+  // Ancien format : DEP <destination> <date> <capacite>
   const m = normalized.match(/^dep\s+(.+?)\s+(\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?)\s+(\d+(?:\.\d+)?)\s*kg?$/);
   if (!m) return null;
-  return { dest: m[1].trim(), date: m[2], kg: parseFloat(m[3]) };
+  return { origin: null, dest: m[1].trim(), date: m[2], kg: parseFloat(m[3]) };
+}
+
+async function createDeparture(
+  admin: any,
+  opts: { reference: string | null; gpProfileId: string | null; origin: string | null; dest: string; date: string; kg: number | null; sender: string },
+) {
+  await admin.from("manual_departures").insert({
+    gp_reference: opts.reference,
+    gp_profile_id: opts.gpProfileId,
+    destination: opts.origin ? `${opts.origin} → ${opts.dest}` : opts.dest,
+    date_depart: opts.date,
+    poids_kg: opts.kg,
+    source: "whatsapp_926",
+    sender_phone: opts.sender,
+  });
 }
 
 Deno.serve(async (req) => {
@@ -121,7 +248,7 @@ Deno.serve(async (req) => {
   // Ping de santé via POST { ping: true } — aucun effet de bord
   if (body && body.ping === true) return json({ status: "ok", line: "926" });
 
-  const { sender, text } = extractMessage(body);
+  const { sender, text, imageId } = extractMessage(body);
   if (!sender) return json({ error: "Missing sender" }, 400);
 
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
@@ -201,24 +328,99 @@ Deno.serve(async (req) => {
     return json({ handled: true, type: "onboarding", reply: ONBOARD_REPLY, admin_notify: { to: ADMIN_PHONE, message: adminNote } });
   }
 
+  // ----- PARTIE IMAGE : Flyer GP analyse par Claude (vision) -----
+  if (imageId) {
+    const img = await downloadWhatsAppImage(imageId);
+    const flyer = img ? await extractFlyerWithClaude(img.base64, img.mediaType) : null;
+    const usable = flyer && (flyer.ville_depart || flyer.ville_arrivee || flyer.date_depart);
+
+    if (!usable) {
+      const reply = "Je n'arrive pas à lire cette image.\nTapez : DEP [ville] [destination] [date] [capacité]";
+      await admin.from("whatsapp_inbound_messages").insert({
+        sender_phone: sender, message_body: "[image]", tag: "flyer_unreadable", is_known_gp: true, bot_reply: reply, raw_payload: body,
+      });
+      return json({ handled: true, type: "flyer_unreadable", reply });
+    }
+
+    // Stocker en session (pending_dep) pour 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    await admin.from("gp_sessions").upsert(
+      {
+        sender_phone: sender,
+        gp_reference: reference,
+        pending_dep: flyer,
+        expires_at: expiresAt,
+      },
+      { onConflict: "sender_phone" },
+    );
+
+    const cap = flyer!.capacite_kg != null ? `${flyer!.capacite_kg}kg` : "non précisée";
+    const reply = `✅ J'ai détecté les infos suivantes :
+📍 Départ : ${flyer!.ville_depart ?? "?"}
+🏁 Destination : ${flyer!.ville_arrivee ?? "?"}
+📅 Date : ${flyer!.date_depart ?? "?"}
+⚖️ Capacité : ${cap}
+
+Tapez OUI pour confirmer, ou corrigez avec :
+DEP ${flyer!.ville_depart ?? "[ville]"} ${flyer!.ville_arrivee ?? "[destination]"} ${flyer!.date_depart ?? "[date]"} ${flyer!.capacite_kg ?? "[capacité]"}`;
+    await admin.from("whatsapp_inbound_messages").insert({
+      sender_phone: sender, message_body: "[image]", tag: "flyer_detected", is_known_gp: true, bot_reply: reply, raw_payload: body,
+    });
+    return json({ handled: true, type: "flyer_detected", reply, pending_dep: flyer });
+  }
+
+  // ----- PARTIE OUI : confirmation d'un depart detecte depuis un flyer -----
+  if (normalized === "oui" || normalized === "ok" || normalized === "confirmer") {
+    const { data: session } = await admin
+      .from("gp_sessions")
+      .select("pending_dep, expires_at")
+      .eq("sender_phone", sender)
+      .maybeSingle();
+    const pending = session?.pending_dep as FlyerData | null;
+    const stillValid = session && new Date(session.expires_at).getTime() > Date.now();
+
+    if (pending && stillValid) {
+      await createDeparture(admin, {
+        reference,
+        gpProfileId: gpProfile?.id ?? null,
+        origin: pending.ville_depart,
+        dest: pending.ville_arrivee ?? pending.ville_depart ?? "?",
+        date: pending.date_depart ?? "",
+        kg: pending.capacite_kg,
+        sender,
+      });
+      await admin.from("gp_sessions").delete().eq("sender_phone", sender);
+      const cap = pending.capacite_kg != null ? `${pending.capacite_kg}kg` : "?";
+      const reply = `Depart enregistre :\n${pending.ville_depart ?? "?"} → ${pending.ville_arrivee ?? "?"} · ${pending.date_depart ?? "?"} · ${cap}\n${gpProfile ? "Visible dans votre dashboard Konnekt." : "Merci !"}`;
+      await admin.from("whatsapp_inbound_messages").insert({
+        sender_phone: sender, message_body: text, tag: "flyer_confirmed", is_known_gp: true, bot_reply: reply, raw_payload: body,
+      });
+      return json({ handled: true, type: "flyer_confirmed", reply });
+    }
+    // Pas de session valide : on laisse passer vers le menu
+  }
+
   // ----- PARTIE 3 : DEP cree dans les 2 systemes -----
   const dep = parseDep(normalized);
   if (dep) {
-    await admin.from("manual_departures").insert({
-      gp_reference: reference,
-      gp_profile_id: gpProfile?.id ?? null,
-      destination: dep.dest,
-      date_depart: dep.date,
-      poids_kg: dep.kg,
-      source: "whatsapp_926",
-      sender_phone: sender,
+    await createDeparture(admin, {
+      reference,
+      gpProfileId: gpProfile?.id ?? null,
+      origin: dep.origin,
+      dest: dep.dest,
+      date: dep.date,
+      kg: dep.kg,
+      sender,
     });
-    const reply = `Depart enregistre :\n${dep.dest} · ${dep.date} · ${dep.kg}kg\n${gpProfile ? "Visible dans votre dashboard Konnekt." : "Merci !"}`;
+    const route = dep.origin ? `${dep.origin} → ${dep.dest}` : dep.dest;
+    const cap = dep.kg != null ? `${dep.kg}kg` : "?";
+    const reply = `Depart enregistre :\n${route} · ${dep.date} · ${cap}\n${gpProfile ? "Visible dans votre dashboard Konnekt." : "Merci !"}`;
     await admin.from("whatsapp_inbound_messages").insert({
       sender_phone: sender, message_body: text, tag: "dep_declared", is_known_gp: true, bot_reply: reply, raw_payload: body,
     });
     return json({ handled: true, type: "dep", reply });
   }
+
 
   // ----- PARTIE 2 : MES MISSIONS -----
   if (normalized === "1" || normalized.includes("mes missions")) {
