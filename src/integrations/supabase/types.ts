@@ -2451,6 +2451,36 @@ export type Database = {
           },
         ]
       }
+      gp_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          gp_reference: string | null
+          id: string
+          pending_dep: Json | null
+          sender_phone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          gp_reference?: string | null
+          id?: string
+          pending_dep?: Json | null
+          sender_phone: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          gp_reference?: string | null
+          id?: string
+          pending_dep?: Json | null
+          sender_phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       gp_wallets: {
         Row: {
           balance: number
