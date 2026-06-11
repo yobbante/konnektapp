@@ -17,6 +17,8 @@ import {
   Loader2, MessageCircle, MapPin, Plane, Package, Wallet, User,
   Plus, Pencil, Trash2, ArrowRight, Check,
 } from "lucide-react";
+import { fetchYobbanteGp } from "@/lib/yobbante";
+
 
 const TEAL = "#0D9488";
 const TEAL_DARK = "#0F766E";
