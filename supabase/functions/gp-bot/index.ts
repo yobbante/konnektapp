@@ -201,11 +201,33 @@ function formatMissions(missions: any[]): string {
   return `Vos missions actives :\n\n${lines.join("\n\n")}`;
 }
 
-// DEP Paris 15/06 25kg
-function parseDep(normalized: string): { dest: string; date: string; kg: number } | null {
+// DEP Paris 15/06 25kg  (ancien format)
+// DEP Paris Dakar 15/06 25  (nouveau format : depart arrivee date capacite)
+function parseDep(normalized: string): { origin: string | null; dest: string; date: string; kg: number | null } | null {
+  // Nouveau format 4 champs : DEP <ville_depart> <ville_arrivee> <date> <capacite>
+  const m4 = normalized.match(/^dep\s+(\S+)\s+(\S+)\s+(\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?)\s+(\d+(?:\.\d+)?)\s*kg?$/);
+  if (m4) {
+    return { origin: m4[1].trim(), dest: m4[2].trim(), date: m4[3], kg: parseFloat(m4[4]) };
+  }
+  // Ancien format : DEP <destination> <date> <capacite>
   const m = normalized.match(/^dep\s+(.+?)\s+(\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?)\s+(\d+(?:\.\d+)?)\s*kg?$/);
   if (!m) return null;
-  return { dest: m[1].trim(), date: m[2], kg: parseFloat(m[3]) };
+  return { origin: null, dest: m[1].trim(), date: m[2], kg: parseFloat(m[3]) };
+}
+
+async function createDeparture(
+  admin: any,
+  opts: { reference: string | null; gpProfileId: string | null; origin: string | null; dest: string; date: string; kg: number | null; sender: string },
+) {
+  await admin.from("manual_departures").insert({
+    gp_reference: opts.reference,
+    gp_profile_id: opts.gpProfileId,
+    destination: opts.origin ? `${opts.origin} → ${opts.dest}` : opts.dest,
+    date_depart: opts.date,
+    poids_kg: opts.kg,
+    source: "whatsapp_926",
+    sender_phone: opts.sender,
+  });
 }
 
 Deno.serve(async (req) => {
