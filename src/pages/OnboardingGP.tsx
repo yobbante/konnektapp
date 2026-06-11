@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { KonnektPageLoader } from "@/components/ui/KonnektLoader";
 import { GpJoinCard } from "@/components/gp/GpJoinCard";
+import { fetchYobbanteGp } from "@/lib/yobbante";
+
 
 const TEAL = "#0D9488";
 const TEAL_DARK = "#0F766E";
@@ -34,48 +36,8 @@ export default function OnboardingGP() {
     sessionStorage.setItem(REF_STORAGE_KEY, normalizedRef);
 
     (async () => {
-      // Les données des GPs sont dans le projet Supabase Yobbanté.
-      // On les récupère via l'edge function `get-gp-data`.
-      let known: {
-        prenom: string | null;
-        nom: string | null;
-        telephone_1: string | null;
-        telephone_2: string | null;
-      } | null = null;
-
-      try {
-        const res = await fetch(
-          "https://tlvuextleczdsqxoguyq.supabase.co/functions/v1/gp-lookup",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-konnekt-key": "konnekt-yobbante-2026",
-            },
-            body: JSON.stringify({ ref_gp: normalizedRef }),
-          }
-        );
-        if (res.ok) {
-          const payload = await res.json().catch(() => null);
-          console.log("[OnboardingGP] gp-lookup", normalizedRef, payload);
-          known =
-            (payload as { data?: typeof known } | null)?.data ??
-            (payload as typeof known | null) ??
-            null;
-          // Guard against an empty object response
-          if (known && !known.prenom && !known.nom && !known.telephone_1 && !known.telephone_2) {
-            known = null;
-          }
-        } else {
-          console.warn("[OnboardingGP] gp-lookup HTTP", res.status);
-        }
-      } catch (e) {
-        console.error("[OnboardingGP] gp-lookup fetch failed:", e);
-      }
-
-      if (!known) {
-        console.warn(`[OnboardingGP] Aucun GP trouvé pour ${normalizedRef} — formulaire vide.`);
-      }
+      // Les 436 GPs vivent dans le projet Supabase Yobbanté (via gp-lookup).
+      const known = await fetchYobbanteGp(normalizedRef);
 
       if (known) {
         // Si prénom manquant, on bascule le nom unique dans le champ Prénom.
@@ -88,7 +50,10 @@ export default function OnboardingGP() {
         }
         const tel = known.telephone_1 || known.telephone_2;
         if (tel) setPhone(tel.replace(/\s/g, ""));
+      } else {
+        console.warn(`[OnboardingGP] Aucun GP trouvé pour ${normalizedRef}.`);
       }
+
 
       // Tracking "link_opened" — enregistré à chaque ouverture de la page (best-effort)
       try {
