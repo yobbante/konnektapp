@@ -75,7 +75,13 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const qrSecret = Deno.env.get("KKT_QR_SECRET") || "konnekt_qr_secret_change_in_prod";
+    const qrSecret = Deno.env.get("KKT_QR_SECRET");
+    if (!qrSecret) {
+      return new Response(JSON.stringify({ error: "Server misconfigured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // ── Auth JWT ──
     const authHeader = req.headers.get("Authorization");
