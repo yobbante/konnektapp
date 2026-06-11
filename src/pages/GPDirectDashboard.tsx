@@ -147,28 +147,55 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
     let active = true;
     (async () => {
       setLoading(true);
-      const { data, error } = await supabase
+      const SELECT_COLS =
+        "id, reference, prenom, nom, telephone_1, navettes, residence_city, whatsapp_confirmed_at, beta_wizard_completed_at, beta_tarif_defaut, beta_notes_conditions";
+
+      // 1) Fiche locale (état beta) si déjà créée
+      let { data } = await supabase
         .from("transporteurs")
-        .select("id, reference, prenom, nom, telephone_1, navettes, residence_city, whatsapp_confirmed_at, beta_wizard_completed_at, beta_tarif_defaut, beta_notes_conditions")
+        .select(SELECT_COLS)
         .ilike("reference", refGp)
         .maybeSingle();
       if (!active) return;
 
-      if (error || !data) {
+      // 2) Sinon, on cherche l'identité dans le projet Yobbanté (436 GPs)
+      if (!data) {
+        const yob = await fetchYobbanteGp(refGp);
+        if (!active) return;
+        if (!yob) {
+          navigate(`/onboarding/${refGp}`, { replace: true });
+          return;
+        }
+        // Création de la fiche locale beta (identité Yobbanté + état beta vide)
+        const { data: created } = await supabase
+          .from("transporteurs")
+          .insert({
+            reference: refGp.toUpperCase(),
+            prenom: yob.prenom,
+            nom: yob.nom,
+            telephone_1: yob.telephone_1 || yob.telephone_2,
+            navettes: [],
+            whatsapp_confirmed_at: new Date().toISOString(),
+          })
+          .select(SELECT_COLS)
+          .maybeSingle();
+        if (!active) return;
+        data = created;
+      }
+
+      if (!data) {
         navigate(`/onboarding/${refGp}`, { replace: true });
         return;
       }
+
       const t = data as Transporteur;
-      if (!t.whatsapp_confirmed_at) {
-        navigate(`/onboarding/${refGp}?finalize=1`, { replace: true });
-        return;
-      }
       setGp(t);
       await loadDeparturesAndMissions(t.reference);
       setLoading(false);
     })();
     return () => { active = false; };
   }, [refGp, navigate, loadDeparturesAndMissions]);
+
 
   const refreshGp = useCallback(async () => {
     const { data } = await supabase
