@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { KonnektPageLoader } from "@/components/ui/KonnektLoader";
 import { GpJoinCard } from "@/components/gp/GpJoinCard";
+import { fetchYobbanteGp } from "@/lib/yobbante";
+
 
 const TEAL = "#0D9488";
 const TEAL_DARK = "#0F766E";
