@@ -328,24 +328,99 @@ Deno.serve(async (req) => {
     return json({ handled: true, type: "onboarding", reply: ONBOARD_REPLY, admin_notify: { to: ADMIN_PHONE, message: adminNote } });
   }
 
+  // ----- PARTIE IMAGE : Flyer GP analyse par Claude (vision) -----
+  if (imageId) {
+    const img = await downloadWhatsAppImage(imageId);
+    const flyer = img ? await extractFlyerWithClaude(img.base64, img.mediaType) : null;
+    const usable = flyer && (flyer.ville_depart || flyer.ville_arrivee || flyer.date_depart);
+
+    if (!usable) {
+      const reply = "Je n'arrive pas à lire cette image.\nTapez : DEP [ville] [destination] [date] [capacité]";
+      await admin.from("whatsapp_inbound_messages").insert({
+        sender_phone: sender, message_body: "[image]", tag: "flyer_unreadable", is_known_gp: true, bot_reply: reply, raw_payload: body,
+      });
+      return json({ handled: true, type: "flyer_unreadable", reply });
+    }
+
+    // Stocker en session (pending_dep) pour 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    await admin.from("gp_sessions").upsert(
+      {
+        sender_phone: sender,
+        gp_reference: reference,
+        pending_dep: flyer,
+        expires_at: expiresAt,
+      },
+      { onConflict: "sender_phone" },
+    );
+
+    const cap = flyer!.capacite_kg != null ? `${flyer!.capacite_kg}kg` : "non précisée";
+    const reply = `✅ J'ai détecté les infos suivantes :
+📍 Départ : ${flyer!.ville_depart ?? "?"}
+🏁 Destination : ${flyer!.ville_arrivee ?? "?"}
+📅 Date : ${flyer!.date_depart ?? "?"}
+⚖️ Capacité : ${cap}
+
+Tapez OUI pour confirmer, ou corrigez avec :
+DEP ${flyer!.ville_depart ?? "[ville]"} ${flyer!.ville_arrivee ?? "[destination]"} ${flyer!.date_depart ?? "[date]"} ${flyer!.capacite_kg ?? "[capacité]"}`;
+    await admin.from("whatsapp_inbound_messages").insert({
+      sender_phone: sender, message_body: "[image]", tag: "flyer_detected", is_known_gp: true, bot_reply: reply, raw_payload: body,
+    });
+    return json({ handled: true, type: "flyer_detected", reply, pending_dep: flyer });
+  }
+
+  // ----- PARTIE OUI : confirmation d'un depart detecte depuis un flyer -----
+  if (normalized === "oui" || normalized === "ok" || normalized === "confirmer") {
+    const { data: session } = await admin
+      .from("gp_sessions")
+      .select("pending_dep, expires_at")
+      .eq("sender_phone", sender)
+      .maybeSingle();
+    const pending = session?.pending_dep as FlyerData | null;
+    const stillValid = session && new Date(session.expires_at).getTime() > Date.now();
+
+    if (pending && stillValid) {
+      await createDeparture(admin, {
+        reference,
+        gpProfileId: gpProfile?.id ?? null,
+        origin: pending.ville_depart,
+        dest: pending.ville_arrivee ?? pending.ville_depart ?? "?",
+        date: pending.date_depart ?? "",
+        kg: pending.capacite_kg,
+        sender,
+      });
+      await admin.from("gp_sessions").delete().eq("sender_phone", sender);
+      const cap = pending.capacite_kg != null ? `${pending.capacite_kg}kg` : "?";
+      const reply = `Depart enregistre :\n${pending.ville_depart ?? "?"} → ${pending.ville_arrivee ?? "?"} · ${pending.date_depart ?? "?"} · ${cap}\n${gpProfile ? "Visible dans votre dashboard Konnekt." : "Merci !"}`;
+      await admin.from("whatsapp_inbound_messages").insert({
+        sender_phone: sender, message_body: text, tag: "flyer_confirmed", is_known_gp: true, bot_reply: reply, raw_payload: body,
+      });
+      return json({ handled: true, type: "flyer_confirmed", reply });
+    }
+    // Pas de session valide : on laisse passer vers le menu
+  }
+
   // ----- PARTIE 3 : DEP cree dans les 2 systemes -----
   const dep = parseDep(normalized);
   if (dep) {
-    await admin.from("manual_departures").insert({
-      gp_reference: reference,
-      gp_profile_id: gpProfile?.id ?? null,
-      destination: dep.dest,
-      date_depart: dep.date,
-      poids_kg: dep.kg,
-      source: "whatsapp_926",
-      sender_phone: sender,
+    await createDeparture(admin, {
+      reference,
+      gpProfileId: gpProfile?.id ?? null,
+      origin: dep.origin,
+      dest: dep.dest,
+      date: dep.date,
+      kg: dep.kg,
+      sender,
     });
-    const reply = `Depart enregistre :\n${dep.dest} · ${dep.date} · ${dep.kg}kg\n${gpProfile ? "Visible dans votre dashboard Konnekt." : "Merci !"}`;
+    const route = dep.origin ? `${dep.origin} → ${dep.dest}` : dep.dest;
+    const cap = dep.kg != null ? `${dep.kg}kg` : "?";
+    const reply = `Depart enregistre :\n${route} · ${dep.date} · ${cap}\n${gpProfile ? "Visible dans votre dashboard Konnekt." : "Merci !"}`;
     await admin.from("whatsapp_inbound_messages").insert({
       sender_phone: sender, message_body: text, tag: "dep_declared", is_known_gp: true, bot_reply: reply, raw_payload: body,
     });
     return json({ handled: true, type: "dep", reply });
   }
+
 
   // ----- PARTIE 2 : MES MISSIONS -----
   if (normalized === "1" || normalized.includes("mes missions")) {
