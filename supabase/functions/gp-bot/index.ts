@@ -248,7 +248,7 @@ Deno.serve(async (req) => {
   // Ping de santé via POST { ping: true } — aucun effet de bord
   if (body && body.ping === true) return json({ status: "ok", line: "926" });
 
-  const { sender, text } = extractMessage(body);
+  const { sender, text, imageId } = extractMessage(body);
   if (!sender) return json({ error: "Missing sender" }, 400);
 
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
