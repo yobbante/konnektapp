@@ -299,6 +299,26 @@ Deno.serve(async (req) => {
     // MODE 3 : GÉNÉRATION QR SIGNÉ (GP / Admin uniquement)
     // ══════════════════════════════════════════════════════════════
     if (mode === "generate_qr_payload") {
+      // GP / Admin uniquement — enforce role server-side
+      const { data: rolesData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+      const isAdmin = (rolesData || []).some((r: { role: string }) =>
+        ["admin", "moderator"].includes(r.role)
+      );
+      const { data: gpRow } = await supabase
+        .from("gp_profiles")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (!isAdmin && !gpRow) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       const { type, id } = body;
       if (!type || !id) {
         return new Response(JSON.stringify({ error: "type and id required" }), {
