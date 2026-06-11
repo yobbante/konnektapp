@@ -44,11 +44,16 @@ Deno.serve(async (req) => {
       auth: { persistSession: false },
     });
 
+    // Accept "GP4346", "4346" or "gp4346" — try the ref and a GP-prefixed variant.
+    const refVariants = [normalizedRef];
+    if (!normalizedRef.startsWith("GP")) refVariants.push(`GP${normalizedRef}`);
+
     const { data, error } = await yobbante
       .from("gp_transporteurs")
-      .select("prenom, nom, telephone_1, telephone_2")
-      .eq("ref_gp", normalizedRef)
+      .select("*")
+      .in("ref_gp", refVariants)
       .maybeSingle();
+
 
     if (error) {
       console.error("[get-gp-data] SELECT error:", error.message);
