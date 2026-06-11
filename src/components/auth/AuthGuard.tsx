@@ -12,6 +12,7 @@ interface AuthGuardProps {
 const PUBLIC_ROUTES = [
   "/auth", 
   "/gp", 
+  "/onboarding",
   "/gp/inscription", 
   "/transporteur/inscription",
   "/gp/bagages/inscription",
