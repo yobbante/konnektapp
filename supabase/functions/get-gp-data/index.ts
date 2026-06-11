@@ -32,8 +32,11 @@ Deno.serve(async (req) => {
 
     const normalizedRef = ref_gp.trim().toUpperCase();
 
-    const url = Deno.env.get("YOBBANTE_SUPABASE_URL");
-    const key = Deno.env.get("YOBBANTE_SUPABASE_SERVICE_KEY");
+    // Yobbanté project (tlvuextleczdsqxoguyq, Frankfurt). URL is not secret; key comes from secrets.
+    const url =
+      Deno.env.get("YOBBANTE_SUPABASE_URL") || "https://tlvuextleczdsqxoguyq.supabase.co";
+    const key =
+      Deno.env.get("YOBBANTE_SUPABASE_SERVICE_KEY") || Deno.env.get("YOBBANTE_API_KEY");
 
     if (!url || !key) {
       console.error("[get-gp-data] Missing Yobbanté credentials");
