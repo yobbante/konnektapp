@@ -40,17 +40,122 @@ function digitsOnly(phone: string): string {
   return (phone || "").replace(/\D/g, "");
 }
 
-function extractMessage(body: any): { sender: string; text: string } {
+function extractMessage(body: any): { sender: string; text: string; imageId: string | null } {
   let sender = body.from ?? body.From ?? body.sender_phone ?? body.sender ?? "";
   let text = body.body ?? body.Body ?? body.message ?? body.text ?? "";
+  // Image directe (formats simples)
+  let imageId: string | null = body.image_id ?? body.media_id ?? body.image?.id ?? null;
   try {
     const msg = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
     if (msg) {
       sender = sender || msg.from || "";
-      text = text || msg.text?.body || "";
+      text = text || msg.text?.body || msg.image?.caption || "";
+      if (!imageId && msg.type === "image" && msg.image?.id) imageId = msg.image.id;
     }
   } catch (_) { /* ignore */ }
-  return { sender: String(sender), text: String(text) };
+  return { sender: String(sender), text: String(text), imageId: imageId ? String(imageId) : null };
+}
+
+// --- Vision flyer : telechargement media Meta + extraction Claude ---
+const WHATSAPP_ACCESS_TOKEN = Deno.env.get("WHATSAPP_ACCESS_TOKEN");
+const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+
+async function downloadWhatsAppImage(mediaId: string): Promise<{ base64: string; mediaType: string } | null> {
+  if (!WHATSAPP_ACCESS_TOKEN) {
+    console.warn("[gp-bot] WHATSAPP_ACCESS_TOKEN manquant — impossible de telecharger l'image");
+    return null;
+  }
+  try {
+    // 1) Resoudre l'URL du media
+    const metaRes = await fetch(`https://graph.facebook.com/v21.0/${mediaId}`, {
+      headers: { Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}` },
+    });
+    if (!metaRes.ok) {
+      console.error("[gp-bot] media meta fetch failed", metaRes.status, await metaRes.text());
+      return null;
+    }
+    const meta = await metaRes.json();
+    const url = meta?.url;
+    const mediaType = meta?.mime_type || "image/jpeg";
+    if (!url) return null;
+    // 2) Telecharger le binaire (auth requise)
+    const binRes = await fetch(url, { headers: { Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}` } });
+    if (!binRes.ok) {
+      console.error("[gp-bot] media download failed", binRes.status);
+      return null;
+    }
+    const buf = new Uint8Array(await binRes.arrayBuffer());
+    let binary = "";
+    for (let i = 0; i < buf.length; i++) binary += String.fromCharCode(buf[i]);
+    return { base64: btoa(binary), mediaType };
+  } catch (e) {
+    console.error("[gp-bot] downloadWhatsAppImage error", String(e));
+    return null;
+  }
+}
+
+interface FlyerData {
+  ville_depart: string | null;
+  ville_arrivee: string | null;
+  date_depart: string | null;
+  capacite_kg: number | null;
+}
+
+async function extractFlyerWithClaude(base64: string, mediaType: string): Promise<FlyerData | null> {
+  if (!ANTHROPIC_API_KEY) {
+    console.warn("[gp-bot] ANTHROPIC_API_KEY manquant — extraction impossible");
+    return null;
+  }
+  const system = `Tu es un assistant qui extrait les infos de départ depuis un flyer de transporteur GP. Réponds UNIQUEMENT en JSON strict :
+{
+  ville_depart: string,
+  ville_arrivee: string,
+  date_depart: string (format JJ/MM),
+  capacite_kg: number ou null
+}
+Si une info est absente, mets null.`;
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 512,
+        system,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
+              { type: "text", text: "Extrais les infos de depart de ce flyer." },
+            ],
+          },
+        ],
+      }),
+    });
+    if (!res.ok) {
+      console.error("[gp-bot] Claude API failed", res.status, await res.text());
+      return null;
+    }
+    const data = await res.json();
+    const raw = data?.content?.[0]?.text ?? "";
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) return null;
+    const parsed = JSON.parse(match[0]);
+    return {
+      ville_depart: parsed.ville_depart ?? null,
+      ville_arrivee: parsed.ville_arrivee ?? null,
+      date_depart: parsed.date_depart ?? null,
+      capacite_kg: typeof parsed.capacite_kg === "number" ? parsed.capacite_kg : null,
+    };
+  } catch (e) {
+    console.error("[gp-bot] extractFlyerWithClaude error", String(e));
+    return null;
+  }
 }
 
 // Compare deux numeros sur les 9 derniers chiffres (numero national)
