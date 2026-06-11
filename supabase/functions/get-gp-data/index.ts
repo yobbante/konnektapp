@@ -36,7 +36,9 @@ Deno.serve(async (req) => {
     const url =
       Deno.env.get("YOBBANTE_SUPABASE_URL") || "https://tlvuextleczdsqxoguyq.supabase.co";
     const key =
-      Deno.env.get("YOBBANTE_SUPABASE_SERVICE_KEY") || Deno.env.get("YOBBANTE_API_KEY");
+      Deno.env.get("YOBBANTE_SUPABASE_SERVICE_KEY") ||
+      Deno.env.get("YOBBANTE_SUPABASE_ANON_KEY") ||
+      Deno.env.get("YOBBANTE_API_KEY");
 
     if (!url || !key) {
       console.error("[get-gp-data] Missing Yobbanté credentials");
