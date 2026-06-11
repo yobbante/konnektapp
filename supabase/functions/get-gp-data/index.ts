@@ -32,8 +32,13 @@ Deno.serve(async (req) => {
 
     const normalizedRef = ref_gp.trim().toUpperCase();
 
-    const url = Deno.env.get("YOBBANTE_SUPABASE_URL");
-    const key = Deno.env.get("YOBBANTE_SUPABASE_SERVICE_KEY");
+    // Yobbanté project (tlvuextleczdsqxoguyq, Frankfurt). URL is not secret; key comes from secrets.
+    const url =
+      Deno.env.get("YOBBANTE_SUPABASE_URL") || "https://tlvuextleczdsqxoguyq.supabase.co";
+    const key =
+      Deno.env.get("YOBBANTE_SUPABASE_SERVICE_KEY") ||
+      Deno.env.get("YOBBANTE_SUPABASE_ANON_KEY") ||
+      Deno.env.get("YOBBANTE_API_KEY");
 
     if (!url || !key) {
       console.error("[get-gp-data] Missing Yobbanté credentials");
@@ -44,11 +49,16 @@ Deno.serve(async (req) => {
       auth: { persistSession: false },
     });
 
+    // Accept "GP4346", "4346" or "gp4346" — try the ref and a GP-prefixed variant.
+    const refVariants = [normalizedRef];
+    if (!normalizedRef.startsWith("GP")) refVariants.push(`GP${normalizedRef}`);
+
     const { data, error } = await yobbante
       .from("gp_transporteurs")
-      .select("prenom, nom, telephone_1, telephone_2")
-      .eq("ref_gp", normalizedRef)
+      .select("*")
+      .in("ref_gp", refVariants)
       .maybeSingle();
+
 
     if (error) {
       console.error("[get-gp-data] SELECT error:", error.message);
