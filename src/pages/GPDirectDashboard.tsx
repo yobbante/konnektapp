@@ -239,7 +239,6 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
             nom: yob.nom,
             telephone_1: yob.telephone_1 || yob.telephone_2,
             navettes: [],
-            whatsapp_confirmed_at: new Date().toISOString(),
           })
           .select(SELECT_COLS)
           .maybeSingle();
