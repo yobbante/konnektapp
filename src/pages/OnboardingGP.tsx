@@ -1,102 +1,152 @@
-import { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { KonnektPageLoader } from "@/components/ui/KonnektLoader";
-import { GpJoinCard } from "@/components/gp/GpJoinCard";
-import { fetchYobbanteGp } from "@/lib/yobbante";
-
+import { KonnektLoader } from "@/components/ui/KonnektLoader";
 
 const TEAL = "#0D9488";
 const TEAL_DARK = "#0F766E";
-const REF_REGEX = /^GP\d{4}$/i;
-const REF_STORAGE_KEY = "gp_onboarding_ref";
+const REF_REGEX = /^GP\d{3,5}$/i;
+const WA_NUMBER = "221789269756";
+const SUPPORT_PHONE = "+221 78 926 97 56";
+
+type ViewState = "loading" | "invalid" | "activate" | "waiting" | "expired";
 
 export default function OnboardingGP() {
   const { ref } = useParams<{ ref: string }>();
-  const navigate = useNavigate();
-  const trackedRef = useRef(false);
+  const startedRef = useRef(false);
+  const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const expireTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [loading, setLoading] = useState(true);
-  const [refGp, setRefGp] = useState("");
-  const [prenom, setPrenom] = useState("");
-  const [nom, setNom] = useState("");
-  const [phone, setPhone] = useState("+221");
+  const [view, setView] = useState<ViewState>("loading");
+  const [prenom, setPrenom] = useState<string>("");
 
+  const normalizedRef = (ref || "").trim().toUpperCase();
+
+  const redirectToGp = useCallback(() => {
+    window.location.replace(`/gp/${normalizedRef}`);
+  }, [normalizedRef]);
+
+  const openWhatsApp = useCallback(() => {
+    const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(`KONNEKT ${normalizedRef}`)}`;
+    window.open(url, "_blank", "noopener");
+  }, [normalizedRef]);
+
+  const clearTimers = useCallback(() => {
+    if (pollTimer.current) clearInterval(pollTimer.current);
+    if (expireTimer.current) clearTimeout(expireTimer.current);
+    pollTimer.current = null;
+    expireTimer.current = null;
+  }, []);
+
+  // ─── Chargement initial ───
   useEffect(() => {
-    if (trackedRef.current) return;
-    trackedRef.current = true;
+    if (startedRef.current) return;
+    startedRef.current = true;
 
-    const normalizedRef = (ref || "").trim().toUpperCase();
     if (!REF_REGEX.test(normalizedRef)) {
-      navigate("/rejoindre-gp", { replace: true });
+      setView("invalid");
       return;
     }
 
-    setRefGp(normalizedRef);
-    sessionStorage.setItem(REF_STORAGE_KEY, normalizedRef);
+    let settled = false;
+    // Timeout 5s → étape activation par défaut
+    const timeout = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        setView("activate");
+      }
+    }, 5000);
 
     (async () => {
-      // Les 436 GPs vivent dans le projet Supabase Yobbanté (via gp-lookup).
-      const known = await fetchYobbanteGp(normalizedRef);
+      const { data, error } = await supabase
+        .from("transporteurs")
+        .select("whatsapp_confirmed_at, prenom")
+        .eq("reference", normalizedRef)
+        .maybeSingle();
 
-      if (known) {
-        // Si prénom manquant, on bascule le nom unique dans le champ Prénom.
-        if (known.prenom) {
-          setPrenom(known.prenom);
-          setNom(known.nom || "");
-        } else if (known.nom) {
-          setPrenom(known.nom);
-          setNom("");
-        }
-        const tel = known.telephone_1 || known.telephone_2;
-        if (tel) setPhone(tel.replace(/\s/g, ""));
-      } else {
-        console.warn(`[OnboardingGP] Aucun GP trouvé pour ${normalizedRef}.`);
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+
+      if (error || !data) {
+        setView("invalid");
+        return;
       }
 
+      if (data.prenom) setPrenom(data.prenom);
 
-      // Tracking "link_opened" — enregistré à chaque ouverture de la page (best-effort)
-      try {
-        const { data } = await supabase.functions.invoke("gp-onboarding-track", {
-          body: { ref_gp: normalizedRef, event: "link_opened" },
-        });
-        if (data?.already_registered) {
-          navigate("/gp/connexion", { replace: true });
-          return;
-        }
-      } catch {
-        /* tracking is best-effort */
+      if (data.whatsapp_confirmed_at) {
+        redirectToGp();
+        return;
       }
 
-      setLoading(false);
+      setView("activate");
     })();
-  }, [ref, navigate]);
 
-  const handleRegistered = async (konnektUserId: string | null) => {
-    const storedRef = sessionStorage.getItem(REF_STORAGE_KEY) || refGp;
-    if (storedRef && REF_REGEX.test(storedRef)) {
-      try {
-        await supabase.functions.invoke("gp-onboarding-track", {
-          body: { ref_gp: storedRef, event: "registered", konnekt_user_id: konnektUserId },
-        });
-      } catch {
-        /* tracking is best-effort */
+    return () => clearTimeout(timeout);
+  }, [normalizedRef, redirectToGp]);
+
+  // ─── Polling après clic WhatsApp ───
+  const startPolling = useCallback(() => {
+    openWhatsApp();
+    setView("waiting");
+    clearTimers();
+
+    pollTimer.current = setInterval(async () => {
+      const { data } = await supabase
+        .from("transporteurs")
+        .select("whatsapp_confirmed_at")
+        .eq("reference", normalizedRef)
+        .not("whatsapp_confirmed_at", "is", null)
+        .maybeSingle();
+
+      if (data?.whatsapp_confirmed_at) {
+        clearTimers();
+        redirectToGp();
       }
-    }
-  };
+    }, 3000);
 
-  if (loading) return <KonnektPageLoader message="Chargement de votre invitation..." />;
+    // Timeout 10 minutes
+    expireTimer.current = setTimeout(() => {
+      clearTimers();
+      setView("expired");
+    }, 10 * 60 * 1000);
+  }, [normalizedRef, openWhatsApp, redirectToGp, clearTimers]);
+
+  useEffect(() => clearTimers, [clearTimers]);
+
+  // ─── RENDER ───
+  if (view === "loading") {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-white">
+        <KonnektLoader size="lg" message="Chargement..." />
+      </div>
+    );
+  }
+
+  if (view === "invalid") {
+    return (
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-white px-6 text-center" style={{ color: "#111827" }}>
+        <h1 className="text-xl font-bold">Ce lien n'est pas valide.</h1>
+        <p className="mt-3 text-muted-foreground">
+          Contactez Konnekt au{" "}
+          <a href={`tel:${SUPPORT_PHONE.replace(/\s/g, "")}`} className="font-semibold" style={{ color: TEAL }}>
+            {SUPPORT_PHONE}
+          </a>
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-[100dvh] bg-white" style={{ fontFamily: "Inter, sans-serif", color: "#111827" }}>
-      {/* HERO */}
+    <div className="min-h-[100dvh] bg-white flex flex-col" style={{ fontFamily: "Inter, sans-serif", color: "#111827" }}>
       <section
         className="px-5 pt-12 pb-12 text-center text-white"
         style={{ background: `linear-gradient(135deg, ${TEAL} 0%, ${TEAL_DARK} 100%)` }}
       >
         <span className="block text-3xl font-extrabold tracking-tight text-white">Konnekt</span>
         <span className="inline-flex items-center rounded-full bg-white/15 border border-white/25 px-3.5 py-1.5 mt-5 text-sm font-semibold backdrop-blur">
-          Invitation personnelle · {refGp}
+          Invitation personnelle · {normalizedRef}
         </span>
         <h1 className="mt-5 text-3xl sm:text-4xl font-extrabold leading-tight text-white">
           {prenom ? (
@@ -107,35 +157,48 @@ export default function OnboardingGP() {
             "Activez votre compte GP"
           )}
         </h1>
-        <p className="mt-3 text-white/85 text-base leading-relaxed max-w-lg mx-auto">
-          Confirmez votre navette et recevez vos missions de transport de bagages directement sur WhatsApp.
-        </p>
       </section>
 
-      {/* FORM */}
-      <section className="px-5 py-10 max-w-2xl mx-auto">
-        <div
-          className="bg-white"
-          style={{ border: "1px solid #E5E7EB", borderRadius: 16, padding: 28, boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}
-        >
-          <GpJoinCard
-            initialPrenom={prenom}
-            initialNom={nom}
-            initialPhone={phone}
-            refGp={refGp}
-            onRegistered={handleRegistered}
-          />
-        </div>
-      </section>
+      <section className="px-5 py-10 max-w-md mx-auto w-full flex-1">
+        {view === "activate" && (
+          <div className="text-center">
+            <button
+              onClick={startPolling}
+              className="w-full rounded-2xl px-6 py-4 text-base font-bold text-white shadow-lg active:scale-[0.98] transition-transform"
+              style={{ background: `linear-gradient(135deg, ${TEAL} 0%, ${TEAL_DARK} 100%)` }}
+            >
+              📲 Activer mon compte sur WhatsApp →
+            </button>
+            <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
+              Envoyez le message pour activer votre compte.
+              <br />
+              Cette page se met à jour automatiquement.
+            </p>
+          </div>
+        )}
 
-      {/* FOOTER */}
-      <footer
-        className="px-5 py-10 text-center text-white"
-        style={{ background: `linear-gradient(135deg, ${TEAL} 0%, ${TEAL_DARK} 100%)` }}
-      >
-        <span className="text-2xl font-extrabold text-white">Konnekt</span>
-        <p className="mt-3 text-xs text-white/70">© 2026 Konnekt by Yobbanté</p>
-      </footer>
+        {view === "waiting" && (
+          <div className="flex flex-col items-center text-center gap-4">
+            <KonnektLoader size="md" />
+            <p className="text-base font-medium text-muted-foreground">⏳ En attente de confirmation...</p>
+          </div>
+        )}
+
+        {view === "expired" && (
+          <div className="text-center">
+            <p className="text-base text-muted-foreground leading-relaxed mb-5">
+              Vous n'avez pas encore envoyé le message.
+            </p>
+            <button
+              onClick={startPolling}
+              className="w-full rounded-2xl px-6 py-4 text-base font-bold text-white shadow-lg active:scale-[0.98] transition-transform"
+              style={{ background: `linear-gradient(135deg, ${TEAL} 0%, ${TEAL_DARK} 100%)` }}
+            >
+              Réessayer →
+            </button>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
