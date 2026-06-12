@@ -121,12 +121,9 @@ export default function KonnektGPLogin() {
 
   const isLoading = state.kind === "loading";
 
-  const personalLink =
-    state.kind === "ok" ? `https://usekonnekt.com/gp/${state.ref}` : "";
   const waMessage =
-    state.kind === "ok"
-      ? `Bonjour, voici mon lien GP Konnekt : ${personalLink}`
-      : "";
+    state.kind === "needs_whatsapp" ? `MON LIEN ${state.ref}` : "";
+
 
   return (
     <div className="min-h-screen bg-white text-[#0D1B2A] font-sans">
