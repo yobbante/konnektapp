@@ -294,7 +294,8 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
         <title>Konnekt GP — Mon espace</title>
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
-      <KonnektHeader />
+      <KonnektHeader whatsappActive={!!gp.whatsapp_confirmed_at} />
+      {!gp.whatsapp_confirmed_at && <WhatsAppCTABanner refGp={gp.reference} />}
       <BetaBanner />
 
       <main className="px-4 py-5 max-w-md mx-auto space-y-5">
