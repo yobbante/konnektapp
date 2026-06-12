@@ -277,15 +277,10 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
     );
   }
 
-  if (!gp.beta_wizard_completed_at) {
-    return (
-      <BetaWizard
-        gp={gp}
-        onReloadDepartures={() => loadDeparturesAndMissions(gp.reference)}
-        onDone={async () => { await refreshGp(); await loadDeparturesAndMissions(gp.reference); }}
-      />
-    );
-  }
+  // Le wizard d'onboarding vit désormais dans /onboarding/[ref].
+  // Le dashboard reste accessible directement (pas de redirect forcé).
+
+
 
   return (
     <div className="min-h-screen bg-white text-[#0D1B2A] font-sans">
