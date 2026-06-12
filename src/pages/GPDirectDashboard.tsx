@@ -5,26 +5,24 @@
  * Source unique : table `transporteurs` (aucun gp_profiles, aucune auth).
  *
  * Accès :
- *  - ref introuvable           → redirect /onboarding/[ref]
- *  - trouvé mais bot pas actif  → redirect /onboarding/[ref] ("Finalisez d'abord")
- *  - trouvé et actif            → dashboard (avec wizard 1ère visite)
+ *  - ref introuvable (local + Yobbanté) → page "Lien invalide ou expiré"
+ *  - trouvé → dashboard
  */
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Loader2, MessageCircle, MapPin, Plane, Package, Wallet, User,
-  Plus, Pencil, Trash2, Check,
+  Loader2, MessageCircle, Plane, Package, Wallet, User,
+  Plus, Pencil, Trash2, Check, AlertTriangle, MapPin,
 } from "lucide-react";
 import { fetchYobbanteGp } from "@/lib/yobbante";
 
-
-const TEAL = "#0D9488";
-const TEAL_DARK = "#0F766E";
+const NAVY = "#0A1628";
+const GOLD = "#C97B3A";
+const GREEN = "#22C55E";
+const BLUE = "#3B82F6";
 const GREEN_WA = "#25D366";
 const KONNEKT_WA = "221789269756";
-const SUPPORT_TEL = "+221 78 926 97 56";
 
 const ACTIVE_MISSION_STATUSES = ["ASSIGNED", "COLLECTED", "IN_TRANSIT"];
 
@@ -64,8 +62,34 @@ interface Mission {
   poids_reel: number | null;
 }
 
+const MONTHS_FR = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+
+/** Parse a stored date string safely and return a JS Date or null. */
+function parseDate(raw: string | null): Date | null {
+  if (!raw) return null;
+  // Match a clean ISO-ish date prefix (yyyy-mm-dd) to avoid garbage like "60715-02-20"
+  const m = String(raw).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) {
+    const y = Number(m[1]), mo = Number(m[2]), d = Number(m[3]);
+    if (y >= 2000 && y <= 2100 && mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+      return new Date(y, mo - 1, d);
+    }
+    return null;
+  }
+  const dt = new Date(raw);
+  if (!isNaN(dt.getTime()) && dt.getFullYear() >= 2000 && dt.getFullYear() <= 2100) return dt;
+  return null;
+}
+
+/** "15 juil. 2026" */
+function formatDateLong(raw: string | null): string {
+  const dt = parseDate(raw);
+  if (!dt) return "Date non définie";
+  return `${dt.getDate()} ${MONTHS_FR[dt.getMonth()]} ${dt.getFullYear()}`;
+}
+
 const inputCls =
-  "w-full rounded-lg border border-black/15 px-3 py-2.5 text-sm outline-none focus:border-[#0D9488] focus:ring-2 focus:ring-[#0D9488]/20";
+  "w-full rounded-xl border border-black/15 px-3 py-2.5 text-sm outline-none focus:border-[#C97B3A] focus:ring-2 focus:ring-[#C97B3A]/20";
 const labelCls = "block text-xs font-semibold mb-1.5 text-black/70";
 
 function StatusBadge({ status }: { status: string | null }) {
@@ -82,38 +106,46 @@ function StatusBadge({ status }: { status: string | null }) {
   );
 }
 
-function KonnektHeader({ whatsappActive }: { whatsappActive?: boolean }) {
+/* ─────────────────────────  HEADER  ───────────────────────── */
+
+function DashboardHeader({ gp }: { gp: Transporteur }) {
   return (
-    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-black/5">
-      <div className="max-w-md mx-auto flex items-center justify-between px-4 py-3.5">
-        <div className="flex items-center gap-2">
-          <span className="w-7 h-7 rounded-md grid place-items-center font-bold text-sm text-white" style={{ backgroundColor: TEAL }}>K</span>
-          <div className="flex flex-col leading-none">
-            <span className="font-bold text-[15px] tracking-tight">KONNEKT</span>
-            <span className="text-[10px] text-black/50">Espace GP</span>
+    <header className="text-white" style={{ backgroundColor: NAVY }}>
+      <div className="max-w-md mx-auto px-4 pt-5 pb-6" style={{ paddingTop: "calc(20px + env(safe-area-inset-top,0px))" }}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="w-8 h-8 rounded-lg grid place-items-center font-bold text-white" style={{ backgroundColor: GOLD }}>K</span>
+            <div className="flex flex-col leading-none">
+              <span className="font-bold text-[15px] tracking-tight">KONNEKT</span>
+              <span className="text-[11px] text-white/50 mt-0.5">Espace GP</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {gp.whatsapp_confirmed_at && (
+              <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full inline-flex items-center gap-1 text-white" style={{ backgroundColor: GREEN_WA }}>
+                <Check className="w-3 h-3" /> WhatsApp actif
+              </span>
+            )}
+            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full text-white" style={{ backgroundColor: GOLD }}>
+              {gp.reference}
+            </span>
           </div>
         </div>
-        {whatsappActive ? (
-          <span className="text-[11px] font-semibold text-white px-3 py-1.5 rounded-full inline-flex items-center gap-1.5" style={{ backgroundColor: GREEN_WA }}>
-            <Check className="w-3.5 h-3.5" /> WhatsApp actif
-          </span>
-        ) : (
-          <a href={`https://wa.me/${KONNEKT_WA}`} target="_blank" rel="noopener noreferrer"
-            className="text-[11px] font-semibold text-white px-3 py-1.5 rounded-full inline-flex items-center gap-1.5" style={{ backgroundColor: GREEN_WA }}>
-            <MessageCircle className="w-3.5 h-3.5" /> Aide
-          </a>
-        )}
+        <h1 className="text-2xl font-bold tracking-tight mt-5">
+          Bonjour {gp.prenom || ""} 👋
+        </h1>
       </div>
     </header>
   );
 }
 
+/* ─────────────────────────  WHATSAPP CTA  ───────────────────────── */
+
 const WA_INCENTIVES = [
-  { icon: "📨", label: "Recevoir les missions en temps réel" },
-  { icon: "✅", label: "Confirmer une collecte en 1 message" },
-  { icon: "🛫", label: "Enregistrer un départ par message" },
-  { icon: "⏰", label: "Rappels automatiques avant chaque départ" },
-  { icon: "⭐", label: "Priorité sur les nouvelles missions" },
+  { icon: "📨", label: "Missions en temps réel" },
+  { icon: "✅", label: "Confirmer une collecte" },
+  { icon: "🛫", label: "Enregistrer un départ" },
+  { icon: "⏰", label: "Rappels automatiques" },
 ];
 
 function WhatsAppCTABanner({ refGp }: { refGp: string }) {
@@ -134,7 +166,6 @@ function WhatsAppCTABanner({ refGp }: { refGp: string }) {
             Activez WhatsApp pour tirer le meilleur de Konnekt
           </h2>
         </div>
-
         <ul className="mt-3 flex flex-wrap gap-1.5">
           {WA_INCENTIVES.map((it) => (
             <li key={it.label} className="text-[11px] font-medium bg-white/20 rounded-full px-2.5 py-1 inline-flex items-center gap-1">
@@ -142,21 +173,13 @@ function WhatsAppCTABanner({ refGp }: { refGp: string }) {
             </li>
           ))}
         </ul>
-
-        <a
-          href={waUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-lg py-3 font-bold text-sm"
-          style={{ backgroundColor: "#FFFFFF", color: GREEN_WA }}
-        >
+        <a href={waUrl} target="_blank" rel="noopener noreferrer"
+          className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl py-3 font-bold text-sm"
+          style={{ backgroundColor: "#FFFFFF", color: GREEN_WA }}>
           <MessageCircle className="w-4 h-4" /> Activer WhatsApp
         </a>
-
-        <button
-          onClick={() => { sessionStorage.setItem(SESSION_KEY, "1"); setDismissed(true); }}
-          className="mt-2 w-full text-center text-[12px] font-medium text-white/80 underline"
-        >
+        <button onClick={() => { sessionStorage.setItem(SESSION_KEY, "1"); setDismissed(true); }}
+          className="mt-2 w-full text-center text-[12px] font-medium text-white/80 underline">
           Plus tard
         </button>
       </div>
@@ -164,17 +187,34 @@ function WhatsAppCTABanner({ refGp }: { refGp: string }) {
   );
 }
 
-function BetaBanner() {
+/* ─────────────────────────  INVALID REF  ───────────────────────── */
+
+function InvalidRefPage() {
   return (
-    <div className="px-4 py-2 text-center text-[12px] font-medium" style={{ backgroundColor: "#ECFDF5", color: TEAL_DARK }}>
-      🚧 Version beta — Vos données seront migrées vers votre espace complet.
+    <div className="min-h-screen grid place-items-center px-6" style={{ backgroundColor: "#F8FAFC" }}>
+      <Helmet>
+        <title>Lien invalide — Konnekt GP</title>
+        <meta name="robots" content="noindex,nofollow" />
+      </Helmet>
+      <div className="max-w-sm w-full text-center bg-white rounded-2xl shadow-sm border border-black/10 p-8">
+        <div className="w-14 h-14 rounded-2xl grid place-items-center mx-auto" style={{ backgroundColor: "rgba(201,123,58,0.12)" }}>
+          <AlertTriangle className="w-7 h-7" style={{ color: GOLD }} />
+        </div>
+        <h1 className="text-xl font-bold mt-5" style={{ color: NAVY }}>Lien invalide ou expiré</h1>
+        <p className="text-sm text-black/60 mt-2">Ce lien d'invitation n'est pas reconnu.</p>
+        <a href="/beta" className="mt-6 w-full inline-flex items-center justify-center rounded-xl py-3 font-bold text-sm text-white" style={{ backgroundColor: GOLD }}>
+          Rejoindre Konnekt
+        </a>
+      </div>
     </div>
   );
 }
 
+/* ─────────────────────────  MAIN  ───────────────────────── */
+
 export default function GPDirectDashboard({ refGp }: { refGp: string }) {
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [invalid, setInvalid] = useState(false);
   const [gp, setGp] = useState<Transporteur | null>(null);
   const [departures, setDepartures] = useState<Departure[]>([]);
   const [missions, setMissions] = useState<Mission[]>([]);
@@ -211,10 +251,11 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
     let active = true;
     (async () => {
       setLoading(true);
+      setInvalid(false);
       const SELECT_COLS =
         "id, reference, prenom, nom, telephone_1, navettes, residence_city, whatsapp_confirmed_at, beta_wizard_completed_at, beta_tarif_defaut, beta_notes_conditions";
 
-      // 1) Fiche locale (état beta) si déjà créée
+      // 1) Fiche locale si déjà créée
       let { data } = await supabase
         .from("transporteurs")
         .select(SELECT_COLS)
@@ -222,15 +263,15 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
         .maybeSingle();
       if (!active) return;
 
-      // 2) Sinon, on cherche l'identité dans le projet Yobbanté (436 GPs)
+      // 2) Sinon, identité dans le projet Yobbanté
       if (!data) {
         const yob = await fetchYobbanteGp(refGp);
         if (!active) return;
         if (!yob) {
-          navigate(`/onboarding/${refGp}`, { replace: true });
+          setInvalid(true);
+          setLoading(false);
           return;
         }
-        // Création de la fiche locale beta (identité Yobbanté + état beta vide)
         const { data: created } = await supabase
           .from("transporteurs")
           .insert({
@@ -247,7 +288,8 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
       }
 
       if (!data) {
-        navigate(`/onboarding/${refGp}`, { replace: true });
+        setInvalid(true);
+        setLoading(false);
         return;
       }
 
@@ -257,8 +299,7 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
       setLoading(false);
     })();
     return () => { active = false; };
-  }, [refGp, navigate, loadDeparturesAndMissions]);
-
+  }, [refGp, loadDeparturesAndMissions]);
 
   const refreshGp = useCallback(async () => {
     const { data } = await supabase
@@ -269,39 +310,27 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
     if (data) setGp(data as Transporteur);
   }, [refGp]);
 
+  if (invalid) return <InvalidRefPage />;
+
   if (loading || !gp) {
     return (
       <div className="min-h-screen grid place-items-center bg-white">
-        <Loader2 className="w-6 h-6 animate-spin" style={{ color: TEAL }} />
+        <Loader2 className="w-6 h-6 animate-spin" style={{ color: GOLD }} />
       </div>
     );
   }
 
-  // Le wizard d'onboarding vit désormais dans /onboarding/[ref].
-  // Le dashboard reste accessible directement (pas de redirect forcé).
-
-
-
   return (
-    <div className="min-h-screen bg-white text-[#0D1B2A] font-sans">
+    <div className="min-h-screen font-sans" style={{ backgroundColor: "#F8FAFC", color: NAVY }}>
       <Helmet>
         <title>Konnekt GP — Mon espace</title>
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
-      <KonnektHeader whatsappActive={!!gp.whatsapp_confirmed_at} />
+
+      <DashboardHeader gp={gp} />
       {!gp.whatsapp_confirmed_at && <WhatsAppCTABanner refGp={gp.reference} />}
-      <BetaBanner />
 
-      <main className="px-4 py-5 max-w-md mx-auto space-y-5">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: TEAL }}>
-            <User className="w-4 h-4" /> {gp.reference}
-          </div>
-          <h1 className="text-xl font-bold tracking-tight mt-1">
-            Bonjour {gp.prenom || ""} 👋
-          </h1>
-        </div>
-
+      <main className="px-4 py-5 max-w-md mx-auto space-y-4">
         <DeparturesSection
           gp={gp}
           departures={departures}
@@ -310,24 +339,34 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
         <MissionsSection missions={missions} />
         <PaymentsSection />
         <ProfileSection gp={gp} onSaved={refreshGp} />
-
-        <p className="text-center text-xs text-black/50 pt-2">
-          Une question ?{" "}
-          <a href={`tel:${KONNEKT_WA}`} className="font-semibold" style={{ color: TEAL }}>{SUPPORT_TEL}</a>
-        </p>
       </main>
+
+      <footer className="max-w-md mx-auto px-4 pb-8 pt-2 text-center">
+        <p className="text-xs font-semibold" style={{ color: NAVY }}>Konnekt by Yobbanté</p>
+        <a
+          href={`https://wa.me/${KONNEKT_WA}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs font-semibold mt-1 inline-flex items-center gap-1"
+          style={{ color: GREEN_WA }}
+        >
+          <MessageCircle className="w-3.5 h-3.5" /> Aide
+        </a>
+      </footer>
     </div>
   );
 }
 
-/* Le wizard d'onboarding a été déplacé vers /onboarding/[ref] (OnboardingGP). */
-
-
 /* ─────────────────────────  SECTIONS  ───────────────────────── */
 
-function SectionCard({ icon, title, action, children }: { icon: React.ReactNode; title: string; action?: React.ReactNode; children: React.ReactNode }) {
+function SectionCard({ accent, icon, title, action, children }: {
+  accent: string; icon: React.ReactNode; title: string; action?: React.ReactNode; children: React.ReactNode;
+}) {
   return (
-    <section className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
+    <section
+      className="bg-white rounded-xl p-4 shadow-sm border border-black/5"
+      style={{ borderLeft: `4px solid ${accent}` }}
+    >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 text-sm font-bold">{icon}{title}</div>
         {action}
@@ -342,41 +381,59 @@ function DeparturesSection({ gp, departures, onChanged }: { gp: Transporteur; de
 
   return (
     <SectionCard
-      icon={<Plane className="w-4 h-4" style={{ color: TEAL }} />}
+      accent={GOLD}
+      icon={<Plane className="w-4 h-4" style={{ color: GOLD }} />}
       title="Mes départs"
-      action={
-        <button onClick={() => setEditing("new")} className="text-xs font-semibold inline-flex items-center gap-1" style={{ color: TEAL }}>
-          <Plus className="w-3.5 h-3.5" /> Ajouter
-        </button>
-      }
     >
       {departures.length === 0 ? (
-        <p className="text-sm text-black/50">Aucun départ enregistré.</p>
+        <div className="text-center py-6">
+          <div className="w-12 h-12 rounded-2xl grid place-items-center mx-auto" style={{ backgroundColor: "rgba(201,123,58,0.1)" }}>
+            <Plane className="w-6 h-6" style={{ color: GOLD }} />
+          </div>
+          <p className="text-sm font-medium mt-3">Aucun départ enregistré.</p>
+          <p className="text-xs text-black/50 mt-0.5">Ajoutez votre prochain voyage.</p>
+        </div>
       ) : (
         <ul className="space-y-2">
-          {departures.map((d) => (
-            <li key={d.id} className="rounded-lg px-3 py-2.5 flex items-center justify-between gap-2" style={{ backgroundColor: "rgba(13,148,136,0.05)" }}>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 text-sm font-medium truncate">
-                  <MapPin className="w-3.5 h-3.5 flex-shrink-0" style={{ color: TEAL }} />
-                  {(d.ville_depart || "—")} → {(d.ville_arrivee || d.destination || "—")}
+          {departures.map((d) => {
+            const capacite = d.capacite_kg ?? d.poids_kg;
+            return (
+              <li key={d.id} className="rounded-xl px-3 py-2.5 flex items-center justify-between gap-2" style={{ backgroundColor: "rgba(201,123,58,0.05)" }}>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 text-sm font-bold truncate">
+                    <Plane className="w-3.5 h-3.5 flex-shrink-0" style={{ color: GOLD }} />
+                    {(d.ville_depart || "—")} → {(d.ville_arrivee || d.destination || "—")}
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[11px] text-black/50">{formatDateLong(d.date_depart)}</span>
+                    {capacite != null && capacite > 0 && (
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "rgba(34,197,94,0.12)", color: "#15803D" }}>
+                        {capacite} kg dispo
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="text-[11px] text-black/50 mt-0.5">
-                  {d.date_depart || "Date non définie"}
-                  {d.capacite_kg || d.poids_kg ? ` · ${d.capacite_kg ?? d.poids_kg} kg` : ""}
-                  {d.tarif_par_kg ? ` · ${d.tarif_par_kg} FCFA/kg` : ""}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button onClick={() => setEditing(d)} className="p-1.5 rounded-md hover:bg-black/5"><Pencil className="w-3.5 h-3.5 text-black/50" /></button>
+                  <button
+                    onClick={async () => { await supabase.from("manual_departures").delete().eq("id", d.id); await onChanged(); }}
+                    className="p-1.5 rounded-md hover:bg-red-50"><Trash2 className="w-3.5 h-3.5" style={{ color: "#DC2626" }} /></button>
                 </div>
-              </div>
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <button onClick={() => setEditing(d)} className="p-1.5 rounded-md hover:bg-black/5"><Pencil className="w-3.5 h-3.5 text-black/50" /></button>
-                <button
-                  onClick={async () => { await supabase.from("manual_departures").delete().eq("id", d.id); await onChanged(); }}
-                  className="p-1.5 rounded-md hover:bg-red-50"><Trash2 className="w-3.5 h-3.5" style={{ color: "#DC2626" }} /></button>
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       )}
+
+      <button
+        onClick={() => setEditing("new")}
+        className="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-xl py-2.5 font-semibold text-sm border-2 transition-colors hover:text-white"
+        style={{ borderColor: NAVY, color: NAVY }}
+        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = NAVY; e.currentTarget.style.color = "#fff"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = NAVY; }}
+      >
+        <Plus className="w-4 h-4" /> Ajouter un départ
+      </button>
 
       {editing && (
         <DepartureForm
@@ -393,9 +450,14 @@ function DeparturesSection({ gp, departures, onChanged }: { gp: Transporteur; de
 function DepartureForm({ gp, departure, onClose, onSaved }: { gp: Transporteur; departure: Departure | null; onClose: () => void; onSaved: () => void | Promise<void> }) {
   const [villeDepart, setVilleDepart] = useState(departure?.ville_depart || gp.residence_city || "");
   const [villeArrivee, setVilleArrivee] = useState(departure?.ville_arrivee || departure?.destination || "");
-  const [dateDepart, setDateDepart] = useState(departure?.date_depart || "");
+  const [dateDepart, setDateDepart] = useState(() => {
+    const dt = parseDate(departure?.date_depart || null);
+    if (!dt) return "";
+    const mm = String(dt.getMonth() + 1).padStart(2, "0");
+    const dd = String(dt.getDate()).padStart(2, "0");
+    return `${dt.getFullYear()}-${mm}-${dd}`;
+  });
   const [capacite, setCapacite] = useState(departure?.capacite_kg != null ? String(departure.capacite_kg) : (departure?.poids_kg != null ? String(departure.poids_kg) : ""));
-  const [tarif, setTarif] = useState(departure?.tarif_par_kg != null ? String(departure.tarif_par_kg) : (gp.beta_tarif_defaut ? String(gp.beta_tarif_defaut) : ""));
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
@@ -408,7 +470,8 @@ function DepartureForm({ gp, departure, onClose, onSaved }: { gp: Transporteur; 
       date_depart: dateDepart || null,
       capacite_kg: capacite ? Number(capacite) : null,
       poids_kg: capacite ? Number(capacite) : null,
-      tarif_par_kg: tarif ? Number(tarif) : null,
+      // Tarif confidentiel (admin only) — conservé tel quel, jamais exposé au GP
+      tarif_par_kg: departure?.tarif_par_kg ?? gp.beta_tarif_defaut ?? null,
       currency: "XOF",
       source: "gp_dashboard_beta",
     };
@@ -428,14 +491,11 @@ function DepartureForm({ gp, departure, onClose, onSaved }: { gp: Transporteur; 
             <div><label className={labelCls}>Arrivée</label><input className={inputCls} value={villeArrivee} onChange={(e) => setVilleArrivee(e.target.value)} /></div>
           </div>
           <div><label className={labelCls}>Date</label><input type="date" className={inputCls} value={dateDepart || ""} onChange={(e) => setDateDepart(e.target.value)} /></div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><label className={labelCls}>Capacité (kg)</label><input type="number" className={inputCls} value={capacite} onChange={(e) => setCapacite(e.target.value)} /></div>
-            <div><label className={labelCls}>Tarif/kg (FCFA)</label><input type="number" className={inputCls} value={tarif} onChange={(e) => setTarif(e.target.value)} /></div>
-          </div>
+          <div><label className={labelCls}>Capacité (kg)</label><input type="number" className={inputCls} value={capacite} onChange={(e) => setCapacite(e.target.value)} /></div>
         </div>
         <div className="flex items-center gap-3 mt-5">
-          <button onClick={onClose} className="flex-1 rounded-lg py-3 font-semibold text-sm border" style={{ borderColor: "#E5E7EB", color: "#6B7280" }}>Annuler</button>
-          <button onClick={save} disabled={saving || !villeArrivee.trim()} className="flex-1 inline-flex items-center justify-center gap-2 text-white rounded-lg py-3 font-semibold text-sm disabled:opacity-50" style={{ backgroundColor: TEAL }}>
+          <button onClick={onClose} className="flex-1 rounded-xl py-3 font-semibold text-sm border" style={{ borderColor: "#E5E7EB", color: "#6B7280" }}>Annuler</button>
+          <button onClick={save} disabled={saving || !villeArrivee.trim()} className="flex-1 inline-flex items-center justify-center gap-2 text-white rounded-xl py-3 font-semibold text-sm disabled:opacity-50" style={{ backgroundColor: GOLD }}>
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Enregistrer <Check className="w-4 h-4" /></>}
           </button>
         </div>
@@ -446,13 +506,19 @@ function DepartureForm({ gp, departure, onClose, onSaved }: { gp: Transporteur; 
 
 function MissionsSection({ missions }: { missions: Mission[] }) {
   return (
-    <SectionCard icon={<Package className="w-4 h-4" style={{ color: TEAL }} />} title="Mes missions">
+    <SectionCard accent={GREEN} icon={<Package className="w-4 h-4" style={{ color: GREEN }} />} title="Mes missions">
       {missions.length === 0 ? (
-        <p className="text-sm text-black/50">Aucune mission en cours.</p>
+        <div className="text-center py-6">
+          <div className="w-12 h-12 rounded-2xl grid place-items-center mx-auto" style={{ backgroundColor: "rgba(34,197,94,0.1)" }}>
+            <Package className="w-6 h-6" style={{ color: GREEN }} />
+          </div>
+          <p className="text-sm font-medium mt-3">Aucune mission active pour le moment.</p>
+          <p className="text-xs text-black/50 mt-0.5">Les colis vous seront assignés par Konnekt.</p>
+        </div>
       ) : (
         <ul className="space-y-2">
           {missions.map((m) => (
-            <li key={m.id} className="rounded-lg px-3 py-2.5 border border-black/5">
+            <li key={m.id} className="rounded-xl px-3 py-2.5 border border-black/5">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-mono text-black/50">{m.tracking_id || m.konnekt_external_id || "—"}</span>
                 <StatusBadge status={m.status} />
@@ -470,47 +536,108 @@ function MissionsSection({ missions }: { missions: Mission[] }) {
 }
 
 function PaymentsSection() {
+  const solde = 0;
   return (
-    <SectionCard icon={<Wallet className="w-4 h-4" style={{ color: TEAL }} />} title="Mes paiements">
-      <div className="rounded-lg px-3 py-3 flex items-center justify-between" style={{ backgroundColor: "rgba(13,148,136,0.05)" }}>
-        <span className="text-sm text-black/60">Solde en attente</span>
-        <span className="text-base font-bold">0 FCFA</span>
+    <SectionCard accent={BLUE} icon={<Wallet className="w-4 h-4" style={{ color: BLUE }} />} title="Mes paiements">
+      <div className="rounded-xl px-4 py-4" style={{ backgroundColor: "rgba(59,130,246,0.06)" }}>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-black/60">Solde en attente</span>
+          {solde > 0 && (
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(245,158,11,0.15)", color: "#B45309" }}>
+              En attente
+            </span>
+          )}
+        </div>
+        <div className="text-2xl font-bold mt-1" style={{ color: NAVY }}>
+          {solde.toLocaleString("fr-FR")} FCFA
+        </div>
       </div>
-      <p className="text-sm text-black/50 mt-3">Aucun paiement pour le moment.</p>
+      <p className="text-sm text-black/50 mt-3">Aucun paiement reçu pour le moment.</p>
     </SectionCard>
   );
 }
 
 function ProfileSection({ gp, onSaved }: { gp: Transporteur; onSaved: () => void | Promise<void> }) {
+  const [editing, setEditing] = useState(false);
+
+  const navettes = (gp.navettes || []).filter(Boolean);
+
+  const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
+    <div className="flex items-center justify-between py-2 border-b border-black/5 last:border-0">
+      <span className="text-xs text-black/50">{label}</span>
+      <span className="text-sm font-medium text-right max-w-[60%]">{value || "—"}</span>
+    </div>
+  );
+
+  return (
+    <SectionCard
+      accent={NAVY}
+      icon={<User className="w-4 h-4" style={{ color: NAVY }} />}
+      title="Mon profil"
+    >
+      <div>
+        <Row label="Prénom" value={gp.prenom} />
+        <Row label="Nom" value={gp.nom} />
+        <Row label="Téléphone" value={gp.telephone_1} />
+        <Row label="Ville de résidence" value={gp.residence_city} />
+        <Row label="Villes de navette" value={navettes.length ? navettes.join(", ") : "—"} />
+      </div>
+      <button
+        onClick={() => setEditing(true)}
+        className="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-xl py-2.5 font-semibold text-sm text-white"
+        style={{ backgroundColor: NAVY }}
+      >
+        <Pencil className="w-4 h-4" /> Modifier mes infos
+      </button>
+
+      {editing && (
+        <ProfileEditModal gp={gp} onClose={() => setEditing(false)} onSaved={async () => { setEditing(false); await onSaved(); }} />
+      )}
+    </SectionCard>
+  );
+}
+
+function ProfileEditModal({ gp, onClose, onSaved }: { gp: Transporteur; onClose: () => void; onSaved: () => void | Promise<void> }) {
+  const [prenom, setPrenom] = useState(gp.prenom || "");
+  const [nom, setNom] = useState(gp.nom || "");
+  const [telephone, setTelephone] = useState(gp.telephone_1 || "");
   const [residence, setResidence] = useState(gp.residence_city || "");
-  const [tarif, setTarif] = useState(gp.beta_tarif_defaut ? String(gp.beta_tarif_defaut) : "");
-  const [notes, setNotes] = useState(gp.beta_notes_conditions || "");
+  const [navettes, setNavettes] = useState((gp.navettes || []).filter(Boolean).join(", "));
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   const save = async () => {
     setSaving(true);
     await supabase.from("transporteurs").update({
+      prenom: prenom.trim() || null,
+      nom: nom.trim() || null,
+      telephone_1: telephone.trim() || null,
       residence_city: residence.trim() || null,
-      beta_tarif_defaut: tarif ? Number(tarif) : null,
-      beta_notes_conditions: notes.trim() || null,
+      navettes: navettes.split(",").map((s) => s.trim()).filter(Boolean),
     }).eq("id", gp.id);
     setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
     await onSaved();
   };
 
   return (
-    <SectionCard icon={<User className="w-4 h-4" style={{ color: TEAL }} />} title="Mon profil">
-      <div className="space-y-3">
-        <div><label className={labelCls}>Ville de résidence</label><input className={inputCls} value={residence} onChange={(e) => setResidence(e.target.value)} /></div>
-        <div><label className={labelCls}>Tarif par défaut (FCFA / kg)</label><input type="number" className={inputCls} value={tarif} onChange={(e) => setTarif(e.target.value)} /></div>
-        <div><label className={labelCls}>Notes / conditions</label><textarea rows={3} className={inputCls} value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
-        <button onClick={save} disabled={saving} className="w-full inline-flex items-center justify-center gap-2 text-white rounded-lg py-3 font-semibold text-sm disabled:opacity-50" style={{ backgroundColor: TEAL }}>
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <>Enregistré <Check className="w-4 h-4" /></> : "Enregistrer"}
-        </button>
+    <div className="fixed inset-0 z-50 bg-black/40 grid place-items-end sm:place-items-center" onClick={onClose}>
+      <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl p-5 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-lg font-bold mb-4">Modifier mes infos</h3>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className={labelCls}>Prénom</label><input className={inputCls} value={prenom} onChange={(e) => setPrenom(e.target.value)} /></div>
+            <div><label className={labelCls}>Nom</label><input className={inputCls} value={nom} onChange={(e) => setNom(e.target.value)} /></div>
+          </div>
+          <div><label className={labelCls}>Téléphone</label><input className={inputCls} value={telephone} onChange={(e) => setTelephone(e.target.value)} /></div>
+          <div><label className={labelCls}>Ville de résidence</label><input className={inputCls} value={residence} onChange={(e) => setResidence(e.target.value)} /></div>
+          <div><label className={labelCls}>Villes de navette (séparées par des virgules)</label><input className={inputCls} value={navettes} onChange={(e) => setNavettes(e.target.value)} placeholder="Dakar, Paris" /></div>
+        </div>
+        <div className="flex items-center gap-3 mt-5">
+          <button onClick={onClose} className="flex-1 rounded-xl py-3 font-semibold text-sm border" style={{ borderColor: "#E5E7EB", color: "#6B7280" }}>Annuler</button>
+          <button onClick={save} disabled={saving} className="flex-1 inline-flex items-center justify-center gap-2 text-white rounded-xl py-3 font-semibold text-sm disabled:opacity-50" style={{ backgroundColor: NAVY }}>
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Enregistrer <Check className="w-4 h-4" /></>}
+          </button>
+        </div>
       </div>
-    </SectionCard>
+    </div>
   );
 }
