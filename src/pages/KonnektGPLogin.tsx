@@ -16,7 +16,7 @@ import {
   AlertTriangle, LinkIcon, CheckCircle2,
 } from "lucide-react";
 import { PhoneCountrySelect, useDetectedCountry, buildFullPhone } from "@/components/PhoneCountrySelect";
-import { fetchYobbanteGp } from "@/lib/yobbante";
+import { fetchYobbanteGpByPhone } from "@/lib/yobbante";
 
 const KONNEKT_WA = "221789269756";
 const SUPPORT_TEL = "+221 78 926 97 56";
