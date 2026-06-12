@@ -185,7 +185,7 @@ export default function KonnektGPLogin() {
           </div>
 
           {/* Form */}
-          {state.kind !== "ok" && (
+          {state.kind !== "needs_whatsapp" && (
             <div className="mt-5 bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
               <label className="block text-xs font-semibold mb-1.5">Téléphone</label>
               <PhoneCountrySelect
@@ -230,18 +230,17 @@ export default function KonnektGPLogin() {
             </div>
           )}
 
-          {/* Success — lien retrouvé */}
-          {state.kind === "ok" && (
+          {/* CAS B — Trouvé dans Yobbanté → invitation WhatsApp */}
+          {state.kind === "needs_whatsapp" && (
             <div className="mt-5 bg-white border rounded-2xl p-5 shadow-sm"
               style={{ borderColor: "rgba(22,163,74,0.3)" }}>
-              <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: "#15803D" }}>
-                <CheckCircle2 className="w-5 h-5" /> Lien retrouvé{state.firstName ? `, ${state.firstName} !` : " !"}
+              <div className="flex items-center gap-2 text-base font-bold" style={{ color: "#15803D" }}>
+                <CheckCircle2 className="w-5 h-5" /> Nous vous avons trouvé{state.firstName ? `, ${state.firstName}` : ""} ✓
               </div>
-
-              <div className="mt-4 flex items-center gap-2 rounded-lg px-3 py-3 border border-black/10 bg-black/[0.02]">
-                <LinkIcon className="w-4 h-4 flex-shrink-0" style={{ color: "#3DAA8A" }} />
-                <span className="text-sm break-all">{personalLink}</span>
-              </div>
+              <p className="text-sm text-black/60 mt-2">
+                Pour accéder à votre espace, envoyez-nous un message WhatsApp
+                en cliquant ci-dessous.
+              </p>
 
               <a
                 href={`https://wa.me/${KONNEKT_WA}?text=${encodeURIComponent(waMessage)}`}
@@ -252,17 +251,21 @@ export default function KonnektGPLogin() {
               >
                 <MessageCircle className="w-4 h-4" /> Recevoir mon lien sur WhatsApp
               </a>
+              <p className="text-xs text-black/50 text-center mt-2">
+                Vous recevrez votre lien d'accès en quelques secondes.
+              </p>
 
               <button
                 type="button"
-                onClick={() => navigate(`/gp/${state.ref}`)}
-                className="w-full mt-3 inline-flex items-center justify-center gap-2 rounded-lg py-3 font-semibold text-sm border"
-                style={{ borderColor: "rgba(61,170,138,0.4)", color: "#3DAA8A" }}
+                onClick={() => navigate(`/onboarding/${state.ref}`)}
+                className="w-full mt-4 inline-flex items-center justify-center gap-2 text-sm font-semibold underline"
+                style={{ color: "#3DAA8A" }}
               >
-                Ouvrir mon espace GP <ArrowRight className="w-4 h-4" />
+                Accéder directement à mon inscription
               </button>
             </div>
           )}
+
 
           <p className="text-center text-xs text-black/50 mt-6">
             Pas encore inscrit ?{" "}
