@@ -15,7 +15,7 @@ import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Loader2, MessageCircle, MapPin, Plane, Package, Wallet, User,
-  Plus, Pencil, Trash2, ArrowRight, Check,
+  Plus, Pencil, Trash2, Check,
 } from "lucide-react";
 import { fetchYobbanteGp } from "@/lib/yobbante";
 
