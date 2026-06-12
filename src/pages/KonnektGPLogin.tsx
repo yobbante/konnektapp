@@ -69,34 +69,59 @@ export default function KonnektGPLogin() {
 
   const submit = async () => {
     setState({ kind: "loading" });
-    const cleanedPhone = fullPhone.replace(/\D/g, "");
+    const e164 = normalizePhoneE164(fullPhone);
+    const cleanedPhone = e164.replace(/\D/g, "");
     if (cleanedPhone.length < 8) {
       setState({ kind: "not_found" });
       return;
     }
 
     const tail = cleanedPhone.slice(-8);
+
+    // 1) Recherche locale (table transporteurs = profils GP Konnekt)
     const { data, error } = await supabase
       .from("transporteurs")
-      .select("reference, prenom, telephone_1, telephone_2")
+      .select("reference, prenom, telephone_1, telephone_2, whatsapp_confirmed_at")
       .or(`telephone_1.ilike.%${tail},telephone_2.ilike.%${tail}`)
       .limit(1)
       .maybeSingle();
 
-    if (error || !data || !(data as any).reference) {
-      setState({ kind: "not_found" });
+    const local = !error && data ? (data as any) : null;
+
+    // CAS A — trouvé et activé localement → accès immédiat
+    if (local?.reference && local.whatsapp_confirmed_at) {
+      const ref = normalizeRef(local.reference);
+      try { localStorage.setItem(GP_REF_KEY, ref); } catch { /* ignore */ }
+      navigate(`/gp/${ref}`, { replace: true });
       return;
     }
 
-    const gp = data as any;
-    setState({
-      kind: "ok",
-      firstName: (gp.prenom || "").split(/\s+/)[0],
-      ref: gp.reference,
-    });
+    // 2) Recherche cross-projet Yobbanté
+    const yob = await fetchYobbanteGp(`+${cleanedPhone}`)
+      .catch(() => null);
+
+    const yobRef = yob?.reference
+      ? normalizeRef(yob.reference)
+      : local?.reference
+        ? normalizeRef(local.reference)
+        : null;
+
+    // CAS B — connu dans Yobbanté (ou local non activé) → invitation WhatsApp
+    if (yobRef) {
+      setState({
+        kind: "needs_whatsapp",
+        firstName: (yob?.prenom || local?.prenom || "").split(/\s+/)[0],
+        ref: yobRef,
+      });
+      return;
+    }
+
+    // CAS C — introuvable dans les deux bases
+    setState({ kind: "not_found" });
   };
 
   const isLoading = state.kind === "loading";
+
   const personalLink =
     state.kind === "ok" ? `https://usekonnekt.com/gp/${state.ref}` : "";
   const waMessage =
