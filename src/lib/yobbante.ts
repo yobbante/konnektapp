@@ -103,22 +103,7 @@ export async function fetchYobbanteGpByPhone(
       return null;
     }
     const payload = await res.json().catch(() => null);
-    const data: YobbanteGp | null =
-      (payload as { data?: YobbanteGp } | null)?.data ??
-      (payload as YobbanteGp | null) ??
-      null;
-
-    if (
-      data &&
-      !data.prenom &&
-      !data.nom &&
-      !data.telephone_1 &&
-      !data.telephone_2 &&
-      !data.reference
-    ) {
-      return null;
-    }
-    return data;
+    return parseYobbanteResponse(payload);
   } catch (e) {
     console.error("[yobbante] gp-lookup(phone) failed:", e);
     return null;
