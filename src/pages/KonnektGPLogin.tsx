@@ -16,15 +16,35 @@ import {
   AlertTriangle, LinkIcon, CheckCircle2,
 } from "lucide-react";
 import { PhoneCountrySelect, useDetectedCountry, buildFullPhone } from "@/components/PhoneCountrySelect";
+import { fetchYobbanteGp } from "@/lib/yobbante";
 
 const KONNEKT_WA = "221789269756";
 const SUPPORT_TEL = "+221 78 926 97 56";
 const SUPPORT_TEL_RAW = "221789269756";
+const GP_REF_KEY = "konnekt_gp_ref";
+
+/** Normalise un numéro vers E.164 (+221XXXXXXXXX par défaut pour le local SN). */
+function normalizePhoneE164(raw: string, fallbackDial = "+221"): string {
+  let s = (raw || "").replace(/[\s().-]/g, "");
+  if (s.startsWith("00")) s = "+" + s.slice(2);
+  if (s.startsWith("+")) return s;
+  // numéro local sans indicatif (ex: 77XXXXXXXX ou 077XXXXXXXX)
+  s = s.replace(/^0+/, "");
+  return `${fallbackDial}${s}`;
+}
+
+/** Normalise une référence GP au format GPXXXX (ajoute le préfixe si absent). */
+function normalizeRef(raw: string): string {
+  const s = (raw || "").trim().toUpperCase();
+  if (!s) return s;
+  return /^GP/.test(s) ? s : `GP${s.replace(/\D/g, "")}`;
+}
 
 type State =
   | { kind: "idle" }
   | { kind: "loading" }
   | { kind: "not_found" }
+  | { kind: "needs_whatsapp"; firstName?: string; ref: string }
   | { kind: "ok"; firstName?: string; ref: string };
 
 export default function KonnektGPLogin() {
