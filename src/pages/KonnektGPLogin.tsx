@@ -13,7 +13,7 @@ import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ArrowLeft, ArrowRight, Loader2, MessageCircle, Info,
-  AlertTriangle, LinkIcon, CheckCircle2,
+  AlertTriangle, CheckCircle2,
 } from "lucide-react";
 import { PhoneCountrySelect, useDetectedCountry, buildFullPhone } from "@/components/PhoneCountrySelect";
 import { fetchYobbanteGpByPhone } from "@/lib/yobbante";
