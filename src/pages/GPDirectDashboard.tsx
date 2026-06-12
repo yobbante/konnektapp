@@ -15,7 +15,7 @@ import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Loader2, MessageCircle, MapPin, Plane, Package, Wallet, User,
-  Plus, Pencil, Trash2, ArrowRight, Check,
+  Plus, Pencil, Trash2, Check,
 } from "lucide-react";
 import { fetchYobbanteGp } from "@/lib/yobbante";
 
@@ -239,7 +239,6 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
             nom: yob.nom,
             telephone_1: yob.telephone_1 || yob.telephone_2,
             navettes: [],
-            whatsapp_confirmed_at: new Date().toISOString(),
           })
           .select(SELECT_COLS)
           .maybeSingle();
@@ -278,15 +277,10 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
     );
   }
 
-  if (!gp.beta_wizard_completed_at) {
-    return (
-      <BetaWizard
-        gp={gp}
-        onReloadDepartures={() => loadDeparturesAndMissions(gp.reference)}
-        onDone={async () => { await refreshGp(); await loadDeparturesAndMissions(gp.reference); }}
-      />
-    );
-  }
+  // Le wizard d'onboarding vit désormais dans /onboarding/[ref].
+  // Le dashboard reste accessible directement (pas de redirect forcé).
+
+
 
   return (
     <div className="min-h-screen bg-white text-[#0D1B2A] font-sans">
@@ -326,146 +320,8 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
   );
 }
 
-/* ─────────────────────────  WIZARD  ───────────────────────── */
+/* Le wizard d'onboarding a été déplacé vers /onboarding/[ref] (OnboardingGP). */
 
-function BetaWizard({
-  gp, onDone, onReloadDepartures,
-}: {
-  gp: Transporteur;
-  onDone: () => void | Promise<void>;
-  onReloadDepartures: () => void | Promise<void>;
-}) {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [saving, setSaving] = useState(false);
-
-  // Step 1 — profil
-  const [prenom, setPrenom] = useState(gp.prenom || "");
-  const [nom, setNom] = useState(gp.nom || "");
-  const [residence, setResidence] = useState(gp.residence_city || "");
-
-  // Step 2 — premier départ
-  const [villeDepart, setVilleDepart] = useState(gp.residence_city || "");
-  const [villeArrivee, setVilleArrivee] = useState("");
-  const [dateDepart, setDateDepart] = useState("");
-  const [capacite, setCapacite] = useState("");
-  const [tarifDepart, setTarifDepart] = useState("");
-
-  // Step 3 — tarifs
-  const [tarifDefaut, setTarifDefaut] = useState(gp.beta_tarif_defaut ? String(gp.beta_tarif_defaut) : "");
-  const [notes, setNotes] = useState(gp.beta_notes_conditions || "");
-
-  const saveStep1 = async () => {
-    setSaving(true);
-    await supabase.from("transporteurs")
-      .update({ prenom: prenom.trim(), nom: nom.trim(), residence_city: residence.trim() })
-      .eq("id", gp.id);
-    setSaving(false);
-    if (!villeDepart) setVilleDepart(residence.trim());
-    setStep(2);
-  };
-
-  const saveStep2 = async (skip: boolean) => {
-    if (!skip) {
-      setSaving(true);
-      await supabase.from("manual_departures").insert({
-        gp_reference: gp.reference,
-        ville_depart: villeDepart.trim() || residence.trim(),
-        ville_arrivee: villeArrivee.trim(),
-        destination: villeArrivee.trim(),
-        date_depart: dateDepart || null,
-        capacite_kg: capacite ? Number(capacite) : null,
-        poids_kg: capacite ? Number(capacite) : null,
-        tarif_par_kg: tarifDepart ? Number(tarifDepart) : null,
-        currency: "XOF",
-        source: "gp_dashboard_beta",
-      });
-      await onReloadDepartures();
-      setSaving(false);
-    }
-    setStep(3);
-  };
-
-  const saveStep3 = async () => {
-    setSaving(true);
-    await supabase.from("transporteurs").update({
-      beta_tarif_defaut: tarifDefaut ? Number(tarifDefaut) : null,
-      beta_notes_conditions: notes.trim() || null,
-      beta_wizard_completed_at: new Date().toISOString(),
-    }).eq("id", gp.id);
-    setSaving(false);
-    await onDone();
-  };
-
-  return (
-    <div className="min-h-screen bg-white text-[#0D1B2A] font-sans">
-      <Helmet><title>Konnekt GP — Bienvenue</title><meta name="robots" content="noindex,nofollow" /></Helmet>
-      <KonnektHeader />
-      <BetaBanner />
-
-      <main className="px-4 py-6 max-w-md mx-auto">
-        {/* Stepper */}
-        <div className="flex items-center gap-2 mb-6">
-          {[1, 2, 3].map((s) => (
-            <div key={s} className="flex-1 h-1.5 rounded-full" style={{ backgroundColor: s <= step ? TEAL : "#E5E7EB" }} />
-          ))}
-        </div>
-
-        {step === 1 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold">Mon profil</h2>
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className={labelCls}>Prénom</label><input className={inputCls} value={prenom} onChange={(e) => setPrenom(e.target.value)} /></div>
-              <div><label className={labelCls}>Nom</label><input className={inputCls} value={nom} onChange={(e) => setNom(e.target.value)} /></div>
-            </div>
-            <div><label className={labelCls}>Ville de résidence principale</label><input className={inputCls} value={residence} onChange={(e) => setResidence(e.target.value)} placeholder="Dakar" /></div>
-            <div>
-              <label className={labelCls}>Téléphone</label>
-              <input className={`${inputCls} bg-black/[0.03] text-black/60`} value={gp.telephone_1 || ""} disabled />
-            </div>
-            <button onClick={saveStep1} disabled={saving || prenom.trim().length < 2 || !residence.trim()}
-              className="w-full inline-flex items-center justify-center gap-2 text-white rounded-lg py-3.5 font-semibold text-sm disabled:opacity-50" style={{ backgroundColor: TEAL }}>
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Continuer <ArrowRight className="w-4 h-4" /></>}
-            </button>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold">Mon premier départ</h2>
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className={labelCls}>Ville de départ</label><input className={inputCls} value={villeDepart} onChange={(e) => setVilleDepart(e.target.value)} placeholder="Dakar" /></div>
-              <div><label className={labelCls}>Ville d'arrivée</label><input className={inputCls} value={villeArrivee} onChange={(e) => setVilleArrivee(e.target.value)} placeholder="Paris" /></div>
-            </div>
-            <div><label className={labelCls}>Date de départ</label><input type="date" className={inputCls} value={dateDepart} onChange={(e) => setDateDepart(e.target.value)} /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className={labelCls}>Capacité (kg)</label><input type="number" className={inputCls} value={capacite} onChange={(e) => setCapacite(e.target.value)} placeholder="20" /></div>
-              <div><label className={labelCls}>Tarif / kg (FCFA)</label><input type="number" className={inputCls} value={tarifDepart} onChange={(e) => setTarifDepart(e.target.value)} placeholder="5000" /></div>
-            </div>
-            <div className="flex items-center gap-3 pt-1">
-              <button onClick={() => saveStep2(true)} className="flex-1 rounded-lg py-3 font-semibold text-sm border" style={{ borderColor: "#E5E7EB", color: "#6B7280" }}>Passer →</button>
-              <button onClick={() => saveStep2(false)} disabled={saving || !villeArrivee.trim()}
-                className="flex-1 inline-flex items-center justify-center gap-2 text-white rounded-lg py-3 font-semibold text-sm disabled:opacity-50" style={{ backgroundColor: TEAL }}>
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Continuer <ArrowRight className="w-4 h-4" /></>}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold">Mes tarifs</h2>
-            <div><label className={labelCls}>Tarif par défaut (FCFA / kg)</label><input type="number" className={inputCls} value={tarifDefaut} onChange={(e) => setTarifDefaut(e.target.value)} placeholder="5000" /></div>
-            <div><label className={labelCls}>Notes / conditions</label><textarea rows={4} className={inputCls} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ex : objets fragiles acceptés, paiement à la livraison…" /></div>
-            <button onClick={saveStep3} disabled={saving}
-              className="w-full inline-flex items-center justify-center gap-2 text-white rounded-lg py-3.5 font-semibold text-sm disabled:opacity-50" style={{ backgroundColor: TEAL }}>
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Accéder à mon espace <ArrowRight className="w-4 h-4" /></>}
-            </button>
-          </div>
-        )}
-      </main>
-    </div>
-  );
-}
 
 /* ─────────────────────────  SECTIONS  ───────────────────────── */
 
