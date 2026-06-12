@@ -82,7 +82,7 @@ function StatusBadge({ status }: { status: string | null }) {
   );
 }
 
-function KonnektHeader() {
+function KonnektHeader({ whatsappActive }: { whatsappActive?: boolean }) {
   return (
     <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-black/5">
       <div className="max-w-md mx-auto flex items-center justify-between px-4 py-3.5">
@@ -93,12 +93,74 @@ function KonnektHeader() {
             <span className="text-[10px] text-black/50">Espace GP</span>
           </div>
         </div>
-        <a href={`https://wa.me/${KONNEKT_WA}`} target="_blank" rel="noopener noreferrer"
-          className="text-[11px] font-semibold text-white px-3 py-1.5 rounded-full inline-flex items-center gap-1.5" style={{ backgroundColor: GREEN_WA }}>
-          <MessageCircle className="w-3.5 h-3.5" /> Aide
-        </a>
+        {whatsappActive ? (
+          <span className="text-[11px] font-semibold text-white px-3 py-1.5 rounded-full inline-flex items-center gap-1.5" style={{ backgroundColor: GREEN_WA }}>
+            <Check className="w-3.5 h-3.5" /> WhatsApp actif
+          </span>
+        ) : (
+          <a href={`https://wa.me/${KONNEKT_WA}`} target="_blank" rel="noopener noreferrer"
+            className="text-[11px] font-semibold text-white px-3 py-1.5 rounded-full inline-flex items-center gap-1.5" style={{ backgroundColor: GREEN_WA }}>
+            <MessageCircle className="w-3.5 h-3.5" /> Aide
+          </a>
+        )}
       </div>
     </header>
+  );
+}
+
+const WA_INCENTIVES = [
+  { icon: "📨", label: "Recevoir les missions en temps réel" },
+  { icon: "✅", label: "Confirmer une collecte en 1 message" },
+  { icon: "🛫", label: "Enregistrer un départ par message" },
+  { icon: "⏰", label: "Rappels automatiques avant chaque départ" },
+  { icon: "⭐", label: "Priorité sur les nouvelles missions" },
+];
+
+function WhatsAppCTABanner({ refGp }: { refGp: string }) {
+  const SESSION_KEY = `wa_cta_dismissed_${refGp.toUpperCase()}`;
+  const [dismissed, setDismissed] = useState(
+    () => typeof window !== "undefined" && sessionStorage.getItem(SESSION_KEY) === "1",
+  );
+  if (dismissed) return null;
+
+  const waUrl = `https://wa.me/${KONNEKT_WA}?text=${encodeURIComponent(`KONNEKT ${refGp.toUpperCase()}`)}`;
+
+  return (
+    <div className="px-4 py-4 text-white" style={{ backgroundColor: GREEN_WA }}>
+      <div className="max-w-md mx-auto">
+        <div className="flex items-start gap-2.5">
+          <MessageCircle className="w-6 h-6 flex-shrink-0 mt-0.5" />
+          <h2 className="text-[15px] font-bold leading-snug">
+            Activez WhatsApp pour tirer le meilleur de Konnekt
+          </h2>
+        </div>
+
+        <ul className="mt-3 flex flex-wrap gap-1.5">
+          {WA_INCENTIVES.map((it) => (
+            <li key={it.label} className="text-[11px] font-medium bg-white/20 rounded-full px-2.5 py-1 inline-flex items-center gap-1">
+              <span>{it.icon}</span>{it.label}
+            </li>
+          ))}
+        </ul>
+
+        <a
+          href={waUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-lg py-3 font-bold text-sm"
+          style={{ backgroundColor: "#FFFFFF", color: GREEN_WA }}
+        >
+          <MessageCircle className="w-4 h-4" /> Activer WhatsApp
+        </a>
+
+        <button
+          onClick={() => { sessionStorage.setItem(SESSION_KEY, "1"); setDismissed(true); }}
+          className="mt-2 w-full text-center text-[12px] font-medium text-white/80 underline"
+        >
+          Plus tard
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -232,7 +294,8 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
         <title>Konnekt GP — Mon espace</title>
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
-      <KonnektHeader />
+      <KonnektHeader whatsappActive={!!gp.whatsapp_confirmed_at} />
+      {!gp.whatsapp_confirmed_at && <WhatsAppCTABanner refGp={gp.reference} />}
       <BetaBanner />
 
       <main className="px-4 py-5 max-w-md mx-auto space-y-5">
