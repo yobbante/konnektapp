@@ -96,9 +96,8 @@ export default function KonnektGPLogin() {
       return;
     }
 
-    // 2) Recherche cross-projet Yobbanté
-    const yob = await fetchYobbanteGp(`+${cleanedPhone}`)
-      .catch(() => null);
+    // 2) Recherche cross-projet Yobbanté (par téléphone E.164)
+    const yob = await fetchYobbanteGpByPhone(e164).catch(() => null);
 
     const yobRef = yob?.reference
       ? normalizeRef(yob.reference)
