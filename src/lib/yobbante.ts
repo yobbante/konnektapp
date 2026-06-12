@@ -20,6 +20,35 @@ export interface YobbanteGp {
 }
 
 /**
+ * Normalise la réponse de `gp-lookup`. L'edge function Yobbanté renvoie
+ * `{ found, ref, prenom, nom, telephone_1, telephone_2 }` (clé `ref`, pas
+ * `reference`). On supporte aussi un éventuel wrapper `{ data: {...} }`.
+ */
+function parseYobbanteResponse(payload: unknown): YobbanteGp | null {
+  if (!payload || typeof payload !== "object") return null;
+  const raw = ((payload as { data?: unknown }).data ?? payload) as Record<
+    string,
+    unknown
+  >;
+
+  // Si l'API indique explicitement "non trouvé"
+  if (raw.found === false) return null;
+
+  const reference =
+    (raw.reference as string | null) ?? (raw.ref as string | null) ?? null;
+  const prenom = (raw.prenom as string | null) ?? null;
+  const nom = (raw.nom as string | null) ?? null;
+  const telephone_1 = (raw.telephone_1 as string | null) ?? null;
+  const telephone_2 = (raw.telephone_2 as string | null) ?? null;
+
+  if (!reference && !prenom && !nom && !telephone_1 && !telephone_2) {
+    return null;
+  }
+
+  return { prenom, nom, telephone_1, telephone_2, reference };
+}
+
+/**
  * Cherche un GP par référence (ex: "GP4346") dans le projet Yobbanté.
  * Retourne null si introuvable ou en cas d'erreur réseau.
  */
@@ -41,21 +70,7 @@ export async function fetchYobbanteGp(refGp: string): Promise<YobbanteGp | null>
       return null;
     }
     const payload = await res.json().catch(() => null);
-    const data: YobbanteGp | null =
-      (payload as { data?: YobbanteGp } | null)?.data ??
-      (payload as YobbanteGp | null) ??
-      null;
-
-    if (
-      data &&
-      !data.prenom &&
-      !data.nom &&
-      !data.telephone_1 &&
-      !data.telephone_2
-    ) {
-      return null;
-    }
-    return data;
+    return parseYobbanteResponse(payload);
   } catch (e) {
     console.error("[yobbante] gp-lookup failed:", e);
     return null;
@@ -88,22 +103,7 @@ export async function fetchYobbanteGpByPhone(
       return null;
     }
     const payload = await res.json().catch(() => null);
-    const data: YobbanteGp | null =
-      (payload as { data?: YobbanteGp } | null)?.data ??
-      (payload as YobbanteGp | null) ??
-      null;
-
-    if (
-      data &&
-      !data.prenom &&
-      !data.nom &&
-      !data.telephone_1 &&
-      !data.telephone_2 &&
-      !data.reference
-    ) {
-      return null;
-    }
-    return data;
+    return parseYobbanteResponse(payload);
   } catch (e) {
     console.error("[yobbante] gp-lookup(phone) failed:", e);
     return null;
