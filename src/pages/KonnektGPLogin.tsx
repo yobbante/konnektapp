@@ -13,18 +13,38 @@ import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ArrowLeft, ArrowRight, Loader2, MessageCircle, Info,
-  AlertTriangle, LinkIcon, CheckCircle2,
+  AlertTriangle, CheckCircle2,
 } from "lucide-react";
 import { PhoneCountrySelect, useDetectedCountry, buildFullPhone } from "@/components/PhoneCountrySelect";
+import { fetchYobbanteGpByPhone } from "@/lib/yobbante";
 
 const KONNEKT_WA = "221789269756";
 const SUPPORT_TEL = "+221 78 926 97 56";
 const SUPPORT_TEL_RAW = "221789269756";
+const GP_REF_KEY = "konnekt_gp_ref";
+
+/** Normalise un numéro vers E.164 (+221XXXXXXXXX par défaut pour le local SN). */
+function normalizePhoneE164(raw: string, fallbackDial = "+221"): string {
+  let s = (raw || "").replace(/[\s().-]/g, "");
+  if (s.startsWith("00")) s = "+" + s.slice(2);
+  if (s.startsWith("+")) return s;
+  // numéro local sans indicatif (ex: 77XXXXXXXX ou 077XXXXXXXX)
+  s = s.replace(/^0+/, "");
+  return `${fallbackDial}${s}`;
+}
+
+/** Normalise une référence GP au format GPXXXX (ajoute le préfixe si absent). */
+function normalizeRef(raw: string): string {
+  const s = (raw || "").trim().toUpperCase();
+  if (!s) return s;
+  return /^GP/.test(s) ? s : `GP${s.replace(/\D/g, "")}`;
+}
 
 type State =
   | { kind: "idle" }
   | { kind: "loading" }
   | { kind: "not_found" }
+  | { kind: "needs_whatsapp"; firstName?: string; ref: string }
   | { kind: "ok"; firstName?: string; ref: string };
 
 export default function KonnektGPLogin() {
@@ -49,40 +69,61 @@ export default function KonnektGPLogin() {
 
   const submit = async () => {
     setState({ kind: "loading" });
-    const cleanedPhone = fullPhone.replace(/\D/g, "");
+    const e164 = normalizePhoneE164(fullPhone);
+    const cleanedPhone = e164.replace(/\D/g, "");
     if (cleanedPhone.length < 8) {
       setState({ kind: "not_found" });
       return;
     }
 
     const tail = cleanedPhone.slice(-8);
+
+    // 1) Recherche locale (table transporteurs = profils GP Konnekt)
     const { data, error } = await supabase
       .from("transporteurs")
-      .select("reference, prenom, telephone_1, telephone_2")
+      .select("reference, prenom, telephone_1, telephone_2, whatsapp_confirmed_at")
       .or(`telephone_1.ilike.%${tail},telephone_2.ilike.%${tail}`)
       .limit(1)
       .maybeSingle();
 
-    if (error || !data || !(data as any).reference) {
-      setState({ kind: "not_found" });
+    const local = !error && data ? (data as any) : null;
+
+    // CAS A — trouvé et activé localement → accès immédiat
+    if (local?.reference && local.whatsapp_confirmed_at) {
+      const ref = normalizeRef(local.reference);
+      try { localStorage.setItem(GP_REF_KEY, ref); } catch { /* ignore */ }
+      navigate(`/gp/${ref}`, { replace: true });
       return;
     }
 
-    const gp = data as any;
-    setState({
-      kind: "ok",
-      firstName: (gp.prenom || "").split(/\s+/)[0],
-      ref: gp.reference,
-    });
+    // 2) Recherche cross-projet Yobbanté (par téléphone E.164)
+    const yob = await fetchYobbanteGpByPhone(e164).catch(() => null);
+
+    const yobRef = yob?.reference
+      ? normalizeRef(yob.reference)
+      : local?.reference
+        ? normalizeRef(local.reference)
+        : null;
+
+    // CAS B — connu dans Yobbanté (ou local non activé) → invitation WhatsApp
+    if (yobRef) {
+      setState({
+        kind: "needs_whatsapp",
+        firstName: (yob?.prenom || local?.prenom || "").split(/\s+/)[0],
+        ref: yobRef,
+      });
+      return;
+    }
+
+    // CAS C — introuvable dans les deux bases
+    setState({ kind: "not_found" });
   };
 
   const isLoading = state.kind === "loading";
-  const personalLink =
-    state.kind === "ok" ? `https://usekonnekt.com/gp/${state.ref}` : "";
+
   const waMessage =
-    state.kind === "ok"
-      ? `Bonjour, voici mon lien GP Konnekt : ${personalLink}`
-      : "";
+    state.kind === "needs_whatsapp" ? `MON LIEN ${state.ref}` : "";
+
 
   return (
     <div className="min-h-screen bg-white text-[#0D1B2A] font-sans">
@@ -144,7 +185,7 @@ export default function KonnektGPLogin() {
           </div>
 
           {/* Form */}
-          {state.kind !== "ok" && (
+          {state.kind !== "needs_whatsapp" && (
             <div className="mt-5 bg-white border border-black/10 rounded-2xl p-5 shadow-sm">
               <label className="block text-xs font-semibold mb-1.5">Téléphone</label>
               <PhoneCountrySelect
@@ -189,18 +230,17 @@ export default function KonnektGPLogin() {
             </div>
           )}
 
-          {/* Success — lien retrouvé */}
-          {state.kind === "ok" && (
+          {/* CAS B — Trouvé dans Yobbanté → invitation WhatsApp */}
+          {state.kind === "needs_whatsapp" && (
             <div className="mt-5 bg-white border rounded-2xl p-5 shadow-sm"
               style={{ borderColor: "rgba(22,163,74,0.3)" }}>
-              <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: "#15803D" }}>
-                <CheckCircle2 className="w-5 h-5" /> Lien retrouvé{state.firstName ? `, ${state.firstName} !` : " !"}
+              <div className="flex items-center gap-2 text-base font-bold" style={{ color: "#15803D" }}>
+                <CheckCircle2 className="w-5 h-5" /> Nous vous avons trouvé{state.firstName ? `, ${state.firstName}` : ""} ✓
               </div>
-
-              <div className="mt-4 flex items-center gap-2 rounded-lg px-3 py-3 border border-black/10 bg-black/[0.02]">
-                <LinkIcon className="w-4 h-4 flex-shrink-0" style={{ color: "#3DAA8A" }} />
-                <span className="text-sm break-all">{personalLink}</span>
-              </div>
+              <p className="text-sm text-black/60 mt-2">
+                Pour accéder à votre espace, envoyez-nous un message WhatsApp
+                en cliquant ci-dessous.
+              </p>
 
               <a
                 href={`https://wa.me/${KONNEKT_WA}?text=${encodeURIComponent(waMessage)}`}
@@ -211,17 +251,21 @@ export default function KonnektGPLogin() {
               >
                 <MessageCircle className="w-4 h-4" /> Recevoir mon lien sur WhatsApp
               </a>
+              <p className="text-xs text-black/50 text-center mt-2">
+                Vous recevrez votre lien d'accès en quelques secondes.
+              </p>
 
               <button
                 type="button"
-                onClick={() => navigate(`/gp/${state.ref}`)}
-                className="w-full mt-3 inline-flex items-center justify-center gap-2 rounded-lg py-3 font-semibold text-sm border"
-                style={{ borderColor: "rgba(61,170,138,0.4)", color: "#3DAA8A" }}
+                onClick={() => navigate(`/onboarding/${state.ref}`)}
+                className="w-full mt-4 inline-flex items-center justify-center gap-2 text-sm font-semibold underline"
+                style={{ color: "#3DAA8A" }}
               >
-                Ouvrir mon espace GP <ArrowRight className="w-4 h-4" />
+                Accéder directement à mon inscription
               </button>
             </div>
           )}
+
 
           <p className="text-center text-xs text-black/50 mt-6">
             Pas encore inscrit ?{" "}
