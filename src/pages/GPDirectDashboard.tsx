@@ -37,8 +37,23 @@ interface Transporteur {
   whatsapp_confirmed_at: string | null;
   beta_wizard_completed_at: string | null;
   beta_tarif_defaut: number | null;
+  beta_forfait_min: number | null;
+  beta_devise: string | null;
   beta_notes_conditions: string | null;
 }
+
+/** Villes disponibles pour les sélecteurs de navette. */
+export const KONNEKT_CITIES = [
+  "Dakar", "Paris", "Bordeaux", "Lyon", "Marseille", "Lille", "Rennes",
+  "Rouen", "Toulouse", "Nice", "Strasbourg", "Nantes", "Montpellier",
+  "Abidjan", "Bamako", "Douala", "Yaoundé", "Kinshasa", "Brazzaville",
+  "Libreville", "Conakry", "Lomé", "Cotonou", "Accra", "Lagos",
+  "Madrid", "Barcelone", "Berlin", "Amsterdam", "Bruxelles", "Genève",
+  "Montréal", "New York", "Washington", "Dubai", "Istanbul",
+];
+
+/** Devises disponibles pour les tarifs GP. */
+export const KONNEKT_CURRENCIES = ["XOF", "EUR", "USD", "GBP", "CAD"] as const;
 
 interface Departure {
   id: string;
