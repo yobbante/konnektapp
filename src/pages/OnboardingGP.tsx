@@ -167,17 +167,17 @@ export default function OnboardingGP() {
         className="min-h-[100dvh] flex flex-col items-center justify-center bg-white px-6 text-center"
         style={{ color: "#111827" }}
       >
-        <h1 className="text-xl font-bold">Ce lien n'est pas valide.</h1>
+        <h1 className="text-xl font-bold">Lien invalide ou expiré</h1>
         <p className="mt-3 text-muted-foreground">
-          Contactez Konnekt au{" "}
-          <a
-            href={`tel:${SUPPORT_PHONE.replace(/\s/g, "")}`}
-            className="font-semibold"
-            style={{ color: TEAL }}
-          >
-            {SUPPORT_PHONE}
-          </a>
+          Ce lien d'invitation n'est pas reconnu.
         </p>
+        <a
+          href="/beta"
+          className="mt-6 inline-flex items-center justify-center rounded-lg px-6 py-3 font-semibold text-sm text-white"
+          style={{ backgroundColor: TEAL }}
+        >
+          Rejoindre Konnekt
+        </a>
       </div>
     );
   }
