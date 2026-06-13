@@ -139,8 +139,7 @@ export default function OnboardingGP() {
   const saveStep2 = async () => {
     if (!gp) return;
     setSaving(true);
-    const navetteList = navettes
-      .split(",")
+    const navetteList = [villeDepart, villeArrivee]
       .map((c) => c.trim())
       .filter(Boolean);
     await supabase
