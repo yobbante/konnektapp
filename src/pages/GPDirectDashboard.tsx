@@ -634,7 +634,12 @@ function ProfileEditModal({ gp, onClose, onSaved }: { gp: Transporteur; onClose:
   const [nom, setNom] = useState(gp.nom || "");
   const [telephone, setTelephone] = useState(gp.telephone_1 || "");
   const [residence, setResidence] = useState(gp.residence_city || "");
-  const [navettes, setNavettes] = useState((gp.navettes || []).filter(Boolean).join(", "));
+  const existing = (gp.navettes || []).filter(Boolean);
+  const [villeDepart, setVilleDepart] = useState(existing[0] || "");
+  const [villeArrivee, setVilleArrivee] = useState(existing[1] || "");
+  const [prixKg, setPrixKg] = useState(gp.beta_tarif_defaut != null ? String(gp.beta_tarif_defaut) : "");
+  const [forfaitMin, setForfaitMin] = useState(gp.beta_forfait_min != null ? String(gp.beta_forfait_min) : "");
+  const [devise, setDevise] = useState(gp.beta_devise || "XOF");
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
@@ -644,7 +649,10 @@ function ProfileEditModal({ gp, onClose, onSaved }: { gp: Transporteur; onClose:
       nom: nom.trim() || null,
       telephone_1: telephone.trim() || null,
       residence_city: residence.trim() || null,
-      navettes: navettes.split(",").map((s) => s.trim()).filter(Boolean),
+      navettes: [villeDepart, villeArrivee].map((s) => s.trim()).filter(Boolean),
+      beta_tarif_defaut: prixKg ? Number(prixKg) : null,
+      beta_forfait_min: forfaitMin ? Number(forfaitMin) : null,
+      beta_devise: devise,
     }).eq("id", gp.id);
     setSaving(false);
     await onSaved();
@@ -661,7 +669,40 @@ function ProfileEditModal({ gp, onClose, onSaved }: { gp: Transporteur; onClose:
           </div>
           <div><label className={labelCls}>Téléphone</label><input className={inputCls} value={telephone} onChange={(e) => setTelephone(e.target.value)} /></div>
           <div><label className={labelCls}>Ville de résidence</label><input className={inputCls} value={residence} onChange={(e) => setResidence(e.target.value)} /></div>
-          <div><label className={labelCls}>Villes de navette (séparées par des virgules)</label><input className={inputCls} value={navettes} onChange={(e) => setNavettes(e.target.value)} placeholder="Dakar, Paris" /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>Ville de départ</label>
+              <select className={inputCls} value={villeDepart} onChange={(e) => setVilleDepart(e.target.value)}>
+                <option value="">Choisir…</option>
+                {KONNEKT_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Ville d'arrivée</label>
+              <select className={inputCls} value={villeArrivee} onChange={(e) => setVilleArrivee(e.target.value)}>
+                <option value="">Choisir…</option>
+                {KONNEKT_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Mes tarifs — privé, jamais exposé aux clients */}
+          <div className="rounded-xl p-3 space-y-3" style={{ backgroundColor: "rgba(10,22,40,0.04)" }}>
+            <div className="flex items-center gap-1.5 text-xs font-bold" style={{ color: NAVY }}>
+              <Wallet className="w-3.5 h-3.5" /> Mes tarifs
+              <span className="ml-auto text-[10px] font-medium text-black/40">privé</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className={labelCls}>Prix au kg</label><input type="number" className={inputCls} value={prixKg} onChange={(e) => setPrixKg(e.target.value)} /></div>
+              <div><label className={labelCls}>Forfait minimum</label><input type="number" className={inputCls} value={forfaitMin} onChange={(e) => setForfaitMin(e.target.value)} /></div>
+            </div>
+            <div>
+              <label className={labelCls}>Devise</label>
+              <select className={inputCls} value={devise} onChange={(e) => setDevise(e.target.value)}>
+                {KONNEKT_CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
         </div>
         <div className="flex items-center gap-3 mt-5">
           <button onClick={onClose} className="flex-1 rounded-xl py-3 font-semibold text-sm border" style={{ borderColor: "#E5E7EB", color: "#6B7280" }}>Annuler</button>
