@@ -8,7 +8,7 @@ import { fetchYobbanteGp } from "@/lib/yobbante";
 const TEAL = "#0D9488";
 const TEAL_DARK = "#0F766E";
 const REF_REGEX = /^GP\d{3,5}$/i;
-const SUPPORT_PHONE = "+221 78 926 97 56";
+
 
 const inputCls =
   "w-full rounded-lg border border-black/15 px-3 py-2.5 text-sm outline-none focus:border-[#0D9488] focus:ring-2 focus:ring-[#0D9488]/20";
