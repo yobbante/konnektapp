@@ -4,6 +4,7 @@ import { Loader2, ArrowRight, User, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { KonnektLoader } from "@/components/ui/KonnektLoader";
 import { fetchYobbanteGp } from "@/lib/yobbante";
+import { KONNEKT_CITIES } from "@/pages/GPDirectDashboard";
 
 const TEAL = "#0D9488";
 const TEAL_DARK = "#0F766E";
@@ -46,7 +47,8 @@ export default function OnboardingGP() {
   const [nom, setNom] = useState("");
   const [telephone, setTelephone] = useState("");
   const [residence, setResidence] = useState("");
-  const [navettes, setNavettes] = useState("");
+  const [villeDepart, setVilleDepart] = useState("");
+  const [villeArrivee, setVilleArrivee] = useState("");
   const [disponibilites, setDisponibilites] = useState("");
 
   const redirectToGp = useCallback(() => {
@@ -111,7 +113,8 @@ export default function OnboardingGP() {
       setNom(local.nom || yob?.nom || "");
       setTelephone(local.telephone_1 || yob?.telephone_1 || yob?.telephone_2 || "");
       setResidence(local.residence_city || "");
-      setNavettes((local.navettes || []).join(", "));
+      setVilleDepart((local.navettes || [])[0] || "");
+      setVilleArrivee((local.navettes || [])[1] || "");
       setDisponibilites(local.beta_notes_conditions || "");
       setView("wizard");
     })();
@@ -136,8 +139,7 @@ export default function OnboardingGP() {
   const saveStep2 = async () => {
     if (!gp) return;
     setSaving(true);
-    const navetteList = navettes
-      .split(",")
+    const navetteList = [villeDepart, villeArrivee]
       .map((c) => c.trim())
       .filter(Boolean);
     await supabase
@@ -261,15 +263,29 @@ export default function OnboardingGP() {
             <h2 className="text-xl font-bold inline-flex items-center gap-2">
               <MapPin className="w-5 h-5" style={{ color: TEAL }} /> Mes navettes
             </h2>
-            <div>
-              <label className={labelCls}>Villes de navette</label>
-              <input
-                className={inputCls}
-                value={navettes}
-                onChange={(e) => setNavettes(e.target.value)}
-                placeholder="Dakar, Paris, Bruxelles"
-              />
-              <p className="text-[11px] text-black/45 mt-1">Séparez les villes par des virgules.</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Ville de départ</label>
+                <select
+                  className={inputCls}
+                  value={villeDepart}
+                  onChange={(e) => setVilleDepart(e.target.value)}
+                >
+                  <option value="">Choisir…</option>
+                  {KONNEKT_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>Ville d'arrivée</label>
+                <select
+                  className={inputCls}
+                  value={villeArrivee}
+                  onChange={(e) => setVilleArrivee(e.target.value)}
+                >
+                  <option value="">Choisir…</option>
+                  {KONNEKT_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
             </div>
             <div>
               <label className={labelCls}>Disponibilités</label>

@@ -37,8 +37,23 @@ interface Transporteur {
   whatsapp_confirmed_at: string | null;
   beta_wizard_completed_at: string | null;
   beta_tarif_defaut: number | null;
+  beta_forfait_min: number | null;
+  beta_devise: string | null;
   beta_notes_conditions: string | null;
 }
+
+/** Villes disponibles pour les sélecteurs de navette. */
+export const KONNEKT_CITIES = [
+  "Dakar", "Paris", "Bordeaux", "Lyon", "Marseille", "Lille", "Rennes",
+  "Rouen", "Toulouse", "Nice", "Strasbourg", "Nantes", "Montpellier",
+  "Abidjan", "Bamako", "Douala", "Yaoundé", "Kinshasa", "Brazzaville",
+  "Libreville", "Conakry", "Lomé", "Cotonou", "Accra", "Lagos",
+  "Madrid", "Barcelone", "Berlin", "Amsterdam", "Bruxelles", "Genève",
+  "Montréal", "New York", "Washington", "Dubai", "Istanbul",
+];
+
+/** Devises disponibles pour les tarifs GP. */
+export const KONNEKT_CURRENCIES = ["XOF", "EUR", "USD", "GBP", "CAD"] as const;
 
 interface Departure {
   id: string;
@@ -62,7 +77,7 @@ interface Mission {
   poids_reel: number | null;
 }
 
-const MONTHS_FR = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+
 
 /** Parse a stored date string safely and return a JS Date or null. */
 function parseDate(raw: string | null): Date | null {
@@ -81,11 +96,11 @@ function parseDate(raw: string | null): Date | null {
   return null;
 }
 
-/** "15 juil. 2026" */
+/** "15 juil. 2026" — formatage français robuste. */
 function formatDateLong(raw: string | null): string {
   const dt = parseDate(raw);
   if (!dt) return "Date non définie";
-  return `${dt.getDate()} ${MONTHS_FR[dt.getMonth()]} ${dt.getFullYear()}`;
+  return dt.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 const inputCls =
@@ -253,7 +268,7 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
       setLoading(true);
       setInvalid(false);
       const SELECT_COLS =
-        "id, reference, prenom, nom, telephone_1, navettes, residence_city, whatsapp_confirmed_at, beta_wizard_completed_at, beta_tarif_defaut, beta_notes_conditions";
+        "id, reference, prenom, nom, telephone_1, navettes, residence_city, whatsapp_confirmed_at, beta_wizard_completed_at, beta_tarif_defaut, beta_forfait_min, beta_devise, beta_notes_conditions";
 
       // 1) Fiche locale si déjà créée
       let { data } = await supabase
@@ -309,7 +324,7 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
   const refreshGp = useCallback(async () => {
     const { data } = await supabase
       .from("transporteurs")
-      .select("id, reference, prenom, nom, telephone_1, navettes, residence_city, whatsapp_confirmed_at, beta_wizard_completed_at, beta_tarif_defaut, beta_notes_conditions")
+      .select("id, reference, prenom, nom, telephone_1, navettes, residence_city, whatsapp_confirmed_at, beta_wizard_completed_at, beta_tarif_defaut, beta_forfait_min, beta_devise, beta_notes_conditions")
       .ilike("reference", refGp)
       .maybeSingle();
     if (data) setGp(data as Transporteur);
@@ -566,6 +581,7 @@ function ProfileSection({ gp, onSaved }: { gp: Transporteur; onSaved: () => void
   const [editing, setEditing] = useState(false);
 
   const navettes = (gp.navettes || []).filter(Boolean);
+  const devise = gp.beta_devise || "XOF";
 
   const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
     <div className="flex items-center justify-between py-2 border-b border-black/5 last:border-0">
@@ -585,7 +601,18 @@ function ProfileSection({ gp, onSaved }: { gp: Transporteur; onSaved: () => void
         <Row label="Nom" value={gp.nom} />
         <Row label="Téléphone" value={gp.telephone_1} />
         <Row label="Ville de résidence" value={gp.residence_city} />
-        <Row label="Villes de navette" value={navettes.length ? navettes.join(", ") : "—"} />
+        <Row label="Villes de navette" value={navettes.length ? navettes.join(" → ") : "—"} />
+      </div>
+
+      {/* Mes tarifs — visibles par le GP, jamais exposés aux clients */}
+      <div className="mt-4 rounded-xl p-3" style={{ backgroundColor: "rgba(10,22,40,0.04)" }}>
+        <div className="flex items-center gap-1.5 text-xs font-bold mb-2" style={{ color: NAVY }}>
+          <Wallet className="w-3.5 h-3.5" /> Mes tarifs
+          <span className="ml-auto text-[10px] font-medium text-black/40">privé</span>
+        </div>
+        <Row label="Prix au kg" value={gp.beta_tarif_defaut != null ? `${gp.beta_tarif_defaut} ${devise}` : "—"} />
+        <Row label="Forfait minimum" value={gp.beta_forfait_min != null ? `${gp.beta_forfait_min} ${devise}` : "—"} />
+        <Row label="Devise" value={devise} />
       </div>
       <button
         onClick={() => setEditing(true)}
@@ -607,7 +634,12 @@ function ProfileEditModal({ gp, onClose, onSaved }: { gp: Transporteur; onClose:
   const [nom, setNom] = useState(gp.nom || "");
   const [telephone, setTelephone] = useState(gp.telephone_1 || "");
   const [residence, setResidence] = useState(gp.residence_city || "");
-  const [navettes, setNavettes] = useState((gp.navettes || []).filter(Boolean).join(", "));
+  const existing = (gp.navettes || []).filter(Boolean);
+  const [villeDepart, setVilleDepart] = useState(existing[0] || "");
+  const [villeArrivee, setVilleArrivee] = useState(existing[1] || "");
+  const [prixKg, setPrixKg] = useState(gp.beta_tarif_defaut != null ? String(gp.beta_tarif_defaut) : "");
+  const [forfaitMin, setForfaitMin] = useState(gp.beta_forfait_min != null ? String(gp.beta_forfait_min) : "");
+  const [devise, setDevise] = useState(gp.beta_devise || "XOF");
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
@@ -617,7 +649,10 @@ function ProfileEditModal({ gp, onClose, onSaved }: { gp: Transporteur; onClose:
       nom: nom.trim() || null,
       telephone_1: telephone.trim() || null,
       residence_city: residence.trim() || null,
-      navettes: navettes.split(",").map((s) => s.trim()).filter(Boolean),
+      navettes: [villeDepart, villeArrivee].map((s) => s.trim()).filter(Boolean),
+      beta_tarif_defaut: prixKg ? Number(prixKg) : null,
+      beta_forfait_min: forfaitMin ? Number(forfaitMin) : null,
+      beta_devise: devise,
     }).eq("id", gp.id);
     setSaving(false);
     await onSaved();
@@ -634,7 +669,40 @@ function ProfileEditModal({ gp, onClose, onSaved }: { gp: Transporteur; onClose:
           </div>
           <div><label className={labelCls}>Téléphone</label><input className={inputCls} value={telephone} onChange={(e) => setTelephone(e.target.value)} /></div>
           <div><label className={labelCls}>Ville de résidence</label><input className={inputCls} value={residence} onChange={(e) => setResidence(e.target.value)} /></div>
-          <div><label className={labelCls}>Villes de navette (séparées par des virgules)</label><input className={inputCls} value={navettes} onChange={(e) => setNavettes(e.target.value)} placeholder="Dakar, Paris" /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>Ville de départ</label>
+              <select className={inputCls} value={villeDepart} onChange={(e) => setVilleDepart(e.target.value)}>
+                <option value="">Choisir…</option>
+                {KONNEKT_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Ville d'arrivée</label>
+              <select className={inputCls} value={villeArrivee} onChange={(e) => setVilleArrivee(e.target.value)}>
+                <option value="">Choisir…</option>
+                {KONNEKT_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Mes tarifs — privé, jamais exposé aux clients */}
+          <div className="rounded-xl p-3 space-y-3" style={{ backgroundColor: "rgba(10,22,40,0.04)" }}>
+            <div className="flex items-center gap-1.5 text-xs font-bold" style={{ color: NAVY }}>
+              <Wallet className="w-3.5 h-3.5" /> Mes tarifs
+              <span className="ml-auto text-[10px] font-medium text-black/40">privé</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className={labelCls}>Prix au kg</label><input type="number" className={inputCls} value={prixKg} onChange={(e) => setPrixKg(e.target.value)} /></div>
+              <div><label className={labelCls}>Forfait minimum</label><input type="number" className={inputCls} value={forfaitMin} onChange={(e) => setForfaitMin(e.target.value)} /></div>
+            </div>
+            <div>
+              <label className={labelCls}>Devise</label>
+              <select className={inputCls} value={devise} onChange={(e) => setDevise(e.target.value)}>
+                {KONNEKT_CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
         </div>
         <div className="flex items-center gap-3 mt-5">
           <button onClick={onClose} className="flex-1 rounded-xl py-3 font-semibold text-sm border" style={{ borderColor: "#E5E7EB", color: "#6B7280" }}>Annuler</button>
