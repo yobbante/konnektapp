@@ -294,6 +294,11 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
       }
 
       const t = data as Transporteur;
+      // Ref existante mais onboarding non terminé → compléter l'inscription
+      if (!t.beta_wizard_completed_at) {
+        window.location.replace(`/onboarding/${t.reference}`);
+        return;
+      }
       setGp(t);
       await loadDeparturesAndMissions(t.reference);
       setLoading(false);
@@ -344,7 +349,7 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
       <footer className="max-w-md mx-auto px-4 pb-8 pt-2 text-center">
         <p className="text-xs font-semibold" style={{ color: NAVY }}>Konnekt by Yobbanté</p>
         <a
-          href={`https://wa.me/${KONNEKT_WA}`}
+          href={`https://wa.me/${KONNEKT_WA}?text=${encodeURIComponent("AIDE")}`}
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs font-semibold mt-1 inline-flex items-center gap-1"
