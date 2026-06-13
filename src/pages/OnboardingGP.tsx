@@ -263,15 +263,29 @@ export default function OnboardingGP() {
             <h2 className="text-xl font-bold inline-flex items-center gap-2">
               <MapPin className="w-5 h-5" style={{ color: TEAL }} /> Mes navettes
             </h2>
-            <div>
-              <label className={labelCls}>Villes de navette</label>
-              <input
-                className={inputCls}
-                value={navettes}
-                onChange={(e) => setNavettes(e.target.value)}
-                placeholder="Dakar, Paris, Bruxelles"
-              />
-              <p className="text-[11px] text-black/45 mt-1">Séparez les villes par des virgules.</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Ville de départ</label>
+                <select
+                  className={inputCls}
+                  value={villeDepart}
+                  onChange={(e) => setVilleDepart(e.target.value)}
+                >
+                  <option value="">Choisir…</option>
+                  {KONNEKT_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>Ville d'arrivée</label>
+                <select
+                  className={inputCls}
+                  value={villeArrivee}
+                  onChange={(e) => setVilleArrivee(e.target.value)}
+                >
+                  <option value="">Choisir…</option>
+                  {KONNEKT_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
             </div>
             <div>
               <label className={labelCls}>Disponibilités</label>
