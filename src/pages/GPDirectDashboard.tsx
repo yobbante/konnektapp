@@ -324,7 +324,7 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
   const refreshGp = useCallback(async () => {
     const { data } = await supabase
       .from("transporteurs")
-      .select("id, reference, prenom, nom, telephone_1, navettes, residence_city, whatsapp_confirmed_at, beta_wizard_completed_at, beta_tarif_defaut, beta_notes_conditions")
+      .select("id, reference, prenom, nom, telephone_1, navettes, residence_city, whatsapp_confirmed_at, beta_wizard_completed_at, beta_tarif_defaut, beta_forfait_min, beta_devise, beta_notes_conditions")
       .ilike("reference", refGp)
       .maybeSingle();
     if (data) setGp(data as Transporteur);
