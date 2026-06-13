@@ -77,7 +77,7 @@ interface Mission {
   poids_reel: number | null;
 }
 
-const MONTHS_FR = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+
 
 /** Parse a stored date string safely and return a JS Date or null. */
 function parseDate(raw: string | null): Date | null {
