@@ -4,6 +4,7 @@ import { Loader2, ArrowRight, User, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { KonnektLoader } from "@/components/ui/KonnektLoader";
 import { fetchYobbanteGp } from "@/lib/yobbante";
+import { KONNEKT_CITIES } from "@/pages/GPDirectDashboard";
 
 const TEAL = "#0D9488";
 const TEAL_DARK = "#0F766E";
