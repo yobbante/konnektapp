@@ -581,6 +581,7 @@ function ProfileSection({ gp, onSaved }: { gp: Transporteur; onSaved: () => void
   const [editing, setEditing] = useState(false);
 
   const navettes = (gp.navettes || []).filter(Boolean);
+  const devise = gp.beta_devise || "XOF";
 
   const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
     <div className="flex items-center justify-between py-2 border-b border-black/5 last:border-0">
@@ -600,7 +601,18 @@ function ProfileSection({ gp, onSaved }: { gp: Transporteur; onSaved: () => void
         <Row label="Nom" value={gp.nom} />
         <Row label="Téléphone" value={gp.telephone_1} />
         <Row label="Ville de résidence" value={gp.residence_city} />
-        <Row label="Villes de navette" value={navettes.length ? navettes.join(", ") : "—"} />
+        <Row label="Villes de navette" value={navettes.length ? navettes.join(" → ") : "—"} />
+      </div>
+
+      {/* Mes tarifs — visibles par le GP, jamais exposés aux clients */}
+      <div className="mt-4 rounded-xl p-3" style={{ backgroundColor: "rgba(10,22,40,0.04)" }}>
+        <div className="flex items-center gap-1.5 text-xs font-bold mb-2" style={{ color: NAVY }}>
+          <Wallet className="w-3.5 h-3.5" /> Mes tarifs
+          <span className="ml-auto text-[10px] font-medium text-black/40">privé</span>
+        </div>
+        <Row label="Prix au kg" value={gp.beta_tarif_defaut != null ? `${gp.beta_tarif_defaut} ${devise}` : "—"} />
+        <Row label="Forfait minimum" value={gp.beta_forfait_min != null ? `${gp.beta_forfait_min} ${devise}` : "—"} />
+        <Row label="Devise" value={devise} />
       </div>
       <button
         onClick={() => setEditing(true)}
