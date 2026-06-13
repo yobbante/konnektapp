@@ -113,7 +113,8 @@ export default function OnboardingGP() {
       setNom(local.nom || yob?.nom || "");
       setTelephone(local.telephone_1 || yob?.telephone_1 || yob?.telephone_2 || "");
       setResidence(local.residence_city || "");
-      setNavettes((local.navettes || []).join(", "));
+      setVilleDepart((local.navettes || [])[0] || "");
+      setVilleArrivee((local.navettes || [])[1] || "");
       setDisponibilites(local.beta_notes_conditions || "");
       setView("wizard");
     })();
