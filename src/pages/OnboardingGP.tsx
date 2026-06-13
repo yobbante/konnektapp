@@ -47,7 +47,8 @@ export default function OnboardingGP() {
   const [nom, setNom] = useState("");
   const [telephone, setTelephone] = useState("");
   const [residence, setResidence] = useState("");
-  const [navettes, setNavettes] = useState("");
+  const [villeDepart, setVilleDepart] = useState("");
+  const [villeArrivee, setVilleArrivee] = useState("");
   const [disponibilites, setDisponibilites] = useState("");
 
   const redirectToGp = useCallback(() => {
