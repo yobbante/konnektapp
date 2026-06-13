@@ -6492,6 +6492,8 @@ export type Database = {
       }
       transporteurs: {
         Row: {
+          beta_devise: string | null
+          beta_forfait_min: number | null
           beta_migrated_at: string | null
           beta_notes_conditions: string | null
           beta_tarif_defaut: number | null
@@ -6513,6 +6515,8 @@ export type Database = {
           whatsapp_confirmed_at: string | null
         }
         Insert: {
+          beta_devise?: string | null
+          beta_forfait_min?: number | null
           beta_migrated_at?: string | null
           beta_notes_conditions?: string | null
           beta_tarif_defaut?: number | null
@@ -6534,6 +6538,8 @@ export type Database = {
           whatsapp_confirmed_at?: string | null
         }
         Update: {
+          beta_devise?: string | null
+          beta_forfait_min?: number | null
           beta_migrated_at?: string | null
           beta_notes_conditions?: string | null
           beta_tarif_defaut?: number | null
