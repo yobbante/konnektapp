@@ -96,11 +96,11 @@ function parseDate(raw: string | null): Date | null {
   return null;
 }
 
-/** "15 juil. 2026" */
+/** "15 juil. 2026" — formatage français robuste. */
 function formatDateLong(raw: string | null): string {
   const dt = parseDate(raw);
   if (!dt) return "Date non définie";
-  return `${dt.getDate()} ${MONTHS_FR[dt.getMonth()]} ${dt.getFullYear()}`;
+  return dt.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 const inputCls =
