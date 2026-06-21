@@ -167,6 +167,36 @@ export type Database = {
         }
         Relationships: []
       }
+      auth_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string | null
+          ref_gp: string
+          token: string
+          used: boolean
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          phone?: string | null
+          ref_gp: string
+          token: string
+          used?: boolean
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string | null
+          ref_gp?: string
+          token?: string
+          used?: boolean
+        }
+        Relationships: []
+      }
       beta_tracking_events: {
         Row: {
           created_at: string

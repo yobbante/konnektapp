@@ -13,9 +13,10 @@ import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Loader2, MessageCircle, Plane, Package, Wallet, User,
-  Plus, Pencil, Trash2, Check, AlertTriangle, MapPin,
+  Plus, Pencil, Trash2, Check, AlertTriangle, MapPin, LogOut,
 } from "lucide-react";
 import { fetchYobbanteGp } from "@/lib/yobbante";
+import { hasValidGpSession, clearGpSession } from "@/lib/gpSession";
 
 const NAVY = "#0A1628";
 const GOLD = "#C97B3A";
@@ -123,7 +124,7 @@ function StatusBadge({ status }: { status: string | null }) {
 
 /* ─────────────────────────  HEADER  ───────────────────────── */
 
-function DashboardHeader({ gp }: { gp: Transporteur }) {
+function DashboardHeader({ gp, onLogout }: { gp: Transporteur; onLogout: () => void }) {
   return (
     <header className="text-white" style={{ backgroundColor: NAVY }}>
       <div className="max-w-md mx-auto px-4 pt-5 pb-6" style={{ paddingTop: "calc(20px + env(safe-area-inset-top,0px))" }}>
@@ -144,6 +145,14 @@ function DashboardHeader({ gp }: { gp: Transporteur }) {
             <span className="text-[11px] font-bold px-2.5 py-1 rounded-full text-white" style={{ backgroundColor: GOLD }}>
               {gp.reference}
             </span>
+            <button
+              type="button"
+              onClick={onLogout}
+              title="Se déconnecter"
+              className="w-8 h-8 rounded-full grid place-items-center bg-white/10 hover:bg-white/20 transition-colors"
+            >
+              <LogOut className="w-4 h-4 text-white" />
+            </button>
           </div>
         </div>
         <h1 className="text-2xl font-bold tracking-tight mt-5">
@@ -262,7 +271,20 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
     );
   }, []);
 
+  // Protection : sans session GP valide pour cette ref → connexion
   useEffect(() => {
+    if (!hasValidGpSession(refGp)) {
+      window.location.replace("/gp/connexion");
+    }
+  }, [refGp]);
+
+  const handleLogout = useCallback(() => {
+    clearGpSession();
+    window.location.replace("/gp/connexion");
+  }, []);
+
+  useEffect(() => {
+    if (!hasValidGpSession(refGp)) return;
     let active = true;
     (async () => {
       setLoading(true);
@@ -347,7 +369,7 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
 
-      <DashboardHeader gp={gp} />
+      <DashboardHeader gp={gp} onLogout={handleLogout} />
       {!gp.whatsapp_confirmed_at && <WhatsAppCTABanner refGp={gp.reference} />}
 
       <main className="px-4 py-5 max-w-md mx-auto space-y-4">
