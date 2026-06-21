@@ -92,6 +92,55 @@ Deno.serve(async (req) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
+  // 0) PATTERN "CODE [ref]" — generation d'un lien magique d'acces GP
+  // Traite AVANT toute autre logique.
+  const codeMatch = String(text || "")
+    .trim()
+    .match(/^code\s+(gp\s*\d{3,})/i);
+  if (codeMatch) {
+    const ref = codeMatch[1].replace(/\s+/g, "").toUpperCase();
+    const token = `${crypto.randomUUID()}-${Date.now()}`;
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+
+    await admin.from("auth_tokens").insert({
+      token,
+      phone: sender,
+      ref_gp: ref,
+      expires_at: expiresAt,
+      used: false,
+    });
+
+    // Recuperer le prenom pour la notification admin
+    const { data: gp } = await admin
+      .from("transporteurs")
+      .select("prenom")
+      .ilike("reference", ref)
+      .maybeSingle();
+
+    const link = `https://usekonnekt.com/gp/auth?token=${token}`;
+    const reply =
+      `🔐 Votre lien d'accès Konnekt :\n${link}\n\n` +
+      `Valable 15 minutes. Ne le partagez pas.`;
+    const adminNote = `🔐 GP ${ref} ${(gp as any)?.prenom || ""} a demandé un accès`;
+    const AUTH_ADMIN_PHONE = "+221784604003";
+
+    await admin.from("whatsapp_inbound_messages").insert({
+      sender_phone: sender,
+      message_body: text,
+      tag: "gp_auth_code",
+      is_known_gp: !!gp,
+      bot_reply: reply,
+      raw_payload: body,
+    });
+
+    return json({
+      handled: true,
+      type: "gp_auth_code",
+      reply,
+      admin_notify: { to: AUTH_ADMIN_PHONE, message: adminNote },
+    });
+  }
+
   const normalized = normalize(text);
   const senderDigits = digitsOnly(sender);
 
