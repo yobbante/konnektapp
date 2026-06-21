@@ -124,7 +124,7 @@ function StatusBadge({ status }: { status: string | null }) {
 
 /* ─────────────────────────  HEADER  ───────────────────────── */
 
-function DashboardHeader({ gp }: { gp: Transporteur }) {
+function DashboardHeader({ gp, onLogout }: { gp: Transporteur; onLogout: () => void }) {
   return (
     <header className="text-white" style={{ backgroundColor: NAVY }}>
       <div className="max-w-md mx-auto px-4 pt-5 pb-6" style={{ paddingTop: "calc(20px + env(safe-area-inset-top,0px))" }}>
@@ -145,6 +145,14 @@ function DashboardHeader({ gp }: { gp: Transporteur }) {
             <span className="text-[11px] font-bold px-2.5 py-1 rounded-full text-white" style={{ backgroundColor: GOLD }}>
               {gp.reference}
             </span>
+            <button
+              type="button"
+              onClick={onLogout}
+              title="Se déconnecter"
+              className="w-8 h-8 rounded-full grid place-items-center bg-white/10 hover:bg-white/20 transition-colors"
+            >
+              <LogOut className="w-4 h-4 text-white" />
+            </button>
           </div>
         </div>
         <h1 className="text-2xl font-bold tracking-tight mt-5">
