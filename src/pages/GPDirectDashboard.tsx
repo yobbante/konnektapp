@@ -271,7 +271,20 @@ export default function GPDirectDashboard({ refGp }: { refGp: string }) {
     );
   }, []);
 
+  // Protection : sans session GP valide pour cette ref → connexion
   useEffect(() => {
+    if (!hasValidGpSession(refGp)) {
+      window.location.replace("/gp/connexion");
+    }
+  }, [refGp]);
+
+  const handleLogout = useCallback(() => {
+    clearGpSession();
+    window.location.replace("/gp/connexion");
+  }, []);
+
+  useEffect(() => {
+    if (!hasValidGpSession(refGp)) return;
     let active = true;
     (async () => {
       setLoading(true);
