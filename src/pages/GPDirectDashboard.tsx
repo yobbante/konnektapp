@@ -16,6 +16,7 @@ import {
   Plus, Pencil, Trash2, Check, AlertTriangle, MapPin,
 } from "lucide-react";
 import { fetchYobbanteGp } from "@/lib/yobbante";
+import { hasValidGpSession, clearGpSession } from "@/lib/gpSession";
 
 const NAVY = "#0A1628";
 const GOLD = "#C97B3A";
