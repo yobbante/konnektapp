@@ -28,6 +28,7 @@ import TransporteurBetaDashboard from "./pages/transporteur/TransporteurBetaDash
 import TransporteurQuickOnboard from "./pages/TransporteurQuickOnboard";
 import BetaLandingPage from "./pages/BetaLandingPage";
 import KonnektGPLogin from "./pages/KonnektGPLogin";
+import GPAuthPage from "./pages/GPAuthPage";
 import TransporteurMiniDashboard from "./pages/TransporteurMiniDashboard";
 import AdminBetaTracking from "./pages/AdminBetaTracking";
 import AdminGPOnboarding from "./pages/AdminGPOnboarding";
