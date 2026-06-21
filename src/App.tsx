@@ -215,6 +215,7 @@ const App = () => (
             <Route path="/konnekt" element={<Navigate to="/konnekt/gp" replace />} />
             {/* Connexion GP dédiée (routes système réservées : /gp/connexion, /gp/dashboard, /gp/profil…) */}
             <Route path="/gp/connexion" element={<KonnektGPLogin />} />
+            <Route path="/gp/auth" element={<GPAuthPage />} />
             <Route path="/gp/login" element={<Navigate to="/gp/connexion" replace />} />
             <Route path="/gp/profil" element={<Navigate to="/gp/profil-public" replace />} />
             <Route path="/gp/missions" element={<Navigate to="/gp/demandes" replace />} />
