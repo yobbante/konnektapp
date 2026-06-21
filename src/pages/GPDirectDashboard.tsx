@@ -13,7 +13,7 @@ import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Loader2, MessageCircle, Plane, Package, Wallet, User,
-  Plus, Pencil, Trash2, Check, AlertTriangle, MapPin,
+  Plus, Pencil, Trash2, Check, AlertTriangle, MapPin, LogOut,
 } from "lucide-react";
 import { fetchYobbanteGp } from "@/lib/yobbante";
 import { hasValidGpSession, clearGpSession } from "@/lib/gpSession";
