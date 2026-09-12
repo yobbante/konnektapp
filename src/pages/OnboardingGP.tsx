@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { KonnektLoader } from "@/components/ui/KonnektLoader";
 import { fetchYobbanteGp } from "@/lib/yobbante";
 import { KONNEKT_CITIES } from "@/pages/GPDirectDashboard";
+import { hasValidGpSession } from "@/lib/gpSession";
 
 const TEAL = "#0D9488";
 const TEAL_DARK = "#0F766E";
@@ -38,6 +39,7 @@ export default function OnboardingGP() {
   const [view, setView] = useState<ViewState>("loading");
   const [gp, setGp] = useState<LocalGp | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [step, setStep] = useState<1 | 2>(1);
 
   const normalizedRef = (ref || "").trim().toUpperCase();
@@ -52,8 +54,8 @@ export default function OnboardingGP() {
   const [disponibilites, setDisponibilites] = useState("");
 
   const redirectToGp = useCallback(() => {
-    window.location.replace(`/gp/${normalizedRef}`);
-  }, [normalizedRef]);
+    navigate(hasValidGpSession(normalizedRef) ? `/gp/${normalizedRef}` : "/gp/connexion", { replace: true });
+  }, [normalizedRef, navigate]);
 
   // ─── Chargement initial + pré-remplissage ───
   useEffect(() => {
@@ -123,7 +125,8 @@ export default function OnboardingGP() {
   const saveStep1 = async () => {
     if (!gp) return;
     setSaving(true);
-    await supabase
+    setSaveError("");
+    const { data: saved, error } = await supabase
       .from("transporteurs")
       .update({
         prenom: prenom.trim(),
@@ -131,26 +134,39 @@ export default function OnboardingGP() {
         telephone_1: telephone.trim() || null,
         residence_city: residence.trim() || null,
       })
-      .eq("id", gp.id);
+      .eq("id", gp.id)
+      .select("id")
+      .maybeSingle();
     setSaving(false);
+    if (error || !saved) {
+      setSaveError("Votre profil n’a pas pu être enregistré. Veuillez réessayer.");
+      return;
+    }
     setStep(2);
   };
 
   const saveStep2 = async () => {
     if (!gp) return;
     setSaving(true);
+    setSaveError("");
     const navetteList = [villeDepart, villeArrivee]
       .map((c) => c.trim())
       .filter(Boolean);
-    await supabase
+    const { data: saved, error } = await supabase
       .from("transporteurs")
       .update({
         navettes: navetteList,
         beta_notes_conditions: disponibilites.trim() || null,
         beta_wizard_completed_at: new Date().toISOString(),
       })
-      .eq("id", gp.id);
+      .eq("id", gp.id)
+      .select("id")
+      .maybeSingle();
     setSaving(false);
+    if (error || !saved) {
+      setSaveError("Vos navettes n’ont pas pu être enregistrées. Veuillez réessayer.");
+      return;
+    }
     redirectToGp();
   };
 
@@ -203,6 +219,7 @@ export default function OnboardingGP() {
       </section>
 
       <main className="px-5 py-8 max-w-md mx-auto w-full flex-1">
+        {saveError && <p role="alert" className="mb-4 text-sm text-destructive">{saveError}</p>}
         {/* Stepper */}
         <div className="flex items-center gap-2 mb-6">
           {[1, 2].map((s) => (

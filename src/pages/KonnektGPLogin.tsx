@@ -22,6 +22,7 @@ import { generateToken, normalizeRef, TOKEN_TTL_MS } from "@/lib/gpSession";
 import { COUNTRY_PHONE_CODES } from "@/lib/phoneCountryCodes";
 import { fetchYobbanteGpByPhone } from "@/lib/yobbante";
 import { Button } from "@/components/ui/button";
+import { KonnektLogo } from "@/components/ui/KonnektLogo";
 
 const KONNEKT_WA = "221789269756";
 const SUPPORT_TEL = "+221 78 926 97 56";
@@ -148,7 +149,7 @@ export default function KonnektGPLogin() {
         <div className="max-w-md mx-auto flex items-center justify-between px-4 py-3.5">
           <Link to="/" className="flex items-center gap-2">
             <ArrowLeft className="w-4 h-4 text-black/50" />
-            <span className="w-7 h-7 rounded-md grid place-items-center font-bold text-sm text-white" style={{ backgroundColor: "#3DAA8A" }}>K</span>
+            <KonnektLogo size={28} />
             <div className="flex flex-col leading-none">
               <span className="font-bold text-[15px] tracking-tight">KONNEKT</span>
               <span className="text-[10px] text-black/50">Espace GP</span>
@@ -235,6 +236,11 @@ export default function KonnektGPLogin() {
                 <div className="flex items-center gap-2 text-base font-bold" style={{ color: "#0D7A5F" }}>
                   <Zap className="w-5 h-5" /> Accès instantané
                 </div>
+                <Button asChild className="mt-4 w-full">
+                  <Link to={`/gp/auth?token=${encodeURIComponent(state.token)}`}>
+                    Accéder à mon dashboard <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
                 <button
                   type="button"
                   onClick={copyLink}
