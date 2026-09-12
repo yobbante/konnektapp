@@ -1,50 +1,72 @@
-# Messagerie admin Konnekt — conversation complète + statut 926
+# Konnekt — Corrections pré-production en dix chantiers
 
-Objectif: pouvoir ouvrir/interagir avec chaque message, voir **l'intégralité** de la conversation bot↔GP, répondre en libre ou via templates, rendre l'onglet Onboarding cliquable, et afficher en direct si la ligne WhatsApp **926** (le bot) est connectée.
+## Objectif
+Corriger les blocages du rapport et établir les preuves de fonctionnement avant toute ouverture commerciale. Garder les sept services accessibles et l’entrée bêta publique, mais protéger les dossiers et opérations privés. Aucune publication automatique.
 
-## Constat technique
-- La conversation réelle bot↔GP vit dans `whatsapp_inbound_messages` : `message_body` = message entrant du GP, `bot_reply` = réponse automatique du bot.
-- Les réponses manuelles de l'admin vivent dans `gp_messages`.
-- Aujourd'hui le détail (`WaThreadDetail`) ne lit **que** `gp_messages` → tout l'historique bot est invisible.
-- L'onglet Onboarding (`whatsapp_inbound_messages` tag `konnekt_signup`) affiche des cartes statiques non cliquables.
-- La ligne « 926 » est gérée par l'edge function `gp-bot` (et `webhook-whatsapp`).
+## 1. Connexion et inscription fiables
+- Diagnostiquer séparément les attentes de connexion dans l’application et les indisponibilités d’accès aux données.
+- Supprimer les blocages liés aux changements de session ; prévoir une erreur claire, un délai maximum et un bouton Réessayer.
+- Reprendre la création des profils métier après confirmation de l’adresse e-mail, sans désactiver cette confirmation.
+- Tester connexion, rechargement, expiration, déconnexion et reprise après incident.
 
-## 1. Conversation complète bot↔GP (fusion des sources)
-Dans `WaThreadDetail.load()`, charger et fusionner par téléphone, triés par date :
-- `gp_messages` (in/out manuels) — comme aujourd'hui.
-- `whatsapp_inbound_messages` filtrés sur le même numéro :
-  - chaque ligne → un message **entrant** (`message_body`, direction `in`).
-  - si `bot_reply` non vide → un message **sortant** marqué « Bot » (libellé + icône `Bot`, style distinct du message admin manuel).
-- Affichage : 3 styles de bulles → GP (entrant, blanc), Bot (sortant, teinté + badge « Bot auto »), Admin (sortant vert). Tri chronologique unique.
+## 2. Sécurité GP et confidentialité
+- Charger tous les résultats de sécurité disponibles, y compris connecteurs/Wiz lorsqu’ils sont présents.
+- Remplacer les liens fabriqués dans le navigateur et la session locale falsifiable par une validation serveur.
+- Envoyer les liens uniquement au canal vérifié ; vérifier que l’expéditeur WhatsApp possède la référence demandée ; consommer les jetons une seule fois, atomiquement.
+- Retirer les lectures et écritures publiques dangereuses sur jetons, profils, commandes et départs, en raccordant d’abord les parcours bêta aux opérations serveur autorisées.
+- Exposer uniquement les informations publiques nécessaires à la découverte et au suivi. Tester les accès directs et croisés.
 
-La liste des threads WhatsApp (`fetchWaThreads`) sera aussi alimentée par `whatsapp_inbound_messages` (groupé par `sender_phone`) en plus de `gp_messages`, pour que chaque GP ayant parlé au bot apparaisse (dédup par numéro).
+## 3. Comptes QA et accès administrateur
+- Créer huit comptes distincts : client, GP, routier, aérien, maritime, Mobility, coursier et agence, avec profils métier et données de test identifiables.
+- Confirmer les comptes par des boîtes réellement contrôlées ; ne pas utiliser les adresses fictives du rapport.
+- Tester l’administration avec un compte explicitement autorisé, sans promouvoir arbitrairement un compte existant.
+- Dépendances : adresses de test confirmables et autorisation d’accès administrateur.
 
-## 2. Onglet Onboarding cliquable (séparé)
-- Les cartes d'inscription restent dans leur onglet, mais deviennent cliquables : un clic ouvre le détail unifié de la conversation pour ce numéro (même `WaThreadDetail`, donc composer + historique complet).
-- On conserve le bouton « Valider dans Terrain » à l'intérieur du détail.
+## 4. Paiements, retraits et remboursements
+- Inventorier les prestataires et connexions déjà configurés avant tout choix d’intégration.
+- Interdire qu’un navigateur déclare seul un paiement réussi ou un retrait terminé.
+- Confirmer les paiements par notifications signées ; vérifier montant, devise, bénéficiaire et unicité des opérations côté serveur.
+- Rendre cohérents réservation, fonds réservés, libération, remboursement et retraits ; traiter échecs et notifications répétées.
+- Tant que le prestataire n’est pas opérationnel, afficher un état indisponible/en attente, jamais un faux succès.
+- Dépendance : compte prestataire et environnement de test utilisables ; demander les éléments manquants via les formulaires sécurisés.
 
-## 3. Composer : libre + templates (déjà présent, généralisé)
-- Le composer (message libre, toggle Templates, envoi enregistré / ouverture WhatsApp) existe déjà dans `WaThreadDetail`. Il devient accessible depuis l'onglet Onboarding via le clic ci-dessus.
-- Aucune régression sur l'envoi (`gp_messages` insert + `wa.me`).
+## 5. GP et routier
+- Conserver le parcours GP existant et sécuriser ses transitions financières.
+- Corriger le lien de suivi routier et harmoniser réservation directe et conversion de mission.
+- Tester supplément de poids, annulation, collecte, code de livraison incorrect/correct, litige et double confirmation.
 
-## 4. Statut « 926 connecté » — test live de l'edge function
-- Ajouter un endpoint santé sans effet de bord dans `gp-bot` : si la requête contient `{ ping: true }` (ou méthode GET), renvoyer `{ status: "ok" }` immédiatement, **sans** écrire en base ni traiter de message.
-- Côté frontend (header de la messagerie), un petit badge « Ligne 926 » :
-  - au chargement, appelle `supabase.functions.invoke("gp-bot", { body: { ping: true } })`.
-  - réponse OK → point vert « 926 connectée », erreur/timeout → point rouge « 926 hors ligne ».
-  - bouton refresh pour re-tester.
+## 6. Aérien et maritime
+- Relier proposition acceptée à réservation ferme, paiement confirmé, suivi et livraison.
+- Distinguer explicitement une demande de devis d’une réservation confirmée.
+- Préserver les spécificités métier existantes : documents, capacité, groupage/conteneur et frais déclarés ; ne pas inventer de tarifs commerciaux.
 
-## Section technique
-- Fichier principal: `src/pages/AdminMessages.tsx`
-  - `fetchWaThreads`: union `gp_messages` + `whatsapp_inbound_messages` (groupés par numéro normalisé), dédup, statut inchangé.
-  - `WaThreadDetail.load`: merge des deux tables → timeline triée avec champ `source` (`gp` | `bot` | `inbound`) pour le style de bulle.
-  - Onglet Onboarding: remplacer le `<div>` non cliquable par un `<button>` qui set `waSelected` (thread construit depuis le `sender_phone`).
-  - Header: composant `LineStatus` qui ping `gp-bot`.
-- Edge function `supabase/functions/gp-bot/index.ts`: court-circuit `ping`/GET → `{status:"ok"}` avant toute logique/insert.
-- Pas de migration DB nécessaire (lecture seule des tables existantes).
+## 7. Mobility, coursier et agence
+- Mobility : exclure les départs passés, afficher des dates non ambiguës et appliquer le jour recherché.
+- Sécuriser la réservation du dernier siège, le ticket, le double scan, les annulations et la rémunération.
+- Raccorder coursier/agence à un espace opérationnel adapté aux capacités existantes : missions, exécution et revenus ; compléter les maillons absents plutôt que laisser l’utilisateur à l’accueil.
+- Faire valider toute nouvelle règle commerciale ou gestion de collaborateurs non définie dans l’existant.
 
-## Vérification
-- Ouvrir une conversation (ex: +33751390284) et confirmer que le message GP de 12:25 + la réponse bot Yobbanté apparaissent dans le bon ordre.
-- Cliquer une carte Onboarding → la conversation s'ouvre avec composer.
-- Tester template + message libre (enregistré, puis WhatsApp).
-- Vérifier le badge 926 (vert si `gp-bot` répond au ping).
+## 8. Administration
+- Raccorder la recherche admin et clarifier l’accès à l’espace terrain avec les protections adéquates.
+- Exécuter les opérations sensibles côté serveur avec vérification des permissions et journal d’audit.
+- Vérifier suspension/réactivation, KYC, litiges, retraits et remboursements effectifs ; faire respecter les suspensions côté serveur.
+
+## 9. Préparation opérationnelle
+- Corriger les annonces périmées ; signaler les témoignages, chiffres et promesses nécessitant une validation, sans inventer de preuves.
+- Vérifier expéditeur e-mail, WhatsApp entrant/sortant et gestion des indisponibilités.
+- Contrôler supervision et sauvegardes ; documenter ce qui reste à démontrer pour la restauration et la charge.
+- Tester téléphone, clavier, petites hauteurs et réseau lent, puis le domaine publié sans déployer implicitement les modifications.
+
+## 10. Recette finale et décision de lancement
+- Rejouer chaque parcours complet avec les comptes QA : inscription → validation → offre → réservation → paiement → exécution → livraison/ticket → règlement.
+- Tester annulation, remboursement, litige, concurrence, répétition des actions et accès interdits.
+- Relancer les scans de sécurité après correction et vérifier les résultats disponibles des connecteurs.
+- Livrer un rapport mis à jour distinguant : corrigé et vérifié, corrigé mais non vérifié, bloqué par une dépendance externe.
+- Ne donner le feu vert qu’après validation des scénarios critiques ; une page affichée ne vaut pas une recette complète.
+
+## Organisation et détails techniques
+- Avancer dans cet ordre : accès et sessions → sécurité et droits → comptes QA → finances et parcours → administration → recette finale.
+- Suivre les dix chantiers dans la feuille de route ; conserver les preuves de test sans coordonnées privées ni secrets.
+- Utiliser les migrations approuvées pour les permissions, fonctions et transactions ; conserver les contrôles serveur et les accès nécessaires aux services internes.
+- Ajouter des tests ciblés de non-régression et des essais navigateur. Les opérations de test ne doivent pas encaisser d’argent réel, envoyer de messages à des clients ou modifier leurs dossiers.
+- Les réglages Cloud concernent à la fois l’aperçu et l’application publiée : prévoir des changements compatibles et ne pas supprimer les données métier.
