@@ -28,3 +28,12 @@
 - [ ] 8. Administration : routes, audit et mutations à vérifier.
 - [ ] 9. Préparation opérationnelle : e-mails, WhatsApp, sauvegardes et supervision à vérifier.
 - [ ] 10. Recette finale : dépend des corrections, comptes QA et paiements de test.
+
+# Ouverture Konnekt — sept points
+- [ ] 1. Vérifier l’état Cloud, les permissions réelles et les fonctions déployées.
+- [ ] 2. Sécuriser connexion GP, WhatsApp et données privées en préservant l’entrée bêta publique.
+- [ ] 3. Connecter et valider paiements, retraits et remboursements ; dépend des accès prestataire.
+- [ ] 4. Aligner l’accueil sur les sept activités sans promesses non vérifiées.
+- [ ] 5. Valider chaque activité de bout en bout et l’isolation entre comptes.
+- [ ] 6. Vérifier conditions, assurance, exclusions, remboursements, contacts et litiges ; validation métier nécessaire.
+- [ ] 7. Relancer les scans et vérifier le domaine publié sans publication automatique.
