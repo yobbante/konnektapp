@@ -7,7 +7,11 @@ import {
   ChevronDown,
   Rocket,
   Quote,
+  ArrowLeft,
+  LogIn,
 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { GpJoinCard } from "@/components/gp/GpJoinCard";
 
 const TEAL = "#0D9488";
@@ -33,6 +37,8 @@ const TESTIMONIALS = [
 ];
 
 export default function RejoindreGP() {
+  const navigate = useNavigate();
+  const goBack = () => window.history.state?.idx > 0 ? navigate(-1) : navigate("/");
   const scrollToForm = () => document.getElementById("form-section")?.scrollIntoView({ behavior: "smooth" });
 
   return (
@@ -42,6 +48,9 @@ export default function RejoindreGP() {
         className="relative min-h-[100dvh] flex flex-col items-center justify-center px-5 py-12 text-center text-white overflow-hidden"
         style={{ background: `linear-gradient(160deg, ${NAVY} 0%, ${TEAL_DARK} 70%, ${TEAL} 130%)` }}
       >
+        <div className="absolute top-4 left-4">
+          <Button variant="secondary" onClick={goBack}><ArrowLeft className="mr-2 h-4 w-4" />Retour</Button>
+        </div>
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -64,6 +73,12 @@ export default function RejoindreGP() {
             Vous voyagez régulièrement sur un même trajet ? Transportez les bagages d'autres
             voyageurs et soyez payé à chaque livraison.
           </p>
+
+          <div className="mt-6 bg-background text-foreground rounded-lg p-4">
+            <p className="text-sm font-semibold">Déjà inscrit sur Konnekt ou accepté sur Yobbanté ?</p>
+            <p className="text-sm text-muted-foreground mt-1">Connectez-vous sans vous réinscrire.</p>
+            <Button asChild className="mt-3"><Link to="/gp/connexion"><LogIn className="mr-2 h-4 w-4" />Se connecter</Link></Button>
+          </div>
 
           <div className="mt-9 grid gap-3 sm:grid-cols-3 text-left">
             {ADVANTAGES.map((a, i) => (

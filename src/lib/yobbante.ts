@@ -84,7 +84,8 @@ export async function fetchYobbanteGp(refGp: string): Promise<YobbanteGp | null>
  * Retourne null si introuvable ou en cas d'erreur réseau.
  */
 export async function fetchYobbanteGpByPhone(
-  phoneE164: string
+  phoneE164: string,
+  throwOnError = false
 ): Promise<YobbanteGp | null> {
   const phone = (phoneE164 || "").trim();
   if (!phone) return null;
@@ -97,14 +98,17 @@ export async function fetchYobbanteGpByPhone(
         "x-konnekt-key": YOBBANTE_SHARED_KEY,
       },
       body: JSON.stringify({ phone, telephone: phone, tel: phone }),
+      signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) {
+      if (throwOnError) throw new Error("Yobbanté temporairement indisponible");
       console.warn("[yobbante] gp-lookup(phone) HTTP", res.status);
       return null;
     }
     const payload = await res.json().catch(() => null);
     return parseYobbanteResponse(payload);
   } catch (e) {
+    if (throwOnError) throw e;
     console.error("[yobbante] gp-lookup(phone) failed:", e);
     return null;
   }

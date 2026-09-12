@@ -19,6 +19,10 @@ import {
 import { PhoneCountrySelect } from "@/components/PhoneCountrySelect";
 import { generateToken, normalizeRef, TOKEN_TTL_MS } from "@/lib/gpSession";
 
+import { COUNTRY_PHONE_CODES } from "@/lib/phoneCountryCodes";
+import { fetchYobbanteGpByPhone } from "@/lib/yobbante";
+import { Button } from "@/components/ui/button";
+
 const KONNEKT_WA = "221789269756";
 const SUPPORT_TEL = "+221 78 926 97 56";
 const SUPPORT_TEL_RAW = "221789269756";
@@ -28,6 +32,7 @@ function normalizePhoneE164(raw: string, fallbackDial = "+221"): string {
   let s = (raw || "").replace(/[\s().-]/g, "");
   if (s.startsWith("00")) s = "+" + s.slice(2);
   if (s.startsWith("+")) return s;
+  if (s.startsWith(fallbackDial.slice(1))) return `+${s}`;
   s = s.replace(/^0+/, "");
   return `${fallbackDial}${s}`;
 }
@@ -36,6 +41,8 @@ type State =
   | { kind: "idle" }
   | { kind: "loading" }
   | { kind: "not_found" }
+  | { kind: "unavailable" }
+  | { kind: "yobbante"; ref: string }
   | { kind: "found"; firstName?: string; ref: string; token: string };
 
 export default function KonnektGPLogin() {
@@ -44,7 +51,7 @@ export default function KonnektGPLogin() {
   const [state, setState] = useState<State>({ kind: "idle" });
   const [copied, setCopied] = useState(false);
 
-  const dial = country === "SN" ? "+221" : undefined;
+  const dial = COUNTRY_PHONE_CODES[country] || "+221";
 
   /* Force light mode */
   useEffect(() => {
@@ -57,7 +64,7 @@ export default function KonnektGPLogin() {
 
   const submit = async () => {
     setState({ kind: "loading" });
-    const e164 = normalizePhoneE164(localPhone ? `${dial || "+221"}${localPhone}` : "");
+    const e164 = normalizePhoneE164(localPhone, dial);
     const cleanedPhone = e164.replace(/\D/g, "");
     if (cleanedPhone.length < 8) {
       setState({ kind: "not_found" });
@@ -71,13 +78,19 @@ export default function KonnektGPLogin() {
       .from("transporteurs")
       .select("reference, prenom, telephone_1, telephone_2")
       .or(`telephone_1.ilike.%${tail},telephone_2.ilike.%${tail}`)
-      .limit(1)
-      .maybeSingle();
+      .limit(100);
 
-    const local = !error && data ? (data as any) : null;
+    const local = !error && data ? data.find(row =>
+      [row.telephone_1, row.telephone_2].some(phone => phone && normalizePhoneE164(phone, dial) === e164)
+    ) : null;
 
     if (!local?.reference) {
-      setState({ kind: "not_found" });
+      try {
+        const remote = await fetchYobbanteGpByPhone(e164, true);
+        setState(remote?.reference ? { kind: "yobbante", ref: normalizeRef(remote.reference) } : { kind: error ? "unavailable" : "not_found" });
+      } catch {
+        setState({ kind: "unavailable" });
+      }
       return;
     }
 
@@ -94,7 +107,7 @@ export default function KonnektGPLogin() {
     });
 
     if (insErr) {
-      setState({ kind: "not_found" });
+      setState({ kind: "unavailable" });
       return;
     }
 
@@ -201,6 +214,14 @@ export default function KonnektGPLogin() {
             </div>
           )}
 
+          {state.kind === "unavailable" && <p role="alert" className="mt-4 text-destructive">Connexion temporairement indisponible. Réessayez dans quelques instants ; cela ne signifie pas que votre compte est absent.</p>}
+          {state.kind === "yobbante" && (
+            <div className="mt-6 rounded-lg border border-border bg-background text-foreground p-5">
+              <p className="font-semibold">Nous vous avons trouvé sur Yobbanté</p>
+              <p className="mt-2 text-sm text-muted-foreground">Retrouvez votre profil prérempli pour poursuivre sur Konnekt, sans nouvelle inscription.</p>
+              <Button asChild className="mt-4"><Link to={`/onboarding/${encodeURIComponent(state.ref)}`}>Continuer sur Konnekt<ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+            </div>
+          )}
           {/* CAS A — trouvé : 2 options */}
           {state.kind === "found" && (
             <div className="mt-6 space-y-4">
