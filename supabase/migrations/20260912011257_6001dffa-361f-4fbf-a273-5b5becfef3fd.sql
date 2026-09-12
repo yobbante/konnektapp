@@ -1,0 +1,12 @@
+REVOKE ALL ON public.partner_api_keys,public.partner_webhooks FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON public.external_partners,public.audit_events FROM PUBLIC,anon,authenticated;
+GRANT SELECT ON public.external_partners,public.audit_events TO authenticated;
+REVOKE UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER ON public.audit_events FROM service_role;
+ALTER TABLE public.recipients ADD CONSTRAINT recipients_owner_profile_fkey FOREIGN KEY(owner_id) REFERENCES public.profiles(user_id) NOT VALID;
+ALTER TABLE public.recipient_requests ADD CONSTRAINT recipient_requests_target_profile_fkey FOREIGN KEY(target_user_id) REFERENCES public.profiles(user_id) NOT VALID;
+ALTER TABLE public.recipient_requests ADD CONSTRAINT recipient_requests_requester_profile_fkey FOREIGN KEY(requester_id) REFERENCES public.profiles(user_id) NOT VALID;
+ALTER TABLE public.sanctions ADD CONSTRAINT sanctions_target_profile_fkey FOREIGN KEY(target_user_id) REFERENCES public.profiles(user_id) NOT VALID;
+ALTER TABLE public.recipients VALIDATE CONSTRAINT recipients_owner_profile_fkey;
+ALTER TABLE public.recipient_requests VALIDATE CONSTRAINT recipient_requests_target_profile_fkey;
+ALTER TABLE public.recipient_requests VALIDATE CONSTRAINT recipient_requests_requester_profile_fkey;
+ALTER TABLE public.sanctions VALIDATE CONSTRAINT sanctions_target_profile_fkey;

@@ -5257,7 +5257,36 @@ export type Database = {
           target_user_id?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "recipient_requests_requester_profile_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "recipient_requests_requester_profile_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "public_user_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "recipient_requests_target_profile_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "recipient_requests_target_profile_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "public_user_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       recipients: {
         Row: {
@@ -5296,7 +5325,22 @@ export type Database = {
           recipient_user_id?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "recipients_owner_profile_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "recipients_owner_profile_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "public_user_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       reputation_incidents: {
         Row: {
@@ -5892,6 +5936,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "disputes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sanctions_target_profile_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "sanctions_target_profile_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "public_user_profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
