@@ -48,3 +48,6 @@
 - [ ] Connexion GP et permissions privées : migration coordonnée toujours à réaliser ; aucune déclaration de résolution.
 - [ ] Paiements réels : aucun secret prestataire ni connexion de paiement trouvé ; intégration et validation nécessaires.
 - [ ] Recette multi-comptes, validation commerciale, notifications réelles, scans connecteurs et domaine publié restent non validés.
+
+## Accès transporteurs
+- [ ] Diagnostiquer et corriger les blocages Yobbanté / acceptation administrateur ; tester les accès et refus.
