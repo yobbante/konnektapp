@@ -37,3 +37,12 @@
 - [ ] 5. Valider chaque activité de bout en bout et l’isolation entre comptes.
 - [ ] 6. Vérifier conditions, assurance, exclusions, remboursements, contacts et litiges ; validation métier nécessaire.
 - [ ] 7. Relancer les scans et vérifier le domaine publié sans publication automatique.
+
+## Vérifications ouverture réalisées
+- [x] Lovable Cloud répond normalement (authentification et base).
+- [x] Trois fonctions financières mises en refus sûr et déployées : lock-escrow, wallet-withdraw, pay-weight-supplement. Tests authentifiés : 503 PAYMENTS_NOT_AVAILABLE, avant toute mutation.
+- [x] Accueil : sept activités, accès Envoyer/Transporter/Voyager ; date passée, chiffres non prouvés et garanties de paiement retirés. Vérification navigateur sur ordinateur.
+- [x] Scan backend relancé : 16 constats (7 erreurs, 9 avertissements), non résolus par les changements financiers.
+- [ ] Connexion GP et permissions privées : migration coordonnée toujours à réaliser ; aucune déclaration de résolution.
+- [ ] Paiements réels : aucun secret prestataire ni connexion de paiement trouvé ; intégration et validation nécessaires.
+- [ ] Recette multi-comptes, validation commerciale, notifications réelles, scans connecteurs et domaine publié restent non validés.
