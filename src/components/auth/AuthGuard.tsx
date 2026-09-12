@@ -102,9 +102,6 @@ const CLIENT_ROUTES = [
   "/client/profile",
 ];
 
-// Super admin email — only sees admin dashboards
-const SUPER_ADMIN_EMAIL = "workbasse@outlook.fr";
-// Agent email — always redirected to /agent
 
 
 const isPublicRoute = (pathname: string): boolean => {
@@ -194,6 +191,17 @@ export function AuthGuard({ children }: AuthGuardProps) {
     if (/^\/gp\/(?:connexion|login|auth|GP\d+)$/i.test(pathname) || pathname.startsWith("/onboarding/")) return;
 
     try {
+      // Resolve authoritative roles before transporter onboarding/isolation.
+      const { data: rolesData, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+      if (rolesError) throw rolesError;
+      const roles = rolesData?.map(r => r.role) || [];
+      const hasAdminAccess = roles.includes("admin") || roles.includes("moderator");
+      const isAgent = roles.includes("agent_logistique");
+      if (hasAdminAccess) return;
+
       // Check if user is GP BEFORE public route early return
       // GP users must be redirected even from public routes like "/"
       const [gpRes, mobilityRes] = await Promise.all([
@@ -280,25 +288,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
       }
 
       if (isPublicRoute(pathname)) return;
-
-      // Check admin/moderator roles
-      const { data: rolesData } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId);
-
-      const roles = rolesData?.map(r => r.role) || [];
-      const hasAdminAccess = roles.includes("admin") || roles.includes("moderator");
-      const isAgent = roles.includes("agent_logistique");
-
-      // ── SUPER ADMIN: only admin dashboards ──
-      if (email.toLowerCase() === SUPER_ADMIN_EMAIL && hasAdminAccess) {
-        if (!isAdminRoute(pathname) && pathname !== "/settings") {
-          navigate("/admin", { replace: true });
-          return;
-        }
-        return;
-      }
 
       // Reuse GP profile from earlier check — only treat as GP if registration is complete
       const isGP = isGPRegistrationComplete;

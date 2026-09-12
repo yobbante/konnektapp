@@ -82,11 +82,13 @@ export function useActiveRole(): ActiveRoleState {
   useEffect(() => {
     determineRole();
 
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      determineRole();
+      clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => { void determineRole(); }, 0);
     });
 
-    return () => subscription.unsubscribe();
+    return () => { clearTimeout(refreshTimer); subscription.unsubscribe(); };
   }, [determineRole]);
 
   const setActiveRole = useCallback((role: ActiveRole) => {
