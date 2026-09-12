@@ -632,7 +632,15 @@ export type Database = {
           volume_estimate?: string | null
           weight_estimate?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "custom_requests_accepted_offer_id_fkey"
+            columns: ["accepted_offer_id"]
+            isOneToOne: false
+            referencedRelation: "custom_request_responses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       delivery_confirmations: {
         Row: {
@@ -735,6 +743,7 @@ export type Database = {
       }
       disputes: {
         Row: {
+          app_source: Database["public"]["Enums"]["app_source"] | null
           assigned_moderator: string | null
           attachments: string[] | null
           category: Database["public"]["Enums"]["dispute_category"]
@@ -757,6 +766,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          app_source?: Database["public"]["Enums"]["app_source"] | null
           assigned_moderator?: string | null
           attachments?: string[] | null
           category: Database["public"]["Enums"]["dispute_category"]
@@ -779,6 +789,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          app_source?: Database["public"]["Enums"]["app_source"] | null
           assigned_moderator?: string | null
           attachments?: string[] | null
           category?: Database["public"]["Enums"]["dispute_category"]
@@ -1249,7 +1260,15 @@ export type Database = {
           volume_m3?: number | null
           weight_kg?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "freight_requests_accepted_proposal_id_fkey"
+            columns: ["accepted_proposal_id"]
+            isOneToOne: false
+            referencedRelation: "freight_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       freight_tracking_events: {
         Row: {
@@ -1716,6 +1735,7 @@ export type Database = {
       gp_offers: {
         Row: {
           airline: string | null
+          app_source: Database["public"]["Enums"]["app_source"] | null
           arrival_date: string | null
           available_capacity: number
           baggage_restrictions: string | null
@@ -1751,6 +1771,7 @@ export type Database = {
         }
         Insert: {
           airline?: string | null
+          app_source?: Database["public"]["Enums"]["app_source"] | null
           arrival_date?: string | null
           available_capacity: number
           baggage_restrictions?: string | null
@@ -1786,6 +1807,7 @@ export type Database = {
         }
         Update: {
           airline?: string | null
+          app_source?: Database["public"]["Enums"]["app_source"] | null
           arrival_date?: string | null
           available_capacity?: number
           baggage_restrictions?: string | null
@@ -4071,7 +4093,15 @@ export type Database = {
             | Database["public"]["Enums"]["vehicle_type"]
             | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "mobility_requests_accepted_proposal_id_fkey"
+            columns: ["accepted_proposal_id"]
+            isOneToOne: false
+            referencedRelation: "mobility_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mobility_shuttle_routes: {
         Row: {
@@ -4342,6 +4372,7 @@ export type Database = {
       }
       notifications: {
         Row: {
+          app_source: Database["public"]["Enums"]["app_source"] | null
           created_at: string
           id: string
           message: string
@@ -4354,6 +4385,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          app_source?: Database["public"]["Enums"]["app_source"] | null
           created_at?: string
           id?: string
           message: string
@@ -4366,6 +4398,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          app_source?: Database["public"]["Enums"]["app_source"] | null
           created_at?: string
           id?: string
           message?: string
@@ -4694,6 +4727,7 @@ export type Database = {
           destination_country: string
           dimensions: string | null
           escrow_id: string | null
+          external_reference: string | null
           final_amount: number | null
           financial_status:
             | Database["public"]["Enums"]["financial_status"]
@@ -4711,6 +4745,7 @@ export type Database = {
           order_number: string
           origin_city: string
           origin_country: string
+          partner_metadata: Json | null
           payment_status: string | null
           pickup_date: string | null
           price_per_kg: number
@@ -4752,6 +4787,7 @@ export type Database = {
           destination_country: string
           dimensions?: string | null
           escrow_id?: string | null
+          external_reference?: string | null
           final_amount?: number | null
           financial_status?:
             | Database["public"]["Enums"]["financial_status"]
@@ -4769,6 +4805,7 @@ export type Database = {
           order_number: string
           origin_city: string
           origin_country: string
+          partner_metadata?: Json | null
           payment_status?: string | null
           pickup_date?: string | null
           price_per_kg: number
@@ -4810,6 +4847,7 @@ export type Database = {
           destination_country?: string
           dimensions?: string | null
           escrow_id?: string | null
+          external_reference?: string | null
           final_amount?: number | null
           financial_status?:
             | Database["public"]["Enums"]["financial_status"]
@@ -4827,6 +4865,7 @@ export type Database = {
           order_number?: string
           origin_city?: string
           origin_country?: string
+          partner_metadata?: Json | null
           payment_status?: string | null
           pickup_date?: string | null
           price_per_kg?: number
@@ -4878,6 +4917,13 @@ export type Database = {
             columns: ["offer_id"]
             isOneToOne: false
             referencedRelation: "gp_offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_routier_mission_id_fkey"
+            columns: ["routier_mission_id"]
+            isOneToOne: false
+            referencedRelation: "routier_missions"
             referencedColumns: ["id"]
           },
         ]
@@ -5164,6 +5210,7 @@ export type Database = {
       }
       reviews: {
         Row: {
+          app_source: Database["public"]["Enums"]["app_source"] | null
           client_id: string
           comment: string | null
           created_at: string
@@ -5178,6 +5225,7 @@ export type Database = {
           rating: number
         }
         Insert: {
+          app_source?: Database["public"]["Enums"]["app_source"] | null
           client_id: string
           comment?: string | null
           created_at?: string
@@ -5192,6 +5240,7 @@ export type Database = {
           rating: number
         }
         Update: {
+          app_source?: Database["public"]["Enums"]["app_source"] | null
           client_id?: string
           comment?: string | null
           created_at?: string
