@@ -134,7 +134,8 @@ export function MobileNav() {
     };
     checkAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    let authRefresh: ReturnType<typeof setTimeout> | undefined;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const authenticated = !!session;
       setIsAuthenticated(authenticated);
       setAuthLoading(false);
@@ -145,19 +146,8 @@ export function MobileNav() {
       };
 
       if (event === 'SIGNED_IN') {
-        if (session?.user?.id) {
-          const { data } = await supabase
-            .from("gp_profiles")
-            .select("id, gp_type")
-            .eq("user_id", session.user.id)
-            .maybeSingle();
-          const nextRole = data && data.gp_type !== 'occasionnel' ? 'transporter' : 'client';
-          setUserRole(nextRole);
-          mobileNavAuthCache = {
-            ...mobileNavAuthCache,
-            userRole: nextRole,
-          };
-        }
+        clearTimeout(authRefresh);
+        authRefresh = setTimeout(() => { void checkAuth(); }, 0);
       } else if (event === 'SIGNED_OUT') {
         setIsAuthenticated(false);
         setUserRole(null);
@@ -177,7 +167,10 @@ export function MobileNav() {
         }
       }
     });
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(authRefresh);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const navItems = [

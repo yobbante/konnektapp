@@ -24,10 +24,12 @@ export function useFavorites() {
     fetchUserAndFavorites();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      clearTimeout(refreshTimer);
       if (session?.user) {
         setUserId(session.user.id);
-        await fetchFavorites(session.user.id);
+        refreshTimer = setTimeout(() => { void fetchFavorites(session.user.id); }, 0);
       } else {
         setUserId(null);
         setFavorites(new Set());
@@ -35,7 +37,7 @@ export function useFavorites() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => { clearTimeout(refreshTimer); subscription.unsubscribe(); };
   }, []);
 
   const fetchFavorites = async (uid: string) => {

@@ -76,8 +76,12 @@ export function ClaimAccountBanner() {
   useEffect(() => {
     void refreshClaimStatus();
     // Re-check on auth changes (after Google OAuth callback / updateUser)
-    const { data: sub } = supabase.auth.onAuthStateChange(() => { void refreshClaimStatus(); });
-    return () => { sub.subscription.unsubscribe(); };
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => { void refreshClaimStatus(); }, 0);
+    });
+    return () => { clearTimeout(refreshTimer); sub.subscription.unsubscribe(); };
   }, [refreshClaimStatus]);
 
   // After Google sign-in callback returns to /t/dashboard the user has a real

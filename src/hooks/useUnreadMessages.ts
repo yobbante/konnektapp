@@ -50,11 +50,13 @@ export function useUnreadMessages() {
   useEffect(() => {
     fetchUnreadCount();
 
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      fetchUnreadCount();
+      clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => { void fetchUnreadCount(); }, 0);
     });
 
-    return () => subscription.unsubscribe();
+    return () => { clearTimeout(refreshTimer); subscription.unsubscribe(); };
   }, [fetchUnreadCount]);
 
   // Subscribe to realtime messages
