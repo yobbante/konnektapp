@@ -70,6 +70,17 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Fail closed: no verified provider settlement or atomic wallet operation exists yet.
+    // Never create held funds, debit balances, or confirm payments from a client request.
+    return new Response(JSON.stringify({
+      success: false,
+      code: "PAYMENTS_NOT_AVAILABLE",
+      error: "Paiements et retraits temporairement indisponibles. Aucun montant n’a été débité.",
+    }), {
+      status: 503,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
     const userId = claimsData.claims.sub;
     const supabase = createClient(supabaseUrl, serviceKey);
 

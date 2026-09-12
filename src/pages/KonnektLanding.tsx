@@ -34,46 +34,30 @@ const steps = [
   {
     n: "03",
     Icon: Wallet,
-    title: "Touchez votre paiement",
-    desc: "Livraison confirmée = virement immédiat via Wave ou Orange Money.",
+    title: "Suivez vos missions",
+    desc: "Les encaissements et retraits sont temporairement indisponibles pendant leur validation.",
   },
 ];
 
 const trust = [
   {
     Icon: Lock,
-    title: "Transporteurs vérifiés",
-    desc: "Chaque partenaire est validé avant sa première mission.",
+    title: "Profils transporteurs",
+    desc: "Consultez les informations du transporteur avant de vous engager.",
   },
   {
     Icon: CreditCard,
-    title: "Paiements garantis",
-    desc: "Votre rémunération est sécurisée dès la confirmation de collecte.",
+    title: "Paiements en préparation",
+    desc: "Aucun encaissement automatique n’est proposé avant validation du service.",
   },
   {
     Icon: MapPin,
-    title: "Suivi en temps réel",
-    desc: "Chaque colis tracé de Dakar jusqu'à destination.",
+    title: "Suivi des étapes",
+    desc: "Consultez les étapes renseignées pour votre envoi.",
   },
 ];
 
-const testimonials = [
-  {
-    quote: "Je reçois mes missions avant chaque départ Paris. Simple et bien rémunéré.",
-    name: "Fatou D.",
-    role: "Dakar-Paris",
-  },
-  {
-    quote: "J'aurais voulu connaître Konnekt bien plus tôt.",
-    name: "Moussa K.",
-    role: "Dakar-New York",
-  },
-  {
-    quote: "Le virement arrive le jour même. Fiable et rapide.",
-    name: "Aminata S.",
-    role: "Dakar-Madrid",
-  },
-];
+const testimonials: { quote: string; name: string; role: string }[] = []; // Await verified customer consent and evidence.
 
 const faqs = [
   {
@@ -86,7 +70,7 @@ const faqs = [
   },
   {
     q: "Quand suis-je payé ?",
-    a: "Dès que la livraison est confirmée, votre paiement est déclenché immédiatement via Wave ou Orange Money. Le virement arrive généralement le jour même.",
+    a: "Les paiements et retraits automatiques ne sont pas encore disponibles. Aucun délai de virement n’est garanti.",
   },
   {
     q: "Comment recevoir mes missions ?",
@@ -94,11 +78,11 @@ const faqs = [
   },
   {
     q: "Mes paiements sont-ils sécurisés ?",
-    a: "Oui. Votre rémunération est sécurisée dès la confirmation de collecte du colis. Aucun risque d'impayé : Konnekt garantit chaque transaction.",
+    a: "Les paiements sont en cours de validation. Ne considérez pas une réservation comme une preuve d’encaissement.",
   },
   {
     q: "Sur quelles destinations puis-je transporter ?",
-    a: "Konnekt couvre 36 destinations, principalement entre Dakar et l'Europe (Paris, Madrid…), ainsi que vers New York et Dubai. La liste s'agrandit chaque mois.",
+    a: "Consultez les offres publiées pour connaître les destinations et disponibilités actuelles.",
   },
 ];
 
@@ -254,13 +238,18 @@ export default function KonnektLanding() {
             </h1>
 
             <p className="mt-6 text-[18px] leading-relaxed max-w-md" style={{ color: GRAY }}>
-              Vous voyagez entre Dakar et l'Europe ? Recevez des missions cargo avant chaque départ. Simple, rapide, rémunéré.
+              GP, routier, aérien cargo, maritime, coursier, agence et Mobility : découvrez les parcours Konnekt. Leur ouverture commerciale reste en cours de validation.
             </p>
 
             <p className="mt-6 text-[14px] font-medium" style={{ color: GRAY }}>
-              422 transporteurs <Dot /> 36 destinations <Dot /> Lancement juillet 2026
+              Sept activités <Dot /> Disponibilité selon les offres <Dot /> Paiements indisponibles
             </p>
 
+            <nav aria-label="Accès aux services" className="mt-6 flex flex-wrap gap-4 text-primary font-semibold">
+              <Link to="/envoyer">Envoyer <ArrowRight className="inline h-4 w-4" /></Link>
+              <Link to="/transporteur/inscription">Transporter <ArrowRight className="inline h-4 w-4" /></Link>
+              <Link to="/mobility/recherche">Voyager <ArrowRight className="inline h-4 w-4" /></Link>
+            </nav>
             <div className="mt-9 flex flex-col sm:flex-row gap-3">
               <Link
                 to="/rejoindre-gp"
@@ -310,7 +299,7 @@ export default function KonnektLanding() {
                     <p className="text-[11px]" style={{ color: DARK }}>J'accepte ✅</p>
                   </div>
                   <div className="bg-white rounded-xl rounded-tl-sm px-3 py-2 shadow-sm max-w-[85%]">
-                    <p className="text-[11px]" style={{ color: DARK }}>Parfait ! Collecte confirmée. Paiement à la livraison via Wave 💸</p>
+                    <p className="text-[11px]" style={{ color: DARK }}>Exemple de suivi : collecte confirmée.</p>
                   </div>
                 </div>
               </div>
@@ -323,9 +312,9 @@ export default function KonnektLanding() {
       <section className="px-5 py-16 md:py-24" style={{ backgroundColor: "#F8F9FA" }}>
         <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-10 text-center">
           {[
-            { value: "422+", label: "transporteurs" },
-            { value: "36", label: "destinations" },
-            { value: "J+0", label: "paiement après livraison" },
+            { value: "7", label: "activités proposées" },
+            { value: "Bêta", label: "parcours en validation" },
+            { value: "À venir", label: "paiements automatiques" },
           ].map((m) => (
             <div key={m.label}>
               <div className="font-black text-5xl md:text-6xl tracking-tight" style={{ color: TEAL }}>{m.value}</div>
