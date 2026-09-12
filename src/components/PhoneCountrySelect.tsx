@@ -60,6 +60,15 @@ export function PhoneCountrySelect({ value, country, onChange, invalid, onBlur, 
   };
 
   const handleLocal = (raw: string) => {
+    if (raw.trim().startsWith("+") || raw.trim().startsWith("00")) {
+      const international = raw.trim().replace(/^00/, "+").replace(/[^\d+]/g, "");
+      const matched = [country, ...ORDERED].find(c => international.startsWith(COUNTRY_PHONE_CODES[c]));
+      if (matched) {
+        const local = international.slice(COUNTRY_PHONE_CODES[matched].length);
+        onChange(local, matched, international);
+        return;
+      }
+    }
     const local = raw.replace(/\D/g, "");
     onChange(local, country, `${dial}${local}`);
   };

@@ -7,8 +7,7 @@
  * beta (wizard, tarif, navettes, notes). L'identité vient toujours de Yobbanté.
  */
 
-const YOBBANTE_LOOKUP_URL =
-  "https://tlvuextleczdsqxoguyq.supabase.co/functions/v1/gp-lookup";
+import { supabase } from "@/integrations/supabase/client";
 const YOBBANTE_SHARED_KEY = "konnekt-yobbante-2026";
 
 export interface YobbanteGp {
@@ -57,19 +56,14 @@ export async function fetchYobbanteGp(refGp: string): Promise<YobbanteGp | null>
   if (!normalizedRef) return null;
 
   try {
-    const res = await fetch(YOBBANTE_LOOKUP_URL, {
-      method: "POST",
+    const { data: payload, error } = await supabase.functions.invoke("yobbante-lookup", {
       headers: {
         "Content-Type": "application/json",
         "x-konnekt-key": YOBBANTE_SHARED_KEY,
       },
-      body: JSON.stringify({ ref_gp: normalizedRef }),
+      body: { ref_gp: normalizedRef },
     });
-    if (!res.ok) {
-      console.warn("[yobbante] gp-lookup HTTP", res.status, normalizedRef);
-      return null;
-    }
-    const payload = await res.json().catch(() => null);
+    if (error) return null;
     return parseYobbanteResponse(payload);
   } catch (e) {
     console.error("[yobbante] gp-lookup failed:", e);
@@ -91,21 +85,17 @@ export async function fetchYobbanteGpByPhone(
   if (!phone) return null;
 
   try {
-    const res = await fetch(YOBBANTE_LOOKUP_URL, {
-      method: "POST",
+    const { data: payload, error } = await supabase.functions.invoke("yobbante-lookup", {
       headers: {
         "Content-Type": "application/json",
         "x-konnekt-key": YOBBANTE_SHARED_KEY,
       },
-      body: JSON.stringify({ phone, telephone: phone, tel: phone }),
-      signal: AbortSignal.timeout(10000),
+      body: { phone },
     });
-    if (!res.ok) {
+    if (error) {
       if (throwOnError) throw new Error("Yobbanté temporairement indisponible");
-      console.warn("[yobbante] gp-lookup(phone) HTTP", res.status);
       return null;
     }
-    const payload = await res.json().catch(() => null);
     return parseYobbanteResponse(payload);
   } catch (e) {
     if (throwOnError) throw e;

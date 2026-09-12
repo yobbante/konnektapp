@@ -108,6 +108,7 @@ const SUPER_ADMIN_EMAIL = "workbasse@outlook.fr";
 
 
 const isPublicRoute = (pathname: string): boolean => {
+  if (isTransporterRoute(pathname) || isMobilityRoute(pathname)) return false;
   return PUBLIC_ROUTES.some(route => {
     if (route === pathname) return true;
     if (pathname.startsWith(route + "/")) return true;
@@ -127,6 +128,7 @@ const isTransporterRoute = (pathname: string): boolean => {
 // Une route est "protégée connue" si elle correspond à un espace nécessitant une session.
 // Les routes inconnues (404) ne le sont pas → on laisse la page 404 s'afficher pour les visiteurs.
 const isKnownProtectedRoute = (pathname: string): boolean => {
+  if (isMobilityRoute(pathname)) return true;
   if (isAdminRoute(pathname)) return true;
   if (isTransporterRoute(pathname)) return true;
   if (AGENT_ROUTES.some(route => pathname.startsWith(route))) return true;
@@ -188,6 +190,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   const checkRoleAccess = async (userId: string, email: string) => {
     const pathname = location.pathname;
+    // A Cloud account must not hijack the separate invitation/session flow.
+    if (/^\/gp\/(?:connexion|login|auth|GP\d+)$/i.test(pathname) || pathname.startsWith("/onboarding/")) return;
 
     try {
       // Check if user is GP BEFORE public route early return
@@ -195,7 +199,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
       const [gpRes, mobilityRes] = await Promise.all([
         supabase
           .from("gp_profiles")
-          .select("id, price_locked_at, gp_type")
+          .select("id, price_locked_at, gp_type, status")
           .eq("user_id", userId)
           .maybeSingle(),
         supabase
@@ -214,7 +218,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
       const isOccasionnel = gpProfileEarly?.gp_type === "occasionnel";
       const isGPEarly = !!gpProfileEarly && !isOccasionnel;
       // GP registration is only complete when pricing is locked
-      const isGPRegistrationComplete = isGPEarly && !!gpProfileEarly?.price_locked_at;
+      const isGPRegistrationComplete = isGPEarly && (
+        gpProfileEarly?.status === "verified" || !!gpProfileEarly?.price_locked_at
+      );
       const isMobilityTransporter = !!mobilityProfile;
 
       // ── MOBILITY TRANSPORTER: redirect to mobility dashboard, block client routes ──
@@ -257,7 +263,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
       }
 
       // ── GP with INCOMPLETE registration on public routes → let them stay (e.g. on /gp/bagages/inscription) ──
-      if (isGPEarly && !isGPRegistrationComplete) {
+      if (isGPEarly && !isGPRegistrationComplete && !isAdminRoute(pathname) && !isMobilityRoute(pathname)) {
         // If they're on the registration page, let them continue
         if (pathname.startsWith("/gp/bagages/inscription") || pathname.startsWith("/gp/inscription") || pathname.startsWith("/transporteur/inscription")) {
           return;

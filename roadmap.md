@@ -48,3 +48,13 @@
 - [ ] Connexion GP et permissions privées : migration coordonnée toujours à réaliser ; aucune déclaration de résolution.
 - [ ] Paiements réels : aucun secret prestataire ni connexion de paiement trouvé ; intégration et validation nécessaires.
 - [ ] Recette multi-comptes, validation commerciale, notifications réelles, scans connecteurs et domaine publié restent non validés.
+
+## Accès transporteurs
+- [ ] Diagnostiquer et corriger les blocages Yobbanté / acceptation administrateur ; tester les accès et refus.
+
+### Résultat accès transporteurs
+- [x] Diagnostic : appels Yobbanté directs bloqués CORS, saisie internationale altérée, 9 GP verified sans price_locked_at.
+- [x] Relais yobbante-lookup déployé ; tests HTTP directs ref et téléphone : 200 found=true. Indicatif international corrigé.
+- [x] Guard : validation administrateur prise en compte indépendamment du tarif ; parcours invitation isolé ; routes dashboards protégées.
+- [ ] Validation E2E complète bloquée : navigateur reçoit 503 du relais malgré les réponses directes 200 ; aucun accès dashboard réel certifié.
+- [ ] Sécurité serveur sessions GP et tests comptes administrateur restent indispensables avant production.
