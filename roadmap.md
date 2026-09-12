@@ -58,3 +58,6 @@
 - [x] Guard : validation administrateur prise en compte indépendamment du tarif ; parcours invitation isolé ; routes dashboards protégées.
 - [ ] Validation E2E complète bloquée : navigateur reçoit 503 du relais malgré les réponses directes 200 ; aucun accès dashboard réel certifié.
 - [ ] Sécurité serveur sessions GP et tests comptes administrateur restent indispensables avant production.
+
+## Correction connexion et accès global
+- [ ] Corriger la recherche Yobbanté et vérifier les restrictions globales et /admin sans contourner les rôles.
