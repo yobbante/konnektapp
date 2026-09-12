@@ -1,4 +1,5 @@
 # Audit pré-production
+- [ ] Résoudre les cinq phases de l’audit backend : intégrité, partenaires, opérations atomiques, consolidation et historique unifié ; préserver le parcours bêta.
 - [x] Tester les entrées publiques de tous les modes et les redirections client.
 - [x] Auditer code client, transporteurs, admin et permissions actuelles.
 - [x] Documenter les essais réels, échecs et étapes non validées dans le rapport.
