@@ -14,9 +14,11 @@ export function GlobalNotificationProvider({ children }: { children: React.React
   useEffect(() => {
     checkUser();
 
+    let refreshTimer: ReturnType<typeof setTimeout> | undefined;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      clearTimeout(refreshTimer);
       if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        checkUser();
+        refreshTimer = setTimeout(() => { void checkUser(); }, 0);
       } else if (event === "SIGNED_OUT") {
         setUserId(null);
         setUserType(null);
@@ -24,6 +26,7 @@ export function GlobalNotificationProvider({ children }: { children: React.React
     });
 
     return () => {
+      clearTimeout(refreshTimer);
       subscription.unsubscribe();
     };
   }, []);
