@@ -1,0 +1,15 @@
+ALTER TABLE public.orders ADD COLUMN external_reference text, ADD COLUMN partner_metadata jsonb;
+ALTER TABLE public.notifications ADD COLUMN app_source public.app_source;
+ALTER TABLE public.gp_offers ADD COLUMN app_source public.app_source;
+ALTER TABLE public.disputes ADD COLUMN app_source public.app_source;
+ALTER TABLE public.reviews ADD COLUMN app_source public.app_source;
+CREATE INDEX orders_external_reference_idx ON public.orders(external_reference) WHERE external_reference IS NOT NULL;
+CREATE INDEX orders_app_source_idx ON public.orders(app_source);
+ALTER TABLE public.orders ADD CONSTRAINT orders_routier_mission_id_fkey FOREIGN KEY (routier_mission_id) REFERENCES public.routier_missions(id) NOT VALID;
+ALTER TABLE public.custom_requests ADD CONSTRAINT custom_requests_accepted_offer_id_fkey FOREIGN KEY (accepted_offer_id) REFERENCES public.custom_request_responses(id) NOT VALID;
+ALTER TABLE public.freight_requests ADD CONSTRAINT freight_requests_accepted_proposal_id_fkey FOREIGN KEY (accepted_proposal_id) REFERENCES public.freight_proposals(id) NOT VALID;
+ALTER TABLE public.mobility_requests ADD CONSTRAINT mobility_requests_accepted_proposal_id_fkey FOREIGN KEY (accepted_proposal_id) REFERENCES public.mobility_proposals(id) NOT VALID;
+ALTER TABLE public.orders VALIDATE CONSTRAINT orders_routier_mission_id_fkey;
+ALTER TABLE public.custom_requests VALIDATE CONSTRAINT custom_requests_accepted_offer_id_fkey;
+ALTER TABLE public.freight_requests VALIDATE CONSTRAINT freight_requests_accepted_proposal_id_fkey;
+ALTER TABLE public.mobility_requests VALIDATE CONSTRAINT mobility_requests_accepted_proposal_id_fkey;
