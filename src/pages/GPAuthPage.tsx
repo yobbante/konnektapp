@@ -50,11 +50,16 @@ export default function GPAuthPage() {
       if (!valid || !data) { setError(true); return; }
 
       // Consommer le token
-      await supabase
+      const { data: consumed, error: consumeError } = await supabase
         .from("auth_tokens")
         .update({ used: true })
-        .eq("token", token);
+        .eq("token", token)
+        .eq("used", false)
+        .gt("expires_at", new Date().toISOString())
+        .select("token")
+        .maybeSingle();
       if (!active) return;
+      if (consumeError || !consumed) { setError(true); return; }
 
       const ref = normalizeRef(data.ref_gp);
       setGpSession(ref, data.phone || "");

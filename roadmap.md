@@ -1,4 +1,6 @@
 # Audit pré-production
+- [x] Connexion GP : accès direct au lien ajouté, consommation vérifiée et échecs de sauvegarde onboarding sans redirection ; logo officiel rétabli.
+- [ ] Valider la connexion GP réelle de bout en bout avec un lien neuf ; sécurité serveur GP toujours à finaliser.
 - [ ] Résoudre les cinq phases de l’audit backend : intégrité, partenaires, opérations atomiques, consolidation et historique unifié ; préserver le parcours bêta.
   - [x] Socle phase 1 : huit relations validées sans orphelins, colonnes partenaires et origine applicative, index commandes.
   - [ ] Phase 1 : adapter les écritures à l’origine applicative et persister les métadonnées dans les endpoints.
