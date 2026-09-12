@@ -167,6 +167,42 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          entity_id: string
+          entity_type: string
+          event_type: string
+          id: string
+          payload: Json
+          source_id: string | null
+          source_table: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          event_type: string
+          id?: string
+          payload?: Json
+          source_id?: string | null
+          source_table?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          source_id?: string | null
+          source_table?: string | null
+        }
+        Relationships: []
+      }
       auth_tokens: {
         Row: {
           created_at: string
@@ -1033,6 +1069,39 @@ export type Database = {
           to_currency?: string
           updated_at?: string
           updated_by?: string | null
+        }
+        Relationships: []
+      }
+      external_partners: {
+        Row: {
+          allowed_endpoints: string[]
+          app_source: Database["public"]["Enums"]["app_source"]
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          rate_limit_per_min: number
+          updated_at: string
+        }
+        Insert: {
+          allowed_endpoints?: string[]
+          app_source: Database["public"]["Enums"]["app_source"]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          rate_limit_per_min?: number
+          updated_at?: string
+        }
+        Update: {
+          allowed_endpoints?: string[]
+          app_source?: Database["public"]["Enums"]["app_source"]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          rate_limit_per_min?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -4924,6 +4993,85 @@ export type Database = {
             columns: ["routier_mission_id"]
             isOneToOne: false
             referencedRelation: "routier_missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_api_keys: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          key_hash: string
+          partner_id: string
+          revoked_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          key_hash: string
+          partner_id: string
+          revoked_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          key_hash?: string
+          partner_id?: string
+          revoked_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_api_keys_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "external_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_webhooks: {
+        Row: {
+          created_at: string
+          endpoint_url: string
+          event_types: string[]
+          id: string
+          is_active: boolean
+          partner_id: string
+          signing_secret_reference: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint_url: string
+          event_types?: string[]
+          id?: string
+          is_active?: boolean
+          partner_id: string
+          signing_secret_reference?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          endpoint_url?: string
+          event_types?: string[]
+          id?: string
+          is_active?: boolean
+          partner_id?: string
+          signing_secret_reference?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_webhooks_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "external_partners"
             referencedColumns: ["id"]
           },
         ]
