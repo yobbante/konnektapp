@@ -56,8 +56,12 @@
 - [x] Diagnostic : appels Yobbanté directs bloqués CORS, saisie internationale altérée, 9 GP verified sans price_locked_at.
 - [x] Relais yobbante-lookup déployé ; tests HTTP directs ref et téléphone : 200 found=true. Indicatif international corrigé.
 - [x] Guard : validation administrateur prise en compte indépendamment du tarif ; parcours invitation isolé ; routes dashboards protégées.
-- [ ] Validation E2E complète bloquée : navigateur reçoit 503 du relais malgré les réponses directes 200 ; aucun accès dashboard réel certifié.
+- [x] Relais Yobbanté retesté depuis le navigateur : found=true sans erreur pour GP3230. Connexion GP complète par lien neuf reste à valider.
 - [ ] Sécurité serveur sessions GP et tests comptes administrateur restent indispensables avant production.
 
 ## Correction connexion et accès global
-- [ ] Corriger la recherche Yobbanté et vérifier les restrictions globales et /admin sans contourner les rôles.
+- [x] Recherche Yobbanté vérifiée depuis le navigateur ; attentes auth corrigées dans navigation, favoris, rôles et notifications.
+- [x] Aucun verrou global : is_locked=false, GP_ONLY_MODE=false ; aucune date ne ferme les services.
+- [x] Rôles administrateur résolus avant les restrictions transporteurs ; rôle admin attribué au compte vérifié du demandeur après autorisation explicite.
+- [x] Test réel /admin : tableau de bord chargé avec données ; visiteurs renvoyés à la connexion sur les dashboards protégés.
+- [ ] Recette exhaustive des fonctionnalités : reste dépendante des paiements opérationnels et sessions GP serveur sécurisées ; non certifiée par ces tests d’accès.
