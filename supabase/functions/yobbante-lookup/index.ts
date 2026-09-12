@@ -28,7 +28,8 @@ Deno.serve(async (req) => {
     });
     if (!upstream.ok) return reply({ error: "Partner unavailable" }, 502);
     return reply(await upstream.json());
-  } catch {
+  } catch (error) {
+    console.error("Partner lookup failed", error instanceof Error ? error.name + ": " + error.message : "Unknown error");
     return reply({ error: "Partner unavailable" }, 503);
   }
 });
