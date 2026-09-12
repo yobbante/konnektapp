@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { toast } from "sonner";
 
@@ -104,7 +105,7 @@ const CLIENT_ROUTES = [
 // Super admin email — only sees admin dashboards
 const SUPER_ADMIN_EMAIL = "workbasse@outlook.fr";
 // Agent email — always redirected to /agent
-const AGENT_EMAIL = "bass96@live.fr";
+
 
 const isPublicRoute = (pathname: string): boolean => {
   return PUBLIC_ROUTES.some(route => {
@@ -153,46 +154,42 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
+  const [authError, setAuthError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
-    
-    const doCheck = async () => {
+    let deferred: ReturnType<typeof setTimeout> | undefined;
+    setLoading(true);
+    setAuthError(false);
+    const timeout = setTimeout(() => {
       if (!isMounted) return;
+      setAuthenticated(false);
+      setAuthError(true);
+      setLoading(false);
+    }, 15000);
+    const run = async () => {
       await checkAuth();
+      if (isMounted) clearTimeout(timeout);
     };
-    doCheck();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!isMounted) return;
-      if (event === "SIGNED_OUT" || !session) {
-        setAuthenticated(false);
-        if (!isPublicRoute(location.pathname)) {
-          navigate("/auth", { state: { returnTo: location.pathname }, replace: true });
-        }
-      } else if (event === "SIGNED_IN" && session) {
-        setAuthenticated(true);
-        checkRoleAccess(session.user.id, session.user.email || "");
-      }
+    void run();
+    // Never issue auth/database requests while the auth callback holds its lock.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      clearTimeout(deferred);
+      deferred = setTimeout(() => { if (isMounted) void run(); }, 0);
     });
-
-    return () => { isMounted = false; subscription.unsubscribe(); };
-  }, [location.pathname]);
+    return () => {
+      isMounted = false;
+      clearTimeout(timeout);
+      clearTimeout(deferred);
+      subscription.unsubscribe();
+    };
+  }, [location.pathname, attempt]);
 
   const checkRoleAccess = async (userId: string, email: string) => {
     const pathname = location.pathname;
 
     try {
-      // ── AGENT EMAIL: always redirect to /agent, even from public routes ──
-      if (email.toLowerCase() === AGENT_EMAIL) {
-        const isOnAgentRoute = AGENT_ROUTES.some(route => pathname.startsWith(route));
-        if (!isOnAgentRoute) {
-          navigate("/agent", { replace: true });
-          return;
-        }
-        return;
-      }
-
       // Check if user is GP BEFORE public route early return
       // GP users must be redirected even from public routes like "/"
       const [gpRes, mobilityRes] = await Promise.all([
@@ -208,6 +205,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
           .maybeSingle(),
       ]);
 
+      if (gpRes.error) throw gpRes.error;
+      if (mobilityRes.error) throw mobilityRes.error;
       const gpProfileEarly = gpRes.data;
       const mobilityProfile = mobilityRes.data;
 
@@ -340,7 +339,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         }
       }
     } catch (error) {
-      console.error("Role check error:", error);
+      throw error;
     }
   };
 
@@ -373,6 +372,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
       }
     } catch (error) {
       console.error("Auth check error:", error);
+      setAuthError(true);
       setAuthenticated(false);
       if (!isPublicRoute(location.pathname)) {
         navigate("/auth", { replace: true });
@@ -381,6 +381,13 @@ export function AuthGuard({ children }: AuthGuardProps) {
       setLoading(false);
     }
   };
+
+  if (authError && !isPublicRoute(location.pathname)) {
+    return <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
+      <p>Impossible de vérifier votre accès. Veuillez réessayer.</p>
+      <Button onClick={() => setAttempt(value => value + 1)}>Réessayer</Button>
+    </div>;
+  }
 
   if (loading) {
     return <PageLoader message="Vérification de l'authentification..." />;

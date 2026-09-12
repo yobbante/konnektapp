@@ -95,12 +95,14 @@ export function useUserRole() {
 
     checkUserRole();
 
-    // Listen to auth changes
+    let deferred: ReturnType<typeof setTimeout> | undefined;
+    // Defer requests until the auth callback releases its lock.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      checkUserRole();
+      clearTimeout(deferred);
+      deferred = setTimeout(() => { void checkUserRole(); }, 0);
     });
 
-    return () => subscription.unsubscribe();
+    return () => { clearTimeout(deferred); subscription.unsubscribe(); };
   }, []);
 
   return state;
